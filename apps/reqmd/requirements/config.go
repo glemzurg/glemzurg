@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"glemzurg/reqmd/helper"
+	"github.com/glemzurg/futz/apps/reqmd/helper"
 )
 
 type Config struct {

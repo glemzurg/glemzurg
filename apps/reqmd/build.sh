@@ -44,23 +44,23 @@ echo -e "\nTEST\n"
 if [ -z "$TEST_TO_RUN" ]; then
 
   # No explicit test, running all tests.
-  go test -p=1 -v glemzurg/reqmd/...
+  go test -p=1 -v ./...
   [ $? -ne 0 ] && exit 1
 
   # The core is working fine. Format.
-  echo -e "\nFMT\n" ; go fmt glemzurg/reqmd/...
+  echo -e "\nFMT\n" ; go fmt ./...
   [ $? -ne 0 ] && exit 1
 
 else 
 
   # An explicit test, run only that.
-  go test -p=1 -v glemzurg/reqmd/... -run "$TEST_TO_RUN"
+  go test -p=1 -v ./... -run "$TEST_TO_RUN"
   [ $? -ne 0 ] && exit 1
 
 fi 
 
 # Build and install any executables.
-echo -e "\nINSTALL\n" ; go install glemzurg/reqmd/...
+echo -e "\nINSTALL\n" ; go install ./...
 [ $? -ne 0 ] && exit 1
 
 # Setting up default data.
