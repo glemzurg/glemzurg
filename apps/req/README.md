@@ -1,8 +1,6 @@
 
 next:
 
-- create the initial svgs
-- add the svg links to the use case md
 - work on the diagram generation
 
 ---------------------------
@@ -10,24 +8,14 @@ next:
 
 - work out the source of section and destination of section
 - work out the event parameter source field
-- use case diagram (graphviz)
-  - Work through testing images with graphviz by hand.
-  - all three appendices
-- sequence diagrams: https://github.com/aorith/svg-sequence
 - duplicate the text book diagram
 - update all the other class diagrams to be a reduced form of it
 - create a solution for ordering of events, states, actions, etc. for reability.
-
-
-- an event that doesn't change state should be in the state as: EventB / ActionY (Just put the event name, the ‘/’, and the action name in the ‘event action’ zone. Note that the eventname/ action notation is somewhat more limited than explicit self-transition notation. Specifically, eventname/ action notation does not allow a guard, and only one action can be specified.)
-
 - same work for state machines
 - update parsing of actions
 - updating parsing of data types
 - add data dictionary of the textbook format
-- add use cases
 - add domains
-- add interaction diagrams
 - make state class members innate and not specified
 
 - add use case level svg images
@@ -68,6 +56,7 @@ graphviz migration:
 
 Long time targets:
 
+- clean up looping transitions to be inside the body as: event [guard] / action
 - post gres schemas, domians, compositions, records, etc
 - move to devcontainers
 - full TLA+ as initial pim overlay
