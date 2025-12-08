@@ -1,7 +1,6 @@
 
 next:
 
-- add the steps to the yaml parsing
 - put the relevant objects on the steps
 - create the initial svgs
 - add the svg links to the use case md
@@ -70,6 +69,8 @@ graphviz migration:
 
 Long time targets:
 
+- post gres schemas, domians, compositions, records, etc
+- move to devcontainers
 - full TLA+ as initial pim overlay
   - Consider e ch node represents either a leaf (code line with FK) or a composite structure (sequence, branch, loop). It leverages PostgreSQL's recursive CTEs for traversal and supports modern indexing.
 - full support of entire text book models

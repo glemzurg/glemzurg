@@ -31,9 +31,6 @@
 | [public.parameter](public.parameter.md) | 7 | A parameter of an action. | BASE TABLE |
 | [public.scenario](public.scenario.md) | 6 | A documented scenario, such as a sequence diagram or activity diagram, for a use case. | BASE TABLE |
 | [public.scenario_object](public.scenario_object.md) | 9 | An object that participates in a scenario. | BASE TABLE |
-| [public.flow](public.flow.md) | 5 | A documentated flow of data/communication for the system. And integration diagram. | BASE TABLE |
-| [public.flow_object](public.flow_object.md) | 6 | An object of a flow. | BASE TABLE |
-| [public.flow_message_box](public.flow_message_box.md) | 15 | A flow tracks message between objects.<br>The messages must pass over an association between the two classes of the objects.<br>A row could also be a box containing other boxes and messages. | BASE TABLE |
 
 ## Enums
 
@@ -43,7 +40,6 @@
 | public.bound_limit_type | closed, open, unconstrained |
 | public.collection_type | atomic, ordered, queue, record, stack, unordered |
 | public.constraint_type | enumeration, object, reference, span, unconstrained |
-| public.message_box_type | alt, attribute, create, delete, event, loop, opt, ref |
 | public.scenario_object_name_style | id, name, unnamed |
 | public.share_type | extend, include |
 | public.state_action_when | do, entry, exit |
