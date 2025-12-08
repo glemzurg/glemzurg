@@ -12,16 +12,10 @@ CREATE ROLE
 postgres=# grant all privileges on database modeling to modeling;
 GRANT
 
-postgres=# create user justin with encrypted password 'booga8';
-CREATE ROLE
-postgres=# grant all privileges on database modeling to justin;
-GRANT
-
 postgres=# \c modeling
 You are now connected to database "modeling" as user "postgres".
 modeling=# GRANT ALL ON SCHEMA public TO modeling;
-modeling=# GRANT ALL ON SCHEMA public TO justin;
-GRANT
+
 
 ===============================================
 
@@ -36,15 +30,8 @@ CREATE ROLE
 postgres=# grant all privileges on database modeling_test to modeling_test;
 GRANT
 
-// postgres=# create user justin with encrypted password 'booga8';
-// CREATE ROLE
-postgres=# grant all privileges on database modeling_test to justin;
-GRANT
-
 postgres=# \c modeling_test
 You are now connected to database "modeling_test" as user "postgres".
-modeling_test=# GRANT ALL ON SCHEMA public TO justin;
-GRANT
 modeling_test=# GRANT ALL ON SCHEMA public TO modeling_test;
 GRANT
 
@@ -56,13 +43,13 @@ GRANT
 
 
 adduser --no-create-home modeling_test
-    password "booga8"
+    password "<passwordhere>"
 
 su modeling_test
 psql -U modeling_test modeling_test
 
 adduser --no-create-home modeling
-    password "booga8"
+    password "<passwordhere>"
 
 su modeling
 psql -U modeling modeling
