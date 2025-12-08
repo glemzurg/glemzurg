@@ -1,0 +1,29 @@
+[⇦ WebBooks 2.0](model.md)
+
+# Web UI
+
+This domain provides a customer interface using Web technology. This domain is expected to use a preexisting service like jQueryUI, Kendo UI, JQWidgets, etc.
+
+Concepts in this domain include:
+
+- Customer login page
+- Search catalog page
+- Checkout page
+- Order status page
+
+Note that to be more technically correct, the web pages abvoe are actually in View-controller region of Order fulfillment, Payment, and User security. The Web UI domain is in terms of pages, buttons, text boxes, scrolling lists, etc. No semantic model is provided--that should be the responsibility of the selected vendor.
+
+## Use Cases
+
+![er](domain-06_web_ui-use-cases.svg)
+
+
+
+## Classes
+
+The classes of this domain.
+
+![er](domain-06_web_ui-classes.svg)
+
+
+

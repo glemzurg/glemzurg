@@ -58,3 +58,22 @@ func createKeyScenarioLookup(
 	}
 	return lookup
 }
+
+func populateScenarioStepReferences(
+	scenarios map[string]Scenario,
+	objects map[string]ScenarioObject,
+	useCases map[string]UseCase,
+	classes map[string]Class,
+	attributes map[string]Attribute,
+	actions map[string]Action,
+) (err error) {
+	for key := range scenarios {
+		scenario := scenarios[key]
+		err = scenario.Steps.PopulateReferences(objects, actions, scenarios)
+		if err != nil {
+			return err
+		}
+		scenarios[key] = scenario
+	}
+	return nil
+}

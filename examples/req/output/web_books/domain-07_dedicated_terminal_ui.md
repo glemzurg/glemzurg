@@ -1,0 +1,30 @@
+[⇦ WebBooks 2.0](model.md)
+
+# Dedicated Terminal UI
+
+This domain provides the ability to interface to a user through a private terminal (e.g. on the user's desk of suitably large tablet). This domain is expcted to use a preexisting service like Java Swing and/or Crystal Reports.
+
+Concepts in this domain include:
+
+- Manager login screen
+- Replenish order status screen
+- Sales report
+- Profit report
+- Catalog management screens
+
+Again, the avoe i sa View-controller region of the Order fullment and User security. This domain is also in terms of buttons, text boxes, scrolling lists, etc. No semantic model is provided--that should be the responsibility of the selected vendor.
+
+## Use Cases
+
+![er](domain-07_dedicated_terminal_ui-use-cases.svg)
+
+
+
+## Classes
+
+The classes of this domain.
+
+![er](domain-07_dedicated_terminal_ui-classes.svg)
+
+
+

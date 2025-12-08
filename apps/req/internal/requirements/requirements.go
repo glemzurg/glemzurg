@@ -1,6 +1,7 @@
 package requirements
 
 import (
+	"log/slog"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -75,6 +76,12 @@ func (r *Requirements) prepLookups() {
 		r.useCaseLookup = createKeyUseCaseLookup(r.UseCases, r.UseCaseActors)
 		r.scenarioLookup = createKeyScenarioLookup(r.Scenarios, r.ScenarioObjects)
 		r.scenarioObjectLookup = createKeyScenarioObjectLookup(r.ScenarioObjects, r.classLookup)
+
+		// Populate references in scenarios. Their steps are like and abstract symbol tree.
+		// And any references to objects, actions, attributes, or scenarios need to be populated.
+		if err := populateScenarioStepReferences(r.scenarioLookup, r.scenarioObjectLookup, r.useCaseLookup, r.classLookup, r.attributeLookup, r.actionLookup); err != nil {
+			slog.Error("error populating scenario step references", "error", err)
+		}
 
 		// Sort anything that should be sorted for templates.
 		sort.Slice(r.Actors, func(i, j int) bool {

@@ -164,32 +164,32 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 
 // PopulateReferences populates the FromObject, ToObject, Action, and Scenario fields
 // from the provided lookup maps. It recursively populates references in sub-nodes.
-func (n *Node) PopulateReferences(objects map[string]*ScenarioObject, actions map[string]*Action, scenarios map[string]*Scenario) error {
+func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map[string]Action, scenarios map[string]Scenario) error {
 	// Populate this node's references
 	if n.FromObjectKey != "" {
 		if obj, exists := objects[n.FromObjectKey]; exists {
-			n.FromObject = obj
+			n.FromObject = &obj
 		} else {
 			return errors.Errorf("from_object_key '%s' not found in objects", n.FromObjectKey)
 		}
 	}
 	if n.ToObjectKey != "" {
 		if obj, exists := objects[n.ToObjectKey]; exists {
-			n.ToObject = obj
+			n.ToObject = &obj
 		} else {
 			return errors.Errorf("to_object_key '%s' not found in objects", n.ToObjectKey)
 		}
 	}
 	if n.ActionKey != "" {
 		if act, exists := actions[n.ActionKey]; exists {
-			n.Action = act
+			n.Action = &act
 		} else {
 			return errors.Errorf("action_key '%s' not found in actions", n.ActionKey)
 		}
 	}
 	if n.ScenarioKey != "" {
 		if scen, exists := scenarios[n.ScenarioKey]; exists {
-			n.Scenario = scen
+			n.Scenario = &scen
 		} else {
 			return errors.Errorf("scenario_key '%s' not found in scenarios", n.ScenarioKey)
 		}

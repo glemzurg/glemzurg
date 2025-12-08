@@ -10,16 +10,16 @@ cd $SCRIPT_PATH
 
 # ================================================
 
-# For iteration, rebuild the command line tool.
+# For easy iteration, rebuild the command line tool.
 echo -e "\nUPDATE INSTALL\n"
-(cd go/glemzurg/reqmodel && go install glemzurg/reqmodel/...)
+(cd $SCRIPT_PATH/../apps/req && go install ./...)
 [ $? -ne 0 ] && exit 1
 
 # ================================================
 
 # Output path.
-INPUT_PATH="$SCRIPT_PATH/example/models"
-OUTPUT_PATH="$SCRIPT_PATH/example/output/models"
+INPUT_PATH="$SCRIPT_PATH/../examples/req/models"
+OUTPUT_PATH="$SCRIPT_PATH/../examples/req/output"
 MODEL="web_books"
 
 # Create the output path if it doesn't exist, or clear it.
