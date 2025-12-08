@@ -115,6 +115,14 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 	if reqs.UseCaseActors == nil {
 		reqs.UseCaseActors = map[string]map[string]requirements.UseCaseActor{}
 	}
+	if reqs.Scenarios == nil {
+		reqs.Scenarios = map[string][]requirements.Scenario{}
+	}
+	if reqs.ScenarioObjects == nil {
+		reqs.ScenarioObjects = map[string][]requirements.ScenarioObject{}
+	}
+
+	// Now, parse each file according to its type.
 
 	for _, toParseFile := range filesToParse {
 
@@ -228,8 +236,12 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 			useCases = append(useCases, useCase)
 			reqs.UseCases[defaultSubdomain(toParseFile.Domain)] = useCases
 
-			// Add the use case actors.
+			// Put the parts on the greater structure.
 			reqs.UseCaseActors[useCase.Key] = useCase.Actors
+			reqs.Scenarios[useCase.Key] = useCase.Scenarios
+			for _, scenario := range useCase.Scenarios {
+				reqs.ScenarioObjects[scenario.Key] = scenario.Objects
+			}
 
 		default:
 			return requirements.Requirements{}, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))

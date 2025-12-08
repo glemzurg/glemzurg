@@ -239,6 +239,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.UseCaseLookup()
 		return lookup[key]
 	},
+	"scenario_lookup": func(reqs requirements.Requirements, key string) (value requirements.Scenario) {
+		lookup := reqs.ScenarioLookup()
+		return lookup[key]
+	},
 }
 
 // Split multi-line bullets into sub bullets.

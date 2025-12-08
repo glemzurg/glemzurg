@@ -21,7 +21,7 @@ type UseCase struct {
 	UmlComment string
 	// Part of the data in a parsed file.
 	Actors    map[string]UseCaseActor
-	Scenarios map[string]Scenario
+	Scenarios []Scenario
 	// Helpful data.
 	DomainKey string
 }
@@ -57,9 +57,14 @@ func (uc *UseCase) SetActors(actors map[string]UseCaseActor) {
 	uc.Actors = actors
 }
 
+func (uc *UseCase) SetScenarios(scenarios []Scenario) {
+	uc.Scenarios = scenarios
+}
+
 func createKeyUseCaseLookup(
 	byCategory map[string][]UseCase,
 	useCaseActors map[string]map[string]UseCaseActor,
+	scenarios map[string][]Scenario,
 ) (lookup map[string]UseCase) {
 
 	lookup = map[string]UseCase{}
@@ -68,6 +73,7 @@ func createKeyUseCaseLookup(
 
 			item.SetDomainKey(domainKey)
 			item.SetActors(useCaseActors[item.Key])
+			item.SetScenarios(scenarios[item.Key])
 
 			lookup[item.Key] = item
 		}

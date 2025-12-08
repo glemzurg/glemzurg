@@ -2,5 +2,16 @@
 
 # Catalog?
 
-... details ...
+This use case provides a Customer with the ability to browse the catalog:
+visibility into Titles, Media, and their availability for ordering.
+
+## Scenarios
+
+Detailed explorations of this use case.
+
+### Simple
+
+A simple query of the available titles.
+
+![er](scenario-01_order_fulfillment.catalog.scenario.catalog.svg)
 

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -58,7 +59,7 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 	// Parse scenarios.
 	scenariosAny, found := yamlData["scenarios"]
 	if found {
-		useCase.Scenarios = map[string]requirements.Scenario{}
+		useCase.Scenarios = []requirements.Scenario{}
 		scenariosMap := scenariosAny.(map[string]any)
 		for scenarioKey, scenarioData := range scenariosMap {
 			scenarioKey = key + "/scenario/" + strings.ToLower(scenarioKey)
@@ -125,9 +126,14 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 			}
 
 			// Add scenario to use case.
-			useCase.Scenarios[scenarioKey] = scenario
+			useCase.Scenarios = append(useCase.Scenarios, scenario)
 		}
 	}
+
+	// Sort the scenarios.
+	sort.Slice(useCase.Scenarios, func(i, j int) bool {
+		return useCase.Scenarios[i].Key < useCase.Scenarios[j].Key
+	})
 
 	return useCase, nil
 }

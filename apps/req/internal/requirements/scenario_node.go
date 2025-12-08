@@ -173,7 +173,7 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 
 // PopulateReferences populates the FromObject, ToObject, Action, and Scenario fields
 // from the provided lookup maps. It recursively populates references in sub-nodes.
-func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map[string]Action, scenarios map[string]Scenario) error {
+func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map[string]Action, attributes map[string]Attribute, scenarios map[string]Scenario) error {
 	// Populate this node's references
 	if n.FromObjectKey != "" {
 		if obj, exists := objects[n.FromObjectKey]; exists {
@@ -196,6 +196,13 @@ func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map
 			return errors.Errorf("action_key '%s' not found in actions", n.ActionKey)
 		}
 	}
+	if n.AttributeKey != "" {
+		if attr, exists := attributes[n.AttributeKey]; exists {
+			n.Attribute = &attr
+		} else {
+			return errors.Errorf("attribute_key '%s' not found in attributes", n.AttributeKey)
+		}
+	}
 	if n.ScenarioKey != "" {
 		if scen, exists := scenarios[n.ScenarioKey]; exists {
 			n.Scenario = &scen
@@ -207,7 +214,7 @@ func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map
 	// Recursively populate references in statements
 	if n.Statements != nil {
 		for i := range n.Statements {
-			if err := n.Statements[i].PopulateReferences(objects, actions, scenarios); err != nil {
+			if err := n.Statements[i].PopulateReferences(objects, actions, attributes, scenarios); err != nil {
 				return err
 			}
 		}
@@ -217,7 +224,7 @@ func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map
 	if n.Cases != nil {
 		for i := range n.Cases {
 			for j := range n.Cases[i].Statements {
-				if err := n.Cases[i].Statements[j].PopulateReferences(objects, actions, scenarios); err != nil {
+				if err := n.Cases[i].Statements[j].PopulateReferences(objects, actions, attributes, scenarios); err != nil {
 					return err
 				}
 			}

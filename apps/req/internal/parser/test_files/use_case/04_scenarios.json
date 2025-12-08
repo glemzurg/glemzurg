@@ -15,8 +15,8 @@
         }
     },
 
-    "Scenarios": {
-        "use_case_key/scenario/scenario_a_key": {
+    "Scenarios": [
+        {
             "Key": "use_case_key/scenario/scenario_a_key",
             "Name": "Scenario A",
             "Details": "Scenario A stuff.",
@@ -88,7 +88,7 @@
                 ]
             }
         },
-        "use_case_key/scenario/scenario_b_key": {
+        {
             "Key": "use_case_key/scenario/scenario_b_key",
             "Name": "Scenario B",
             "Details": "Scenario B stuff.",
@@ -113,5 +113,5 @@
                 }
             ]
         }
-    }
+    ]
 }

@@ -6,3 +6,22 @@
 
 {{ .UseCase.Details }}
 
+## Scenarios
+
+Detailed explorations of this use case.
+
+{{ if ne .UseCase.Scenarios nil -}}
+{{ range .UseCase.Scenarios -}}
+
+    {{- $scenario := scenario_lookup $reqs .Key -}}
+
+### {{ $scenario.Name }}
+
+{{ $scenario.Details }}
+
+![er]({{ filename "scenario" $scenario.Key "" ".svg" }})
+
+{{ end -}}
+{{- else -}}
+*None*
+{{- end }}

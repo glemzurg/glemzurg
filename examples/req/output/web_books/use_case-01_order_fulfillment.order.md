@@ -4,3 +4,8 @@
 
 ... details ...
 
+## Scenarios
+
+Detailed explorations of this use case.
+
+*None*
