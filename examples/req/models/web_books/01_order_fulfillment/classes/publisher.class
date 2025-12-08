@@ -1,0 +1,109 @@
+# Publisher
+
+This is an actor that represents external companies who publish and distribute books that WebBooks sells.
+WebBooks obtains both physical copies of Print media and publisher keys for eBooks from teh relevant Publisher.
+While actor classes generally don't have state models, this is a relatively rare 
+exception in that it does have behavior relevant to WebBooks processes. That behavior is shown in the 
+state diagram, and the remainder of the behavior is outside the scope of Order Fulfillment.
+
+◇
+
+actor_key: publisher
+
+attributes:
+    name:
+        name: "name"
+        details: The name of the Publisher--how they would like to be referred to--such as "Permanent Press" or "JKL Publishing House".
+        rules: unconstrained
+        index_nums: [0] # Index zero is "key"
+    email:
+        name: "email address"
+        index_nums: [1]
+        details: |
+            The address that will be used for all (email) communication between this Publisher and WebBooks. Publishers may
+            have more than one email address, but they must select only one of them for primary communication with WebBooks.
+        rules: any valid email address acoording to relevant IETF specifications
+    address:
+        name: "postal address"
+        details: |
+            The primary postal mailing address of the publsiher. A publisher may have more than one valid postal 
+            mailing address but must choose only one to be their primary contact mailing address.
+        rules: any mailing address acceptable to the US Post Office and Canada Post
+
+associations:
+
+    - name: Fills
+      from_multiplicity: "1"
+      to_class_key: 01_order_fulfillment/replenish_order
+      to_multiplicity: "any"
+
+
+states:
+
+  Exists:
+    details: The publisher is in the system.
+
+events:
+
+    "«new»":
+        details: Create this publisher.
+        parameters:
+            - name: name
+              source: somewhere
+            - name: email
+              source: somewhere
+            - name: address
+              source: somewhere
+
+    "Replenish":
+        details: Send new media to WebBooks.
+        parameters:
+            - name: medium
+              source: somewhere
+            - name: qty
+              source: somewhere
+
+    "PlaceOrder":
+        details: WebBooks orders new media from Publisher.
+        parameters:
+            - name: order id
+              source: somewhere
+            - name: collection of (isbn, qty)
+              source: somewhere
+
+
+actions:
+
+    Initialize:
+        details: Add a new medium to the system.
+        requires:
+            - email is consistent with the range of .email address
+            - address is consistent with the range of .postal address
+        guarantees:
+            - |
+                one new Publisher exists with:
+                    .name == name
+                    .email == email
+                    .postal address == address
+
+    MakeOrAddToOrder:
+        details: Remove some of this medium from the inventory.
+        guarantees:
+            - |
+                if no open Replenish order already exists for this Publsiher via Fills 
+                    then new (Print medium, qty) has been signaled 
+                    otherwise add (Print medium, qty) has been signaled
+                    for that open Replenish order via Fills
+
+    ProcessOrderPlacement:
+        details: Add more of this medium to the inventory.
+        guarantees:
+            - |
+                Publisher is aware of the contents of the Replenish order via Fills
+                    (note: this is really external, it's shown for completeness in this model)
+
+transitions:
+
+    - {from: "", event: "«new»", to: "Exists", action: "Initialize"}
+    - {from: "Exists", event: "Replenish", to: "Exists", action: "MakeOrAddToOrder"}
+    - {from: "Exists", event: "PlaceOrder", to: "Exists", action: "ProcessOrderPlacement"}

@@ -1,0 +1,9 @@
+# Warehouse Worker
+
+This is an actor representing WebBooks employees who have the responsibility 
+to pack and ship Book Orders involving Print media.
+
+◇
+
+type: person
+

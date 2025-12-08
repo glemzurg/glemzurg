@@ -1,0 +1,42 @@
+
+{{- $reqs := .Reqs -}}
+
+digraph States {
+    rankdir=LR;
+    graph [splines=spline]
+    node [shape=record, style=rounded];
+    edge [fontname="Sans-Serif", fontsize=10];
+
+in [shape=circle, label="", style=filled, fillcolor=black, fixedsize=true, width=0.3];
+
+{{/* Only include an end state if we have a transition that goes there. */}}
+{{ $hasFinal := false }}
+{{range .Class.Transitions }}{{if eq .ToStateKey ""}}{{ $hasFinal = true }}{{ end }}{{ end }}
+{{ if $hasFinal }}
+fi [shape=circle, label="", peripheries=2, style=filled, fillcolor=black, fixedsize=true, width=0.3];
+{{ end }}
+
+{{ $eventNameLookup := .EventNameLookup }}
+{{ $guardDetailsLookup := .GuardDetailsLookup }}
+{{ $actionNameLookup := .ActionNameLookup }}
+
+{{range .Class.States }}
+{{ $stateKey := nodeid "state" .Key }}
+{{ $stateKey }} [label="{{ .Name }}|
+    {{- range $i, $action := .Actions -}}
+    {{- if ne $i 0 -}}
+        \n
+	{{- end -}}
+    {{ .When }}/{{ lookup $actionNameLookup .ActionKey }}
+    {{- end -}}
+    "];
+{{end}}
+
+{{range .Class.Transitions }}
+{{ $fromStateKey := "in"}}{{if ne .FromStateKey ""}}{{ $fromStateKey = nodeid "state" .FromStateKey }}{{end}}
+{{ $toStateKey := "fi"}}{{if ne .ToStateKey ""}}{{ $toStateKey = nodeid "state" .ToStateKey }}{{end}}
+
+{{ $fromStateKey }} -> {{ $toStateKey }} [label="{{ lookup $eventNameLookup .EventKey }}{{if ne .GuardKey ""}} [{{ lookup $guardDetailsLookup .GuardKey }}]{{end}}{{if ne .ActionKey ""}} / {{ lookup $actionNameLookup .ActionKey }}{{end}}"];
+
+{{end}}}
+

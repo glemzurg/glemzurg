@@ -1,0 +1,9 @@
+# Inventory?
+
+... details ...
+
+◇
+
+actors:
+    manager: 
+

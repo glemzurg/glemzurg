@@ -1,0 +1,29 @@
+{
+    "Key": "class_key",
+    "Name": "A Basic Class",
+    "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+
+    "Associations": [
+        {
+            "Key": "class_key/association/1",
+            "Name": "Contains",
+            "Details": "Appears in data dictionary.",
+            "FromClassKey": "class_key",
+            "FromMultiplicity": {"LowerBound": 1, "HigherBound": 1},
+            "ToClassKey": "child_key",
+            "ToMultiplicity": {"LowerBound": 0, "HigherBound": 0},
+            "AssociationClassKey": "association_class_key",
+            "UmlComment": "very import to users"
+        },
+        {
+            "Key": "class_key/association/2",
+            "Name": "Belongs To",
+            "FromClassKey": "class_key",
+            "FromMultiplicity": {"LowerBound": 0, "HigherBound": 0},
+            "ToClassKey": "parent_key",
+            "ToMultiplicity": {"LowerBound": 1, "HigherBound": 1}
+        }
+    ]
+}

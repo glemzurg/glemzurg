@@ -1,0 +1,116 @@
+# Print Medium
+
+This class represents as specific Title being offered for sale to Customers in print (aka "physical book," or paper) format. 
+
+◇
+
+subclass_of_key: medium
+
+attributes:
+    stock_level:
+        name: "stock level"
+        details: |
+            The number of physical copies of the book in WebBooks inventory, 
+            available to be packed and shipped to Customers.
+        rules: 0 .. unconstrained, to the nearest whole number
+    reorder_level:
+        name: "reorder level"
+        details: The inventory level below which more copies need to be ordered from the Publisher.
+        rules: 1 .. unconstrained, to the nearest whole number
+    reorder_quantity:
+        name: "reorder quantity"
+        details: When more inventory is needed from the Publisher, this is the number of copies to request.
+        rules: 1 .. unconstrained, to the nearest whole number
+    shipping_weight:
+        name: "shipping weight"
+        details: The shipping weight of one copy of this Print medium for calculating shipping costs.
+        rules: 1 .. unconstrained grams, to the nearest whole gram
+
+states:
+
+  Exists:
+    details: The medium is in the system.
+
+events:
+
+    "«new»":
+        details: Create this medium.
+        parameters:
+            - name: title
+              source: somewhere
+            - name: isbn
+              source: somewhere
+            - name: price
+              source: somewhere
+            - name: cost
+              source: somewhere
+            - name: stock qty
+              source: somewhere
+            - name: trigger level
+              source: somewhere
+            - name: reorder qty
+              source: somewhere
+            - name: weight
+              source: somewhere
+
+    "Picked":
+        details: Items of the medium have been picked for an order to ship.
+        parameters:
+            - name: qty
+              source: somewhere
+
+    "Restock":
+        details: Items have been added to the inventory from a shipment received.
+        parameters:
+            - name: qty
+              source: somewhere
+
+actions:
+
+    Initialize:
+        details: Add a new medium to the system.
+        requires:
+            - ISBN is consistent with the range of Medium.ISBN
+            - price is consistent with the range of Medium.selling price
+            - cost is consistent with the range of Medium.acquisition cost
+            - stock qty is consistent with the range of stock level
+            - trigger level is consistent with the range of reorder level
+            - reorder qty is consistent with the range of .reorder quantity
+            - weight is consistent with the range of .shipping weight
+        guarantees:
+            - |
+                one new Print Medium exists with:
+                    .isbn == isbn
+                    .selling price == price
+                    .acquistion cost == cost
+                    .is visible == false
+                    .stock level == stock qty
+                    .reorder level == trigger level
+                    .reorder quantity == reorder qty
+                    .shipping weight == weight
+                    this Medium linked to its Title via Sold As
+
+    RemoveFromStock:
+        details: Remove some of this medium from the inventory.
+        requires:
+            - qty > 0
+        guarantees:
+            - post( .stock level ) == pre( .stock level ) - qty
+            - |
+                if pre( .stock level ) was already below .reorder level
+                    then replenish ( qty ) was has already been signaled to Title via Sold As
+                    otherwise if post( .stock level ) went below .reorder level
+                    then signal replenish ( .reorder quantity ) for Title via Sold As
+
+    AddToStock:
+        details: Add more of this medium to the inventory.
+        requires:
+            - qty > 0
+        guarantees:
+            - post( .stock level ) == pre( .stock level ) + qty
+
+transitions:
+
+    - {from: "", event: "«new»", to: "Exists", action: "Initialize"}
+    - {from: "Exists", event: "Picked", to: "Exists", action: "RemoveFromStock"}
+    - {from: "Exists", event: "Restock", to: "Exists", action: "AddToStock"}

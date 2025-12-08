@@ -1,0 +1,16 @@
+# Scalability
+
+This domain allows the system to be scaled to very large number of users.
+
+Concepts in this domain include:
+
+- Data center
+- Client app
+- Server app
+- Load balancing
+
+◇
+
+associations:
+
+    - solution_domain_key: 05_high_availability

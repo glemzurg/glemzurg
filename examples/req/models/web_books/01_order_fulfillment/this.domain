@@ -1,0 +1,25 @@
+# Order Fulfillment
+
+This domain is in charge of the catalog, inventory, customers orering, shipping and receiving.
+
+Concepts in this domain include:
+
+- Customer
+- Add to cart
+- Procede to checkout
+- Order
+- Packability
+- Packing
+- Shipping
+- Stock on hand
+- Replenish
+
+◇
+
+associations:
+
+    - solution_domain_key: 02_payment
+    - solution_domain_key: 03_user_security
+    - solution_domain_key: 04_scalability
+    - solution_domain_key: 06_web_ui
+    - solution_domain_key: 07_dedicated_terminal_ui

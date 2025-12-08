@@ -1,0 +1,8 @@
+# Customer
+
+This is an actor that represent persons or businesses that may place Book Orders with WebBooks.
+
+◇
+
+type: person
+

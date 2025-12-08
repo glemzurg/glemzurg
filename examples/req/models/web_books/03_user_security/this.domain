@@ -1,0 +1,19 @@
+# User Security
+
+This domain handles authorization of the different kinds of users to access different kinds of functionality.
+
+Concepts in this domain include:
+
+- User
+- Role
+- Autorization
+- Password
+- Protected service
+
+◇
+
+associations:
+
+    - solution_domain_key: 04_scalability
+    - solution_domain_key: 06_web_ui
+    - solution_domain_key: 07_dedicated_terminal_ui

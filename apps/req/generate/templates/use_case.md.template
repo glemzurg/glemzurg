@@ -1,0 +1,8 @@
+{{- $reqs := .Reqs -}}
+
+{{- $domain := domain_lookup $reqs .UseCase.DomainKey -}}
+
+[⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
+
+{{ .UseCase.Details }}
+

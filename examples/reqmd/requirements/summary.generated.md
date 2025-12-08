@@ -1,0 +1,43 @@
+# Summary
+
+## Incomplete
+
+- S2. Reviewer
+	- Stakeholder not referenced anywhere.
+- S3. Subject Matter Expert
+	- Stakeholder not referenced anywhere.
+- A2. Reviewer
+	- Actor not in any use cases.
+- A3. Subject Matter Expert
+	- Actor not in any use cases.
+- U1. Fix next incomplete part of requiements
+	- Use case step missing a functional requirement: 1. Author(s) runs tool to see undone next step.
+	- Use case step missing a functional requirement:     2. Author reruns tool to see is is corrected.
+	- Use case step missing a functional requirement: 3. Author commands tool to clean up requirements.
+	- Use case step missing a functional requirement: 4. Author commits changes to persistent store. (x)
+- F2. Test Header
+	- Functional requirements not in any use cases.
+- F4. Allows tracking stakeholders
+	- Functional requirements not in any use cases.
+- F5. Allows writing functional requirements
+	- Functional requirements not in any use cases.
+- F6. Allow notating non-requirements
+	- Functional requirements not in any use cases.
+- F7. In user stories, define what is out of scope
+	- Functional requirements not in any use cases.
+- F8. Support writing user stories in layers of vaguest to eventual exceptions in high detail
+	- Functional requirements not in any use cases.
+- F9. Support repeating steps in user stories
+	- Functional requirements not in any use cases.
+- F10. Assist Author in evaluating completion of Requirements
+	- Functional requirements not in any use cases.
+- F11. Capability to cleanup requirements
+	- Functional requirements not in any use cases.
+- F12. Support a "index card" payload in requirements
+	- Functional requirements not in any use cases.
+- F13. Support shrinking documentation size
+	- Functional requirements not in any use cases.
+- F14. Support flexible traceability to next layer of design
+	- Functional requirements not in any use cases.
+- F15. Author can write and edit links with the most minimal of typing
+	- Functional requirements not in any use cases.

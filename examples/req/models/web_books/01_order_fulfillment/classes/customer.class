@@ -1,0 +1,29 @@
+# Customer
+
+This class is an actor that represent persons or businesses that may place Book Orders with WebBooks. That person or business doesn't need to have placed any Book Orders to be considered a Customer; they only need to on WebBooks' marketing list. This class has no state diagram because it is an actor and is mostly external to Order Fullfillment.
+
+◇
+
+actor_key: customer
+
+attributes:
+    email:
+        name: "email address"
+        index_nums: [0] # Index zero is "key"
+        details: The address that will be used for email communication between this customer and WebBooks. Customers may have more than one valid email address, but they mjust select only one of them for primary communication with WebBooks.
+        rules: any valid email address according to relevant Internet Engineering Task Force (IETF) specifications.
+    name:
+        name: name
+        details: The name of the custoemr--how they woudl like to be referred to--such as "John Smith" or "ABC Corp."
+        rules: unconstrained
+    postal:
+        name: "postal address"
+        details: The primary psotal mailing address of the customer. A customer may h ave more than one valid postal addresss but must choose only one to  be theior contact address. This is likely the customer's billing address.
+        rules: any mailing address acceptable to the US Post Office or Canada Post
+
+associations:
+
+    - name: Places
+      from_multiplicity: "1"
+      to_class_key: 01_order_fulfillment/book_order
+      to_multiplicity: "any"

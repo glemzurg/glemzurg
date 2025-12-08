@@ -1,0 +1,95 @@
+# Replenish Order
+
+This represents a request by WebBooks to a given
+Publisher to obtain more physical copies of a specified set of Print Media. 
+
+◇
+
+attributes:
+    id:
+        name: "id"
+        index_nums: [0] # Index zero is "key"
+        details: |
+            This is used outside the domain to correlate this Replenish Order with other external processes.
+        rules: refer to corporate policy CP123b
+    opened:
+        name: "date opened"
+        details: |
+            The date with this Replenish Order was originally
+            created, that is, the first Replenish Order Line was
+            put in.
+        rules: calendar date no earlier than January 1, 1998, and no later than today, to the nearest whole day
+
+
+associations:
+
+    - name: Restocks
+      from_multiplicity: "1"
+      to_class_key: 01_order_fulfillment/medium_print
+      to_multiplicity: "1..many"
+      association_class_key: 01_order_fulfillment/replenish_order_line
+
+states:
+
+  Open:
+    details: The order is created.
+
+  Placed:
+    details: This order is in process.
+
+events:
+
+    "«new»":
+        details: Create this Replenish Order.
+
+    Add:
+        details: Add a line to the Replenish Order.
+        parameters:
+            - name: print medium
+              source: somewhere
+            - name: qty
+              source: somewhere
+
+    After24Hours:
+        details: Trigger after 24 hours to to give time for the order to have more lines added, bundling replenish into fewer but larger orders.
+
+    Received:
+        details: The Publisher has received this order.
+
+actions:
+
+    Initialize:
+        details: Start a new Replenish Order.
+        guarantees:
+            - |
+                one new Replenish Order exists with:
+                    .id properly assigned,
+                    .date opened == today
+
+    AddLine:
+        details: Add a line to a Replenish Order.
+        guarantees:
+            - |
+                if a Replenish Order Line for Print Medium (via Restocks) doesn't already exist:
+                    then new (print medium, qty) has been signaled for Replenish Order Line,
+                otherwise add (qty) has been signaled for that existing line
+    
+    PlaceOrder:
+        details: Place the order with a Publisher.
+        guarantees:
+            - Publisher is aware of the contents of this Replenish Order (and lines) via Fills
+
+    MarkAsReceived:
+        details: Each replenish line has been restocked. 
+        guarantees:
+            - received has been signaled for each Replenish Order Line via Restocks 
+
+transitions:
+
+    - {from: "", event: "«new»", to: "Open", action: "Initialize"}
+
+    - {from: "Open", event: "Add", to: "Open", action: "AddLine"}
+    - {from: "Open", event: "After24Hours", to: "Placed", action: "PlaceOrder"}
+
+    - {from: "Placed", event: "Received", to: "", action: "MarkAsReceived"}
+

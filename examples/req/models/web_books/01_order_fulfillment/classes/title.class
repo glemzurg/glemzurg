@@ -1,0 +1,105 @@
+# Title
+
+This class represents a specdific book being available for sale to Customers, either
+in eBook or Print format, or both. Margaret Michell's classic novel "Gone
+With The Wind" is an example title. The novel is available in both eBook 
+and Print media. Tedchncially, each new edition of a Book is a different title,
+but WebBooks doesn't are about the relationship of one edition to another, 
+so they will only offer new editions as different titles that are offered for sale.
+
+◇
+
+attributes:
+    title:
+        name: "title"
+        details: The title of the work, as assigned by the author.
+        rules: unconstrained
+    author:
+        name: "author"
+        details: |
+            The name of the recognized author(s) of the work. While technically 
+            there can be many authors on a signle title and the same person can be an 
+            author on many different titles, for customer searches, a simple substring 
+            mach is sufficient so this attribute is not strictly normalized.
+        rules: unconstrained
+    subject:
+        name: "subject"
+        details: |
+            The subject matter(s) covered in the work. While technically there can 
+            be many subjects in a single title and the same subject can apply to many 
+            different title, for customer seraches, a simple substring match is sufficient so 
+            this attribute is not strictly normalized.
+        rules: unconstrained
+    year:
+        name: "copyright year"
+        details: |
+            The year the work has copyrighted. For works that have passed 
+            out of copyright or where never copyrighted, the value will be "public domain" 
+        rules: either a whole year no earlier than 1780 and no later than this year, or public domain
+
+associations:
+
+    - name: "Sold as"
+      from_multiplicity: "1"
+      to_class_key: 01_order_fulfillment/medium
+      to_multiplicity: "0..2"
+
+    - name: "Obtained from"
+      from_multiplicity: "any"
+      to_class_key: 01_order_fulfillment/publisher
+      to_multiplicity: "1"
+
+states:
+
+  Exists:
+    details: The Title is in the system.
+
+events:
+
+    "«new»":
+        details: Create this title.
+        parameters:
+            - name: title
+              source: somewhere
+            - name: author
+              source: somewhere
+            - name: subject
+              source: somewhere
+            - name: year
+              source: somewhere
+            - name: publisher
+              source: somewhere
+
+    "Replenish":
+        details: Items of the title are being added to the inventory.
+        parameters:
+            - name: print medium
+              source: somewhere
+            - name: qty
+              source: somewhere
+
+
+actions:
+
+    Initialize:
+        details: Add a new title to the system.
+        requires:
+            - year is consistent with the range of .copyright year
+        guarantees:
+            - |
+                one new Title exists with:
+                    .title == title
+                    .author == author
+                    .subject == subject
+                    .copyright year == year
+                    this Medium linked to its Publisher via Obtained From
+
+    RequestReplenish:
+        details: Request more inventory.
+        guarantees:
+            - replenish ( Print Medium, qty) has been signaled for linked Publisher via Obtained from
+
+transitions:
+
+    - {from: "", event: "«new»", to: "Exists", action: "Initialize"}
+    - {from: "Exists", event: "Replenish", to: "Exists", action: "RequestReplenish"}

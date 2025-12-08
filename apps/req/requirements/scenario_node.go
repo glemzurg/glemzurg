@@ -1,0 +1,279 @@
+package requirements
+
+import (
+	"encoding/json"
+
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
+)
+
+const (
+	// Node types.
+	_NODE_TYPE_LEAF     = "" // Leaf node has no type.
+	_NODE_TYPE_SEQUENCE = "sequence"
+	_NODE_TYPE_SWITCH   = "switch"
+	_NODE_TYPE_LOOP     = "loop"
+)
+
+// Node represents a node in the scenario steps tree.
+type Node struct {
+	Statements    []Node `json:"statements,omitempty" yaml:"statements,omitempty"`
+	Cases         []Case `json:"cases,omitempty" yaml:"cases,omitempty"`
+	Loop          string `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
+	Description   string `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
+	FromObjectKey string `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
+	ToObjectKey   string `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
+	ActionKey     string `json:"action_key,omitempty" yaml:"action_key,omitempty"`
+	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
+	// Helper fields can be added here as needed.
+	FromObject *ScenarioObject `json:"-" yaml:"-"`
+	ToObject   *ScenarioObject `json:"-" yaml:"-"`
+	Action     *Action         `json:"-" yaml:"-"`
+	Scenario   *Scenario       `json:"-" yaml:"-"`
+}
+
+// inferredType returns the type of the node based on its fields.
+func (n *Node) inferredType() string {
+	if n.Loop != "" {
+		return _NODE_TYPE_LOOP
+	}
+	if len(n.Cases) > 0 {
+		return _NODE_TYPE_SWITCH
+	}
+	if len(n.Statements) > 0 {
+		return _NODE_TYPE_SEQUENCE
+	}
+	return _NODE_TYPE_LEAF
+}
+
+// Case represents a case in a switch node.
+type Case struct {
+	Condition  string `json:"condition" yaml:"condition"`
+	Statements []Node `json:"statements" yaml:"statements"`
+}
+
+// Validate validates the node and its sub-nodes.
+func (n *Node) Validate() error {
+	switch n.inferredType() {
+	case _NODE_TYPE_SEQUENCE:
+		if len(n.Statements) == 0 {
+			return errors.New("sequence must have at least one statement")
+		}
+		for _, stmt := range n.Statements {
+			if err := stmt.Validate(); err != nil {
+				return err
+			}
+		}
+	case _NODE_TYPE_SWITCH:
+		if len(n.Cases) == 0 {
+			return errors.New("switch must have at least one case")
+		}
+		for _, c := range n.Cases {
+			if c.Condition == "" {
+				return errors.New("switch case must have a conditional description")
+			}
+			for _, stmt := range c.Statements {
+				if err := stmt.Validate(); err != nil {
+					return err
+				}
+			}
+		}
+	case _NODE_TYPE_LOOP:
+		if n.Loop == "" {
+			return errors.New("loop must have a loop description")
+		}
+		if len(n.Statements) == 0 {
+			return errors.New("loop must have at least one statement")
+		}
+		for _, stmt := range n.Statements {
+			if err := stmt.Validate(); err != nil {
+				return err
+			}
+		}
+	case _NODE_TYPE_LEAF:
+		if n.FromObjectKey == "" {
+			return errors.New("leaf must have a from_object_key")
+		}
+		if n.ToObjectKey == "" {
+			return errors.New("leaf must have a to_object_key")
+		}
+		if n.ActionKey != "" && n.ScenarioKey != "" {
+			return errors.New("leaf cannot have both action_key and scenario_key")
+		}
+		if n.ActionKey == "" && n.ScenarioKey == "" {
+			return errors.New("leaf must have either action_key or scenario_key")
+		}
+	}
+	return nil
+}
+
+// FromJSON parses the JSON string into the Node.
+func (n *Node) FromJSON(jsonStr string) error {
+	return json.Unmarshal([]byte(jsonStr), n)
+}
+
+// ToJSON generates the JSON string from the Node.
+func (n Node) ToJSON() (string, error) {
+	data, err := json.Marshal(n)
+	return string(data), err
+}
+
+// FromYAML parses the YAML string into the Node.
+func (n *Node) FromYAML(yamlStr string) error {
+	return yaml.Unmarshal([]byte(yamlStr), n)
+}
+
+// ToYAML generates the YAML string from the Node.
+func (n Node) ToYAML() (string, error) {
+	data, err := yaml.Marshal(n)
+	return string(data), err
+}
+
+// ScopeObjects prepends the object keys with the full path of the scenario to make them unique in the requirements.
+func (n *Node) ScopeObjects(scenarioKey string) error {
+	// Populate this node's references
+	if n.FromObjectKey != "" {
+		n.FromObjectKey = scenarioKey + "/object/" + n.FromObjectKey
+	}
+	if n.ToObjectKey != "" {
+		n.ToObjectKey = scenarioKey + "/object/" + n.ToObjectKey
+	}
+
+	// Recursively populate references in statements
+	if n.Statements != nil {
+		for i := range n.Statements {
+			if err := n.Statements[i].ScopeObjects(scenarioKey); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Recursively populate references in cases
+	if n.Cases != nil {
+		for i := range n.Cases {
+			for j := range n.Cases[i].Statements {
+				if err := n.Cases[i].Statements[j].ScopeObjects(scenarioKey); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// PopulateReferences populates the FromObject, ToObject, Action, and Scenario fields
+// from the provided lookup maps. It recursively populates references in sub-nodes.
+func (n *Node) PopulateReferences(objects map[string]*ScenarioObject, actions map[string]*Action, scenarios map[string]*Scenario) error {
+	// Populate this node's references
+	if n.FromObjectKey != "" {
+		if obj, exists := objects[n.FromObjectKey]; exists {
+			n.FromObject = obj
+		} else {
+			return errors.Errorf("from_object_key '%s' not found in objects", n.FromObjectKey)
+		}
+	}
+	if n.ToObjectKey != "" {
+		if obj, exists := objects[n.ToObjectKey]; exists {
+			n.ToObject = obj
+		} else {
+			return errors.Errorf("to_object_key '%s' not found in objects", n.ToObjectKey)
+		}
+	}
+	if n.ActionKey != "" {
+		if act, exists := actions[n.ActionKey]; exists {
+			n.Action = act
+		} else {
+			return errors.Errorf("action_key '%s' not found in actions", n.ActionKey)
+		}
+	}
+	if n.ScenarioKey != "" {
+		if scen, exists := scenarios[n.ScenarioKey]; exists {
+			n.Scenario = scen
+		} else {
+			return errors.Errorf("scenario_key '%s' not found in scenarios", n.ScenarioKey)
+		}
+	}
+
+	// Recursively populate references in statements
+	if n.Statements != nil {
+		for i := range n.Statements {
+			if err := n.Statements[i].PopulateReferences(objects, actions, scenarios); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Recursively populate references in cases
+	if n.Cases != nil {
+		for i := range n.Cases {
+			for j := range n.Cases[i].Statements {
+				if err := n.Cases[i].Statements[j].PopulateReferences(objects, actions, scenarios); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// MarshalJSON custom marshals the Node to include the inferred type.
+func (n *Node) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	if len(n.Statements) > 0 {
+		m["statements"] = n.Statements
+	}
+	if len(n.Cases) > 0 {
+		m["cases"] = n.Cases
+	}
+	if n.Loop != "" {
+		m["loop"] = n.Loop
+	}
+	if n.Description != "" {
+		m["description"] = n.Description
+	}
+	if n.FromObjectKey != "" {
+		m["from_object_key"] = n.FromObjectKey
+	}
+	if n.ToObjectKey != "" {
+		m["to_object_key"] = n.ToObjectKey
+	}
+	if n.ActionKey != "" {
+		m["action_key"] = n.ActionKey
+	}
+	if n.ScenarioKey != "" {
+		m["scenario_key"] = n.ScenarioKey
+	}
+	return json.Marshal(m)
+}
+
+// MarshalYAML custom marshals the Node to include the inferred type.
+func (n *Node) MarshalYAML() (interface{}, error) {
+	m := make(map[string]interface{})
+	if len(n.Statements) > 0 {
+		m["statements"] = n.Statements
+	}
+	if len(n.Cases) > 0 {
+		m["cases"] = n.Cases
+	}
+	if n.Loop != "" {
+		m["loop"] = n.Loop
+	}
+	if n.Description != "" {
+		m["description"] = n.Description
+	}
+	if n.FromObjectKey != "" {
+		m["from_object_key"] = n.FromObjectKey
+	}
+	if n.ToObjectKey != "" {
+		m["to_object_key"] = n.ToObjectKey
+	}
+	if n.ActionKey != "" {
+		m["action_key"] = n.ActionKey
+	}
+	if n.ScenarioKey != "" {
+		m["scenario_key"] = n.ScenarioKey
+	}
+	return m, nil
+}

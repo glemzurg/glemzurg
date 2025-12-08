@@ -1,0 +1,23 @@
+# Payment
+
+This domain manages all of the different forms of customer payment, including combinations of payment methods at the same time.
+
+Concepts in this domain include:
+
+- Payment method
+- Financial institution
+- Credit/debit card
+- Gift certificate
+- Loyalty points
+- Payment authorized
+- Payment declined
+- Refunds
+
+◇
+
+associations:
+
+    - solution_domain_key: 03_user_security
+    - solution_domain_key: 04_scalability
+    - solution_domain_key: 06_web_ui
+    - solution_domain_key: 07_dedicated_terminal_ui

@@ -1,0 +1,8 @@
+# .tbls.yml
+
+# DSN (Database Source Name) to connect database
+dsn: postgres://modeling:modeling@localhost:5432/modeling
+
+# Path to generate document
+# Default is `dbdoc`
+docPath: docs/dbdoc

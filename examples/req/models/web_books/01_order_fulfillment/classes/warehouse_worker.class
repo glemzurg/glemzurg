@@ -1,0 +1,10 @@
+# Warehouse Worker
+
+This class is an actor representing WebBooks employees who have the responsibility 
+to pack and ship Book Orders involving Print media. Warehouse workers also handle the
+restocking of Replenish orders as they are received. This class has no state diagram
+because it is purely and actor is mostly external to the business.
+
+◇
+
+actor_key: warehouse_worker

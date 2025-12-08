@@ -1,0 +1,8 @@
+# Publisher
+
+This is an actor that represents external companies who publish and distribute books that WebBooks sells.
+
+◇
+
+type: system
+

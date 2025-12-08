@@ -1,0 +1,126 @@
+{{- $width := 200 -}}
+
+{{- $reqs := .Reqs -}}
+
+{{- define "class_node" -}}
+
+    {{ $classKey := nodeid "class" .Key -}}
+	{{ $classKey }} [
+		shape=plain
+		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" width="200">
+			<tr> <td> {{- if ne .ActorKey "" }} «actor» <br />{{ end -}}<b>  {{ .Name }} </b> </td> </tr>
+			<tr> <td>
+				{{ if ne .Attributes nil -}}
+				<table align="left" border="0" cellborder="0" cellspacing="0"  width="200">
+ 				{{ range .Attributes -}}
+					<tr> <td align="left">
+					{{- if ne .IndexNums nil -}}«
+		 				{{- range $i, $indexNum := .IndexNums -}}
+						    {{- if $i }}, {{ end -}}
+							{{- if eq $indexNum 0 -}}
+								key
+							{{- else -}}
+								i{{ $indexNum }}
+	 						{{- end -}}
+						{{- end -}}
+						» {{ end -}}
+					{{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name -}}</td> </tr>
+                {{ end -}}
+ 				</table>
+                {{- end }}
+			</td> </tr>
+			<tr> <td> </td> </tr>
+		</table>>
+	]
+
+{{- end -}}
+
+digraph Classes {
+    graph [splines=spline, nodesep=0.5, ranksep=1, outputorder="edgesfirst"];
+	node [
+		fontname="Helvetica,Arial,sans-serif"
+		shape=record
+		style=filled
+		fillcolor=white
+	]
+	edge [arrowhead=vee, style=solid, fontname="Helvetica,Arial,sans-serif", labeldistance=2.0]
+
+{{/* Add generalizations used in this diagram. */}}
+{{ range .Generalizations -}}
+
+
+{{/* "cluster" as the first part of a subgraph name isolates the contents in their own box. */}}
+{{- $subgraphId := nodeid "cluster_subgraph" .Key }}
+subgraph {{ $subgraphId }} {
+	color = none;  // Turns off the box line
+	
+	edge [color=blue, penwidth=1.5];
+
+	{{/* Put all subclasses at the same rank, which should be below the generalization node. */}}
+	{rank=same;{{ range .SubclassKeys }} {{ nodeid "class" . }};{{ end -}} }
+
+	{{- $generalizationLabel := generalization_label $reqs .Key -}}
+	{{- $generalizationNode := nodeid "generalization" .Key }}
+	{{ $generalizationNode }} [shape=point]
+
+	{rank=same; {{ $generalizationNode }}; {{ range .SubclassKeys }} {{ nodeid "subclassangle" . }};{{ end -}} }
+
+	{{/* Add all the class nodes that are part of this generalization */}}
+
+	{{- $superclass := class_lookup $reqs .SuperclassKey }}
+ 	{{ template "class_node" $superclass }}
+
+	{{- $superclassNode := nodeid "class" .SuperclassKey }}
+	{{ $superclassNode }} -> {{ $generalizationNode }} [dir=back, arrowhead=normal, arrowsize=2, headlabel="{{ $generalizationLabel }}", weight=100]
+
+
+	{{ range .SubclassKeys }}
+		
+		{{- $subclass := class_lookup $reqs . }}
+ 		{{ template "class_node" $subclass }}
+
+		{{- $subclassAngleNode := nodeid "subclassangle" . }}
+		{{ $subclassAngleNode }} [shape=point]
+
+
+		{{- $subclassNode := nodeid "class" . }}
+		{{ $subclassAngleNode }} -> {{ $subclassNode }} [dir=back, arrowhead=none, arrowtail=none, weight=100]
+		{{ $generalizationNode }} -> {{ $subclassAngleNode }} [dir=back, arrowhead=none, arrowtail=none]
+
+	{{ end }}
+
+}
+
+{{ end }}
+
+{{ range .Classes -}}
+ 
+	{{- $class := class_lookup $reqs .Key }}
+	{{- $classKey := nodeid "class" .Key }}
+
+ 	{{ template "class_node" $class }}
+
+{{ end }}
+
+{{ range .Associations -}}
+
+{{ $fromClassKey := nodeid "class" .FromClassKey }}
+{{ $fromMultiplicity := multiplicity .FromMultiplicity }}
+{{ $toClassKey := nodeid "class" .ToClassKey }}
+{{ $toMultiplicity := multiplicity .ToMultiplicity }}
+
+{{ if eq .AssociationClassKey "" }}
+{{- $fromClassKey }} -> {{ $toClassKey }} [xlabel="{{ .Name }}", headlabel="{{ $toMultiplicity }}", taillabel="{{ $fromMultiplicity }}"]
+{{- else -}}
+{{/* Draw a class associated with the association itself. */}}
+{{- $associationClassKey := nodeid "class" .AssociationClassKey }}	
+{{- $midAssociationLineNode := nodeid "midnode" .Key }}
+{{ $midAssociationLineNode }} [shape=point]
+{{ $fromClassKey }} -> {{ $midAssociationLineNode }} [xlabel="{{ .Name }}", taillabel="{{ $fromMultiplicity }}", arrowhead=none, weight=100]
+{{ $midAssociationLineNode }} -> {{ $toClassKey }} [headlabel="{{ $toMultiplicity }}", weight=100]
+{{ $associationClassKey }} -> {{ $midAssociationLineNode }} [style=dashed, arrowhead=none]
+{{- end }}
+
+{{ end }}
+
+}

@@ -1,0 +1,70 @@
+# Replenish Order Line
+
+This is a request, within a specific Replenish Order, for a specified number of copies of some 
+specified Print Medium. Some people would refer to this class as "Replenish Order Details."
+
+◇
+
+attributes:
+    quantity:
+        name: "quantity"
+        details: The number of quantities of the selected Print Medium being requested.
+        rules: 1 .. unconstrained to the nearest whole number
+
+states:
+
+  Open:
+    details: The line is created and can be added to.
+
+events:
+
+    "«new»":
+        details: Create this Replenish Order Line.
+        parameters:
+            - name: replenish order
+              source: somewhere
+            - name: print medium
+              source: somewhere
+            - name: qty
+              source: somewhere
+
+    Add:
+        details: Add more quantity to the order line.
+        parameters:
+            - name: qty
+              source: somewhere
+
+    Received:
+        details: The Publisher has received this order line.
+
+actions:
+
+    Initialize:
+        details: Start a new Replenish Order.
+        requires:
+            - qty is consistent with range of .quantity
+        guarantees:
+            - |
+                one new Replenish Order Line exists with:
+                    -quantity == qty
+                    this line linked to Replenish Order and Print Medium
+
+    AddQuantity:
+        details: Increase the quantity of an existing order line.
+        requires:
+            - qty > 0
+        guarantees:
+            - post(.quanity) == pre(quantity) + qty
+ 
+    MarkAsReceived:
+        details: This Print Medium has been added to the stocks. 
+        guarantees:
+            - restock(.quantity) has been signaled for the linked Print Medium. 
+
+transitions:
+
+    - {from: "", event: "«new»", to: "Open", action: "Initialize"}
+
+    - {from: "Open", event: "Add", to: "Open", action: "AddQuantity"}
+    - {from: "Open", event: "Received", to: "", action: "MarkAsReceived"}
+

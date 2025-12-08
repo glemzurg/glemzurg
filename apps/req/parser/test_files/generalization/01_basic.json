@@ -1,0 +1,8 @@
+{
+    "Key": "generalization_key",
+    "Name": "A Basic Generalization",
+    "Details": "## A Basic Generalization\n\nHere we have markdown details.\n\nAnd even more.",
+    "IsComplete": true,
+    "IsStatic": true,
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more."
+}
