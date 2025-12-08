@@ -25,11 +25,13 @@ type Node struct {
 	ToObjectKey   string `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
 	ActionKey     string `json:"action_key,omitempty" yaml:"action_key,omitempty"`
 	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
+	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
 	// Helper fields can be added here as needed.
 	FromObject *ScenarioObject `json:"-" yaml:"-"`
 	ToObject   *ScenarioObject `json:"-" yaml:"-"`
 	Action     *Action         `json:"-" yaml:"-"`
 	Scenario   *Scenario       `json:"-" yaml:"-"`
+	Attribute  *Attribute      `json:"-" yaml:"-"`
 }
 
 // inferredType returns the type of the node based on its fields.
@@ -97,11 +99,18 @@ func (n *Node) Validate() error {
 		if n.ToObjectKey == "" {
 			return errors.New("leaf must have a to_object_key")
 		}
-		if n.ActionKey != "" && n.ScenarioKey != "" {
-			return errors.New("leaf cannot have both action_key and scenario_key")
+		keys := []string{n.ActionKey, n.ScenarioKey, n.AttributeKey}
+		nonEmptyKeys := 0
+		for _, key := range keys {
+			if key != "" {
+				nonEmptyKeys++
+			}
 		}
-		if n.ActionKey == "" && n.ScenarioKey == "" {
-			return errors.New("leaf must have either action_key or scenario_key")
+		if nonEmptyKeys == 0 {
+			return errors.New("leaf must have one of action_key, scenario_key, or attribute_key")
+		}
+		if nonEmptyKeys > 1 {
+			return errors.New("leaf cannot have more than one of action_key, scenario_key, or attribute_key")
 		}
 	}
 	return nil
@@ -242,6 +251,9 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 	if n.ActionKey != "" {
 		m["action_key"] = n.ActionKey
 	}
+	if n.AttributeKey != "" {
+		m["attribute_key"] = n.AttributeKey
+	}
 	if n.ScenarioKey != "" {
 		m["scenario_key"] = n.ScenarioKey
 	}
@@ -271,6 +283,9 @@ func (n *Node) MarshalYAML() (interface{}, error) {
 	}
 	if n.ActionKey != "" {
 		m["action_key"] = n.ActionKey
+	}
+	if n.AttributeKey != "" {
+		m["attribute_key"] = n.AttributeKey
 	}
 	if n.ScenarioKey != "" {
 		m["scenario_key"] = n.ScenarioKey

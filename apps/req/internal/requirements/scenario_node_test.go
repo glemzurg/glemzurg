@@ -126,16 +126,37 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey:   "sk",
 	}
 	err = node.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf cannot have both action_key and scenario_key")
+	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of action_key, scenario_key, or attribute_key")
 
-	// Invalid: neither action_key nor scenario_key
+	// Invalid: neither action_key nor scenario_key nor attribute_key
 	node = Node{
 		Description:   "desc",
 		FromObjectKey: "fk",
 		ToObjectKey:   "tk",
 	}
 	err = node.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf must have either action_key or scenario_key")
+	assert.ErrorContains(suite.T(), err, "leaf must have one of action_key, scenario_key, or attribute_key")
+
+	// Valid: attribute_key
+	node = Node{
+		Description:   "desc",
+		FromObjectKey: "fk",
+		ToObjectKey:   "tk",
+		AttributeKey:  "attrk",
+	}
+	err = node.Validate()
+	assert.NoError(suite.T(), err)
+
+	// Invalid: action_key and attribute_key
+	node = Node{
+		Description:   "desc",
+		FromObjectKey: "fk",
+		ToObjectKey:   "tk",
+		ActionKey:     "ak",
+		AttributeKey:  "attrk",
+	}
+	err = node.Validate()
+	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of action_key, scenario_key, or attribute_key")
 }
 
 func (suite *ScenarioStepsSuite) TestJSON() {
@@ -212,7 +233,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 								"description": "case1 step",
 								"from_object_key": "fk3",
 								"to_object_key": "tk3",
-								"action_key": "ak3"
+								"attribute_key": "ak4"
 							}
 						]
 					},
@@ -264,7 +285,7 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
             - description: case1 step
               from_object_key: fk3
               to_object_key: tk3
-              action_key: ak3
+              attribute_key: ak4
         - condition: case2
           statements:
             - description: case2 step
