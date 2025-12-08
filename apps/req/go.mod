@@ -1,6 +1,6 @@
 module github.com/glemzurg/futz/apps/req
 
-go 1.24.5
+go 1.25.3
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0
@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/aorith/svg-sequence v0.0.15 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect

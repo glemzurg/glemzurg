@@ -1,7 +1,6 @@
 
 next:
 
-- put the relevant objects on the steps
 - create the initial svgs
 - add the svg links to the use case md
 - work on the diagram generation

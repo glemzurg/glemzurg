@@ -105,6 +105,12 @@ func generateFiles(debug bool, outputPath string, reqs requirements.Requirements
 		return err
 	}
 
+	// Generate scenario files.
+	err = generateScenarioFiles(outputPath, reqs)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println()
 
 	return nil
