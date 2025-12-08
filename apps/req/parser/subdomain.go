@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 )
 
 func parseSubdomain(key, filename, contents string) (subdomain requirements.Subdomain, err error) {

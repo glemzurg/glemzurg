@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 )
 
 func parseModel(key, filename, contents string) (model requirements.Model, err error) {

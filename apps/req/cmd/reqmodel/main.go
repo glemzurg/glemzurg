@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"glemzurg/reqmodel/database"
-	"glemzurg/reqmodel/generate"
+	"github.com/glemzurg/futz/apps/req/database"
+	"github.com/glemzurg/futz/apps/req/generate"
 	"log/slog"
 	"os"
 )

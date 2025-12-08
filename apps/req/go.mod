@@ -1,4 +1,4 @@
-module glemzurg/reqmodel
+module github.com/glemzurg/futz/apps/req
 
 go 1.24.5
 

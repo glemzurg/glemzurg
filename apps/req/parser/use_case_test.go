@@ -2,7 +2,7 @@ package parser
 
 import (
 	"encoding/json"
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

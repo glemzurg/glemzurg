@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

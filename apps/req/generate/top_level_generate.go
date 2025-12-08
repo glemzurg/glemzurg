@@ -3,9 +3,9 @@ package generate
 import (
 	"database/sql"
 	"fmt"
-	"glemzurg/reqmodel/database"
-	"glemzurg/reqmodel/parser"
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/database"
+	"github.com/glemzurg/futz/apps/req/parser"
+	"github.com/glemzurg/futz/apps/req/requirements"
 	"log"
 	"os"
 	"path/filepath"

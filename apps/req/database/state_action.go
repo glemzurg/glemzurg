@@ -1,7 +1,7 @@
 package database
 
 import (
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"

@@ -1,7 +1,7 @@
 package generate
 
 import (
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 	"path/filepath"
 	"sort"
 

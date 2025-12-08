@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"glemzurg/reqmodel/requirements"
+	"github.com/glemzurg/futz/apps/req/requirements"
 )
 
 func WriteRequirements(db *sql.DB, reqs requirements.Requirements) (err error) {
@@ -82,8 +82,6 @@ func WriteRequirements(db *sql.DB, reqs requirements.Requirements) (err error) {
 				return err
 			}
 		}
-
-
 
 		// State machines.
 		for classKey, states := range reqs.States {
