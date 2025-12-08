@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/glemzurg/futz/apps/req/database"
+	"github.com/glemzurg/futz/apps/req/internal/database"
 )
 
 func main() { // Entry point of the program.
