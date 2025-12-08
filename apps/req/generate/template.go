@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"io/fs"
 	"log"
 	"path/filepath"
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/pkg/errors"
 )

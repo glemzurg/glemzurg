@@ -2,9 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"strings"
 	"testing"
+
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

@@ -3,12 +3,13 @@ package generate
 import (
 	"database/sql"
 	"fmt"
-	"github.com/glemzurg/futz/apps/req/database"
-	"github.com/glemzurg/futz/apps/req/parser"
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/glemzurg/futz/apps/req/database"
+	"github.com/glemzurg/futz/apps/req/parser"
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/pkg/errors"
 )

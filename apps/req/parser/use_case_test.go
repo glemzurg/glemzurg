@@ -2,8 +2,9 @@ package parser
 
 import (
 	"encoding/json"
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"testing"
+
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

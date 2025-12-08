@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/glemzurg/futz/apps/req/database"
-	"github.com/glemzurg/futz/apps/req/generate"
 	"log/slog"
 	"os"
+
+	"github.com/glemzurg/futz/apps/req/database"
+	"github.com/glemzurg/futz/apps/req/generate"
 )
 
 func main() {

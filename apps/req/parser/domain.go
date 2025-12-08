@@ -1,8 +1,9 @@
 package parser
 
 import (
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"strconv"
+
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

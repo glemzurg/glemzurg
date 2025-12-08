@@ -1,10 +1,11 @@
 package parser
 
 import (
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/pkg/errors"
 )

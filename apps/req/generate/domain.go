@@ -1,9 +1,10 @@
 package generate
 
 import (
-	"github.com/glemzurg/futz/apps/req/requirements"
 	"path/filepath"
 	"sort"
+
+	"github.com/glemzurg/futz/apps/req/requirements"
 
 	"github.com/pkg/errors"
 )
