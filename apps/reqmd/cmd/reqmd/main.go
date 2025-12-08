@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/glemzurg/futz/apps/reqmd/helper"
-	"github.com/glemzurg/futz/apps/reqmd/requirements"
+	"github.com/glemzurg/futz/apps/reqmd/internal/helper"
+	"github.com/glemzurg/futz/apps/reqmd/internal/requirements"
 )
 
 func main() {
