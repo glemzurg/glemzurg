@@ -1,4 +1,4 @@
-module github.com/glemzurg/futz/apps/requirements/reqmd
+module github.com/glemzurg/glemzurg/apps/requirements/reqmd
 
 go 1.21.2
 

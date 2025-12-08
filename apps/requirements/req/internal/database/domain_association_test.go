@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/futz/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

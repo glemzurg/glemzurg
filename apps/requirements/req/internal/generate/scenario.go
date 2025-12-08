@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	svgsequence "github.com/aorith/svg-sequence"
-	"github.com/glemzurg/futz/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 )
 
 func generateScenarioFiles(outputPath string, reqs requirements.Requirements) (err error) {

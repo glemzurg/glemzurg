@@ -9,5 +9,5 @@ export GOBIN=$SCRIPT_PATH/../bin
 # go install code.google.com/p/go.tools/cmd/godoc
 
 # godoc installed to /usr/local/bin/godoc
-echo http://localhost:6060/pkg/github.com/glemzurg/futz/apps/requirements/req/
+echo http://localhost:6060/pkg/github.com/glemzurg/glemzurg/apps/requirements/req/
 godoc -http=:6060

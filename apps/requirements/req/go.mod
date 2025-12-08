@@ -1,4 +1,4 @@
-module github.com/glemzurg/futz/apps/requirements/req
+module github.com/glemzurg/glemzurg/apps/requirements/req
 
 go 1.25.3
 

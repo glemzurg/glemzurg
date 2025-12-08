@@ -2,7 +2,7 @@
 
 digraph UseCases {
 	rankdir=LR;
-	imagepath=".;/home/justin/Documents/Sandbox/futz/apps/req/generate/templates";
+	imagepath=".;/home/justin/Documents/Sandbox/glemzurg/apps/req/generate/templates";
     graph [splines=nospline, nodesep=0.5, ranksep=1, outputorder="edgesfirst"];
 	node [
 		fontname="Helvetica,Arial,sans-serif"

@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"github.com/glemzurg/futz/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 )
 
 func WriteRequirements(db *sql.DB, reqs requirements.Requirements) (err error) {

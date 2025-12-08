@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/glemzurg/futz/apps/requirements/req/internal/database"
-	"github.com/glemzurg/futz/apps/requirements/req/internal/generate"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 )
 
 func main() {

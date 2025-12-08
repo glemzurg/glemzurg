@@ -3,7 +3,7 @@ package parser
 import (
 	"strconv"
 
-	"github.com/glemzurg/futz/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

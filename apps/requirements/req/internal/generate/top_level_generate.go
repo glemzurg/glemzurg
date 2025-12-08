@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/glemzurg/futz/apps/requirements/req/internal/database"
-	"github.com/glemzurg/futz/apps/requirements/req/internal/parser"
-	"github.com/glemzurg/futz/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 
 	"github.com/pkg/errors"
 )
