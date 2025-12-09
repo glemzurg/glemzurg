@@ -53,7 +53,7 @@ func (suite *ScenarioSuite) TestLoad() {
 				Description:   "test step",
 				FromObjectKey: "obj1",
 				ToObjectKey:   "obj2",
-				ActionKey:     "test_action",
+				EventKey:      "test_event",
 			},
 		},
 	}
@@ -75,7 +75,7 @@ func (suite *ScenarioSuite) TestLoad() {
 				'Name',
 				'use_case_key',
 				'Details',
-				'{"type":"sequence","statements":[{"type":"leaf","description":"test step","from_object_key":"obj1","to_object_key":"obj2","event_key":"test_action"}]}'
+				'{"type":"sequence","statements":[{"type":"leaf","description":"test step","from_object_key":"obj1","to_object_key":"obj2","event_key":"test_event"}]}'
 			)
 	`)
 	assert.Nil(suite.T(), err)
@@ -103,7 +103,7 @@ func (suite *ScenarioSuite) TestAdd() {
 					Description:   "add test step",
 					FromObjectKey: "obj1",
 					ToObjectKey:   "obj2",
-					ActionKey:     "add_action",
+					EventKey:      "add_event",
 				},
 			},
 		},
@@ -131,7 +131,7 @@ func (suite *ScenarioSuite) TestUpdate() {
 				Description:   "original step",
 				FromObjectKey: "obj1",
 				ToObjectKey:   "obj2",
-				ActionKey:     "orig_action",
+				EventKey:      "orig_event",
 			},
 		},
 	}
@@ -150,7 +150,7 @@ func (suite *ScenarioSuite) TestUpdate() {
 				Description:   "updated step",
 				FromObjectKey: "obj3",
 				ToObjectKey:   "obj4",
-				ActionKey:     "updated_action",
+				EventKey:      "updated_event",
 			},
 		},
 	}
@@ -200,7 +200,7 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 				Description:   "step X",
 				FromObjectKey: "obj1",
 				ToObjectKey:   "obj2",
-				ActionKey:     "action_x",
+				EventKey:      "event_x",
 			},
 		},
 	}
@@ -219,7 +219,7 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 				Description:   "step",
 				FromObjectKey: "obj3",
 				ToObjectKey:   "obj4",
-				ActionKey:     "action",
+				EventKey:      "event",
 			},
 		},
 	}
@@ -268,7 +268,7 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey, scenarioKey, useCaseKe
 					Description:   "helper step",
 					FromObjectKey: "helper_from",
 					ToObjectKey:   "helper_to",
-					ActionKey:     "helper_action",
+					EventKey:      "helper_event",
 				},
 			},
 		},

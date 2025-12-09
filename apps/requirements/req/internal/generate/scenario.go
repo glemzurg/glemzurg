@@ -48,8 +48,8 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 				target = stmt.ToObject.Name
 			}
 			text := stmt.Description
-			if text == "" && stmt.Action != nil {
-				text = stmt.Action.Name
+			if text == "" && stmt.Event != nil {
+				text = stmt.Event.Name
 			}
 			s.AddStep(svgsequence.Step{
 				Source: source,

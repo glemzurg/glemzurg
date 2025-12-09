@@ -24,7 +24,7 @@ func (suite *ScenarioStepsSuite) TestValidateSequence() {
 	// Valid sequence
 	node := Node{
 		Statements: []Node{
-			{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ak1"},
+			{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
 		},
 	}
 	err := node.Validate()
@@ -38,7 +38,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 			{
 				Condition: "cond1",
 				Statements: []Node{
-					{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ak1"},
+					{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
 				},
 			},
 		},
@@ -50,7 +50,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 	node = Node{
 		Cases: []Case{
 			{
-				Statements: []Node{{Description: "step", FromObjectKey: "fk", ToObjectKey: "tk", EventKey: "ak"}},
+				Statements: []Node{{Description: "step", FromObjectKey: "fk", ToObjectKey: "tk", EventKey: "ek"}},
 			},
 		},
 	}
@@ -63,7 +63,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 	node := Node{
 		Loop: "while true",
 		Statements: []Node{
-			{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ak1"},
+			{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
 		},
 	}
 	err := node.Validate()
@@ -84,7 +84,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		Description:   "desc",
 		FromObjectKey: "fk",
 		ToObjectKey:   "tk",
-		EventKey:      "ak",
+		EventKey:      "ek",
 	}
 	err := node.Validate()
 	assert.Nil(suite.T(), err)
@@ -103,7 +103,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	node = Node{
 		Description: "desc",
 		ToObjectKey: "tk",
-		EventKey:    "ak",
+		EventKey:    "ek",
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have a from_object_key")
@@ -112,7 +112,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	node = Node{
 		Description:   "desc",
 		FromObjectKey: "fk",
-		EventKey:      "ak",
+		EventKey:      "ek",
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have a to_object_key")
@@ -122,7 +122,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		Description:   "desc",
 		FromObjectKey: "fk",
 		ToObjectKey:   "tk",
-		EventKey:      "ak",
+		EventKey:      "ek",
 		ScenarioKey:   "sk",
 	}
 	err = node.Validate()
@@ -152,7 +152,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		Description:   "desc",
 		FromObjectKey: "fk",
 		ToObjectKey:   "tk",
-		EventKey:      "ak",
+		EventKey:      "ek",
 		AttributeKey:  "attrk",
 	}
 	err = node.Validate()
@@ -168,7 +168,7 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 					{
 						Condition: "if x > 0",
 						Statements: []Node{
-							{Description: "positive", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ak1"},
+							{Description: "positive", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
 						},
 					},
 				},
@@ -211,7 +211,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 				"description": "first step",
 				"from_object_key": "fk1",
 				"to_object_key": "tk1",
-				"event_key": "ak1"
+				"event_key": "ek1"
 			},
 			{
 				"loop": "while condition",
@@ -272,7 +272,7 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
     - description: first step
       from_object_key: fk1
       to_object_key: tk1
-      event_key: ak1
+      event_key: ek1
     - statements:
         - description: loop step
           from_object_key: fk2
