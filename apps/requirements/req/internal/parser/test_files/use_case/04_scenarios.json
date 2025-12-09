@@ -46,7 +46,7 @@
                         "description": "first step",
                         "from_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
                         "to_object_key": "use_case_key/scenario/scenario_a_key/object/book",
-                        "action_key": "class_key/action/processlog"
+                        "event_key": "class_key/event/processlog"
                     },
                     {
                         "loop": "while condition",
@@ -68,7 +68,7 @@
                                         "description": "case1 step",
                                         "from_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
                                         "to_object_key": "use_case_key/scenario/scenario_a_key/object/book",
-                                        "action_key": "class_key/action/processlog"
+                                        "event_key": "class_key/event/processlog"
                                     }
                                 ]
                             },

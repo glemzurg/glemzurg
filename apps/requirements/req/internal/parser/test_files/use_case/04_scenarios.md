@@ -38,7 +38,7 @@ scenarios:
             - description: first step
               from_object_key: bob
               to_object_key: book
-              action_key: class_key/action/processlog
+              event_key: class_key/event/processlog
             - loop: while condition
               statements:
                 - description: loop step
@@ -51,7 +51,7 @@ scenarios:
                     - description: case1 step
                       from_object_key: bob
                       to_object_key: book
-                      action_key: class_key/action/processlog
+                      event_key: class_key/event/processlog
                 - condition: case2
                   statements:
                     - description: case2 step
