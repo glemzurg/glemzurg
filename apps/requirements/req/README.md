@@ -18,6 +18,9 @@ next:
 - add domains
 - make state class members innate and not specified
 
+- move to devcontainers
+  - move scripts to make files
+  
 - add use case level svg images
   - work with an artist to make mud, sea, sky (and mabye fish and kite)
   - create the computer svg and user svg as well
@@ -59,7 +62,6 @@ Long time targets:
 - formal verification: https://martin.kleppmann.com/2025/12/08/ai-formal-verification.html
 - clean up looping transitions to be inside the body as: event [guard] / action
 - post gres schemas, domians, compositions, records, etc
-- move to devcontainers
 - full TLA+ as initial pim overlay
   - Consider e ch node represents either a leaf (code line with FK) or a composite structure (sequence, branch, loop). It leverages PostgreSQL's recursive CTEs for traversal and supports modern indexing.
 - full support of entire text book models
