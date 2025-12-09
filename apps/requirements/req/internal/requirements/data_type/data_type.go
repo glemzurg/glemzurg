@@ -25,6 +25,25 @@ type DataType struct {
 	Atomic           *Atomic
 }
 
+// New creates a new DataType by parsing the input text.
+func New(text string) (dataType *DataType, err error) {
+
+	parser := NewParser(text)
+
+	// Parse the data type.
+	dataType, err = parser.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate the data type.
+	if err = dataType.Validate(); err != nil {
+		return nil, err
+	}
+
+	return dataType, nil
+}
+
 // Validate validates the DataType struct.
 func (d DataType) Validate() error {
 	return validation.ValidateStruct(&d,
