@@ -2,6 +2,7 @@ package data_type
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -26,20 +27,32 @@ type DataType struct {
 }
 
 // New creates a new DataType by parsing the input text.
-func New(text string) (dataType *DataType, err error) {
+func New(key, text string) (dataType *DataType, err error) {
 
-	// parser := NewParser(text)
+	// Parse the data type.
+	dataTypeAny, err := Parse("", []byte(text))
+	if err != nil {
+		return nil, err
+	}
 
-	// // Parse the data type.
-	// dataType, err = parser.Parse()
-	// if err != nil {
-	// 	return nil, err
-	// }
+	// Case to the data type.
+	dataType, ok := dataTypeAny.(*DataType)
+	if !ok {
+		return nil, errors.Errorf("parsed data type is not of type *DataType")
+	}
 
-	// // Validate the data type.
-	// if err = dataType.Validate(); err != nil {
-	// 	return nil, err
-	// }
+	// Set the key.
+	dataType.Key = key
+
+	// Name for blank text is "unconstrained".
+	if dataType.Name == "" {
+		dataType.Name = _CONSTRAINT_TYPE_UNCONSTRAINED
+	}
+
+	// Validate the data type.
+	if err = dataType.Validate(); err != nil {
+		return nil, err
+	}
 
 	return dataType, nil
 }

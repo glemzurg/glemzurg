@@ -21,205 +21,22 @@ var g = &grammar{
 	rules: []*rule{
 		{
 			name: "DataType",
-			pos:  position{line: 9, col: 1, offset: 46},
+			pos:  position{line: 5, col: 1, offset: 23},
 			expr: &actionExpr{
-				pos: position{line: 9, col: 13, offset: 58},
+				pos: position{line: 5, col: 13, offset: 35},
 				run: (*parser).callonDataType1,
 				expr: &seqExpr{
-					pos: position{line: 9, col: 13, offset: 58},
+					pos: position{line: 5, col: 13, offset: 35},
 					exprs: []any{
-						&labeledExpr{
-							pos:   position{line: 9, col: 13, offset: 58},
-							label: "dt",
-							expr: &ruleRefExpr{
-								pos:  position{line: 9, col: 16, offset: 61},
-								name: "AtomicType",
-							},
+						&ruleRefExpr{
+							pos:  position{line: 5, col: 13, offset: 35},
+							name: "ws",
 						},
 						&notExpr{
-							pos: position{line: 9, col: 27, offset: 72},
+							pos: position{line: 5, col: 16, offset: 38},
 							expr: &anyMatcher{
-								line: 9, col: 28, offset: 73,
+								line: 5, col: 17, offset: 39,
 							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "AtomicType",
-			pos:  position{line: 13, col: 1, offset: 96},
-			expr: &choiceExpr{
-				pos: position{line: 13, col: 15, offset: 110},
-				alternatives: []any{
-					&ruleRefExpr{
-						pos:  position{line: 13, col: 15, offset: 110},
-						name: "EnumType",
-					},
-					&ruleRefExpr{
-						pos:  position{line: 13, col: 26, offset: 121},
-						name: "UnconstrainedType",
-					},
-				},
-			},
-		},
-		{
-			name: "UnconstrainedType",
-			pos:  position{line: 15, col: 1, offset: 140},
-			expr: &actionExpr{
-				pos: position{line: 15, col: 22, offset: 161},
-				run: (*parser).callonUnconstrainedType1,
-				expr: &labeledExpr{
-					pos:   position{line: 15, col: 22, offset: 161},
-					label: "id",
-					expr: &ruleRefExpr{
-						pos:  position{line: 15, col: 25, offset: 164},
-						name: "Ident",
-					},
-				},
-			},
-		},
-		{
-			name: "EnumType",
-			pos:  position{line: 30, col: 1, offset: 444},
-			expr: &actionExpr{
-				pos: position{line: 30, col: 13, offset: 456},
-				run: (*parser).callonEnumType1,
-				expr: &seqExpr{
-					pos: position{line: 30, col: 13, offset: 456},
-					exprs: []any{
-						&litMatcher{
-							pos:        position{line: 30, col: 13, offset: 456},
-							val:        "enum",
-							ignoreCase: false,
-							want:       "\"enum\"",
-						},
-						&ruleRefExpr{
-							pos:  position{line: 30, col: 20, offset: 463},
-							name: "ws",
-						},
-						&litMatcher{
-							pos:        position{line: 30, col: 23, offset: 466},
-							val:        "{",
-							ignoreCase: false,
-							want:       "\"{\"",
-						},
-						&ruleRefExpr{
-							pos:  position{line: 30, col: 27, offset: 470},
-							name: "ws",
-						},
-						&labeledExpr{
-							pos:   position{line: 30, col: 30, offset: 473},
-							label: "values",
-							expr: &ruleRefExpr{
-								pos:  position{line: 30, col: 37, offset: 480},
-								name: "EnumValues",
-							},
-						},
-						&ruleRefExpr{
-							pos:  position{line: 30, col: 48, offset: 491},
-							name: "ws",
-						},
-						&litMatcher{
-							pos:        position{line: 30, col: 51, offset: 494},
-							val:        "}",
-							ignoreCase: false,
-							want:       "\"}\"",
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "EnumValues",
-			pos:  position{line: 40, col: 1, offset: 667},
-			expr: &actionExpr{
-				pos: position{line: 40, col: 15, offset: 681},
-				run: (*parser).callonEnumValues1,
-				expr: &seqExpr{
-					pos: position{line: 40, col: 15, offset: 681},
-					exprs: []any{
-						&labeledExpr{
-							pos:   position{line: 40, col: 15, offset: 681},
-							label: "head",
-							expr: &ruleRefExpr{
-								pos:  position{line: 40, col: 20, offset: 686},
-								name: "EnumValue",
-							},
-						},
-						&labeledExpr{
-							pos:   position{line: 40, col: 30, offset: 696},
-							label: "tail",
-							expr: &zeroOrMoreExpr{
-								pos: position{line: 40, col: 35, offset: 701},
-								expr: &seqExpr{
-									pos: position{line: 40, col: 36, offset: 702},
-									exprs: []any{
-										&ruleRefExpr{
-											pos:  position{line: 40, col: 36, offset: 702},
-											name: "ws",
-										},
-										&litMatcher{
-											pos:        position{line: 40, col: 39, offset: 705},
-											val:        ",",
-											ignoreCase: false,
-											want:       "\",\"",
-										},
-										&ruleRefExpr{
-											pos:  position{line: 40, col: 43, offset: 709},
-											name: "ws",
-										},
-										&ruleRefExpr{
-											pos:  position{line: 40, col: 46, offset: 712},
-											name: "EnumValue",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "EnumValue",
-			pos:  position{line: 48, col: 1, offset: 937},
-			expr: &actionExpr{
-				pos: position{line: 48, col: 14, offset: 950},
-				run: (*parser).callonEnumValue1,
-				expr: &labeledExpr{
-					pos:   position{line: 48, col: 14, offset: 950},
-					label: "id",
-					expr: &ruleRefExpr{
-						pos:  position{line: 48, col: 17, offset: 953},
-						name: "Ident",
-					},
-				},
-			},
-		},
-		{
-			name: "Ident",
-			pos:  position{line: 60, col: 1, offset: 1172},
-			expr: &seqExpr{
-				pos: position{line: 60, col: 10, offset: 1181},
-				exprs: []any{
-					&charClassMatcher{
-						pos:        position{line: 60, col: 10, offset: 1181},
-						val:        "[a-zA-Z_]",
-						chars:      []rune{'_'},
-						ranges:     []rune{'a', 'z', 'A', 'Z'},
-						ignoreCase: false,
-						inverted:   false,
-					},
-					&zeroOrMoreExpr{
-						pos: position{line: 60, col: 19, offset: 1190},
-						expr: &charClassMatcher{
-							pos:        position{line: 60, col: 19, offset: 1190},
-							val:        "[a-zA-Z0-9_]",
-							chars:      []rune{'_'},
-							ranges:     []rune{'a', 'z', 'A', 'Z', '0', '9'},
-							ignoreCase: false,
-							inverted:   false,
 						},
 					},
 				},
@@ -227,11 +44,11 @@ var g = &grammar{
 		},
 		{
 			name: "ws",
-			pos:  position{line: 62, col: 1, offset: 1205},
+			pos:  position{line: 14, col: 1, offset: 161},
 			expr: &zeroOrMoreExpr{
-				pos: position{line: 62, col: 7, offset: 1211},
+				pos: position{line: 14, col: 7, offset: 167},
 				expr: &charClassMatcher{
-					pos:        position{line: 62, col: 7, offset: 1211},
+					pos:        position{line: 14, col: 7, offset: 167},
 					val:        "[ \\t\\n\\r]",
 					chars:      []rune{' ', '\t', '\n', '\r'},
 					ignoreCase: false,
@@ -242,83 +59,19 @@ var g = &grammar{
 	},
 }
 
-func (c *current) onDataType1(dt any) (any, error) {
-	return dt, nil
+func (c *current) onDataType1() (any, error) {
+	return &DataType{
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}, nil
 }
 
 func (p *parser) callonDataType1() (any, error) {
 	stack := p.vstack[len(p.vstack)-1]
 	_ = stack
-	return p.cur.onDataType1(stack["dt"])
-}
-
-func (c *current) onUnconstrainedType1(id any) (any, error) {
-	result := id.([]interface{})
-	s := string(result[0].([]byte))
-	for _, r := range result[1].([]interface{}) {
-		s += string(r.([]byte))
-	}
-	return &DataType{
-		CollectionType: "atomic",
-		Atomic: &Atomic{
-			ConstraintType: "unconstrained",
-			Details:        s,
-		},
-	}, nil
-}
-
-func (p *parser) callonUnconstrainedType1() (any, error) {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	return p.cur.onUnconstrainedType1(stack["id"])
-}
-
-func (c *current) onEnumType1(values any) (any, error) {
-	return &DataType{
-		CollectionType: "atomic",
-		Atomic: &Atomic{
-			ConstraintType: "enumeration",
-			EnumValues:     values.([]DataTypeAtomicEnumValue),
-		},
-	}, nil
-}
-
-func (p *parser) callonEnumType1() (any, error) {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	return p.cur.onEnumType1(stack["values"])
-}
-
-func (c *current) onEnumValues1(head, tail any) (any, error) {
-	values := []DataTypeAtomicEnumValue{head.(DataTypeAtomicEnumValue)}
-	for _, v := range tail.([]interface{}) {
-		values = append(values, v.([]interface{})[3].(DataTypeAtomicEnumValue))
-	}
-	return values, nil
-}
-
-func (p *parser) callonEnumValues1() (any, error) {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	return p.cur.onEnumValues1(stack["head"], stack["tail"])
-}
-
-func (c *current) onEnumValue1(id any) (any, error) {
-	result := id.([]interface{})
-	s := string(result[0].([]byte))
-	for _, r := range result[1].([]interface{}) {
-		s += string(r.([]byte))
-	}
-	return DataTypeAtomicEnumValue{
-		Value:     s,
-		SortOrder: 0,
-	}, nil
-}
-
-func (p *parser) callonEnumValue1() (any, error) {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	return p.cur.onEnumValue1(stack["id"])
+	return p.cur.onDataType1()
 }
 
 var (

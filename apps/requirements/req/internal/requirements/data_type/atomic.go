@@ -1,8 +1,6 @@
 package data_type
 
-import (
-	"github.com/go-ozzo/ozzo-validation/v4"
-)
+import validation "github.com/go-ozzo/ozzo-validation/v4"
 
 const (
 	_CONSTRAINT_TYPE_UNCONSTRAINED = "unconstrained" // Anything.
@@ -12,17 +10,9 @@ const (
 	_CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
 )
 
-// DataTypeAtomicEnumValue represents an enum value for atomic data types.
-type DataTypeAtomicEnumValue struct {
-	Value     string
-	SortOrder int
-}
-
 // Atomic represents the atomic data type (as opposed to a collection).
 type Atomic struct {
 	ConstraintType string
-	Details        string
-	EnumValues     []DataTypeAtomicEnumValue
 	Reference      string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
 	ObjectClassKey string
