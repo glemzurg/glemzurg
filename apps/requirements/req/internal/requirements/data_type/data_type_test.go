@@ -123,3 +123,10 @@ func TestNewUnparsable(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, result)
 }
+
+func TestNewInvalid(t *testing.T) {
+	// Key is required.
+	result, err := New("", "")
+	assert.ErrorContains(t, err, "Key: cannot be blank.")
+	assert.Nil(t, result)
+}
