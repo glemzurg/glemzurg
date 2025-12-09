@@ -1,0 +1,62 @@
+{
+package data_type
+
+import (
+	"strconv"
+)
+}
+
+DataType <- dt:AtomicType !. {
+	return dt, nil
+}
+
+AtomicType <- EnumType / UnconstrainedType
+
+UnconstrainedType <- id:Ident {
+	result := id.([]interface{})
+	s := string(result[0].([]byte))
+	for _, r := range result[1].([]interface{}) {
+		s += string(r.([]byte))
+	}
+	return &DataType{
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "unconstrained",
+			Details: s,
+		},
+	}, nil
+}
+
+EnumType <- "enum" ws "{" ws values:EnumValues ws "}" {
+	return &DataType{
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "enumeration",
+			EnumValues: values.([]AtomicEnumValue),
+		},
+	}, nil
+}
+
+EnumValues <- head:EnumValue tail:(ws "," ws EnumValue)* {
+	values := []AtomicEnumValue{head.(AtomicEnumValue)}
+	for _, v := range tail.([]interface{}) {
+		values = append(values, v.([]interface{})[3].(AtomicEnumValue))
+	}
+	return values, nil
+}
+
+EnumValue <- id:Ident {
+	result := id.([]interface{})
+	s := string(result[0].([]byte))
+	for _, r := range result[1].([]interface{}) {
+		s += string(r.([]byte))
+	}
+	return AtomicEnumValue{
+		Value: s,
+		SortOrder: 0,
+	}, nil
+}
+
+Ident <- [a-zA-Z_][a-zA-Z0-9_]*
+
+ws <- [ \t\n\r]*
