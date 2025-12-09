@@ -45,11 +45,7 @@ func New(key, text string) (dataType *DataType, err error) {
 	dataType.Key = key
 
 	// Set the name.
-	if dataType.CollectionType == _COLLECTION_TYPE_ATOMIC && dataType.Atomic != nil {
-		dataType.Name = dataType.Atomic.String()
-	} else if dataType.Name == "" {
-		dataType.Name = _CONSTRAINT_TYPE_UNCONSTRAINED
-	}
+	dataType.Name = dataType.String()
 
 	// Validate the data type.
 	if err = dataType.Validate(); err != nil {
@@ -72,4 +68,14 @@ func (d DataType) Validate() error {
 			return nil
 		})),
 	)
+}
+
+// String returns a string representation of the DataType.
+func (d DataType) String() string {
+	switch d.CollectionType {
+	case _COLLECTION_TYPE_ATOMIC:
+		return d.Atomic.String()
+	default:
+		panic("unsupported collection type: " + d.CollectionType)
+	}
 }

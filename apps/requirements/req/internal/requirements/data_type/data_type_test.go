@@ -130,3 +130,55 @@ func TestNewInvalid(t *testing.T) {
 	assert.ErrorContains(t, err, "Key: cannot be blank.")
 	assert.Nil(t, result)
 }
+
+func TestDataTypeString(t *testing.T) {
+	tests := []struct {
+		name     string
+		dataType DataType
+		expected string
+	}{
+		{
+			name: "atomic unconstrained",
+			dataType: DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			expected: "unconstrained",
+		},
+		{
+			name: "atomic reference",
+			dataType: DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "some ref",
+				},
+			},
+			expected: "ref: some ref",
+		},
+		{
+			name: "atomic nil",
+			dataType: DataType{
+				CollectionType: "atomic",
+				Atomic:         nil,
+			},
+			expected: "",
+		},
+		{
+			name: "non-atomic",
+			dataType: DataType{
+				CollectionType: "ordered",
+			},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.dataType.String()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
