@@ -27,10 +27,12 @@ func (a Atomic) Validate() error {
 
 // String returns a string representation of the Atomic type.
 func (a Atomic) String() string {
-	if a.ConstraintType == _CONSTRAINT_TYPE_UNCONSTRAINED {
+	switch a.ConstraintType {
+	case _CONSTRAINT_TYPE_UNCONSTRAINED:
 		return "unconstrained"
-	} else if a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE {
+	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference
+	default:
+		panic("invalid constraint type: '" + a.ConstraintType + "'")
 	}
-	return ""
 }

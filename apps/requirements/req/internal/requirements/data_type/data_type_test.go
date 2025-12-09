@@ -133,9 +133,10 @@ func TestNewInvalid(t *testing.T) {
 
 func TestDataTypeString(t *testing.T) {
 	tests := []struct {
-		name     string
-		dataType DataType
-		expected string
+		name         string
+		dataType     DataType
+		expected     string
+		panicMessage string
 	}{
 		{
 			name: "atomic unconstrained",
@@ -159,26 +160,32 @@ func TestDataTypeString(t *testing.T) {
 			expected: "ref: some ref",
 		},
 		{
-			name: "atomic nil",
-			dataType: DataType{
-				CollectionType: "atomic",
-				Atomic:         nil,
-			},
-			expected: "",
-		},
-		{
 			name: "non-atomic",
 			dataType: DataType{
-				CollectionType: "ordered",
+				CollectionType: "unknown",
 			},
-			expected: "",
+			panicMessage: "unsupported collection type: 'unknown'",
+		},
+		{
+			name: "panic case: atomic nil",
+			dataType: DataType{
+				CollectionType: "atomic",
+				// Atomic is nil to force panic.
+			},
+			panicMessage: "atomic is nil",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.dataType.String()
-			assert.Equal(t, tt.expected, result)
+			if tt.panicMessage != "" {
+				assert.PanicsWithValue(t, tt.panicMessage, func() { tt.dataType.String() })
+			} else {
+				assert.NotPanics(t, func() {
+					result := tt.dataType.String()
+					assert.Equal(t, tt.expected, result)
+				})
+			}
 		})
 	}
 }

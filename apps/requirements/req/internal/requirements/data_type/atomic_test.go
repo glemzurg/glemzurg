@@ -120,9 +120,10 @@ func TestParseAtomic(t *testing.T) {
 
 func TestAtomicString(t *testing.T) {
 	tests := []struct {
-		name     string
-		atomic   Atomic
-		expected string
+		name         string
+		atomic       Atomic
+		expected     string
+		panicMessage string
 	}{
 		{
 			name: "unconstrained",
@@ -152,14 +153,18 @@ func TestAtomicString(t *testing.T) {
 			atomic: Atomic{
 				ConstraintType: "unknown",
 			},
-			expected: "",
+			panicMessage: "invalid constraint type: 'unknown'",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.atomic.String()
-			assert.Equal(t, tt.expected, result)
+			if tt.panicMessage != "" {
+				assert.PanicsWithValue(t, tt.panicMessage, func() { tt.atomic.String() })
+			} else {
+				result := tt.atomic.String()
+				assert.Equal(t, tt.expected, result)
+			}
 		})
 	}
 }

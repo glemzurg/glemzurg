@@ -74,8 +74,11 @@ func (d DataType) Validate() error {
 func (d DataType) String() string {
 	switch d.CollectionType {
 	case _COLLECTION_TYPE_ATOMIC:
+		if d.Atomic == nil {
+			panic("atomic is nil")
+		}
 		return d.Atomic.String()
 	default:
-		panic("unsupported collection type: " + d.CollectionType)
+		panic("unsupported collection type: '" + d.CollectionType + "'")
 	}
 }
