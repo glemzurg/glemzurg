@@ -117,3 +117,49 @@ func TestParseAtomic(t *testing.T) {
 		})
 	}
 }
+
+func TestAtomicString(t *testing.T) {
+	tests := []struct {
+		name     string
+		atomic   Atomic
+		expected string
+	}{
+		{
+			name: "unconstrained",
+			atomic: Atomic{
+				ConstraintType: "unconstrained",
+			},
+			expected: "unconstrained",
+		},
+		{
+			name: "reference",
+			atomic: Atomic{
+				ConstraintType: "reference",
+				Reference:      "listed somewhere else",
+			},
+			expected: "ref: listed somewhere else",
+		},
+		{
+			name: "reference empty",
+			atomic: Atomic{
+				ConstraintType: "reference",
+				Reference:      "",
+			},
+			expected: "ref: ",
+		},
+		{
+			name: "unknown type",
+			atomic: Atomic{
+				ConstraintType: "unknown",
+			},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.atomic.String()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

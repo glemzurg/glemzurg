@@ -24,3 +24,13 @@ func (a Atomic) Validate() error {
 		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE)),
 	)
 }
+
+// String returns a string representation of the Atomic type.
+func (a Atomic) String() string {
+	if a.ConstraintType == _CONSTRAINT_TYPE_UNCONSTRAINED {
+		return "unconstrained"
+	} else if a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE {
+		return "ref: " + a.Reference
+	}
+	return ""
+}

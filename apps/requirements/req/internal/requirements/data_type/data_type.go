@@ -44,8 +44,10 @@ func New(key, text string) (dataType *DataType, err error) {
 	// Set the key.
 	dataType.Key = key
 
-	// Name for blank text is "unconstrained".
-	if dataType.Name == "" {
+	// Set the name.
+	if dataType.CollectionType == _COLLECTION_TYPE_ATOMIC && dataType.Atomic != nil {
+		dataType.Name = dataType.Atomic.String()
+	} else if dataType.Name == "" {
 		dataType.Name = _CONSTRAINT_TYPE_UNCONSTRAINED
 	}
 
