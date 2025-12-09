@@ -1,5 +1,9 @@
 package data_type
 
+import (
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+)
+
 const (
 	_COLLECTION_TYPE_ATOMIC    = "atomic"    // An atomic type, not a collection.
 	_COLLECTION_TYPE_ORDERED   = "ordered"   // An ordered collection.
@@ -19,4 +23,14 @@ type DataType struct {
 	CollectionMin    *int
 	CollectionMax    *int
 	Atomic           *Atomic
+}
+
+// Validate validates the DataType struct.
+func (d DataType) Validate() error {
+	return validation.ValidateStruct(&d,
+		validation.Field(&d.Key, validation.Required),
+		validation.Field(&d.Name, validation.Required),
+		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC)),
+		validation.Field(&d.Atomic, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_ATOMIC)),
+	)
 }

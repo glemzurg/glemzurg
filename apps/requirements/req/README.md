@@ -20,7 +20,8 @@ next:
 
 - move to devcontainers
   - move scripts to make files
-  
+  - update tests to be a table format with names
+
 - add use case level svg images
   - work with an artist to make mud, sea, sky (and mabye fish and kite)
   - create the computer svg and user svg as well
