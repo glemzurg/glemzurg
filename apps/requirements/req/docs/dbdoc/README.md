@@ -13,10 +13,12 @@
 | [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
 | [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |
 | [public.use_case_shared](public.use_case_shared.md) | 5 | Which use cases are used by with other use cases. | BASE TABLE |
-| [public.data_type_atomic](public.data_type_atomic.md) | 7 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
-| [public.data_type_atomic_span](public.data_type_atomic_span.md) | 9 | The definition of a span for an atomic data type. | BASE TABLE |
-| [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 3 | A value of an attribute that is an enum. | BASE TABLE |
-| [public.data_type](public.data_type.md) | 7 | An data type for use in a class attribute or action parameter. | BASE TABLE |
+| [public.data_type](public.data_type.md) | 8 | An data type for use in a class attribute or action parameter. | BASE TABLE |
+| [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
+| [public.data_type_atomic2](public.data_type_atomic2.md) | 7 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
+| [public.data_type_atomic2_span](public.data_type_atomic2_span.md) | 9 | The definition of a span for an atomic data type. | BASE TABLE |
+| [public.data_type_atomic2_enum_value](public.data_type_atomic2_enum_value.md) | 3 | A value of an attribute that is an enum. | BASE TABLE |
+| [public.data_type2](public.data_type2.md) | 7 | An data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.field](public.field.md) | 6 | A field of a record data type. | BASE TABLE |
 | [public.class](public.class.md) | 9 | A set of objects that share the same semantics. | BASE TABLE |
 | [public.attribute](public.attribute.md) | 9 | An attribute of a class. | BASE TABLE |

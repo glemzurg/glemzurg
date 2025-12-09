@@ -8,26 +8,29 @@ An data type for use in a class attribute or action parameter.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| data_type_id | bigint |  | false | [public.field](public.field.md) | [public.data_type_atomic](public.data_type_atomic.md) | The internal ID, the atomic table is the source. |
-| collection_type | collection_type | 'atomic'::collection_type | false |  |  | Whether a collection or atomic value, and if a collection what kind. |
+| model_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) | [public.model](public.model.md) | The model this data type is part of. |
+| data_type_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) |  | The internal ID. |
+| name | text |  | false |  |  | A name for this data type, when there is no name the original unparsed text is the name.  |
+| details | text |  | true |  |  | An optional desription, if there is any value here will be displayed in a data dictionary. |
+| collection_type | collection_type |  | false |  |  | Whether a collection or atomic value, and if a collection what kind. |
 | collection_unique | boolean |  | true |  |  | If a collection, is this collection unique. |
-| collection_min | bigint |  | true |  |  | If a collection and there is a minimum number of items, the minimum. |
+| collection_min | bigint |  | true |  |  | If a collection and there is a minimum number of items, the minimum. Always set of maximum set. |
 | collection_max | bigint |  | true |  |  | If a collection and there is a maximum number of items, the maximum. |
-| details | text |  | true |  |  | A summary description. |
-| uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| fk_data_type_atomic | FOREIGN KEY | FOREIGN KEY (data_type_id) REFERENCES data_type_atomic(data_type_id) ON DELETE CASCADE |
-| data_type_pkey | PRIMARY KEY | PRIMARY KEY (data_type_id) |
+| data_type_check | CHECK | CHECK ((collection_max >= collection_min)) |
+| data_type_collection_min_check | CHECK | CHECK ((collection_min > 0)) |
+| fk_data_type_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
+| data_type_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| data_type_pkey | CREATE UNIQUE INDEX data_type_pkey ON public.data_type USING btree (data_type_id) |
+| data_type_pkey | CREATE UNIQUE INDEX data_type_pkey ON public.data_type USING btree (model_key, data_type_key) |
 
 ## Relations
 

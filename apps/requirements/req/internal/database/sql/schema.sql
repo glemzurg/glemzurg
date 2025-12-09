@@ -215,88 +215,6 @@ COMMENT ON COLUMN use_case_shared.uml_comment IS 'A comment that appears in the 
 
 --------------------------------------------------------------
 
-CREATE TYPE constraint_type AS ENUM ('span', 'enumeration', 'reference', 'unconstrained', 'object');
-COMMENT ON TYPE constraint_type IS 'How an attribute constrains its values.
-
-- Span. A lower and upper bound with precision and units.
-- Enumeration. A list of acceptable values.
-- Reference. A citation of documentation outside of the system.
-- Unconstrained.
-- Object. A reference to a class. This is used in parameters, but not class attributes which use associations.
-';
-
-CREATE TABLE data_type_atomic (
-  data_type_id serial,
-  constraint_type constraint_type NOT NULL DEFAULT 'unconstrained',
-  reference text DEFAULT NULL, 
-  enum_ordered boolean DEFAULT NULL, 
-  object_class_key text DEFAULT NULL,
-  details text DEFAULT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (data_type_id)
-);
-
-COMMENT ON TABLE data_type_atomic IS 'An atomic type that backs a data type for eventually use in a class attribute or action parameter.';
-COMMENT ON COLUMN data_type_atomic.data_type_id IS 'The internal ID.';
-COMMENT ON COLUMN data_type_atomic.constraint_type IS 'The constraints on values for this attribute.';
-COMMENT ON COLUMN data_type_atomic.reference IS 'If this is a reference, the details that define it.';
-COMMENT ON COLUMN data_type_atomic.enum_ordered IS 'If this is an enumeration, enumerations could be ordered, so that should be clear.';
-COMMENT ON COLUMN data_type_atomic.object_class_key IS 'If this is an object, which class it is.';
-COMMENT ON COLUMN data_type_atomic.details IS 'A summary description.';
-COMMENT ON COLUMN data_type_atomic.uml_comment IS 'A comment that appears in the diagrams.';
-
---------------------------------------------------------------
-
-CREATE TYPE bound_limit_type AS ENUM ('closed', 'open', 'unconstrained');
-COMMENT ON TYPE bound_limit_type IS 'How a min and max value is defined in a span.
-
-- Closed. Include the value itself.
-- Open. Do not in clude the value itself.
-- Unconstrained. Undefined what this end of the span is, at least not in requirements.
-';
-
-CREATE TABLE data_type_atomic_span (
-  data_type_id bigint NOT NULL,
-  lower_type bound_limit_type NOT NULL,
-  lower_value bigint DEFAULT NULL,
-  lower_denominator bigint DEFAULT NULL,
-  higher_type bound_limit_type NOT NULL,
-  higher_value bigint DEFAULT NULL,
-  higher_denominator bigint DEFAULT NULL,
-  units text NOT NULL,
-  precision bigint NOT NULL,
-  PRIMARY KEY (data_type_id),
-  CONSTRAINT fk_span_atomic FOREIGN KEY (data_type_id) REFERENCES data_type_atomic (data_type_id) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE data_type_atomic_span IS 'The definition of a span for an atomic data type.';
-COMMENT ON COLUMN data_type_atomic_span.data_type_id IS 'The atomic data type this is a span for.';
-COMMENT ON COLUMN data_type_atomic_span.lower_type IS 'Whether the lower end of the span is unconstrained, open, or closed.';
-COMMENT ON COLUMN data_type_atomic_span.lower_value IS 'The value that defines the lower end of the span.';
-COMMENT ON COLUMN data_type_atomic_span.lower_denominator IS 'If the lower bound is a ratio.';
-COMMENT ON COLUMN data_type_atomic_span.higher_type IS 'Whether the lower end of the span is unconstrained, open, or closed.';
-COMMENT ON COLUMN data_type_atomic_span.higher_value IS 'The value that defines the lower end of the span.';
-COMMENT ON COLUMN data_type_atomic_span.higher_denominator IS 'If the higher bound is a ratio.';
-COMMENT ON COLUMN data_type_atomic_span.units IS 'The units of this span.';
-COMMENT ON COLUMN data_type_atomic_span.precision IS 'The precision of this span.';
-
---------------------------------------------------------------
-
-CREATE TABLE data_type_atomic_enum_value (
-  data_type_id bigint NOT NULL,
-  value text NOT NULL,
-  sort_order int NOT NULL,
-  PRIMARY KEY (data_type_id, value),
-  CONSTRAINT fk_enum_atomic FOREIGN KEY (data_type_id) REFERENCES data_type_atomic (data_type_id) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE data_type_atomic_enum_value IS 'A value of an attribute that is an enum.';
-COMMENT ON COLUMN data_type_atomic_enum_value.data_type_id IS 'The atomic data type this is a value for.';
-COMMENT ON COLUMN data_type_atomic_enum_value.value IS 'The enum value.';
-COMMENT ON COLUMN data_type_atomic_enum_value.sort_order IS 'A value for keeping presentation clear in documentation.';
-
---------------------------------------------------------------
-
 CREATE TYPE collection_type AS ENUM ('atomic', 'record',  'unordered', 'ordered', 'queue', 'stack');
 COMMENT ON TYPE collection_type IS 'The kind of collection a data type is (or whether it is).
 
@@ -309,6 +227,134 @@ COMMENT ON TYPE collection_type IS 'The kind of collection a data type is (or wh
 ';
 
 CREATE TABLE data_type (
+  model_key text NOT NULL,
+  data_type_key text NOT NULL,
+  name text NOT NULL,
+  details text DEFAULT NULL,
+  collection_type collection_type NOT NULL,
+  collection_unique boolean DEFAULT NULL,
+  collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
+  collection_max bigint CHECK (collection_max >= collection_min) DEFAULT NULL,
+  PRIMARY KEY (model_key, data_type_key),
+  CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE data_type IS 'An data type for use in a class attribute or action parameter.';
+COMMENT ON COLUMN data_type.model_key IS 'The model this data type is part of.';
+COMMENT ON COLUMN data_type.data_type_key IS 'The internal ID.';
+COMMENT ON COLUMN data_type.name IS 'A name for this data type, when there is no name the original unparsed text is the name. ';
+COMMENT ON COLUMN data_type.details IS 'An optional desription, if there is any value here will be displayed in a data dictionary.';
+COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic value, and if a collection what kind.';
+COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
+COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set of maximum set.';
+COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
+
+--------------------------------------------------------------
+
+CREATE TYPE constraint_type AS ENUM ('span', 'enumeration', 'reference', 'unconstrained', 'object');
+COMMENT ON TYPE constraint_type IS 'How an attribute constrains its values.
+
+- Span. A lower and upper bound with precision and units.
+- Enumeration. A list of acceptable values.
+- Reference. A citation of documentation outside of the system.
+- Unconstrained.
+- Object. A reference to a class. This is used in parameters, but not class attributes which use associations.
+';
+
+CREATE TABLE data_type_atomic (
+  model_key text NOT NULL,
+  data_type_key text NOT NULL,
+  constraint_type constraint_type NOT NULL DEFAULT 'unconstrained',
+  reference text DEFAULT NULL, 
+  enum_ordered boolean DEFAULT NULL, 
+  object_class_key text DEFAULT NULL,
+  PRIMARY KEY (model_key, data_type_key),
+  CONSTRAINT fk_atomic_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE data_type_atomic IS 'An atomic type that backs a data type for eventually use in a class attribute or action parameter.';
+COMMENT ON COLUMN data_type_atomic.model_key IS 'The model this data type is part of.';
+COMMENT ON COLUMN data_type_atomic.data_type_key IS 'The internal ID from data_type..';
+COMMENT ON COLUMN data_type_atomic.constraint_type IS 'The constraints on values for this data type.';
+COMMENT ON COLUMN data_type_atomic.reference IS 'If this is a reference, the details that define it.';
+COMMENT ON COLUMN data_type_atomic.enum_ordered IS 'If this is an enumeration, enumerations could be ordered, so they can be compared greater-lesser-than against each other.';
+COMMENT ON COLUMN data_type_atomic.object_class_key IS 'If this is an object, which class it is.';
+
+--------------------------------------------------------------
+
+CREATE TABLE data_type_atomic2 (
+  data_type_id serial,
+  constraint_type constraint_type NOT NULL DEFAULT 'unconstrained',
+  reference text DEFAULT NULL, 
+  enum_ordered boolean DEFAULT NULL, 
+  object_class_key text DEFAULT NULL,
+  details text DEFAULT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (data_type_id)
+);
+
+COMMENT ON TABLE data_type_atomic2 IS 'An atomic type that backs a data type for eventually use in a class attribute or action parameter.';
+COMMENT ON COLUMN data_type_atomic2.data_type_id IS 'The internal ID.';
+COMMENT ON COLUMN data_type_atomic2.constraint_type IS 'The constraints on values for this attribute.';
+COMMENT ON COLUMN data_type_atomic2.reference IS 'If this is a reference, the details that define it.';
+COMMENT ON COLUMN data_type_atomic2.enum_ordered IS 'If this is an enumeration, enumerations could be ordered, so that should be clear.';
+COMMENT ON COLUMN data_type_atomic2.object_class_key IS 'If this is an object, which class it is.';
+COMMENT ON COLUMN data_type_atomic2.details IS 'A summary description.';
+COMMENT ON COLUMN data_type_atomic2.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
+CREATE TYPE bound_limit_type AS ENUM ('closed', 'open', 'unconstrained');
+COMMENT ON TYPE bound_limit_type IS 'How a min and max value is defined in a span.
+
+- Closed. Include the value itself.
+- Open. Do not in clude the value itself.
+- Unconstrained. Undefined what this end of the span is, at least not in requirements.
+';
+
+CREATE TABLE data_type_atomic2_span (
+  data_type_id bigint NOT NULL,
+  lower_type bound_limit_type NOT NULL,
+  lower_value bigint DEFAULT NULL,
+  lower_denominator bigint DEFAULT NULL,
+  higher_type bound_limit_type NOT NULL,
+  higher_value bigint DEFAULT NULL,
+  higher_denominator bigint DEFAULT NULL,
+  units text NOT NULL,
+  precision bigint NOT NULL,
+  PRIMARY KEY (data_type_id),
+  CONSTRAINT fk_span_atomic FOREIGN KEY (data_type_id) REFERENCES data_type_atomic2 (data_type_id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE data_type_atomic2_span IS 'The definition of a span for an atomic data type.';
+COMMENT ON COLUMN data_type_atomic2_span.data_type_id IS 'The atomic data type this is a span for.';
+COMMENT ON COLUMN data_type_atomic2_span.lower_type IS 'Whether the lower end of the span is unconstrained, open, or closed.';
+COMMENT ON COLUMN data_type_atomic2_span.lower_value IS 'The value that defines the lower end of the span.';
+COMMENT ON COLUMN data_type_atomic2_span.lower_denominator IS 'If the lower bound is a ratio.';
+COMMENT ON COLUMN data_type_atomic2_span.higher_type IS 'Whether the lower end of the span is unconstrained, open, or closed.';
+COMMENT ON COLUMN data_type_atomic2_span.higher_value IS 'The value that defines the lower end of the span.';
+COMMENT ON COLUMN data_type_atomic2_span.higher_denominator IS 'If the higher bound is a ratio.';
+COMMENT ON COLUMN data_type_atomic2_span.units IS 'The units of this span.';
+COMMENT ON COLUMN data_type_atomic2_span.precision IS 'The precision of this span.';
+
+--------------------------------------------------------------
+
+CREATE TABLE data_type_atomic2_enum_value (
+  data_type_id bigint NOT NULL,
+  value text NOT NULL,
+  sort_order int NOT NULL,
+  PRIMARY KEY (data_type_id, value),
+  CONSTRAINT fk_enum_atomic FOREIGN KEY (data_type_id) REFERENCES data_type_atomic2 (data_type_id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE data_type_atomic2_enum_value IS 'A value of an attribute that is an enum.';
+COMMENT ON COLUMN data_type_atomic2_enum_value.data_type_id IS 'The atomic data type this is a value for.';
+COMMENT ON COLUMN data_type_atomic2_enum_value.value IS 'The enum value.';
+COMMENT ON COLUMN data_type_atomic2_enum_value.sort_order IS 'A value for keeping presentation clear in documentation.';
+
+--------------------------------------------------------------
+
+CREATE TABLE data_type2 (
   data_type_id bigint NOT NULL,
   collection_type collection_type NOT NULL DEFAULT 'atomic',
   collection_unique boolean DEFAULT NULL,
@@ -317,17 +363,17 @@ CREATE TABLE data_type (
   details text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (data_type_id),
-  CONSTRAINT fk_data_type_atomic FOREIGN KEY (data_type_id) REFERENCES data_type_atomic (data_type_id) ON DELETE CASCADE
+  CONSTRAINT fk_data_type_atomic2 FOREIGN KEY (data_type_id) REFERENCES data_type_atomic2 (data_type_id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE data_type IS 'An data type for use in a class attribute or action parameter.';
-COMMENT ON COLUMN data_type.data_type_id IS 'The internal ID, the atomic table is the source.';
-COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic value, and if a collection what kind.';
-COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
-COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum.';
-COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
-COMMENT ON COLUMN data_type.details IS 'A summary description.';
-COMMENT ON COLUMN data_type.uml_comment IS 'A comment that appears in the diagrams.';
+COMMENT ON TABLE data_type2 IS 'An data type for use in a class attribute or action parameter.';
+COMMENT ON COLUMN data_type2.data_type_id IS 'The internal ID, the atomic table is the source.';
+COMMENT ON COLUMN data_type2.collection_type IS 'Whether a collection or atomic value, and if a collection what kind.';
+COMMENT ON COLUMN data_type2.collection_unique IS 'If a collection, is this collection unique.';
+COMMENT ON COLUMN data_type2.collection_min IS 'If a collection and there is a minimum number of items, the minimum.';
+COMMENT ON COLUMN data_type2.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
+COMMENT ON COLUMN data_type2.details IS 'A summary description.';
+COMMENT ON COLUMN data_type2.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
 
@@ -339,8 +385,8 @@ CREATE TABLE field (
   details text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (field_id),
-  CONSTRAINT fk_field_record FOREIGN KEY (record_data_type_id) REFERENCES data_type (data_type_id) ON DELETE CASCADE,
-  CONSTRAINT fk_field_type FOREIGN KEY (field_data_type_id) REFERENCES data_type (data_type_id) ON DELETE CASCADE
+  CONSTRAINT fk_field_record FOREIGN KEY (record_data_type_id) REFERENCES data_type2 (data_type_id) ON DELETE CASCADE,
+  CONSTRAINT fk_field_type FOREIGN KEY (field_data_type_id) REFERENCES data_type2 (data_type_id) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE field IS 'A field of a record data type.';
@@ -384,7 +430,7 @@ COMMENT ON COLUMN class.uml_comment IS 'A comment that appears in the diagrams.'
 
 --------------------------------------------------------------
 
--- ALTER TABLE data_type_atomic ADD CONSTRAINT fk_atomic_class FOREIGN KEY (model_key, object_class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE;
+-- ALTER TABLE data_type_atomic2 ADD CONSTRAINT fk_atomic_class FOREIGN KEY (model_key, object_class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE;
 
 --------------------------------------------------------------
 
