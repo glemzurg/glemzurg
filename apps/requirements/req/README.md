@@ -3,6 +3,10 @@ next:
 
 - work on the diagram generation
 
+- add other atomic types
+- move to other collections
+- work out how to name and how to add details
+
 ---------------------------
 
 

@@ -34,15 +34,31 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 
 	s := svgsequence.NewSequence()
 
-	s.AddStep(svgsequence.Step{Source: "Bob", Target: "Maria", Text: "Hi! How are you doing?"})
-	s.OpenSection("response", "")
-	s.AddStep(svgsequence.Step{
-		Source: "Maria", Target: "Maria",
-		Text:  "*Thinks*\nLong time no see...",
-		Color: "#667777",
-	})
-	s.AddStep(svgsequence.Step{Source: "Maria", Target: "Bob", Text: "Fine!"})
-	s.CloseSection()
+	if len(scenario.Steps.Statements) == 0 {
+		// No steps, so just add an informative plackard.
+		s.AddStep(svgsequence.Step{Source: "Unknown", Target: "Unknown", Text: "No operations defined."})
+	} else {
+		for _, stmt := range scenario.Steps.Statements {
+			source := "Unknown"
+			if stmt.FromObject != nil {
+				source = stmt.FromObject.Name
+			}
+			target := "Unknown"
+			if stmt.ToObject != nil {
+				target = stmt.ToObject.Name
+			}
+			text := stmt.Description
+			if text == "" && stmt.Action != nil {
+				text = stmt.Action.Name
+			}
+			s.AddStep(svgsequence.Step{
+				Source: source,
+				Target: target,
+				Text:   text,
+			})
+		}
+	}
+
 	contents, err = s.Generate()
 
 	return contents, nil
