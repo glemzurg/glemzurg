@@ -64,7 +64,13 @@ graphviz migration:
 
 Long time targets:
 
-- attribute interaction lines are:f
+- interaction diagrams:
+  - update node creation and deletion style
+- attribute interaction lines are:
+  - multiple attributes
+  - conditional
+  - multiple, nested multiples (data flow)
+- attribute interaction lines are:
   - records of attributes with multiples
   - conditiononals
   - indication of whether it is many responses

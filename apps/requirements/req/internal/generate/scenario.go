@@ -33,6 +33,7 @@ func generateScenarioFiles(outputPath string, reqs requirements.Requirements) (e
 
 func generateScenarioSvgContents(reqs requirements.Requirements, scenario requirements.Scenario) (contents string, err error) {
 
+	eventLookup := reqs.EventLookup()
 	scenarioObjectLookup := reqs.ScenarioObjectLookup()
 
 	s := svgsequence.NewSequence()
@@ -62,57 +63,96 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 		// No steps, so just add an informative placard.
 		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[0], Text: "No operations defined"})
 	} else {
-		for _, stmt := range scenario.Steps.Statements {
-			switch stmt.Inferredtype() {
-			case requirements.NODE_TYPE_LEAF:
-
-				switch {
-
-				case stmt.AttributeKey != "", stmt.EventKey != "":
-
-					fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
-					if !found {
-						return "", errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
-					}
-					toObject, found := scenarioObjectLookup[stmt.ToObjectKey]
-					if !found {
-						return "", errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey)
-					}
-
-					text := stmt.Description
-
-					s.AddStep(svgsequence.Step{
-						Source: fromObject.GetName(),
-						Target: toObject.GetName(),
-						Text:   text,
-					})
-
-				default:
-					return "", errors.Errorf("leaf node must have one of event_key, scenario_key, or attribute_key: '%+v'", stmt)
-				}
-
-			case requirements.NODE_TYPE_SWITCH:
-
-				for _, c := range stmt.Cases {
-					s.OpenSection("Opt ["+c.Condition+"]", "")
-
-					// ... statement handling ...
-					s.AddStep(svgsequence.Step{
-						Source: "Maria", Target: "Maria",
-						Text:  "*Thinks*\nLong time no see...",
-						Color: "#36bbbbff",
-					})
-
-					s.CloseSection()
-				}
-
-			default:
-				return "", errors.Errorf("unsupported node type in scenario SVG generation: '%s'", stmt.Inferredtype())
-			}
+		err = addSteps(eventLookup, s, scenario.Steps.Statements, scenarioObjectLookup)
+		if err != nil {
+			return "", err
 		}
 	}
 
 	contents, err = s.Generate()
 
 	return contents, nil
+}
+
+func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence, statements []requirements.Node, scenarioObjectLookup map[string]requirements.ScenarioObject) error {
+	for _, stmt := range statements {
+		switch stmt.Inferredtype() {
+		case requirements.NODE_TYPE_LEAF:
+
+			if stmt.EventKey != "" || stmt.AttributeKey != "" {
+
+				fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
+				if !found {
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+				}
+				toObject, found := scenarioObjectLookup[stmt.ToObjectKey]
+				if !found {
+					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey)
+				}
+
+				text := stmt.Description
+
+				// Events can be fully described.
+				if stmt.EventKey != "" {
+					event, found := eventLookup[stmt.EventKey]
+					if !found {
+						return errors.Errorf("unknown event key: '%s'", stmt.EventKey)
+					}
+					text += event.Name
+					if len(event.Parameters) > 0 {
+						text += "("
+						for i, param := range event.Parameters {
+							if i > 0 {
+								text += ", "
+							}
+							text += param.Name
+						}
+						text += ")"
+					}
+				}
+
+				s.AddStep(svgsequence.Step{
+					Source: fromObject.GetName(),
+					Target: toObject.GetName(),
+					Text:   text,
+				})
+
+			} else {
+				return errors.Errorf("leaf node must have one of event_key, scenario_key, or attribute_key: '%+v'", stmt)
+			}
+
+		case requirements.NODE_TYPE_SEQUENCE:
+			err := addSteps(eventLookup, s, stmt.Statements, scenarioObjectLookup)
+			if err != nil {
+				return err
+			}
+
+		case requirements.NODE_TYPE_SWITCH:
+
+			for _, c := range stmt.Cases {
+				s.OpenSection("(Opt) ["+c.Condition+"]", "")
+
+				err := addSteps(eventLookup, s, c.Statements, scenarioObjectLookup)
+				if err != nil {
+					return err
+				}
+
+				s.CloseSection()
+			}
+
+		case requirements.NODE_TYPE_LOOP:
+			s.OpenSection("(Loop) ["+stmt.Loop+"]", "")
+
+			err := addSteps(eventLookup, s, stmt.Statements, scenarioObjectLookup)
+			if err != nil {
+				return err
+			}
+
+			s.CloseSection()
+
+		default:
+			return errors.Errorf("unsupported node type in scenario SVG generation: '%s'", stmt.Inferredtype())
+		}
+	}
+	return nil
 }

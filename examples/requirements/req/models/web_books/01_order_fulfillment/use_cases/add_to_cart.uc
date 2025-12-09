@@ -34,26 +34,18 @@ scenarios:
 
         steps:
 
-            - description: "«new»(addressx)"
-              from_object_key: joe
-              to_object_key: order
-              event_key: "01_order_fulfillment/book_order/event/«new»"
-
             - cases:
                 - condition: No open Book Order for Customer
                   statements:
-                    - description: "«new»(addressx)"
-                      from_object_key: joe
+                    - from_object_key: joe
                       to_object_key: order
                       event_key: "01_order_fulfillment/book_order/event/«new»"
  
-            - description: "add(Medium,qtyx)"
-              from_object_key: joe
+            - from_object_key: joe
               to_object_key: order
               event_key: "01_order_fulfillment/book_order/event/add"
 
-            - description: "«new»(ord, Medium, qtyx)"
-              from_object_key: order
+            - from_object_key: order
               to_object_key: line
               event_key: "01_order_fulfillment/book_order_line/event/«new»"
 
