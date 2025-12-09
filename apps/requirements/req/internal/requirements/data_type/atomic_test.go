@@ -17,13 +17,6 @@ func TestParseAtomic(t *testing.T) {
 		errorMessage string
 	}{
 
-		{
-			name:         "non-whitespace",
-			input:        "x",
-			expected:     nil,
-			errorMessage: "no match found",
-		},
-
 		// Unconstrained atomics.
 		{
 			name:  "empty string",

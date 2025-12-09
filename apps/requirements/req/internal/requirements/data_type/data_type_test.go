@@ -115,3 +115,11 @@ func (suite *DataTypeSuite) TestValidate() {
 		}
 	}
 }
+
+func TestNewUnparsable(t *testing.T) {
+
+	// If we cannot parse the text, no error but instead just a nil result.
+	result, err := New("key", "this cannot be parsed so it is just an unparsable blob")
+	assert.NoError(t, err)
+	assert.Nil(t, result)
+}
