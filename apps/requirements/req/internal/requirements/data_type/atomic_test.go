@@ -44,6 +44,64 @@ func TestParseAtomic(t *testing.T) {
 			},
 			errorMessage: "",
 		},
+
+		// References.
+		{
+			name:  "ref",
+			input: "ref: listed somewhere else",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ref: listed somewhere else",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "listed somewhere else",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "reference",
+			input: "reference: listed somewhere else",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ref: listed somewhere else",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "listed somewhere else",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "ref with whitespace",
+			input: "   \t\nref   \t\n:    \t\nlisted somewhere else    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ref: listed somewhere else",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "listed somewhere else",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "reference with whitespace",
+			input: "   \t\nreference   \t\n:    \t\nlisted somewhere else    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ref: listed somewhere else",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "listed somewhere else",
+				},
+			},
+			errorMessage: "",
+		},
 	}
 
 	for _, tt := range tests {
