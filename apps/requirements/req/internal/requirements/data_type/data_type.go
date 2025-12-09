@@ -44,6 +44,11 @@ func New(key, text string) (dataType *DataType, err error) {
 	// Set the key.
 	dataType.Key = key
 
+	// Name for blank text is "unconstrained".
+	if dataType.Name == "" {
+		dataType.Name = _CONSTRAINT_TYPE_UNCONSTRAINED
+	}
+
 	// Validate the data type.
 	if err = dataType.Validate(); err != nil {
 		return nil, err
