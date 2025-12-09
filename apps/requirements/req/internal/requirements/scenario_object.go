@@ -64,6 +64,23 @@ func (so *ScenarioObject) SetClass(class Class) {
 	so.Class = class
 }
 
+func (so *ScenarioObject) GetName() (name string) {
+	switch so.NameStyle {
+	case _NAME_STYLE_NAME:
+		name = so.Name + ":" + so.Class.Name
+	case _NAME_STYLE_ID:
+		name = so.Class.Name + " " + so.Name
+	case _NAME_STYLE_UNNAMED:
+		name = ":" + so.Class.Name
+	default:
+		panic("unknown name style: " + so.NameStyle)
+	}
+	if so.Multi {
+		name = "*" + name
+	}
+	return name
+}
+
 func createKeyScenarioObjectLookup(
 	byScenario map[string][]ScenarioObject,
 	classLookup map[string]Class,

@@ -5,6 +5,7 @@ import (
 
 	svgsequence "github.com/aorith/svg-sequence"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/pkg/errors"
 )
 
 func generateScenarioFiles(outputPath string, reqs requirements.Requirements) (err error) {
@@ -32,30 +33,66 @@ func generateScenarioFiles(outputPath string, reqs requirements.Requirements) (e
 
 func generateScenarioSvgContents(reqs requirements.Requirements, scenario requirements.Scenario) (contents string, err error) {
 
+	scenarioObjectLookup := reqs.ScenarioObjectLookup()
+
 	s := svgsequence.NewSequence()
 
+	// Add the actors in order.
+	var actors []string
+	if len(scenario.Objects) > 0 {
+		for _, obj := range scenario.Objects {
+
+			// Get fully populated object for proper name construction.
+			object, found := scenarioObjectLookup[obj.Key]
+			if !found {
+				return "", errors.Errorf("unknown object key: '%s'", obj.Key)
+			}
+
+			actors = append(actors, object.GetName())
+		}
+	} else {
+		// No objects defined, so add unknown actor for the placard.
+		actors = append(actors, "Unknown")
+	}
+	s.AddActors(actors...)
+
+	// Add the steps.
+
 	if len(scenario.Steps.Statements) == 0 {
-		// No steps, so just add an informative plackard.
-		s.AddStep(svgsequence.Step{Source: "Unknown", Target: "Unknown", Text: "No operations defined."})
+		// No steps, so just add an informative placard.
+		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[len(actors)-1], Text: "No operations defined."})
 	} else {
 		for _, stmt := range scenario.Steps.Statements {
-			source := "Unknown"
-			if stmt.FromObject != nil {
-				source = stmt.FromObject.Name
+			switch stmt.Inferredtype() {
+			case requirements.NODE_TYPE_LEAF:
+
+				switch {
+				case stmt.AttributeKey != "":
+
+					fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
+					if !found {
+						return "", errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+					}
+					toObject, found := scenarioObjectLookup[stmt.ToObjectKey]
+					if !found {
+						return "", errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey)
+					}
+
+					text := stmt.Description
+
+					s.AddStep(svgsequence.Step{
+						Source: fromObject.GetName(),
+						Target: toObject.GetName(),
+						Text:   text,
+					})
+
+				default:
+					return "", errors.Errorf("leaf node must have one of event_key, scenario_key, or attribute_key: '%+v'", stmt)
+				}
+
+			default:
+				return "", errors.Errorf("unsupported node type in scenario SVG generation: '%s'", stmt.Inferredtype())
 			}
-			target := "Unknown"
-			if stmt.ToObject != nil {
-				target = stmt.ToObject.Name
-			}
-			text := stmt.Description
-			if text == "" && stmt.Event != nil {
-				text = stmt.Event.Name
-			}
-			s.AddStep(svgsequence.Step{
-				Source: source,
-				Target: target,
-				Text:   text,
-			})
 		}
 	}
 

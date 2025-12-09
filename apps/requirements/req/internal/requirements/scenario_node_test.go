@@ -197,10 +197,10 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 	assert.Nil(suite.T(), err)
 
 	// Check structure
-	assert.Equal(suite.T(), "sequence", unmarshaled.inferredType())
+	assert.Equal(suite.T(), "sequence", unmarshaled.Inferredtype())
 	assert.Len(suite.T(), unmarshaled.Statements, 2)
-	assert.Equal(suite.T(), "switch", unmarshaled.Statements[0].inferredType())
-	assert.Equal(suite.T(), "loop", unmarshaled.Statements[1].inferredType())
+	assert.Equal(suite.T(), "switch", unmarshaled.Statements[0].Inferredtype())
+	assert.Equal(suite.T(), "loop", unmarshaled.Statements[1].Inferredtype())
 }
 
 func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {

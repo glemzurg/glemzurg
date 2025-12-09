@@ -9,10 +9,10 @@ import (
 
 const (
 	// Node types.
-	_NODE_TYPE_LEAF     = "" // Leaf node has no type.
-	_NODE_TYPE_SEQUENCE = "sequence"
-	_NODE_TYPE_SWITCH   = "switch"
-	_NODE_TYPE_LOOP     = "loop"
+	NODE_TYPE_LEAF     = "" // Leaf node has no type.
+	NODE_TYPE_SEQUENCE = "sequence"
+	NODE_TYPE_SWITCH   = "switch"
+	NODE_TYPE_LOOP     = "loop"
 )
 
 // Node represents a node in the scenario steps tree.
@@ -34,18 +34,18 @@ type Node struct {
 	Attribute  *Attribute      `json:"-" yaml:"-"`
 }
 
-// inferredType returns the type of the node based on its fields.
-func (n *Node) inferredType() string {
+// Inferredtype returns the type of the node based on its fields.
+func (n *Node) Inferredtype() string {
 	if n.Loop != "" {
-		return _NODE_TYPE_LOOP
+		return NODE_TYPE_LOOP
 	}
 	if len(n.Cases) > 0 {
-		return _NODE_TYPE_SWITCH
+		return NODE_TYPE_SWITCH
 	}
 	if len(n.Statements) > 0 {
-		return _NODE_TYPE_SEQUENCE
+		return NODE_TYPE_SEQUENCE
 	}
-	return _NODE_TYPE_LEAF
+	return NODE_TYPE_LEAF
 }
 
 // Case represents a case in a switch node.
@@ -56,8 +56,8 @@ type Case struct {
 
 // Validate validates the node and its sub-nodes.
 func (n *Node) Validate() error {
-	switch n.inferredType() {
-	case _NODE_TYPE_SEQUENCE:
+	switch n.Inferredtype() {
+	case NODE_TYPE_SEQUENCE:
 		if len(n.Statements) == 0 {
 			return errors.New("sequence must have at least one statement")
 		}
@@ -66,7 +66,7 @@ func (n *Node) Validate() error {
 				return err
 			}
 		}
-	case _NODE_TYPE_SWITCH:
+	case NODE_TYPE_SWITCH:
 		if len(n.Cases) == 0 {
 			return errors.New("switch must have at least one case")
 		}
@@ -80,7 +80,7 @@ func (n *Node) Validate() error {
 				}
 			}
 		}
-	case _NODE_TYPE_LOOP:
+	case NODE_TYPE_LOOP:
 		if n.Loop == "" {
 			return errors.New("loop must have a loop description")
 		}
@@ -92,7 +92,7 @@ func (n *Node) Validate() error {
 				return err
 			}
 		}
-	case _NODE_TYPE_LEAF:
+	case NODE_TYPE_LEAF:
 		if n.FromObjectKey == "" {
 			return errors.New("leaf must have a from_object_key")
 		}
