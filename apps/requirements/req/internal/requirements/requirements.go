@@ -77,8 +77,8 @@ func (r *Requirements) prepLookups() {
 		r.scenarioObjectLookup = createKeyScenarioObjectLookup(r.ScenarioObjects, r.classLookup)
 
 		// Populate references in scenarios. Their steps are like and abstract symbol tree.
-		// And any references to objects, actions, attributes, or scenarios need to be populated.
-		if err := populateScenarioStepReferences(r.scenarioLookup, r.scenarioObjectLookup, r.attributeLookup, r.actionLookup); err != nil {
+		// And any references to objects, events, attributes, or scenarios need to be populated.
+		if err := populateScenarioStepReferences(r.scenarioLookup, r.scenarioObjectLookup, r.attributeLookup, r.eventLookup); err != nil {
 			panic(errors.Errorf("error populating scenario step references: %+v", err))
 		}
 

@@ -23,13 +23,13 @@ type Node struct {
 	Description   string `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
 	FromObjectKey string `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
 	ToObjectKey   string `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
-	ActionKey     string `json:"action_key,omitempty" yaml:"action_key,omitempty"`
+	EventKey      string `json:"event_key,omitempty" yaml:"event_key,omitempty"`
 	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
 	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
 	// Helper fields can be added here as needed.
 	FromObject *ScenarioObject `json:"-" yaml:"-"`
 	ToObject   *ScenarioObject `json:"-" yaml:"-"`
-	Action     *Action         `json:"-" yaml:"-"`
+	Event      *Event          `json:"-" yaml:"-"`
 	Scenario   *Scenario       `json:"-" yaml:"-"`
 	Attribute  *Attribute      `json:"-" yaml:"-"`
 }
@@ -99,7 +99,7 @@ func (n *Node) Validate() error {
 		if n.ToObjectKey == "" {
 			return errors.New("leaf must have a to_object_key")
 		}
-		keys := []string{n.ActionKey, n.ScenarioKey, n.AttributeKey}
+		keys := []string{n.EventKey, n.ScenarioKey, n.AttributeKey}
 		nonEmptyKeys := 0
 		for _, key := range keys {
 			if key != "" {
@@ -107,10 +107,10 @@ func (n *Node) Validate() error {
 			}
 		}
 		if nonEmptyKeys == 0 {
-			return errors.New("leaf must have one of action_key, scenario_key, or attribute_key")
+			return errors.New("leaf must have one of event_key, scenario_key, or attribute_key")
 		}
 		if nonEmptyKeys > 1 {
-			return errors.New("leaf cannot have more than one of action_key, scenario_key, or attribute_key")
+			return errors.New("leaf cannot have more than one of event_key, scenario_key, or attribute_key")
 		}
 	}
 	return nil
@@ -171,9 +171,9 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 	return nil
 }
 
-// PopulateReferences populates the FromObject, ToObject, Action, and Scenario fields
+// PopulateReferences populates the FromObject, ToObject, Event, and Scenario fields
 // from the provided lookup maps. It recursively populates references in sub-nodes.
-func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map[string]Action, attributes map[string]Attribute, scenarios map[string]Scenario) error {
+func (n *Node) PopulateReferences(objects map[string]ScenarioObject, events map[string]Event, attributes map[string]Attribute, scenarios map[string]Scenario) error {
 	// Populate this node's references
 	if n.FromObjectKey != "" {
 		if obj, exists := objects[n.FromObjectKey]; exists {
@@ -189,11 +189,11 @@ func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map
 			return errors.Errorf("to_object_key '%s' not found in objects", n.ToObjectKey)
 		}
 	}
-	if n.ActionKey != "" {
-		if act, exists := actions[n.ActionKey]; exists {
-			n.Action = &act
+	if n.EventKey != "" {
+		if evt, exists := events[n.EventKey]; exists {
+			n.Event = &evt
 		} else {
-			return errors.Errorf("action_key '%s' not found in actions", n.ActionKey)
+			return errors.Errorf("event_key '%s' not found in events", n.EventKey)
 		}
 	}
 	if n.AttributeKey != "" {
@@ -214,7 +214,7 @@ func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map
 	// Recursively populate references in statements
 	if n.Statements != nil {
 		for i := range n.Statements {
-			if err := n.Statements[i].PopulateReferences(objects, actions, attributes, scenarios); err != nil {
+			if err := n.Statements[i].PopulateReferences(objects, events, attributes, scenarios); err != nil {
 				return err
 			}
 		}
@@ -224,7 +224,7 @@ func (n *Node) PopulateReferences(objects map[string]ScenarioObject, actions map
 	if n.Cases != nil {
 		for i := range n.Cases {
 			for j := range n.Cases[i].Statements {
-				if err := n.Cases[i].Statements[j].PopulateReferences(objects, actions, attributes, scenarios); err != nil {
+				if err := n.Cases[i].Statements[j].PopulateReferences(objects, events, attributes, scenarios); err != nil {
 					return err
 				}
 			}
@@ -255,8 +255,8 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 	if n.ToObjectKey != "" {
 		m["to_object_key"] = n.ToObjectKey
 	}
-	if n.ActionKey != "" {
-		m["action_key"] = n.ActionKey
+	if n.EventKey != "" {
+		m["event_key"] = n.EventKey
 	}
 	if n.AttributeKey != "" {
 		m["attribute_key"] = n.AttributeKey
@@ -288,8 +288,8 @@ func (n *Node) MarshalYAML() (interface{}, error) {
 	if n.ToObjectKey != "" {
 		m["to_object_key"] = n.ToObjectKey
 	}
-	if n.ActionKey != "" {
-		m["action_key"] = n.ActionKey
+	if n.EventKey != "" {
+		m["event_key"] = n.EventKey
 	}
 	if n.AttributeKey != "" {
 		m["attribute_key"] = n.AttributeKey

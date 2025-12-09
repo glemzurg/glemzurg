@@ -75,7 +75,7 @@ func (suite *ScenarioSuite) TestLoad() {
 				'Name',
 				'use_case_key',
 				'Details',
-				'{"type":"sequence","statements":[{"type":"leaf","description":"test step","from_object_key":"obj1","to_object_key":"obj2","action_key":"test_action"}]}'
+				'{"type":"sequence","statements":[{"type":"leaf","description":"test step","from_object_key":"obj1","to_object_key":"obj2","event_key":"test_action"}]}'
 			)
 	`)
 	assert.Nil(suite.T(), err)

@@ -63,11 +63,11 @@ func populateScenarioStepReferences(
 	scenarios map[string]Scenario,
 	objects map[string]ScenarioObject,
 	attributes map[string]Attribute,
-	actions map[string]Action,
+	events map[string]Event,
 ) (err error) {
 	for key := range scenarios {
 		scenario := scenarios[key]
-		err = scenario.Steps.PopulateReferences(objects, actions, attributes, scenarios)
+		err = scenario.Steps.PopulateReferences(objects, events, attributes, scenarios)
 		if err != nil {
 			return err
 		}
