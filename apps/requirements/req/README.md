@@ -56,6 +56,7 @@ graphviz migration:
 
 Long time targets:
 
+- formal verification: https://martin.kleppmann.com/2025/12/08/ai-formal-verification.html
 - clean up looping transitions to be inside the body as: event [guard] / action
 - post gres schemas, domians, compositions, records, etc
 - move to devcontainers
