@@ -1,13 +1,36 @@
 package data_type
 
-// Atomic represents the atomic data type.
+import (
+	"github.com/go-ozzo/ozzo-validation/v4"
+)
+
+const (
+	_CONSTRAINT_TYPE_UNCONSTRAINED = "unconstrained" // Anything.
+	_CONSTRAINT_TYPE_SPAN          = "span"          // A range of allowed values.
+	_CONSTRAINT_TYPE_ENUMERATION   = "enumeration"   // A set of allowed values.
+	_CONSTRAINT_TYPE_REFERENCE     = "reference"     // A reference to other documentation.
+	_CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
+)
+
+// DataTypeAtomicEnumValue represents an enum value for atomic data types.
+type DataTypeAtomicEnumValue struct {
+	Value     string
+	SortOrder int
+}
+
+// Atomic represents the atomic data type (as opposed to a collection).
 type Atomic struct {
-	ConstraintType string // "unconstrained", "enumeration", "object", "reference", "span"
-	Reference      string
-	EnumOrdered    *bool
-	ObjectClassKey string
+	ConstraintType string
 	Details        string
-	UmlComment     string
-	EnumValues     []AtomicEnumValue
-	Spans          []AtomicSpan
+	EnumValues     []DataTypeAtomicEnumValue
+	Reference      string
+	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
+	ObjectClassKey string
+}
+
+// Validate validates the Atomic struct.
+func (a Atomic) Validate() error {
+	return validation.ValidateStruct(&a,
+		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED)),
+	)
 }

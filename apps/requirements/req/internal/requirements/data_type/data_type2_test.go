@@ -42,7 +42,7 @@ func TestParseDataType(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
-					EnumValues: []AtomicEnumValue{
+					EnumValues: []DataTypeAtomicEnumValue{
 						{Value: "red", SortOrder: 0},
 						{Value: "green", SortOrder: 0},
 						{Value: "blue", SortOrder: 0},
@@ -70,7 +70,7 @@ func TestParseDataType(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
-					EnumValues: []AtomicEnumValue{
+					EnumValues: []DataTypeAtomicEnumValue{
 						{Value: "a", SortOrder: 0},
 						{Value: "b", SortOrder: 0},
 						{Value: "c", SortOrder: 0},

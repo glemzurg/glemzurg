@@ -18,7 +18,9 @@ type DataTypeSuite struct {
 func (suite *DataTypeSuite) TestValidate() {
 	atomic := &Atomic{
 		ConstraintType: "unconstrained",
-		Details:        "string",
+	}
+	atomicInvalid := &Atomic{
+		ConstraintType: "unknown",
 	}
 
 	tests := []struct {
@@ -85,6 +87,14 @@ func (suite *DataTypeSuite) TestValidate() {
 			collectionType: "atomic",
 			atomic:         nil,
 			errstr:         `Atomic: cannot be blank.`,
+		},
+		{
+			key:            "Key",
+			name:           "Name",
+			details:        "Details",
+			collectionType: "atomic",
+			atomic:         atomicInvalid,
+			errstr:         `Atomic: (ConstraintType: must be a valid value.).`,
 		},
 	}
 

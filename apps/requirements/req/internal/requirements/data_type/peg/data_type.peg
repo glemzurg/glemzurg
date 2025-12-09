@@ -32,15 +32,15 @@ EnumType <- "enum" ws "{" ws values:EnumValues ws "}" {
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "enumeration",
-			EnumValues: values.([]AtomicEnumValue),
+			EnumValues: values.([]DataTypeAtomicEnumValue),
 		},
 	}, nil
 }
 
 EnumValues <- head:EnumValue tail:(ws "," ws EnumValue)* {
-	values := []AtomicEnumValue{head.(AtomicEnumValue)}
+	values := []DataTypeAtomicEnumValue{head.(DataTypeAtomicEnumValue)}
 	for _, v := range tail.([]interface{}) {
-		values = append(values, v.([]interface{})[3].(AtomicEnumValue))
+		values = append(values, v.([]interface{})[3].(DataTypeAtomicEnumValue))
 	}
 	return values, nil
 }
@@ -51,7 +51,7 @@ EnumValue <- id:Ident {
 	for _, r := range result[1].([]interface{}) {
 		s += string(r.([]byte))
 	}
-	return AtomicEnumValue{
+	return DataTypeAtomicEnumValue{
 		Value: s,
 		SortOrder: 0,
 	}, nil

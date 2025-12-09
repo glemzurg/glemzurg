@@ -1,10 +1,5 @@
 package data_type
 
-// AtomicEnumValue represents an enum value.
-type AtomicEnumValue struct {
-	Value     string
-	SortOrder int
-}
 
 // AtomicSpan represents a span.
 type AtomicSpan struct {

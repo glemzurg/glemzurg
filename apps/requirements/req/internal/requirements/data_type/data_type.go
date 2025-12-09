@@ -28,18 +28,18 @@ type DataType struct {
 // New creates a new DataType by parsing the input text.
 func New(text string) (dataType *DataType, err error) {
 
-	parser := NewParser(text)
+	// parser := NewParser(text)
 
-	// Parse the data type.
-	dataType, err = parser.Parse()
-	if err != nil {
-		return nil, err
-	}
+	// // Parse the data type.
+	// dataType, err = parser.Parse()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	// Validate the data type.
-	if err = dataType.Validate(); err != nil {
-		return nil, err
-	}
+	// // Validate the data type.
+	// if err = dataType.Validate(); err != nil {
+	// 	return nil, err
+	// }
 
 	return dataType, nil
 }
@@ -50,6 +50,11 @@ func (d DataType) Validate() error {
 		validation.Field(&d.Key, validation.Required),
 		validation.Field(&d.Name, validation.Required),
 		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC)),
-		validation.Field(&d.Atomic, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_ATOMIC)),
+		validation.Field(&d.Atomic, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_ATOMIC), validation.By(func(value interface{}) error {
+			if a, ok := value.(*Atomic); ok && a != nil {
+				return a.Validate()
+			}
+			return nil
+		})),
 	)
 }
