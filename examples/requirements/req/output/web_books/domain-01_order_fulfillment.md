@@ -20,7 +20,8 @@ Concepts in this domain include:
 
 ![er](domain-01_order_fulfillment-use-cases.svg)
 
-- **[Add to Cart](use_case-01_order_fulfillment.add_to_cart.md).** ... details ...
+- **[Add to Cart](use_case-01_order_fulfillment.add_to_cart.md).** In this use case, the Customer is adding one to many copies 
+of the same Medium to their shopping cart.
 - **[Cancel Order](use_case-01_order_fulfillment.cancel_order.md).** ... details ...
 - **[Catalog?](use_case-01_order_fulfillment.catalog.md).** This use case provides a Customer with the ability to browse the catalog:
 visibility into Titles, Media, and their availability for ordering.

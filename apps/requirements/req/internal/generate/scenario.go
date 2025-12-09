@@ -51,8 +51,8 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 			actors = append(actors, object.GetName())
 		}
 	} else {
-		// No objects defined, so add unknown actor for the placard.
-		actors = append(actors, "Unknown")
+		// No objects defined, so add placeholder actor for the placard.
+		actors = append(actors, "No actors defined")
 	}
 	s.AddActors(actors...)
 
@@ -60,14 +60,15 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 
 	if len(scenario.Steps.Statements) == 0 {
 		// No steps, so just add an informative placard.
-		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[len(actors)-1], Text: "No operations defined."})
+		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[0], Text: "No operations defined"})
 	} else {
 		for _, stmt := range scenario.Steps.Statements {
 			switch stmt.Inferredtype() {
 			case requirements.NODE_TYPE_LEAF:
 
 				switch {
-				case stmt.AttributeKey != "":
+
+				case stmt.AttributeKey != "", stmt.EventKey != "":
 
 					fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
 					if !found {
@@ -88,6 +89,21 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 
 				default:
 					return "", errors.Errorf("leaf node must have one of event_key, scenario_key, or attribute_key: '%+v'", stmt)
+				}
+
+			case requirements.NODE_TYPE_SWITCH:
+
+				for _, c := range stmt.Cases {
+					s.OpenSection("Opt ["+c.Condition+"]", "")
+
+					// ... statement handling ...
+					s.AddStep(svgsequence.Step{
+						Source: "Maria", Target: "Maria",
+						Text:  "*Thinks*\nLong time no see...",
+						Color: "#36bbbbff",
+					})
+
+					s.CloseSection()
 				}
 
 			default:

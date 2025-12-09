@@ -64,6 +64,12 @@ graphviz migration:
 
 Long time targets:
 
+- attribute interaction lines are:f
+  - records of attributes with multiples
+  - conditiononals
+  - indication of whether it is many responses
+  - same with events, showing the parameters
+  - (perhaps this should be resolved with data flow diagrams)
 - formal verification: https://martin.kleppmann.com/2025/12/08/ai-formal-verification.html
 - clean up looping transitions to be inside the body as: event [guard] / action
 - post gres schemas, domians, compositions, records, etc
@@ -79,6 +85,7 @@ Long time targets:
   - like amgiguity language
 - support all known requirement methodologies
 - build out interaction diagrams from existing data and just have users constrain them
+- build a custom svg graphing library
 
 ================================
 
