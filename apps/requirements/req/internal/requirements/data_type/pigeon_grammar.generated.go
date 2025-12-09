@@ -21,21 +21,102 @@ var g = &grammar{
 	rules: []*rule{
 		{
 			name: "DataType",
-			pos:  position{line: 5, col: 1, offset: 23},
+			pos:  position{line: 9, col: 1, offset: 46},
+			expr: &choiceExpr{
+				pos: position{line: 9, col: 13, offset: 58},
+				alternatives: []any{
+					&ruleRefExpr{
+						pos:  position{line: 9, col: 13, offset: 58},
+						name: "ReferenceType",
+					},
+					&ruleRefExpr{
+						pos:  position{line: 9, col: 29, offset: 74},
+						name: "UnconstrainedType",
+					},
+				},
+			},
+		},
+		{
+			name: "UnconstrainedType",
+			pos:  position{line: 11, col: 1, offset: 93},
 			expr: &actionExpr{
-				pos: position{line: 5, col: 13, offset: 35},
-				run: (*parser).callonDataType1,
+				pos: position{line: 11, col: 22, offset: 114},
+				run: (*parser).callonUnconstrainedType1,
 				expr: &seqExpr{
-					pos: position{line: 5, col: 13, offset: 35},
+					pos: position{line: 11, col: 22, offset: 114},
 					exprs: []any{
 						&ruleRefExpr{
-							pos:  position{line: 5, col: 13, offset: 35},
+							pos:  position{line: 11, col: 22, offset: 114},
 							name: "ws",
 						},
 						&notExpr{
-							pos: position{line: 5, col: 16, offset: 38},
+							pos: position{line: 11, col: 25, offset: 117},
 							expr: &anyMatcher{
-								line: 5, col: 17, offset: 39,
+								line: 11, col: 26, offset: 118,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "ReferenceType",
+			pos:  position{line: 21, col: 1, offset: 275},
+			expr: &actionExpr{
+				pos: position{line: 21, col: 18, offset: 292},
+				run: (*parser).callonReferenceType1,
+				expr: &seqExpr{
+					pos: position{line: 21, col: 18, offset: 292},
+					exprs: []any{
+						&ruleRefExpr{
+							pos:  position{line: 21, col: 18, offset: 292},
+							name: "ws",
+						},
+						&choiceExpr{
+							pos: position{line: 21, col: 22, offset: 296},
+							alternatives: []any{
+								&litMatcher{
+									pos:        position{line: 21, col: 22, offset: 296},
+									val:        "reference",
+									ignoreCase: false,
+									want:       "\"reference\"",
+								},
+								&litMatcher{
+									pos:        position{line: 21, col: 36, offset: 310},
+									val:        "ref",
+									ignoreCase: false,
+									want:       "\"ref\"",
+								},
+							},
+						},
+						&ruleRefExpr{
+							pos:  position{line: 21, col: 43, offset: 317},
+							name: "ws",
+						},
+						&litMatcher{
+							pos:        position{line: 21, col: 46, offset: 320},
+							val:        ":",
+							ignoreCase: false,
+							want:       "\":\"",
+						},
+						&ruleRefExpr{
+							pos:  position{line: 21, col: 50, offset: 324},
+							name: "ws",
+						},
+						&labeledExpr{
+							pos:   position{line: 21, col: 53, offset: 327},
+							label: "ref",
+							expr: &zeroOrMoreExpr{
+								pos: position{line: 21, col: 57, offset: 331},
+								expr: &anyMatcher{
+									line: 21, col: 57, offset: 331,
+								},
+							},
+						},
+						&notExpr{
+							pos: position{line: 21, col: 60, offset: 334},
+							expr: &anyMatcher{
+								line: 21, col: 61, offset: 335,
 							},
 						},
 					},
@@ -44,11 +125,11 @@ var g = &grammar{
 		},
 		{
 			name: "ws",
-			pos:  position{line: 14, col: 1, offset: 161},
+			pos:  position{line: 39, col: 1, offset: 672},
 			expr: &zeroOrMoreExpr{
-				pos: position{line: 14, col: 7, offset: 167},
+				pos: position{line: 39, col: 7, offset: 678},
 				expr: &charClassMatcher{
-					pos:        position{line: 14, col: 7, offset: 167},
+					pos:        position{line: 39, col: 7, offset: 678},
 					val:        "[ \\t\\n\\r]",
 					chars:      []rune{' ', '\t', '\n', '\r'},
 					ignoreCase: false,
@@ -59,8 +140,9 @@ var g = &grammar{
 	},
 }
 
-func (c *current) onDataType1() (any, error) {
+func (c *current) onUnconstrainedType1() (any, error) {
 	return &DataType{
+		Name:           "unconstrained",
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "unconstrained",
@@ -68,10 +150,34 @@ func (c *current) onDataType1() (any, error) {
 	}, nil
 }
 
-func (p *parser) callonDataType1() (any, error) {
+func (p *parser) callonUnconstrainedType1() (any, error) {
 	stack := p.vstack[len(p.vstack)-1]
 	_ = stack
-	return p.cur.onDataType1()
+	return p.cur.onUnconstrainedType1()
+}
+
+func (c *current) onReferenceType1(ref any) (any, error) {
+	refBytes := ref.([]interface{})
+	refStr := ""
+	for _, b := range refBytes {
+		refStr += string(b.([]byte))
+	}
+	refStr = strings.TrimSpace(refStr)
+	name := "ref: " + refStr
+	return &DataType{
+		Name:           name,
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "reference",
+			Reference:      refStr,
+		},
+	}, nil
+}
+
+func (p *parser) callonReferenceType1() (any, error) {
+	stack := p.vstack[len(p.vstack)-1]
+	_ = stack
+	return p.cur.onReferenceType1(stack["ref"])
 }
 
 var (

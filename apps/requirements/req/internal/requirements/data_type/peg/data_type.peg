@@ -1,12 +1,37 @@
 {
 package data_type
+
+import (
+	"strings"
+)
 }
 
-DataType <- ws !. {
+DataType <- ReferenceType / UnconstrainedType
+
+UnconstrainedType <- ws !. {
 	return &DataType{
+		Name:           "unconstrained",
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "unconstrained",
+		},
+	}, nil
+}
+
+ReferenceType <- ws ("reference" / "ref") ws ":" ws ref:.* !. {
+	refBytes := ref.([]interface{})
+	refStr := ""
+	for _, b := range refBytes {
+		refStr += string(b.([]byte))
+	}
+	refStr = strings.TrimSpace(refStr)
+	name := "ref: " + refStr
+	return &DataType{
+		Name:           name,
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "reference",
+			Reference: refStr,
 		},
 	}, nil
 }

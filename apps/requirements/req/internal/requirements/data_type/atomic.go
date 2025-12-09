@@ -21,6 +21,6 @@ type Atomic struct {
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
 	return validation.ValidateStruct(&a,
-		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED)),
+		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE)),
 	)
 }
