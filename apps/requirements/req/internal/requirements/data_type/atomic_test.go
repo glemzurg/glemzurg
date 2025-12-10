@@ -165,6 +165,23 @@ func TestParseAtomic(t *testing.T) {
 
 		// Enumeration.
 		{
+			name:  "enum on value",
+			input: "enum: value_a",
+			expected: &DataType{
+				Key:            key,
+				Name:           "enum: value_a",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
 			name:  "enum",
 			input: "enum: value_a, value_b, value_c",
 			expected: &DataType{
@@ -185,13 +202,14 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "enumeration",
-			input: "enumeration: class_key",
+			input: "enumeration: value_a, value_b, value_c",
 			expected: &DataType{
 				Key:            key,
 				Name:           "enum: value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
-					EnumOrdered: &falseValue,
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -209,7 +227,8 @@ func TestParseAtomic(t *testing.T) {
 				Name:           "enum: value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
-					EnumOrdered: &falseValue,
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -227,7 +246,8 @@ func TestParseAtomic(t *testing.T) {
 				Name:           "enum: value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
-					EnumOrdered: &falseValue,
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -246,7 +266,8 @@ func TestParseAtomic(t *testing.T) {
 				Name:           "ord-enum: value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
-					EnumOrdered: &trueValue,
+					ConstraintType: "enumeration",
+					EnumOrdered:    &trueValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -264,7 +285,8 @@ func TestParseAtomic(t *testing.T) {
 				Name:           "ord-enum: value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
-					EnumOrdered: &trueValue,
+					ConstraintType: "enumeration",
+					EnumOrdered:    &trueValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -291,6 +313,8 @@ func TestParseAtomic(t *testing.T) {
 }
 
 func TestAtomicString(t *testing.T) {
+	trueValue := true
+	falseValue := false
 	tests := []struct {
 		name         string
 		atomic       Atomic
@@ -327,6 +351,32 @@ func TestAtomicString(t *testing.T) {
 				ObjectClassKey: "some_class",
 			},
 			expected: "obj: some_class",
+		},
+		{
+			name: "enumeration",
+			atomic: Atomic{
+				ConstraintType: "enumeration",
+				EnumOrdered:    &falseValue,
+				Enums: []AtomicEnum{
+					{Value: "value_a"},
+					{Value: "value_b"},
+					{Value: "value_c"},
+				},
+			},
+			expected: "enum: value_a, value_b, value_c",
+		},
+		{
+			name: "ordered enumeration",
+			atomic: Atomic{
+				ConstraintType: "enumeration",
+				EnumOrdered:    &trueValue,
+				Enums: []AtomicEnum{
+					{Value: "value_a"},
+					{Value: "value_b"},
+					{Value: "value_c"},
+				},
+			},
+			expected: "ord-enum: value_a, value_b, value_c",
 		},
 		{
 			name: "unknown type",

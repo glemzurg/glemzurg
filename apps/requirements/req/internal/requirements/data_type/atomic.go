@@ -1,6 +1,11 @@
 package data_type
 
-import validation "github.com/go-ozzo/ozzo-validation/v4"
+import (
+	"errors"
+	"strings"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+)
 
 const (
 	_CONSTRAINT_TYPE_UNCONSTRAINED = "unconstrained" // Anything.
@@ -26,7 +31,22 @@ func (a Atomic) Validate() error {
 		validation.Field(&a.Reference, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE)),
 		validation.Field(&a.ObjectClassKey, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_OBJECT)),
 		validation.Field(&a.Enums, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION), validation.Empty.When(a.ConstraintType != _CONSTRAINT_TYPE_ENUMERATION), validation.Each(validation.By(func(value interface{}) error { enum := value.(AtomicEnum); return (&enum).Validate() }))),
-		validation.Field(&a.EnumOrdered, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION), validation.Nil.When(a.ConstraintType != _CONSTRAINT_TYPE_ENUMERATION)),
+		validation.Field(&a.EnumOrdered, validation.By(func(value interface{}) error {
+			ptr, ok := value.(*bool)
+			if !ok {
+				return errors.New("EnumOrdered must be *bool")
+			}
+			if a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION {
+				if ptr == nil {
+					return errors.New("EnumOrdered must not be nil for enumeration types")
+				}
+			} else {
+				if ptr != nil {
+					return errors.New("EnumOrdered must be nil for non-enumeration types")
+				}
+			}
+			return nil
+		})),
 	)
 }
 
@@ -39,6 +59,16 @@ func (a Atomic) String() string {
 		return "ref: " + a.Reference
 	case _CONSTRAINT_TYPE_OBJECT:
 		return "obj: " + a.ObjectClassKey
+	case _CONSTRAINT_TYPE_ENUMERATION:
+		var values []string
+		for _, enum := range a.Enums {
+			values = append(values, enum.Value)
+		}
+		prefix := "enum:"
+		if a.EnumOrdered != nil && *a.EnumOrdered {
+			prefix = "ord-enum:"
+		}
+		return prefix + " " + strings.Join(values, ", ")
 	default:
 		panic("invalid constraint type: '" + a.ConstraintType + "'")
 	}
