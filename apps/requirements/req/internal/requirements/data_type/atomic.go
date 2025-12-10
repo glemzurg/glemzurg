@@ -18,6 +18,7 @@ const (
 // Atomic represents the atomic data type (as opposed to a collection).
 type Atomic struct {
 	ConstraintType string
+	Span           *AtomicSpan
 	Reference      string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
 	Enums          []AtomicEnum
@@ -27,7 +28,7 @@ type Atomic struct {
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
 	return validation.ValidateStruct(&a,
-		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE, _CONSTRAINT_TYPE_OBJECT, _CONSTRAINT_TYPE_ENUMERATION)),
+		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_SPAN, _CONSTRAINT_TYPE_REFERENCE, _CONSTRAINT_TYPE_OBJECT, _CONSTRAINT_TYPE_ENUMERATION)),
 		validation.Field(&a.Reference, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE)),
 		validation.Field(&a.ObjectClassKey, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_OBJECT)),
 		validation.Field(&a.Enums, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION), validation.Empty.When(a.ConstraintType != _CONSTRAINT_TYPE_ENUMERATION), validation.Each(validation.By(func(value interface{}) error { enum := value.(AtomicEnum); return (&enum).Validate() }))),
@@ -47,6 +48,23 @@ func (a Atomic) Validate() error {
 			}
 			return nil
 		})),
+		validation.Field(&a.Span, validation.By(func(value interface{}) error {
+			ptr, ok := value.(*AtomicSpan)
+			if !ok {
+				return errors.New("Span must be *AtomicSpan")
+			}
+			if a.ConstraintType == _CONSTRAINT_TYPE_SPAN {
+				if ptr == nil {
+					return errors.New("Span must not be nil for span types")
+				}
+				return ptr.Validate()
+			} else {
+				if ptr != nil {
+					return errors.New("Span must be nil for non-span types")
+				}
+			}
+			return nil
+		})),
 	)
 }
 
@@ -55,6 +73,8 @@ func (a Atomic) String() string {
 	switch a.ConstraintType {
 	case _CONSTRAINT_TYPE_UNCONSTRAINED:
 		return "unconstrained"
+	case _CONSTRAINT_TYPE_SPAN:
+		return "span: <span details>"
 	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference
 	case _CONSTRAINT_TYPE_OBJECT:
