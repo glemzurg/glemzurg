@@ -9,75 +9,56 @@ import (
 
 DataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
 
-SpanType <- lower:LowerBound [ \t\n\r]* "." "." [ \t\n\r]* higher:HigherBound [ \t\n\r]* units:Units [ \t\n\r]* precision:Precision {
-	var lowerType string
-	var lowerValue *int
-	var lowerDenom *int
-	var higherType string
-	var higherValue *int
-	var higherDenom *int
-	lm := lower.(map[string]interface{})
-	if lm["bracket"].(string) == "(" {
-		lowerType = "open"
-	} else {
-		lowerType = "closed"
-	}
-	val := lm["value"].(int)
-	lowerValue = &val
-	den := lm["denom"].(int)
-	lowerDenom = &den
-	hm := higher.(map[string]interface{})
-	val2 := hm["value"].(int)
-	higherValue = &val2
-	den2 := hm["denom"].(int)
-	higherDenom = &den2
-	if hm["bracket"].(string) == ")" {
-		higherType = "open"
-	} else {
-		higherType = "closed"
-	}
+SpanType <- lowerBracket:CloseOpenBracket ws lowerValue:FractionValue ws "." "." ws higherValue:FractionValue ws higherBracket:CloseOpenBracket ws units:Units ws precision:Float {
+	lowerType := "open"
+	higherType := "open"
+
+	// Get the lower values.
+	lv := lowerValue["value"]  
+	ld := lowerValue["denom"]  
+
+	// Get the higher values.
+	hv := higherValue["value"]  
+	hd := higherValue["denom"]  
+
 	return &DataType{
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "span",
 			Span: &AtomicSpan{
 				LowerType:         lowerType,
-				LowerValue:        lowerValue,
-				LowerDenominator:  lowerDenom,
+				LowerValue:        &lv,
+				LowerDenominator:  &ld,
 				HigherType:        higherType,
-				HigherValue:       higherValue,
-				HigherDenominator: higherDenom,
-				Units:             units.(string),
-				Precision:         precision.(float64),
+				HigherValue:       &hv,
+				HigherDenominator: &hd,
+				Units:             units,
+				Precision:         precision,
 			},
 		},
 	}, nil
 }
 
-LowerBound <- bracket:("(" / "[") value:Integer "/" denom:Integer {
-	return map[string]interface{}{"bracket": string(bracket.([]byte)), "value": value, "denom": denom}, nil
+FractionValue <-  value:Integer ws "/" ws denom:Integer {
+	return map[string]int{}{"value": value, "denom": denom}, nil
 }
 
-HigherBound <- value:Integer "/" denom:Integer bracket:(")" / "]") {
-	return map[string]interface{}{"bracket": string(bracket.([]byte)), "value": value, "denom": denom}, nil
+Integer <- [0-9]+ {
+	return strconv.Atoi(string(c.text))
 }
 
-Integer <- digits:[0-9]+ {
-	str := string(digits.([]byte))
-	val, _ := strconv.Atoi(str)
-	return val, nil
-}
-
-Precision <- Float
-
-Float <- ( [0-9]+ "." [0-9]* / [0-9]* "." [0-9]+ / [0-9]+ ) {
+Float <- [0-9]+ "." [0-9]* / [0-9]* "." [0-9]+ / [0-9]+ {
 	str := string(c.text)
 	val, _ := strconv.ParseFloat(str, 64)
 	return val, nil
 }
 
-Units <- letters:[a-zA-Z]+ {
-	return string(letters.([]byte)), nil
+CloseOpenBracket <- "(" / "[" {
+	return string(c.text), nil
+}
+
+Units <- [a-zA-Z]+ {
+	return string(c.text), nil
 }
 
 UnconstrainedType <- ws !. {
