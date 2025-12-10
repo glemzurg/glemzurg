@@ -71,42 +71,52 @@ func (a Atomic) Validate() error {
 
 // String returns a string representation of the Atomic type.
 func (a Atomic) String() string {
+
 	switch a.ConstraintType {
+
 	case _CONSTRAINT_TYPE_UNCONSTRAINED:
 		return "unconstrained"
+
 	case _CONSTRAINT_TYPE_SPAN:
 		if a.Span == nil {
 			return "span: <nil>"
+
 		}
+
+		lowerBracket := "("
+		if a.Span.LowerType == "closed" {
+			lowerBracket = "["
+		}
+
 		lowerStr := "unconstrained"
-		if a.Span.LowerType != "unconstrained" {
-			bracket := "("
-			if a.Span.LowerType == "closed" {
-				bracket = "["
-			}
-			lowerStr = bracket + strconv.Itoa(*a.Span.LowerValue)
+		if a.Span.LowerValue != nil {
+			lowerStr = strconv.Itoa(*a.Span.LowerValue)
 			if a.Span.LowerDenominator != nil {
 				lowerStr += "/" + strconv.Itoa(*a.Span.LowerDenominator)
 			}
 		}
+
 		higherStr := "unconstrained"
-		if a.Span.HigherType != "unconstrained" {
+		if a.Span.HigherValue != nil {
 			higherStr = strconv.Itoa(*a.Span.HigherValue)
 			if a.Span.HigherDenominator != nil {
 				higherStr += "/" + strconv.Itoa(*a.Span.HigherDenominator)
 			}
-			bracket := ")"
-			if a.Span.HigherType == "closed" {
-				bracket = "]"
-			}
-			higherStr += bracket
 		}
-		sep := " .. "
-		return lowerStr + sep + higherStr + " " + a.Span.Units + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64)
+
+		higherBracket := ")"
+		if a.Span.HigherType == "closed" {
+			higherBracket = "]"
+		}
+
+		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " " + a.Span.Units + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64)
+
 	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference
+
 	case _CONSTRAINT_TYPE_OBJECT:
 		return "obj: " + a.ObjectClassKey
+
 	case _CONSTRAINT_TYPE_ENUMERATION:
 		var values []string
 		for _, enum := range a.Enums {

@@ -9,7 +9,7 @@ import (
 
 DataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
 
-SpanType <- lowerBracket:LowerBracket ws lowerValue:FractionValue ws "." "." ws higherValue:FractionValue ws higherBracket:HigherBracket ws units:Units ws precision:Float {
+SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionValue ) ws "." "." ws higherValue:( Unconstrained / FractionValue ) ws higherBracket:HigherBracket ws units:Units ws precision:Float {
 
 	// What are the bounds?
 	lowerType := "open"
@@ -21,15 +21,32 @@ SpanType <- lowerBracket:LowerBracket ws lowerValue:FractionValue ws "." "." ws 
 		higherType = "closed"
 	}
 
-	// Get the lower values.
-	lm := lowerValue.(map[string]int)
-	lv := lm["value"]  
-	ld := lm["denom"]  
+	var lvPtr, ldPtr *int
+	var hvPtr, hdPtr *int
 
-	// Get the higher values.
-	hm := higherValue.(map[string]int)
-	hv := hm["value"]  
-	hd := hm["denom"]  
+	// lower value may be "unconstrained" or a map of values.
+	if _, ok := lowerValue.(string); ok {
+		lowerType = "unconstrained"
+	} else {
+		// Get the lower values.
+		lm := lowerValue.(map[string]int)
+		lv := lm["value"]  
+		ld := lm["denom"]  
+		lvPtr = &lv
+		ldPtr = &ld
+	}
+
+	// higher value may be "unconstrained" or a map of values.
+	if _, ok := higherValue.(string); ok {
+		higherType = "unconstrained"
+	} else {
+		// Get the higher values.
+		hm := higherValue.(map[string]int)
+		hv := hm["value"]  
+		hd := hm["denom"]  
+		hvPtr = &hv
+		hdPtr = &hd
+	}
 
 	return &DataType{
 		CollectionType: "atomic",
@@ -37,11 +54,11 @@ SpanType <- lowerBracket:LowerBracket ws lowerValue:FractionValue ws "." "." ws 
 			ConstraintType: "span",
 			Span: &AtomicSpan{
 				LowerType:         lowerType,
-				LowerValue:        &lv,
-				LowerDenominator:  &ld,
+				LowerValue:        lvPtr,
+				LowerDenominator:  ldPtr,
 				HigherType:        higherType,
-				HigherValue:       &hv,
-				HigherDenominator: &hd,
+				HigherValue:       hvPtr,
+				HigherDenominator: hdPtr,
 				Units:             units.(string),
 				Precision:         precision.(float64),
 			},
@@ -62,6 +79,11 @@ Float <- ( [0-9]+ "." [0-9]* / [0-9]* "." [0-9]+ / [0-9]+ ) {
 	val, _ := strconv.ParseFloat(str, 64)
 	return val, nil
 }
+
+Unconstrained <- ( "unconstrained" ) {
+	return string(c.text), nil
+}
+
 
 LowerBracket <- ( "(" / "[" ) {
 	return string(c.text), nil
