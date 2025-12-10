@@ -299,6 +299,43 @@ COMMENT ON COLUMN data_type_atomic_enum_value.sort_order IS 'A value for keeping
 
 --------------------------------------------------------------
 
+CREATE TYPE bound_limit_type AS ENUM ('closed', 'open', 'unconstrained');
+COMMENT ON TYPE bound_limit_type IS 'How a min and max value is defined in a span.
+
+- Closed. Include the value itself.
+- Open. Do not in clude the value itself.
+- Unconstrained. Undefined what this end of the span is, at least not in requirements.
+';
+
+CREATE TABLE data_type_atomic_span (
+  model_key text NOT NULL,
+  data_type_key text NOT NULL,
+  lower_type bound_limit_type NOT NULL,
+  lower_value bigint DEFAULT NULL,
+  lower_denominator bigint DEFAULT NULL,
+  higher_type bound_limit_type NOT NULL,
+  higher_value bigint DEFAULT NULL,
+  higher_denominator bigint DEFAULT NULL,
+  units text NOT NULL,
+  precision bigint NOT NULL,
+  PRIMARY KEY (model_key, data_type_key),
+  CONSTRAINT fk_span_atomic FOREIGN KEY (model_key, data_type_key) REFERENCES data_type_atomic (model_key, data_type_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE data_type_atomic_span IS 'The definition of a span for an atomic data type.';
+COMMENT ON COLUMN data_type_atomic_span.model_key IS 'The model this data type is part of.';
+COMMENT ON COLUMN data_type_atomic_span.data_type_key IS 'The internal ID from data_type_atomic.';
+COMMENT ON COLUMN data_type_atomic_span.lower_type IS 'Whether the lower end of the span is unconstrained, open, or closed.';
+COMMENT ON COLUMN data_type_atomic_span.lower_value IS 'The value that defines the lower end of the span.';
+COMMENT ON COLUMN data_type_atomic_span.lower_denominator IS 'If the lower bound is a ratio.';
+COMMENT ON COLUMN data_type_atomic_span.higher_type IS 'Whether the higher end of the span is unconstrained, open, or closed.';
+COMMENT ON COLUMN data_type_atomic_span.higher_value IS 'The value that defines the higher end of the span.';
+COMMENT ON COLUMN data_type_atomic_span.higher_denominator IS 'If the higher bound is a ratio.';
+COMMENT ON COLUMN data_type_atomic_span.units IS 'The units of this span.';
+COMMENT ON COLUMN data_type_atomic_span.precision IS 'The precision of this span.';
+
+--------------------------------------------------------------
+
 CREATE TABLE data_type_atomic2 (
   data_type_id serial,
   constraint_type constraint_type NOT NULL DEFAULT 'unconstrained',
@@ -320,14 +357,6 @@ COMMENT ON COLUMN data_type_atomic2.details IS 'A summary description.';
 COMMENT ON COLUMN data_type_atomic2.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
-
-CREATE TYPE bound_limit_type AS ENUM ('closed', 'open', 'unconstrained');
-COMMENT ON TYPE bound_limit_type IS 'How a min and max value is defined in a span.
-
-- Closed. Include the value itself.
-- Open. Do not in clude the value itself.
-- Unconstrained. Undefined what this end of the span is, at least not in requirements.
-';
 
 CREATE TABLE data_type_atomic2_span (
   data_type_id bigint NOT NULL,

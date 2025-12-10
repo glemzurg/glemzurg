@@ -16,6 +16,7 @@
 | [public.data_type](public.data_type.md) | 8 | An data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 4 | A value of an attribute that is an enum. | BASE TABLE |
+| [public.data_type_atomic_span](public.data_type_atomic_span.md) | 10 | The definition of a span for an atomic data type. | BASE TABLE |
 | [public.data_type_atomic2](public.data_type_atomic2.md) | 7 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic2_span](public.data_type_atomic2_span.md) | 9 | The definition of a span for an atomic data type. | BASE TABLE |
 | [public.data_type_atomic2_enum_value](public.data_type_atomic2_enum_value.md) | 3 | A value of an attribute that is an enum. | BASE TABLE |

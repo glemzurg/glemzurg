@@ -8,12 +8,13 @@ The definition of a span for an atomic data type.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| data_type_id | bigint |  | false |  | [public.data_type_atomic](public.data_type_atomic.md) | The atomic data type this is a span for. |
+| model_key | text |  | false |  | [public.data_type_atomic](public.data_type_atomic.md) | The model this data type is part of. |
+| data_type_key | text |  | false |  | [public.data_type_atomic](public.data_type_atomic.md) | The internal ID from data_type_atomic. |
 | lower_type | bound_limit_type |  | false |  |  | Whether the lower end of the span is unconstrained, open, or closed. |
 | lower_value | bigint |  | true |  |  | The value that defines the lower end of the span. |
 | lower_denominator | bigint |  | true |  |  | If the lower bound is a ratio. |
-| higher_type | bound_limit_type |  | false |  |  | Whether the lower end of the span is unconstrained, open, or closed. |
-| higher_value | bigint |  | true |  |  | The value that defines the lower end of the span. |
+| higher_type | bound_limit_type |  | false |  |  | Whether the higher end of the span is unconstrained, open, or closed. |
+| higher_value | bigint |  | true |  |  | The value that defines the higher end of the span. |
 | higher_denominator | bigint |  | true |  |  | If the higher bound is a ratio. |
 | units | text |  | false |  |  | The units of this span. |
 | precision | bigint |  | false |  |  | The precision of this span. |
@@ -22,14 +23,14 @@ The definition of a span for an atomic data type.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| fk_span_atomic | FOREIGN KEY | FOREIGN KEY (data_type_id) REFERENCES data_type_atomic(data_type_id) ON DELETE CASCADE |
-| data_type_atomic_span_pkey | PRIMARY KEY | PRIMARY KEY (data_type_id) |
+| fk_span_atomic | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type_atomic(model_key, data_type_key) ON DELETE CASCADE |
+| data_type_atomic_span_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| data_type_atomic_span_pkey | CREATE UNIQUE INDEX data_type_atomic_span_pkey ON public.data_type_atomic_span USING btree (data_type_id) |
+| data_type_atomic_span_pkey | CREATE UNIQUE INDEX data_type_atomic_span_pkey ON public.data_type_atomic_span USING btree (model_key, data_type_key) |
 
 ## Relations
 
