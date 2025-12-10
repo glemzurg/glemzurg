@@ -296,6 +296,31 @@ func TestParseAtomic(t *testing.T) {
 			},
 			errorMessage: "",
 		},
+
+		// Spans.
+		{
+			name:  "span simple",
+			input: "(3/4 .. 5/6] meter 0.01",
+			expected: &DataType{
+				Key:            key,
+				Name:           "(3/4 .. 5/6] meter at 0.01",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "span",
+					Span: &AtomicSpan{
+						LowerType:         "open",
+						LowerValue:        intPtr(3),
+						LowerDenominator:  intPtr(4),
+						HigherType:        "closed",
+						HigherValue:       intPtr(5),
+						HigherDenominator: intPtr(6),
+						Units:             "meter",
+						Precision:         0.01,
+					},
+				},
+			},
+			errorMessage: "",
+		},
 	}
 
 	for _, tt := range tests {

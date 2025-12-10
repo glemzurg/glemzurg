@@ -8,7 +8,7 @@ import (
 
 const (
 	_BOUND_TYPE_LIMIT_CLOSED        = "closed"        // Include the value itself.
-	_BOUND_TYPE_LIMIT_OPEN          = "open"          // Do not in clude the value itself.
+	_BOUND_TYPE_LIMIT_OPEN          = "open"          // Do not include the value itself.
 	_BOUND_TYPE_LIMIT_UNCONSTRAINED = "unconstrained" // Undefined what this end of the span is, at least not in requirements.
 )
 
@@ -24,7 +24,7 @@ type AtomicSpan struct {
 	// What are these values?
 	Units string
 	// What precision should we support of these values?
-	Precision uint
+	Precision float64
 }
 
 func validateDenominator(value interface{}, required bool) error {
