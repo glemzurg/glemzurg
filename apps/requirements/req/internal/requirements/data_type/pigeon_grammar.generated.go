@@ -27,10 +27,14 @@ var g = &grammar{
 				alternatives: []any{
 					&ruleRefExpr{
 						pos:  position{line: 9, col: 13, offset: 58},
+						name: "ObjectType",
+					},
+					&ruleRefExpr{
+						pos:  position{line: 9, col: 26, offset: 71},
 						name: "ReferenceType",
 					},
 					&ruleRefExpr{
-						pos:  position{line: 9, col: 29, offset: 74},
+						pos:  position{line: 9, col: 42, offset: 87},
 						name: "UnconstrainedType",
 					},
 				},
@@ -38,21 +42,85 @@ var g = &grammar{
 		},
 		{
 			name: "UnconstrainedType",
-			pos:  position{line: 11, col: 1, offset: 93},
+			pos:  position{line: 11, col: 1, offset: 106},
 			expr: &actionExpr{
-				pos: position{line: 11, col: 22, offset: 114},
+				pos: position{line: 11, col: 22, offset: 127},
 				run: (*parser).callonUnconstrainedType1,
 				expr: &seqExpr{
-					pos: position{line: 11, col: 22, offset: 114},
+					pos: position{line: 11, col: 22, offset: 127},
 					exprs: []any{
 						&ruleRefExpr{
-							pos:  position{line: 11, col: 22, offset: 114},
+							pos:  position{line: 11, col: 22, offset: 127},
 							name: "ws",
 						},
 						&notExpr{
-							pos: position{line: 11, col: 25, offset: 117},
+							pos: position{line: 11, col: 25, offset: 130},
 							expr: &anyMatcher{
-								line: 11, col: 26, offset: 118,
+								line: 11, col: 26, offset: 131,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "ObjectType",
+			pos:  position{line: 21, col: 1, offset: 288},
+			expr: &actionExpr{
+				pos: position{line: 21, col: 15, offset: 302},
+				run: (*parser).callonObjectType1,
+				expr: &seqExpr{
+					pos: position{line: 21, col: 15, offset: 302},
+					exprs: []any{
+						&ruleRefExpr{
+							pos:  position{line: 21, col: 15, offset: 302},
+							name: "ws",
+						},
+						&choiceExpr{
+							pos: position{line: 21, col: 19, offset: 306},
+							alternatives: []any{
+								&litMatcher{
+									pos:        position{line: 21, col: 19, offset: 306},
+									val:        "object",
+									ignoreCase: false,
+									want:       "\"object\"",
+								},
+								&litMatcher{
+									pos:        position{line: 21, col: 30, offset: 317},
+									val:        "obj",
+									ignoreCase: false,
+									want:       "\"obj\"",
+								},
+							},
+						},
+						&ruleRefExpr{
+							pos:  position{line: 21, col: 37, offset: 324},
+							name: "ws",
+						},
+						&litMatcher{
+							pos:        position{line: 21, col: 40, offset: 327},
+							val:        ":",
+							ignoreCase: false,
+							want:       "\":\"",
+						},
+						&ruleRefExpr{
+							pos:  position{line: 21, col: 44, offset: 331},
+							name: "ws",
+						},
+						&labeledExpr{
+							pos:   position{line: 21, col: 47, offset: 334},
+							label: "classKey",
+							expr: &zeroOrMoreExpr{
+								pos: position{line: 21, col: 56, offset: 343},
+								expr: &anyMatcher{
+									line: 21, col: 56, offset: 343,
+								},
+							},
+						},
+						&notExpr{
+							pos: position{line: 21, col: 59, offset: 346},
+							expr: &anyMatcher{
+								line: 21, col: 60, offset: 347,
 							},
 						},
 					},
@@ -61,28 +129,28 @@ var g = &grammar{
 		},
 		{
 			name: "ReferenceType",
-			pos:  position{line: 20, col: 1, offset: 240},
+			pos:  position{line: 39, col: 1, offset: 707},
 			expr: &actionExpr{
-				pos: position{line: 20, col: 18, offset: 257},
+				pos: position{line: 39, col: 18, offset: 724},
 				run: (*parser).callonReferenceType1,
 				expr: &seqExpr{
-					pos: position{line: 20, col: 18, offset: 257},
+					pos: position{line: 39, col: 18, offset: 724},
 					exprs: []any{
 						&ruleRefExpr{
-							pos:  position{line: 20, col: 18, offset: 257},
+							pos:  position{line: 39, col: 18, offset: 724},
 							name: "ws",
 						},
 						&choiceExpr{
-							pos: position{line: 20, col: 22, offset: 261},
+							pos: position{line: 39, col: 22, offset: 728},
 							alternatives: []any{
 								&litMatcher{
-									pos:        position{line: 20, col: 22, offset: 261},
+									pos:        position{line: 39, col: 22, offset: 728},
 									val:        "reference",
 									ignoreCase: false,
 									want:       "\"reference\"",
 								},
 								&litMatcher{
-									pos:        position{line: 20, col: 36, offset: 275},
+									pos:        position{line: 39, col: 36, offset: 742},
 									val:        "ref",
 									ignoreCase: false,
 									want:       "\"ref\"",
@@ -90,33 +158,33 @@ var g = &grammar{
 							},
 						},
 						&ruleRefExpr{
-							pos:  position{line: 20, col: 43, offset: 282},
+							pos:  position{line: 39, col: 43, offset: 749},
 							name: "ws",
 						},
 						&litMatcher{
-							pos:        position{line: 20, col: 46, offset: 285},
+							pos:        position{line: 39, col: 46, offset: 752},
 							val:        ":",
 							ignoreCase: false,
 							want:       "\":\"",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 20, col: 50, offset: 289},
+							pos:  position{line: 39, col: 50, offset: 756},
 							name: "ws",
 						},
 						&labeledExpr{
-							pos:   position{line: 20, col: 53, offset: 292},
+							pos:   position{line: 39, col: 53, offset: 759},
 							label: "ref",
 							expr: &zeroOrMoreExpr{
-								pos: position{line: 20, col: 57, offset: 296},
+								pos: position{line: 39, col: 57, offset: 763},
 								expr: &anyMatcher{
-									line: 20, col: 57, offset: 296,
+									line: 39, col: 57, offset: 763,
 								},
 							},
 						},
 						&notExpr{
-							pos: position{line: 20, col: 60, offset: 299},
+							pos: position{line: 39, col: 60, offset: 766},
 							expr: &anyMatcher{
-								line: 20, col: 61, offset: 300,
+								line: 39, col: 61, offset: 767,
 							},
 						},
 					},
@@ -125,11 +193,11 @@ var g = &grammar{
 		},
 		{
 			name: "ws",
-			pos:  position{line: 36, col: 1, offset: 587},
+			pos:  position{line: 57, col: 1, offset: 1104},
 			expr: &zeroOrMoreExpr{
-				pos: position{line: 36, col: 7, offset: 593},
+				pos: position{line: 57, col: 7, offset: 1110},
 				expr: &charClassMatcher{
-					pos:        position{line: 36, col: 7, offset: 593},
+					pos:        position{line: 57, col: 7, offset: 1110},
 					val:        "[ \\t\\n\\r]",
 					chars:      []rune{' ', '\t', '\n', '\r'},
 					ignoreCase: false,
@@ -142,6 +210,7 @@ var g = &grammar{
 
 func (c *current) onUnconstrainedType1() (any, error) {
 	return &DataType{
+		Name:           "unconstrained",
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "unconstrained",
@@ -155,6 +224,30 @@ func (p *parser) callonUnconstrainedType1() (any, error) {
 	return p.cur.onUnconstrainedType1()
 }
 
+func (c *current) onObjectType1(classKey any) (any, error) {
+	classBytes := classKey.([]interface{})
+	classStr := ""
+	for _, b := range classBytes {
+		classStr += string(b.([]byte))
+	}
+	classStr = strings.TrimSpace(classStr)
+	name := "obj: " + classStr
+	return &DataType{
+		Name:           name,
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "object",
+			ObjectClassKey: classStr,
+		},
+	}, nil
+}
+
+func (p *parser) callonObjectType1() (any, error) {
+	stack := p.vstack[len(p.vstack)-1]
+	_ = stack
+	return p.cur.onObjectType1(stack["classKey"])
+}
+
 func (c *current) onReferenceType1(ref any) (any, error) {
 	refBytes := ref.([]interface{})
 	refStr := ""
@@ -162,7 +255,9 @@ func (c *current) onReferenceType1(ref any) (any, error) {
 		refStr += string(b.([]byte))
 	}
 	refStr = strings.TrimSpace(refStr)
+	name := "ref: " + refStr
 	return &DataType{
+		Name:           name,
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "reference",

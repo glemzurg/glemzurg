@@ -21,7 +21,9 @@ type Atomic struct {
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
 	return validation.ValidateStruct(&a,
-		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE)),
+		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE, _CONSTRAINT_TYPE_OBJECT)),
+		validation.Field(&a.Reference, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE)),
+		validation.Field(&a.ObjectClassKey, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_OBJECT)),
 	)
 }
 
@@ -32,6 +34,8 @@ func (a Atomic) String() string {
 		return "unconstrained"
 	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference
+	case _CONSTRAINT_TYPE_OBJECT:
+		return "obj: " + a.ObjectClassKey
 	default:
 		panic("invalid constraint type: '" + a.ConstraintType + "'")
 	}

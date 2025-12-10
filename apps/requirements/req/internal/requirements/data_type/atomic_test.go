@@ -207,6 +207,14 @@ func TestAtomicString(t *testing.T) {
 			expected: "ref: ",
 		},
 		{
+			name: "object",
+			atomic: Atomic{
+				ConstraintType: "object",
+				ObjectClassKey: "some_class",
+			},
+			expected: "obj: some_class",
+		},
+		{
 			name: "unknown type",
 			atomic: Atomic{
 				ConstraintType: "unknown",

@@ -6,7 +6,7 @@ import (
 )
 }
 
-DataType <- ReferenceType / UnconstrainedType
+DataType <- ObjectType / ReferenceType / UnconstrainedType
 
 UnconstrainedType <- ws !. {
 	return &DataType{
@@ -14,6 +14,24 @@ UnconstrainedType <- ws !. {
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "unconstrained",
+		},
+	}, nil
+}
+
+ObjectType <- ws ("object" / "obj") ws ":" ws classKey:.* !. {
+	classBytes := classKey.([]interface{})
+	classStr := ""
+	for _, b := range classBytes {
+		classStr += string(b.([]byte))
+	}
+	classStr = strings.TrimSpace(classStr)
+	name := "obj: " + classStr
+	return &DataType{
+		Name:           name,
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "object",
+			ObjectClassKey: classStr,
 		},
 	}, nil
 }
