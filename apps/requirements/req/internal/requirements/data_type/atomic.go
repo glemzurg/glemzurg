@@ -2,6 +2,7 @@ package data_type
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -74,7 +75,34 @@ func (a Atomic) String() string {
 	case _CONSTRAINT_TYPE_UNCONSTRAINED:
 		return "unconstrained"
 	case _CONSTRAINT_TYPE_SPAN:
-		return "span: <span details>"
+		if a.Span == nil {
+			return "span: <nil>"
+		}
+		lowerStr := "unconstrained"
+		if a.Span.LowerType != "unconstrained" {
+			bracket := "("
+			if a.Span.LowerType == "closed" {
+				bracket = "["
+			}
+			lowerStr = bracket + strconv.Itoa(*a.Span.LowerValue)
+			if a.Span.LowerDenominator != nil {
+				lowerStr += "/" + strconv.Itoa(*a.Span.LowerDenominator)
+			}
+		}
+		higherStr := "unconstrained"
+		if a.Span.HigherType != "unconstrained" {
+			higherStr = strconv.Itoa(*a.Span.HigherValue)
+			if a.Span.HigherDenominator != nil {
+				higherStr += "/" + strconv.Itoa(*a.Span.HigherDenominator)
+			}
+			bracket := ")"
+			if a.Span.HigherType == "closed" {
+				bracket = "]"
+			}
+			higherStr += bracket
+		}
+		sep := " .. "
+		return lowerStr + sep + higherStr + " " + a.Span.Units + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64)
 	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference
 	case _CONSTRAINT_TYPE_OBJECT:

@@ -3,10 +3,93 @@ package data_type
 
 import (
 	"strings"
+	"strconv"
 )
 }
 
-DataType <- OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+DataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+
+SpanType <- ws lower:LowerBound? ws ".." ws higher:HigherBound? ws units:Units ws precision:Precision !. {
+	lowerType := "unconstrained"
+	var lowerValue *int
+	var lowerDenom *int
+	if lower != nil {
+		lm := lower.(map[string]interface{})
+		if lm["bracket"].(string) == "(" {
+			lowerType = "open"
+		} else {
+			lowerType = "closed"
+		}
+		val := lm["value"].(int)
+		lowerValue = &val
+		if lm["denom"] != nil {
+			den := lm["denom"].(int)
+			lowerDenom = &den
+		}
+	}
+	higherType := "unconstrained"
+	var higherValue *int
+	var higherDenom *int
+	if higher != nil {
+		hm := higher.(map[string]interface{})
+		val := hm["value"].(int)
+		higherValue = &val
+		if hm["denom"] != nil {
+			den := hm["denom"].(int)
+			higherDenom = &den
+		}
+		if hm["bracket"].(string) == ")" {
+			higherType = "open"
+		} else {
+			higherType = "closed"
+		}
+	}
+	return &DataType{
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "span",
+			Span: &AtomicSpan{
+				LowerType:         lowerType,
+				LowerValue:        lowerValue,
+				LowerDenominator:  lowerDenom,
+				HigherType:        higherType,
+				HigherValue:       higherValue,
+				HigherDenominator: higherDenom,
+				Units:             units.(string),
+				Precision:         precision.(float64),
+			},
+		},
+	}, nil
+}
+
+LowerBound <- bracket:("(" / "[") ws value:Integer denom:(ws "/" ws Integer)? ws {
+	return map[string]interface{}{"bracket": string(bracket.([]byte)), "value": value, "denom": denom}, nil
+}
+
+HigherBound <- ws value:Integer denom:(ws "/" ws Integer)? ws bracket:(")" / "]") {
+	return map[string]interface{}{"bracket": string(bracket.([]byte)), "value": value, "denom": denom}, nil
+}
+
+Integer <- digits:[0-9]+ {
+	str := string(digits.([]byte))
+	val, _ := strconv.Atoi(str)
+	return val, nil
+}
+
+Precision <- Float
+
+Float <- digits:[0-9]+ "." [0-9]* / digits:[0-9]* "." [0-9]+ / digits:[0-9]+ {
+	str := ""
+	for _, b := range digits.([]interface{}) {
+		str += string(b.([]byte))
+	}
+	val, _ := strconv.ParseFloat(str, 64)
+	return val, nil
+}
+
+Units <- letters:[a-zA-Z]+ {
+	return string(letters.([]byte)), nil
+}
 
 UnconstrainedType <- ws !. {
 	return &DataType{

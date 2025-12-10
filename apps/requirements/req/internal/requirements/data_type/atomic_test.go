@@ -619,7 +619,7 @@ func TestAtomicString(t *testing.T) {
 					Precision:         0.01,
 				},
 			},
-			expected: "span: <span details>",
+			expected: "(3/4 .. 5/6] meter at 0.01",
 		},
 		{
 			name: "unknown type",
