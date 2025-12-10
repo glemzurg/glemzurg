@@ -9,6 +9,8 @@ import (
 func TestParseAtomic(t *testing.T) {
 
 	key := "key"
+	trueValue := true
+	falseValue := false
 
 	tests := []struct {
 		name         string
@@ -156,6 +158,118 @@ func TestParseAtomic(t *testing.T) {
 				Atomic: &Atomic{
 					ConstraintType: "object",
 					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+
+		// Enumeration.
+		{
+			name:  "enum",
+			input: "enum: value_a, value_b, value_c",
+			expected: &DataType{
+				Key:            key,
+				Name:           "enum: value_a, value_b, value_c",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+						{Value: "value_c"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "enumeration",
+			input: "enumeration: class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "enum: value_a, value_b, value_c",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					EnumOrdered: &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+						{Value: "value_c"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "enum with whitespace",
+			input: "   \t\nenum   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "enum: value_a, value_b, value_c",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					EnumOrdered: &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+						{Value: "value_c"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "enumeration with whitespace",
+			input: "   \t\nenumeration   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "enum: value_a, value_b, value_c",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					EnumOrdered: &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+						{Value: "value_c"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		{
+			name:  "ord enum with whitespace",
+			input: "   \t\nord-enum   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ord-enum: value_a, value_b, value_c",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					EnumOrdered: &trueValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+						{Value: "value_c"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "ordered enumeration with whitespace",
+			input: "   \t\nordered-enumeration   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ord-enum: value_a, value_b, value_c",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					EnumOrdered: &trueValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+						{Value: "value_c"},
+					},
 				},
 			},
 			errorMessage: "",

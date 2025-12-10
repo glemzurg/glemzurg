@@ -22,9 +22,11 @@ type Atomic struct {
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
 	return validation.ValidateStruct(&a,
-		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE, _CONSTRAINT_TYPE_OBJECT)),
+		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_REFERENCE, _CONSTRAINT_TYPE_OBJECT, _CONSTRAINT_TYPE_ENUMERATION)),
 		validation.Field(&a.Reference, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE)),
 		validation.Field(&a.ObjectClassKey, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_OBJECT)),
+		validation.Field(&a.Enums, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION), validation.Empty.When(a.ConstraintType != _CONSTRAINT_TYPE_ENUMERATION), validation.Each(validation.By(func(value interface{}) error { enum := value.(AtomicEnum); return (&enum).Validate() }))),
+		validation.Field(&a.EnumOrdered, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION), validation.Nil.When(a.ConstraintType != _CONSTRAINT_TYPE_ENUMERATION)),
 	)
 }
 
