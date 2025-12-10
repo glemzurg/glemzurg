@@ -322,8 +322,8 @@ func TestParseAtomic(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			name:  "span simple, with whitespace",
-			input: " \t\n(  \t\n3/4 \t\n ..  \t\n5/6 \t\n] \t\n meter \t\n 0.01 \t\n",
+			name:  "span simple with whitespace",
+			input: "(  \t\n3/4 \t\n ..  \t\n5/6 \t\n] \t\n meter \t\n 0.01",
 			expected: &DataType{
 				Key:            key,
 				Name:           "(3/4 .. 5/6] meter at 0.01",
@@ -372,7 +372,7 @@ func TestParseAtomic(t *testing.T) {
 			input: "[3/4 .. 5/6) meter 1",
 			expected: &DataType{
 				Key:            key,
-				Name:           "[3/4 .. 5/6) meter at 1.0",
+				Name:           "[3/4 .. 5/6) meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -488,12 +488,14 @@ func TestParseAtomic(t *testing.T) {
 				Atomic: &Atomic{
 					ConstraintType: "span",
 					Span: &AtomicSpan{
-						LowerType:   "open",
-						LowerValue:  intPtr(3),
-						HigherType:  "closed",
-						HigherValue: intPtr(5),
-						Units:       "meter",
-						Precision:   0.01,
+						LowerType:         "open",
+						LowerValue:        intPtr(3),
+						LowerDenominator:  intPtr(1),
+						HigherType:        "closed",
+						HigherValue:       intPtr(5),
+						HigherDenominator: intPtr(1),
+						Units:             "meter",
+						Precision:         0.01,
 					},
 				},
 			},

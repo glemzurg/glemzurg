@@ -66,8 +66,16 @@ SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionVa
 	}, nil
 }
 
-FractionValue <-  value:Integer ws "/" ws denom:Integer {
-	return map[string]int{"value": value.(int), "denom": denom.(int)}, nil
+FractionValue <- ( value:Integer denom:( ws "/" ws denomValue:Integer )? ) {
+	v := value.(int)
+	d := 1
+	if denomSlice, ok := denom.([]interface{}); ok && len(denomSlice) > 0 {
+		d = denomSlice[3].(int)
+		if d == 0 {
+			return nil, errors.New("denominator cannot be zero")
+		}
+	}
+	return map[string]int{"value": v, "denom": d}, nil
 }
 
 Integer <- [0-9]+ {

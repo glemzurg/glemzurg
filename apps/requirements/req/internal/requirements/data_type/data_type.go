@@ -32,8 +32,7 @@ func New(key, text string) (dataType *DataType, err error) {
 	// Parse the data type.
 	dataTypeAny, err := Parse("", []byte(text))
 	if err != nil {
-		return nil, err
-		//		return nil, nil // Not an error, just cannot parse.
+		return nil, nil // Not an error, just cannot parse.
 	}
 
 	// Case to the data type.

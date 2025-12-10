@@ -91,7 +91,7 @@ func (a Atomic) String() string {
 		lowerStr := "unconstrained"
 		if a.Span.LowerValue != nil {
 			lowerStr = strconv.Itoa(*a.Span.LowerValue)
-			if a.Span.LowerDenominator != nil {
+			if a.Span.LowerDenominator != nil && *a.Span.LowerDenominator > 1 {
 				lowerStr += "/" + strconv.Itoa(*a.Span.LowerDenominator)
 			}
 		}
@@ -99,7 +99,7 @@ func (a Atomic) String() string {
 		higherStr := "unconstrained"
 		if a.Span.HigherValue != nil {
 			higherStr = strconv.Itoa(*a.Span.HigherValue)
-			if a.Span.HigherDenominator != nil {
+			if a.Span.HigherDenominator != nil && *a.Span.HigherDenominator > 1 {
 				higherStr += "/" + strconv.Itoa(*a.Span.HigherDenominator)
 			}
 		}
@@ -109,7 +109,12 @@ func (a Atomic) String() string {
 			higherBracket = "]"
 		}
 
-		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " " + a.Span.Units + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64)
+		precisionStr := ""
+		if a.Span.Precision < 1.0 {
+			precisionStr = " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64)
+		}
+
+		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " " + a.Span.Units + precisionStr
 
 	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference
