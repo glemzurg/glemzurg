@@ -102,6 +102,64 @@ func TestParseAtomic(t *testing.T) {
 			},
 			errorMessage: "",
 		},
+
+		// Objects.
+		{
+			name:  "obj",
+			input: "obj: class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "obj: class_key",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "object",
+			input: "object: class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "obj: class_key",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "obj with whitespace",
+			input: "   \t\nobj   \t\n:    \t\nclass_key    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "obj: class_key",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "object with whitespace",
+			input: "   \t\nobject   \t\n:    \t\nclass_key    \t\n",
+			expected: &DataType{
+				Key:            key,
+				Name:           "obj: class_key",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
 	}
 
 	for _, tt := range tests {

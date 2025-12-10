@@ -64,6 +64,8 @@ graphviz migration:
 
 Long time targets:
 
+- start gitbooks documentation
+  - use grammar level checking
 - interaction diagrams:
   - update node creation and deletion style
 - attribute interaction lines are:
