@@ -8,8 +8,8 @@ An atomic type that backs a data type for eventually use in a class attribute or
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.data_type](public.data_type.md) | The model this data type is part of. |
-| data_type_key | text |  | false |  | [public.data_type](public.data_type.md) | The internal ID from data_type.. |
+| model_key | text |  | false | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | [public.data_type](public.data_type.md) | The model this data type is part of. |
+| data_type_key | text |  | false | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | [public.data_type](public.data_type.md) | The internal ID from data_type.. |
 | constraint_type | constraint_type | 'unconstrained'::constraint_type | false |  |  | The constraints on values for this data type. |
 | reference | text |  | true |  |  | If this is a reference, the details that define it. |
 | enum_ordered | boolean |  | true |  |  | If this is an enumeration, enumerations could be ordered, so they can be compared greater-lesser-than against each other. |

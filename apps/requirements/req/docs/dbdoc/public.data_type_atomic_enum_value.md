@@ -8,22 +8,23 @@ A value of an attribute that is an enum.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| data_type_id | bigint |  | false |  | [public.data_type_atomic](public.data_type_atomic.md) | The atomic data type this is a value for. |
+| model_key | text |  | false |  | [public.data_type_atomic](public.data_type_atomic.md) | The model this data type is part of. |
+| data_type_key | text |  | false |  | [public.data_type_atomic](public.data_type_atomic.md) | The internal ID from data_type_atomic. |
 | value | text |  | false |  |  | The enum value. |
-| sort_order | integer |  | false |  |  | A value for keeping presentation clear in documentation. |
+| sort_order | integer |  | false |  |  | A value for keeping presentation clear in documentation. For numbered enums, this is their comparison number. |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
-| fk_enum_atomic | FOREIGN KEY | FOREIGN KEY (data_type_id) REFERENCES data_type_atomic(data_type_id) ON DELETE CASCADE |
-| data_type_atomic_enum_value_pkey | PRIMARY KEY | PRIMARY KEY (data_type_id, value) |
+| fk_enum_atomic | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type_atomic(model_key, data_type_key) ON DELETE CASCADE |
+| data_type_atomic_enum_value_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key, value) |
 
 ## Indexes
 
 | Name | Definition |
 | ---- | ---------- |
-| data_type_atomic_enum_value_pkey | CREATE UNIQUE INDEX data_type_atomic_enum_value_pkey ON public.data_type_atomic_enum_value USING btree (data_type_id, value) |
+| data_type_atomic_enum_value_pkey | CREATE UNIQUE INDEX data_type_atomic_enum_value_pkey ON public.data_type_atomic_enum_value USING btree (model_key, data_type_key, value) |
 
 ## Relations
 

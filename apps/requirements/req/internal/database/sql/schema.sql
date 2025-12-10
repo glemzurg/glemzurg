@@ -282,6 +282,23 @@ COMMENT ON COLUMN data_type_atomic.object_class_key IS 'If this is an object, wh
 
 --------------------------------------------------------------
 
+CREATE TABLE data_type_atomic_enum_value (
+  model_key text NOT NULL,
+  data_type_key text NOT NULL,
+  value text NOT NULL,
+  sort_order int NOT NULL,
+  PRIMARY KEY (model_key, data_type_key, value),
+  CONSTRAINT fk_enum_atomic FOREIGN KEY (model_key, data_type_key) REFERENCES data_type_atomic (model_key, data_type_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE data_type_atomic_enum_value IS 'A value of an attribute that is an enum.';
+COMMENT ON COLUMN data_type_atomic_enum_value.model_key IS 'The model this data type is part of.';
+COMMENT ON COLUMN data_type_atomic_enum_value.data_type_key IS 'The internal ID from data_type_atomic.';
+COMMENT ON COLUMN data_type_atomic_enum_value.value IS 'The enum value.';
+COMMENT ON COLUMN data_type_atomic_enum_value.sort_order IS 'A value for keeping presentation clear in documentation. For numbered enums, this is their comparison number.';
+
+--------------------------------------------------------------
+
 CREATE TABLE data_type_atomic2 (
   data_type_id serial,
   constraint_type constraint_type NOT NULL DEFAULT 'unconstrained',

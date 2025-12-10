@@ -15,6 +15,7 @@ type Atomic struct {
 	ConstraintType string
 	Reference      string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
+	Enums          []AtomicEnum
 	ObjectClassKey string
 }
 
