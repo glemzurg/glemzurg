@@ -1,4 +1,12 @@
 
+question on querying the system:
+  query parmeters are on the left, but arrows start on teh right
+  use initiates, but no state change event
+  would be like derived attributes with parameter?
+  each report would be a different parameter?
+  each would have different business logic
+
+
 next:
 
 - work on the diagram generation
@@ -24,11 +32,13 @@ ref from The abbreviation for states from
 obj of/from class_key
 enum of value1, value2, value3
 
-(3/4 .. 5/6] at 1 meter
+(3/4 .. 5/6] at 0.01 meter
 
 unique stack of (3/4 .. 5/6] at 1 meter
-unique 3+ stack (3/4 .. 5/6] meter at 0.01
-unique 3-7 stack (3/4 .. 5/6] meter at 0.01
+unique 3+ stack (3/4 .. 5/6] at 0.01 meter
+unique 3-7 stack (3/4 .. 5/6] at 0.01 meter
+unique 0-7 stack (3/4 .. 5/6] at 0.01 meter
+0-7 stack (3/4 .. 5/6] at 0.01 meter
 
 unique stack of values: (3/4 .. 5/6] meter at 0.01
 unique 3+ stack of values: (3/4 .. 5/6] meter at 0.01
@@ -49,8 +59,13 @@ nog: (3/4 .. 5/6] meter at 0.01
   - https://github.com/terrastruct/d2?tab=readme-ov-file#d2-as-a-library
   - examine license of other libraries in use
 
+
 - chip away at tla plus peg parser
 - design the simuilator - chained with derived simulators
+  - inspect the existing simulator and create a model for it
+
+- examine the recursive postgres capabilities
+  - store full simualator as rows without json blobs 
 
 - work out the source of section and destination of section
 - work out the event parameter source field
@@ -68,6 +83,8 @@ nog: (3/4 .. 5/6] meter at 0.01
 - move to devcontainers
   - move scripts to make files
   - update tests to be a table format with names
+  - remove linux users and local postgres
+  - remove postgres?
 
 - add use case level svg images
   - work with an artist to make mud, sea, sky (and mabye fish and kite)
@@ -118,7 +135,7 @@ Long time targets:
   - small data tranformations that contain meaningful code patterns that can be applied iteratively
   - json schemas that dictate available choices that can be iterated on
 - start gitbooks documentation
-  - use grammar level checking
+  - use grammar level checking (https://x.com/i/grok?conversation=1998900138715263329)
 - interaction diagrams:
   - update node creation and deletion style
 - attribute interaction lines are:
