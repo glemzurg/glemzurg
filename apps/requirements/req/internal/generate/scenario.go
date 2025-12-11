@@ -140,7 +140,7 @@ func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence
 				s.AddStep(svgsequence.Step{
 					Source: fromObject.GetName(),
 					Target: fromObject.GetName(),
-					Text:   "Delete: " + stmt.Description,
+					Text:   "(delete)",
 				})
 
 			default:

@@ -300,6 +300,9 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 	if n.ScenarioKey != "" {
 		m["scenario_key"] = n.ScenarioKey
 	}
+	if n.IsDelete {
+		m["is_delete"] = n.IsDelete
+	}
 	return json.Marshal(m)
 }
 
@@ -332,6 +335,9 @@ func (n *Node) MarshalYAML() (interface{}, error) {
 	}
 	if n.ScenarioKey != "" {
 		m["scenario_key"] = n.ScenarioKey
+	}
+	if n.IsDelete {
+		m["is_delete"] = n.IsDelete
 	}
 	return m, nil
 }

@@ -32,7 +32,6 @@ scenarios:
               class_key: 01_order_fulfillment/book_order_line
               multi: true
 
-
         steps:
  
             - from_object_key: joe

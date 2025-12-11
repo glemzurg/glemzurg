@@ -317,10 +317,8 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 						"condition": "case2",
 						"statements": [ 
 							{
-								"description": "case2 step",
 								"from_object_key": "fk4",
-								"to_object_key": "tk4",
-								"scenario_key": "sk1"
+								"is_delete": true
 							}
 						]
 					}
@@ -364,10 +362,8 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
               attribute_key: ak4
         - condition: case2
           statements:
-            - description: case2 step
-              from_object_key: fk4
-              to_object_key: tk4
-              scenario_key: sk1
+            - from_object_key: fk4
+              is_delete: true
 `
 
 	// Parse into structure
