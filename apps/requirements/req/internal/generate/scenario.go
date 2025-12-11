@@ -79,7 +79,9 @@ func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence
 		switch stmt.Inferredtype() {
 		case requirements.NODE_TYPE_LEAF:
 
-			if stmt.EventKey != "" || stmt.AttributeKey != "" {
+			switch {
+
+			case stmt.EventKey != "", stmt.AttributeKey != "":
 
 				fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
 				if !found {
@@ -117,8 +119,32 @@ func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence
 					Text:   text,
 				})
 
-			} else {
-				return errors.Errorf("leaf node must have one of event_key, scenario_key, or attribute_key: '%+v'", stmt)
+			case stmt.ScenarioKey != "":
+				// This is a call to another scenario.
+				calledScenarioObject, found := scenarioObjectLookup[stmt.ToObjectKey]
+				if !found {
+					return errors.Errorf("unknown called scenario object key: '%s'", stmt.ToObjectKey)
+				}
+				s.AddStep(svgsequence.Step{
+					Source: stmt.FromObjectKey,
+					Target: calledScenarioObject.GetName(),
+					Text:   "Call scenario: " + stmt.Description,
+				})
+
+			case stmt.IsDelete:
+				// This is a delete operation.
+				fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
+				if !found {
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+				}
+				s.AddStep(svgsequence.Step{
+					Source: fromObject.GetName(),
+					Target: fromObject.GetName(),
+					Text:   "Delete: " + stmt.Description,
+				})
+
+			default:
+				return errors.Errorf("leaf node must have one of event_key, scenario_key, attribute_key, or is_delete: '%+v'", stmt)
 			}
 
 		case requirements.NODE_TYPE_SEQUENCE:

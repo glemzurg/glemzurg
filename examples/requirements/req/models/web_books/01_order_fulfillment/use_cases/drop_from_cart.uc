@@ -43,10 +43,8 @@ scenarios:
               to_object_key: line_n
               event_key: "01_order_fulfillment/book_order_line/event/«destroy»"
 
-            - description: "X"
-              from_object_key: line_n
-              to_object_key: line_n
-              attribute_key: "01_order_fulfillment/book_order_line/quantity"
+            - from_object_key: line_n
+              is_delete: true
 
             - description: "*[remaining Line in Book Order] *?"
               from_object_key: line
@@ -56,8 +54,6 @@ scenarios:
             - cases:
                 - condition: No remaining Book Order Lines
                   statements:
-                    - description: "X"
-                      from_object_key: order
-                      to_object_key: order
-                      attribute_key: "01_order_fulfillment/book_order/id"
+                    - from_object_key: order
+                      is_delete: true
 

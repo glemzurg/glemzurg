@@ -196,6 +196,43 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or attribute_key")
+
+	// Valid delete leaf
+	node = Node{
+		Description:   "desc",
+		FromObjectKey: "fk",
+		IsDelete:      true,
+	}
+	err = node.Validate()
+	assert.NoError(suite.T(), err)
+
+	// Invalid delete: has to_object_key
+	node = Node{
+		Description:   "desc",
+		FromObjectKey: "fk",
+		ToObjectKey:   "tk",
+		IsDelete:      true,
+	}
+	err = node.Validate()
+	assert.ErrorContains(suite.T(), err, "delete leaf cannot have a to_object_key")
+
+	// Invalid delete: has event_key
+	node = Node{
+		Description:   "desc",
+		FromObjectKey: "fk",
+		EventKey:      "ek",
+		IsDelete:      true,
+	}
+	err = node.Validate()
+	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or attribute_key")
+
+	// Invalid delete: no from_object_key
+	node = Node{
+		Description: "desc",
+		IsDelete:    true,
+	}
+	err = node.Validate()
+	assert.ErrorContains(suite.T(), err, "delete leaf must have a from_object_key")
 }
 
 func (suite *ScenarioStepsSuite) TestJSON() {

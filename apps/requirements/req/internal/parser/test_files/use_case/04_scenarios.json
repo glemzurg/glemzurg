@@ -76,10 +76,8 @@
                                 "condition": "case2",
                                 "statements": [ 
                                     {
-                                        "description": "case2 step",
                                         "from_object_key": "use_case_key/scenario/scenario_a_key/object/book",
-                                        "to_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
-                                        "scenario_key": "use_case_key/scenario/scenario_b_key"
+                                        "is_delete": true
                                     }
                                 ]
                             }

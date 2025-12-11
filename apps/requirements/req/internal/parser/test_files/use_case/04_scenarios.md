@@ -54,10 +54,8 @@ scenarios:
                       event_key: class_key/event/processlog
                 - condition: case2
                   statements:
-                    - description: case2 step
-                      from_object_key: book
-                      to_object_key: bob
-                      scenario_key: use_case_key/scenario/scenario_b_key        
+                    - from_object_key: book
+                      is_delete: true        
 
     scenario_b_key:
         name: Scenario B

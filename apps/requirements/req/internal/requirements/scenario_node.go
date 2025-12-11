@@ -117,24 +117,36 @@ func (n *Node) Validate() error {
 			}
 		}
 	case NODE_TYPE_LEAF:
-		if n.FromObjectKey == "" {
-			return errors.New("leaf must have a from_object_key")
-		}
-		if n.ToObjectKey == "" {
-			return errors.New("leaf must have a to_object_key")
-		}
-		keys := []string{n.EventKey, n.ScenarioKey, n.AttributeKey}
-		nonEmptyKeys := 0
-		for _, key := range keys {
-			if key != "" {
-				nonEmptyKeys++
+		if n.IsDelete {
+			if n.FromObjectKey == "" {
+				return errors.New("delete leaf must have a from_object_key")
 			}
-		}
-		if nonEmptyKeys == 0 {
-			return errors.New("leaf must have one of event_key, scenario_key, or attribute_key")
-		}
-		if nonEmptyKeys > 1 {
-			return errors.New("leaf cannot have more than one of event_key, scenario_key, or attribute_key")
+			if n.ToObjectKey != "" {
+				return errors.New("delete leaf cannot have a to_object_key")
+			}
+			if n.EventKey != "" || n.ScenarioKey != "" || n.AttributeKey != "" {
+				return errors.New("delete leaf cannot have event_key, scenario_key, or attribute_key")
+			}
+		} else {
+			if n.FromObjectKey == "" {
+				return errors.New("leaf must have a from_object_key")
+			}
+			if n.ToObjectKey == "" {
+				return errors.New("leaf must have a to_object_key")
+			}
+			keys := []string{n.EventKey, n.ScenarioKey, n.AttributeKey}
+			nonEmptyKeys := 0
+			for _, key := range keys {
+				if key != "" {
+					nonEmptyKeys++
+				}
+			}
+			if nonEmptyKeys == 0 {
+				return errors.New("leaf must have one of event_key, scenario_key, or attribute_key")
+			}
+			if nonEmptyKeys > 1 {
+				return errors.New("leaf cannot have more than one of event_key, scenario_key, or attribute_key")
+			}
 		}
 	}
 	return nil
