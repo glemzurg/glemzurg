@@ -29,7 +29,7 @@ scenarios:
             - description: "*[Medium for Title and is visible]\nISBN, selling price?"
               from_object_key: medium
               to_object_key: title
-              attribute_key: 01_order_fulfillment/medium/isbin
+              attribute_key: 01_order_fulfillment/medium/isbn
             - description: "[*customer interest]\ntitle, author, subject, ISBN(s), price(s)"
               from_object_key: title
               to_object_key: joe

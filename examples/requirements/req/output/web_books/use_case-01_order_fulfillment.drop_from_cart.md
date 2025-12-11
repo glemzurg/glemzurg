@@ -8,11 +8,11 @@ is also deleted.
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
 ### Simple
 
 The basic flow for dropping from a cart.
 
-![er](scenario-01_order_fulfillment.drop_from_cart.scenario.add_to_cart.svg)
+![er](scenario-01_order_fulfillment.drop_from_cart.scenario.drop_from_cart.svg)
 

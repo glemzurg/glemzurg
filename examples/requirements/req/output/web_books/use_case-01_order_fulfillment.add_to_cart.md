@@ -8,7 +8,7 @@ Book Order exists for this Customer, a new Book Order is created.
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
 ### Simple
 

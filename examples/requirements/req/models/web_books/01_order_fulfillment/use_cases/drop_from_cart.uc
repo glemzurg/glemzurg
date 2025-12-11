@@ -11,7 +11,7 @@ actors:
 
 scenarios:
 
-    add_to_cart:
+    drop_from_cart:
         name: Simple
         details: The basic flow for dropping from a cart.
 

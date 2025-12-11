@@ -7,7 +7,7 @@ visibility into Titles, Media, and their availability for ordering.
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
 ### Simple
 

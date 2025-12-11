@@ -8,7 +8,7 @@
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
 {{ if ne .UseCase.Scenarios nil -}}
 {{ range .UseCase.Scenarios -}}

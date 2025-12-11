@@ -6,6 +6,6 @@
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
 *None*

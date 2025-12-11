@@ -2,10 +2,15 @@
 
 # Check Out
 
-... details ...
+The Customer has decided to proceed to checkout (i.e. place their Book Order).
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
-*None*
+### Simple
+
+Purchasing the book order.
+
+![er](scenario-01_order_fulfillment.check_out.scenario.check_out.svg)
+

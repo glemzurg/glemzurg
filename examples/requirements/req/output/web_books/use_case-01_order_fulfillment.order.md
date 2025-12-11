@@ -2,10 +2,15 @@
 
 # Order?
 
-... details ...
+This use case gives the Custoemr visibility into the contents of one of their Book Orders.
 
 ## Scenarios
 
-Detailed explorations of this use case.
+Flows of interest.
 
-*None*
+### Simple
+
+Details about an order.
+
+![er](scenario-01_order_fulfillment.order.scenario.order.svg)
+

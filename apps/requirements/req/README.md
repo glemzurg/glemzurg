@@ -12,6 +12,7 @@ next:
 
 ---------------------------
 
+- fix the nested sequence diagram display issue (move to d2)
 - examine d2 diagramming:
   - https://github.com/terrastruct/d2?tab=readme-ov-file#d2-as-a-library
   - examine license of other libraries in use
