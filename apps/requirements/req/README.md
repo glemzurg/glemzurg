@@ -9,6 +9,38 @@ next:
 - wire into class members
 
 
+- Record. A structure of two or more dissimilar things.
+- Unordered. A collection with no ordering.
+- Ordered. A collection with ordering.
+- Queue. A first in, first out queue.
+- Stack. A last in, first out stack.
+
+
+obj: class_key
+ref: something
+enum: value, value
+
+ref from The abbreviation for states from
+obj of/from class_key
+enum of value1, value2, value3
+
+(3/4 .. 5/6] at 1 meter
+
+unique stack of (3/4 .. 5/6] at 1 meter
+unique 3+ stack (3/4 .. 5/6] meter at 0.01
+unique 3-7 stack (3/4 .. 5/6] meter at 0.01
+
+unique stack of values: (3/4 .. 5/6] meter at 0.01
+unique 3+ stack of values: (3/4 .. 5/6] meter at 0.01
+unique 3-7 stack of values: (3/4 .. 5/6] meter at 0.01
+
+
+ham: (3/4 .. 5/6] meter at 0.01 (newline)/;
+radio: (3/4 .. 5/6] meter at 0.01
+swig: (3/4 .. 5/6] meter at 0.01
+nog: (3/4 .. 5/6] meter at 0.01
+
+
 
 ---------------------------
 
