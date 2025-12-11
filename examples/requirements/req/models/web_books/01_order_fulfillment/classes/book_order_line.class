@@ -22,11 +22,6 @@ attributes:
             Media may be offered for free.
         rules: $0.00 .. unconstrained in US Dollars, to the whole cent
 
-    state:
-        name: "state"
-        details: Shows the business processing status of this Book Order Line.
-        rules: enumeration of the states in the state model
-
     is_packable:
         name: "is packable?"
         details: Shows if this Book Order Line is currently packable or not.

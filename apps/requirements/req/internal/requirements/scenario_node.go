@@ -13,6 +13,12 @@ const (
 	NODE_TYPE_SEQUENCE = "sequence"
 	NODE_TYPE_SWITCH   = "switch"
 	NODE_TYPE_LOOP     = "loop"
+
+	// Leaf types.
+	LEAF_TYPE_EVENT     = "event"
+	LEAF_TYPE_ATTRIBUTE = "attribute"
+	LEAF_TYPE_SCENARIO  = "scenario"
+	LEAF_TYPE_DELETE    = "delete"
 )
 
 // Node represents a node in the scenario steps tree.
@@ -26,6 +32,7 @@ type Node struct {
 	EventKey      string `json:"event_key,omitempty" yaml:"event_key,omitempty"`
 	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
 	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
+	IsDelete      bool   `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
 	// Helper fields can be added here as needed.
 	FromObject *ScenarioObject `json:"-" yaml:"-"`
 	ToObject   *ScenarioObject `json:"-" yaml:"-"`
@@ -46,6 +53,23 @@ func (n *Node) Inferredtype() string {
 		return NODE_TYPE_SEQUENCE
 	}
 	return NODE_TYPE_LEAF
+}
+
+// InferredLeafType returns the leaf type of the node based on its fields.
+func (n *Node) InferredLeafType() string {
+	if n.EventKey != "" {
+		return LEAF_TYPE_EVENT
+	}
+	if n.ScenarioKey != "" {
+		return LEAF_TYPE_SCENARIO
+	}
+	if n.AttributeKey != "" {
+		return LEAF_TYPE_ATTRIBUTE
+	}
+	if n.IsDelete {
+		return LEAF_TYPE_DELETE
+	}
+	panic("node is not a leaf")
 }
 
 // Case represents a case in a switch node.

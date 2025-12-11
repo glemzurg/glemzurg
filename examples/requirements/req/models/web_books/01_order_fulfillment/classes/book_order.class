@@ -18,10 +18,6 @@ attributes:
         name: "shipping address"
         details: The postal address the Customer is requesting any Print Media in the Book order be shipped to.
         rules: any mailing address acceptable to the US Post Office ro Canada Post
-    state:
-        name: "state"
-        details: Shows the business processing status of this Book Order.
-        rules: enumeration of the states in the state model
     is_packable:
         name: "is packable?"
         details: Shows if this Book Order is currently packable or not.

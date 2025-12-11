@@ -20,6 +20,45 @@ func TestScenarioStepsSuite(t *testing.T) {
 	suite.Run(t, new(ScenarioStepsSuite))
 }
 
+func (suite *ScenarioStepsSuite) TestInferredLeafType() {
+	// Event leaf
+	node := Node{
+		FromObjectKey: "fk",
+		ToObjectKey:   "tk",
+		EventKey:      "ek",
+	}
+	assert.Equal(suite.T(), LEAF_TYPE_EVENT, node.InferredLeafType())
+
+	// Scenario leaf
+	node = Node{
+		FromObjectKey: "fk",
+		ToObjectKey:   "tk",
+		ScenarioKey:   "sk",
+	}
+	assert.Equal(suite.T(), LEAF_TYPE_SCENARIO, node.InferredLeafType())
+
+	// Attribute leaf
+	node = Node{
+		FromObjectKey: "fk",
+		ToObjectKey:   "tk",
+		AttributeKey:  "ak",
+	}
+	assert.Equal(suite.T(), LEAF_TYPE_ATTRIBUTE, node.InferredLeafType())
+
+	// Delete leaf
+	node = Node{
+		FromObjectKey: "fk",
+		IsDelete:      true,
+	}
+	assert.Equal(suite.T(), LEAF_TYPE_DELETE, node.InferredLeafType())
+
+	// Not a leaf (panic)
+	node = Node{
+		Statements: []Node{{}},
+	}
+	assert.Panics(suite.T(), func() { node.InferredLeafType() })
+}
+
 func (suite *ScenarioStepsSuite) TestValidateSequence() {
 	// Valid sequence
 	node := Node{

@@ -3,12 +3,21 @@ next:
 
 - work on the diagram generation
 
-- add other atomic types
-- move to other collections
-- work out how to name and how to add details
+- collections
+- records
+- database
+- wire into class members
+
+
 
 ---------------------------
 
+- examine d2 diagramming:
+  - https://github.com/terrastruct/d2?tab=readme-ov-file#d2-as-a-library
+  - examine license of other libraries in use
+
+- chip away at tla plus peg parser
+- design the simuilator - chained with derived simulators
 
 - work out the source of section and destination of section
 - work out the event parameter source field
@@ -19,6 +28,7 @@ next:
 - update parsing of actions
 - updating parsing of data types
 - add data dictionary of the textbook format
+  - work out how to name and how to add details
 - add domains
 - make state class members innate and not specified
 
@@ -68,6 +78,12 @@ graphviz migration:
 
 Long time targets:
 
+- optimize for speed of modeling
+  - work with experienced ui designer
+- design data models explicitly for digestion by AI
+  - give the models self referential hints for "thrashing" through code options
+  - small data tranformations that contain meaningful code patterns that can be applied iteratively
+  - json schemas that dictate available choices that can be iterated on
 - start gitbooks documentation
   - use grammar level checking
 - interaction diagrams:
