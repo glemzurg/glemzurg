@@ -30,19 +30,23 @@ visibility into Titles, Media, and their availability for ordering.
 - **[Drop from Cart](use_case-01_order_fulfillment.drop_from_cart.md).** The Customer is removing a previously added Medium from their shopping cart.
 - **[eBook User Keys?](use_case-01_order_fulfillment.ebook_user_keys.md).** The Customer is given user keys for any eBooks they have in a placed, 
 packed, shipped, or completed Book Order.
-- **[Inventory?](use_case-01_order_fulfillment.inventory.md).** ... details ...
-- **[«sky» Manage Catalog](use_case-01_order_fulfillment.manage_catalog.md).** ... details ...
+- **[Inventory?](use_case-01_order_fulfillment.inventory.md).** This use case gives Managers visibility into the status of Inventory: available 
+Titles, current stock levels, and reorder levels.
+- **[«sky» Manage Catalog](use_case-01_order_fulfillment.manage_catalog.md).** The organizational user story for the umbrella of all work to curate the WebBooks catalog.
 - **[Order?](use_case-01_order_fulfillment.order.md).** This use case gives the Custoemr visibility into the contents of one of their Book Orders.
 - **[Order Status?](use_case-01_order_fulfillment.order_status.md).** This use case gives the Customer visibility into the status of one of their Book 
 Orders.
 - **[Packable Orders?](use_case-01_order_fulfillment.packable_orders.md).** Warehouse Workers need visibility into which Book ORders (those involving Print Media) are packable.
 - **[Pack Order](use_case-01_order_fulfillment.pack_order.md).** A Book Order involving Print Media has been packed by a Warehouse Worker;
 stock needs to be decreased by the number of copies packed.
-- **[Profit?](use_case-01_order_fulfillment.profit.md).** ... details ...
-- **[Receive Replenish](use_case-01_order_fulfillment.receive_replenish.md).** ... details ...
-- **[Sales?](use_case-01_order_fulfillment.sales.md).** ... details ...
-- **[Send Replenish](use_case-01_order_fulfillment.send_replenish.md).** ... details ...
-- **[Ship Order](use_case-01_order_fulfillment.ship_order.md).** ... details ...
+- **[Profit?](use_case-01_order_fulfillment.profit.md).** This use case gives Managers visibility into profit results over some period of time.
+- **[Receive Replenish](use_case-01_order_fulfillment.receive_replenish.md).** A Replenish Order for Print Media was received from the Publisher; Print Media 
+stock needs to be increased to reflect the number of copies received.
+- **[Sales?](use_case-01_order_fulfillment.sales.md).** This use case gives Managers visibility into sales results over some period of time.
+- **[Send Replenish](use_case-01_order_fulfillment.send_replenish.md).** The wait time (24 hours) has passed after a Replenish Order was opened, and the 
+contents of the order need to be sent to the Publisher.
+- **[Ship Order](use_case-01_order_fulfillment.ship_order.md).** A Book Order (with Print Media) was previously packed and has been taken by a shipper 
+for delivery to the Customer.
 
 
 ## Classes

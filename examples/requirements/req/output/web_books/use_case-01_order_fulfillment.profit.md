@@ -2,10 +2,15 @@
 
 # Profit?
 
-... details ...
+This use case gives Managers visibility into profit results over some period of time.
 
 ## Scenarios
 
 Flows of interest.
 
-*None*
+### Profit
+
+Manager queries the profits.
+
+![er](scenario-01_order_fulfillment.profit.scenario.profit.svg)
+

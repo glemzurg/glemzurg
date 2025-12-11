@@ -2,10 +2,16 @@
 
 # Inventory?
 
-... details ...
+This use case gives Managers visibility into the status of Inventory: available 
+Titles, current stock levels, and reorder levels.
 
 ## Scenarios
 
 Flows of interest.
 
-*None*
+### Inventory
+
+Manager queries the inventory.
+
+![er](scenario-01_order_fulfillment.inventory.scenario.inventory.svg)
+
