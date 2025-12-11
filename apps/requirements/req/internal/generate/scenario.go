@@ -34,6 +34,7 @@ func generateScenarioFiles(outputPath string, reqs requirements.Requirements) (e
 func generateScenarioSvgContents(reqs requirements.Requirements, scenario requirements.Scenario) (contents string, err error) {
 
 	eventLookup := reqs.EventLookup()
+	scenarioLookup := reqs.ScenarioLookup()
 	scenarioObjectLookup := reqs.ScenarioObjectLookup()
 
 	s := svgsequence.NewSequence()
@@ -63,7 +64,7 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 		// No steps, so just add an informative placard.
 		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[0], Text: "No operations defined"})
 	} else {
-		err = addSteps(eventLookup, s, scenario.Steps.Statements, scenarioObjectLookup)
+		err = addSteps(eventLookup, s, scenario.Steps.Statements, scenarioLookup, scenarioObjectLookup)
 		if err != nil {
 			return "", err
 		}
@@ -74,7 +75,7 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 	return contents, nil
 }
 
-func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence, statements []requirements.Node, scenarioObjectLookup map[string]requirements.ScenarioObject) error {
+func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence, statements []requirements.Node, scenarioLookup map[string]requirements.Scenario, scenarioObjectLookup map[string]requirements.ScenarioObject) error {
 	for _, stmt := range statements {
 		switch stmt.Inferredtype() {
 		case requirements.NODE_TYPE_LEAF:
@@ -120,15 +121,25 @@ func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence
 				})
 
 			case stmt.ScenarioKey != "":
+
+				fromObject, found := scenarioObjectLookup[stmt.FromObjectKey]
+				if !found {
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+				}
+				toObject, found := scenarioObjectLookup[stmt.ToObjectKey]
+				if !found {
+					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey)
+				}
+
 				// This is a call to another scenario.
-				calledScenarioObject, found := scenarioObjectLookup[stmt.ToObjectKey]
+				calledScenario, found := scenarioLookup[stmt.ScenarioKey]
 				if !found {
 					return errors.Errorf("unknown called scenario object key: '%s'", stmt.ToObjectKey)
 				}
 				s.AddStep(svgsequence.Step{
-					Source: stmt.FromObjectKey,
-					Target: calledScenarioObject.GetName(),
-					Text:   "Call scenario: " + stmt.Description,
+					Source: fromObject.GetName(),
+					Target: toObject.GetName(),
+					Text:   "Scenario: " + calledScenario.Name,
 				})
 
 			case stmt.IsDelete:
@@ -148,17 +159,22 @@ func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence
 			}
 
 		case requirements.NODE_TYPE_SEQUENCE:
-			err := addSteps(eventLookup, s, stmt.Statements, scenarioObjectLookup)
+			err := addSteps(eventLookup, s, stmt.Statements, scenarioLookup, scenarioObjectLookup)
 			if err != nil {
 				return err
 			}
 
 		case requirements.NODE_TYPE_SWITCH:
 
-			for _, c := range stmt.Cases {
-				s.OpenSection("(Opt) ["+c.Condition+"]", "")
+			sectionLabel := "(Opt)"
+			if len(stmt.Cases) > 1 {
+				sectionLabel = "(Alt)"
+			}
 
-				err := addSteps(eventLookup, s, c.Statements, scenarioObjectLookup)
+			for _, c := range stmt.Cases {
+				s.OpenSection(sectionLabel+" ["+c.Condition+"]", "")
+
+				err := addSteps(eventLookup, s, c.Statements, scenarioLookup, scenarioObjectLookup)
 				if err != nil {
 					return err
 				}
@@ -169,7 +185,7 @@ func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence
 		case requirements.NODE_TYPE_LOOP:
 			s.OpenSection("(Loop) ["+stmt.Loop+"]", "")
 
-			err := addSteps(eventLookup, s, stmt.Statements, scenarioObjectLookup)
+			err := addSteps(eventLookup, s, stmt.Statements, scenarioLookup, scenarioObjectLookup)
 			if err != nil {
 				return err
 			}
