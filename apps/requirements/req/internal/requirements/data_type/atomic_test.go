@@ -1,7 +1,6 @@
 package data_type
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +20,7 @@ func TestParseAtomic(t *testing.T) {
 
 		// Unconstrained atomics.
 		{
-			name:  "empty string",
+			name:  "unconstrained",
 			input: "unconstrained",
 			expected: &DataType{
 				CollectionType: "atomic",
@@ -32,8 +31,8 @@ func TestParseAtomic(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			name:  "whitespace",
-			input: " \t\nunconstrained \t\n",
+			name:  "unconstrained with whitespace",
+			input: " \t\nunconstrained",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -523,7 +522,7 @@ func TestParseAtomic(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		pass := t.Run(tt.name, func(t *testing.T) {
 
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("AtomicDataType"))
@@ -534,18 +533,16 @@ func TestParseAtomic(t *testing.T) {
 				assert.NotPanics(t, func() { dataType = dataTypeAny.(*DataType) }, tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
-
-				// The earlier test are more basic and later tests build on them.
-				// Stop the test.
-				if err != nil {
-					panic(fmt.Sprintf(`stopped tests on parsing: '%s'`, tt.input))
-				}
 			} else {
 
 				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
+		if !pass {
+			// The earlier test set the basics for later tests, stop as soon as we have an error.
+			break
+		}
 	}
 }
 
