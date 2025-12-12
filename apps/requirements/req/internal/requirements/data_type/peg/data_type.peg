@@ -7,7 +7,7 @@ import (
 )
 }
 
-DataType <- CollectionType / SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+DataType <- RecordType / CollectionType / SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
 
 AtomicDataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType / UnconstrainedAtomicType
 
@@ -198,6 +198,40 @@ ReferenceType <- ws ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 			Reference: refStr,
 		},
 	}, nil
+}
+
+RecordType <- "{" ws fields:FieldList ws "}" {
+	fieldsSlice := fields.([]interface{})
+	fieldList := make([]Field, len(fieldsSlice))
+	for i, f := range fieldsSlice {
+		fieldList[i] = f.(Field)
+	}
+	return &DataType{
+		Name:           "record",
+		CollectionType: "record",
+		RecordFields:   fieldList,
+	}, nil
+}
+
+FieldList <- first:Field rest:( ws ";" ws f:Field )* ws ";"? {
+	result := []interface{}{first}
+	for _, r := range rest.([]interface{}) {
+		if slice, ok := r.([]interface{}); ok && len(slice) > 2 {
+			result = append(result, slice[2])
+		}
+	}
+	return result, nil
+}
+
+Field <- name:FieldName ws ":" ws dataType:DataType {
+	return Field{
+		Name:          name.(string),
+		FieldDataType: dataType.(*DataType),
+	}, nil
+}
+
+FieldName <- [a-zA-Z_][a-zA-Z0-9_]* {
+	return string(c.text), nil
 }
 
 CollectionType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws collectionType:CollectionTypeKeyword ws "of" ws atomic:AtomicDataType {

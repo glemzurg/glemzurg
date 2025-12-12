@@ -19,12 +19,17 @@ next:
 - Record. A structure of two or more dissimilar things.
 
 
-a record is a bunch of field names (like "ham", "radio", etc.)  delimited by ";" with a final optional ";"
+a record is a bunch of field names (like "ham", "radio", etc.) followed by ":" (with optional leading speces) then an attomic parsing string delimited by ";" with a final optional ";"
+
+the record is wrapped inside {} indicating that everything inside is a record, and the field data types could also be records so the {} will be nested for each record.
+
+{
 
 ham: < data type atomic, record, or collectiopn >;
 radio: < data type atomic, record, or collectiopn >;
-swig: < data type atomic, record, or collectiopn >;
-nog: < data type atomic, record, or collectiopn >;
+swig : < data type atomic, record, or collectiopn >;
+nog : < data type atomic, record, or collectiopn >;
+}
 
 
 

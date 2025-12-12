@@ -70,6 +70,16 @@ func (d DataType) Validate() error {
 			}
 			return nil
 		})),
+		validation.Field(&d.RecordFields, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_RECORD), validation.By(func(value interface{}) error {
+			if fields, ok := value.([]Field); ok {
+				for _, f := range fields {
+					if err := f.Validate(); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})),
 		validation.Field(&d.CollectionMin, validation.By(func(value interface{}) error {
 			if d.CollectionType == _COLLECTION_TYPE_STACK || d.CollectionType == _COLLECTION_TYPE_UNORDERED || d.CollectionType == _COLLECTION_TYPE_ORDERED || d.CollectionType == _COLLECTION_TYPE_QUEUE {
 				if value == nil {
@@ -86,6 +96,13 @@ func (d DataType) Validate() error {
 // String returns a string representation of the DataType.
 func (d DataType) String() string {
 	switch d.CollectionType {
+	case _COLLECTION_TYPE_RECORD:
+		result := "{\n"
+		for _, field := range d.RecordFields {
+			result += field.String() + "\n"
+		}
+		result += "}"
+		return result
 	case _COLLECTION_TYPE_ATOMIC:
 		if d.Atomic == nil {
 			panic("atomic is nil")
