@@ -460,7 +460,7 @@ func TestParseRecords(t *testing.T) {
 
 		{
 			name:  "minimal record",
-			input: `{ham:  unconstrained}`,
+			input: `{ ham : unconstrained }`,
 			expected: &DataType{
 				CollectionType: "record",
 				RecordFields: []Field{
@@ -471,17 +471,6 @@ func TestParseRecords(t *testing.T) {
 							CollectionType: "atomic",
 							Atomic: &Atomic{
 								ConstraintType: "unconstrained",
-							},
-						},
-					},
-					{
-						Name: "radio",
-						FieldDataType: &DataType{
-							Name:           "ref from something",
-							CollectionType: "atomic",
-							Atomic: &Atomic{
-								ConstraintType: "reference",
-								Reference:      "something",
 							},
 						},
 					},

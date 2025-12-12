@@ -13,7 +13,7 @@ import (
 
 DataType <- RecordDataType / CollectionDataType / AtomicDataType
 
-RecordDataType <- "{" ws fields:FieldList ws "}" {
+RecordDataType <- ws? "{" ws? fields:FieldList ws? "}" ws? !. {
 	fieldsSlice := fields.([]interface{})
 	fieldList := make([]Field, len(fieldsSlice))
 	for i, f := range fieldsSlice {
@@ -25,7 +25,7 @@ RecordDataType <- "{" ws fields:FieldList ws "}" {
 	}, nil
 }
 
-FieldList <- first:Field rest:( ws ";" ws f:Field )* ws ";"? {
+FieldList <- first:Field rest:( ws? ";" ws? f:Field )* ws? ";"? {
 	result := []interface{}{first}
 	for _, r := range rest.([]interface{}) {
 		if slice, ok := r.([]interface{}); ok && len(slice) > 2 {
