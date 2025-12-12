@@ -13,7 +13,7 @@ import (
 
 DataType <- RecordDataType / CollectionDataType / AtomicDataType
 
-RecordTDataype <- "{" ws fields:FieldList ws "}" {
+RecordDataType <- "{" ws fields:FieldList ws "}" {
 	fieldsSlice := fields.([]interface{})
 	fieldList := make([]Field, len(fieldsSlice))
 	for i, f := range fieldsSlice {
@@ -35,7 +35,7 @@ FieldList <- first:Field rest:( ws ";" ws f:Field )* ws ";"? {
 	return result, nil
 }
 
-Field <- name:FieldName ws ":" ws dataType:DataType {
+Field <- name:FieldName ws? ":" ws? dataType:DataType {
 	return Field{
 		Name:          name.(string),
 		FieldDataType: dataType.(*DataType),

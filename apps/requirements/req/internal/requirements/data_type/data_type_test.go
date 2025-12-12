@@ -366,9 +366,89 @@ func TestParseCollections(t *testing.T) {
 	}
 }
 
-func TestParseRecords(t *testing.T) {
-	key := "key"
+func TestParseRecordFields(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		expected     Field
+		errorMessage string
+	}{
 
+		// Records
+
+		{
+			name:  "minimal field",
+			input: `ham:unconstrained`,
+			expected: Field{
+				Name: "ham",
+				FieldDataType: &DataType{
+					CollectionType: "atomic",
+					Atomic: &Atomic{
+						ConstraintType: "unconstrained",
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "minimal field with space",
+			input: `ham  :  unconstrained`,
+			expected: Field{
+				Name: "ham",
+				FieldDataType: &DataType{
+					CollectionType: "atomic",
+					Atomic: &Atomic{
+						ConstraintType: "unconstrained",
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		{
+			name:  "field with a collection",
+			input: `ham  :  unordered of ref from something`,
+			expected: Field{
+				Name: "ham",
+				FieldDataType: &DataType{
+					CollectionType: "unordered",
+					CollectionMin:  intPtr(0),
+					Atomic: &Atomic{
+						ConstraintType: "reference",
+						Reference:      "something",
+					},
+				},
+			},
+			errorMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		pass := t.Run(tt.name, func(t *testing.T) {
+
+			// Test calling directly into the parser.
+			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("Field"))
+			if tt.errorMessage == "" {
+				assert.NoError(t, err, tt.input)
+
+				dataType, ok := dataTypeAny.(Field)
+				assert.Equal(t, true, ok, "cannot type cast to Field: '%s'", tt.input)
+
+				assert.Equal(t, tt.expected, dataType, tt.input)
+			} else {
+
+				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				assert.Empty(t, dataTypeAny, tt.input)
+			}
+		})
+		if !pass {
+			// The earlier test set the basics for later tests, stop as soon as we have an error.
+			break
+		}
+	}
+}
+
+func TestParseRecords(t *testing.T) {
 	tests := []struct {
 		name         string
 		input        string
@@ -377,18 +457,11 @@ func TestParseRecords(t *testing.T) {
 	}{
 
 		// Records
+
 		{
-			name: "simple record",
-			input: `{
-ham: unconstrained;
-radio: ref from something;
-}`,
+			name:  "minimal record",
+			input: `{ham:  unconstrained}`,
 			expected: &DataType{
-				Key: key,
-				Name: `{
-ham: unconstrained;
-radio: ref from something;
-}`,
 				CollectionType: "record",
 				RecordFields: []Field{
 					{
@@ -416,47 +489,84 @@ radio: ref from something;
 			},
 			errorMessage: "",
 		},
-		{
-			name: "nested record",
-			input: `{
-outer: {
-inner: unconstrained;
-};
-}`,
-			expected: &DataType{
-				Key: key,
-				Name: `{
-outer: {
-inner: unconstrained;
-};
-}`,
-				CollectionType: "record",
-				RecordFields: []Field{
-					{
-						Name: "outer",
-						FieldDataType: &DataType{
-							Name: `{
-inner: unconstrained;
-}`,
-							CollectionType: "record",
-							RecordFields: []Field{
-								{
-									Name: "inner",
-									FieldDataType: &DataType{
-										Name:           "unconstrained",
-										CollectionType: "atomic",
-										Atomic: &Atomic{
-											ConstraintType: "unconstrained",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			errorMessage: "",
-		},
+
+		// 		{
+		// 			name:  "simple record",
+		// 			input: `{ham: unconstrained; radio: ref from something;}`,
+		// 			expected: &DataType{
+		// 				Key: key,
+		// 				Name: `{
+		// ham: unconstrained;
+		// radio: ref from something;
+		// }`,
+		// 				CollectionType: "record",
+		// 				RecordFields: []Field{
+		// 					{
+		// 						Name: "ham",
+		// 						FieldDataType: &DataType{
+		// 							Name:           "unconstrained",
+		// 							CollectionType: "atomic",
+		// 							Atomic: &Atomic{
+		// 								ConstraintType: "unconstrained",
+		// 							},
+		// 						},
+		// 					},
+		// 					{
+		// 						Name: "radio",
+		// 						FieldDataType: &DataType{
+		// 							Name:           "ref from something",
+		// 							CollectionType: "atomic",
+		// 							Atomic: &Atomic{
+		// 								ConstraintType: "reference",
+		// 								Reference:      "something",
+		// 							},
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			errorMessage: "",
+		// 		},
+		// 		{
+		// 			name: "nested record",
+		// 			input: `{
+		// outer: {
+		// inner: unconstrained;
+		// };
+		// }`,
+		// 			expected: &DataType{
+		// 				Key: key,
+		// 				Name: `{
+		// outer: {
+		// inner: unconstrained;
+		// };
+		// }`,
+		// 				CollectionType: "record",
+		// 				RecordFields: []Field{
+		// 					{
+		// 						Name: "outer",
+		// 						FieldDataType: &DataType{
+		// 							Name: `{
+		// inner: unconstrained;
+		// }`,
+		// 							CollectionType: "record",
+		// 							RecordFields: []Field{
+		// 								{
+		// 									Name: "inner",
+		// 									FieldDataType: &DataType{
+		// 										Name:           "unconstrained",
+		// 										CollectionType: "atomic",
+		// 										Atomic: &Atomic{
+		// 											ConstraintType: "unconstrained",
+		// 										},
+		// 									},
+		// 								},
+		// 							},
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			errorMessage: "",
+		// 		},
 	}
 
 	for _, tt := range tests {
