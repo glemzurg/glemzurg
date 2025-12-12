@@ -1,4 +1,6 @@
 
+
+
 question on querying the system:
   query parmeters are on the left, but arrows start on teh right
   use initiates, but no state change event
@@ -85,6 +87,8 @@ nog: (3/4 .. 5/6] meter at 0.01
   - update tests to be a table format with names
   - remove linux users and local postgres
   - remove postgres?
+  - https://www.cyberciti.biz/faq/linux-list-users-command/
+  - revove mesasge queues
 
 - add use case level svg images
   - work with an artist to make mud, sea, sky (and mabye fish and kite)
