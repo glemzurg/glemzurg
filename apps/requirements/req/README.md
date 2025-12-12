@@ -11,67 +11,21 @@ question on querying the system:
 
 next:
 
-- work on the diagram generation
-
-- collections
 - records
 - database
 - wire into class members
 
 
 - Record. A structure of two or more dissimilar things.
-- Unordered. A collection with no ordering.
-- Ordered. A collection with ordering.
-- Queue. A first in, first out queue.
-- Stack. A last in, first out stack.
 
 
-same but for
+a record is a bunch of field names (like "ham", "radio", etc.)  delimited by ";" with a final optional ";"
 
-obj: class_key
-ref: something
-enum: value, value
+ham: < data type atomic, record, or collectiopn >;
+radio: < data type atomic, record, or collectiopn >;
+swig: < data type atomic, record, or collectiopn >;
+nog: < data type atomic, record, or collectiopn >;
 
-refactor the ": " to instead be " of " or " from "
-
-ref from The abbreviation for states from
-obj of/from class_key
-enum of value1, value2, value3
-
-(3/4 .. 5/6] at 0.01 meter
-
-In apps/requirements/req/internal/requirements/data_type/data_type_test.go creates tests for the collections (these do not include records which are not collections). The distinct kinds of collectionsa re "ordered" "unordered" "queue" and "stack"
-
-They all have the same parsing structure, with an optional "unique" in front.
-
-stack of < parsing rules for atomic >
-3+ unordered of < parsing rules for atomic >
-3-7 ordered of < parsing rules for atomic >
-0-7 queue of < parsing rules for atomic >
-
-
-unique stack of < parsing rules for atomic >
-unique 3+ stack of < parsing rules for atomic >
-unique 3-7 stack of < parsing rules for atomic >
-unique 0-7 stack of < parsing rules for atomic >
-
-No number means min is 0 and max is nil.
-3+ (4+, etc.) means min is the number and max is nil.
-2-5 (3-100, etc.) means min is the lower number and max is the higher number
-
-No negative numbers are allowed in any of those collection min or max.
-
-
-
-unique stack of values: (3/4 .. 5/6] meter at 0.01
-unique 3+ stack of values: (3/4 .. 5/6] meter at 0.01
-unique 3-7 stack of values: (3/4 .. 5/6] meter at 0.01
-
-
-ham: (3/4 .. 5/6] meter at 0.01 (newline)/;
-radio: (3/4 .. 5/6] meter at 0.01
-swig: (3/4 .. 5/6] meter at 0.01
-nog: (3/4 .. 5/6] meter at 0.01
 
 
 
