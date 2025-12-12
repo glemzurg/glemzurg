@@ -9,9 +9,9 @@ import (
 
 DataType <- RecordType / CollectionType / SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
 
-AtomicDataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+AtomicDataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType / UnconstrainedAtomicType
 
-UnconstrainedType <- "unconstrained" {
+UnconstrainedAtomicType <- ws "unconstrained" ws !. {
 	return &DataType{
 		Name:           "unconstrained",
 		CollectionType: "atomic",
@@ -113,11 +113,19 @@ HigherBracket <- ( ")" / "]" ) {
 	return string(c.text), nil
 }
 
-Units <- ([a-zA-Z])+ {
+Units <- [a-zA-Z]+ {
 	return string(c.text), nil
 }
 
-
+UnconstrainedType <- ws !. {
+	return &DataType{
+		Name:           "unconstrained",
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}, nil
+}
 
 OrdEnumType <- ws ("ordered" / "ord") ws enumeration:EnumType {
 	// Make it ordered.
@@ -127,7 +135,7 @@ OrdEnumType <- ws ("ordered" / "ord") ws enumeration:EnumType {
 	return enumType, nil
 }
 
-EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:[^;{}]* {
+EnumType <- ws ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* !. {
 	valuesBytes := enumValues.([]interface{})
 	valuesStr := ""
 	for _, b := range valuesBytes {
@@ -156,7 +164,7 @@ EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:[^;{}]* {
 	}, nil
 }
 
-ObjectType <- ("object" / "obj") ws ("of" / "from") ws classKey:[^;{}]* {
+ObjectType <- ws ("object" / "obj") ws ("of" / "from") ws classKey:.* !. {
 	classBytes := classKey.([]interface{})
 	classStr := ""
 	for _, b := range classBytes {
@@ -174,7 +182,7 @@ ObjectType <- ("object" / "obj") ws ("of" / "from") ws classKey:[^;{}]* {
 	}, nil
 }
 
-ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws ref:[^;{}]* {
+ReferenceType <- ws ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 	refBytes := ref.([]interface{})
 	refStr := ""
 	for _, b := range refBytes {
@@ -192,12 +200,11 @@ ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws ref:[^;{}]* {
 	}, nil
 }
 
-RecordType <- "{" ws? fields:( Field ws? )+  ws? "}" {
+RecordType <- "{" ws fields:FieldList ws "}" {
 	fieldsSlice := fields.([]interface{})
 	fieldList := make([]Field, len(fieldsSlice))
 	for i, f := range fieldsSlice {
-		fieldPtr := f.(*Field)
-		fieldList[i] = *fieldPtr
+		fieldList[i] = f.(Field)
 	}
 	return &DataType{
 		Name:           "record",
@@ -206,8 +213,18 @@ RecordType <- "{" ws? fields:( Field ws? )+  ws? "}" {
 	}, nil
 }
 
-Field <- ( name:FieldName ws? ":" ws? dataType:DataType ws? ";" ) {
-	return &Field{
+FieldList <- first:Field rest:( ws ";" ws f:Field )* ws ";"? {
+	result := []interface{}{first}
+	for _, r := range rest.([]interface{}) {
+		if slice, ok := r.([]interface{}); ok && len(slice) > 2 {
+			result = append(result, slice[2])
+		}
+	}
+	return result, nil
+}
+
+Field <- name:FieldName ws ":" ws dataType:DataType {
+	return Field{
 		Name:          name.(string),
 		FieldDataType: dataType.(*DataType),
 	}, nil
