@@ -116,6 +116,211 @@ func (suite *DataTypeSuite) TestValidate() {
 	}
 }
 
+func TestParseCollections(t *testing.T) {
+	key := "key"
+	trueValue := true
+	falseValue := false
+
+	tests := []struct {
+		name         string
+		input        string
+		expected     *DataType
+		errorMessage string
+	}{
+		// Basic collections without multiplicity
+		{
+			name:  "stack of unconstrained",
+			input: "stack of unconstrained",
+			expected: &DataType{
+				Key:            key,
+				Name:           "stack of unconstrained",
+				CollectionType: "stack",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "unordered of ref from something",
+			input: "unordered of ref from something",
+			expected: &DataType{
+				Key:            key,
+				Name:           "unordered of ref from something",
+				CollectionType: "unordered",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "something",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "ordered of obj of class_key",
+			input: "ordered of obj of class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ordered of obj of class_key",
+				CollectionType: "ordered",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "queue of enum of value_a, value_b",
+			input: "queue of enum of value_a, value_b",
+			expected: &DataType{
+				Key:            key,
+				Name:           "queue of enum of value_a, value_b",
+				CollectionType: "queue",
+				Atomic: &Atomic{
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		// Collections with multiplicity
+		{
+			name:  "3+ unordered of unconstrained",
+			input: "3+ unordered of unconstrained",
+			expected: &DataType{
+				Key:            key,
+				Name:           "3+ unordered of unconstrained",
+				CollectionType: "unordered",
+				CollectionMin:  intPtr(3),
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "2-5 ordered of ref from something",
+			input: "2-5 ordered of ref from something",
+			expected: &DataType{
+				Key:            key,
+				Name:           "2-5 ordered of ref from something",
+				CollectionType: "ordered",
+				CollectionMin:  intPtr(2),
+				CollectionMax:  intPtr(5),
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "something",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "0-7 queue of obj of class_key",
+			input: "0-7 queue of obj of class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "0-7 queue of obj of class_key",
+				CollectionType: "queue",
+				CollectionMin:  intPtr(0),
+				CollectionMax:  intPtr(7),
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+
+		// Collections with unique
+		{
+			name:  "unique stack of unconstrained",
+			input: "unique stack of unconstrained",
+			expected: &DataType{
+				Key:              key,
+				Name:             "unique stack of unconstrained",
+				CollectionType:   "stack",
+				CollectionUnique: &trueValue,
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "unique 3+ unordered of ref from something",
+			input: "unique 3+ unordered of ref from something",
+			expected: &DataType{
+				Key:              key,
+				Name:             "unique 3+ unordered of ref from something",
+				CollectionType:   "unordered",
+				CollectionUnique: &trueValue,
+				CollectionMin:    intPtr(3),
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "something",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "unique 2-5 ordered of obj of class_key",
+			input: "unique 2-5 ordered of obj of class_key",
+			expected: &DataType{
+				Key:              key,
+				Name:             "unique 2-5 ordered of obj of class_key",
+				CollectionType:   "ordered",
+				CollectionUnique: &trueValue,
+				CollectionMin:    intPtr(2),
+				CollectionMax:    intPtr(5),
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "unique 0-7 queue of enum of value_a, value_b",
+			input: "unique 0-7 queue of enum of value_a, value_b",
+			expected: &DataType{
+				Key:              key,
+				Name:             "unique 0-7 queue of enum of value_a, value_b",
+				CollectionType:   "queue",
+				CollectionUnique: &trueValue,
+				CollectionMin:    intPtr(0),
+				CollectionMax:    intPtr(7),
+				Atomic: &Atomic{
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+						{Value: "value_b"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := New(key, tt.input)
+			if tt.errorMessage != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMessage)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
 func TestNewUnparsable(t *testing.T) {
 
 	// If we cannot parse the text, no error but instead just a nil result.
@@ -132,6 +337,8 @@ func TestNewInvalid(t *testing.T) {
 }
 
 func TestDataTypeString(t *testing.T) {
+	trueValue := true
+
 	tests := []struct {
 		name         string
 		dataType     DataType
@@ -158,6 +365,42 @@ func TestDataTypeString(t *testing.T) {
 				},
 			},
 			expected: "ref from some ref",
+		},
+		{
+			name: "collection stack",
+			dataType: DataType{
+				CollectionType: "stack",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			expected: "stack of unconstrained",
+		},
+		{
+			name: "collection with multiplicity",
+			dataType: DataType{
+				CollectionType: "unordered",
+				CollectionMin:  intPtr(3),
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "something",
+				},
+			},
+			expected: "3+ unordered of ref from something",
+		},
+		{
+			name: "collection with unique",
+			dataType: DataType{
+				CollectionType:   "ordered",
+				CollectionUnique: &trueValue,
+				CollectionMin:    intPtr(2),
+				CollectionMax:    intPtr(5),
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			expected: "unique 2-5 ordered of obj of class_key",
 		},
 		{
 			name: "non-atomic",

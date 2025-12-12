@@ -7,7 +7,19 @@ import (
 )
 }
 
-DataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+DataType <- CollectionType / SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+
+AtomicDataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType / UnconstrainedAtomicType
+
+UnconstrainedAtomicType <- ws "unconstrained" ws !. {
+	return &DataType{
+		Name:           "unconstrained",
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}, nil
+}
 
 SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionValue ) ws "." "." ws higherValue:( Unconstrained / FractionValue ) ws higherBracket:HigherBracket ws "at" ws precision:Float ws units:Units {
 
@@ -186,6 +198,76 @@ ReferenceType <- ws ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 			Reference: refStr,
 		},
 	}, nil
+}
+
+CollectionType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws collectionType:CollectionTypeKeyword ws "of" ws atomic:AtomicDataType {
+	collectionTypeStr := collectionType.(string)
+	atomicDt := atomic.(*DataType)
+
+	// Set collection properties
+	var unique *bool
+	if uniqueFlag != nil {
+		trueVal := true
+		unique = &trueVal
+	}
+
+	var min, maxPtr *int
+	if multiplicity != nil {
+		mult := multiplicity.(map[string]interface{})
+		if m, ok := mult["min"]; ok {
+			minVal := m.(int)
+			min = &minVal
+		}
+		if m, ok := mult["max"]; ok {
+			maxVal := m.(int)
+			maxPtr = &maxVal
+		}
+	}
+
+	// Build name
+	name := ""
+	if unique != nil {
+		name += "unique "
+	}
+	if min != nil {
+		name += strconv.Itoa(*min)
+		if maxPtr != nil {
+			name += "-" + strconv.Itoa(*maxPtr)
+		} else {
+			name += "+"
+		}
+		name += " "
+	}
+	name += collectionTypeStr + " of " + atomicDt.Name
+
+	return &DataType{
+		Name:              name,
+		CollectionType:    collectionTypeStr,
+		CollectionUnique:  unique,
+		CollectionMin:     min,
+		CollectionMax:     maxPtr,
+		Atomic:            atomicDt.Atomic,
+	}, nil
+}
+
+CollectionTypeKeyword <- ( "stack" / "unordered" / "ordered" / "queue" ) {
+	return string(c.text), nil
+}
+
+Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
+	result := make(map[string]interface{})
+	minVal := min.(int)
+	result["min"] = minVal
+	if suffix != nil {
+		if suffixStr, ok := suffix.(string); ok && suffixStr == "+" {
+			// It's "+", max is nil (unbounded)
+		} else if suffixSlice, ok := suffix.([]interface{}); ok && len(suffixSlice) > 1 {
+			// It's "-" maxVal
+			maximum := suffixSlice[1].(int)
+			result["max"] = maximum
+		}
+	}
+	return result, nil
 }
 
 ws <- [ \t\n\r]*

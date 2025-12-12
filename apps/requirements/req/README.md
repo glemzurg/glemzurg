@@ -40,11 +40,28 @@ enum of value1, value2, value3
 
 (3/4 .. 5/6] at 0.01 meter
 
-unique stack of (3/4 .. 5/6] at 1 meter
-unique 3+ stack (3/4 .. 5/6] at 0.01 meter
-unique 3-7 stack (3/4 .. 5/6] at 0.01 meter
-unique 0-7 stack (3/4 .. 5/6] at 0.01 meter
-0-7 stack (3/4 .. 5/6] at 0.01 meter
+In apps/requirements/req/internal/requirements/data_type/data_type_test.go creates tests for the collections (these do not include records which are not collections). The distinct kinds of collectionsa re "ordered" "unordered" "queue" and "stack"
+
+They all have the same parsing structure, with an optional "unique" in front.
+
+stack of < parsing rules for atomic >
+3+ unordered of < parsing rules for atomic >
+3-7 ordered of < parsing rules for atomic >
+0-7 queue of < parsing rules for atomic >
+
+
+unique stack of < parsing rules for atomic >
+unique 3+ stack of < parsing rules for atomic >
+unique 3-7 stack of < parsing rules for atomic >
+unique 0-7 stack of < parsing rules for atomic >
+
+No number means min is 0 and max is nil.
+3+ (4+, etc.) means min is the number and max is nil.
+2-5 (3-100, etc.) means min is the lower number and max is the higher number
+
+No negative numbers are allowed in any of those collection min or max.
+
+
 
 unique stack of values: (3/4 .. 5/6] meter at 0.01
 unique 3+ stack of values: (3/4 .. 5/6] meter at 0.01
@@ -66,9 +83,10 @@ nog: (3/4 .. 5/6] meter at 0.01
   - examine license of other libraries in use
 
 
-- chip away at tla plus peg parser
+- tla plus peg parser
 - design the simuilator - chained with derived simulators
   - inspect the existing simulator and create a model for it
+  - study library and grammar https://pkg.go.dev/github.com/mna/pigeon
 
 - examine the recursive postgres capabilities
   - store full simualator as rows without json blobs 
@@ -92,7 +110,7 @@ nog: (3/4 .. 5/6] meter at 0.01
   - remove linux users and local postgres
   - remove postgres?
   - https://www.cyberciti.biz/faq/linux-list-users-command/
-  - revove mesasge queues
+  - remove mesasge queues
 
 - add use case level svg images
   - work with an artist to make mud, sea, sky (and mabye fish and kite)

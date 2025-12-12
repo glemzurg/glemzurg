@@ -1,6 +1,8 @@
 package data_type
 
 import (
+	"strconv"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -61,13 +63,15 @@ func (d DataType) Validate() error {
 	return validation.ValidateStruct(&d,
 		validation.Field(&d.Key, validation.Required),
 		validation.Field(&d.Name, validation.Required),
-		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC)),
-		validation.Field(&d.Atomic, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_ATOMIC), validation.By(func(value interface{}) error {
+		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC, _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE)),
+		validation.Field(&d.Atomic, validation.Required, validation.By(func(value interface{}) error {
 			if a, ok := value.(*Atomic); ok && a != nil {
 				return a.Validate()
 			}
 			return nil
 		})),
+		validation.Field(&d.CollectionMin, validation.Min(0)),
+		validation.Field(&d.CollectionMax, validation.Min(0)),
 	)
 }
 
@@ -79,6 +83,25 @@ func (d DataType) String() string {
 			panic("atomic is nil")
 		}
 		return d.Atomic.String()
+	case _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE:
+		name := ""
+		if d.CollectionUnique != nil && *d.CollectionUnique {
+			name += "unique "
+		}
+		if d.CollectionMin != nil {
+			name += strconv.Itoa(*d.CollectionMin)
+			if d.CollectionMax != nil {
+				name += "-" + strconv.Itoa(*d.CollectionMax)
+			} else {
+				name += "+"
+			}
+			name += " "
+		}
+		name += d.CollectionType + " of "
+		if d.Atomic != nil {
+			name += d.Atomic.String()
+		}
+		return name
 	default:
 		panic("unsupported collection type: '" + d.CollectionType + "'")
 	}
