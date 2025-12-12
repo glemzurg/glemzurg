@@ -345,7 +345,7 @@ func TestParseCollections(t *testing.T) {
 		pass := t.Run(tt.name, func(t *testing.T) {
 
 			// Test calling directly into the parser.
-			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("CollectionType"))
+			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("CollectionDataType"))
 			if tt.errorMessage == "" {
 				assert.NoError(t, err, tt.input)
 
@@ -460,16 +460,27 @@ inner: unconstrained;
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := New(key, tt.input)
-			if tt.errorMessage != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errorMessage)
+		pass := t.Run(tt.name, func(t *testing.T) {
+
+			// Test calling directly into the parser.
+			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("RecordDataType"))
+			if tt.errorMessage == "" {
+				assert.NoError(t, err, tt.input)
+
+				dataType, ok := dataTypeAny.(*DataType)
+				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+
+				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+
+				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
+		if !pass {
+			// The earlier test set the basics for later tests, stop as soon as we have an error.
+			break
+		}
 	}
 }
 

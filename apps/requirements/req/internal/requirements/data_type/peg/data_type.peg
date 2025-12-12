@@ -11,9 +11,9 @@ import (
 
 
 
-DataType <- RecordType / CollectionType / AtomicDataType
+DataType <- RecordDataType / CollectionDataType / AtomicDataType
 
-RecordType <- "{" ws fields:FieldList ws "}" {
+RecordTDataype <- "{" ws fields:FieldList ws "}" {
 	fieldsSlice := fields.([]interface{})
 	fieldList := make([]Field, len(fieldsSlice))
 	for i, f := range fieldsSlice {
@@ -46,7 +46,7 @@ FieldName <- [a-zA-Z_][a-zA-Z0-9_]* {
 	return string(c.text), nil
 }
 
-CollectionType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws? collectionType:CollectionTypeKeyword ws "of" ws atomic:AtomicDataType {
+CollectionDataType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws? collectionType:CollectionTypeKeyword ws "of" ws atomic:AtomicDataType {
 	collectionTypeStr := collectionType.(string)
 	atomicDt := atomic.(*DataType)
 
