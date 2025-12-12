@@ -26,6 +26,7 @@ type DataType struct {
 	CollectionMin    *int
 	CollectionMax    *int
 	Atomic           *Atomic
+	RecordFields     []Field
 }
 
 // New creates a new DataType by parsing the input text.
