@@ -283,7 +283,7 @@ UnconstrainedType <- "unconstrained" {
 	}, nil
 }
 
-Content <- [a-zA-Z0-9 \t\n\r-_.,]+ {
+Content <- [a-zA-Z0-9 \t\n\r-_.,#@!*=+]+ {
 	return string(c.text), nil
 } 
 
