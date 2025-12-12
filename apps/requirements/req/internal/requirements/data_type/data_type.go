@@ -45,6 +45,10 @@ func New(key, text string) (dataType *DataType, err error) {
 
 	} else {
 
+		// Simplify the text to have easier to parse whitespace.
+		// All data types are a single line anyway.
+		text = strings.TrimSpace(normalizeWhitespace(text))
+
 		// Parse the data type.
 		dataTypeAny, err := Parse("", []byte(text))
 		if err != nil {

@@ -1118,9 +1118,9 @@ var g = &grammar{
 					pos: position{line: 286, col: 12, offset: 6739},
 					expr: &charClassMatcher{
 						pos:        position{line: 286, col: 12, offset: 6739},
-						val:        "[a-zA-Z0-9 \\t\\n\\r-_.,#@!*=+]",
-						chars:      []rune{' ', '\t', '\n', '.', ',', '#', '@', '!', '*', '=', '+'},
-						ranges:     []rune{'a', 'z', 'A', 'Z', '0', '9', '\r', '_'},
+						val:        "[a-zA-Z0-9 -_.,#@!*=+]",
+						chars:      []rune{'.', ',', '#', '@', '!', '*', '=', '+'},
+						ranges:     []rune{'a', 'z', 'A', 'Z', '0', '9', ' ', '_'},
 						ignoreCase: false,
 						inverted:   false,
 					},
@@ -1129,13 +1129,13 @@ var g = &grammar{
 		},
 		{
 			name: "ws",
-			pos:  position{line: 290, col: 1, offset: 6803},
+			pos:  position{line: 290, col: 1, offset: 6797},
 			expr: &oneOrMoreExpr{
-				pos: position{line: 290, col: 7, offset: 6809},
+				pos: position{line: 290, col: 7, offset: 6803},
 				expr: &charClassMatcher{
-					pos:        position{line: 290, col: 7, offset: 6809},
-					val:        "[ \\t\\n\\r]",
-					chars:      []rune{' ', '\t', '\n', '\r'},
+					pos:        position{line: 290, col: 7, offset: 6803},
+					val:        "[ ]",
+					chars:      []rune{' '},
 					ignoreCase: false,
 					inverted:   false,
 				},
