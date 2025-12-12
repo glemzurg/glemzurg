@@ -553,3 +553,26 @@ func TestDataTypeString(t *testing.T) {
 		})
 	}
 }
+
+		{
+			name:  "empty string",
+			input: "",
+			expected: &DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "whitespace",
+			input: "   \t\n",
+			expected: &DataType{
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},

@@ -7,19 +7,8 @@ import (
 )
 }
 
-DataType <- RecordType / CollectionType / SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+DataType <- RecordType / CollectionType / AtomicDataType
 
-AtomicDataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType / UnconstrainedAtomicType
-
-UnconstrainedAtomicType <- ws "unconstrained" ws !. {
-	return &DataType{
-		Name:           "unconstrained",
-		CollectionType: "atomic",
-		Atomic: &Atomic{
-			ConstraintType: "unconstrained",
-		},
-	}, nil
-}
 
 SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionValue ) ws "." "." ws higherValue:( Unconstrained / FractionValue ) ws higherBracket:HigherBracket ws "at" ws precision:Float ws units:Units {
 
@@ -100,11 +89,6 @@ Float <- ( [0-9]+ "." [0-9]* / [0-9]* "." [0-9]+ / [0-9]+ ) {
 	return val, nil
 }
 
-Unconstrained <- ( "unconstrained" ) {
-	return string(c.text), nil
-}
-
-
 LowerBracket <- ( "(" / "[" ) {
 	return string(c.text), nil
 }
@@ -113,18 +97,12 @@ HigherBracket <- ( ")" / "]" ) {
 	return string(c.text), nil
 }
 
-Units <- [a-zA-Z]+ {
+Unconstrained <- "unconstrained" {
 	return string(c.text), nil
 }
 
-UnconstrainedType <- ws !. {
-	return &DataType{
-		Name:           "unconstrained",
-		CollectionType: "atomic",
-		Atomic: &Atomic{
-			ConstraintType: "unconstrained",
-		},
-	}, nil
+Units <- [a-zA-Z]+ {
+	return string(c.text), nil
 }
 
 OrdEnumType <- ws ("ordered" / "ord") ws enumeration:EnumType {
@@ -151,10 +129,8 @@ EnumType <- ws ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* !. {
 			enums = append(enums, AtomicEnum{Value: trimmed})
 		}
 	}
-	name := "enum of " + valuesStr
 	falseVal := false
 	return &DataType{
-		Name:           name,
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "enumeration",
@@ -171,9 +147,7 @@ ObjectType <- ws ("object" / "obj") ws ("of" / "from") ws classKey:.* !. {
 		classStr += string(b.([]byte))
 	}
 	classStr = strings.TrimSpace(classStr)
-	name := "obj of " + classStr
 	return &DataType{
-		Name:           name,
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "object",
@@ -189,9 +163,7 @@ ReferenceType <- ws ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 		refStr += string(b.([]byte))
 	}
 	refStr = strings.TrimSpace(refStr)
-	name := "ref from " + refStr
 	return &DataType{
-		Name:           name,
 		CollectionType: "atomic",
 		Atomic: &Atomic{
 			ConstraintType: "reference",
@@ -207,7 +179,6 @@ RecordType <- "{" ws fields:FieldList ws "}" {
 		fieldList[i] = f.(Field)
 	}
 	return &DataType{
-		Name:           "record",
 		CollectionType: "record",
 		RecordFields:   fieldList,
 	}, nil
@@ -276,10 +247,8 @@ CollectionType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws coll
 		}
 		name += " "
 	}
-	name += collectionTypeStr + " of " + atomicDt.Name
 
 	return &DataType{
-		Name:              name,
 		CollectionType:    collectionTypeStr,
 		CollectionUnique:  unique,
 		CollectionMin:     min,
@@ -306,6 +275,17 @@ Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
 		}
 	}
 	return result, nil
+}
+
+AtomicDataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
+
+UnconstrainedType <- ws "unconstrained" ws !. {
+	return &DataType{
+		CollectionType: "atomic",
+		Atomic: &Atomic{
+			ConstraintType: "unconstrained",
+		},
+	}, nil
 }
 
 ws <- [ \t\n\r]*
