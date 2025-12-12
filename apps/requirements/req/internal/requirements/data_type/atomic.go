@@ -109,12 +109,7 @@ func (a Atomic) String() string {
 			higherBracket = "]"
 		}
 
-		precisionStr := ""
-		if a.Span.Precision < 1.0 {
-			precisionStr = " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64)
-		}
-
-		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " " + a.Span.Units + precisionStr
+		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64) + " " + a.Span.Units
 
 	case _CONSTRAINT_TYPE_REFERENCE:
 		return "ref: " + a.Reference

@@ -9,7 +9,7 @@ import (
 
 DataType <- SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType
 
-SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionValue ) ws "." "." ws higherValue:( Unconstrained / FractionValue ) ws higherBracket:HigherBracket ws units:Units ws precision:Float {
+SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionValue ) ws "." "." ws higherValue:( Unconstrained / FractionValue ) ws higherBracket:HigherBracket ws "at" ws precision:Float ws units:Units {
 
 	// What are the bounds?
 	lowerType := "open"

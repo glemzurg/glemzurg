@@ -300,10 +300,10 @@ func TestParseAtomic(t *testing.T) {
 		// Spans.
 		{
 			name:  "span simple",
-			input: "(3/4 .. 5/6] meter 0.01",
+			input: "(3/4 .. 5/6] at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(3/4 .. 5/6] meter at 0.01",
+				Name:           "(3/4 .. 5/6] at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -323,10 +323,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span simple with whitespace",
-			input: "(  \t\n3/4 \t\n ..  \t\n5/6 \t\n] \t\n meter \t\n 0.01",
+			input: "(  \t\n3/4 \t\n ..  \t\n5/6 \t\n] \t\n at \t\n 0.01 \t\n meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(3/4 .. 5/6] meter at 0.01",
+				Name:           "(3/4 .. 5/6] at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -346,10 +346,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span simple, minimal whitespace",
-			input: "(3/4..5/6]meter 0.01",
+			input: "(3/4..5/6]at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(3/4 .. 5/6] meter at 0.01",
+				Name:           "(3/4 .. 5/6] at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -369,10 +369,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span closed lower open higher",
-			input: "[3/4 .. 5/6) meter 1",
+			input: "[3/4 .. 5/6) at 1 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "[3/4 .. 5/6) meter",
+				Name:           "[3/4 .. 5/6) at 1 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -392,10 +392,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span both closed",
-			input: "[3/4 .. 5/6] meter 0.01",
+			input: "[3/4 .. 5/6] at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "[3/4 .. 5/6] meter at 0.01",
+				Name:           "[3/4 .. 5/6] at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -415,10 +415,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span both open",
-			input: "(3/4 .. 5/6) meter 0.01",
+			input: "(3/4 .. 5/6) at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(3/4 .. 5/6) meter at 0.01",
+				Name:           "(3/4 .. 5/6) at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -438,10 +438,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span unconstrained lower",
-			input: "(unconstrained .. 5/6] meter 0.01",
+			input: "(unconstrained .. 5/6] at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(unconstrained .. 5/6] meter at 0.01",
+				Name:           "(unconstrained .. 5/6] at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -459,10 +459,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span unconstrained higher",
-			input: "[3/4 .. unconstrained) meter 0.01",
+			input: "[3/4 .. unconstrained) at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "[3/4 .. unconstrained) meter at 0.01",
+				Name:           "[3/4 .. unconstrained) at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -480,10 +480,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span without denominators",
-			input: "(3 .. 5] meter 0.01",
+			input: "(3 .. 5] at 0.01 meter",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(3 .. 5] meter at 0.01",
+				Name:           "(3 .. 5] at 0.01 meter",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -503,10 +503,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "span different units",
-			input: "(1/2 .. 3/4] kilogram 0.001",
+			input: "(1/2 .. 3/4] at 0.001 kilogram",
 			expected: &DataType{
 				Key:            key,
-				Name:           "(1/2 .. 3/4] kilogram at 0.001",
+				Name:           "(1/2 .. 3/4] at 0.001 kilogram",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "span",
@@ -621,7 +621,7 @@ func TestAtomicString(t *testing.T) {
 					Precision:         0.01,
 				},
 			},
-			expected: "(3/4 .. 5/6] meter at 0.01",
+			expected: "(3/4 .. 5/6] at 0.01 meter",
 		},
 		{
 			name: "unknown type",
