@@ -162,9 +162,9 @@ SpanType <- lowerBracket:LowerBracket ws? lowerValue:( Unconstrained / FractionV
 	}
 
 	return &DataType{
-		CollectionType: "atomic",
+		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: "span",
+			ConstraintType: _CONSTRAINT_TYPE_SPAN,
 			Span: &AtomicSpan{
 				LowerType:         lowerType,
 				LowerValue:        lvPtr,
@@ -243,54 +243,48 @@ EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* {
 	}
 	falseVal := false
 	return &DataType{
-		CollectionType: "atomic",
+		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: "enumeration",
+			ConstraintType: _CONSTRAINT_TYPE_ENUMERATION,
 			EnumOrdered:    &falseVal,
 			Enums:          enums,
 		},
 	}, nil
 }
 
-ObjectType <- ("object" / "obj") ws ("of" / "from") ws classKey:.* !. {
-	classBytes := classKey.([]interface{})
-	classStr := ""
-	for _, b := range classBytes {
-		classStr += string(b.([]byte))
-	}
-	classStr = strings.TrimSpace(classStr)
+ObjectType <- ("object" / "obj") ws ("of" / "from") ws content:Content? {
+	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: "atomic",
+		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: "object",
-			ObjectClassKey: classStr,
+			ConstraintType: _CONSTRAINT_TYPE_OBJECT,
+			ObjectClassKey: contentStr,
 		},
 	}, nil
 }
 
-ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
-	refBytes := ref.([]interface{})
-	refStr := ""
-	for _, b := range refBytes {
-		refStr += string(b.([]byte))
-	}
-	refStr = strings.TrimSpace(refStr)
+ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws content:Content? {
+	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: "atomic",
+		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: "reference",
-			Reference: refStr,
+			ConstraintType: _CONSTRAINT_TYPE_REFERENCE,
+			Reference: contentStr,
 		},
 	}, nil
 }
 
 UnconstrainedType <- "unconstrained" {
 	return &DataType{
-		CollectionType: "atomic",
+		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: "unconstrained",
+			ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
 		},
 	}, nil
 }
+
+Content <- [a-zA-Z0-9 \t\n\r-_.,]+ {
+	return string(c.text), nil
+} 
 
 ws <- [ \t\n\r]+
