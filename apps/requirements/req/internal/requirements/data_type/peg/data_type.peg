@@ -118,11 +118,11 @@ Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
 	return result, nil
 }
 
-AtomicDataType <- ws atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) ws {
+AtomicDataType <- ws? atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) ws? !. {
 	return atomic, nil
 }
 
-SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionValue ) ws "." "." ws higherValue:( Unconstrained / FractionValue ) ws higherBracket:HigherBracket ws "at" ws precision:Float ws units:Units {
+SpanType <- lowerBracket:LowerBracket ws? lowerValue:( Unconstrained / FractionValue ) ws? ".." ws? higherValue:( Unconstrained / FractionValue ) ws? higherBracket:HigherBracket ws? "at" ws? precision:Float ws? units:Units {
 
 	// What are the bounds?
 	lowerType := "open"
@@ -179,7 +179,7 @@ SpanType <- lowerBracket:LowerBracket ws lowerValue:( Unconstrained / FractionVa
 	}, nil
 }
 
-FractionValue <- ( value:Integer denom:( ws "/" ws denomValue:Integer )? ) {
+FractionValue <- ( value:Integer denom:( ws? "/" ws? denomValue:Integer )? ) {
 	v := value.(int)
 	d := 1
 	if denomSlice, ok := denom.([]interface{}); ok && len(denomSlice) > 0 {
@@ -213,11 +213,11 @@ Unconstrained <- "unconstrained" {
 	return string(c.text), nil
 }
 
-Units <- [a-zA-Z]+ {
+Units <- [a-zA-Z-]+ {
 	return string(c.text), nil
 }
 
-OrdEnumType <- ws ("ordered" / "ord") ws enumeration:EnumType {
+OrdEnumType <- ("ordered" / "ord") ws enumeration:EnumType {
 	// Make it ordered.
 	trueValue := true
 	enumType := enumeration.(*DataType)
@@ -225,7 +225,7 @@ OrdEnumType <- ws ("ordered" / "ord") ws enumeration:EnumType {
 	return enumType, nil
 }
 
-EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* !. {
+EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* {
 	valuesBytes := enumValues.([]interface{})
 	valuesStr := ""
 	for _, b := range valuesBytes {
@@ -284,7 +284,7 @@ ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 	}, nil
 }
 
-UnconstrainedType <- "unconstrained" !. {
+UnconstrainedType <- "unconstrained" {
 	return &DataType{
 		CollectionType: "atomic",
 		Atomic: &Atomic{
@@ -293,4 +293,4 @@ UnconstrainedType <- "unconstrained" !. {
 	}, nil
 }
 
-ws <- [ \t\n\r]*
+ws <- [ \t\n\r]+
