@@ -116,6 +116,58 @@ func (suite *DataTypeSuite) TestValidate() {
 	}
 }
 
+func TestParseBlank(t *testing.T) {
+	key := "key"
+
+	tests := []struct {
+		name         string
+		input        string
+		expected     *DataType
+		errorMessage string
+	}{
+		// Basic collections without multiplicity
+		{
+			name:  "blank",
+			input: "",
+			expected: &DataType{
+				Key:            key,
+				Name:           "unconstrained",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "only whitespace",
+			input: " \t\n\r",
+			expected: &DataType{
+				Key:            key,
+				Name:           "unconstrained",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			errorMessage: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := New(key, tt.input)
+			if tt.errorMessage != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMessage)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
 func TestParseCollections(t *testing.T) {
 	key := "key"
 	trueValue := true
@@ -310,6 +362,31 @@ func TestParseCollections(t *testing.T) {
 			},
 			errorMessage: "",
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := New(key, tt.input)
+			if tt.errorMessage != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMessage)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestParseRecords(t *testing.T) {
+	key := "key"
+
+	tests := []struct {
+		name         string
+		input        string
+		expected     *DataType
+		errorMessage string
+	}{
 
 		// Records
 		{
@@ -553,26 +630,3 @@ func TestDataTypeString(t *testing.T) {
 		})
 	}
 }
-
-		{
-			name:  "empty string",
-			input: "",
-			expected: &DataType{
-				CollectionType: "atomic",
-				Atomic: &Atomic{
-					ConstraintType: "unconstrained",
-				},
-			},
-			errorMessage: "",
-		},
-		{
-			name:  "whitespace",
-			input: "   \t\n",
-			expected: &DataType{
-				CollectionType: "atomic",
-				Atomic: &Atomic{
-					ConstraintType: "unconstrained",
-				},
-			},
-			errorMessage: "",
-		},

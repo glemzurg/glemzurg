@@ -2,6 +2,7 @@ package data_type
 
 import (
 	"strconv"
+	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
@@ -32,16 +33,30 @@ type DataType struct {
 // New creates a new DataType by parsing the input text.
 func New(key, text string) (dataType *DataType, err error) {
 
-	// Parse the data type.
-	dataTypeAny, err := Parse("", []byte(text))
-	if err != nil {
-		return nil, nil // Not an error, just cannot parse.
-	}
+	// If this is blank then it is an unconstrained data type.
+	if strings.TrimSpace(text) == "" {
 
-	// Case to the data type.
-	dataType, ok := dataTypeAny.(*DataType)
-	if !ok {
-		return nil, errors.Errorf("parsed data type is not of type *DataType")
+		dataType = &DataType{
+			CollectionType: _COLLECTION_TYPE_ATOMIC,
+			Atomic: &Atomic{
+				ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
+			},
+		}
+
+	} else {
+
+		// Parse the data type.
+		dataTypeAny, err := Parse("", []byte(text))
+		if err != nil {
+			return nil, nil // Not an error, just cannot parse.
+		}
+
+		// Case to the data type.
+		var ok bool
+		dataType, ok = dataTypeAny.(*DataType)
+		if !ok {
+			return nil, errors.Errorf("parsed data type is not of type *DataType")
+		}
 	}
 
 	// Set the key.
