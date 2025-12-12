@@ -212,24 +212,28 @@ CollectionType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws coll
 	}
 
 	var min, maxPtr *int
+	minVal := 0 // Default min is 0 for collections
+	multiplicitySpecified := false
 	if multiplicity != nil {
 		mult := multiplicity.(map[string]interface{})
 		if m, ok := mult["min"]; ok {
-			minVal := m.(int)
-			min = &minVal
+			minVal = m.(int)
+			multiplicitySpecified = true
 		}
 		if m, ok := mult["max"]; ok {
 			maxVal := m.(int)
 			maxPtr = &maxVal
+			multiplicitySpecified = true
 		}
 	}
+	min = &minVal
 
 	// Build name
 	name := ""
 	if unique != nil {
 		name += "unique "
 	}
-	if min != nil {
+	if multiplicitySpecified {
 		name += strconv.Itoa(*min)
 		if maxPtr != nil {
 			name += "-" + strconv.Itoa(*maxPtr)

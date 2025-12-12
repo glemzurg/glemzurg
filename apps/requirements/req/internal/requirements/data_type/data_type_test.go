@@ -135,6 +135,7 @@ func TestParseCollections(t *testing.T) {
 				Key:            key,
 				Name:           "stack of unconstrained",
 				CollectionType: "stack",
+				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -146,8 +147,9 @@ func TestParseCollections(t *testing.T) {
 			input: "unordered of ref from something",
 			expected: &DataType{
 				Key:            key,
-				Name:           "unordered of ref from something",
+				Name:           "unordered collection of ref from something",
 				CollectionType: "unordered",
+				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
 					Reference:      "something",
@@ -160,8 +162,9 @@ func TestParseCollections(t *testing.T) {
 			input: "ordered of obj of class_key",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ordered of obj of class_key",
+				Name:           "ordered collection of obj of class_key",
 				CollectionType: "ordered",
+				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "object",
 					ObjectClassKey: "class_key",
@@ -176,6 +179,7 @@ func TestParseCollections(t *testing.T) {
 				Key:            key,
 				Name:           "queue of enum of value_a, value_b",
 				CollectionType: "queue",
+				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
 					EnumOrdered:    &falseValue,
@@ -194,7 +198,7 @@ func TestParseCollections(t *testing.T) {
 			input: "3+ unordered of unconstrained",
 			expected: &DataType{
 				Key:            key,
-				Name:           "3+ unordered of unconstrained",
+				Name:           "3+ unordered collection of unconstrained",
 				CollectionType: "unordered",
 				CollectionMin:  intPtr(3),
 				Atomic: &Atomic{
@@ -208,7 +212,7 @@ func TestParseCollections(t *testing.T) {
 			input: "2-5 ordered of ref from something",
 			expected: &DataType{
 				Key:            key,
-				Name:           "2-5 ordered of ref from something",
+				Name:           "2-5 ordered collection of ref from something",
 				CollectionType: "ordered",
 				CollectionMin:  intPtr(2),
 				CollectionMax:  intPtr(5),
@@ -245,6 +249,7 @@ func TestParseCollections(t *testing.T) {
 				Name:             "unique stack of unconstrained",
 				CollectionType:   "stack",
 				CollectionUnique: &trueValue,
+				CollectionMin:    intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -256,7 +261,7 @@ func TestParseCollections(t *testing.T) {
 			input: "unique 3+ unordered of ref from something",
 			expected: &DataType{
 				Key:              key,
-				Name:             "unique 3+ unordered of ref from something",
+				Name:             "unique 3+ unordered collection of ref from something",
 				CollectionType:   "unordered",
 				CollectionUnique: &trueValue,
 				CollectionMin:    intPtr(3),
@@ -272,7 +277,7 @@ func TestParseCollections(t *testing.T) {
 			input: "unique 2-5 ordered of obj of class_key",
 			expected: &DataType{
 				Key:              key,
-				Name:             "unique 2-5 ordered of obj of class_key",
+				Name:             "unique 2-5 ordered collection of obj of class_key",
 				CollectionType:   "ordered",
 				CollectionUnique: &trueValue,
 				CollectionMin:    intPtr(2),
@@ -370,11 +375,45 @@ func TestDataTypeString(t *testing.T) {
 			name: "collection stack",
 			dataType: DataType{
 				CollectionType: "stack",
+				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
 			},
 			expected: "stack of unconstrained",
+		},
+		{
+			name: "collection ordered",
+			dataType: DataType{
+				CollectionType: "ordered",
+				CollectionMin:  intPtr(0),
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			expected: "ordered collection of unconstrained",
+		},
+		{
+			name: "collection unordered",
+			dataType: DataType{
+				CollectionType: "unordered",
+				CollectionMin:  intPtr(0),
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			expected: "unordered collection of unconstrained",
+		},
+		{
+			name: "collection queue",
+			dataType: DataType{
+				CollectionType: "queue",
+				CollectionMin:  intPtr(0),
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			expected: "queue of unconstrained",
 		},
 		{
 			name: "collection with multiplicity",
@@ -386,7 +425,7 @@ func TestDataTypeString(t *testing.T) {
 					Reference:      "something",
 				},
 			},
-			expected: "3+ unordered of ref from something",
+			expected: "3+ unordered collection of ref from something",
 		},
 		{
 			name: "collection with unique",
@@ -400,7 +439,7 @@ func TestDataTypeString(t *testing.T) {
 					ObjectClassKey: "class_key",
 				},
 			},
-			expected: "unique 2-5 ordered of obj of class_key",
+			expected: "unique 2-5 ordered collection of obj of class_key",
 		},
 		{
 			name: "non-atomic",

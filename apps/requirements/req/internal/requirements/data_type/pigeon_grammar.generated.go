@@ -867,33 +867,33 @@ var g = &grammar{
 		},
 		{
 			name: "CollectionTypeKeyword",
-			pos:  position{line: 253, col: 1, offset: 5793},
+			pos:  position{line: 257, col: 1, offset: 5946},
 			expr: &actionExpr{
-				pos: position{line: 253, col: 26, offset: 5818},
+				pos: position{line: 257, col: 26, offset: 5971},
 				run: (*parser).callonCollectionTypeKeyword1,
 				expr: &choiceExpr{
-					pos: position{line: 253, col: 28, offset: 5820},
+					pos: position{line: 257, col: 28, offset: 5973},
 					alternatives: []any{
 						&litMatcher{
-							pos:        position{line: 253, col: 28, offset: 5820},
+							pos:        position{line: 257, col: 28, offset: 5973},
 							val:        "stack",
 							ignoreCase: false,
 							want:       "\"stack\"",
 						},
 						&litMatcher{
-							pos:        position{line: 253, col: 38, offset: 5830},
+							pos:        position{line: 257, col: 38, offset: 5983},
 							val:        "unordered",
 							ignoreCase: false,
 							want:       "\"unordered\"",
 						},
 						&litMatcher{
-							pos:        position{line: 253, col: 52, offset: 5844},
+							pos:        position{line: 257, col: 52, offset: 5997},
 							val:        "ordered",
 							ignoreCase: false,
 							want:       "\"ordered\"",
 						},
 						&litMatcher{
-							pos:        position{line: 253, col: 64, offset: 5856},
+							pos:        position{line: 257, col: 64, offset: 6009},
 							val:        "queue",
 							ignoreCase: false,
 							want:       "\"queue\"",
@@ -904,50 +904,50 @@ var g = &grammar{
 		},
 		{
 			name: "Multiplicity",
-			pos:  position{line: 257, col: 1, offset: 5899},
+			pos:  position{line: 261, col: 1, offset: 6052},
 			expr: &actionExpr{
-				pos: position{line: 257, col: 17, offset: 5915},
+				pos: position{line: 261, col: 17, offset: 6068},
 				run: (*parser).callonMultiplicity1,
 				expr: &seqExpr{
-					pos: position{line: 257, col: 17, offset: 5915},
+					pos: position{line: 261, col: 17, offset: 6068},
 					exprs: []any{
 						&labeledExpr{
-							pos:   position{line: 257, col: 17, offset: 5915},
+							pos:   position{line: 261, col: 17, offset: 6068},
 							label: "min",
 							expr: &ruleRefExpr{
-								pos:  position{line: 257, col: 21, offset: 5919},
+								pos:  position{line: 261, col: 21, offset: 6072},
 								name: "Integer",
 							},
 						},
 						&labeledExpr{
-							pos:   position{line: 257, col: 29, offset: 5927},
+							pos:   position{line: 261, col: 29, offset: 6080},
 							label: "suffix",
 							expr: &zeroOrOneExpr{
-								pos: position{line: 257, col: 36, offset: 5934},
+								pos: position{line: 261, col: 36, offset: 6087},
 								expr: &choiceExpr{
-									pos: position{line: 257, col: 38, offset: 5936},
+									pos: position{line: 261, col: 38, offset: 6089},
 									alternatives: []any{
 										&seqExpr{
-											pos: position{line: 257, col: 38, offset: 5936},
+											pos: position{line: 261, col: 38, offset: 6089},
 											exprs: []any{
 												&litMatcher{
-													pos:        position{line: 257, col: 38, offset: 5936},
+													pos:        position{line: 261, col: 38, offset: 6089},
 													val:        "-",
 													ignoreCase: false,
 													want:       "\"-\"",
 												},
 												&labeledExpr{
-													pos:   position{line: 257, col: 42, offset: 5940},
+													pos:   position{line: 261, col: 42, offset: 6093},
 													label: "maxVal",
 													expr: &ruleRefExpr{
-														pos:  position{line: 257, col: 49, offset: 5947},
+														pos:  position{line: 261, col: 49, offset: 6100},
 														name: "Integer",
 													},
 												},
 											},
 										},
 										&litMatcher{
-											pos:        position{line: 257, col: 59, offset: 5957},
+											pos:        position{line: 261, col: 59, offset: 6110},
 											val:        "+",
 											ignoreCase: false,
 											want:       "\"+\"",
@@ -962,11 +962,11 @@ var g = &grammar{
 		},
 		{
 			name: "ws",
-			pos:  position{line: 273, col: 1, offset: 6372},
+			pos:  position{line: 277, col: 1, offset: 6525},
 			expr: &zeroOrMoreExpr{
-				pos: position{line: 273, col: 7, offset: 6378},
+				pos: position{line: 277, col: 7, offset: 6531},
 				expr: &charClassMatcher{
-					pos:        position{line: 273, col: 7, offset: 6378},
+					pos:        position{line: 277, col: 7, offset: 6531},
 					val:        "[ \\t\\n\\r]",
 					chars:      []rune{' ', '\t', '\n', '\r'},
 					ignoreCase: false,
@@ -1261,24 +1261,28 @@ func (c *current) onCollectionType1(uniqueFlag, multiplicity, collectionType, at
 	}
 
 	var min, maxPtr *int
+	minVal := 0 // Default min is 0 for collections
+	multiplicitySpecified := false
 	if multiplicity != nil {
 		mult := multiplicity.(map[string]interface{})
 		if m, ok := mult["min"]; ok {
-			minVal := m.(int)
-			min = &minVal
+			minVal = m.(int)
+			multiplicitySpecified = true
 		}
 		if m, ok := mult["max"]; ok {
 			maxVal := m.(int)
 			maxPtr = &maxVal
+			multiplicitySpecified = true
 		}
 	}
+	min = &minVal
 
 	// Build name
 	name := ""
 	if unique != nil {
 		name += "unique "
 	}
-	if min != nil {
+	if multiplicitySpecified {
 		name += strconv.Itoa(*min)
 		if maxPtr != nil {
 			name += "-" + strconv.Itoa(*maxPtr)

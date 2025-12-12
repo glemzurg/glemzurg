@@ -34,8 +34,7 @@ func New(key, text string) (dataType *DataType, err error) {
 	// Parse the data type.
 	dataTypeAny, err := Parse("", []byte(text))
 	if err != nil {
-		return nil, err
-		//		return nil, nil // Not an error, just cannot parse.
+		return nil, nil // Not an error, just cannot parse.
 	}
 
 	// Case to the data type.
@@ -63,14 +62,22 @@ func (d DataType) Validate() error {
 	return validation.ValidateStruct(&d,
 		validation.Field(&d.Key, validation.Required),
 		validation.Field(&d.Name, validation.Required),
-		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC, _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE)),
+		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC, _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE, _COLLECTION_TYPE_RECORD)),
 		validation.Field(&d.Atomic, validation.Required, validation.By(func(value interface{}) error {
 			if a, ok := value.(*Atomic); ok && a != nil {
 				return a.Validate()
 			}
 			return nil
 		})),
-		validation.Field(&d.CollectionMin, validation.Min(0)),
+		validation.Field(&d.CollectionMin, validation.By(func(value interface{}) error {
+			if d.CollectionType == _COLLECTION_TYPE_STACK || d.CollectionType == _COLLECTION_TYPE_UNORDERED || d.CollectionType == _COLLECTION_TYPE_ORDERED || d.CollectionType == _COLLECTION_TYPE_QUEUE {
+				if value == nil {
+					return errors.New("cannot be blank")
+				}
+				return nil
+			}
+			return nil
+		}), validation.Min(0)),
 		validation.Field(&d.CollectionMax, validation.Min(0)),
 	)
 }
@@ -88,7 +95,7 @@ func (d DataType) String() string {
 		if d.CollectionUnique != nil && *d.CollectionUnique {
 			name += "unique "
 		}
-		if d.CollectionMin != nil {
+		if d.CollectionMin != nil && (*d.CollectionMin != 0 || d.CollectionMax != nil) {
 			name += strconv.Itoa(*d.CollectionMin)
 			if d.CollectionMax != nil {
 				name += "-" + strconv.Itoa(*d.CollectionMax)
@@ -97,7 +104,13 @@ func (d DataType) String() string {
 			}
 			name += " "
 		}
-		name += d.CollectionType + " of "
+
+		collectionType := d.CollectionType
+		if collectionType == _COLLECTION_TYPE_UNORDERED || collectionType == _COLLECTION_TYPE_ORDERED {
+			collectionType = collectionType + " collection"
+		}
+
+		name += collectionType + " of "
 		if d.Atomic != nil {
 			name += d.Atomic.String()
 		}
