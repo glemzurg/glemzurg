@@ -112,19 +112,19 @@ func (a Atomic) String() string {
 		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64) + " " + a.Span.Units
 
 	case _CONSTRAINT_TYPE_REFERENCE:
-		return "ref: " + a.Reference
+		return "ref from " + a.Reference
 
 	case _CONSTRAINT_TYPE_OBJECT:
-		return "obj: " + a.ObjectClassKey
+		return "obj of " + a.ObjectClassKey
 
 	case _CONSTRAINT_TYPE_ENUMERATION:
 		var values []string
 		for _, enum := range a.Enums {
 			values = append(values, enum.Value)
 		}
-		prefix := "enum:"
+		prefix := "enum of"
 		if a.EnumOrdered != nil && *a.EnumOrdered {
-			prefix = "ord-enum:"
+			prefix = "ord-enum of"
 		}
 		return prefix + " " + strings.Join(values, ", ")
 	default:

@@ -157,7 +157,7 @@ func TestDataTypeString(t *testing.T) {
 					Reference:      "some ref",
 				},
 			},
-			expected: "ref: some ref",
+			expected: "ref from some ref",
 		},
 		{
 			name: "non-atomic",

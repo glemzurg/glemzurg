@@ -26,9 +26,13 @@ next:
 - Stack. A last in, first out stack.
 
 
+same but for
+
 obj: class_key
 ref: something
 enum: value, value
+
+refactor the ": " to instead be " of " or " from "
 
 ref from The abbreviation for states from
 obj of/from class_key

@@ -50,10 +50,24 @@ func TestParseAtomic(t *testing.T) {
 		// References.
 		{
 			name:  "ref",
-			input: "ref: listed somewhere else",
+			input: "ref from listed somewhere else",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ref: listed somewhere else",
+				Name:           "ref from listed somewhere else",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "reference",
+					Reference:      "listed somewhere else",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "ref of",
+			input: "ref of listed somewhere else",
+			expected: &DataType{
+				Key:            key,
+				Name:           "ref from listed somewhere else",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
@@ -64,10 +78,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "reference",
-			input: "reference: listed somewhere else",
+			input: "reference from listed somewhere else",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ref: listed somewhere else",
+				Name:           "ref from listed somewhere else",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
@@ -78,10 +92,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "ref with whitespace",
-			input: "   \t\nref   \t\n:    \t\nlisted somewhere else    \t\n",
+			input: "   \t\nref   \t\nfrom    \t\nlisted somewhere else    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ref: listed somewhere else",
+				Name:           "ref from listed somewhere else",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
@@ -92,10 +106,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "reference with whitespace",
-			input: "   \t\nreference   \t\n:    \t\nlisted somewhere else    \t\n",
+			input: "   \t\nreference   \t\nfrom    \t\nlisted somewhere else    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ref: listed somewhere else",
+				Name:           "ref from listed somewhere else",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
@@ -108,10 +122,24 @@ func TestParseAtomic(t *testing.T) {
 		// Objects.
 		{
 			name:  "obj",
-			input: "obj: class_key",
+			input: "obj of class_key",
 			expected: &DataType{
 				Key:            key,
-				Name:           "obj: class_key",
+				Name:           "obj of class_key",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "obj from",
+			input: "obj from class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "obj of class_key",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
@@ -122,10 +150,24 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "object",
-			input: "object: class_key",
+			input: "object of class_key",
 			expected: &DataType{
 				Key:            key,
-				Name:           "obj: class_key",
+				Name:           "obj of class_key",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "object",
+					ObjectClassKey: "class_key",
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "object from",
+			input: "object from class_key",
+			expected: &DataType{
+				Key:            key,
+				Name:           "obj of class_key",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
@@ -136,10 +178,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "obj with whitespace",
-			input: "   \t\nobj   \t\n:    \t\nclass_key    \t\n",
+			input: "   \t\nobj   \t\nof    \t\nclass_key    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "obj: class_key",
+				Name:           "obj of class_key",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
@@ -150,10 +192,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "object with whitespace",
-			input: "   \t\nobject   \t\n:    \t\nclass_key    \t\n",
+			input: "   \t\nobject   \t\nof    \t\nclass_key    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "obj: class_key",
+				Name:           "obj of class_key",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
@@ -165,11 +207,28 @@ func TestParseAtomic(t *testing.T) {
 
 		// Enumeration.
 		{
-			name:  "enum on value",
-			input: "enum: value_a",
+			name:  "enum of value",
+			input: "enum of value_a",
 			expected: &DataType{
 				Key:            key,
-				Name:           "enum: value_a",
+				Name:           "enum of value_a",
+				CollectionType: "atomic",
+				Atomic: &Atomic{
+					ConstraintType: "enumeration",
+					EnumOrdered:    &falseValue,
+					Enums: []AtomicEnum{
+						{Value: "value_a"},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+		{
+			name:  "enum from value",
+			input: "enum from value_a",
+			expected: &DataType{
+				Key:            key,
+				Name:           "enum of value_a",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -183,10 +242,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "enum",
-			input: "enum: value_a, value_b, value_c",
+			input: "enum of value_a, value_b, value_c",
 			expected: &DataType{
 				Key:            key,
-				Name:           "enum: value_a, value_b, value_c",
+				Name:           "enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -201,15 +260,15 @@ func TestParseAtomic(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			name:  "enumeration",
-			input: "enumeration: value_a, value_b, value_c",
+			name:  "ordered enumeration",
+			input: "ordered enumeration of value_a, value_b, value_c",
 			expected: &DataType{
 				Key:            key,
-				Name:           "enum: value_a, value_b, value_c",
+				Name:           "ord-enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
-					EnumOrdered:    &falseValue,
+					EnumOrdered:    &trueValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -220,11 +279,11 @@ func TestParseAtomic(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			name:  "enum with whitespace",
-			input: "   \t\nenum   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			name:  "ordered enum with whitespace",
+			input: "   \t\nordered \t\n enum   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "enum: value_a, value_b, value_c",
+				Name:           "enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -240,10 +299,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "enumeration with whitespace",
-			input: "   \t\nenumeration   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			input: "   \t\nenumeration   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "enum: value_a, value_b, value_c",
+				Name:           "enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -260,10 +319,10 @@ func TestParseAtomic(t *testing.T) {
 
 		{
 			name:  "ord enum with whitespace",
-			input: "   \t\nord-enum   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			input: "   \t\nord-enum   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ord-enum: value_a, value_b, value_c",
+				Name:           "ord-enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -279,10 +338,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "ordered enumeration with whitespace",
-			input: "   \t\nordered-enumeration   \t\n:    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			input: "   \t\nordered-enumeration   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ord-enum: value_a, value_b, value_c",
+				Name:           "ord-enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -562,7 +621,7 @@ func TestAtomicString(t *testing.T) {
 				ConstraintType: "reference",
 				Reference:      "listed somewhere else",
 			},
-			expected: "ref: listed somewhere else",
+			expected: "ref from listed somewhere else",
 		},
 		{
 			name: "reference empty",
@@ -570,7 +629,7 @@ func TestAtomicString(t *testing.T) {
 				ConstraintType: "reference",
 				Reference:      "",
 			},
-			expected: "ref: ",
+			expected: "ref from ",
 		},
 		{
 			name: "object",
@@ -578,7 +637,7 @@ func TestAtomicString(t *testing.T) {
 				ConstraintType: "object",
 				ObjectClassKey: "some_class",
 			},
-			expected: "obj: some_class",
+			expected: "obj of some_class",
 		},
 		{
 			name: "enumeration",
@@ -591,7 +650,7 @@ func TestAtomicString(t *testing.T) {
 					{Value: "value_c"},
 				},
 			},
-			expected: "enum: value_a, value_b, value_c",
+			expected: "enum of value_a, value_b, value_c",
 		},
 		{
 			name: "ordered enumeration",
@@ -604,7 +663,7 @@ func TestAtomicString(t *testing.T) {
 					{Value: "value_c"},
 				},
 			},
-			expected: "ord-enum: value_a, value_b, value_c",
+			expected: "ord-enum of value_a, value_b, value_c",
 		},
 		{
 			name: "span",

@@ -115,7 +115,7 @@ UnconstrainedType <- ws !. {
 	}, nil
 }
 
-OrdEnumType <- ws ("ordered-enumeration" / "ord-enum") ws ":" ws enumValues:.* !. {
+OrdEnumType <- ws ("ordered-enumeration" / "ord-enum" / ("ordered" / "ord") ws ("enumeration" / "enum")) ws ("of" / "from") ws enumValues:.* !. {
 	valuesBytes := enumValues.([]interface{})
 	valuesStr := ""
 	for _, b := range valuesBytes {
@@ -131,7 +131,7 @@ OrdEnumType <- ws ("ordered-enumeration" / "ord-enum") ws ":" ws enumValues:.* !
 			enums = append(enums, AtomicEnum{Value: trimmed})
 		}
 	}
-	name := "ord-enum: " + valuesStr
+	name := "ord-enum of " + valuesStr
 	trueVal := true
 	return &DataType{
 		Name:           name,
@@ -144,7 +144,7 @@ OrdEnumType <- ws ("ordered-enumeration" / "ord-enum") ws ":" ws enumValues:.* !
 	}, nil
 }
 
-EnumType <- ws ("enumeration" / "enum") ws ":" ws enumValues:.* !. {
+EnumType <- ws ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* !. {
 	valuesBytes := enumValues.([]interface{})
 	valuesStr := ""
 	for _, b := range valuesBytes {
@@ -160,7 +160,7 @@ EnumType <- ws ("enumeration" / "enum") ws ":" ws enumValues:.* !. {
 			enums = append(enums, AtomicEnum{Value: trimmed})
 		}
 	}
-	name := "enum: " + valuesStr
+	name := "enum of " + valuesStr
 	falseVal := false
 	return &DataType{
 		Name:           name,
@@ -173,14 +173,14 @@ EnumType <- ws ("enumeration" / "enum") ws ":" ws enumValues:.* !. {
 	}, nil
 }
 
-ObjectType <- ws ("object" / "obj") ws ":" ws classKey:.* !. {
+ObjectType <- ws ("object" / "obj") ws ("of" / "from") ws classKey:.* !. {
 	classBytes := classKey.([]interface{})
 	classStr := ""
 	for _, b := range classBytes {
 		classStr += string(b.([]byte))
 	}
 	classStr = strings.TrimSpace(classStr)
-	name := "obj: " + classStr
+	name := "obj of " + classStr
 	return &DataType{
 		Name:           name,
 		CollectionType: "atomic",
@@ -191,14 +191,14 @@ ObjectType <- ws ("object" / "obj") ws ":" ws classKey:.* !. {
 	}, nil
 }
 
-ReferenceType <- ws ("reference" / "ref") ws ":" ws ref:.* !. {
+ReferenceType <- ws ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 	refBytes := ref.([]interface{})
 	refStr := ""
 	for _, b := range refBytes {
 		refStr += string(b.([]byte))
 	}
 	refStr = strings.TrimSpace(refStr)
-	name := "ref: " + refStr
+	name := "ref from " + refStr
 	return &DataType{
 		Name:           name,
 		CollectionType: "atomic",
