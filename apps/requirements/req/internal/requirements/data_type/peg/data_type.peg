@@ -200,7 +200,7 @@ ReferenceType <- ws ("reference" / "ref") ws ("of" / "from") ws ref:.* !. {
 	}, nil
 }
 
-RecordType <- "{" ws fields:FieldList ws "}" {
+RecordType <- "{" ws fields:Field+ ws "}" {
 	fieldsSlice := fields.([]interface{})
 	fieldList := make([]Field, len(fieldsSlice))
 	for i, f := range fieldsSlice {
@@ -213,17 +213,7 @@ RecordType <- "{" ws fields:FieldList ws "}" {
 	}, nil
 }
 
-FieldList <- first:Field rest:( ws ";" ws f:Field )* ws ";"? {
-	result := []interface{}{first}
-	for _, r := range rest.([]interface{}) {
-		if slice, ok := r.([]interface{}); ok && len(slice) > 2 {
-			result = append(result, slice[2])
-		}
-	}
-	return result, nil
-}
-
-Field <- name:FieldName ws ":" ws dataType:DataType {
+Field <- name:FieldName ws ":" ws dataType:DataType ws ";"  {
 	return Field{
 		Name:          name.(string),
 		FieldDataType: dataType.(*DataType),
