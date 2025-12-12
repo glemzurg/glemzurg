@@ -115,33 +115,12 @@ UnconstrainedType <- ws !. {
 	}, nil
 }
 
-OrdEnumType <- ws ("ordered-enumeration" / "ord-enum" / ("ordered" / "ord") ws ("enumeration" / "enum")) ws ("of" / "from") ws enumValues:.* !. {
-	valuesBytes := enumValues.([]interface{})
-	valuesStr := ""
-	for _, b := range valuesBytes {
-		valuesStr += string(b.([]byte))
-	}
-	valuesStr = strings.TrimSpace(valuesStr)
-	// Split by comma and trim spaces
-	parts := strings.Split(valuesStr, ",")
-	var enums []AtomicEnum
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed != "" {
-			enums = append(enums, AtomicEnum{Value: trimmed})
-		}
-	}
-	name := "ord-enum of " + valuesStr
-	trueVal := true
-	return &DataType{
-		Name:           name,
-		CollectionType: "atomic",
-		Atomic: &Atomic{
-			ConstraintType: "enumeration",
-			EnumOrdered:    &trueVal,
-			Enums:          enums,
-		},
-	}, nil
+OrdEnumType <- ws ("ordered" / "ord") ws enumeration:EnumType {
+	// Make it ordered.
+	trueValue := true
+	enumType := enumeration.(*DataType)
+	enumType.Atomic.EnumOrdered = &trueValue
+	return enumType, nil
 }
 
 EnumType <- ws ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* !. {

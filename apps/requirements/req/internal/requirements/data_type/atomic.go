@@ -124,7 +124,7 @@ func (a Atomic) String() string {
 		}
 		prefix := "enum of"
 		if a.EnumOrdered != nil && *a.EnumOrdered {
-			prefix = "ord-enum of"
+			prefix = "ord enum of"
 		}
 		return prefix + " " + strings.Join(values, ", ")
 	default:

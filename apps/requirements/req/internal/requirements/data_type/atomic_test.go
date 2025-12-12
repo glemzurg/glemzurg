@@ -264,7 +264,7 @@ func TestParseAtomic(t *testing.T) {
 			input: "ordered enumeration of value_a, value_b, value_c",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ord-enum of value_a, value_b, value_c",
+				Name:           "ord enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -283,11 +283,11 @@ func TestParseAtomic(t *testing.T) {
 			input: "   \t\nordered \t\n enum   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "enum of value_a, value_b, value_c",
+				Name:           "ord enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
-					EnumOrdered:    &falseValue,
+					EnumOrdered:    &trueValue,
 					Enums: []AtomicEnum{
 						{Value: "value_a"},
 						{Value: "value_b"},
@@ -319,10 +319,10 @@ func TestParseAtomic(t *testing.T) {
 
 		{
 			name:  "ord enum with whitespace",
-			input: "   \t\nord-enum   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			input: "   \t\nord   \t\n enum   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ord-enum of value_a, value_b, value_c",
+				Name:           "ord enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -338,10 +338,10 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "ordered enumeration with whitespace",
-			input: "   \t\nordered-enumeration   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
+			input: "   \t\nordered   \t\nenumeration   \t\nof    \t\n  value_a  \t\n ,  \t\n  value_b  \t\n ,   \t\n value_c    \t\n",
 			expected: &DataType{
 				Key:            key,
-				Name:           "ord-enum of value_a, value_b, value_c",
+				Name:           "ord enum of value_a, value_b, value_c",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -663,7 +663,7 @@ func TestAtomicString(t *testing.T) {
 					{Value: "value_c"},
 				},
 			},
-			expected: "ord-enum of value_a, value_b, value_c",
+			expected: "ord enum of value_a, value_b, value_c",
 		},
 		{
 			name: "span",
