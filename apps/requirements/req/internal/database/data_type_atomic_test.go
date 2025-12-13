@@ -41,8 +41,9 @@ func (suite *AtomicSuite) SetupTest() {
 func (suite *AtomicSuite) TestLoad() {
 
 	// Nothing in database yet.
-	atomic, err := LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	assert.Empty(suite.T(), parentDataTypeKey)
 	assert.Empty(suite.T(), atomic)
 
 	_, err = dbExec(suite.db, `
@@ -67,8 +68,9 @@ func (suite *AtomicSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	atomic, err = LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_Type_Key") // Test case-insensitive.
+	parentDataTypeKey, atomic, err = LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_Type_Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "data_type_key", parentDataTypeKey)
 	assert.Equal(suite.T(), data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
@@ -87,8 +89,9 @@ func (suite *AtomicSuite) TestAdd() {
 	})
 	assert.Nil(suite.T(), err)
 
-	atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "data_type_key", parentDataTypeKey)
 	assert.Equal(suite.T(), data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      t_StrPtr("Reference"),
@@ -107,8 +110,9 @@ func (suite *AtomicSuite) TestAddNulls() {
 	})
 	assert.Nil(suite.T(), err)
 
-	atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "data_type_key", parentDataTypeKey)
 	assert.Equal(suite.T(), data_type.Atomic{
 		ConstraintType: "reference",
 		Reference:      nil,
@@ -135,8 +139,9 @@ func (suite *AtomicSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "data_type_key", parentDataTypeKey)
 	assert.Equal(suite.T(), data_type.Atomic{
 		ConstraintType: "object",
 		Reference:      t_StrPtr("ReferenceX"),
@@ -163,8 +168,9 @@ func (suite *AtomicSuite) TestUpdateNulls() {
 	})
 	assert.Nil(suite.T(), err)
 
-	atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "data_type_key", parentDataTypeKey)
 	assert.Equal(suite.T(), data_type.Atomic{
 		ConstraintType: "object",
 		Reference:      nil,
@@ -186,45 +192,47 @@ func (suite *AtomicSuite) TestRemove() {
 	err = RemoveAtomic(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 
-	atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
+	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	assert.Empty(suite.T(), parentDataTypeKey)
 	assert.Empty(suite.T(), atomic)
 }
 
-// func (suite *AtomicSuite) TestQuery() {
+func (suite *AtomicSuite) TestQuery() {
 
-// 	err := AddAtomic(suite.db, suite.model.Key, suite.dataType.Key, data_type.Atomic{
-// 		Reference:      t_StrPtr("Reference"),
-// 		EnumOrdered:    t_BoolPtr(true),
-// 		ObjectClassKey: t_StrPtr("ObjectClassKey"),
-// 	})
-// 	assert.Nil(suite.T(), err)
+	err := AddAtomic(suite.db, suite.model.Key, suite.dataTypeB.Key, data_type.Atomic{
+		ConstraintType: "reference",
+		Reference:      t_StrPtr("ReferenceX"),
+		EnumOrdered:    t_BoolPtr(false),
+		ObjectClassKey: t_StrPtr("ObjectClassKeyX"),
+	})
 
-// 	// Add another data type and atomic
-// 	err = AddAtomic(suite.db, suite.model.Key, suite.dataTypeB.Key, data_type.Atomic{
-// 		Reference:      t_StrPtr("Reference"),
-// 		EnumOrdered:    t_BoolPtr(true),
-// 		ObjectClassKey: t_StrPtr("ObjectClassKey"),
-// 	})
-// 	assert.Nil(suite.T(), err)
+	assert.Nil(suite.T(), err)
+	err = AddAtomic(suite.db, suite.model.Key, suite.dataType.Key, data_type.Atomic{
+		ConstraintType: "reference",
+		Reference:      t_StrPtr("Reference"),
+		EnumOrdered:    t_BoolPtr(true),
+		ObjectClassKey: t_StrPtr("ObjectClassKey"),
+	})
+	assert.Nil(suite.T(), err)
 
-// 	atomics, err := QueryAtomics(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-// 	assert.Nil(suite.T(), err)
-// 	assert.Equal(suite.T(), map[string]data_type.Atomic{
-// 		"data_type_key": data_type.Atomic{
-// 			ConstraintType: "reference",
-// 			Reference:      t_StrPtr("some_ref"),
-// 			EnumOrdered:    t_BoolPtr(true),
-// 			ObjectClassKey: nil,
-// 		},
-// 		"data_type_key2": data_type.Atomic{
-// 			ConstraintType: "object",
-// 			Reference:      nil,
-// 			EnumOrdered:    nil,
-// 			ObjectClassKey: t_StrPtr("class_key"),
-// 		},
-// 	}, atomics)
-// }
+	atomics, err := QueryAtomics(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), map[string]data_type.Atomic{
+		"data_type_key": data_type.Atomic{
+			ConstraintType: "reference",
+			Reference:      t_StrPtr("Reference"),
+			EnumOrdered:    t_BoolPtr(true),
+			ObjectClassKey: t_StrPtr("ObjectClassKey"),
+		},
+		"data_type_key_b": data_type.Atomic{
+			ConstraintType: "reference",
+			Reference:      t_StrPtr("ReferenceX"),
+			EnumOrdered:    t_BoolPtr(false),
+			ObjectClassKey: t_StrPtr("ObjectClassKeyX"),
+		},
+	}, atomics)
+}
 
 //==================================================
 // Test objects for other tests.
@@ -241,7 +249,7 @@ func t_AddAtomic(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string, cons
 	err := AddAtomic(dbOrTx, modelKey, dataTypeKey, atomic)
 	assert.Nil(t, err)
 
-	atomic, err = LoadAtomic(dbOrTx, modelKey, dataTypeKey)
+	_, atomic, err = LoadAtomic(dbOrTx, modelKey, dataTypeKey)
 	assert.Nil(t, err)
 
 	return atomic

@@ -8,8 +8,9 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanAtomic(scanner Scanner, atomic *data_type.Atomic) (err error) {
+func scanAtomic(scanner Scanner, dataTypeKeyPtr *string, atomic *data_type.Atomic) (err error) {
 	if err = scanner.Scan(
+		dataTypeKeyPtr,
 		&atomic.ConstraintType,
 		&atomic.Reference,
 		&atomic.EnumOrdered,
@@ -25,28 +26,29 @@ func scanAtomic(scanner Scanner, atomic *data_type.Atomic) (err error) {
 }
 
 // LoadAtomic loads an atomic from the database
-func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomic data_type.Atomic, err error) {
+func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomic data_type.Atomic, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return data_type.Atomic{}, err
+		return "", data_type.Atomic{}, err
 	}
 	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
 	if err != nil {
-		return data_type.Atomic{}, err
+		return "", data_type.Atomic{}, err
 	}
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanAtomic(scanner, &atomic); err != nil {
+			if err = scanAtomic(scanner, &parentDataTypePtr, &atomic); err != nil {
 				return err
 			}
 			return nil
 		},
 		`SELECT
+			data_type_key  ,
 			constraint_type ,
 			reference       ,
 			enum_ordered    ,
@@ -60,10 +62,10 @@ func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomic data_type.A
 		modelKey,
 		dataTypeKey)
 	if err != nil {
-		return data_type.Atomic{}, errors.WithStack(err)
+		return "", data_type.Atomic{}, errors.WithStack(err)
 	}
 
-	return atomic, nil
+	return parentDataTypePtr, atomic, nil
 }
 
 // AddAtomic adds an atomic to the database.
@@ -196,13 +198,7 @@ func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]data_type.
 		func(scanner Scanner) (err error) {
 			var dataTypeKey string
 			var atomic data_type.Atomic
-			if err = scanner.Scan(
-				&dataTypeKey,
-				&atomic.ConstraintType,
-				&atomic.Reference,
-				&atomic.EnumOrdered,
-				&atomic.ObjectClassKey,
-			); err != nil {
+			if err = scanAtomic(scanner, &dataTypeKey, &atomic); err != nil {
 				return errors.WithStack(err)
 			}
 			if atomics == nil {
