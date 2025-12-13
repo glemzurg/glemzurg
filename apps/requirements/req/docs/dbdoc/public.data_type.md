@@ -10,8 +10,6 @@ An data type for use in a class attribute or action parameter.
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
 | model_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) | [public.model](public.model.md) | The model this data type is part of. |
 | data_type_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) |  | The internal ID. |
-| name | text |  | false |  |  | A name for this data type, when there is no name the original unparsed text is the name.  |
-| details | text |  | true |  |  | An optional desription, if there is any value here will be displayed in a data dictionary. |
 | collection_type | collection_type |  | false |  |  | Whether a collection or atomic value, and if a collection what kind. |
 | collection_unique | boolean |  | true |  |  | If a collection, is this collection unique. |
 | collection_min | bigint |  | true |  |  | If a collection and there is a minimum number of items, the minimum. Always set of maximum set. |

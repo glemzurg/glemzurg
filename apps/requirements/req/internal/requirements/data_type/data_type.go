@@ -20,8 +20,6 @@ const (
 // DataType represents the main data type structure.
 type DataType struct {
 	Key              string
-	Name             string
-	Details          string
 	CollectionType   string
 	CollectionUnique *bool
 	CollectionMin    *int
@@ -66,9 +64,6 @@ func New(key, text string) (dataType *DataType, err error) {
 	// Set the key.
 	dataType.Key = key
 
-	// Set the name.
-	dataType.Name = dataType.String()
-
 	// Validate the data type.
 	if err = dataType.Validate(); err != nil {
 		return nil, err
@@ -81,7 +76,6 @@ func New(key, text string) (dataType *DataType, err error) {
 func (d DataType) Validate() error {
 	return validation.ValidateStruct(&d,
 		validation.Field(&d.Key, validation.Required),
-		validation.Field(&d.Name, validation.Required),
 		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC, _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE, _COLLECTION_TYPE_RECORD)),
 		validation.Field(&d.Atomic, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_ATOMIC), validation.By(func(value interface{}) error {
 			if a, ok := value.(*Atomic); ok && a != nil {

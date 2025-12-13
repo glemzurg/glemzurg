@@ -219,42 +219,36 @@
 <!-- public.data_type -->
 <g id="node7" class="node">
 <title>public.data_type</title>
-<polygon fill="#efefef" stroke="none" points="2023.92,-607.6 2023.92,-643.2 2281.87,-643.2 2281.87,-607.6 2023.92,-607.6"/>
-<polygon fill="none" stroke="black" points="2023.92,-607.6 2023.92,-643.2 2281.87,-643.2 2281.87,-607.6 2023.92,-607.6"/>
-<text text-anchor="start" x="2030.92" y="-621" font-family="Arial Bold" font-size="18.00">public.data_type</text>
-<text text-anchor="start" x="2150.38" y="-621" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="2181.5" y="-621" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="2023.92,-576.8 2023.92,-607.6 2281.87,-607.6 2281.87,-576.8 2023.92,-576.8"/>
-<text text-anchor="start" x="2030.92" y="-589" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="2102.51" y="-589" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="2023.92,-576.8 2023.92,-612.4 2281.87,-612.4 2281.87,-576.8 2023.92,-576.8"/>
+<polygon fill="none" stroke="black" points="2023.92,-576.8 2023.92,-612.4 2281.87,-612.4 2281.87,-576.8 2023.92,-576.8"/>
+<text text-anchor="start" x="2030.92" y="-590.2" font-family="Arial Bold" font-size="18.00">public.data_type</text>
+<text text-anchor="start" x="2150.38" y="-590.2" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="2181.5" y="-590.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
 <polygon fill="none" stroke="black" points="2023.92,-546 2023.92,-576.8 2281.87,-576.8 2281.87,-546 2023.92,-546"/>
-<text text-anchor="start" x="2030.92" y="-558.2" font-family="Arial" font-size="14.00">data_type_key </text>
-<text text-anchor="start" x="2125.88" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<text text-anchor="start" x="2030.92" y="-558.2" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="2102.51" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" points="2023.92,-515.2 2023.92,-546 2281.87,-546 2281.87,-515.2 2023.92,-515.2"/>
-<text text-anchor="start" x="2030.92" y="-527.4" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="2069.83" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<text text-anchor="start" x="2030.92" y="-527.4" font-family="Arial" font-size="14.00">data_type_key </text>
+<text text-anchor="start" x="2125.88" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" points="2023.92,-484.4 2023.92,-515.2 2281.87,-515.2 2281.87,-484.4 2023.92,-484.4"/>
-<text text-anchor="start" x="2030.92" y="-496.6" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="2075.28" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<text text-anchor="start" x="2030.92" y="-496.6" font-family="Arial" font-size="14.00">collection_type </text>
+<text text-anchor="start" x="2127.42" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[collection_type]</text>
 <polygon fill="none" stroke="black" points="2023.92,-453.6 2023.92,-484.4 2281.87,-484.4 2281.87,-453.6 2023.92,-453.6"/>
-<text text-anchor="start" x="2030.92" y="-465.8" font-family="Arial" font-size="14.00">collection_type </text>
-<text text-anchor="start" x="2127.42" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[collection_type]</text>
+<text text-anchor="start" x="2030.92" y="-465.8" font-family="Arial" font-size="14.00">collection_unique </text>
+<text text-anchor="start" x="2143" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
 <polygon fill="none" stroke="black" points="2023.92,-422.8 2023.92,-453.6 2281.87,-453.6 2281.87,-422.8 2023.92,-422.8"/>
-<text text-anchor="start" x="2030.92" y="-435" font-family="Arial" font-size="14.00">collection_unique </text>
-<text text-anchor="start" x="2143" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
+<text text-anchor="start" x="2030.92" y="-435" font-family="Arial" font-size="14.00">collection_min </text>
+<text text-anchor="start" x="2123.52" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
 <polygon fill="none" stroke="black" points="2023.92,-392 2023.92,-422.8 2281.87,-422.8 2281.87,-392 2023.92,-392"/>
-<text text-anchor="start" x="2030.92" y="-404.2" font-family="Arial" font-size="14.00">collection_min </text>
-<text text-anchor="start" x="2123.52" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
-<polygon fill="none" stroke="black" points="2023.92,-361.2 2023.92,-392 2281.87,-392 2281.87,-361.2 2023.92,-361.2"/>
-<text text-anchor="start" x="2030.92" y="-373.4" font-family="Arial" font-size="14.00">collection_max </text>
-<text text-anchor="start" x="2127.41" y="-373.4" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
+<text text-anchor="start" x="2030.92" y="-404.2" font-family="Arial" font-size="14.00">collection_max </text>
+<text text-anchor="start" x="2127.41" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
 </g>
 <!-- public.data_type&#45;&gt;public.model -->
 <g id="edge6" class="edge">
 <title>public.data_type:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M2012.98,-589.91C1967.23,-566.63 2007.16,-372.73 2023.92,-318 2039.22,-268.06 2073.92,-270.29 2089.38,-220.4 2102.17,-179.13 2133.58,-123.2 2090.38,-123.2"/>
-<polygon fill="black" stroke="black" points="2012.85,-589.88 2021.58,-596.51 2018.05,-591.08 2022.27,-592.05 2022.27,-592.05 2022.27,-592.05 2018.05,-591.08 2023.6,-587.74 2012.85,-589.88"/>
-<text text-anchor="start" x="2029.92" y="-602.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M2012.6,-560.86C1934.07,-552.01 2002.51,-437.04 2023.92,-348.8 2039.03,-286.55 2074.1,-282.61 2089.38,-220.4 2099.69,-178.45 2133.58,-123.2 2090.38,-123.2"/>
+<polygon fill="black" stroke="black" points="2012.6,-560.86 2022.35,-565.88 2017.93,-561.14 2022.25,-561.36 2022.25,-561.36 2022.25,-561.36 2017.93,-561.14 2022.82,-556.89 2012.6,-560.86"/>
+<text text-anchor="start" x="2029.92" y="-571.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class -->
 <g id="node8" class="node">
@@ -297,7 +291,7 @@
 <title>public.class:model_key&#45;&gt;public.model:model_key</title>
 <path fill="none" stroke="black" d="M2375.29,-605.76C2313.06,-581.23 2376.84,-318.11 2333.9,-256.4 2263.43,-155.14 2213.74,-123.2 2090.38,-123.2"/>
 <polygon fill="black" stroke="black" points="2375.24,-605.76 2384.28,-611.97 2380.49,-606.71 2384.75,-607.48 2384.75,-607.48 2384.75,-607.48 2380.49,-606.71 2385.88,-603.11 2375.24,-605.76"/>
-<text text-anchor="start" x="2392.41" y="-617.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<text text-anchor="start" x="2087.25" y="-591.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.association -->
 <g id="node9" class="node">

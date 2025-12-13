@@ -30,17 +30,7 @@ func TestParseAtomic(t *testing.T) {
 			},
 			errorMessage: "",
 		},
-		{
-			name:  "unconstrained with whitespace",
-			input: " unconstrained",
-			expected: &DataType{
-				CollectionType: "atomic",
-				Atomic: &Atomic{
-					ConstraintType: "unconstrained",
-				},
-			},
-			errorMessage: "",
-		},
+
 		// References.
 		{
 			name:  "ref",
@@ -80,7 +70,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "ref with whitespace",
-			input: "   ref   from    listed somewhere else    ",
+			input: "ref   from    listed somewhere else",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -92,7 +82,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "reference with whitespace",
-			input: "   reference   from    listed somewhere else    ",
+			input: "reference   from    listed somewhere else",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -154,7 +144,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "obj with whitespace",
-			input: "   obj   of    class_key    ",
+			input: "obj   of    class_key",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -166,7 +156,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "object with whitespace",
-			input: "   object   of    class_key    ",
+			input: "object   of    class_key",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -244,7 +234,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "ordered enum with whitespace",
-			input: "   ordered  enum   of      value_a   ,    value_b   ,    value_c    ",
+			input: "ordered  enum   of      value_a   ,    value_b   ,    value_c",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -261,7 +251,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "enumeration with whitespace",
-			input: "   enumeration   of      value_a   ,    value_b   ,    value_c    ",
+			input: "enumeration   of      value_a   ,    value_b   ,    value_c",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -279,7 +269,7 @@ func TestParseAtomic(t *testing.T) {
 
 		{
 			name:  "ord enum with whitespace",
-			input: "   ord    enum   of      value_a   ,    value_b   ,    value_c    ",
+			input: "ord    enum   of      value_a   ,    value_b   ,    value_c",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{
@@ -296,7 +286,7 @@ func TestParseAtomic(t *testing.T) {
 		},
 		{
 			name:  "ordered enumeration with whitespace",
-			input: "   ordered   enumeration   of      value_a   ,    value_b   ,    value_c    ",
+			input: "ordered   enumeration   of      value_a   ,    value_b   ,    value_c",
 			expected: &DataType{
 				CollectionType: "atomic",
 				Atomic: &Atomic{

@@ -229,8 +229,6 @@ COMMENT ON TYPE collection_type IS 'The kind of collection a data type is (or wh
 CREATE TABLE data_type (
   model_key text NOT NULL,
   data_type_key text NOT NULL,
-  name text NOT NULL,
-  details text DEFAULT NULL,
   collection_type collection_type NOT NULL,
   collection_unique boolean DEFAULT NULL,
   collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
@@ -242,8 +240,6 @@ CREATE TABLE data_type (
 COMMENT ON TABLE data_type IS 'An data type for use in a class attribute or action parameter.';
 COMMENT ON COLUMN data_type.model_key IS 'The model this data type is part of.';
 COMMENT ON COLUMN data_type.data_type_key IS 'The internal ID.';
-COMMENT ON COLUMN data_type.name IS 'A name for this data type, when there is no name the original unparsed text is the name. ';
-COMMENT ON COLUMN data_type.details IS 'An optional desription, if there is any value here will be displayed in a data dictionary.';
 COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic value, and if a collection what kind.';
 COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
 COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set of maximum set.';

@@ -25,8 +25,6 @@ func (suite *DataTypeSuite) TestValidate() {
 
 	tests := []struct {
 		key            string
-		name           string
-		details        string
 		collectionType string
 		atomic         *Atomic
 		errstr         string
@@ -34,15 +32,6 @@ func (suite *DataTypeSuite) TestValidate() {
 		// OK.
 		{
 			key:            "Key",
-			name:           "Name",
-			details:        "Details",
-			collectionType: "atomic",
-			atomic:         atomic,
-		},
-		{
-			key:            "Key",
-			name:           "Name",
-			details:        "",
 			collectionType: "atomic",
 			atomic:         atomic,
 		},
@@ -50,48 +39,30 @@ func (suite *DataTypeSuite) TestValidate() {
 		// Error states.
 		{
 			key:            "",
-			name:           "Name",
-			details:        "Details",
 			collectionType: "atomic",
 			atomic:         atomic,
 			errstr:         `Key: cannot be blank.`,
 		},
 		{
 			key:            "Key",
-			name:           "",
-			details:        "Details",
-			collectionType: "atomic",
-			atomic:         atomic,
-			errstr:         `Name: cannot be blank.`,
-		},
-		{
-			key:            "Key",
-			name:           "Name",
-			details:        "Details",
 			collectionType: "",
 			atomic:         atomic,
 			errstr:         `CollectionType: cannot be blank.`,
 		},
 		{
 			key:            "Key",
-			name:           "Name",
-			details:        "Details",
 			collectionType: "unknown",
 			atomic:         atomic,
 			errstr:         `CollectionType: must be a valid value.`,
 		},
 		{
 			key:            "Key",
-			name:           "Name",
-			details:        "Details",
 			collectionType: "atomic",
 			atomic:         nil,
 			errstr:         `Atomic: cannot be blank.`,
 		},
 		{
 			key:            "Key",
-			name:           "Name",
-			details:        "Details",
 			collectionType: "atomic",
 			atomic:         atomicInvalid,
 			errstr:         `Atomic: (ConstraintType: must be a valid value.).`,
@@ -99,19 +70,17 @@ func (suite *DataTypeSuite) TestValidate() {
 	}
 
 	for _, tt := range tests {
-		dt := DataType{
+		dataType := &DataType{
 			Key:            tt.key,
-			Name:           tt.name,
-			Details:        tt.details,
 			CollectionType: tt.collectionType,
 			Atomic:         tt.atomic,
 		}
-		err := dt.Validate()
+		err := dataType.Validate()
 		if tt.errstr == "" {
-			assert.Nil(suite.T(), err, "expected no error for %+v", dt)
+			assert.Nil(suite.T(), err, "expected no error for %+v", dataType)
 		} else {
-			assert.NotNil(suite.T(), err, "expected error for %+v", dt)
-			assert.Equal(suite.T(), tt.errstr, err.Error(), "error message mismatch for %+v", dt)
+			assert.NotNil(suite.T(), err, "expected error for %+v", dataType)
+			assert.Equal(suite.T(), tt.errstr, err.Error(), "error message mismatch for %+v", dataType)
 		}
 	}
 }
@@ -131,7 +100,6 @@ func TestParseBlank(t *testing.T) {
 			input: "",
 			expected: &DataType{
 				Key:            key,
-				Name:           "unconstrained",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
@@ -144,7 +112,6 @@ func TestParseBlank(t *testing.T) {
 			input: " \t\n\r",
 			expected: &DataType{
 				Key:            key,
-				Name:           "unconstrained",
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
