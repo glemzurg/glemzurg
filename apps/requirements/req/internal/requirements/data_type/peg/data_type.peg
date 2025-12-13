@@ -118,7 +118,7 @@ Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
 	return result, nil
 }
 
-AtomicDataType <- ws? atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) ws? !. {
+AtomicDataType <- ws? atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) ws? {
 	return atomic, nil
 }
 

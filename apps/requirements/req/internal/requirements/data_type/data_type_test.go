@@ -467,7 +467,35 @@ func TestParseRecords(t *testing.T) {
 					{
 						Name: "ham",
 						FieldDataType: &DataType{
-							Name:           "unconstrained",
+							CollectionType: "atomic",
+							Atomic: &Atomic{
+								ConstraintType: "unconstrained",
+							},
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		{
+			name:  "simple record",
+			input: `{ ham : unconstrained ; sandwich : unconstrained }`,
+			expected: &DataType{
+				CollectionType: "record",
+				RecordFields: []Field{
+					{
+						Name: "ham",
+						FieldDataType: &DataType{
+							CollectionType: "atomic",
+							Atomic: &Atomic{
+								ConstraintType: "unconstrained",
+							},
+						},
+					},
+					{
+						Name: "sandwich",
+						FieldDataType: &DataType{
 							CollectionType: "atomic",
 							Atomic: &Atomic{
 								ConstraintType: "unconstrained",
