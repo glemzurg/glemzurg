@@ -13,7 +13,7 @@ import (
 
 func TestGuardSuite(t *testing.T) {
 	if !*_runDatabaseTests {
-		t.Skip("Skipping database test; run `go test ./database/... -dbtests`")
+		t.Skip("Skipping database test; run `go test ./internal/database/... -dbtests`")
 	}
 	suite.Run(t, new(GuardSuite))
 }
