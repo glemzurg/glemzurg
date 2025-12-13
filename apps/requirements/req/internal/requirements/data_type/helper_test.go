@@ -1,4 +1,4 @@
-package database
+package data_type
 
 func t_IntPtr(i int) *int {
 	return &i

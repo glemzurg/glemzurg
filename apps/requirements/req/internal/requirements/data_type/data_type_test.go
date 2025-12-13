@@ -166,7 +166,7 @@ func TestParseCollections(t *testing.T) {
 				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "something",
+					Reference:      t_StrPtr("something"),
 				},
 			},
 			errorMessage: "",
@@ -179,7 +179,7 @@ func TestParseCollections(t *testing.T) {
 				CollectionMin:  intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -224,7 +224,7 @@ func TestParseCollections(t *testing.T) {
 				CollectionMax:  intPtr(5),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "something",
+					Reference:      t_StrPtr("something"),
 				},
 			},
 			errorMessage: "",
@@ -238,7 +238,7 @@ func TestParseCollections(t *testing.T) {
 				CollectionMax:  intPtr(7),
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -259,15 +259,15 @@ func TestParseCollections(t *testing.T) {
 			errorMessage: "",
 		},
 		{
-			name:  "unique 3+ unordered of ref from something",
-			input: "unique 3+ unordered of ref from something",
+			name:  "unique unordered of ref from something",
+			input: "unique unordered of ref from something",
 			expected: &DataType{
 				CollectionType:   "unordered",
 				CollectionUnique: &trueValue,
-				CollectionMin:    intPtr(3),
+				CollectionMin:    intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "something",
+					Reference:      t_StrPtr("something"),
 				},
 			},
 			errorMessage: "",
@@ -282,7 +282,7 @@ func TestParseCollections(t *testing.T) {
 				CollectionMax:    intPtr(5),
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -382,7 +382,7 @@ func TestParseRecordFields(t *testing.T) {
 					CollectionMin:  intPtr(0),
 					Atomic: &Atomic{
 						ConstraintType: "reference",
-						Reference:      "something",
+						Reference:      t_StrPtr("something"),
 					},
 				},
 			},
@@ -644,7 +644,7 @@ func TestDataTypeString(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "some ref",
+					Reference:      t_StrPtr("some ref"),
 				},
 			},
 			expected: "ref from some ref",
@@ -700,7 +700,7 @@ func TestDataTypeString(t *testing.T) {
 				CollectionMin:  intPtr(3),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "something",
+					Reference:      t_StrPtr("something"),
 				},
 			},
 			expected: "3+ unordered collection of ref from something",
@@ -714,7 +714,7 @@ func TestDataTypeString(t *testing.T) {
 				CollectionMax:    intPtr(5),
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			expected: "unique 2-5 ordered collection of obj of class_key",

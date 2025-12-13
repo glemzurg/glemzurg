@@ -5,9 +5,12 @@ import (
 	"strings"
 	"strconv"
 )
+
+func parserBoolPtr(b bool) *bool {
+	return &b
 }
 
-
+}
 
 RootDataType <- DataType !. 
 
@@ -53,8 +56,7 @@ CollectionDataType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws?
 	// Set collection properties
 	var unique *bool
 	if uniqueFlag != nil {
-		trueVal := true
-		unique = &trueVal
+		unique = parserBoolPtr(true)
 	}
 
 	var min, maxPtr *int
@@ -219,9 +221,8 @@ Units <- [a-zA-Z-]+ {
 
 OrdEnumType <- ("ordered" / "ord") ws enumeration:EnumType {
 	// Make it ordered.
-	trueValue := true
 	enumType := enumeration.(*DataType)
-	enumType.Atomic.EnumOrdered = &trueValue
+	enumType.Atomic.EnumOrdered = parserBoolPtr(true)
 	return enumType, nil
 }
 
@@ -241,12 +242,11 @@ EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* {
 			enums = append(enums, AtomicEnum{Value: trimmed})
 		}
 	}
-	falseVal := false
 	return &DataType{
 		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
 			ConstraintType: _CONSTRAINT_TYPE_ENUMERATION,
-			EnumOrdered:    &falseVal,
+			EnumOrdered:    parserBoolPtr(false),
 			Enums:          enums,
 		},
 	}, nil
@@ -258,7 +258,7 @@ ObjectType <- ("object" / "obj") ws ("of" / "from") ws content:Content? {
 		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
 			ConstraintType: _CONSTRAINT_TYPE_OBJECT,
-			ObjectClassKey: contentStr,
+			ObjectClassKey: &contentStr,
 		},
 	}, nil
 }
@@ -269,7 +269,7 @@ ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws content:Content? {
 		CollectionType: _COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
 			ConstraintType: _CONSTRAINT_TYPE_REFERENCE,
-			Reference: contentStr,
+			Reference: &contentStr,
 		},
 	}, nil
 }

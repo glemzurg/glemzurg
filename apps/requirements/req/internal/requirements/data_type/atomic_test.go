@@ -39,7 +39,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "listed somewhere else",
+					Reference:      t_StrPtr("listed somewhere else"),
 				},
 			},
 			errorMessage: "",
@@ -51,7 +51,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "listed somewhere else",
+					Reference:      t_StrPtr("listed somewhere else"),
 				},
 			},
 			errorMessage: "",
@@ -63,7 +63,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "listed somewhere else",
+					Reference:      t_StrPtr("listed somewhere else"),
 				},
 			},
 			errorMessage: "",
@@ -75,7 +75,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "listed somewhere else",
+					Reference:      t_StrPtr("listed somewhere else"),
 				},
 			},
 			errorMessage: "",
@@ -87,7 +87,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "reference",
-					Reference:      "listed somewhere else",
+					Reference:      t_StrPtr("listed somewhere else"),
 				},
 			},
 			errorMessage: "",
@@ -101,7 +101,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -113,7 +113,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -125,7 +125,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -137,7 +137,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -149,7 +149,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -161,7 +161,7 @@ func TestParseAtomic(t *testing.T) {
 				CollectionType: "atomic",
 				Atomic: &Atomic{
 					ConstraintType: "object",
-					ObjectClassKey: "class_key",
+					ObjectClassKey: t_StrPtr("class_key"),
 				},
 			},
 			errorMessage: "",
@@ -556,7 +556,7 @@ func TestAtomicString(t *testing.T) {
 			name: "reference",
 			atomic: Atomic{
 				ConstraintType: "reference",
-				Reference:      "listed somewhere else",
+				Reference:      t_StrPtr("listed somewhere else"),
 			},
 			expected: "ref from listed somewhere else",
 		},
@@ -564,7 +564,7 @@ func TestAtomicString(t *testing.T) {
 			name: "reference empty",
 			atomic: Atomic{
 				ConstraintType: "reference",
-				Reference:      "",
+				Reference:      t_StrPtr(""),
 			},
 			expected: "ref from ",
 		},
@@ -572,7 +572,7 @@ func TestAtomicString(t *testing.T) {
 			name: "object",
 			atomic: Atomic{
 				ConstraintType: "object",
-				ObjectClassKey: "some_class",
+				ObjectClassKey: t_StrPtr("some_class"),
 			},
 			expected: "obj of some_class",
 		},

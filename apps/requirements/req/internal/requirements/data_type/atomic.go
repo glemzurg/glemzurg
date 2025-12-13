@@ -20,18 +20,48 @@ const (
 type Atomic struct {
 	ConstraintType string
 	Span           *AtomicSpan
-	Reference      string
+	Reference      *string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
 	Enums          []AtomicEnum
-	ObjectClassKey string
+	ObjectClassKey *string
 }
 
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
 	return validation.ValidateStruct(&a,
 		validation.Field(&a.ConstraintType, validation.Required, validation.In(_CONSTRAINT_TYPE_UNCONSTRAINED, _CONSTRAINT_TYPE_SPAN, _CONSTRAINT_TYPE_REFERENCE, _CONSTRAINT_TYPE_OBJECT, _CONSTRAINT_TYPE_ENUMERATION)),
-		validation.Field(&a.Reference, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE)),
-		validation.Field(&a.ObjectClassKey, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_OBJECT)),
+		validation.Field(&a.Reference, validation.By(func(value interface{}) error {
+			ptr, ok := value.(*string)
+			if !ok {
+				return errors.New("Reference must be *string")
+			}
+			if a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE {
+				if ptr == nil || *ptr == "" {
+					return errors.New("Reference must not be nil or empty for reference types")
+				}
+			} else {
+				if ptr != nil {
+					return errors.New("Reference must be nil for non-reference types")
+				}
+			}
+			return nil
+		})),
+		validation.Field(&a.ObjectClassKey, validation.By(func(value interface{}) error {
+			ptr, ok := value.(*string)
+			if !ok {
+				return errors.New("ObjectClassKey must be *string")
+			}
+			if a.ConstraintType == _CONSTRAINT_TYPE_OBJECT {
+				if ptr == nil || *ptr == "" {
+					return errors.New("ObjectClassKey must not be nil or empty for object types")
+				}
+			} else {
+				if ptr != nil {
+					return errors.New("ObjectClassKey must be nil for non-object types")
+				}
+			}
+			return nil
+		})),
 		validation.Field(&a.Enums, validation.Required.When(a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION), validation.Empty.When(a.ConstraintType != _CONSTRAINT_TYPE_ENUMERATION), validation.Each(validation.By(func(value interface{}) error { enum := value.(AtomicEnum); return (&enum).Validate() }))),
 		validation.Field(&a.EnumOrdered, validation.By(func(value interface{}) error {
 			ptr, ok := value.(*bool)
@@ -112,10 +142,10 @@ func (a Atomic) String() string {
 		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64) + " " + a.Span.Units
 
 	case _CONSTRAINT_TYPE_REFERENCE:
-		return "ref from " + a.Reference
+		return "ref from " + *a.Reference
 
 	case _CONSTRAINT_TYPE_OBJECT:
-		return "obj of " + a.ObjectClassKey
+		return "obj of " + *a.ObjectClassKey
 
 	case _CONSTRAINT_TYPE_ENUMERATION:
 		var values []string
