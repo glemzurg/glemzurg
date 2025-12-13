@@ -9,11 +9,11 @@ import (
 
 
 
-
+RootDataType <- DataType !. 
 
 DataType <- RecordDataType / CollectionDataType / AtomicDataType
 
-RecordDataType <- ws? "{" ws? fields:FieldList ws? "}" ws? !. {
+RecordDataType <- "{" ws? fields:FieldList ws? "}" {
 	fieldsSlice := fields.([]interface{})
 	fieldList := make([]Field, len(fieldsSlice))
 	for i, f := range fieldsSlice {
@@ -118,7 +118,7 @@ Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
 	return result, nil
 }
 
-AtomicDataType <- ws? atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) ws? {
+AtomicDataType <- atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) {
 	return atomic, nil
 }
 
