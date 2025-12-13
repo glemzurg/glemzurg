@@ -25,11 +25,11 @@ RecordDataType <- ws? "{" ws? fields:FieldList ws? "}" ws? !. {
 	}, nil
 }
 
-FieldList <- first:Field rest:( ws? ";" ws? f:Field )* ws? ";"? {
+FieldList <- first:Field rest:( ws? ";" ws? Field )* ws? ";"? {
 	result := []interface{}{first}
 	for _, r := range rest.([]interface{}) {
-		if slice, ok := r.([]interface{}); ok && len(slice) > 2 {
-			result = append(result, slice[2])
+		if slice, ok := r.([]interface{}); ok && len(slice) > 3 {
+			result = append(result, slice[3]) // If the grammar changes, this index ends moving.
 		}
 	}
 	return result, nil
