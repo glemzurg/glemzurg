@@ -507,6 +507,64 @@ func TestParseRecords(t *testing.T) {
 			errorMessage: "",
 		},
 
+		{
+			name:  "simple record trailing semicolon",
+			input: `{ ham : unconstrained ; sandwich : unconstrained ; }`,
+			expected: &DataType{
+				CollectionType: "record",
+				RecordFields: []Field{
+					{
+						Name: "ham",
+						FieldDataType: &DataType{
+							CollectionType: "atomic",
+							Atomic: &Atomic{
+								ConstraintType: "unconstrained",
+							},
+						},
+					},
+					{
+						Name: "sandwich",
+						FieldDataType: &DataType{
+							CollectionType: "atomic",
+							Atomic: &Atomic{
+								ConstraintType: "unconstrained",
+							},
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
+		{
+			name:  "simple record compact",
+			input: `{ham:unconstrained;sandwich:unconstrained}`,
+			expected: &DataType{
+				CollectionType: "record",
+				RecordFields: []Field{
+					{
+						Name: "ham",
+						FieldDataType: &DataType{
+							CollectionType: "atomic",
+							Atomic: &Atomic{
+								ConstraintType: "unconstrained",
+							},
+						},
+					},
+					{
+						Name: "sandwich",
+						FieldDataType: &DataType{
+							CollectionType: "atomic",
+							Atomic: &Atomic{
+								ConstraintType: "unconstrained",
+							},
+						},
+					},
+				},
+			},
+			errorMessage: "",
+		},
+
 		// 		{
 		// 			name:  "simple record",
 		// 			input: `{ham: unconstrained; radio: ref from something;}`,
