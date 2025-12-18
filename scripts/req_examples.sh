@@ -1,8 +1,30 @@
 #!/bin/bash
+# Example: ./req_examples.sh /path/to/input /path/to/output model_name -debug
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Output path.
+INPUT_PATH="$1"
+OUTPUT_PATH="$2"
+MODEL="$3"
+
+# Check required parameters
+if [ -z "$INPUT_PATH" ]; then
+    echo "ERROR: INPUT_PATH is required. Please provide the input path as the first argument."
+    exit 1
+fi
+
+if [ -z "$OUTPUT_PATH" ]; then
+    echo "ERROR: OUTPUT_PATH is required. Please provide the output path as the second argument."
+    exit 1
+fi
+
+if [ -z "$MODEL" ]; then
+    echo "ERROR: MODEL is required. Please provide the model name as the third argument."
+    exit 1
+fi
+
 # We may have a test we want to run.
-DEBUG="$1"
+DEBUG="$4"
 
 # We are in the script path directory.
 cd $SCRIPT_PATH
@@ -16,11 +38,6 @@ echo -e "\nUPDATE INSTALL\n"
 [ $? -ne 0 ] && exit 1
 
 # ================================================
-
-# Output path.
-INPUT_PATH="$SCRIPT_PATH/../examples/requirements/req/models"
-OUTPUT_PATH="$SCRIPT_PATH/../examples/requirements/req/output"
-MODEL="web_books"
 
 # Create the output path if it doesn't exist, or clear it.
 mkdir -p $OUTPUT_PATH
