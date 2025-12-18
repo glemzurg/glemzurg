@@ -1,0 +1,6 @@
+{
+    "Title": "test_files/generic/03_no_details.md",
+    "Details": "# A Basic File\n\nHere we have markdown details.\n\nAnd even more.",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+    "Data": "property_a: data_a\nproperty_b: data_b"
+}

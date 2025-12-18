@@ -1,0 +1,124 @@
+{{- $reqs := .Reqs -}}
+
+{{- $domain := domain_lookup $reqs .Class.DomainKey -}}
+
+[⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
+
+{{ .Class.Details }}
+
+## Attributes
+
+| Name | Rules | Nullable | Comment |
+| ---- | ----- | -------- | ------- |
+{{- range .Class.Attributes }}
+| {{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+
+## Relations
+
+![er]({{ filename "class" .Class.Key "" ".svg" }})
+
+# State Machine
+
+{{ if ne .Class.States nil -}}
+![er]({{ filename "class" .Class.Key "states" ".svg" }})
+{{- end }}
+
+## State and Event Descriptions
+
+The states for this class.
+
+{{ if ne .Class.States nil -}}
+{{ range .Class.States -}}
+- **{{ .Name }}.** {{ .Details }}
+{{ end -}}
+{{- else -}}
+*None*
+{{- end }}
+
+The events for this class.
+
+{{ if ne .Class.Events nil -}}
+
+{{ range .Class.Events -}}
+
+- **{{ .Name }}.** {{ .Details }}{{ if ne .Parameters nil }} Parameters:
+{{ range .Parameters }}   - *{{ .Name }}.* {{ .Source }}
+{{ end }}{{- end }}
+{{ end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+## Action Specifications
+
+The actions for this class.
+
+{{ if ne .Class.Actions nil -}}
+
+{{ range .Class.Actions -}}
+
+{{- $action := action_lookup $reqs .Key -}}
+
+
+{{- /* And action may have multiple signatures based on who calls it. */ -}}
+
+{{- $signatures := action_signatures $reqs $action.FromTransitions $action.FromStates -}}
+
+{{- $actionName := $action.Name -}}
+{{ if eq $signatures nil -}}
+### {{ $actionName }}(*not called*)
+{{ else }}
+### {{ range $i, $signature := $signatures -}}
+    {{- if ne $i 0 }} or {{ end -}}
+        {{- $actionName -}}({{- $signature -}})
+    {{- end -}}
+{{ end }}
+
+{{ $action.Details }}
+
+Requires:
+
+{{ if ne $action.Requires nil -}}
+
+{{ range $action.Requires -}}
+- {{ . }}
+{{ end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+Guarantees:
+
+{{ if ne $action.Guarantees nil -}}
+
+{{ range $action.Guarantees -}}
+{{- $mainBullet := main_bullet . }}
+{{- $subBullets := sub_bullets . }}
+- {{ $mainBullet }}
+{{- if ne $subBullets nil }}{{ range $subBullets }}
+    - {{ . }}
+{{- end }}{{ end }}
+{{ end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+Triggered from:
+
+{{ range $action.FromTransitions -}}
+- {{ event_guard_signature $reqs . }}
+{{ end }}
+{{- range $action.FromStates -}}
+- {{ $state := state_lookup $reqs .StateKey }}{{ $state.Name }} /{{ .When }}
+{{ end }}
+
+
+{{ end -}}
+
+{{- else -}}
+*None*
+{{- end }}
+

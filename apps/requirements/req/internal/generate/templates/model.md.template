@@ -1,0 +1,22 @@
+{{- $reqs := .Reqs -}}
+
+{{ .Model.Details }}
+
+## Actors
+
+The actors of this model.
+
+{{ range .Actors -}}
+- **[{{ .Name }} <img src="{{ .Type }}.svg" width="30" height="30" />]({{ filename "actor" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+
+## Domains
+
+The domains of this model.
+
+![er](domains.svg)
+
+{{ range .Domains -}}
+- **[{{ if .Realized }}«realized» {{ end }}{{ .Name }}]({{ filename "domain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+

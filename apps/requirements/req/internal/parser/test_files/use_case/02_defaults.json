@@ -1,0 +1,8 @@
+{
+    "Key": "use_case_key",
+    "Name": "A Basic Use Case",
+    "Details": "# A Basic Use Case\n\nHere we have markdown details.\n\nAnd even more.",
+    "Level": "sea",
+    "ReadOnly": false,
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more."
+}

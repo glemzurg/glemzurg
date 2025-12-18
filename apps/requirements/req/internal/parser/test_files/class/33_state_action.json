@@ -1,0 +1,23 @@
+{
+    "Key": "class_key",
+    "Name": "A Basic Class",
+    "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+
+    "Actions": [
+        {
+            "Key": "class_key/action/processlog",
+            "Name": "ProcessLog",
+            "Details": "Appears in data dictionary.",
+            "Requires": [
+                "userid (with details)",
+                "username (e.g. bob)"
+            ],
+            "Guarantees": [
+                "userid (with details)",
+                "username (e.g. bob)"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,304 @@
+package generate
+
+import (
+	"bytes"
+	"embed"
+	"fmt"
+	"io/fs"
+	"log"
+	"path/filepath"
+	"sort"
+	"strings"
+	"text/template"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+
+	"github.com/pkg/errors"
+)
+
+//go:embed templates/*
+var _templateFS embed.FS
+
+func init() {
+
+	// Walk through the embedded file system to find and parse all .template files.
+	err := fs.WalkDir(_templateFS, "templates", func(path string, d fs.DirEntry, err error) error {
+
+		// Report any error walking into this path.
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// Ignore directories as data.
+		if d.IsDir() {
+			return nil
+		}
+
+		// Skip non-template files.
+		if filepath.Ext(path) != ".template" {
+			return nil
+		}
+
+		// Read from the embedded file system.
+		content, err := _templateFS.ReadFile(path)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		// Parse the template and add it to the set.
+		tmplName := filepath.Base(path)
+		tmpl, err := template.New(tmplName).Funcs(_funcMap).Parse(string(content))
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		log.Printf("Parsed template: %s", tmplName)
+
+		// Put the template into specific vars based on their use.
+		// So this must be exact.
+		switch tmplName {
+		case "model.md.template":
+			_modelMdTemplate = tmpl
+		case "actor.md.template":
+			_actorMdTemplate = tmpl
+		case "domain.md.template":
+			_domainMdTemplate = tmpl
+		case "domains.dot.template":
+			_domainsDotTemplate = tmpl
+		case "use_cases.dot.template":
+			_useCasesDotTemplate = tmpl
+		case "classes.dot.template":
+			_classesDotTemplate = tmpl
+		case "class.md.template":
+			_classMdTemplate = tmpl
+		case "class-state.dot.template":
+			_classStateDotTemplate = tmpl
+		case "use_case.md.template":
+			_useCaseMdTemplate = tmpl
+		default:
+			return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("Failed to parse templates: %+v", err)
+	}
+}
+
+// The templates in the system.
+var _modelMdTemplate *template.Template
+var _actorMdTemplate *template.Template
+var _domainMdTemplate *template.Template
+var _domainsDotTemplate *template.Template  // DOT input to GraphViz for SVG UML diagram.
+var _useCasesDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
+var _classesDotTemplate *template.Template  // DOT input to GraphViz for SVG UML diagram.
+var _classMdTemplate *template.Template
+var _classStateDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
+var _useCaseMdTemplate *template.Template
+
+// Define some function for our templates.
+var _funcMap = template.FuncMap{
+	"nodeid": func(idtype, key string) string {
+		// Replace / with _
+		key = strings.ReplaceAll(key, "/", "_")
+		// Replace - with _
+		key = strings.ReplaceAll(key, "-", "_")
+		return idtype + "_" + key
+	},
+	"lookup": func(lookup map[string]string, key string) (value string) {
+		value, found := lookup[key]
+		fmt.Println(key, lookup)
+		if !found {
+			panic(fmt.Sprintf("Unknown lookup key: '%s'", key))
+		}
+		return value
+	},
+	"filename": func(objType, key, suffix, ext string) (filename string) {
+		return convertKeyToFilename(objType, key, suffix, ext)
+	},
+	"data_type_rules": func(rules string, dataType *data_type.DataType) (value string) {
+		if dataType == nil {
+			return `_(unparsed)_ ` + rules
+		}
+		return "__" + dataType.String() + "__"
+	},
+	"first_md_paragraph": func(md string) (paragraph string) {
+		return firstMdParagraph(md)
+	},
+	"first_md_sentence": func(md string) (paragraph string) {
+		return firstSentence(firstMdParagraph(md))
+	},
+	"multiplicity": func(multiplicity requirements.Multiplicity) (value string) {
+		return multiplicity.String()
+	},
+	"generalization_label": func(reqs requirements.Requirements, generalizationKey string) (value string) {
+		generalizationLookup := reqs.GeneralizationLookup()
+		generalization := generalizationLookup[generalizationKey]
+		complete := "«complete»"
+		if !generalization.IsComplete {
+			complete = "«incomplete»"
+		}
+		static := "«static»"
+		if !generalization.IsStatic {
+			static = "«dynamic»"
+		}
+		return complete + "\n" + static
+	},
+	"event_guard_signature": func(reqs requirements.Requirements, transition requirements.Transition) (eventCall string) {
+
+		eventLookup := reqs.EventLookup()
+		guardLookup := reqs.GuardLookup()
+
+		// The event.
+		event := eventLookup[transition.EventKey]
+
+		// Create a signature for the event.
+		var paramNames []string
+		for _, param := range event.Parameters {
+			paramNames = append(paramNames, param.Name)
+		}
+		signature := strings.Join(paramNames, ", ")
+
+		// The main call.
+		eventCall = event.Name + "(" + signature + ")"
+
+		// Add a guard if there is one.
+		if transition.GuardKey != "" {
+			guard := guardLookup[transition.GuardKey]
+			eventCall += " [" + guard.Details + "]"
+		}
+
+		return eventCall
+	},
+	"action_signatures": func(reqs requirements.Requirements, transitions []requirements.Transition, stateActions []requirements.StateAction) (signatures []string) {
+
+		eventLookup := reqs.EventLookup()
+
+		// Keep track of each signature we find.
+		signatureLookup := map[string]bool{}
+
+		// If there is any state action we have a signature with no parameters.
+		if len(stateActions) > 0 {
+			signatureLookup[""] = true
+		}
+
+		// Create a signature for each event used.
+		for _, transition := range transitions {
+			event := eventLookup[transition.EventKey]
+
+			var paramNames []string
+			for _, param := range event.Parameters {
+				paramNames = append(paramNames, param.Name)
+			}
+			signature := strings.Join(paramNames, ", ")
+			signatureLookup[signature] = true
+		}
+
+		// Put all the signatures in a list.
+		for signature := range signatureLookup {
+			signatures = append(signatures, signature)
+		}
+
+		// Make the signatures ordered for consistent display.
+		sort.Strings(signatures)
+
+		return signatures
+	},
+
+	// Formatting of bulleted lists.
+	"main_bullet": func(bulletText string) (mainBullet string) {
+		mainBullet, _ = splitBulletTextIntoMainAndSubBullets(bulletText)
+		return mainBullet
+	},
+	"sub_bullets": func(bulletText string) (subBullets []string) {
+		_, subBullets = splitBulletTextIntoMainAndSubBullets(bulletText)
+		return subBullets
+	},
+
+	// Lookup methods for objects.
+	"domain_lookup": func(reqs requirements.Requirements, key string) (value requirements.Domain) {
+		lookup, _ := reqs.DomainLookup()
+		return lookup[key]
+	},
+	"class_lookup": func(reqs requirements.Requirements, key string) (value requirements.Class) {
+		lookup, _ := reqs.ClassLookup()
+		return lookup[key]
+	},
+	"state_lookup": func(reqs requirements.Requirements, key string) (value requirements.State) {
+		lookup := reqs.StateLookup()
+		return lookup[key]
+	},
+	"event_lookup": func(reqs requirements.Requirements, key string) (value requirements.Event) {
+		lookup := reqs.EventLookup()
+		return lookup[key]
+	},
+	"guard_lookup": func(reqs requirements.Requirements, key string) (value requirements.Guard) {
+		lookup := reqs.GuardLookup()
+		return lookup[key]
+	},
+	"action_lookup": func(reqs requirements.Requirements, key string) (value requirements.Action) {
+		lookup := reqs.ActionLookup()
+		return lookup[key]
+	},
+	"use_case_lookup": func(reqs requirements.Requirements, key string) (value requirements.UseCase) {
+		lookup := reqs.UseCaseLookup()
+		return lookup[key]
+	},
+	"scenario_lookup": func(reqs requirements.Requirements, key string) (value requirements.Scenario) {
+		lookup := reqs.ScenarioLookup()
+		return lookup[key]
+	},
+}
+
+// Split multi-line bullets into sub bullets.
+func splitBulletTextIntoMainAndSubBullets(bulletText string) (mainBullet string, subBullets []string) {
+
+	// If the text we want to put in a bullet is multiple lines,
+	// every line after the first is a subbullet.
+
+	// First clean up the edge whitespace.
+	trimmedText := strings.TrimSpace(bulletText)
+	if trimmedText == "" {
+		return "", nil
+	}
+
+	// Main bullet.
+	parts := strings.Split(trimmedText, "\n")
+	mainBullet = strings.TrimSpace(parts[0])
+
+	// Rest of bullets.
+	for i := 1; i < len(parts); i++ {
+		subBullets = append(subBullets, strings.TrimSpace(parts[i]))
+	}
+
+	return mainBullet, subBullets
+}
+
+// Convert an object key to a filename.
+func convertKeyToFilename(objType, key, suffix, ext string) (filename string) {
+	baseFilename := objType + "-" + strings.ReplaceAll(key, "/", ".")
+	fullSuffix := ""
+	if suffix != "" {
+		fullSuffix = "-" + suffix
+	}
+	return baseFilename + fullSuffix + ext
+}
+
+func generateFromTemplate(template *template.Template, data any) (contents string, err error) {
+
+	// Create a buffer to hold the output.
+	var buf bytes.Buffer
+
+	// Execute the template into the buffer.
+	err = template.Execute(&buf, data)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	// Convert the buffer to a string variable.
+	contents = buf.String()
+
+	return contents, nil
+}

@@ -1,0 +1,20 @@
+{
+    "Key": "class_key",
+    "Name": "A Basic Class",
+    "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+
+    "States": [
+        {
+            "Key": "class_key/state/started",
+            "Name": "Started",
+            "Details": "Appears in data dictionary.",
+            "UmlComment": "very import to users"
+        },
+        {
+            "Key": "class_key/state/stopped",
+            "Name": "Stopped"
+        }
+    ]
+}

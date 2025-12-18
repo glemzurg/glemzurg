@@ -1,0 +1,77 @@
+package requirements
+
+import (
+	"sort"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/pkg/errors"
+)
+
+// Scenario is a documented scenario for a use case, such as a sequence diagram.
+type Scenario struct {
+	Key     string
+	Name    string
+	Details string // Markdown.
+	Steps   Node   // The "abstract syntax tree" of the scenario.
+	// Part of the data in a parsed file.
+	Objects []ScenarioObject
+	// Steps represent the structured program steps of the scenario.
+}
+
+func NewScenario(key, name, details string) (scenario Scenario, err error) {
+
+	scenario = Scenario{
+		Key:     key,
+		Name:    name,
+		Details: details,
+	}
+
+	err = validation.ValidateStruct(&scenario,
+		validation.Field(&scenario.Key, validation.Required),
+		validation.Field(&scenario.Name, validation.Required),
+	)
+	if err != nil {
+		return Scenario{}, errors.WithStack(err)
+	}
+
+	return scenario, nil
+}
+
+func (sc *Scenario) SetObjects(objects []ScenarioObject) {
+	sort.Slice(objects, func(i, j int) bool {
+		return objects[i].ObjectNumber < objects[j].ObjectNumber
+	})
+	sc.Objects = objects
+}
+
+func createKeyScenarioLookup(
+	byUseCase map[string][]Scenario,
+	objectsByScenario map[string][]ScenarioObject,
+) (lookup map[string]Scenario) {
+
+	lookup = map[string]Scenario{}
+	for _, items := range byUseCase {
+		for _, item := range items {
+			item.SetObjects(objectsByScenario[item.Key])
+			lookup[item.Key] = item
+		}
+	}
+	return lookup
+}
+
+func populateScenarioStepReferences(
+	scenarios map[string]Scenario,
+	objects map[string]ScenarioObject,
+	attributes map[string]Attribute,
+	events map[string]Event,
+) (err error) {
+	for key := range scenarios {
+		scenario := scenarios[key]
+		err = scenario.Steps.PopulateReferences(objects, events, attributes, scenarios)
+		if err != nil {
+			return err
+		}
+		scenarios[key] = scenario
+	}
+	return nil
+}

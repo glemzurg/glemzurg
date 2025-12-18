@@ -1,0 +1,52 @@
+{{- $reqs := .Reqs -}}
+
+digraph UseCases {
+	rankdir=LR;
+	imagepath=".;/home/justin/Documents/Sandbox/glemzurg/apps/req/generate/templates";
+    graph [splines=nospline, nodesep=0.5, ranksep=1, outputorder="edgesfirst"];
+	node [
+		fontname="Helvetica,Arial,sans-serif"
+		shape=record
+		style=filled
+		fillcolor=white
+	]
+	edge [arrowhead=none, style=solid, fontname="Helvetica,Arial,sans-serif", labeldistance=2.0]
+
+
+{{- $subgraphId := nodeid "cluster_subgraph" .Domain.Key }}
+subgraph {{ $subgraphId }} {
+	label = "{{ .Domain.Name }}";
+	node [
+		fontname="Helvetica,Arial,sans-serif"
+		shape=oval
+		style=filled
+		fillcolor=white
+	]
+	
+{{ range .UseCases -}}
+    {{ $useCaseNode := nodeid "use_case" .Key -}}
+	{{ $useCaseNode }} [label="{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ .Name }} "]
+{{ end }}
+
+}
+
+
+{{ range .Actors -}}
+    {{ $actorKey := nodeid "actor" .Key -}}
+    {{- $shape := "underline" -}}
+	{{- if eq .Type "system" -}}
+	    {{- $shape = "box3d" -}}
+	{{- end -}}
+	{{ $actorKey }} [shape={{ $shape }} label="«{{ .Type }}»\n{{ .Name }} "]
+{{ end }}
+
+
+{{ range .UseCases -}}
+    {{ $useCaseNode := nodeid "use_case" .Key -}}
+    {{ range $actorKey, $useCaseActor := .Actors -}}
+        {{ $actorNode := nodeid "actor" $actorKey -}}
+        {{ $actorNode }} -> {{ $useCaseNode }}
+    {{ end -}}
+{{ end }}
+
+}

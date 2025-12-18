@@ -1,0 +1,28 @@
+{
+    "Key": "class_key",
+    "Name": "A Basic Class",
+    "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+
+    "Events": [
+        {
+            "Key": "class_key/event/login",
+            "Name": "LogIn",
+            "Details": "Appears in data dictionary.",
+            "Parameters": [
+                {"Name": "userid", "Source":"this comes from x"},
+                {"Name": "username", "Source":"this comes from y"}
+            ]
+        },
+        {
+            "Key": "class_key/event/logout",
+            "Name": "LogOut"
+        },
+        {
+            "Key": "class_key/event/trigger",
+            "Name": "Trigger",
+            "Details": "Appears in data dictionary."
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+{{- $reqs := .Reqs -}}
+
+digraph Domains {
+    graph [splines=false, nodesep=0.5, ranksep=1, outputorder="edgesfirst"];
+    node [shape=folder, style="filled", fillcolor="white", fontname="Sans-Serif", fontsize=11];
+    edge [style=dashed, arrowhead=vee];// Example domains
+
+{{ range .Domains -}}
+{{ $domainKey := nodeid "domain" .Key }}
+{{ $domainKey }} [label="{{ if .Realized }}«realized»\n{{ end }}{{ .Name }}"]
+{{ end }}
+
+{{ range .Associations -}}
+{{ $problemDomainKey := nodeid "domain" .ProblemDomainKey -}}
+{{ $solutionDomainKey := nodeid "domain" .SolutionDomainKey -}}
+{{ $problemDomainKey }} -> {{ $solutionDomainKey }}
+{{ end }}
+
+}
+

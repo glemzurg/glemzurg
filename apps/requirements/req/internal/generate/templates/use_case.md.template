@@ -1,0 +1,27 @@
+{{- $reqs := .Reqs -}}
+
+{{- $domain := domain_lookup $reqs .UseCase.DomainKey -}}
+
+[⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
+
+{{ .UseCase.Details }}
+
+## Scenarios
+
+Flows of interest.
+
+{{ if ne .UseCase.Scenarios nil -}}
+{{ range .UseCase.Scenarios -}}
+
+    {{- $scenario := scenario_lookup $reqs .Key -}}
+
+### {{ $scenario.Name }}
+
+{{ $scenario.Details }}
+
+![er]({{ filename "scenario" $scenario.Key "" ".svg" }})
+
+{{ end -}}
+{{- else -}}
+*None*
+{{- end }}

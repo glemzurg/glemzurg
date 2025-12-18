@@ -1,0 +1,115 @@
+{
+    "Key": "use_case_key",
+    "Name": "A Basic Use Case?",
+    "Details": "# A Basic Use Case?\n\nHere we have markdown details.\n\nAnd even more.",
+    "Level": "sky",
+    "ReadOnly": true,
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+
+    "Actors": {
+        "actor_key": {
+            "UmlComment": "Actor stuff"
+        },
+        "actor_b_key": {
+            "UmlComment": "Actor B stuff"
+        }
+    },
+
+    "Scenarios": [
+        {
+            "Key": "use_case_key/scenario/scenario_a_key",
+            "Name": "Scenario A",
+            "Details": "Scenario A stuff.",
+            "Objects": [
+                {
+                    "Key": "use_case_key/scenario/scenario_a_key/object/bob",
+                    "ObjectNumber": 1,
+                    "Name": "Bob",
+                    "NameStyle": "name",
+                    "ClassKey": "person_key",
+                    "Multi": false,
+                    "UmlComment": ""
+                },
+                {
+                    "Key": "use_case_key/scenario/scenario_a_key/object/book",
+                    "ObjectNumber": 2,
+                    "Name": "1",
+                    "NameStyle": "id",
+                    "ClassKey": "book_key",
+                    "Multi": true,
+                    "UmlComment": "the book of greatness"
+                }
+            ],
+            "Steps": {
+                "statements": [
+                    {
+                        "description": "first step",
+                        "from_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
+                        "to_object_key": "use_case_key/scenario/scenario_a_key/object/book",
+                        "event_key": "class_key/event/processlog"
+                    },
+                    {
+                        "loop": "while condition",
+                        "statements": [
+                            {
+                                "description": "loop step",
+                                "from_object_key": "use_case_key/scenario/scenario_a_key/object/book",
+                                "to_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
+                                "scenario_key": "use_case_key/scenario/scenario_b_key"
+                            }
+                        ]
+                    },
+                    {
+                        "cases": [
+                            {
+                                "condition": "case1",
+                                "statements": [
+                                    {
+                                        "description": "case1 step",
+                                        "from_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
+                                        "to_object_key": "use_case_key/scenario/scenario_a_key/object/book",
+                                        "event_key": "class_key/event/processlog"
+                                    }
+                                ]
+                            },
+                            {
+                                "condition": "case2",
+                                "statements": [ 
+                                    {
+                                        "from_object_key": "use_case_key/scenario/scenario_a_key/object/book",
+                                        "is_delete": true
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "Key": "use_case_key/scenario/scenario_b_key",
+            "Name": "Scenario B",
+            "Details": "Scenario B stuff.",
+            "Objects": [
+                {
+                    "Key": "use_case_key/scenario/scenario_b_key/object/bob",
+                    "ObjectNumber": 1,
+                    "Name": "Bob",
+                    "NameStyle": "name",
+                    "ClassKey": "person_key",
+                    "Multi": false,
+                    "UmlComment": ""
+                },
+                {
+                    "Key": "use_case_key/scenario/scenario_b_key/object/book",
+                    "ObjectNumber": 2,
+                    "Name": "",
+                    "NameStyle": "unnamed",
+                    "ClassKey": "book_key",
+                    "Multi": false,
+                    "UmlComment": ""
+                }
+            ]
+        }
+    ]
+}

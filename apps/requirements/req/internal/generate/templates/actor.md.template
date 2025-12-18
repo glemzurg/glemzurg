@@ -1,0 +1,36 @@
+{{- $reqs := .Reqs -}}
+
+[⇦ {{ $reqs.Model.Name }}](model.md)
+
+{{ .Actor.Details }}
+
+## Classes
+
+The domain classes that define this actor.
+
+{{ if ne .Actor.ClassKeys nil -}}
+
+{{ range .Actor.ClassKeys -}}
+{{- $class := class_lookup $reqs . }}
+{{- $domain := domain_lookup $reqs $class.DomainKey }}
+
+### {{ $domain.Name }} : {{ $class.Name }}
+
+{{ first_md_paragraph $class.Details }}
+
+{{ if ne $class.Attributes nil -}}
+
+| Name | Rules | Nullable | Comment |
+| ---- | ----- | -------- | ------- |
+{{- range $class.Attributes }}
+| {{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name }} | {{ .DataTypeRules }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+
+{{- else -}}
+*No attributes*
+{{- end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+{{- end }}

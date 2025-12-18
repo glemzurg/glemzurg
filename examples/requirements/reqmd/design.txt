@@ -1,0 +1,41 @@
+main.go has comments for next work to do
+
+---------------
+
+
+Every link is a requirement thing, the link being the id if not fully developed.
+
+The link can have text.
+
+The system can optionally clean up links.
+
+The system reports incomplete data, but doesnt write files.
+
+Sections that begin with a known pattern are the requriements things.
+
+Any bulelted list in a use case is expected to be a sequence of information.
+
+-------------
+
+Cleanup requirements.
+
+Find every line that matches pattern of:
+
+    FNRSU - Some sort of text here
+
+then give each a proper number and update text file.
+
+---------------
+
+Renumber:
+
+Trust file order, then renumer all values by order for files, then orde4r in file.
+
+Update all links to be the new links.
+
+---------------
+
+Evaluate completion:
+    all () must be a link of a certain format with
+     the pattern of U23 or R14.
+

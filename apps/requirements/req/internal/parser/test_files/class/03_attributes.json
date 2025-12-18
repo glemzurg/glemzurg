@@ -1,0 +1,32 @@
+{
+    "Key": "class_key",
+    "Name": "A Basic Class",
+    "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+
+    "Attributes": [
+        {
+            "Key": "class_key/power",
+            "Name": "Power",
+            "Details": "Appears in data dictionary.",
+            "DataTypeRules": "string that is 3-28 chars long",
+            "DerivationPolicy": "the joining of other values",
+            "Nullable": true,
+            "UmlComment": "very import to users",
+            "IndexNums": [1, 2]
+        },
+        {
+            "Key": "class_key/speed",
+            "Name": "Speed",
+            "DataTypeRules": "unconstrained",
+            "DataType": {
+                "Key": "class_key/speed",
+                "CollectionType": "atomic",
+                "Atomic": {
+                    "ConstraintType": "unconstrained"
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,66 @@
+
+===============================================
+
+// Documentation database.
+
+sudo -u postgres psql
+
+postgres=# create database modeling;
+CREATE DATABASE
+postgres=# create user modeling with encrypted password 'modeling';
+CREATE ROLE
+postgres=# grant all privileges on database modeling to modeling;
+GRANT
+
+postgres=# \c modeling
+You are now connected to database "modeling" as user "postgres".
+modeling=# GRANT ALL ON SCHEMA public TO modeling;
+
+
+===============================================
+
+// Test database.
+
+sudo -u postgres psql
+
+postgres=# create database modeling_test;
+CREATE DATABASE
+postgres=# create user modeling_test with encrypted password 'modeling_test';
+CREATE ROLE
+postgres=# grant all privileges on database modeling_test to modeling_test;
+GRANT
+
+postgres=# \c modeling_test
+You are now connected to database "modeling_test" as user "postgres".
+modeling_test=# GRANT ALL ON SCHEMA public TO modeling_test;
+GRANT
+
+===============================================
+
+// Test the unit test user can operate on database.
+
+// The code-driven user for postgres must be a user in the system.
+
+
+adduser --no-create-home modeling_test
+    password "<passwordhere>"
+
+su modeling_test
+psql -U modeling_test modeling_test
+
+adduser --no-create-home modeling
+    password "<passwordhere>"
+
+su modeling
+psql -U modeling modeling
+
+===============================================
+
+In the shell had success with full connection strings to connect a user who is not the active linux user.
+
+The creator of the table has specific access. If one user creates a table, and another tries to access, then access can be denied.
+Even with granted permissions.
+
+// The code-driven test user must be the owner of the tables to reset database.
+
+ALTER TABLE table_name OWNER TO new_owner;
