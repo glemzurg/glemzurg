@@ -1,10 +1,6 @@
 
 
 next:
-  - remove web books out of repo as example
-    - new example needed
-  - setup web books inside a home repo
-    - work out the method to point to other repos 
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md
