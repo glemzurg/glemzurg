@@ -22,6 +22,10 @@ The movement between states.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| transition_class_key_not_null | n | NOT NULL class_key |
+| transition_event_key_not_null | n | NOT NULL event_key |
+| transition_model_key_not_null | n | NOT NULL model_key |
+| transition_transition_key_not_null | n | NOT NULL transition_key |
 | fk_transition_from | FOREIGN KEY | FOREIGN KEY (model_key, from_state_key) REFERENCES state(model_key, state_key) ON DELETE CASCADE |
 | fk_transition_to | FOREIGN KEY | FOREIGN KEY (model_key, to_state_key) REFERENCES state(model_key, state_key) ON DELETE CASCADE |
 | fk_transition_event | FOREIGN KEY | FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE |

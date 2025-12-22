@@ -11,10 +11,10 @@ SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $SCRIPT_PATH
 [ $? -ne 0 ] && exit 1
 
-psql "postgresql://modeling:modeling@localhost:5432/modeling" -f "$SCRIPT_PATH/internal/database/sql/drop_schema.sql"
+psql "postgresql://postgres:postgres@localhost:5432/postgres" -f "$SCRIPT_PATH/internal/database/sql/drop_schema.sql"
 [ $? -ne 0 ] && exit 1
 
-psql "postgresql://modeling:modeling@localhost:5432/modeling" -f "$SCRIPT_PATH/internal/database/sql/schema.sql"
+psql "postgresql://postgres:postgres@localhost:5432/postgres" -f "$SCRIPT_PATH/internal/database/sql/schema.sql"
 [ $? -ne 0 ] && exit 1
 
 

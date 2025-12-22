@@ -18,6 +18,10 @@ An extra condition on when the transition can take place.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| guard_class_key_not_null | n | NOT NULL class_key |
+| guard_guard_key_not_null | n | NOT NULL guard_key |
+| guard_model_key_not_null | n | NOT NULL model_key |
+| guard_name_not_null | n | NOT NULL name |
 | fk_guard_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | guard_pkey | PRIMARY KEY | PRIMARY KEY (model_key, guard_key) |
 

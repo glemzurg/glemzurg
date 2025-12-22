@@ -17,6 +17,9 @@ Which actors participate in which use cases.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| use_case_actor_actor_key_not_null | n | NOT NULL actor_key |
+| use_case_actor_model_key_not_null | n | NOT NULL model_key |
+| use_case_actor_use_case_key_not_null | n | NOT NULL use_case_key |
 | fk_uca_actor | FOREIGN KEY | FOREIGN KEY (model_key, actor_key) REFERENCES actor(model_key, actor_key) ON DELETE CASCADE |
 | fk_uca_use_case | FOREIGN KEY | FOREIGN KEY (model_key, use_case_key) REFERENCES use_case(model_key, use_case_key) ON DELETE CASCADE |
 | use_case_actor_pkey | PRIMARY KEY | PRIMARY KEY (model_key, use_case_key, actor_key) |

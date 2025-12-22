@@ -25,6 +25,15 @@ A semantic relationship between typed instances.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| association_association_key_not_null | n | NOT NULL association_key |
+| association_from_class_key_not_null | n | NOT NULL from_class_key |
+| association_from_multiplicity_higher_not_null | n | NOT NULL from_multiplicity_higher |
+| association_from_multiplicity_lower_not_null | n | NOT NULL from_multiplicity_lower |
+| association_model_key_not_null | n | NOT NULL model_key |
+| association_name_not_null | n | NOT NULL name |
+| association_to_class_key_not_null | n | NOT NULL to_class_key |
+| association_to_multiplicity_higher_not_null | n | NOT NULL to_multiplicity_higher |
+| association_to_multiplicity_lower_not_null | n | NOT NULL to_multiplicity_lower |
 | fk_association_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_association_class | FOREIGN KEY | FOREIGN KEY (model_key, association_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | fk_association_from | FOREIGN KEY | FOREIGN KEY (model_key, from_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |

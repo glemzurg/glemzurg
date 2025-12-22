@@ -22,6 +22,14 @@ An object that participates in a scenario.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| scenario_object_class_key_not_null | n | NOT NULL class_key |
+| scenario_object_model_key_not_null | n | NOT NULL model_key |
+| scenario_object_multi_not_null | n | NOT NULL multi |
+| scenario_object_name_not_null | n | NOT NULL name |
+| scenario_object_name_style_not_null | n | NOT NULL name_style |
+| scenario_object_object_number_not_null | n | NOT NULL object_number |
+| scenario_object_scenario_key_not_null | n | NOT NULL scenario_key |
+| scenario_object_scenario_object_key_not_null | n | NOT NULL scenario_object_key |
 | fk_scenario_object_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_scenario_object_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | fk_scenario_object_scenario | FOREIGN KEY | FOREIGN KEY (model_key, scenario_key) REFERENCES scenario(model_key, scenario_key) ON DELETE CASCADE |

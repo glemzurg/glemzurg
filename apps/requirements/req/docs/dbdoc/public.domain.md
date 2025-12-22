@@ -19,6 +19,9 @@ A bucket for parts of a model.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| domain_domain_key_not_null | n | NOT NULL domain_key |
+| domain_model_key_not_null | n | NOT NULL model_key |
+| domain_name_not_null | n | NOT NULL name |
 | fk_domain_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | domain_pkey | PRIMARY KEY | PRIMARY KEY (model_key, domain_key) |
 

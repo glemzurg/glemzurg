@@ -18,6 +18,11 @@ An action triggered on entry, exit, or continual do from a state.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| state_action_action_key_not_null | n | NOT NULL action_key |
+| state_action_action_when_not_null | n | NOT NULL action_when |
+| state_action_model_key_not_null | n | NOT NULL model_key |
+| state_action_state_action_key_not_null | n | NOT NULL state_action_key |
+| state_action_state_key_not_null | n | NOT NULL state_key |
 | fk_state_action_state | FOREIGN KEY | FOREIGN KEY (model_key, state_key) REFERENCES state(model_key, state_key) ON DELETE CASCADE |
 | fk_state_action_action | FOREIGN KEY | FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE |
 | state_action_pkey | PRIMARY KEY | PRIMARY KEY (model_key, state_action_key) |

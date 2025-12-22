@@ -17,6 +17,10 @@ A unique identity for a class, may be mulitple attributes together for the ident
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| class_index_attribute_key_not_null | n | NOT NULL attribute_key |
+| class_index_class_key_not_null | n | NOT NULL class_key |
+| class_index_index_num_not_null | n | NOT NULL index_num |
+| class_index_model_key_not_null | n | NOT NULL model_key |
 | fk_index_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | fk_index_attribute | FOREIGN KEY | FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE |
 | class_index_pkey | PRIMARY KEY | PRIMARY KEY (model_key, class_key, index_num, attribute_key) |

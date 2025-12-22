@@ -20,6 +20,10 @@ An action of a class that can be attached to transitions.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| action_action_key_not_null | n | NOT NULL action_key |
+| action_class_key_not_null | n | NOT NULL class_key |
+| action_model_key_not_null | n | NOT NULL model_key |
+| action_name_not_null | n | NOT NULL name |
 | fk_action_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | action_pkey | PRIMARY KEY | PRIMARY KEY (model_key, action_key) |
 

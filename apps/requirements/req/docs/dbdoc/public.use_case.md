@@ -23,6 +23,12 @@ A sequence of steps in the business rules.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| use_case_level_not_null | n | NOT NULL level |
+| use_case_model_key_not_null | n | NOT NULL model_key |
+| use_case_name_not_null | n | NOT NULL name |
+| use_case_read_only_not_null | n | NOT NULL read_only |
+| use_case_subdomain_key_not_null | n | NOT NULL subdomain_key |
+| use_case_use_case_key_not_null | n | NOT NULL use_case_key |
 | fk_use_case_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_use_case_subdomain | FOREIGN KEY | FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE |
 | fk_use_case_subclass | FOREIGN KEY | FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization(model_key, generalization_key) ON DELETE CASCADE |

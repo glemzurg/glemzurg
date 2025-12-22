@@ -19,6 +19,10 @@ A situation where invariant conditions on a class instance hold.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| state_class_key_not_null | n | NOT NULL class_key |
+| state_model_key_not_null | n | NOT NULL model_key |
+| state_name_not_null | n | NOT NULL name |
+| state_state_key_not_null | n | NOT NULL state_key |
 | fk_state_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | state_pkey | PRIMARY KEY | PRIMARY KEY (model_key, state_key) |
 

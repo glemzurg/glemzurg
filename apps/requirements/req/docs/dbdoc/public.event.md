@@ -19,6 +19,10 @@ Some occurence that can potentially trigger a change in and instance.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| event_class_key_not_null | n | NOT NULL class_key |
+| event_event_key_not_null | n | NOT NULL event_key |
+| event_model_key_not_null | n | NOT NULL model_key |
+| event_name_not_null | n | NOT NULL name |
 | fk_event_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | event_pkey | PRIMARY KEY | PRIMARY KEY (model_key, event_key) |
 

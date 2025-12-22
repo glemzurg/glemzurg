@@ -23,6 +23,11 @@ An attribute of a class.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| attribute_attribute_key_not_null | n | NOT NULL attribute_key |
+| attribute_class_key_not_null | n | NOT NULL class_key |
+| attribute_model_key_not_null | n | NOT NULL model_key |
+| attribute_name_not_null | n | NOT NULL name |
+| attribute_nullable_not_null | n | NOT NULL nullable |
 | fk_attribute_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_attribute_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | attribute_pkey | PRIMARY KEY | PRIMARY KEY (model_key, attribute_key) |

@@ -13,9 +13,9 @@ var _runDatabaseTests = flag.Bool("dbtests", false, "Run database tests only if 
 
 const (
 	// A database used only during test.
-	_TEST_DATABASE = "modeling_test"
-	_TEST_USER     = "modeling_test"
-	_TEST_PASSWORD = "modeling_test"
+	_TEST_DATABASE = "unit_test" // Don't use the database the application uses.
+	_TEST_USER     = "postgres"  // Dev containers and CI use the default 'postgres' user.
+	_TEST_PASSWORD = "postgres"  // dev containers and CI use the default 'postgres' password.
 )
 
 // t_ResetDatabase reset the database between unit tests. If not called the test will use the normal database.

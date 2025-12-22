@@ -18,6 +18,10 @@ Which use cases are used by with other use cases.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| use_case_shared_model_key_not_null | n | NOT NULL model_key |
+| use_case_shared_mud_use_case_key_not_null | n | NOT NULL mud_use_case_key |
+| use_case_shared_sea_use_case_key_not_null | n | NOT NULL sea_use_case_key |
+| use_case_shared_share_type_not_null | n | NOT NULL share_type |
 | fk_shared_mud | FOREIGN KEY | FOREIGN KEY (model_key, mud_use_case_key) REFERENCES use_case(model_key, use_case_key) ON DELETE CASCADE |
 | fk_shared_sea | FOREIGN KEY | FOREIGN KEY (model_key, sea_use_case_key) REFERENCES use_case(model_key, use_case_key) ON DELETE CASCADE |
 | use_case_shared_pkey | PRIMARY KEY | PRIMARY KEY (model_key, sea_use_case_key, mud_use_case_key) |

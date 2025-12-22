@@ -19,6 +19,10 @@ A bucket for parts of a model.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| subdomain_domain_key_not_null | n | NOT NULL domain_key |
+| subdomain_model_key_not_null | n | NOT NULL model_key |
+| subdomain_name_not_null | n | NOT NULL name |
+| subdomain_subdomain_key_not_null | n | NOT NULL subdomain_key |
 | fk_subdomain_domain | FOREIGN KEY | FOREIGN KEY (model_key, domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE |
 | subdomain_pkey | PRIMARY KEY | PRIMARY KEY (model_key, subdomain_key) |
 

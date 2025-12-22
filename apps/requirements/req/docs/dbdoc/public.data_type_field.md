@@ -17,6 +17,10 @@ A field of a record data type.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| data_type_field_data_type_key_not_null | n | NOT NULL data_type_key |
+| data_type_field_field_data_type_key_not_null | n | NOT NULL field_data_type_key |
+| data_type_field_model_key_not_null | n | NOT NULL model_key |
+| data_type_field_name_not_null | n | NOT NULL name |
 | fk_field_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_field_field_data_type | FOREIGN KEY | FOREIGN KEY (model_key, field_data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | data_type_field_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key, name) |

@@ -16,6 +16,8 @@ A fully distinct semantic model, separate from all others.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| model_model_key_not_null | n | NOT NULL model_key |
+| model_name_not_null | n | NOT NULL name |
 | model_pkey | PRIMARY KEY | PRIMARY KEY (model_key) |
 
 ## Indexes

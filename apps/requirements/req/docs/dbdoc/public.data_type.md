@@ -21,6 +21,9 @@ An data type for use in a class attribute or action parameter.
 | ---- | ---- | ---------- |
 | data_type_check | CHECK | CHECK ((collection_max >= collection_min)) |
 | data_type_collection_min_check | CHECK | CHECK ((collection_min > 0)) |
+| data_type_collection_type_not_null | n | NOT NULL collection_type |
+| data_type_data_type_key_not_null | n | NOT NULL data_type_key |
+| data_type_model_key_not_null | n | NOT NULL model_key |
 | fk_data_type_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | data_type_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key) |
 

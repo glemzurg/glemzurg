@@ -19,6 +19,10 @@ A documented scenario, such as a sequence diagram or activity diagram, for a use
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| scenario_model_key_not_null | n | NOT NULL model_key |
+| scenario_name_not_null | n | NOT NULL name |
+| scenario_scenario_key_not_null | n | NOT NULL scenario_key |
+| scenario_use_case_key_not_null | n | NOT NULL use_case_key |
 | fk_scenario_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_scenario_use_case | FOREIGN KEY | FOREIGN KEY (model_key, use_case_key) REFERENCES use_case(model_key, use_case_key) ON DELETE CASCADE |
 | scenario_pkey | PRIMARY KEY | PRIMARY KEY (model_key, scenario_key) |

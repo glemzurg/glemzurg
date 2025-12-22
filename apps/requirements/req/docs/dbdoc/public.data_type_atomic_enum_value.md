@@ -17,6 +17,10 @@ A value of an attribute that is an enum.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| data_type_atomic_enum_value_data_type_key_not_null | n | NOT NULL data_type_key |
+| data_type_atomic_enum_value_model_key_not_null | n | NOT NULL model_key |
+| data_type_atomic_enum_value_sort_order_not_null | n | NOT NULL sort_order |
+| data_type_atomic_enum_value_value_not_null | n | NOT NULL value |
 | fk_enum_atomic | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type_atomic(model_key, data_type_key) ON DELETE CASCADE |
 | data_type_atomic_enum_value_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key, value) |
 

@@ -23,7 +23,13 @@ The definition of a span for an atomic data type.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| data_type_atomic_span_data_type_key_not_null | n | NOT NULL data_type_key |
+| data_type_atomic_span_higher_type_not_null | n | NOT NULL higher_type |
+| data_type_atomic_span_lower_type_not_null | n | NOT NULL lower_type |
+| data_type_atomic_span_model_key_not_null | n | NOT NULL model_key |
 | data_type_atomic_span_precision_check | CHECK | CHECK ((("precision" <= (1)::numeric) AND ("precision" > (0)::numeric) AND (floor(log10("precision")) = log10("precision")))) |
+| data_type_atomic_span_precision_not_null | n | NOT NULL "precision" |
+| data_type_atomic_span_units_not_null | n | NOT NULL units |
 | fk_span_atomic | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type_atomic(model_key, data_type_key) ON DELETE CASCADE |
 | data_type_atomic_span_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key) |
 

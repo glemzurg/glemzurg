@@ -21,6 +21,10 @@ A parameter of an action.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| parameter_action_key_not_null | n | NOT NULL action_key |
+| parameter_model_key_not_null | n | NOT NULL model_key |
+| parameter_name_not_null | n | NOT NULL name |
+| parameter_parameter_key_not_null | n | NOT NULL parameter_key |
 | fk_parameter_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_parameter_action | FOREIGN KEY | FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE |
 | parameter_pkey | PRIMARY KEY | PRIMARY KEY (model_key, parameter_key) |

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Example: ./req_examples.sh /path/to/input /path/to/output model_name -debug
+# Example: ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books -debug
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Output path.
@@ -51,7 +51,7 @@ rm -fr $OUTPUT_PATH/*/dot
 
 # Run the command to generate from the example.
 echo -e "\$GOBIN/reqmodel -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL -debug\n"
-$GOBIN/reqmodel -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $DEBUG
+/go/bin/reqmodel -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $DEBUG
 
 [ $? -ne 0 ] && exit 1
 

@@ -19,6 +19,9 @@ An atomic type that backs a data type for eventually use in a class attribute or
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| data_type_atomic_constraint_type_not_null | n | NOT NULL constraint_type |
+| data_type_atomic_data_type_key_not_null | n | NOT NULL data_type_key |
+| data_type_atomic_model_key_not_null | n | NOT NULL model_key |
 | fk_atomic_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | data_type_atomic_pkey | PRIMARY KEY | PRIMARY KEY (model_key, data_type_key) |
 

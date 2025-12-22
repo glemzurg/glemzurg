@@ -21,6 +21,10 @@ A role that a person or sytem can take who uses the system. Actors are outside o
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| actor_actor_key_not_null | n | NOT NULL actor_key |
+| actor_actor_type_not_null | n | NOT NULL actor_type |
+| actor_model_key_not_null | n | NOT NULL model_key |
+| actor_name_not_null | n | NOT NULL name |
 | fk_actor_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_actor_subclass | FOREIGN KEY | FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization(model_key, generalization_key) ON DELETE CASCADE |
 | fk_actor_superclass | FOREIGN KEY | FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization(model_key, generalization_key) ON DELETE CASCADE |

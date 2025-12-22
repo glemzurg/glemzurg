@@ -20,6 +20,9 @@ A relationship between classes indicating super classes and subclasses. This is 
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| generalization_generalization_key_not_null | n | NOT NULL generalization_key |
+| generalization_model_key_not_null | n | NOT NULL model_key |
+| generalization_name_not_null | n | NOT NULL name |
 | fk_generalization_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | generalization_pkey | PRIMARY KEY | PRIMARY KEY (model_key, generalization_key) |
 

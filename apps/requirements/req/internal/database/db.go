@@ -14,9 +14,9 @@ const (
 	_DRIVER   = "postgres"
 	_HOST     = "localhost"
 	_PORT     = 5432
-	_DATABASE = "modeling"
-	_USER     = "modeling"
-	_PASSWORD = "modeling"
+	_DATABASE = "postgres" // Dev containers and CI use the default 'postgres' database.
+	_USER     = "postgres" // Dev containers and CI use the default 'postgres' user.
+	_PASSWORD = "postgres" // Dev containers and CI use the default 'postgres' password.
 )
 
 const (

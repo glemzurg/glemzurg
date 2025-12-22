@@ -22,6 +22,10 @@ A set of objects that share the same semantics.
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| class_class_key_not_null | n | NOT NULL class_key |
+| class_model_key_not_null | n | NOT NULL model_key |
+| class_name_not_null | n | NOT NULL name |
+| class_subdomain_key_not_null | n | NOT NULL subdomain_key |
 | fk_class_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | fk_class_subdomain | FOREIGN KEY | FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE |
 | fk_class_subclass | FOREIGN KEY | FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization(model_key, generalization_key) ON DELETE CASCADE |
