@@ -51,7 +51,7 @@ rm -fr $OUTPUT_PATH/*/dot
 
 # Run the command to generate from the example.
 echo -e "\$GOBIN/reqmodel -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL -debug\n"
-/go/bin/reqmodel -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $DEBUG
+/go/bin/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $DEBUG
 
 [ $? -ne 0 ] && exit 1
 
