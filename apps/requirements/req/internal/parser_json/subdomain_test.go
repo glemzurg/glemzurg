@@ -13,10 +13,29 @@ func TestSubdomainInOutRoundTrip(t *testing.T) {
 		Name:       "Sub1",
 		Details:    "Details",
 		UmlComment: "comment",
+		Generalizations: []requirements.Generalization{
+			{
+				Key: "gen1",
+			},
+		},
+		Classes: []requirements.Class{
+			{
+				Key: "class1",
+			},
+		},
+		UseCases: []requirements.UseCase{
+			{
+				Key: "uc1",
+			},
+		},
+		Associations: []requirements.Association{
+			{
+				Key: "assoc1",
+			},
+		},
 	}
 
 	inOut := FromRequirementsSubdomain(original)
 	back := inOut.ToRequirements()
-
 	assert.Equal(t, original, back)
 }

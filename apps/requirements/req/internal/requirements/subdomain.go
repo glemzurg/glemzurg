@@ -11,6 +11,11 @@ type Subdomain struct {
 	Name       string
 	Details    string // Markdown.
 	UmlComment string
+	// For parsing only, not stored here.
+	Generalizations []Generalization // Generalizations for the classes and use cases in this subdomain.
+	Classes         []Class          // Classes in this subdomain.
+	UseCases        []UseCase        // Use cases in this subdomain.
+	Associations    []Association    // Associations between classes in this subdomain.
 }
 
 func NewSubdomain(key, name, details, umlComment string) (subdomain Subdomain, err error) {
