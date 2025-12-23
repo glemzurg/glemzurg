@@ -14,13 +14,11 @@ type actionInOut struct {
 // ToRequirements converts the actionInOut to requirements.Action.
 func (a actionInOut) ToRequirements() requirements.Action {
 	return requirements.Action{
-		Key:             a.Key,
-		Name:            a.Name,
-		Details:         a.Details,
-		Requires:        a.Requires,
-		Guarantees:      a.Guarantees,
-		FromTransitions: nil, // Not stored in JSON
-		FromStates:      nil, // Not stored in JSON
+		Key:        a.Key,
+		Name:       a.Name,
+		Details:    a.Details,
+		Requires:   a.Requires,
+		Guarantees: a.Guarantees,
 	}
 }
 
