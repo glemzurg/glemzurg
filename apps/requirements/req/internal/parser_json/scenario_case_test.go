@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCaseInOutJSONRoundTrip(t *testing.T) {
@@ -35,22 +36,16 @@ func TestCaseInOutJSONRoundTrip(t *testing.T) {
 	}
 
 	// Check fields
-	if unmarshaled.Condition != original.Condition {
-		t.Errorf("Condition mismatch: got %q, want %q", unmarshaled.Condition, original.Condition)
-	}
+	assert.Equal(t, original.Condition, unmarshaled.Condition)
 
-	if len(unmarshaled.Statements) != len(original.Statements) {
-		t.Errorf("Statements length mismatch: got %d, want %d", len(unmarshaled.Statements), len(original.Statements))
-	}
+	assert.Len(t, unmarshaled.Statements, len(original.Statements))
 
 	if len(unmarshaled.Statements) > 0 {
-		if unmarshaled.Statements[0].Description != original.Statements[0].Description ||
-			unmarshaled.Statements[0].FromObjectKey != original.Statements[0].FromObjectKey ||
-			unmarshaled.Statements[0].ToObjectKey != original.Statements[0].ToObjectKey ||
-			unmarshaled.Statements[0].EventKey != original.Statements[0].EventKey ||
-			unmarshaled.Statements[0].IsDelete != original.Statements[0].IsDelete {
-			t.Errorf("Statement mismatch: got %+v, want %+v", unmarshaled.Statements[0], original.Statements[0])
-		}
+		assert.Equal(t, original.Statements[0].Description, unmarshaled.Statements[0].Description)
+		assert.Equal(t, original.Statements[0].FromObjectKey, unmarshaled.Statements[0].FromObjectKey)
+		assert.Equal(t, original.Statements[0].ToObjectKey, unmarshaled.Statements[0].ToObjectKey)
+		assert.Equal(t, original.Statements[0].EventKey, unmarshaled.Statements[0].EventKey)
+		assert.Equal(t, original.Statements[0].IsDelete, unmarshaled.Statements[0].IsDelete)
 	}
 }
 
@@ -75,21 +70,15 @@ func TestCaseInOutConversionRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Condition != originalReq.Condition {
-		t.Errorf("Condition mismatch: got %q, want %q", convertedBack.Condition, originalReq.Condition)
-	}
+	assert.Equal(t, originalReq.Condition, convertedBack.Condition)
 
-	if len(convertedBack.Statements) != len(originalReq.Statements) {
-		t.Errorf("Statements length mismatch: got %d, want %d", len(convertedBack.Statements), len(originalReq.Statements))
-	}
+	assert.Len(t, convertedBack.Statements, len(originalReq.Statements))
 
 	if len(convertedBack.Statements) > 0 {
-		if convertedBack.Statements[0].Description != originalReq.Statements[0].Description ||
-			convertedBack.Statements[0].FromObjectKey != originalReq.Statements[0].FromObjectKey ||
-			convertedBack.Statements[0].ToObjectKey != originalReq.Statements[0].ToObjectKey ||
-			convertedBack.Statements[0].EventKey != originalReq.Statements[0].EventKey ||
-			convertedBack.Statements[0].IsDelete != originalReq.Statements[0].IsDelete {
-			t.Errorf("Statement mismatch: got %+v, want %+v", convertedBack.Statements[0], originalReq.Statements[0])
-		}
+		assert.Equal(t, originalReq.Statements[0].Description, convertedBack.Statements[0].Description)
+		assert.Equal(t, originalReq.Statements[0].FromObjectKey, convertedBack.Statements[0].FromObjectKey)
+		assert.Equal(t, originalReq.Statements[0].ToObjectKey, convertedBack.Statements[0].ToObjectKey)
+		assert.Equal(t, originalReq.Statements[0].EventKey, convertedBack.Statements[0].EventKey)
+		assert.Equal(t, originalReq.Statements[0].IsDelete, convertedBack.Statements[0].IsDelete)
 	}
 }

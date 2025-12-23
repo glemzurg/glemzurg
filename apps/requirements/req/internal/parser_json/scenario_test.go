@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScenarioInOutJSONRoundTrip(t *testing.T) {
@@ -48,22 +49,16 @@ func TestScenarioInOutJSONRoundTrip(t *testing.T) {
 	}
 
 	// Check fields
-	if unmarshaled.Key != original.Key ||
-		unmarshaled.Name != original.Name ||
-		unmarshaled.Details != original.Details {
-		t.Errorf("Basic fields mismatch: got %+v, want %+v", unmarshaled, original)
-	}
+	assert.Equal(t, original.Key, unmarshaled.Key)
+	assert.Equal(t, original.Name, unmarshaled.Name)
+	assert.Equal(t, original.Details, unmarshaled.Details)
 
 	// Check steps
-	if unmarshaled.Steps.Description != original.Steps.Description ||
-		unmarshaled.Steps.EventKey != original.Steps.EventKey {
-		t.Errorf("Steps mismatch: got %+v, want %+v", unmarshaled.Steps, original.Steps)
-	}
+	assert.Equal(t, original.Steps.Description, unmarshaled.Steps.Description)
+	assert.Equal(t, original.Steps.EventKey, unmarshaled.Steps.EventKey)
 
 	// Check objects
-	if len(unmarshaled.Objects) != len(original.Objects) {
-		t.Errorf("Objects length mismatch: got %d, want %d", len(unmarshaled.Objects), len(original.Objects))
-	}
+	assert.Len(t, unmarshaled.Objects, len(original.Objects))
 }
 
 func TestScenarioInOutConversionRoundTrip(t *testing.T) {
@@ -100,20 +95,14 @@ func TestScenarioInOutConversionRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.Name != originalReq.Name ||
-		convertedBack.Details != originalReq.Details {
-		t.Errorf("Basic fields mismatch: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.Name, convertedBack.Name)
+	assert.Equal(t, originalReq.Details, convertedBack.Details)
 
 	// Check steps
-	if convertedBack.Steps.Description != originalReq.Steps.Description ||
-		convertedBack.Steps.EventKey != originalReq.Steps.EventKey {
-		t.Errorf("Steps mismatch: got %+v, want %+v", convertedBack.Steps, originalReq.Steps)
-	}
+	assert.Equal(t, originalReq.Steps.Description, convertedBack.Steps.Description)
+	assert.Equal(t, originalReq.Steps.EventKey, convertedBack.Steps.EventKey)
 
 	// Check objects
-	if len(convertedBack.Objects) != len(originalReq.Objects) {
-		t.Errorf("Objects length mismatch: got %d, want %d", len(convertedBack.Objects), len(originalReq.Objects))
-	}
+	assert.Len(t, convertedBack.Objects, len(originalReq.Objects))
 }

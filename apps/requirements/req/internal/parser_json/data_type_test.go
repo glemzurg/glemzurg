@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDataTypeInOutRoundTrip(t *testing.T) {
@@ -22,10 +23,13 @@ func TestDataTypeInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsDataType(original)
 	back := inOut.ToRequirements()
 
-	if back.Key != original.Key || back.CollectionType != original.CollectionType ||
-		back.CollectionUnique != original.CollectionUnique ||
-		(back.CollectionMin == nil && original.CollectionMin != nil) || (back.CollectionMin != nil && *back.CollectionMin != *original.CollectionMin) ||
-		(back.CollectionMax == nil && original.CollectionMax != nil) || (back.CollectionMax != nil && *back.CollectionMax != *original.CollectionMax) {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Key, back.Key)
+	assert.Equal(t, original.CollectionType, back.CollectionType)
+	assert.Equal(t, original.CollectionUnique, back.CollectionUnique)
+	assert.NotNil(t, back.CollectionMin)
+	assert.Equal(t, *original.CollectionMin, *back.CollectionMin)
+	assert.NotNil(t, back.CollectionMax)
+	assert.Equal(t, *original.CollectionMax, *back.CollectionMax)
+	assert.Equal(t, original.Atomic, back.Atomic)
+	assert.Equal(t, original.RecordFields, back.RecordFields)
 }

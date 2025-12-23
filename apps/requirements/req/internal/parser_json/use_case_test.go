@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUseCaseInOutJSONRoundTrip(t *testing.T) {
@@ -47,24 +48,18 @@ func TestUseCaseInOutJSONRoundTrip(t *testing.T) {
 	}
 
 	// Check fields
-	if unmarshaled.Key != original.Key ||
-		unmarshaled.Name != original.Name ||
-		unmarshaled.Details != original.Details ||
-		unmarshaled.Level != original.Level ||
-		unmarshaled.ReadOnly != original.ReadOnly ||
-		unmarshaled.UmlComment != original.UmlComment {
-		t.Errorf("Basic fields mismatch: got %+v, want %+v", unmarshaled, original)
-	}
+	assert.Equal(t, original.Key, unmarshaled.Key)
+	assert.Equal(t, original.Name, unmarshaled.Name)
+	assert.Equal(t, original.Details, unmarshaled.Details)
+	assert.Equal(t, original.Level, unmarshaled.Level)
+	assert.Equal(t, original.ReadOnly, unmarshaled.ReadOnly)
+	assert.Equal(t, original.UmlComment, unmarshaled.UmlComment)
 
 	// Check actors
-	if len(unmarshaled.Actors) != len(original.Actors) {
-		t.Errorf("Actors length mismatch: got %d, want %d", len(unmarshaled.Actors), len(original.Actors))
-	}
+	assert.Len(t, unmarshaled.Actors, len(original.Actors))
 
 	// Check scenarios
-	if len(unmarshaled.Scenarios) != len(original.Scenarios) {
-		t.Errorf("Scenarios length mismatch: got %d, want %d", len(unmarshaled.Scenarios), len(original.Scenarios))
-	}
+	assert.Len(t, unmarshaled.Scenarios, len(original.Scenarios))
 }
 
 func TestUseCaseInOutConversionRoundTrip(t *testing.T) {
@@ -100,22 +95,16 @@ func TestUseCaseInOutConversionRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.Name != originalReq.Name ||
-		convertedBack.Details != originalReq.Details ||
-		convertedBack.Level != originalReq.Level ||
-		convertedBack.ReadOnly != originalReq.ReadOnly ||
-		convertedBack.UmlComment != originalReq.UmlComment {
-		t.Errorf("Basic fields mismatch: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.Name, convertedBack.Name)
+	assert.Equal(t, originalReq.Details, convertedBack.Details)
+	assert.Equal(t, originalReq.Level, convertedBack.Level)
+	assert.Equal(t, originalReq.ReadOnly, convertedBack.ReadOnly)
+	assert.Equal(t, originalReq.UmlComment, convertedBack.UmlComment)
 
 	// Check actors
-	if len(convertedBack.Actors) != len(originalReq.Actors) {
-		t.Errorf("Actors length mismatch: got %d, want %d", len(convertedBack.Actors), len(originalReq.Actors))
-	}
+	assert.Len(t, convertedBack.Actors, len(originalReq.Actors))
 
 	// Check scenarios
-	if len(convertedBack.Scenarios) != len(originalReq.Scenarios) {
-		t.Errorf("Scenarios length mismatch: got %d, want %d", len(convertedBack.Scenarios), len(originalReq.Scenarios))
-	}
+	assert.Len(t, convertedBack.Scenarios, len(originalReq.Scenarios))
 }

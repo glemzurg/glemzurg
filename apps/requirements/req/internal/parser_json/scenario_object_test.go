@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScenarioObjectInOutRoundTrip(t *testing.T) {
@@ -22,8 +23,11 @@ func TestScenarioObjectInOutRoundTrip(t *testing.T) {
 	back := inOut.ToRequirements()
 
 	// Check fields that are preserved
-	if back.Key != original.Key || back.ObjectNumber != original.ObjectNumber || back.Name != original.Name ||
-		back.NameStyle != original.NameStyle || back.ClassKey != original.ClassKey || back.Multi != original.Multi || back.UmlComment != original.UmlComment {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Key, back.Key)
+	assert.Equal(t, original.ObjectNumber, back.ObjectNumber)
+	assert.Equal(t, original.Name, back.Name)
+	assert.Equal(t, original.NameStyle, back.NameStyle)
+	assert.Equal(t, original.ClassKey, back.ClassKey)
+	assert.Equal(t, original.Multi, back.Multi)
+	assert.Equal(t, original.UmlComment, back.UmlComment)
 }

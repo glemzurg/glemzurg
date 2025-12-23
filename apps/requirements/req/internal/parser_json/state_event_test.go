@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEventInOutRoundTrip(t *testing.T) {
@@ -30,17 +31,13 @@ func TestEventInOutRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.Name != originalReq.Name ||
-		convertedBack.Details != originalReq.Details ||
-		len(convertedBack.Parameters) != len(originalReq.Parameters) {
-		t.Errorf("Round trip failed: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.Name, convertedBack.Name)
+	assert.Equal(t, originalReq.Details, convertedBack.Details)
+	assert.Len(t, convertedBack.Parameters, len(originalReq.Parameters))
 
 	for i, param := range originalReq.Parameters {
-		if convertedBack.Parameters[i].Name != param.Name ||
-			convertedBack.Parameters[i].Source != param.Source {
-			t.Errorf("Parameter[%d] mismatch: got %+v, want %+v", i, convertedBack.Parameters[i], param)
-		}
+		assert.Equal(t, param.Name, convertedBack.Parameters[i].Name)
+		assert.Equal(t, param.Source, convertedBack.Parameters[i].Source)
 	}
 }

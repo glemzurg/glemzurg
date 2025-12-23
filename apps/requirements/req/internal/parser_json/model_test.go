@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestModelInOutRoundTrip(t *testing.T) {
@@ -34,32 +35,20 @@ func TestModelInOutRoundTrip(t *testing.T) {
 	back := inOut.ToRequirements()
 
 	// Check model
-	if back.Model != original.Model {
-		t.Errorf("Model round trip failed: got %+v, want %+v", back.Model, original.Model)
-	}
+	assert.Equal(t, original.Model, back.Model)
 
 	// Check actors
-	if len(back.Actors) != len(original.Actors) {
-		t.Errorf("Actors length: got %d, want %d", len(back.Actors), len(original.Actors))
-	}
+	assert.Len(t, back.Actors, len(original.Actors))
 
 	// Check domains
-	if len(back.Domains) != len(original.Domains) {
-		t.Errorf("Domains length: got %d, want %d", len(back.Domains), len(original.Domains))
-	}
+	assert.Len(t, back.Domains, len(original.Domains))
 
 	// Check subdomains
-	if len(back.Subdomains) != len(original.Subdomains) {
-		t.Errorf("Subdomains length: got %d, want %d", len(back.Subdomains), len(original.Subdomains))
-	}
+	assert.Len(t, back.Subdomains, len(original.Subdomains))
 
 	// Check domain associations
-	if len(back.DomainAssociations) != len(original.DomainAssociations) {
-		t.Errorf("DomainAssociations length: got %d, want %d", len(back.DomainAssociations), len(original.DomainAssociations))
-	}
+	assert.Len(t, back.DomainAssociations, len(original.DomainAssociations))
 
 	// Check associations
-	if len(back.Associations) != len(original.Associations) {
-		t.Errorf("Associations length: got %d, want %d", len(back.Associations), len(original.Associations))
-	}
+	assert.Len(t, back.Associations, len(original.Associations))
 }

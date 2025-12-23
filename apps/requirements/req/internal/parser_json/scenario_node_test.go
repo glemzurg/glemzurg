@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNodeInOutJSONRoundTrip(t *testing.T) {
@@ -53,22 +54,20 @@ func TestNodeInOutJSONRoundTrip(t *testing.T) {
 	}
 
 	// Check basic fields
-	if unmarshaled.Loop != original.Loop || unmarshaled.Description != original.Description ||
-		unmarshaled.FromObjectKey != original.FromObjectKey || unmarshaled.ToObjectKey != original.ToObjectKey ||
-		unmarshaled.EventKey != original.EventKey || unmarshaled.ScenarioKey != original.ScenarioKey ||
-		unmarshaled.AttributeKey != original.AttributeKey || unmarshaled.IsDelete != original.IsDelete {
-		t.Errorf("Basic fields mismatch: got %+v, want %+v", unmarshaled, original)
-	}
+	assert.Equal(t, original.Loop, unmarshaled.Loop)
+	assert.Equal(t, original.Description, unmarshaled.Description)
+	assert.Equal(t, original.FromObjectKey, unmarshaled.FromObjectKey)
+	assert.Equal(t, original.ToObjectKey, unmarshaled.ToObjectKey)
+	assert.Equal(t, original.EventKey, unmarshaled.EventKey)
+	assert.Equal(t, original.ScenarioKey, unmarshaled.ScenarioKey)
+	assert.Equal(t, original.AttributeKey, unmarshaled.AttributeKey)
+	assert.Equal(t, original.IsDelete, unmarshaled.IsDelete)
 
 	// Check statements
-	if len(unmarshaled.Statements) != len(original.Statements) {
-		t.Errorf("Statements length mismatch: got %d, want %d", len(unmarshaled.Statements), len(original.Statements))
-	}
+	assert.Len(t, unmarshaled.Statements, len(original.Statements))
 
 	// Check cases
-	if len(unmarshaled.Cases) != len(original.Cases) {
-		t.Errorf("Cases length mismatch: got %d, want %d", len(unmarshaled.Cases), len(original.Cases))
-	}
+	assert.Len(t, unmarshaled.Cases, len(original.Cases))
 }
 
 func TestNodeInOutConversionRoundTrip(t *testing.T) {
@@ -110,20 +109,18 @@ func TestNodeInOutConversionRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check basic fields
-	if convertedBack.Loop != originalReq.Loop || convertedBack.Description != originalReq.Description ||
-		convertedBack.FromObjectKey != originalReq.FromObjectKey || convertedBack.ToObjectKey != originalReq.ToObjectKey ||
-		convertedBack.EventKey != originalReq.EventKey || convertedBack.ScenarioKey != originalReq.ScenarioKey ||
-		convertedBack.AttributeKey != originalReq.AttributeKey || convertedBack.IsDelete != originalReq.IsDelete {
-		t.Errorf("Basic fields mismatch: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Loop, convertedBack.Loop)
+	assert.Equal(t, originalReq.Description, convertedBack.Description)
+	assert.Equal(t, originalReq.FromObjectKey, convertedBack.FromObjectKey)
+	assert.Equal(t, originalReq.ToObjectKey, convertedBack.ToObjectKey)
+	assert.Equal(t, originalReq.EventKey, convertedBack.EventKey)
+	assert.Equal(t, originalReq.ScenarioKey, convertedBack.ScenarioKey)
+	assert.Equal(t, originalReq.AttributeKey, convertedBack.AttributeKey)
+	assert.Equal(t, originalReq.IsDelete, convertedBack.IsDelete)
 
 	// Check statements
-	if len(convertedBack.Statements) != len(originalReq.Statements) {
-		t.Errorf("Statements length mismatch: got %d, want %d", len(convertedBack.Statements), len(originalReq.Statements))
-	}
+	assert.Len(t, convertedBack.Statements, len(originalReq.Statements))
 
 	// Check cases
-	if len(convertedBack.Cases) != len(originalReq.Cases) {
-		t.Errorf("Cases length mismatch: got %d, want %d", len(convertedBack.Cases), len(originalReq.Cases))
-	}
+	assert.Len(t, convertedBack.Cases, len(originalReq.Cases))
 }

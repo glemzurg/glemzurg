@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStateActionInOutRoundTrip(t *testing.T) {
@@ -21,11 +22,9 @@ func TestStateActionInOutRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.ActionKey != originalReq.ActionKey ||
-		convertedBack.When != originalReq.When {
-		t.Errorf("Round trip failed: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.ActionKey, convertedBack.ActionKey)
+	assert.Equal(t, originalReq.When, convertedBack.When)
 
 	// Note: StateKey is not stored in JSON, so it's empty in convertedBack
 }

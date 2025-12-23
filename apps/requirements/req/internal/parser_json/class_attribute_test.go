@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAttributeInOutRoundTrip(t *testing.T) {
@@ -22,10 +23,13 @@ func TestAttributeInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsAttribute(original)
 	back := inOut.ToRequirements()
 
-	if back.Key != original.Key || back.Name != original.Name || back.Details != original.Details ||
-		back.DataTypeRules != original.DataTypeRules || back.DerivationPolicy != original.DerivationPolicy ||
-		back.Nullable != original.Nullable || back.UmlComment != original.UmlComment ||
-		len(back.IndexNums) != len(original.IndexNums) || back.DataType != original.DataType {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Key, back.Key)
+	assert.Equal(t, original.Name, back.Name)
+	assert.Equal(t, original.Details, back.Details)
+	assert.Equal(t, original.DataTypeRules, back.DataTypeRules)
+	assert.Equal(t, original.DerivationPolicy, back.DerivationPolicy)
+	assert.Equal(t, original.Nullable, back.Nullable)
+	assert.Equal(t, original.UmlComment, back.UmlComment)
+	assert.Equal(t, original.IndexNums, back.IndexNums)
+	assert.Equal(t, original.DataType, back.DataType)
 }

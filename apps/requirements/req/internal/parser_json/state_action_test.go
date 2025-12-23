@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestActionInOutRoundTrip(t *testing.T) {
@@ -22,23 +23,17 @@ func TestActionInOutRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.Name != originalReq.Name ||
-		convertedBack.Details != originalReq.Details ||
-		len(convertedBack.Requires) != len(originalReq.Requires) ||
-		len(convertedBack.Guarantees) != len(originalReq.Guarantees) {
-		t.Errorf("Round trip failed: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.Name, convertedBack.Name)
+	assert.Equal(t, originalReq.Details, convertedBack.Details)
+	assert.Len(t, convertedBack.Requires, len(originalReq.Requires))
+	assert.Len(t, convertedBack.Guarantees, len(originalReq.Guarantees))
 
 	for i, req := range originalReq.Requires {
-		if convertedBack.Requires[i] != req {
-			t.Errorf("Requires[%d] mismatch: got %q, want %q", i, convertedBack.Requires[i], req)
-		}
+		assert.Equal(t, req, convertedBack.Requires[i])
 	}
 
 	for i, gua := range originalReq.Guarantees {
-		if convertedBack.Guarantees[i] != gua {
-			t.Errorf("Guarantees[%d] mismatch: got %q, want %q", i, convertedBack.Guarantees[i], gua)
-		}
+		assert.Equal(t, gua, convertedBack.Guarantees[i])
 	}
 }

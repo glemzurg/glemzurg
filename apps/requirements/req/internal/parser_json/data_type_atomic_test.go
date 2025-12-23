@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAtomicInOutRoundTrip(t *testing.T) {
@@ -24,9 +25,13 @@ func TestAtomicInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsAtomic(original)
 	back := inOut.ToRequirements()
 
-	if back.ConstraintType != original.ConstraintType || (back.Reference == nil && original.Reference != nil) || (back.Reference != nil && *back.Reference != *original.Reference) ||
-		(back.EnumOrdered == nil && original.EnumOrdered != nil) || (back.EnumOrdered != nil && *back.EnumOrdered != *original.EnumOrdered) ||
-		len(back.Enums) != len(original.Enums) || (back.ObjectClassKey == nil && original.ObjectClassKey != nil) || (back.ObjectClassKey != nil && *back.ObjectClassKey != *original.ObjectClassKey) {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.ConstraintType, back.ConstraintType)
+	assert.Nil(t, back.Span)
+	assert.NotNil(t, back.Reference)
+	assert.Equal(t, *original.Reference, *back.Reference)
+	assert.NotNil(t, back.EnumOrdered)
+	assert.Equal(t, *original.EnumOrdered, *back.EnumOrdered)
+	assert.Len(t, back.Enums, len(original.Enums))
+	assert.NotNil(t, back.ObjectClassKey)
+	assert.Equal(t, *original.ObjectClassKey, *back.ObjectClassKey)
 }

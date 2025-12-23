@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSubdomainInOutRoundTrip(t *testing.T) {
@@ -17,7 +18,5 @@ func TestSubdomainInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsSubdomain(original)
 	back := inOut.ToRequirements()
 
-	if back != original {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original, back)
 }

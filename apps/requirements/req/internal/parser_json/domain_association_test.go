@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDomainAssociationInOutRoundTrip(t *testing.T) {
@@ -17,7 +18,8 @@ func TestDomainAssociationInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsDomainAssociation(original)
 	back := inOut.ToRequirements()
 
-	if back != original {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Key, back.Key)
+	assert.Equal(t, original.ProblemDomainKey, back.ProblemDomainKey)
+	assert.Equal(t, original.SolutionDomainKey, back.SolutionDomainKey)
+	assert.Equal(t, original.UmlComment, back.UmlComment)
 }

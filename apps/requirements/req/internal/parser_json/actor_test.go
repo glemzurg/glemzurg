@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestActorInOutRoundTrip(t *testing.T) {
@@ -20,8 +21,9 @@ func TestActorInOutRoundTrip(t *testing.T) {
 	back := inOut.ToRequirements()
 
 	// Check individual fields, ignoring ClassKeys
-	if back.Key != original.Key || back.Name != original.Name || back.Details != original.Details ||
-		back.Type != original.Type || back.UmlComment != original.UmlComment {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Key, back.Key)
+	assert.Equal(t, original.Name, back.Name)
+	assert.Equal(t, original.Details, back.Details)
+	assert.Equal(t, original.Type, back.Type)
+	assert.Equal(t, original.UmlComment, back.UmlComment)
 }

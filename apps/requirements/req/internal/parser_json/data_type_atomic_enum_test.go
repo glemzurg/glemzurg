@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAtomicEnumInOutRoundTrip(t *testing.T) {
@@ -15,7 +16,6 @@ func TestAtomicEnumInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsAtomicEnum(original)
 	back := inOut.ToRequirements()
 
-	if back != original {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Value, back.Value)
+	assert.Equal(t, original.SortOrder, back.SortOrder)
 }

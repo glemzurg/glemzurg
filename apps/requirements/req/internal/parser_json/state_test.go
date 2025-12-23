@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStateInOutRoundTrip(t *testing.T) {
@@ -33,19 +34,15 @@ func TestStateInOutRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.Name != originalReq.Name ||
-		convertedBack.Details != originalReq.Details ||
-		convertedBack.UmlComment != originalReq.UmlComment ||
-		len(convertedBack.Actions) != len(originalReq.Actions) {
-		t.Errorf("Round trip failed: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.Name, convertedBack.Name)
+	assert.Equal(t, originalReq.Details, convertedBack.Details)
+	assert.Equal(t, originalReq.UmlComment, convertedBack.UmlComment)
+	assert.Len(t, convertedBack.Actions, len(originalReq.Actions))
 
 	for i, action := range originalReq.Actions {
-		if convertedBack.Actions[i].Key != action.Key ||
-			convertedBack.Actions[i].ActionKey != action.ActionKey ||
-			convertedBack.Actions[i].When != action.When {
-			t.Errorf("Action[%d] mismatch: got %+v, want %+v", i, convertedBack.Actions[i], action)
-		}
+		assert.Equal(t, action.Key, convertedBack.Actions[i].Key)
+		assert.Equal(t, action.ActionKey, convertedBack.Actions[i].ActionKey)
+		assert.Equal(t, action.When, convertedBack.Actions[i].When)
 	}
 }

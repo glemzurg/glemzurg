@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAtomicSpanInOutRoundTrip(t *testing.T) {
@@ -23,9 +24,14 @@ func TestAtomicSpanInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsAtomicSpan(original)
 	back := inOut.ToRequirements()
 
-	if back.LowerType != original.LowerType || (back.LowerValue == nil && original.LowerValue != nil) || (back.LowerValue != nil && *back.LowerValue != *original.LowerValue) ||
-		back.HigherType != original.HigherType || (back.HigherValue == nil && original.HigherValue != nil) || (back.HigherValue != nil && *back.HigherValue != *original.HigherValue) ||
-		back.Units != original.Units || back.Precision != original.Precision {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.LowerType, back.LowerType)
+	assert.NotNil(t, back.LowerValue)
+	assert.Equal(t, *original.LowerValue, *back.LowerValue)
+	assert.Nil(t, back.LowerDenominator)
+	assert.Equal(t, original.HigherType, back.HigherType)
+	assert.NotNil(t, back.HigherValue)
+	assert.Equal(t, *original.HigherValue, *back.HigherValue)
+	assert.Nil(t, back.HigherDenominator)
+	assert.Equal(t, original.Units, back.Units)
+	assert.Equal(t, original.Precision, back.Precision)
 }

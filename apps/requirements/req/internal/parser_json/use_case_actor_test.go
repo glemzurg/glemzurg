@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUseCaseActorInOutRoundTrip(t *testing.T) {
@@ -14,7 +15,5 @@ func TestUseCaseActorInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsUseCaseActor(original)
 	back := inOut.ToRequirements()
 
-	if back != original {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original, back)
 }

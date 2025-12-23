@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMultiplicityInOutRoundTrip(t *testing.T) {
@@ -15,7 +16,6 @@ func TestMultiplicityInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsMultiplicity(original)
 	back := inOut.ToRequirements()
 
-	if back != original {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.LowerBound, back.LowerBound)
+	assert.Equal(t, original.HigherBound, back.HigherBound)
 }

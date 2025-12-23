@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClassInOutRoundTrip(t *testing.T) {
@@ -39,17 +40,19 @@ func TestClassInOutRoundTrip(t *testing.T) {
 	back := inOut.ToRequirements()
 
 	// Check basic fields
-	if back.Key != original.Key || back.Name != original.Name || back.Details != original.Details ||
-		back.ActorKey != original.ActorKey || back.SuperclassOfKey != original.SuperclassOfKey ||
-		back.SubclassOfKey != original.SubclassOfKey || back.UmlComment != original.UmlComment {
-		t.Errorf("Basic fields round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Key, back.Key)
+	assert.Equal(t, original.Name, back.Name)
+	assert.Equal(t, original.Details, back.Details)
+	assert.Equal(t, original.ActorKey, back.ActorKey)
+	assert.Equal(t, original.SuperclassOfKey, back.SuperclassOfKey)
+	assert.Equal(t, original.SubclassOfKey, back.SubclassOfKey)
+	assert.Equal(t, original.UmlComment, back.UmlComment)
 
 	// Check lengths of slices
-	if len(back.Attributes) != len(original.Attributes) || len(back.States) != len(original.States) ||
-		len(back.Events) != len(original.Events) || len(back.Guards) != len(original.Guards) ||
-		len(back.Actions) != len(original.Actions) || len(back.Transitions) != len(original.Transitions) {
-		t.Errorf("Slice lengths don't match: got attrs=%d, states=%d, events=%d, guards=%d, actions=%d, transitions=%d",
-			len(back.Attributes), len(back.States), len(back.Events), len(back.Guards), len(back.Actions), len(back.Transitions))
-	}
+	assert.Len(t, back.Attributes, len(original.Attributes))
+	assert.Len(t, back.States, len(original.States))
+	assert.Len(t, back.Events, len(original.Events))
+	assert.Len(t, back.Guards, len(original.Guards))
+	assert.Len(t, back.Actions, len(original.Actions))
+	assert.Len(t, back.Transitions, len(original.Transitions))
 }

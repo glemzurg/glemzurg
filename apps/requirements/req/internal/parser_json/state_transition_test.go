@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTransitionInOutRoundTrip(t *testing.T) {
@@ -24,13 +25,11 @@ func TestTransitionInOutRoundTrip(t *testing.T) {
 	convertedBack := inOut.ToRequirements()
 
 	// Check fields
-	if convertedBack.Key != originalReq.Key ||
-		convertedBack.FromStateKey != originalReq.FromStateKey ||
-		convertedBack.EventKey != originalReq.EventKey ||
-		convertedBack.GuardKey != originalReq.GuardKey ||
-		convertedBack.ActionKey != originalReq.ActionKey ||
-		convertedBack.ToStateKey != originalReq.ToStateKey ||
-		convertedBack.UmlComment != originalReq.UmlComment {
-		t.Errorf("Round trip failed: got %+v, want %+v", convertedBack, originalReq)
-	}
+	assert.Equal(t, originalReq.Key, convertedBack.Key)
+	assert.Equal(t, originalReq.FromStateKey, convertedBack.FromStateKey)
+	assert.Equal(t, originalReq.EventKey, convertedBack.EventKey)
+	assert.Equal(t, originalReq.GuardKey, convertedBack.GuardKey)
+	assert.Equal(t, originalReq.ActionKey, convertedBack.ActionKey)
+	assert.Equal(t, originalReq.ToStateKey, convertedBack.ToStateKey)
+	assert.Equal(t, originalReq.UmlComment, convertedBack.UmlComment)
 }

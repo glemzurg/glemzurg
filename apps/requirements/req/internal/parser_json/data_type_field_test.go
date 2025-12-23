@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFieldInOutRoundTrip(t *testing.T) {
@@ -15,7 +16,6 @@ func TestFieldInOutRoundTrip(t *testing.T) {
 	inOut := FromRequirementsField(original)
 	back := inOut.ToRequirements()
 
-	if back.Name != original.Name || back.FieldDataType != original.FieldDataType {
-		t.Errorf("Round trip failed: got %+v, want %+v", back, original)
-	}
+	assert.Equal(t, original.Name, back.Name)
+	assert.Equal(t, original.FieldDataType, back.FieldDataType)
 }
