@@ -1,7 +1,7 @@
 package parser_json
 
-// class is a thing in the system.
-type class struct {
+// classInOut is a thing in the system.
+type classInOut struct {
 	Key             string
 	Name            string
 	Details         string // Markdown.
@@ -10,10 +10,10 @@ type class struct {
 	SubclassOfKey   string // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Nested.
-	Attributes  []attribute
-	States      []state
-	Events      []event
-	Guards      []guard
-	Actions     []action
-	Transitions []transition
+	Attributes  []attributeInOut
+	States      []stateInOut
+	Events      []eventInOut
+	Guards      []guardInOut
+	Actions     []actionInOut
+	Transitions []transitionInOut
 }

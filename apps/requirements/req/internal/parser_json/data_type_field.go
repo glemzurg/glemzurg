@@ -1,7 +1,7 @@
 package parser_json
 
-// field represents a single field of a record datatype.
-type field struct {
-	Name          string    // The name of the field.
-	FieldDataType *dataType // The data type of this field.
+// fieldInOut represents a single field of a record datatype.
+type fieldInOut struct {
+	Name          string         // The name of the field.
+	FieldDataType *dataTypeInOut // The data type of this field.
 }

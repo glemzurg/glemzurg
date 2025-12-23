@@ -1,7 +1,7 @@
 package parser_json
 
-// action is what happens in a transition between states.
-type action struct {
+// actionInOut is what happens in a transition between states.
+type actionInOut struct {
 	Key        string
 	Name       string
 	Details    string

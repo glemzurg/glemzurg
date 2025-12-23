@@ -1,7 +1,7 @@
 package parser_json
 
-// actor is a external user of this system, either a person or another system.
-type actor struct {
+// actorInOut is a external user of this system, either a person or another system.
+type actorInOut struct {
 	Key        string
 	Name       string
 	Details    string // Markdown.

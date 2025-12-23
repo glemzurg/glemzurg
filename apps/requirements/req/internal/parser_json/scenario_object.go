@@ -1,7 +1,7 @@
 package parser_json
 
-// scenarioObject is an object that participates in a scenario.
-type scenarioObject struct {
+// scenarioObjectInOut is an object that participates in a scenario.
+type scenarioObjectInOut struct {
 	Key          string
 	ObjectNumber uint   // Order in the scenario diagram.
 	Name         string // The name or id of the object.

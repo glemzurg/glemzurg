@@ -1,7 +1,7 @@
 package parser_json
 
-// generalization is how two or more things in the system build on each other (like a super type and sub type).
-type generalization struct {
+// generalizationInOut is how two or more things in the system build on each other (like a super type and sub type).
+type generalizationInOut struct {
 	Key        string
 	Name       string
 	Details    string // Markdown.

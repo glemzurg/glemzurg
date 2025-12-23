@@ -1,11 +1,11 @@
 package parser_json
 
-// atomic represents the atomic data type (as opposed to a collection).
-type atomic struct {
+// atomicInOut represents the atomic data type (as opposed to a collection).
+type atomicInOut struct {
 	ConstraintType string
-	Span           *atomicSpan
+	Span           *atomicSpanInOut
 	Reference      *string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
-	Enums          []atomicEnum
+	Enums          []atomicEnumInOut
 	ObjectClassKey *string
 }

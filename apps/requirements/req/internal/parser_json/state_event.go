@@ -1,9 +1,9 @@
 package parser_json
 
-// event is what triggers a transition between states.
-type event struct {
+// eventInOut is what triggers a transition between states.
+type eventInOut struct {
 	Key        string
 	Name       string
 	Details    string
-	Parameters []eventParameter
+	Parameters []eventParameterInOut
 }

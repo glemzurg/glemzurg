@@ -1,7 +1,7 @@
 package parser_json
 
-// transition is a move between two states.
-type transition struct {
+// transitionInOut is a move between two states.
+type transitionInOut struct {
 	Key          string
 	FromStateKey string
 	EventKey     string

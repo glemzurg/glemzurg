@@ -1,7 +1,7 @@
 package parser_json
 
-// atomicEnum represents an allowed value in an enumeration.
-type atomicEnum struct {
+// atomicEnumInOut represents an allowed value in an enumeration.
+type atomicEnumInOut struct {
 	Value     string
 	SortOrder int
 }

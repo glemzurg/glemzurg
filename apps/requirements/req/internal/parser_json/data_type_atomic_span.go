@@ -1,7 +1,7 @@
 package parser_json
 
-// atomicSpan represents a range of allowed values.
-type atomicSpan struct {
+// atomicSpanInOut represents a range of allowed values.
+type atomicSpanInOut struct {
 	// Lower bound.
 	LowerType        string
 	LowerValue       *int

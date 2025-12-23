@@ -1,7 +1,7 @@
 package parser_json
 
-// attribute is a member of a class.
-type attribute struct {
+// attributeInOut is a member of a class.
+type attributeInOut struct {
 	Key              string
 	Name             string
 	Details          string // Markdown.
@@ -10,6 +10,6 @@ type attribute struct {
 	Nullable         bool   // Is this attribute optional.
 	UmlComment       string
 	// Part of the data in a parsed file.
-	IndexNums []uint    // The indexes this attribute is part of.
-	DataType  *dataType // If the DataTypeRules can be parsed, this is the resulting data type.
+	IndexNums []uint         // The indexes this attribute is part of.
+	DataType  *dataTypeInOut // If the DataTypeRules can be parsed, this is the resulting data type.
 }

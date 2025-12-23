@@ -1,13 +1,13 @@
 package parser_json
 
-// model is the documentation summary of a set of requirements.
-type model struct {
+// modelInOut is the documentation summary of a set of requirements.
+type modelInOut struct {
 	Key     string
 	Name    string
 	Details string // Markdown.
 	// Nested structure.
-	Actors             []actor
-	Domains            []domain
-	DomainAssociations []domainAssociation
-	Associations       []association // Associations between classes that span domains.
+	Actors             []actorInOut
+	Domains            []domainInOut
+	DomainAssociations []domainAssociationInOut
+	Associations       []associationInOut // Associations between classes that span domains.
 }
