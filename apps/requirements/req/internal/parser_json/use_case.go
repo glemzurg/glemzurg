@@ -17,44 +17,52 @@ type useCaseInOut struct {
 
 // ToRequirements converts the useCaseInOut to requirements.UseCase.
 func (u useCaseInOut) ToRequirements() requirements.UseCase {
-	actors := make(map[string]requirements.UseCaseActor)
-	for k, v := range u.Actors {
-		actors[k] = v.ToRequirements()
-	}
-	scenarios := make([]requirements.Scenario, len(u.Scenarios))
-	for i, s := range u.Scenarios {
-		scenarios[i] = s.ToRequirements()
-	}
-	return requirements.UseCase{
+
+	useCase := requirements.UseCase{
 		Key:        u.Key,
 		Name:       u.Name,
 		Details:    u.Details,
 		Level:      u.Level,
 		ReadOnly:   u.ReadOnly,
 		UmlComment: u.UmlComment,
-		Actors:     actors,
-		Scenarios:  scenarios,
+		Actors:     nil,
+		Scenarios:  nil,
 	}
+
+	for k, v := range u.Actors {
+		if useCase.Actors == nil {
+			useCase.Actors = make(map[string]requirements.UseCaseActor)
+		}
+		useCase.Actors[k] = v.ToRequirements()
+	}
+	for _, s := range u.Scenarios {
+		useCase.Scenarios = append(useCase.Scenarios, s.ToRequirements())
+	}
+	return useCase
 }
 
 // FromRequirementsUseCase creates a useCaseInOut from requirements.UseCase.
 func FromRequirementsUseCase(u requirements.UseCase) useCaseInOut {
-	actors := make(map[string]useCaseActorInOut)
-	for k, v := range u.Actors {
-		actors[k] = FromRequirementsUseCaseActor(v)
-	}
-	scenarios := make([]scenarioInOut, len(u.Scenarios))
-	for i, s := range u.Scenarios {
-		scenarios[i] = FromRequirementsScenario(s)
-	}
-	return useCaseInOut{
+
+	useCase := useCaseInOut{
 		Key:        u.Key,
 		Name:       u.Name,
 		Details:    u.Details,
 		Level:      u.Level,
 		ReadOnly:   u.ReadOnly,
 		UmlComment: u.UmlComment,
-		Actors:     actors,
-		Scenarios:  scenarios,
+		Actors:     nil,
+		Scenarios:  nil,
 	}
+
+	for k, v := range u.Actors {
+		if useCase.Actors == nil {
+			useCase.Actors = make(map[string]useCaseActorInOut)
+		}
+		useCase.Actors[k] = FromRequirementsUseCaseActor(v)
+	}
+	for _, s := range u.Scenarios {
+		useCase.Scenarios = append(useCase.Scenarios, FromRequirementsScenario(s))
+	}
+	return useCase
 }

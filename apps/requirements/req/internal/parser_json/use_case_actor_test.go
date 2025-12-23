@@ -14,6 +14,5 @@ func TestUseCaseActorInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsUseCaseActor(original)
 	back := inOut.ToRequirements()
-
 	assert.Equal(t, original, back)
 }
