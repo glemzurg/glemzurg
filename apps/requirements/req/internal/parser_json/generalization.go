@@ -15,14 +15,12 @@ type generalizationInOut struct {
 // ToRequirements converts the generalizationInOut to requirements.Generalization.
 func (g generalizationInOut) ToRequirements() requirements.Generalization {
 	return requirements.Generalization{
-		Key:           g.Key,
-		Name:          g.Name,
-		Details:       g.Details,
-		IsComplete:    g.IsComplete,
-		IsStatic:      g.IsStatic,
-		UmlComment:    g.UmlComment,
-		SuperclassKey: "",  // Not stored in JSON
-		SubclassKeys:  nil, // Not stored in JSON
+		Key:        g.Key,
+		Name:       g.Name,
+		Details:    g.Details,
+		IsComplete: g.IsComplete,
+		IsStatic:   g.IsStatic,
+		UmlComment: g.UmlComment,
 	}
 }
 

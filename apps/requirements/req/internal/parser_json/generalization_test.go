@@ -9,14 +9,12 @@ import (
 
 func TestGeneralizationInOutRoundTrip(t *testing.T) {
 	original := requirements.Generalization{
-		Key:           "gen1",
-		Name:          "Gen1",
-		Details:       "Details",
-		IsComplete:    true,
-		IsStatic:      false,
-		UmlComment:    "comment",
-		SuperclassKey: "class1",
-		SubclassKeys:  []string{"class2"},
+		Key:        "gen1",
+		Name:       "Gen1",
+		Details:    "Details",
+		IsComplete: true,
+		IsStatic:   false,
+		UmlComment: "comment",
 	}
 
 	inOut := FromRequirementsGeneralization(original)
