@@ -15,7 +15,6 @@ func (s stateActionInOut) ToRequirements() requirements.StateAction {
 		Key:       s.Key,
 		ActionKey: s.ActionKey,
 		When:      s.When,
-		StateKey:  "", // Not stored in JSON
 	}
 }
 

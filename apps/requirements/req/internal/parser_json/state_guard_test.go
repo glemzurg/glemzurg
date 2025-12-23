@@ -8,20 +8,13 @@ import (
 )
 
 func TestGuardInOutRoundTrip(t *testing.T) {
-	originalReq := requirements.Guard{
+	original := requirements.Guard{
 		Key:     "guard1",
 		Name:    "Authenticated",
 		Details: "User must be authenticated",
 	}
 
-	// Convert to InOut
-	inOut := FromRequirementsGuard(originalReq)
-
-	// Convert back to requirements
-	convertedBack := inOut.ToRequirements()
-
-	// Check fields
-	assert.Equal(t, originalReq.Key, convertedBack.Key)
-	assert.Equal(t, originalReq.Name, convertedBack.Name)
-	assert.Equal(t, originalReq.Details, convertedBack.Details)
+	inOut := FromRequirementsGuard(original)
+	back := inOut.ToRequirements()
+	assert.Equal(t, original, back)
 }
