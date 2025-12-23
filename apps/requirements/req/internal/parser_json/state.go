@@ -19,6 +19,7 @@ func (s stateInOut) ToRequirements() requirements.State {
 		Name:       s.Name,
 		Details:    s.Details,
 		UmlComment: s.UmlComment,
+		Actions:    nil,
 	}
 	for _, a := range s.Actions {
 		state.Actions = append(state.Actions, a.ToRequirements())
@@ -33,6 +34,7 @@ func FromRequirementsState(s requirements.State) stateInOut {
 		Name:       s.Name,
 		Details:    s.Details,
 		UmlComment: s.UmlComment,
+		Actions:    nil,
 	}
 	for _, a := range s.Actions {
 		state.Actions = append(state.Actions, FromRequirementsStateAction(a))

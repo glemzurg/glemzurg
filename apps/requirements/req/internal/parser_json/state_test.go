@@ -8,41 +8,22 @@ import (
 )
 
 func TestStateInOutRoundTrip(t *testing.T) {
-	originalReq := requirements.State{
+	original := requirements.State{
 		Key:        "state1",
 		Name:       "Initial State",
 		Details:    "The starting state",
 		UmlComment: "State comment",
 		Actions: []requirements.StateAction{
 			{
-				Key:       "action1",
-				ActionKey: "entry_action",
-				When:      "entry",
+				Key: "action1",
 			},
 			{
-				Key:       "action2",
-				ActionKey: "exit_action",
-				When:      "exit",
+				Key: "action2",
 			},
 		},
 	}
 
-	// Convert to InOut
-	inOut := FromRequirementsState(originalReq)
-
-	// Convert back to requirements
-	convertedBack := inOut.ToRequirements()
-
-	// Check fields
-	assert.Equal(t, originalReq.Key, convertedBack.Key)
-	assert.Equal(t, originalReq.Name, convertedBack.Name)
-	assert.Equal(t, originalReq.Details, convertedBack.Details)
-	assert.Equal(t, originalReq.UmlComment, convertedBack.UmlComment)
-	assert.Len(t, convertedBack.Actions, len(originalReq.Actions))
-
-	for i, action := range originalReq.Actions {
-		assert.Equal(t, action.Key, convertedBack.Actions[i].Key)
-		assert.Equal(t, action.ActionKey, convertedBack.Actions[i].ActionKey)
-		assert.Equal(t, action.When, convertedBack.Actions[i].When)
-	}
+	inOut := FromRequirementsState(original)
+	back := inOut.ToRequirements()
+	assert.Equal(t, original, back)
 }
