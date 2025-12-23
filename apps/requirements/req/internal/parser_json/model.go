@@ -15,54 +15,50 @@ type modelInOut struct {
 }
 
 // ToRequirements converts the modelInOut to requirements.Requirements.
-func (m modelInOut) ToRequirements() requirements.Requirements {
-	r := requirements.Requirements{
-		Model: requirements.Model{
-			Key:     m.Key,
-			Name:    m.Name,
-			Details: m.Details,
-		},
-		Subdomains: make(map[string][]requirements.Subdomain),
+func (m modelInOut) ToRequirements() requirements.Model {
+	model := requirements.Model{
+		Key:                m.Key,
+		Name:               m.Name,
+		Details:            m.Details,
+		Actors:             nil,
+		Domains:            nil,
+		DomainAssociations: nil,
+		Associations:       nil,
 	}
 
 	// Convert actors
 	for _, a := range m.Actors {
-		r.Actors = append(r.Actors, a.ToRequirements())
+		model.Actors = append(model.Actors, a.ToRequirements())
 	}
 
 	// Convert domains and subdomains
 	for _, d := range m.Domains {
-		domain := d.ToRequirements()
-		r.Domains = append(r.Domains, domain)
-		// Subdomains are handled in domain.ToRequirements, but since Requirements has Subdomains map,
-		// we need to populate it here
-		for _, s := range d.Subdomains {
-			r.Subdomains[d.Key] = append(r.Subdomains[d.Key], s.ToRequirements())
-		}
+		model.Domains = append(model.Domains, d.ToRequirements())
 	}
 
 	// Domain associations
 	for _, da := range m.DomainAssociations {
-		r.DomainAssociations = append(r.DomainAssociations, da.ToRequirements())
+		model.DomainAssociations = append(model.DomainAssociations, da.ToRequirements())
 	}
 
 	// Associations
 	for _, a := range m.Associations {
-		r.Associations = append(r.Associations, a.ToRequirements())
+		model.Associations = append(model.Associations, a.ToRequirements())
 	}
 
-	// Note: Other maps like Classes, Attributes, etc. are not populated here as they are nested in subdomains
-	// This is a simplified version; in a full implementation, we would need to traverse all nested structures
-
-	return r
+	return model
 }
 
-// FromRequirements creates a modelInOut from requirements.Requirements.
-func FromRequirementsModel(r requirements.Requirements) modelInOut {
+// FromRequirements creates a modelInOut from requirements.Model.
+func FromRequirementsModel(r requirements.Model) modelInOut {
 	m := modelInOut{
-		Key:     r.Model.Key,
-		Name:    r.Model.Name,
-		Details: r.Model.Details,
+		Key:                r.Key,
+		Name:               r.Name,
+		Details:            r.Details,
+		Actors:             nil,
+		Domains:            nil,
+		DomainAssociations: nil,
+		Associations:       nil,
 	}
 
 	// Convert actors
@@ -72,14 +68,7 @@ func FromRequirementsModel(r requirements.Requirements) modelInOut {
 
 	// Convert domains
 	for _, d := range r.Domains {
-		domain := FromRequirementsDomain(d)
-		// Add subdomains
-		if subs, ok := r.Subdomains[d.Key]; ok {
-			for _, s := range subs {
-				domain.Subdomains = append(domain.Subdomains, FromRequirementsSubdomain(s))
-			}
-		}
-		m.Domains = append(m.Domains, domain)
+		m.Domains = append(m.Domains, FromRequirementsDomain(d))
 	}
 
 	// Domain associations
