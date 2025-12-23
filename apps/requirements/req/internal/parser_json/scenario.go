@@ -1,5 +1,7 @@
 package parser_json
 
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+
 // scenarioInOut is a documented scenario for a use case, such as a sequence diagram.
 type scenarioInOut struct {
 	Key     string    `json:"key"`
@@ -8,4 +10,35 @@ type scenarioInOut struct {
 	Steps   nodeInOut `json:"steps"`   // The "abstract syntax tree" of the scenario.
 	// Nested.
 	Objects []scenarioObjectInOut `json:"objects"`
+}
+
+// ToRequirements converts the scenarioInOut to requirements.Scenario.
+func (s scenarioInOut) ToRequirements() requirements.Scenario {
+	objects := make([]requirements.ScenarioObject, len(s.Objects))
+	for i, o := range s.Objects {
+		objects[i] = o.ToRequirements()
+	}
+	scenario := requirements.Scenario{
+		Key:     s.Key,
+		Name:    s.Name,
+		Details: s.Details,
+		Steps:   s.Steps.ToRequirements(),
+		Objects: objects,
+	}
+	return scenario
+}
+
+// FromRequirementsScenario creates a scenarioInOut from requirements.Scenario.
+func FromRequirementsScenario(s requirements.Scenario) scenarioInOut {
+	objects := make([]scenarioObjectInOut, len(s.Objects))
+	for i, o := range s.Objects {
+		objects[i] = FromRequirementsScenarioObject(o)
+	}
+	return scenarioInOut{
+		Key:     s.Key,
+		Name:    s.Name,
+		Details: s.Details,
+		Steps:   FromRequirementsNode(s.Steps),
+		Objects: objects,
+	}
 }

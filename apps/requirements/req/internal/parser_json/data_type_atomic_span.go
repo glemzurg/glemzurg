@@ -21,9 +21,9 @@ type atomicSpanInOut struct {
 // ToRequirements converts the atomicSpanInOut to data_type.AtomicSpan.
 func (a atomicSpanInOut) ToRequirements() data_type.AtomicSpan {
 	return data_type.AtomicSpan{
-		LowerType:        a.LowerType,
-		LowerValue:       a.LowerValue,
-		LowerDenominator: a.LowerDenominator,
+		LowerType:         a.LowerType,
+		LowerValue:        a.LowerValue,
+		LowerDenominator:  a.LowerDenominator,
 		HigherType:        a.HigherType,
 		HigherValue:       a.HigherValue,
 		HigherDenominator: a.HigherDenominator,
@@ -35,9 +35,9 @@ func (a atomicSpanInOut) ToRequirements() data_type.AtomicSpan {
 // FromRequirements creates a atomicSpanInOut from data_type.AtomicSpan.
 func FromRequirementsAtomicSpan(a data_type.AtomicSpan) atomicSpanInOut {
 	return atomicSpanInOut{
-		LowerType:        a.LowerType,
-		LowerValue:       a.LowerValue,
-		LowerDenominator: a.LowerDenominator,
+		LowerType:         a.LowerType,
+		LowerValue:        a.LowerValue,
+		LowerDenominator:  a.LowerDenominator,
 		HigherType:        a.HigherType,
 		HigherValue:       a.HigherValue,
 		HigherDenominator: a.HigherDenominator,

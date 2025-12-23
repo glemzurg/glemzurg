@@ -10,9 +10,9 @@ func TestAtomicSpanInOutRoundTrip(t *testing.T) {
 	lowerVal := 1
 	higherVal := 10
 	original := data_type.AtomicSpan{
-		LowerType:        "closed",
-		LowerValue:       &lowerVal,
-		LowerDenominator: nil,
+		LowerType:         "closed",
+		LowerValue:        &lowerVal,
+		LowerDenominator:  nil,
 		HigherType:        "open",
 		HigherValue:       &higherVal,
 		HigherDenominator: nil,
