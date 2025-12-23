@@ -4,11 +4,11 @@ package parser_json
 type subdomainInOut struct {
 	Key        string `json:"key"`
 	Name       string `json:"name"`
-	Details    string `json:"details,omitempty"` // Markdown.
-	UmlComment string `json:"uml_comment,omitempty"`
+	Details    string `json:"details"` // Markdown.
+	UmlComment string `json:"uml_comment"`
 	// Nested.
-	Generalizations []generalizationInOut `json:"generalizations,omitempty"` // Generalizations for the classes and use cases in this subdomain.
-	Classes         []classInOut          `json:"classes,omitempty"`
-	UseCases        []useCaseInOut        `json:"use_cases,omitempty"`
-	Associations    []associationInOut    `json:"associations,omitempty"` // Associations between classes in this subdomain.
+	Generalizations []generalizationInOut `json:"generalizations"` // Generalizations for the classes and use cases in this subdomain.
+	Classes         []classInOut          `json:"classes"`
+	UseCases        []useCaseInOut        `json:"use_cases"`
+	Associations    []associationInOut    `json:"associations"` // Associations between classes in this subdomain.
 }

@@ -4,7 +4,7 @@ package parser_json
 type actorInOut struct {
 	Key        string `json:"key"`
 	Name       string `json:"name"`
-	Details    string `json:"details,omitempty"` // Markdown.
-	Type       string `json:"type"`              // "person" or "system"
-	UmlComment string `json:"uml_comment,omitempty"`
+	Details    string `json:"details"` // Markdown.
+	Type       string `json:"type"`    // "person" or "system"
+	UmlComment string `json:"uml_comment"`
 }

@@ -4,8 +4,8 @@ package parser_json
 type scenarioInOut struct {
 	Key     string    `json:"key"`
 	Name    string    `json:"name"`
-	Details string    `json:"details,omitempty"` // Markdown.
-	Steps   nodeInOut `json:"steps"`             // The "abstract syntax tree" of the scenario.
+	Details string    `json:"details"` // Markdown.
+	Steps   nodeInOut `json:"steps"`   // The "abstract syntax tree" of the scenario.
 	// Nested.
-	Objects []scenarioObjectInOut `json:"objects,omitempty"`
+	Objects []scenarioObjectInOut `json:"objects"`
 }

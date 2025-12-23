@@ -4,8 +4,8 @@ package parser_json
 type stateInOut struct {
 	Key        string `json:"key"`
 	Name       string `json:"name"`
-	Details    string `json:"details,omitempty"` // Markdown.
-	UmlComment string `json:"uml_comment,omitempty"`
+	Details    string `json:"details"` // Markdown.
+	UmlComment string `json:"uml_comment"`
 	// Nested.
-	Actions []stateActionInOut `json:"actions,omitempty"`
+	Actions []stateActionInOut `json:"actions"`
 }

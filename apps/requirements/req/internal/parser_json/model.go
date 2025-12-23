@@ -4,10 +4,10 @@ package parser_json
 type modelInOut struct {
 	Key     string `json:"key"`
 	Name    string `json:"name"`
-	Details string `json:"details,omitempty"` // Markdown.
+	Details string `json:"details"` // Markdown.
 	// Nested structure.
-	Actors             []actorInOut             `json:"actors,omitempty"`
-	Domains            []domainInOut            `json:"domains,omitempty"`
-	DomainAssociations []domainAssociationInOut `json:"domain_associations,omitempty"`
-	Associations       []associationInOut       `json:"associations,omitempty"` // Associations between classes that span domains.
+	Actors             []actorInOut             `json:"actors"`
+	Domains            []domainInOut            `json:"domains"`
+	DomainAssociations []domainAssociationInOut `json:"domain_associations"`
+	Associations       []associationInOut       `json:"associations"` // Associations between classes that span domains.
 }

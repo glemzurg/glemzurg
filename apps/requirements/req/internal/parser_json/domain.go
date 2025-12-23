@@ -4,9 +4,9 @@ package parser_json
 type domainInOut struct {
 	Key        string `json:"key"`
 	Name       string `json:"name"`
-	Details    string `json:"details,omitempty"` // Markdown.
+	Details    string `json:"details"` // Markdown.
 	Realized   bool   `json:"realized"`
-	UmlComment string `json:"uml_comment,omitempty"`
+	UmlComment string `json:"uml_comment"`
 	// Nested.
-	Subdomains []subdomainInOut `json:"subdomains,omitempty"`
+	Subdomains []subdomainInOut `json:"subdomains"`
 }

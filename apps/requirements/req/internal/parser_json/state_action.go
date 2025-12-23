@@ -4,7 +4,7 @@ package parser_json
 type actionInOut struct {
 	Key        string   `json:"key"`
 	Name       string   `json:"name"`
-	Details    string   `json:"details,omitempty"`
-	Requires   []string `json:"requires,omitempty"` // To enter this action.
-	Guarantees []string `json:"guarantees,omitempty"`
+	Details    string   `json:"details"`
+	Requires   []string `json:"requires"` // To enter this action.
+	Guarantees []string `json:"guarantees"`
 }

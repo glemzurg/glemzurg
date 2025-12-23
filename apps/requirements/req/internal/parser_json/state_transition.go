@@ -5,8 +5,8 @@ type transitionInOut struct {
 	Key          string `json:"key"`
 	FromStateKey string `json:"from_state_key"`
 	EventKey     string `json:"event_key"`
-	GuardKey     string `json:"guard_key,omitempty"`
-	ActionKey    string `json:"action_key,omitempty"`
+	GuardKey     string `json:"guard_key"`
+	ActionKey    string `json:"action_key"`
 	ToStateKey   string `json:"to_state_key"`
-	UmlComment   string `json:"uml_comment,omitempty"`
+	UmlComment   string `json:"uml_comment"`
 }

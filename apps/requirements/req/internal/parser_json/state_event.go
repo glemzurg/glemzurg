@@ -4,6 +4,6 @@ package parser_json
 type eventInOut struct {
 	Key        string                `json:"key"`
 	Name       string                `json:"name"`
-	Details    string                `json:"details,omitempty"`
-	Parameters []eventParameterInOut `json:"parameters,omitempty"`
+	Details    string                `json:"details"`
+	Parameters []eventParameterInOut `json:"parameters"`
 }

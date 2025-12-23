@@ -2,14 +2,14 @@ package parser_json
 
 // nodeInOut represents a node in the scenario steps tree.
 type nodeInOut struct {
-	Statements    []nodeInOut `json:"statements,omitempty" yaml:"statements,omitempty"`
-	Cases         []caseInOut `json:"cases,omitempty" yaml:"cases,omitempty"`
-	Loop          string      `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
-	Description   string      `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
-	FromObjectKey string      `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
-	ToObjectKey   string      `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
-	EventKey      string      `json:"event_key,omitempty" yaml:"event_key,omitempty"`
-	ScenarioKey   string      `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
-	AttributeKey  string      `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
-	IsDelete      bool        `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
+	Statements    []nodeInOut `json:"statements" yaml:"statements"`
+	Cases         []caseInOut `json:"cases" yaml:"cases"`
+	Loop          string      `json:"loop" yaml:"loop"`               // Loop description.
+	Description   string      `json:"description" yaml:"description"` // Leaf description.
+	FromObjectKey string      `json:"from_object_key" yaml:"from_object_key"`
+	ToObjectKey   string      `json:"to_object_key" yaml:"to_object_key"`
+	EventKey      string      `json:"event_key" yaml:"event_key"`
+	ScenarioKey   string      `json:"scenario_key" yaml:"scenario_key"`
+	AttributeKey  string      `json:"attribute_key" yaml:"attribute_key"`
+	IsDelete      bool        `json:"is_delete" yaml:"is_delete"`
 }
