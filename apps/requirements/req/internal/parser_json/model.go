@@ -1,9 +1,5 @@
 package parser_json
 
-import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
-)
-
 // Model is the documentation summary of a set of requirements.
 type Model struct {
 	Key     string
@@ -77,8 +73,8 @@ type Attribute struct {
 	Nullable         bool   // Is this attribute optional.
 	UmlComment       string
 	// Part of the data in a parsed file.
-	IndexNums []uint              // The indexes this attribute is part of.
-	DataType  *data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
+	IndexNums []uint    // The indexes this attribute is part of.
+	DataType  *DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
 // Association is how two classes relate to each other.
@@ -182,8 +178,8 @@ type UseCaseActor struct {
 type Scenario struct {
 	Key     string
 	Name    string
-	Details string      // Markdown.
-	Steps   interface{} // The "abstract syntax tree" of the scenario. (Node type, simplified)
+	Details string // Markdown.
+	Steps   Node   // The "abstract syntax tree" of the scenario.
 	// Nested.
 	Objects []ScenarioObject
 }
@@ -215,4 +211,79 @@ type DomainAssociation struct {
 	ProblemDomainKey  string // The domain that enforces requirements on the other domain.
 	SolutionDomainKey string // The domain that has requirements enforced upon it.
 	UmlComment        string
+}
+
+// Node represents a node in the scenario steps tree.
+type Node struct {
+	Statements    []Node `json:"statements,omitempty" yaml:"statements,omitempty"`
+	Cases         []Case `json:"cases,omitempty" yaml:"cases,omitempty"`
+	Loop          string `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
+	Description   string `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
+	FromObjectKey string `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
+	ToObjectKey   string `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
+	EventKey      string `json:"event_key,omitempty" yaml:"event_key,omitempty"`
+	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
+	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
+	IsDelete      bool   `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
+	// Helper fields can be added here as needed.
+	FromObject *ScenarioObject `json:"-" yaml:"-"`
+	ToObject   *ScenarioObject `json:"-" yaml:"-"`
+	Event      *Event          `json:"-" yaml:"-"`
+	Scenario   *Scenario       `json:"-" yaml:"-"`
+	Attribute  *Attribute      `json:"-" yaml:"-"`
+}
+
+// Case represents a case in a switch node.
+type Case struct {
+	Condition  string `json:"condition" yaml:"condition"`
+	Statements []Node `json:"statements" yaml:"statements"`
+}
+
+// DataType represents the main data type structure.
+type DataType struct {
+	Key              string
+	CollectionType   string
+	CollectionUnique *bool
+	CollectionMin    *int
+	CollectionMax    *int
+	Atomic           *Atomic
+	RecordFields     []Field
+}
+
+// Atomic represents the atomic data type (as opposed to a collection).
+type Atomic struct {
+	ConstraintType string
+	Span           *AtomicSpan
+	Reference      *string
+	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
+	Enums          []AtomicEnum
+	ObjectClassKey *string
+}
+
+// Field represents a single field of a record datatype.
+type Field struct {
+	Name          string    // The name of the field.
+	FieldDataType *DataType // The data type of this field.
+}
+
+// AtomicSpan represents a range of allowed values.
+type AtomicSpan struct {
+	// Lower bound.
+	LowerType        string
+	LowerValue       *int
+	LowerDenominator *int // If a fraction.
+	// Higher bound.
+	HigherType        string
+	HigherValue       *int
+	HigherDenominator *int // If a fraction.
+	// What are these values?
+	Units string
+	// What precision should we support of these values?
+	Precision float64
+}
+
+// AtomicEnum represents an allowed value in an enumeration.
+type AtomicEnum struct {
+	Value     string
+	SortOrder int
 }
