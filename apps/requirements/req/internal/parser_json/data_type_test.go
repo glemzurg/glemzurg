@@ -8,16 +8,22 @@ import (
 )
 
 func TestDataTypeInOutRoundTrip(t *testing.T) {
-	min := 1
-	max := 10
+
 	original := data_type.DataType{
 		Key:              "dt1",
 		CollectionType:   "ordered",
-		CollectionUnique: nil,
-		CollectionMin:    &min,
-		CollectionMax:    &max,
-		Atomic:           nil,
-		RecordFields:     nil,
+		CollectionUnique: t_BoolPtr(true),
+		CollectionMin:    t_IntPtr(1),
+		CollectionMax:    t_IntPtr(10),
+		Atomic:           &data_type.Atomic{ConstraintType: "span"},
+		RecordFields: []data_type.Field{
+			{
+				Name: "field1",
+			},
+			{
+				Name: "field2",
+			},
+		},
 	}
 
 	inOut := FromRequirementsDataType(original)

@@ -9,34 +9,25 @@ import (
 
 func TestAtomicInOutRoundTrip(t *testing.T) {
 
-	lowerVal := 1
-	lowerDenom := 2
-	higherVal := 10
-	higherDenom := 20
-	originalSpan := data_type.AtomicSpan{
-		LowerType:         "closed",
-		LowerValue:        &lowerVal,
-		LowerDenominator:  &lowerDenom,
-		HigherType:        "open",
-		HigherValue:       &higherVal,
-		HigherDenominator: &higherDenom,
-		Units:             "kg",
-		Precision:         0.1,
-	}
-
-	ref := "ref1"
-	objKey := "class1"
-	ordered := true
 	original := data_type.Atomic{
 		ConstraintType: "enumeration",
-		Span:           &originalSpan,
-		Reference:      &ref,
-		EnumOrdered:    &ordered,
+		Span: &data_type.AtomicSpan{
+			LowerType:         "closed",
+			LowerValue:        t_IntPtr(1),
+			LowerDenominator:  t_IntPtr(2),
+			HigherType:        "open",
+			HigherValue:       t_IntPtr(10),
+			HigherDenominator: t_IntPtr(20),
+			Units:             "kg",
+			Precision:         0.1,
+		},
+		Reference:   t_StrPtr("ref1"),
+		EnumOrdered: t_BoolPtr(true),
 		Enums: []data_type.AtomicEnum{
 			{Value: "val1", SortOrder: 1},
 			{Value: "val2", SortOrder: 2},
 		},
-		ObjectClassKey: &objKey,
+		ObjectClassKey: t_StrPtr("class1"),
 	}
 
 	inOut := FromRequirementsAtomic(original)

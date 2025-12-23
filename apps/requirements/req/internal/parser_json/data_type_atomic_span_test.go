@@ -8,17 +8,14 @@ import (
 )
 
 func TestAtomicSpanInOutRoundTrip(t *testing.T) {
-	lowerVal := 1
-	lowerDenom := 2
-	higherVal := 10
-	higherDenom := 20
+
 	original := data_type.AtomicSpan{
 		LowerType:         "closed",
-		LowerValue:        &lowerVal,
-		LowerDenominator:  &lowerDenom,
+		LowerValue:        t_IntPtr(1),
+		LowerDenominator:  t_IntPtr(2),
 		HigherType:        "open",
-		HigherValue:       &higherVal,
-		HigherDenominator: &higherDenom,
+		HigherValue:       t_IntPtr(10),
+		HigherDenominator: t_IntPtr(20),
 		Units:             "kg",
 		Precision:         0.1,
 	}
