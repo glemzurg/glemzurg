@@ -15,24 +15,33 @@ type domainInOut struct {
 
 // ToRequirements converts the domainInOut to requirements.Domain.
 func (d domainInOut) ToRequirements() requirements.Domain {
-	return requirements.Domain{
+	domain := requirements.Domain{
 		Key:        d.Key,
 		Name:       d.Name,
 		Details:    d.Details,
 		Realized:   d.Realized,
 		UmlComment: d.UmlComment,
-		// Associations, Classes, UseCases not included in InOut
+		Subdomains: nil,
 	}
+
+	for _, s := range d.Subdomains {
+		domain.Subdomains = append(domain.Subdomains, s.ToRequirements())
+	}
+	return domain
 }
 
 // FromRequirements creates a domainInOut from requirements.Domain.
 func FromRequirementsDomain(d requirements.Domain) domainInOut {
-	return domainInOut{
+	domain := domainInOut{
 		Key:        d.Key,
 		Name:       d.Name,
 		Details:    d.Details,
 		Realized:   d.Realized,
 		UmlComment: d.UmlComment,
-		Subdomains: nil, // Subdomains are handled at model level
+		Subdomains: nil,
 	}
+	for _, s := range d.Subdomains {
+		domain.Subdomains = append(domain.Subdomains, FromRequirementsSubdomain(s))
+	}
+	return domain
 }
