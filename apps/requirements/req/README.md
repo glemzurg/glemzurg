@@ -25,9 +25,6 @@ april (in parallel)
   - manage design models
   - update simulators to run models together
 
-
-
-
 ---------------------------
 
 - import examples models from steve's examples
@@ -81,16 +78,16 @@ april (in parallel)
 
 - setup best practices github repo for modeler
 
-- move to devcontainers
-  - https://github.com/devcontainers
-  - move scripts to make files
+- go test updates
   - update tests to be a table format with names
+
+- move to devcontainers
+  - move scripts to make files
   - remove linux users and local postgres
   - remove postgres?
   - https://www.cyberciti.biz/faq/linux-list-users-command/
   - remove mesasge queues
   - tilt and cattle prod https://github.com/tilt-dev/ctlptl
-  - 
 
 - add use case level svg images
   - work with an artist to make mud, sea, sky (and mabye fish and kite)
