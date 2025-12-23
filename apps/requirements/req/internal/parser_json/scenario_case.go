@@ -10,24 +10,27 @@ type caseInOut struct {
 
 // ToRequirements converts the caseInOut to requirements.Case.
 func (c caseInOut) ToRequirements() requirements.Case {
-	statements := make([]requirements.Node, len(c.Statements))
-	for i, s := range c.Statements {
-		statements[i] = s.ToRequirements()
-	}
-	return requirements.Case{
+	nodeCase := requirements.Case{
 		Condition:  c.Condition,
-		Statements: statements,
+		Statements: nil,
 	}
+	for _, s := range c.Statements {
+		nodeCase.Statements = append(nodeCase.Statements, s.ToRequirements())
+	}
+
+	return nodeCase
 }
 
 // FromRequirementsCase creates a caseInOut from requirements.Case.
 func FromRequirementsCase(c requirements.Case) caseInOut {
-	statements := make([]nodeInOut, len(c.Statements))
-	for i, s := range c.Statements {
-		statements[i] = FromRequirementsNode(s)
-	}
-	return caseInOut{
+	nodeCase := caseInOut{
 		Condition:  c.Condition,
-		Statements: statements,
+		Statements: nil,
 	}
+
+	for _, s := range c.Statements {
+		nodeCase.Statements = append(nodeCase.Statements, FromRequirementsNode(s))
+	}
+
+	return nodeCase
 }
