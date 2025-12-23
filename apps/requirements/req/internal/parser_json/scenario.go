@@ -14,31 +14,35 @@ type scenarioInOut struct {
 
 // ToRequirements converts the scenarioInOut to requirements.Scenario.
 func (s scenarioInOut) ToRequirements() requirements.Scenario {
-	objects := make([]requirements.ScenarioObject, len(s.Objects))
-	for i, o := range s.Objects {
-		objects[i] = o.ToRequirements()
-	}
+
 	scenario := requirements.Scenario{
 		Key:     s.Key,
 		Name:    s.Name,
 		Details: s.Details,
 		Steps:   s.Steps.ToRequirements(),
-		Objects: objects,
+		Objects: nil,
 	}
+
+	for _, o := range s.Objects {
+		scenario.Objects = append(scenario.Objects, o.ToRequirements())
+	}
+
 	return scenario
 }
 
 // FromRequirementsScenario creates a scenarioInOut from requirements.Scenario.
 func FromRequirementsScenario(s requirements.Scenario) scenarioInOut {
-	objects := make([]scenarioObjectInOut, len(s.Objects))
-	for i, o := range s.Objects {
-		objects[i] = FromRequirementsScenarioObject(o)
-	}
-	return scenarioInOut{
+
+	scenario := scenarioInOut{
 		Key:     s.Key,
 		Name:    s.Name,
 		Details: s.Details,
 		Steps:   FromRequirementsNode(s.Steps),
-		Objects: objects,
+		Objects: nil,
 	}
+
+	for _, o := range s.Objects {
+		scenario.Objects = append(scenario.Objects, FromRequirementsScenarioObject(o))
+	}
+	return scenario
 }
