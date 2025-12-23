@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,11 +14,13 @@ func TestAttributeInOutRoundTrip(t *testing.T) {
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "string",
-		DerivationPolicy: "",
-		Nullable:         false,
+		DerivationPolicy: "derived",
+		Nullable:         true,
 		UmlComment:       "comment",
 		IndexNums:        []uint{1},
-		DataType:         nil, // TODO: test with data type
+		DataType: &data_type.DataType{
+			Key: "dt1",
+		},
 	}
 
 	inOut := FromRequirementsAttribute(original)

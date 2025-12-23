@@ -27,8 +27,14 @@ func (a attributeInOut) ToRequirements() requirements.Attribute {
 		Nullable:         a.Nullable,
 		UmlComment:       a.UmlComment,
 		IndexNums:        a.IndexNums,
-		DataType:         nil, // TODO: convert
+		DataType:         nil,
 	}
+
+	if a.DataType != nil {
+		dt := a.DataType.ToRequirements()
+		attr.DataType = &dt
+	}
+
 	return attr
 }
 
@@ -43,7 +49,13 @@ func FromRequirementsAttribute(a requirements.Attribute) attributeInOut {
 		Nullable:         a.Nullable,
 		UmlComment:       a.UmlComment,
 		IndexNums:        a.IndexNums,
-		DataType:         nil, // TODO: convert
+		DataType:         nil,
 	}
+
+	if a.DataType != nil {
+		dt := FromRequirementsDataType(*a.DataType)
+		attr.DataType = &dt
+	}
+
 	return attr
 }
