@@ -21,12 +21,5 @@ func TestGeneralizationInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsGeneralization(original)
 	back := inOut.ToRequirements()
-
-	// Check fields that are preserved
-	assert.Equal(t, original.Key, back.Key)
-	assert.Equal(t, original.Name, back.Name)
-	assert.Equal(t, original.Details, back.Details)
-	assert.Equal(t, original.IsComplete, back.IsComplete)
-	assert.Equal(t, original.IsStatic, back.IsStatic)
-	assert.Equal(t, original.UmlComment, back.UmlComment)
+	assert.Equal(t, original, back)
 }

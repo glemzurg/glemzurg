@@ -15,7 +15,5 @@ func TestAtomicEnumInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsAtomicEnum(original)
 	back := inOut.ToRequirements()
-
-	assert.Equal(t, original.Value, back.Value)
-	assert.Equal(t, original.SortOrder, back.SortOrder)
+	assert.Equal(t, original, back)
 }

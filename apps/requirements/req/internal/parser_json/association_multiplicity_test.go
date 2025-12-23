@@ -15,7 +15,5 @@ func TestMultiplicityInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsMultiplicity(original)
 	back := inOut.ToRequirements()
-
-	assert.Equal(t, original.LowerBound, back.LowerBound)
-	assert.Equal(t, original.HigherBound, back.HigherBound)
+	assert.Equal(t, original, back)
 }

@@ -22,14 +22,5 @@ func TestAssociationInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsAssociation(original)
 	back := inOut.ToRequirements()
-
-	assert.Equal(t, original.Key, back.Key)
-	assert.Equal(t, original.Name, back.Name)
-	assert.Equal(t, original.Details, back.Details)
-	assert.Equal(t, original.FromClassKey, back.FromClassKey)
-	assert.Equal(t, original.ToClassKey, back.ToClassKey)
-	assert.Equal(t, original.AssociationClassKey, back.AssociationClassKey)
-	assert.Equal(t, original.UmlComment, back.UmlComment)
-	assert.Equal(t, original.FromMultiplicity, back.FromMultiplicity)
-	assert.Equal(t, original.ToMultiplicity, back.ToMultiplicity)
+	assert.Equal(t, original, back)
 }

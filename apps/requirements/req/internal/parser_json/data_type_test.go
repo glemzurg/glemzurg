@@ -22,14 +22,5 @@ func TestDataTypeInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsDataType(original)
 	back := inOut.ToRequirements()
-
-	assert.Equal(t, original.Key, back.Key)
-	assert.Equal(t, original.CollectionType, back.CollectionType)
-	assert.Equal(t, original.CollectionUnique, back.CollectionUnique)
-	assert.NotNil(t, back.CollectionMin)
-	assert.Equal(t, *original.CollectionMin, *back.CollectionMin)
-	assert.NotNil(t, back.CollectionMax)
-	assert.Equal(t, *original.CollectionMax, *back.CollectionMax)
-	assert.Equal(t, original.Atomic, back.Atomic)
-	assert.Equal(t, original.RecordFields, back.RecordFields)
+	assert.Equal(t, original, back)
 }

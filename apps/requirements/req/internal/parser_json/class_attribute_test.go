@@ -22,14 +22,5 @@ func TestAttributeInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsAttribute(original)
 	back := inOut.ToRequirements()
-
-	assert.Equal(t, original.Key, back.Key)
-	assert.Equal(t, original.Name, back.Name)
-	assert.Equal(t, original.Details, back.Details)
-	assert.Equal(t, original.DataTypeRules, back.DataTypeRules)
-	assert.Equal(t, original.DerivationPolicy, back.DerivationPolicy)
-	assert.Equal(t, original.Nullable, back.Nullable)
-	assert.Equal(t, original.UmlComment, back.UmlComment)
-	assert.Equal(t, original.IndexNums, back.IndexNums)
-	assert.Equal(t, original.DataType, back.DataType)
+	assert.Equal(t, original, back)
 }

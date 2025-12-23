@@ -15,7 +15,5 @@ func TestFieldInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsField(original)
 	back := inOut.ToRequirements()
-
-	assert.Equal(t, original.Name, back.Name)
-	assert.Equal(t, original.FieldDataType, back.FieldDataType)
+	assert.Equal(t, original, back)
 }

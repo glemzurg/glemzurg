@@ -38,21 +38,5 @@ func TestClassInOutRoundTrip(t *testing.T) {
 
 	inOut := FromRequirementsClass(original)
 	back := inOut.ToRequirements()
-
-	// Check basic fields
-	assert.Equal(t, original.Key, back.Key)
-	assert.Equal(t, original.Name, back.Name)
-	assert.Equal(t, original.Details, back.Details)
-	assert.Equal(t, original.ActorKey, back.ActorKey)
-	assert.Equal(t, original.SuperclassOfKey, back.SuperclassOfKey)
-	assert.Equal(t, original.SubclassOfKey, back.SubclassOfKey)
-	assert.Equal(t, original.UmlComment, back.UmlComment)
-
-	// Check lengths of slices
-	assert.Len(t, back.Attributes, len(original.Attributes))
-	assert.Len(t, back.States, len(original.States))
-	assert.Len(t, back.Events, len(original.Events))
-	assert.Len(t, back.Guards, len(original.Guards))
-	assert.Len(t, back.Actions, len(original.Actions))
-	assert.Len(t, back.Transitions, len(original.Transitions))
+	assert.Equal(t, original, back)
 }
