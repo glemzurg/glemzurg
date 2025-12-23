@@ -13,9 +13,10 @@ type eventInOut struct {
 // ToRequirements converts the eventInOut to requirements.Event.
 func (e eventInOut) ToRequirements() requirements.Event {
 	event := requirements.Event{
-		Key:     e.Key,
-		Name:    e.Name,
-		Details: e.Details,
+		Key:        e.Key,
+		Name:       e.Name,
+		Details:    e.Details,
+		Parameters: nil,
 	}
 	for _, p := range e.Parameters {
 		event.Parameters = append(event.Parameters, p.ToRequirements())
@@ -26,9 +27,10 @@ func (e eventInOut) ToRequirements() requirements.Event {
 // FromRequirements creates a eventInOut from requirements.Event.
 func FromRequirementsEvent(e requirements.Event) eventInOut {
 	event := eventInOut{
-		Key:     e.Key,
-		Name:    e.Name,
-		Details: e.Details,
+		Key:        e.Key,
+		Name:       e.Name,
+		Details:    e.Details,
+		Parameters: nil,
 	}
 	for _, p := range e.Parameters {
 		event.Parameters = append(event.Parameters, FromRequirementsEventParameter(p))

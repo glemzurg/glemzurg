@@ -8,18 +8,12 @@ import (
 )
 
 func TestEventParameterInOutRoundTrip(t *testing.T) {
-	originalReq := requirements.EventParameter{
+	original := requirements.EventParameter{
 		Name:   "username",
 		Source: "user_input",
 	}
 
-	// Convert to InOut
-	inOut := FromRequirementsEventParameter(originalReq)
-
-	// Convert back to requirements
-	convertedBack := inOut.ToRequirements()
-
-	// Check fields
-	assert.Equal(t, originalReq.Name, convertedBack.Name)
-	assert.Equal(t, originalReq.Source, convertedBack.Source)
+	inOut := FromRequirementsEventParameter(original)
+	back := inOut.ToRequirements()
+	assert.Equal(t, original, back)
 }
