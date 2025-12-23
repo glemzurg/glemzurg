@@ -18,17 +18,10 @@ type nodeInOut struct {
 
 // ToRequirements converts the nodeInOut to requirements.Node.
 func (n nodeInOut) ToRequirements() requirements.Node {
-	statements := make([]requirements.Node, len(n.Statements))
-	for i, s := range n.Statements {
-		statements[i] = s.ToRequirements()
-	}
-	cases := make([]requirements.Case, len(n.Cases))
-	for i, c := range n.Cases {
-		cases[i] = c.ToRequirements()
-	}
-	return requirements.Node{
-		Statements:    statements,
-		Cases:         cases,
+
+	node := requirements.Node{
+		Statements:    nil,
+		Cases:         nil,
 		Loop:          n.Loop,
 		Description:   n.Description,
 		FromObjectKey: n.FromObjectKey,
@@ -38,21 +31,24 @@ func (n nodeInOut) ToRequirements() requirements.Node {
 		AttributeKey:  n.AttributeKey,
 		IsDelete:      n.IsDelete,
 	}
+
+	for _, s := range n.Statements {
+		node.Statements = append(node.Statements, s.ToRequirements())
+	}
+
+	for _, c := range n.Cases {
+		node.Cases = append(node.Cases, c.ToRequirements())
+	}
+
+	return node
 }
 
 // FromRequirementsNode creates a nodeInOut from requirements.Node.
 func FromRequirementsNode(n requirements.Node) nodeInOut {
-	statements := make([]nodeInOut, len(n.Statements))
-	for i, s := range n.Statements {
-		statements[i] = FromRequirementsNode(s)
-	}
-	cases := make([]caseInOut, len(n.Cases))
-	for i, c := range n.Cases {
-		cases[i] = FromRequirementsCase(c)
-	}
-	return nodeInOut{
-		Statements:    statements,
-		Cases:         cases,
+
+	node := nodeInOut{
+		Statements:    nil,
+		Cases:         nil,
 		Loop:          n.Loop,
 		Description:   n.Description,
 		FromObjectKey: n.FromObjectKey,
@@ -62,4 +58,12 @@ func FromRequirementsNode(n requirements.Node) nodeInOut {
 		AttributeKey:  n.AttributeKey,
 		IsDelete:      n.IsDelete,
 	}
+
+	for _, s := range n.Statements {
+		node.Statements = append(node.Statements, FromRequirementsNode(s))
+	}
+	for _, c := range n.Cases {
+		node.Cases = append(node.Cases, FromRequirementsCase(c))
+	}
+	return node
 }
