@@ -23,7 +23,6 @@ func (s scenarioObjectInOut) ToRequirements() requirements.ScenarioObject {
 		ClassKey:     s.ClassKey,
 		Multi:        s.Multi,
 		UmlComment:   s.UmlComment,
-		Class:        requirements.Class{}, // Not stored in JSON
 	}
 }
 
