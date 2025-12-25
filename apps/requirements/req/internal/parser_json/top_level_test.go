@@ -124,6 +124,8 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 					Key:  "domain_key_b/subdomain_ba/class_a/attribute_a",
 					Name: "AttributeA",
 				},
+			},
+			"domain_key_b/subdomain_bb/class_b": {
 				{
 					Key:  "domain_key_b/subdomain_bb/class_b/attribute_b",
 					Name: "AttributeB",
