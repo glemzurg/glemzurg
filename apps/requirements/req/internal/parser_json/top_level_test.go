@@ -4,133 +4,249 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
-	// Create a sample Requirements object. For simplicity, use a minimal one.
+
+	// What are we writing?
 	original := requirements.Requirements{
+
+		// Model
 		Model: requirements.Model{
-			Key:     "model1",
-			Name:    "Test Model",
-			Details: "Details",
-			Actors: []requirements.Actor{
-				{Key: "actor1", Name: "User", Type: "person"},
+			Key:  "model_key",
+			Name: "Model",
+		},
+
+		// Generalizations.
+		Generalizations: []requirements.Generalization{
+			{
+				Key:  "model_key/generalization/generalization_a",
+				Name: "GeneralizationA",
 			},
-			Domains: []requirements.Domain{
+		},
+
+		// Actors.
+		Actors: []requirements.Actor{
+			{
+				Key:  "model_key/actor/actor_a",
+				Name: "ActorA",
+				Type: "person",
+			},
+		},
+
+		// Organization.
+		Domains: []requirements.Domain{
+			{
+				Key:  "domain_key_a",
+				Name: "DomainA",
+			},
+			{
+				Key:  "domain_key_b",
+				Name: "DomainB",
+			},
+		},
+		Subdomains: map[string][]requirements.Subdomain{
+			"domain_key_a": {
 				{
-					Key:      "domain1",
-					Name:     "Domain1",
-					Realized: true,
-					Subdomains: []requirements.Subdomain{
-						{
-							Key:  "subdomain1",
-							Name: "Subdomain1",
-							Classes: []requirements.Class{
-								{
-									Key:  "class1",
-									Name: "Class1",
-									Attributes: []requirements.Attribute{
-										{Key: "attr1", Name: "Attr1"},
-									},
-									States: []requirements.State{
-										{
-											Key:  "state1",
-											Name: "State1",
-											Actions: []requirements.StateAction{
-												{Key: "sa1", ActionKey: "action1", When: "enter"},
-											},
-										},
-									},
-									Events: []requirements.Event{
-										{Key: "event1", Name: "Event1"},
-									},
-									Guards: []requirements.Guard{
-										{Key: "guard1", Name: "Guard1"},
-									},
-									Actions: []requirements.Action{
-										{Key: "action1", Name: "Action1"},
-									},
-									Transitions: []requirements.Transition{
-										{Key: "trans1", FromStateKey: "state1", ToStateKey: "state2"},
-									},
-								},
-							},
-							UseCases: []requirements.UseCase{
-								{
-									Key:  "usecase1",
-									Name: "UseCase1",
-									Actors: map[string]requirements.UseCaseActor{
-										"actor1": {UmlComment: "comment"},
-									},
-									Scenarios: []requirements.Scenario{
-										{
-											Key:  "scenario1",
-											Name: "Scenario1",
-											Objects: []requirements.ScenarioObject{
-												{Key: "obj1", Name: "Obj1"},
-											},
-										},
-									},
-								},
-							},
-							Generalizations: []requirements.Generalization{
-								{Key: "gen1", Name: "Gen1"},
-							},
-							Associations: []requirements.Association{
-								{Key: "assoc1", Name: "Assoc1"},
-							},
+					Key:  "domain_key_a/subdomain_aa",
+					Name: "SubdomainAA",
+				},
+				{
+					Key:  "domain_key_a/subdomain_ab",
+					Name: "SubdomainAB",
+				},
+			},
+			"domain_key_b": {
+				{
+					Key:  "domain_key_b/subdomain_ba",
+					Name: "SubdomainBA",
+				},
+				{
+					Key:  "domain_key_b/subdomain_bb",
+					Name: "SubdomainBB",
+				},
+			},
+		},
+		DomainAssociations: []requirements.DomainAssociation{
+			{
+				Key:               "model_key/domain_association/1",
+				ProblemDomainKey:  "domain_key_a",
+				SolutionDomainKey: "domain_key_b",
+			},
+		},
+
+		// Classes.
+		Classes: map[string][]requirements.Class{
+			"domain_key_a/subdomain_aa": {
+				{
+					Key:  "domain_key_a/subdomain_aa/class_a",
+					Name: "ClassA",
+				},
+				{
+					Key:  "domain_key_a/subdomain_aa/class_b",
+					Name: "ClassB",
+				},
+			},
+			"domain_key_b/subdomain_bb": {
+				{
+					Key:  "domain_key_b/subdomain_ba/class_a",
+					Name: "ClassA",
+				},
+				{
+					Key:  "domain_key_b/subdomain_bb/class_b",
+					Name: "ClassB",
+				},
+			},
+		},
+		Attributes: map[string][]requirements.Attribute{
+			"domain_key_a/subdomain_aa/class_a": {
+				{
+					Key:           "domain_key_a/subdomain_aa/class_a/attribute_a",
+					Name:          "AttributeA",
+					DataTypeRules: "unconstrained",
+					DataType: &data_type.DataType{
+						Key:            "domain_key_a/subdomain_aa/class_a/attribute_a",
+						CollectionType: "atomic",
+						Atomic: &data_type.Atomic{
+							ConstraintType: "unconstrained",
 						},
 					},
 				},
+				{
+					Key:  "domain_key_a/subdomain_aa/class_a/attribute_b",
+					Name: "AttributeB",
+				},
 			},
-			DomainAssociations: []requirements.DomainAssociation{
-				{Key: "da1", ProblemDomainKey: "domain1", SolutionDomainKey: "domain2"},
+			"domain_key_b/subdomain_ba/class_a": {
+				{
+					Key:  "domain_key_b/subdomain_ba/class_a/attribute_a",
+					Name: "AttributeA",
+				},
+				{
+					Key:  "domain_key_b/subdomain_bb/class_b/attribute_b",
+					Name: "AttributeB",
+				},
 			},
-			Associations: []requirements.Association{
-				{Key: "assoc2", Name: "Assoc2"},
+		},
+		Associations: []requirements.Association{
+			{
+				Key:              "model_key/association/1",
+				Name:             "Child",
+				FromClassKey:     "domain_key_a/subdomain_aa/class_a",
+				FromMultiplicity: requirements.Multiplicity{LowerBound: 0, HigherBound: 1},
+				ToClassKey:       "domain_key_b/subdomain_ba/class_a",
+				ToMultiplicity:   requirements.Multiplicity{LowerBound: 2, HigherBound: 3},
+			},
+			{
+				Key:              "model_key/association/2",
+				Name:             "Parent",
+				FromClassKey:     "domain_key_a/subdomain_aa/class_b",
+				FromMultiplicity: requirements.Multiplicity{LowerBound: 0, HigherBound: 1},
+				ToClassKey:       "domain_key_b/subdomain_bb/class_b",
+				ToMultiplicity:   requirements.Multiplicity{LowerBound: 2, HigherBound: 3},
+			},
+		},
+
+		// Class States.
+		States: map[string][]requirements.State{
+			"domain_key_a/subdomain_aa/class_a": {
+				{
+					Key:  "domain_key_a/subdomain_aa/class_a/state_a",
+					Name: "StateA",
+				},
+			},
+		},
+		Events: map[string][]requirements.Event{
+			"domain_key_a/subdomain_aa/class_a": {
+				{
+					Key:  "domain_key_a/subdomain_aa/class_a/event_a",
+					Name: "EventA",
+				},
+			},
+		},
+		Guards: map[string][]requirements.Guard{
+			"domain_key_a/subdomain_aa/class_a": {
+				{
+					Key:  "domain_key_a/subdomain_aa/class_a/guard_a",
+					Name: "GuardA",
+				},
+			},
+		},
+		Actions: map[string][]requirements.Action{
+			"domain_key_a/subdomain_aa/class_a": {
+				{
+					Key:  "domain_key_a/subdomain_aa/class_a/action_a",
+					Name: "ActionA",
+				},
+			},
+		},
+		Transitions: map[string][]requirements.Transition{
+			"domain_key_a/subdomain_aa/class_a": {
+				{
+					Key:        "domain_key_a/subdomain_aa/class_a/transition_a",
+					EventKey:   "domain_key_a/subdomain_aa/class_a/event_a",
+					ActionKey:  "domain_key_a/subdomain_aa/class_a/action_a",
+					ToStateKey: "domain_key_a/subdomain_aa/class_a/state_a",
+				},
+			},
+		},
+		StateActions: map[string][]requirements.StateAction{
+			"domain_key_a/subdomain_aa/class_a/state_a": {
+				{
+					Key:       "domain_key_a/subdomain_aa/class_a/state_a/state_action_a",
+					ActionKey: "domain_key_a/subdomain_aa/class_a/action_a",
+					When:      "entry",
+				},
+			},
+		},
+
+		// Use Cases.
+		UseCases: map[string][]requirements.UseCase{
+			"domain_key_a/subdomain_aa": {
+				{
+					Key:      "domain_key_a/subdomain_aa/use_case_a",
+					Name:     "UseCaseA",
+					Level:    "sea",
+					ReadOnly: false,
+				},
+			},
+		},
+		UseCaseActors: map[string]map[string]requirements.UseCaseActor{
+			"domain_key_a/subdomain_aa/use_case_a": {
+				"model_key/actor/actor_a": {},
+			},
+		},
+
+		// Scenarios.
+		Scenarios: map[string][]requirements.Scenario{
+			"domain_key_a/subdomain_aa/use_case_a": {
+				{
+					Key:     "domain_key_a/subdomain_aa/use_case_a/scenario_a",
+					Name:    "ScenarioA",
+					Details: "Scenario details",
+				},
+			},
+		},
+
+		// Scenario Objects.
+		ScenarioObjects: map[string][]requirements.ScenarioObject{
+			"domain_key_a/subdomain_aa/use_case_a/scenario_a": {
+				{
+					Key:          "domain_key_a/subdomain_aa/use_case_a/scenario_a/object_a",
+					ObjectNumber: 1,
+					Name:         "model_key/object/object_a",
+					NameStyle:    "name",
+					ClassKey:     "domain_key_a/subdomain_aa/class_a",
+					Multi:        false,
+					UmlComment:   "Object comment",
+				},
 			},
 		},
 	}
 
-	// Populate the flattened fields as they would be in a real Requirements object.
-	original.Actors = original.Model.Actors
-	original.Domains = original.Model.Domains
-	original.DomainAssociations = original.Model.DomainAssociations
-	original.Associations = append(original.Associations, original.Model.Associations...)
-	original.Subdomains = make(map[string][]requirements.Subdomain)
-	original.Subdomains["domain1"] = original.Model.Domains[0].Subdomains
-	original.Classes = make(map[string][]requirements.Class)
-	original.Classes["subdomain1"] = original.Model.Domains[0].Subdomains[0].Classes
-	original.Attributes = make(map[string][]requirements.Attribute)
-	original.Attributes["class1"] = original.Model.Domains[0].Subdomains[0].Classes[0].Attributes
-	original.States = make(map[string][]requirements.State)
-	original.States["class1"] = original.Model.Domains[0].Subdomains[0].Classes[0].States
-	original.Events = make(map[string][]requirements.Event)
-	original.Events["class1"] = original.Model.Domains[0].Subdomains[0].Classes[0].Events
-	original.Guards = make(map[string][]requirements.Guard)
-	original.Guards["class1"] = original.Model.Domains[0].Subdomains[0].Classes[0].Guards
-	original.Actions = make(map[string][]requirements.Action)
-	original.Actions["class1"] = original.Model.Domains[0].Subdomains[0].Classes[0].Actions
-	original.Transitions = make(map[string][]requirements.Transition)
-	original.Transitions["class1"] = original.Model.Domains[0].Subdomains[0].Classes[0].Transitions
-	original.StateActions = make(map[string][]requirements.StateAction)
-	original.StateActions["state1"] = original.Model.Domains[0].Subdomains[0].Classes[0].States[0].Actions
-	original.UseCases = make(map[string][]requirements.UseCase)
-	original.UseCases["subdomain1"] = original.Model.Domains[0].Subdomains[0].UseCases
-	original.UseCaseActors = make(map[string]map[string]requirements.UseCaseActor)
-	original.UseCaseActors["usecase1"] = original.Model.Domains[0].Subdomains[0].UseCases[0].Actors
-	original.Scenarios = make(map[string][]requirements.Scenario)
-	original.Scenarios["usecase1"] = original.Model.Domains[0].Subdomains[0].UseCases[0].Scenarios
-	original.ScenarioObjects = make(map[string][]requirements.ScenarioObject)
-	original.ScenarioObjects["scenario1"] = original.Model.Domains[0].Subdomains[0].UseCases[0].Scenarios[0].Objects
-	original.Generalizations = original.Model.Domains[0].Subdomains[0].Generalizations
-	original.Associations = append(original.Associations, original.Model.Domains[0].Subdomains[0].Associations...)
-
-	// Unpack and pack back
-	tree := UnpackRequirements(original)
-	back := PackRequirements(tree)
-
-	// Assert they are equal
+	inOut := UnpackRequirements(original)
+	back := PackRequirements(inOut)
 	assert.Equal(t, original, back)
 }
