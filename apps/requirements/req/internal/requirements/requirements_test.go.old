@@ -34,7 +34,7 @@ func TestToTreeFromTreeRoundTrip(t *testing.T) {
 					{
 						Key:  "domain_key_a/subdomain_aa",
 						Name: "SubdomainAA",
-						Classes: []Class{
+						Classes: []class.Class{
 							{
 								Key:  "domain_key_a/subdomain_aa/class_a",
 								Name: "ClassA",

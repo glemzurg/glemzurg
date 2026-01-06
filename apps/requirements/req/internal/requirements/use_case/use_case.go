@@ -1,6 +1,7 @@
 package use_case
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -21,7 +22,7 @@ type UseCase struct {
 	UmlComment string
 	// Part of the data in a parsed file.
 	Actors    map[string]UseCaseActor
-	Scenarios []Scenario
+	Scenarios []scenario.Scenario
 	// Helpful data.
 	DomainKey string
 }
@@ -57,14 +58,14 @@ func (uc *UseCase) SetActors(actors map[string]UseCaseActor) {
 	uc.Actors = actors
 }
 
-func (uc *UseCase) SetScenarios(scenarios []Scenario) {
+func (uc *UseCase) SetScenarios(scenarios []scenario.Scenario) {
 	uc.Scenarios = scenarios
 }
 
 func createKeyUseCaseLookup(
 	byCategory map[string][]UseCase,
 	useCaseActors map[string]map[string]UseCaseActor,
-	scenarios map[string][]Scenario,
+	scenarios map[string][]scenario.Scenario,
 ) (lookup map[string]UseCase) {
 
 	lookup = map[string]UseCase{}

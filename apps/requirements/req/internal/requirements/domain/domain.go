@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -14,8 +16,8 @@ type Domain struct {
 	UmlComment string
 	// Part of the data in a parsed file.
 	Associations []DomainAssociation
-	Classes      []Class
-	UseCases     []UseCase
+	Classes      []class.Class
+	UseCases     []use_case.UseCase
 	Subdomains   []Subdomain
 }
 
@@ -40,7 +42,7 @@ func NewDomain(key, name, details string, realized bool, umlComment string) (dom
 	return domain, nil
 }
 
-func createKeyDomainLookup(domainClasses map[string][]Class, domainUseCases map[string][]UseCase, items []Domain) (lookup map[string]Domain) {
+func createKeyDomainLookup(domainClasses map[string][]class.Class, domainUseCases map[string][]use_case.UseCase, items []Domain) (lookup map[string]Domain) {
 
 	lookup = map[string]Domain{}
 	for _, item := range items {

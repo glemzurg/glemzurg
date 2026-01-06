@@ -1,6 +1,9 @@
 package model
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -11,10 +14,10 @@ type Model struct {
 	Name    string
 	Details string // Markdown.
 	// Data in a parsed file.
-	Actors             []Actor
-	Domains            []Domain
-	DomainAssociations []DomainAssociation
-	Associations       []Association // Associations between classes that span domains.
+	Actors             []actor.Actor
+	Domains            []domain.Domain
+	DomainAssociations []domain.DomainAssociation
+	Associations       []class.Association // Associations between classes that span domains.
 }
 
 func NewModel(key, name, details string) (model Model, err error) {

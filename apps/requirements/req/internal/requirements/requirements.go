@@ -3,24 +3,29 @@ package requirements
 import (
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 	"github.com/pkg/errors"
 )
 
 type Requirements struct {
 	Model Model
 	// Generalizations.
-	Generalizations []Generalization
+	Generalizations []class.Generalization
 	// Actors.
-	Actors []Actor
+	Actors []actor.Actor
 	// Organization.
-	Domains            []Domain
-	Subdomains         map[string][]Subdomain // All the subdomains in a domain.
-	DomainAssociations []DomainAssociation
+	Domains            []domain.Domain
+	Subdomains         map[string][]domain.Subdomain // All the subdomains in a domain.
+	DomainAssociations []domain.DomainAssociation
 	// Classes.
-	Classes      map[string][]Class     // All the classes in a subdomain.
-	Attributes   map[string][]Attribute // All the attributes in a class.
-	Associations []Association
+	Classes      map[string][]class.Class     // All the classes in a subdomain.
+	Attributes   map[string][]class.Attribute // All the attributes in a class.
+	Associations []class.Association
 	// Class States.
 	States       map[string][]state.State       // All the states in a class.
 	Events       map[string][]state.Event       // All the state events in a class.
@@ -29,27 +34,27 @@ type Requirements struct {
 	Transitions  map[string][]state.Transition  // All the state transitions in a class.
 	StateActions map[string][]state.StateAction // All the state actions in a state.
 	// Use Cases.
-	UseCases      map[string][]UseCase               // All the use cases in a subdomain.
-	UseCaseActors map[string]map[string]UseCaseActor // All the use cases actors.
+	UseCases      map[string][]use_case.UseCase               // All the use cases in a subdomain.
+	UseCaseActors map[string]map[string]use_case.UseCaseActor // All the use cases actors.
 	// Scenarios.
-	Scenarios       map[string][]Scenario       // All scenarios in a use case.
-	ScenarioObjects map[string][]ScenarioObject // All scenario objects in a scenario.
+	Scenarios       map[string][]scenario.Scenario       // All scenarios in a use case.
+	ScenarioObjects map[string][]scenario.ScenarioObject // All scenario objects in a scenario.
 	// Convenience structures.
-	generalizationLookup map[string]Generalization
-	actorLookup          map[string]Actor
-	domainLookup         map[string]Domain
-	classLookup          map[string]Class
-	attributeLookup      map[string]Attribute
-	associationLookup    map[string]Association
+	generalizationLookup map[string]class.Generalization
+	actorLookup          map[string]actor.Actor
+	domainLookup         map[string]domain.Domain
+	classLookup          map[string]class.Class
+	attributeLookup      map[string]class.Attribute
+	associationLookup    map[string]class.Association
 	stateLookup          map[string]state.State
 	eventLookup          map[string]state.Event
 	guardLookup          map[string]state.Guard
 	actionLookup         map[string]state.Action
 	transitionLookup     map[string]state.Transition
 	stateActionLookup    map[string]state.StateAction
-	useCaseLookup        map[string]UseCase
-	scenarioLookup       map[string]Scenario
-	scenarioObjectLookup map[string]ScenarioObject
+	useCaseLookup        map[string]use_case.UseCase
+	scenarioLookup       map[string]scenario.Scenario
+	scenarioObjectLookup map[string]scenario.ScenarioObject
 }
 
 // Prepare data for templating.
@@ -96,17 +101,17 @@ func (r *Requirements) prepLookups() {
 	}
 }
 
-func (r *Requirements) GeneralizationLookup() (generalizationLookup map[string]Generalization) {
+func (r *Requirements) GeneralizationLookup() (generalizationLookup map[string]class.Generalization) {
 	r.prepLookups()
 	return r.generalizationLookup
 }
 
-func (r *Requirements) ActorLookup() (actorLookup map[string]Actor) {
+func (r *Requirements) ActorLookup() (actorLookup map[string]actor.Actor) {
 	r.prepLookups()
 	return r.actorLookup
 }
 
-func (r *Requirements) DomainLookup() (domainLookup map[string]Domain, associations []DomainAssociation) {
+func (r *Requirements) DomainLookup() (domainLookup map[string]domain.Domain, associations []domain.DomainAssociation) {
 	r.prepLookups()
 	return r.domainLookup, r.DomainAssociations
 }

@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -12,10 +14,10 @@ type Subdomain struct {
 	Details    string // Markdown.
 	UmlComment string
 	// For parsing only, not stored here.
-	Generalizations []Generalization // Generalizations for the classes and use cases in this subdomain.
-	Classes         []Class          // Classes in this subdomain.
-	UseCases        []UseCase        // Use cases in this subdomain.
-	Associations    []Association    // Associations between classes in this subdomain.
+	Generalizations []class.Generalization // Generalizations for the classes and use cases in this subdomain.
+	Classes         []class.Class          // Classes in this subdomain.
+	UseCases        []use_case.UseCase     // Use cases in this subdomain.
+	Associations    []class.Association    // Associations between classes in this subdomain.
 }
 
 func NewSubdomain(key, name, details, umlComment string) (subdomain Subdomain, err error) {
