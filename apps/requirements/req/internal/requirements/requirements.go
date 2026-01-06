@@ -3,6 +3,7 @@ package requirements
 import (
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	"github.com/pkg/errors"
 )
 
@@ -21,12 +22,12 @@ type Requirements struct {
 	Attributes   map[string][]Attribute // All the attributes in a class.
 	Associations []Association
 	// Class States.
-	States       map[string][]State       // All the states in a class.
-	Events       map[string][]Event       // All the state events in a class.
-	Guards       map[string][]Guard       // All the state guards in a class.
-	Actions      map[string][]Action      // All the state actions in a class.
-	Transitions  map[string][]Transition  // All the state transitions in a class.
-	StateActions map[string][]StateAction // All the state actions in a state.
+	States       map[string][]state.State       // All the states in a class.
+	Events       map[string][]state.Event       // All the state events in a class.
+	Guards       map[string][]state.Guard       // All the state guards in a class.
+	Actions      map[string][]state.Action      // All the state actions in a class.
+	Transitions  map[string][]state.Transition  // All the state transitions in a class.
+	StateActions map[string][]state.StateAction // All the state actions in a state.
 	// Use Cases.
 	UseCases      map[string][]UseCase               // All the use cases in a subdomain.
 	UseCaseActors map[string]map[string]UseCaseActor // All the use cases actors.
@@ -40,12 +41,12 @@ type Requirements struct {
 	classLookup          map[string]Class
 	attributeLookup      map[string]Attribute
 	associationLookup    map[string]Association
-	stateLookup          map[string]State
-	eventLookup          map[string]Event
-	guardLookup          map[string]Guard
-	actionLookup         map[string]Action
-	transitionLookup     map[string]Transition
-	stateActionLookup    map[string]StateAction
+	stateLookup          map[string]state.State
+	eventLookup          map[string]state.Event
+	guardLookup          map[string]state.Guard
+	actionLookup         map[string]state.Action
+	transitionLookup     map[string]state.Transition
+	stateActionLookup    map[string]state.StateAction
 	useCaseLookup        map[string]UseCase
 	scenarioLookup       map[string]Scenario
 	scenarioObjectLookup map[string]ScenarioObject
@@ -66,12 +67,12 @@ func (r *Requirements) prepLookups() {
 		r.classLookup = createKeyClassLookup(r.Attributes, r.States, r.Events, r.Guards, r.Actions, r.Transitions, r.Classes)
 		r.attributeLookup = createKeyAttributeLookup(r.Attributes)
 		r.associationLookup = createKeyAssociationLookup(r.Associations)
-		r.stateLookup = createKeyStateLookup(r.StateActions, r.States)
-		r.eventLookup = createKeyEventLookup(r.Events)
-		r.guardLookup = createKeyGuardLookup(r.Guards)
-		r.actionLookup = createKeyActionLookup(r.Transitions, r.StateActions, r.Actions)
-		r.transitionLookup = createKeyTransitionLookup(r.Transitions)
-		r.stateActionLookup = createKeyStateActionLookup(r.StateActions)
+		r.stateLookup = state.CreateKeyStateLookup(r.StateActions, r.States)
+		r.eventLookup = state.CreateKeyEventLookup(r.Events)
+		r.guardLookup = state.CreateKeyGuardLookup(r.Guards)
+		r.actionLookup = state.CreateKeyActionLookup(r.Transitions, r.StateActions, r.Actions)
+		r.transitionLookup = state.CreateKeyTransitionLookup(r.Transitions)
+		r.stateActionLookup = state.CreateKeyStateActionLookup(r.StateActions)
 		r.useCaseLookup = createKeyUseCaseLookup(r.UseCases, r.UseCaseActors, r.Scenarios)
 		r.scenarioLookup = createKeyScenarioLookup(r.Scenarios, r.ScenarioObjects)
 		r.scenarioObjectLookup = createKeyScenarioObjectLookup(r.ScenarioObjects, r.classLookup)
@@ -115,22 +116,22 @@ func (r *Requirements) ClassLookup() (classLookup map[string]Class, associations
 	return r.classLookup, r.Associations
 }
 
-func (r *Requirements) StateLookup() (eventLookup map[string]State) {
+func (r *Requirements) StateLookup() (eventLookup map[string]state.State) {
 	r.prepLookups()
 	return r.stateLookup
 }
 
-func (r *Requirements) EventLookup() (eventLookup map[string]Event) {
+func (r *Requirements) EventLookup() (eventLookup map[string]state.Event) {
 	r.prepLookups()
 	return r.eventLookup
 }
 
-func (r *Requirements) GuardLookup() (guardLookup map[string]Guard) {
+func (r *Requirements) GuardLookup() (guardLookup map[string]state.Guard) {
 	r.prepLookups()
 	return r.guardLookup
 }
 
-func (r *Requirements) ActionLookup() (actionLookup map[string]Action) {
+func (r *Requirements) ActionLookup() (actionLookup map[string]state.Action) {
 	r.prepLookups()
 	return r.actionLookup
 }
@@ -370,6 +371,9 @@ func (r *Requirements) ToTree() Model {
 		}
 	}
 
+	// Populate domain associations
+	tree.DomainAssociations = r.DomainAssociations
+
 	// Group generalizations by subdomain
 	for _, g := range r.Generalizations {
 		subdomainKey := classToSubdomain[g.SuperclassKey]
@@ -385,6 +389,7 @@ func (r *Requirements) ToTree() Model {
 	}
 
 	// Group associations by subdomain or model
+	tree.Associations = nil
 	for _, association := range r.Associations {
 		fromSubdomain := classToSubdomain[association.FromClassKey]
 		toSubdomain := classToSubdomain[association.ToClassKey]
@@ -410,12 +415,12 @@ func (r *Requirements) FromTree(tree Model) {
 	r.Subdomains = make(map[string][]Subdomain)
 	r.Classes = make(map[string][]Class)
 	r.Attributes = make(map[string][]Attribute)
-	r.States = make(map[string][]State)
-	r.Events = make(map[string][]Event)
-	r.Guards = make(map[string][]Guard)
-	r.Actions = make(map[string][]Action)
-	r.Transitions = make(map[string][]Transition)
-	r.StateActions = make(map[string][]StateAction)
+	r.States = make(map[string][]state.State)
+	r.Events = make(map[string][]state.Event)
+	r.Guards = make(map[string][]state.Guard)
+	r.Actions = make(map[string][]state.Action)
+	r.Transitions = make(map[string][]state.Transition)
+	r.StateActions = make(map[string][]state.StateAction)
 	r.UseCases = make(map[string][]UseCase)
 	r.UseCaseActors = make(map[string]map[string]UseCaseActor)
 	r.Scenarios = make(map[string][]Scenario)
@@ -476,8 +481,8 @@ func (r *Requirements) FromTree(tree Model) {
 		Details:            tree.Details,
 		Actors:             tree.Actors,
 		Domains:            make([]Domain, len(tree.Domains)),
-		DomainAssociations: tree.DomainAssociations,
-		Associations:       tree.Associations,
+		DomainAssociations: nil, // Associations are in r.DomainAssociations
+		Associations:       nil, // Associations are in r.Associations
 	}
 	for i, d := range tree.Domains {
 		r.Model.Domains[i] = Domain{
@@ -487,6 +492,9 @@ func (r *Requirements) FromTree(tree Model) {
 			Realized:   d.Realized,
 			UmlComment: d.UmlComment,
 			// Subdomains empty
+			Associations: nil, // Associations are in r.Associations
+			Classes:      nil, // Classes are in r.Classes
+			UseCases:     nil, // UseCases are in r.UseCases
 		}
 	}
 }

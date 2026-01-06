@@ -1,4 +1,4 @@
-package requirements
+package state
 
 import (
 	"fmt"
@@ -8,22 +8,21 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestActionSuite(t *testing.T) {
-	suite.Run(t, new(ActionSuite))
+func TestEventSuite(t *testing.T) {
+	suite.Run(t, new(EventSuite))
 }
 
-type ActionSuite struct {
+type EventSuite struct {
 	suite.Suite
 }
 
-func (suite *ActionSuite) TestNew() {
+func (suite *EventSuite) TestNew() {
 	tests := []struct {
 		key        string
 		name       string
 		details    string
-		requires   []string
-		guarantees []string
-		obj        Action
+		parameters []EventParameter
+		obj        Event
 		errstr     string
 	}{
 		// OK.
@@ -31,28 +30,24 @@ func (suite *ActionSuite) TestNew() {
 			key:        "Key",
 			name:       "Name",
 			details:    "Details",
-			requires:   []string{"Requires"},
-			guarantees: []string{"Guarantees"},
-			obj: Action{
+			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+			obj: Event{
 				Key:        "Key",
 				Name:       "Name",
 				Details:    "Details",
-				Requires:   []string{"Requires"},
-				Guarantees: []string{"Guarantees"},
+				Parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 			},
 		},
 		{
 			key:        "Key",
 			name:       "Name",
 			details:    "",
-			requires:   nil,
-			guarantees: nil,
-			obj: Action{
+			parameters: nil,
+			obj: Event{
 				Key:        "Key",
 				Name:       "Name",
 				Details:    "",
-				Requires:   nil,
-				Guarantees: nil,
+				Parameters: nil,
 			},
 		},
 
@@ -61,22 +56,20 @@ func (suite *ActionSuite) TestNew() {
 			key:        "",
 			name:       "Name",
 			details:    "Details",
-			requires:   []string{"Requires"},
-			guarantees: []string{"Guarantees"},
+			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 			errstr:     `Key: cannot be blank`,
 		},
 		{
 			key:        "Key",
 			name:       "",
 			details:    "Details",
-			requires:   []string{"Requires"},
-			guarantees: []string{"Guarantees"},
+			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 			errstr:     `Name: cannot be blank`,
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewAction(test.key, test.name, test.details, test.requires, test.guarantees)
+		obj, err := NewEvent(test.key, test.name, test.details, test.parameters)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.obj, obj, testName)

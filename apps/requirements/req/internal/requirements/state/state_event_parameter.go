@@ -1,4 +1,4 @@
-package requirements
+package state
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"

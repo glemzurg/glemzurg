@@ -3,6 +3,7 @@ package requirements
 import (
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -63,7 +64,7 @@ func populateScenarioStepReferences(
 	scenarios map[string]Scenario,
 	objects map[string]ScenarioObject,
 	attributes map[string]Attribute,
-	events map[string]Event,
+	events map[string]state.Event,
 ) (err error) {
 	for key := range scenarios {
 		scenario := scenarios[key]

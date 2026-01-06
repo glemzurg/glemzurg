@@ -1,4 +1,4 @@
-package requirements
+package state
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -57,7 +57,7 @@ func lessThanStateAction(a, b StateAction) (less bool) {
 	return a.Key < b.Key
 }
 
-func createKeyStateActionLookup(byCategory map[string][]StateAction) (lookup map[string]StateAction) {
+func CreateKeyStateActionLookup(byCategory map[string][]StateAction) (lookup map[string]StateAction) {
 	lookup = map[string]StateAction{}
 	for _, items := range byCategory {
 		for _, item := range items {

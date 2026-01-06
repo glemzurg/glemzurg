@@ -3,6 +3,7 @@ package requirements
 import (
 	"encoding/json"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -36,7 +37,7 @@ type Node struct {
 	// Helper fields can be added here as needed.
 	FromObject *ScenarioObject `json:"-" yaml:"-"`
 	ToObject   *ScenarioObject `json:"-" yaml:"-"`
-	Event      *Event          `json:"-" yaml:"-"`
+	Event      *state.Event    `json:"-" yaml:"-"`
 	Scenario   *Scenario       `json:"-" yaml:"-"`
 	Attribute  *Attribute      `json:"-" yaml:"-"`
 }
@@ -209,7 +210,7 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 
 // PopulateReferences populates the FromObject, ToObject, Event, and Scenario fields
 // from the provided lookup maps. It recursively populates references in sub-nodes.
-func (n *Node) PopulateReferences(objects map[string]ScenarioObject, events map[string]Event, attributes map[string]Attribute, scenarios map[string]Scenario) error {
+func (n *Node) PopulateReferences(objects map[string]ScenarioObject, events map[string]state.Event, attributes map[string]Attribute, scenarios map[string]Scenario) error {
 	// Populate this node's references
 	if n.FromObjectKey != "" {
 		if obj, exists := objects[n.FromObjectKey]; exists {

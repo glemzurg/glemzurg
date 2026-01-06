@@ -1,4 +1,4 @@
-package requirements
+package state
 
 import (
 	"fmt"
@@ -8,21 +8,21 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestEventSuite(t *testing.T) {
-	suite.Run(t, new(EventSuite))
+func TestStateSuite(t *testing.T) {
+	suite.Run(t, new(StateSuite))
 }
 
-type EventSuite struct {
+type StateSuite struct {
 	suite.Suite
 }
 
-func (suite *EventSuite) TestNew() {
+func (suite *StateSuite) TestNew() {
 	tests := []struct {
 		key        string
 		name       string
 		details    string
-		parameters []EventParameter
-		obj        Event
+		umlComment string
+		obj        State
 		errstr     string
 	}{
 		// OK.
@@ -30,24 +30,24 @@ func (suite *EventSuite) TestNew() {
 			key:        "Key",
 			name:       "Name",
 			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
-			obj: Event{
+			umlComment: "UmlComment",
+			obj: State{
 				Key:        "Key",
 				Name:       "Name",
 				Details:    "Details",
-				Parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+				UmlComment: "UmlComment",
 			},
 		},
 		{
 			key:        "Key",
 			name:       "Name",
 			details:    "",
-			parameters: nil,
-			obj: Event{
+			umlComment: "",
+			obj: State{
 				Key:        "Key",
 				Name:       "Name",
 				Details:    "",
-				Parameters: nil,
+				UmlComment: "",
 			},
 		},
 
@@ -56,20 +56,20 @@ func (suite *EventSuite) TestNew() {
 			key:        "",
 			name:       "Name",
 			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+			umlComment: "UmlComment",
 			errstr:     `Key: cannot be blank`,
 		},
 		{
 			key:        "Key",
 			name:       "",
 			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+			umlComment: "UmlComment",
 			errstr:     `Name: cannot be blank`,
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewEvent(test.key, test.name, test.details, test.parameters)
+		obj, err := NewState(test.key, test.name, test.details, test.umlComment)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.obj, obj, testName)

@@ -1,4 +1,4 @@
-package requirements
+package state
 
 import (
 	"fmt"
@@ -8,21 +8,22 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestStateSuite(t *testing.T) {
-	suite.Run(t, new(StateSuite))
+func TestActionSuite(t *testing.T) {
+	suite.Run(t, new(ActionSuite))
 }
 
-type StateSuite struct {
+type ActionSuite struct {
 	suite.Suite
 }
 
-func (suite *StateSuite) TestNew() {
+func (suite *ActionSuite) TestNew() {
 	tests := []struct {
 		key        string
 		name       string
 		details    string
-		umlComment string
-		obj        State
+		requires   []string
+		guarantees []string
+		obj        Action
 		errstr     string
 	}{
 		// OK.
@@ -30,24 +31,28 @@ func (suite *StateSuite) TestNew() {
 			key:        "Key",
 			name:       "Name",
 			details:    "Details",
-			umlComment: "UmlComment",
-			obj: State{
+			requires:   []string{"Requires"},
+			guarantees: []string{"Guarantees"},
+			obj: Action{
 				Key:        "Key",
 				Name:       "Name",
 				Details:    "Details",
-				UmlComment: "UmlComment",
+				Requires:   []string{"Requires"},
+				Guarantees: []string{"Guarantees"},
 			},
 		},
 		{
 			key:        "Key",
 			name:       "Name",
 			details:    "",
-			umlComment: "",
-			obj: State{
+			requires:   nil,
+			guarantees: nil,
+			obj: Action{
 				Key:        "Key",
 				Name:       "Name",
 				Details:    "",
-				UmlComment: "",
+				Requires:   nil,
+				Guarantees: nil,
 			},
 		},
 
@@ -56,20 +61,22 @@ func (suite *StateSuite) TestNew() {
 			key:        "",
 			name:       "Name",
 			details:    "Details",
-			umlComment: "UmlComment",
+			requires:   []string{"Requires"},
+			guarantees: []string{"Guarantees"},
 			errstr:     `Key: cannot be blank`,
 		},
 		{
 			key:        "Key",
 			name:       "",
 			details:    "Details",
-			umlComment: "UmlComment",
+			requires:   []string{"Requires"},
+			guarantees: []string{"Guarantees"},
 			errstr:     `Name: cannot be blank`,
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewState(test.key, test.name, test.details, test.umlComment)
+		obj, err := NewAction(test.key, test.name, test.details, test.requires, test.guarantees)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.obj, obj, testName)
