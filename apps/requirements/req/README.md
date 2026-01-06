@@ -27,6 +27,7 @@ april (in parallel)
 
 ---------------------------
 
+- cleanup regex must compile code
 - import examples models from steve's examples
 - fix the nested sequence diagram display issue (move to d2)
 - examine d2 diagramming:
@@ -38,6 +39,8 @@ april (in parallel)
 - design the simuilator - chained with derived simulators
   - inspect the existing simulator and create a model for it
   - study library and grammar https://pkg.go.dev/github.com/mna/pigeon
+
+update to https://github.com/go-playground/validator
 
 - examine the recursive postgres capabilities
   - store full simualator as recursive rows without json blobs 
@@ -54,6 +57,13 @@ april (in parallel)
   - work out how to name and how to add details
 - add domains
 - make state class members innate and not specified
+
+- use godoc to review exported methods
+
+- postgres more features:
+  - constraints
+  - work through study
+  - posgres domain and composites and ranges best practices
 
 - Work through how to handle actions with tla:
   - data types for action parameters would be in use, right now unused

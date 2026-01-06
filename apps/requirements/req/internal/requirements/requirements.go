@@ -314,3 +314,179 @@ func classesFromAssociations(allClassLookup map[string]Class, associationLookup 
 	}
 	return lookup
 }
+
+// ToTree builds a nested tree structure from the flattened Requirements.
+func (r *Requirements) ToTree() Model {
+	tree := r.Model
+
+	// Build class to subdomain map
+	classToSubdomain := make(map[string]string)
+	for subdomainKey, classes := range r.Classes {
+		for _, class := range classes {
+			classToSubdomain[class.Key] = subdomainKey
+		}
+	}
+
+	// Populate domains
+	for i := range tree.Domains {
+		domain := &tree.Domains[i]
+		domain.Subdomains = r.Subdomains[domain.Key]
+
+		// Populate subdomains
+		for j := range domain.Subdomains {
+			subdomain := &domain.Subdomains[j]
+			subdomain.Classes = r.Classes[subdomain.Key]
+			subdomain.UseCases = r.UseCases[subdomain.Key]
+
+			// Populate classes
+			for k := range subdomain.Classes {
+				class := &subdomain.Classes[k]
+				class.Attributes = r.Attributes[class.Key]
+				class.States = r.States[class.Key]
+				class.Events = r.Events[class.Key]
+				class.Guards = r.Guards[class.Key]
+				class.Actions = r.Actions[class.Key]
+				class.Transitions = r.Transitions[class.Key]
+
+				// Populate states with actions
+				for l := range class.States {
+					state := &class.States[l]
+					state.Actions = r.StateActions[state.Key]
+				}
+			}
+
+			// Populate use cases
+			for k := range subdomain.UseCases {
+				useCase := &subdomain.UseCases[k]
+				useCase.Actors = r.UseCaseActors[useCase.Key]
+				useCase.Scenarios = r.Scenarios[useCase.Key]
+
+				// Populate scenarios with objects
+				for l := range useCase.Scenarios {
+					scenario := &useCase.Scenarios[l]
+					scenario.Objects = r.ScenarioObjects[scenario.Key]
+				}
+			}
+		}
+	}
+
+	// Group generalizations by subdomain
+	for _, g := range r.Generalizations {
+		subdomainKey := classToSubdomain[g.SuperclassKey]
+		if subdomainKey != "" {
+			for i := range tree.Domains {
+				for j := range tree.Domains[i].Subdomains {
+					if tree.Domains[i].Subdomains[j].Key == subdomainKey {
+						tree.Domains[i].Subdomains[j].Generalizations = append(tree.Domains[i].Subdomains[j].Generalizations, g)
+					}
+				}
+			}
+		}
+	}
+
+	// Group associations by subdomain or model
+	for _, association := range r.Associations {
+		fromSubdomain := classToSubdomain[association.FromClassKey]
+		toSubdomain := classToSubdomain[association.ToClassKey]
+		if fromSubdomain == toSubdomain && fromSubdomain != "" {
+			for i := range tree.Domains {
+				for j := range tree.Domains[i].Subdomains {
+					if tree.Domains[i].Subdomains[j].Key == fromSubdomain {
+						tree.Domains[i].Subdomains[j].Associations = append(tree.Domains[i].Subdomains[j].Associations, association)
+					}
+				}
+			}
+		} else {
+			tree.Associations = append(tree.Associations, association)
+		}
+	}
+
+	return tree
+}
+
+// FromTree flattens the nested tree structure into the Requirements maps and slices.
+func (r *Requirements) FromTree(tree Model) {
+	// Clear the maps
+	r.Subdomains = make(map[string][]Subdomain)
+	r.Classes = make(map[string][]Class)
+	r.Attributes = make(map[string][]Attribute)
+	r.States = make(map[string][]State)
+	r.Events = make(map[string][]Event)
+	r.Guards = make(map[string][]Guard)
+	r.Actions = make(map[string][]Action)
+	r.Transitions = make(map[string][]Transition)
+	r.StateActions = make(map[string][]StateAction)
+	r.UseCases = make(map[string][]UseCase)
+	r.UseCaseActors = make(map[string]map[string]UseCaseActor)
+	r.Scenarios = make(map[string][]Scenario)
+	r.ScenarioObjects = make(map[string][]ScenarioObject)
+
+	// Populate from tree
+	for _, domain := range tree.Domains {
+		r.Subdomains[domain.Key] = domain.Subdomains
+
+		for _, subdomain := range domain.Subdomains {
+			r.Classes[subdomain.Key] = subdomain.Classes
+			r.UseCases[subdomain.Key] = subdomain.UseCases
+
+			for _, class := range subdomain.Classes {
+				r.Attributes[class.Key] = class.Attributes
+				r.States[class.Key] = class.States
+				r.Events[class.Key] = class.Events
+				r.Guards[class.Key] = class.Guards
+				r.Actions[class.Key] = class.Actions
+				r.Transitions[class.Key] = class.Transitions
+
+				for _, state := range class.States {
+					r.StateActions[state.Key] = state.Actions
+				}
+			}
+
+			for _, useCase := range subdomain.UseCases {
+				r.UseCaseActors[useCase.Key] = useCase.Actors
+				r.Scenarios[useCase.Key] = useCase.Scenarios
+
+				for _, scenario := range useCase.Scenarios {
+					r.ScenarioObjects[scenario.Key] = scenario.Objects
+				}
+			}
+		}
+	}
+
+	// Collect generalizations from subdomains
+	r.Generalizations = []Generalization{}
+	for _, domain := range tree.Domains {
+		for _, subdomain := range domain.Subdomains {
+			r.Generalizations = append(r.Generalizations, subdomain.Generalizations...)
+		}
+	}
+
+	// Collect associations from model and subdomains
+	r.Associations = tree.Associations
+	for _, domain := range tree.Domains {
+		for _, subdomain := range domain.Subdomains {
+			r.Associations = append(r.Associations, subdomain.Associations...)
+		}
+	}
+
+	// Set r.Model with empty nested
+	r.Model = Model{
+		Key:                tree.Key,
+		Name:               tree.Name,
+		Details:            tree.Details,
+		Actors:             tree.Actors,
+		Domains:            make([]Domain, len(tree.Domains)),
+		DomainAssociations: tree.DomainAssociations,
+		Associations:       tree.Associations,
+	}
+	for i, d := range tree.Domains {
+		r.Model.Domains[i] = Domain{
+			Key:        d.Key,
+			Name:       d.Name,
+			Details:    d.Details,
+			Realized:   d.Realized,
+			UmlComment: d.UmlComment,
+			// Subdomains empty
+		}
+	}
+}
