@@ -138,7 +138,7 @@ func (c *Class) SetDomainKey(domainKey string) {
 	c.DomainKey = domainKey
 }
 
-func createKeyClassLookup(
+func CreateKeyClassLookup(
 	classAttributes map[string][]Attribute,
 	classStates map[string][]state.State,
 	classEvents map[string][]state.Event,

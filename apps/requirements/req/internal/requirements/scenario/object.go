@@ -82,7 +82,7 @@ func (so *ScenarioObject) GetName() (name string) {
 	return name
 }
 
-func createKeyScenarioObjectLookup(
+func CreateKeyScenarioObjectLookup(
 	byScenario map[string][]ScenarioObject,
 	classLookup map[string]class.Class,
 ) (lookup map[string]ScenarioObject) {

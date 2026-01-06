@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +31,7 @@ func (suite *ModelFileSuite) TestParseModelFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		var expected, actual requirements.Model
+		var expected, actual model.Model
 
 		actual, err := parseModel(key, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)

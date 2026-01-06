@@ -5,7 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,9 +23,9 @@ func TestUseCaseSuite(t *testing.T) {
 type UseCaseSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
+	model     model.Model
+	domain    domain.Domain
+	subdomain domain.Subdomain
 }
 
 func (suite *UseCaseSuite) SetupTest() {
@@ -74,7 +76,7 @@ func (suite *UseCaseSuite) TestLoad() {
 	subdomainKey, useCase, err = LoadUseCase(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.UseCase{
+	assert.Equal(suite.T(), use_case.UseCase{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -86,7 +88,7 @@ func (suite *UseCaseSuite) TestLoad() {
 
 func (suite *UseCaseSuite) TestAdd() {
 
-	err := AddUseCase(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), requirements.UseCase{
+	err := AddUseCase(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), use_case.UseCase{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -99,7 +101,7 @@ func (suite *UseCaseSuite) TestAdd() {
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.UseCase{
+	assert.Equal(suite.T(), use_case.UseCase{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -111,7 +113,7 @@ func (suite *UseCaseSuite) TestAdd() {
 
 func (suite *UseCaseSuite) TestUpdate() {
 
-	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, requirements.UseCase{
+	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, use_case.UseCase{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -121,7 +123,7 @@ func (suite *UseCaseSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateUseCase(suite.db, strings.ToUpper(suite.model.Key), requirements.UseCase{
+	err = UpdateUseCase(suite.db, strings.ToUpper(suite.model.Key), use_case.UseCase{
 		Key:        "kEy", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -134,7 +136,7 @@ func (suite *UseCaseSuite) TestUpdate() {
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.UseCase{
+	assert.Equal(suite.T(), use_case.UseCase{
 		Key:        "key", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -146,7 +148,7 @@ func (suite *UseCaseSuite) TestUpdate() {
 
 func (suite *UseCaseSuite) TestRemove() {
 
-	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, requirements.UseCase{
+	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, use_case.UseCase{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -167,7 +169,7 @@ func (suite *UseCaseSuite) TestRemove() {
 
 func (suite *UseCaseSuite) TestQuery() {
 
-	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, requirements.UseCase{
+	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, use_case.UseCase{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -177,7 +179,7 @@ func (suite *UseCaseSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, requirements.UseCase{
+	err = AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, use_case.UseCase{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -193,7 +195,7 @@ func (suite *UseCaseSuite) TestQuery() {
 		"keyx": "subdomain_key",
 		"key":  "subdomain_key",
 	}, subdomainKeys)
-	assert.Equal(suite.T(), []requirements.UseCase{
+	assert.Equal(suite.T(), []use_case.UseCase{
 		{
 			Key:        "key",
 			Name:       "Name",
@@ -218,9 +220,9 @@ func (suite *UseCaseSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddUseCase(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, useCaseKey string) (useCase requirements.UseCase) {
+func t_AddUseCase(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, useCaseKey string) (useCase use_case.UseCase) {
 
-	err := AddUseCase(dbOrTx, modelKey, subdomainKey, requirements.UseCase{
+	err := AddUseCase(dbOrTx, modelKey, subdomainKey, use_case.UseCase{
 		Key:        useCaseKey,
 		Name:       "Name",
 		Details:    "Details",

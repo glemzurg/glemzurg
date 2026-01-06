@@ -5,7 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,7 +22,7 @@ func TestGeneralizationSuite(t *testing.T) {
 type GeneralizationSuite struct {
 	suite.Suite
 	db    *sql.DB
-	model requirements.Model
+	model model.Model
 }
 
 func (suite *GeneralizationSuite) SetupTest() {
@@ -66,7 +67,7 @@ func (suite *GeneralizationSuite) TestLoad() {
 
 	generalization, err = LoadGeneralization(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Generalization{
+	assert.Equal(suite.T(), class.Generalization{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -78,7 +79,7 @@ func (suite *GeneralizationSuite) TestLoad() {
 
 func (suite *GeneralizationSuite) TestAdd() {
 
-	err := AddGeneralization(suite.db, strings.ToUpper(suite.model.Key), requirements.Generalization{
+	err := AddGeneralization(suite.db, strings.ToUpper(suite.model.Key), class.Generalization{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -90,7 +91,7 @@ func (suite *GeneralizationSuite) TestAdd() {
 
 	generalization, err := LoadGeneralization(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Generalization{
+	assert.Equal(suite.T(), class.Generalization{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -102,7 +103,7 @@ func (suite *GeneralizationSuite) TestAdd() {
 
 func (suite *GeneralizationSuite) TestUpdate() {
 
-	err := AddGeneralization(suite.db, suite.model.Key, requirements.Generalization{
+	err := AddGeneralization(suite.db, suite.model.Key, class.Generalization{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -112,7 +113,7 @@ func (suite *GeneralizationSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateGeneralization(suite.db, strings.ToUpper(suite.model.Key), requirements.Generalization{
+	err = UpdateGeneralization(suite.db, strings.ToUpper(suite.model.Key), class.Generalization{
 		Key:        "kEy", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -124,7 +125,7 @@ func (suite *GeneralizationSuite) TestUpdate() {
 
 	generalization, err := LoadGeneralization(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Generalization{
+	assert.Equal(suite.T(), class.Generalization{
 		Key:        "key", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -136,7 +137,7 @@ func (suite *GeneralizationSuite) TestUpdate() {
 
 func (suite *GeneralizationSuite) TestRemove() {
 
-	err := AddGeneralization(suite.db, suite.model.Key, requirements.Generalization{
+	err := AddGeneralization(suite.db, suite.model.Key, class.Generalization{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -156,7 +157,7 @@ func (suite *GeneralizationSuite) TestRemove() {
 
 func (suite *GeneralizationSuite) TestQuery() {
 
-	err := AddGeneralization(suite.db, suite.model.Key, requirements.Generalization{
+	err := AddGeneralization(suite.db, suite.model.Key, class.Generalization{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -166,7 +167,7 @@ func (suite *GeneralizationSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddGeneralization(suite.db, suite.model.Key, requirements.Generalization{
+	err = AddGeneralization(suite.db, suite.model.Key, class.Generalization{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -178,7 +179,7 @@ func (suite *GeneralizationSuite) TestQuery() {
 
 	generalizations, err := QueryGeneralizations(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []requirements.Generalization{
+	assert.Equal(suite.T(), []class.Generalization{
 		{
 			Key:        "key",
 			Name:       "Name",
@@ -203,9 +204,9 @@ func (suite *GeneralizationSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey, generalizationKey string) (generalization requirements.Generalization) {
+func t_AddGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey, generalizationKey string) (generalization class.Generalization) {
 
-	err := AddGeneralization(dbOrTx, modelKey, requirements.Generalization{
+	err := AddGeneralization(dbOrTx, modelKey, class.Generalization{
 		Key:        generalizationKey,
 		Name:       generalizationKey,
 		Details:    "Details",

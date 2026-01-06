@@ -5,7 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,10 +24,10 @@ func TestActionSuite(t *testing.T) {
 type ActionSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
+	model     model.Model
+	domain    domain.Domain
+	subdomain domain.Subdomain
+	class     class.Class
 }
 
 func (suite *ActionSuite) SetupTest() {
@@ -74,7 +77,7 @@ func (suite *ActionSuite) TestLoad() {
 	classKey, action, err = LoadAction(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Action{
+	assert.Equal(suite.T(), state.Action{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -85,7 +88,7 @@ func (suite *ActionSuite) TestLoad() {
 
 func (suite *ActionSuite) TestAdd() {
 
-	err := AddAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Action{
+	err := AddAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), state.Action{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -97,7 +100,7 @@ func (suite *ActionSuite) TestAdd() {
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Action{
+	assert.Equal(suite.T(), state.Action{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -108,7 +111,7 @@ func (suite *ActionSuite) TestAdd() {
 
 func (suite *ActionSuite) TestUpdate() {
 
-	err := AddAction(suite.db, suite.model.Key, suite.class.Key, requirements.Action{
+	err := AddAction(suite.db, suite.model.Key, suite.class.Key, state.Action{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -117,7 +120,7 @@ func (suite *ActionSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Action{
+	err = UpdateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), state.Action{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -129,7 +132,7 @@ func (suite *ActionSuite) TestUpdate() {
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Action{
+	assert.Equal(suite.T(), state.Action{
 		Key:        "key",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -140,7 +143,7 @@ func (suite *ActionSuite) TestUpdate() {
 
 func (suite *ActionSuite) TestRemove() {
 
-	err := AddAction(suite.db, suite.model.Key, suite.class.Key, requirements.Action{
+	err := AddAction(suite.db, suite.model.Key, suite.class.Key, state.Action{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -160,7 +163,7 @@ func (suite *ActionSuite) TestRemove() {
 
 func (suite *ActionSuite) TestQuery() {
 
-	err := AddAction(suite.db, suite.model.Key, suite.class.Key, requirements.Action{
+	err := AddAction(suite.db, suite.model.Key, suite.class.Key, state.Action{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -169,7 +172,7 @@ func (suite *ActionSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddAction(suite.db, suite.model.Key, suite.class.Key, requirements.Action{
+	err = AddAction(suite.db, suite.model.Key, suite.class.Key, state.Action{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -180,8 +183,8 @@ func (suite *ActionSuite) TestQuery() {
 
 	actions, err := QueryActions(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Action{
-		"class_key": []requirements.Action{
+	assert.Equal(suite.T(), map[string][]state.Action{
+		"class_key": []state.Action{
 			{
 				Key:        "key",
 				Name:       "Name",
@@ -204,9 +207,9 @@ func (suite *ActionSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, actionKey string) (action requirements.Action) {
+func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, actionKey string) (action state.Action) {
 
-	err := AddAction(dbOrTx, modelKey, classKey, requirements.Action{
+	err := AddAction(dbOrTx, modelKey, classKey, state.Action{
 		Key:        actionKey,
 		Name:       "Name",
 		Details:    "Details",

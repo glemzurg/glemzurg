@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
@@ -13,7 +14,7 @@ import (
 )
 
 type Requirements struct {
-	Model Model
+	Model model.Model
 	// Generalizations.
 	Generalizations []class.Generalization
 	// Actors.
@@ -66,25 +67,25 @@ func (r *Requirements) prepLookups() {
 	if r.generalizationLookup == nil {
 
 		// Put data into an easy to lookup format.
-		r.generalizationLookup = createKeyGeneralizationLookup(r.Classes, r.Generalizations)
-		r.actorLookup = createKeyActorLookup(r.Classes, r.Actors)
-		r.domainLookup = createKeyDomainLookup(r.Classes, r.UseCases, r.Domains)
-		r.classLookup = createKeyClassLookup(r.Attributes, r.States, r.Events, r.Guards, r.Actions, r.Transitions, r.Classes)
-		r.attributeLookup = createKeyAttributeLookup(r.Attributes)
-		r.associationLookup = createKeyAssociationLookup(r.Associations)
+		r.generalizationLookup = class.CreateKeyGeneralizationLookup(r.Classes, r.Generalizations)
+		r.actorLookup = actor.CreateKeyActorLookup(r.Classes, r.Actors)
+		r.domainLookup = domain.CreateKeyDomainLookup(r.Classes, r.UseCases, r.Domains)
+		r.classLookup = class.CreateKeyClassLookup(r.Attributes, r.States, r.Events, r.Guards, r.Actions, r.Transitions, r.Classes)
+		r.attributeLookup = class.CreateKeyAttributeLookup(r.Attributes)
+		r.associationLookup = class.CreateKeyAssociationLookup(r.Associations)
 		r.stateLookup = state.CreateKeyStateLookup(r.StateActions, r.States)
 		r.eventLookup = state.CreateKeyEventLookup(r.Events)
 		r.guardLookup = state.CreateKeyGuardLookup(r.Guards)
 		r.actionLookup = state.CreateKeyActionLookup(r.Transitions, r.StateActions, r.Actions)
 		r.transitionLookup = state.CreateKeyTransitionLookup(r.Transitions)
 		r.stateActionLookup = state.CreateKeyStateActionLookup(r.StateActions)
-		r.useCaseLookup = createKeyUseCaseLookup(r.UseCases, r.UseCaseActors, r.Scenarios)
-		r.scenarioLookup = createKeyScenarioLookup(r.Scenarios, r.ScenarioObjects)
-		r.scenarioObjectLookup = createKeyScenarioObjectLookup(r.ScenarioObjects, r.classLookup)
+		r.useCaseLookup = use_case.CreateKeyUseCaseLookup(r.UseCases, r.UseCaseActors, r.Scenarios)
+		r.scenarioLookup = scenario.CreateKeyScenarioLookup(r.Scenarios, r.ScenarioObjects)
+		r.scenarioObjectLookup = scenario.CreateKeyScenarioObjectLookup(r.ScenarioObjects, r.classLookup)
 
 		// Populate references in scenarios. Their steps are like and abstract symbol tree.
 		// And any references to objects, events, attributes, or scenarios need to be populated.
-		if err := populateScenarioStepReferences(r.scenarioLookup, r.scenarioObjectLookup, r.attributeLookup, r.eventLookup); err != nil {
+		if err := scenario.PopulateScenarioStepReferences(r.scenarioLookup, r.scenarioObjectLookup, r.attributeLookup, r.eventLookup); err != nil {
 			panic(errors.Errorf("error populating scenario step references: %+v", err))
 		}
 
@@ -116,7 +117,7 @@ func (r *Requirements) DomainLookup() (domainLookup map[string]domain.Domain, as
 	return r.domainLookup, r.DomainAssociations
 }
 
-func (r *Requirements) ClassLookup() (classLookup map[string]Class, associations []Association) {
+func (r *Requirements) ClassLookup() (classLookup map[string]class.Class, associations []class.Association) {
 	r.prepLookups()
 	return r.classLookup, r.Associations
 }
@@ -141,23 +142,23 @@ func (r *Requirements) ActionLookup() (actionLookup map[string]state.Action) {
 	return r.actionLookup
 }
 
-func (r *Requirements) UseCaseLookup() (useCaseLookup map[string]UseCase) {
+func (r *Requirements) UseCaseLookup() (useCaseLookup map[string]use_case.UseCase) {
 	r.prepLookups()
 	return r.useCaseLookup
 }
 
-func (r *Requirements) ScenarioLookup() (scenarioLookup map[string]Scenario) {
+func (r *Requirements) ScenarioLookup() (scenarioLookup map[string]scenario.Scenario) {
 	r.prepLookups()
 	return r.scenarioLookup
 }
 
-func (r *Requirements) ScenarioObjectLookup() (scenarioObjectLookup map[string]ScenarioObject) {
+func (r *Requirements) ScenarioObjectLookup() (scenarioObjectLookup map[string]scenario.ScenarioObject) {
 	r.prepLookups()
 	return r.scenarioObjectLookup
 }
 
 // Get all the objects connected to one or more classes for rending in a uml diagram.
-func (r *Requirements) RegardingClasses(inClasses []Class) (generalizations []Generalization, classes []Class, associations []Association) {
+func (r *Requirements) RegardingClasses(inClasses []class.Class) (generalizations []class.Generalization, classes []class.Class, associations []class.Association) {
 	allClassLookup, allAssociations := r.ClassLookup()
 	allGeneralizationLookup := r.GeneralizationLookup()
 
@@ -208,7 +209,7 @@ func (r *Requirements) RegardingClasses(inClasses []Class) (generalizations []Ge
 }
 
 // Get all the actors connected to one or more use cases for rendering in a uml diagram.
-func (r *Requirements) RegardingUseCases(inUseCases []UseCase) (useCases []UseCase, actors []Actor, err error) {
+func (r *Requirements) RegardingUseCases(inUseCases []use_case.UseCase) (useCases []use_case.UseCase, actors []actor.Actor, err error) {
 	actorLookup := r.ActorLookup()
 	useCaseLookup := r.UseCaseLookup()
 
@@ -222,7 +223,7 @@ func (r *Requirements) RegardingUseCases(inUseCases []UseCase) (useCases []UseCa
 	}
 
 	// Collect unique actors.
-	uniqueActors := map[string]Actor{}
+	uniqueActors := map[string]actor.Actor{}
 	for _, useCase := range useCases {
 		for actorKey := range useCase.Actors {
 			actor, found := actorLookup[actorKey]
@@ -250,8 +251,8 @@ func (r *Requirements) RegardingUseCases(inUseCases []UseCase) (useCases []UseCa
 	return useCases, actors, nil
 }
 
-func mergeClassLookups(lookupA, lookupB map[string]Class) (lookup map[string]Class) {
-	lookup = map[string]Class{}
+func mergeClassLookups(lookupA, lookupB map[string]class.Class) (lookup map[string]class.Class) {
+	lookup = map[string]class.Class{}
 	for _, class := range lookupA {
 		lookup[class.Key] = class
 	}
@@ -261,16 +262,16 @@ func mergeClassLookups(lookupA, lookupB map[string]Class) (lookup map[string]Cla
 	return lookup
 }
 
-func classesAsLookup(allClassLookup map[string]Class, classes []Class) (lookup map[string]Class) {
-	lookup = map[string]Class{}
+func classesAsLookup(allClassLookup map[string]class.Class, classes []class.Class) (lookup map[string]class.Class) {
+	lookup = map[string]class.Class{}
 	for _, class := range classes {
 		lookup[class.Key] = allClassLookup[class.Key]
 	}
 	return lookup
 }
 
-func classGeneralizationsAsLookup(classLookup map[string]Class, generalizationLookup map[string]Generalization) (lookup map[string]Generalization) {
-	lookup = map[string]Generalization{}
+func classGeneralizationsAsLookup(classLookup map[string]class.Class, generalizationLookup map[string]class.Generalization) (lookup map[string]class.Generalization) {
+	lookup = map[string]class.Generalization{}
 	for _, class := range classLookup {
 		for _, generalization := range generalizationLookup {
 			if class.SuperclassOfKey == generalization.Key {
@@ -284,8 +285,8 @@ func classGeneralizationsAsLookup(classLookup map[string]Class, generalizationLo
 	return lookup
 }
 
-func classAssociationsAsLookup(classLookup map[string]Class, associations []Association) (lookup map[string]Association) {
-	lookup = map[string]Association{}
+func classAssociationsAsLookup(classLookup map[string]class.Class, associations []class.Association) (lookup map[string]class.Association) {
+	lookup = map[string]class.Association{}
 	for classKey := range classLookup {
 		for _, association := range associations {
 			if association.Includes(classKey) {
@@ -296,8 +297,8 @@ func classAssociationsAsLookup(classLookup map[string]Class, associations []Asso
 	return lookup
 }
 
-func classesFromGeneralizations(allClassLookup map[string]Class, generalizationLookup map[string]Generalization) (lookup map[string]Class) {
-	lookup = map[string]Class{}
+func classesFromGeneralizations(allClassLookup map[string]class.Class, generalizationLookup map[string]class.Generalization) (lookup map[string]class.Class) {
+	lookup = map[string]class.Class{}
 	for _, generalization := range generalizationLookup {
 		if generalization.SuperclassKey != "" {
 			lookup[generalization.SuperclassKey] = allClassLookup[generalization.SuperclassKey]
@@ -309,8 +310,8 @@ func classesFromGeneralizations(allClassLookup map[string]Class, generalizationL
 	return lookup
 }
 
-func classesFromAssociations(allClassLookup map[string]Class, associationLookup map[string]Association) (lookup map[string]Class) {
-	lookup = map[string]Class{}
+func classesFromAssociations(allClassLookup map[string]class.Class, associationLookup map[string]class.Association) (lookup map[string]class.Class) {
+	lookup = map[string]class.Class{}
 	for _, association := range associationLookup {
 		lookup[association.FromClassKey] = allClassLookup[association.FromClassKey]
 		lookup[association.ToClassKey] = allClassLookup[association.ToClassKey]
@@ -322,7 +323,7 @@ func classesFromAssociations(allClassLookup map[string]Class, associationLookup 
 }
 
 // ToTree builds a nested tree structure from the flattened Requirements.
-func (r *Requirements) ToTree() Model {
+func (r *Requirements) ToTree() model.Model {
 	tree := r.Model
 
 	// Build class to subdomain map
@@ -415,21 +416,21 @@ func (r *Requirements) ToTree() Model {
 }
 
 // FromTree flattens the nested tree structure into the Requirements maps and slices.
-func (r *Requirements) FromTree(tree Model) {
+func (r *Requirements) FromTree(tree model.Model) {
 	// Clear the maps
-	r.Subdomains = make(map[string][]Subdomain)
-	r.Classes = make(map[string][]Class)
-	r.Attributes = make(map[string][]Attribute)
+	r.Subdomains = make(map[string][]domain.Subdomain)
+	r.Classes = make(map[string][]class.Class)
+	r.Attributes = make(map[string][]class.Attribute)
 	r.States = make(map[string][]state.State)
 	r.Events = make(map[string][]state.Event)
 	r.Guards = make(map[string][]state.Guard)
 	r.Actions = make(map[string][]state.Action)
 	r.Transitions = make(map[string][]state.Transition)
 	r.StateActions = make(map[string][]state.StateAction)
-	r.UseCases = make(map[string][]UseCase)
-	r.UseCaseActors = make(map[string]map[string]UseCaseActor)
-	r.Scenarios = make(map[string][]Scenario)
-	r.ScenarioObjects = make(map[string][]ScenarioObject)
+	r.UseCases = make(map[string][]use_case.UseCase)
+	r.UseCaseActors = make(map[string]map[string]use_case.UseCaseActor)
+	r.Scenarios = make(map[string][]scenario.Scenario)
+	r.ScenarioObjects = make(map[string][]scenario.ScenarioObject)
 
 	// Populate from tree
 	for _, domain := range tree.Domains {
@@ -464,7 +465,7 @@ func (r *Requirements) FromTree(tree Model) {
 	}
 
 	// Collect generalizations from subdomains
-	r.Generalizations = []Generalization{}
+	r.Generalizations = []class.Generalization{}
 	for _, domain := range tree.Domains {
 		for _, subdomain := range domain.Subdomains {
 			r.Generalizations = append(r.Generalizations, subdomain.Generalizations...)
@@ -480,17 +481,17 @@ func (r *Requirements) FromTree(tree Model) {
 	}
 
 	// Set r.Model with empty nested
-	r.Model = Model{
+	r.Model = model.Model{
 		Key:                tree.Key,
 		Name:               tree.Name,
 		Details:            tree.Details,
 		Actors:             tree.Actors,
-		Domains:            make([]Domain, len(tree.Domains)),
+		Domains:            make([]domain.Domain, len(tree.Domains)),
 		DomainAssociations: nil, // Associations are in r.DomainAssociations
 		Associations:       nil, // Associations are in r.Associations
 	}
 	for i, d := range tree.Domains {
-		r.Model.Domains[i] = Domain{
+		r.Model.Domains[i] = domain.Domain{
 			Key:        d.Key,
 			Name:       d.Name,
 			Details:    d.Details,

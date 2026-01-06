@@ -3,12 +3,13 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestClassInOutRoundTrip(t *testing.T) {
-	original := requirements.Class{
+	original := class.Class{
 		Key:             "class1",
 		Name:            "TestClass",
 		Details:         "A test class",
@@ -16,22 +17,22 @@ func TestClassInOutRoundTrip(t *testing.T) {
 		SuperclassOfKey: "super1",
 		SubclassOfKey:   "sub1",
 		UmlComment:      "comment",
-		Attributes: []requirements.Attribute{
+		Attributes: []class.Attribute{
 			{Key: "attr1", Name: "Attr1", Details: "Details", DataTypeRules: "string", Nullable: false, UmlComment: "comment"},
 		},
-		States: []requirements.State{
+		States: []state.State{
 			{Key: "state1", Name: "State1", Details: "Details", UmlComment: "comment"},
 		},
-		Events: []requirements.Event{
+		Events: []state.Event{
 			{Key: "event1", Name: "Event1", Details: "Details"},
 		},
-		Guards: []requirements.Guard{
+		Guards: []state.Guard{
 			{Key: "guard1", Name: "Guard1", Details: "Details"},
 		},
-		Actions: []requirements.Action{
+		Actions: []state.Action{
 			{Key: "action1", Name: "Action1", Details: "Details", Requires: []string{"req1"}, Guarantees: []string{"guar1"}},
 		},
-		Transitions: []requirements.Transition{
+		Transitions: []state.Transition{
 			{Key: "trans1", FromStateKey: "state1", EventKey: "event1", ToStateKey: "state2", UmlComment: "comment"},
 		},
 	}

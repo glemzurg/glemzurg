@@ -4,7 +4,14 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,13 +21,13 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 	original := requirements.Requirements{
 
 		// Model
-		Model: requirements.Model{
+		Model: model.Model{
 			Key:  "model_key",
 			Name: "Model",
 		},
 
 		// Generalizations.
-		Generalizations: []requirements.Generalization{
+		Generalizations: []class.Generalization{
 			{
 				Key:  "model_key/generalization/generalization_a",
 				Name: "GeneralizationA",
@@ -28,7 +35,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 		},
 
 		// Actors.
-		Actors: []requirements.Actor{
+		Actors: []actor.Actor{
 			{
 				Key:  "model_key/actor/actor_a",
 				Name: "ActorA",
@@ -37,7 +44,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 		},
 
 		// Organization.
-		Domains: []requirements.Domain{
+		Domains: []domain.Domain{
 			{
 				Key:  "domain_key_a",
 				Name: "DomainA",
@@ -47,7 +54,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				Name: "DomainB",
 			},
 		},
-		Subdomains: map[string][]requirements.Subdomain{
+		Subdomains: map[string][]domain.Subdomain{
 			"domain_key_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa",
@@ -69,7 +76,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		DomainAssociations: []requirements.DomainAssociation{
+		DomainAssociations: []domain.DomainAssociation{
 			{
 				Key:               "model_key/domain_association/1",
 				ProblemDomainKey:  "domain_key_a",
@@ -78,7 +85,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 		},
 
 		// Classes.
-		Classes: map[string][]requirements.Class{
+		Classes: map[string][]class.Class{
 			"domain_key_a/subdomain_aa": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a",
@@ -100,7 +107,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		Attributes: map[string][]requirements.Attribute{
+		Attributes: map[string][]class.Attribute{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:           "domain_key_a/subdomain_aa/class_a/attribute_a",
@@ -132,27 +139,27 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		Associations: []requirements.Association{
+		Associations: []class.Association{
 			{
 				Key:              "model_key/association/1",
 				Name:             "Child",
 				FromClassKey:     "domain_key_a/subdomain_aa/class_a",
-				FromMultiplicity: requirements.Multiplicity{LowerBound: 0, HigherBound: 1},
+				FromMultiplicity: class.Multiplicity{LowerBound: 0, HigherBound: 1},
 				ToClassKey:       "domain_key_b/subdomain_ba/class_a",
-				ToMultiplicity:   requirements.Multiplicity{LowerBound: 2, HigherBound: 3},
+				ToMultiplicity:   class.Multiplicity{LowerBound: 2, HigherBound: 3},
 			},
 			{
 				Key:              "model_key/association/2",
 				Name:             "Parent",
 				FromClassKey:     "domain_key_a/subdomain_aa/class_b",
-				FromMultiplicity: requirements.Multiplicity{LowerBound: 0, HigherBound: 1},
+				FromMultiplicity: class.Multiplicity{LowerBound: 0, HigherBound: 1},
 				ToClassKey:       "domain_key_b/subdomain_bb/class_b",
-				ToMultiplicity:   requirements.Multiplicity{LowerBound: 2, HigherBound: 3},
+				ToMultiplicity:   class.Multiplicity{LowerBound: 2, HigherBound: 3},
 			},
 		},
 
 		// Class States.
-		States: map[string][]requirements.State{
+		States: map[string][]state.State{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/state_a",
@@ -160,7 +167,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		Events: map[string][]requirements.Event{
+		Events: map[string][]state.Event{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/event_a",
@@ -168,7 +175,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		Guards: map[string][]requirements.Guard{
+		Guards: map[string][]state.Guard{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/guard_a",
@@ -176,7 +183,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		Actions: map[string][]requirements.Action{
+		Actions: map[string][]state.Action{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/action_a",
@@ -184,7 +191,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		Transitions: map[string][]requirements.Transition{
+		Transitions: map[string][]state.Transition{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:        "domain_key_a/subdomain_aa/class_a/transition_a",
@@ -194,7 +201,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		StateActions: map[string][]requirements.StateAction{
+		StateActions: map[string][]state.StateAction{
 			"domain_key_a/subdomain_aa/class_a/state_a": {
 				{
 					Key:       "domain_key_a/subdomain_aa/class_a/state_a/state_action_a",
@@ -205,7 +212,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 		},
 
 		// Use Cases.
-		UseCases: map[string][]requirements.UseCase{
+		UseCases: map[string][]use_case.UseCase{
 			"domain_key_a/subdomain_aa": {
 				{
 					Key:      "domain_key_a/subdomain_aa/use_case_a",
@@ -215,14 +222,14 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		UseCaseActors: map[string]map[string]requirements.UseCaseActor{
+		UseCaseActors: map[string]map[string]use_case.UseCaseActor{
 			"domain_key_a/subdomain_aa/use_case_a": {
 				"model_key/actor/actor_a": {},
 			},
 		},
 
 		// Scenarios.
-		Scenarios: map[string][]requirements.Scenario{
+		Scenarios: map[string][]scenario.Scenario{
 			"domain_key_a/subdomain_aa/use_case_a": {
 				{
 					Key:     "domain_key_a/subdomain_aa/use_case_a/scenario_a",
@@ -233,7 +240,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 		},
 
 		// Scenario Objects.
-		ScenarioObjects: map[string][]requirements.ScenarioObject{
+		ScenarioObjects: map[string][]scenario.ScenarioObject{
 			"domain_key_a/subdomain_aa/use_case_a/scenario_a": {
 				{
 					Key:          "domain_key_a/subdomain_aa/use_case_a/scenario_a/object_a",

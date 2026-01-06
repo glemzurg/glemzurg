@@ -3,17 +3,17 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStateInOutRoundTrip(t *testing.T) {
-	original := requirements.State{
+	original := state.State{
 		Key:        "state1",
 		Name:       "Initial State",
 		Details:    "The starting state",
 		UmlComment: "State comment",
-		Actions: []requirements.StateAction{
+		Actions: []state.StateAction{
 			{
 				Key: "action1",
 			},

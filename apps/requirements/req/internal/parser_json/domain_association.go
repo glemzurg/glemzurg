@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
 
 // domainAssociationInOut is when a domain enforces requirements on another domain.
 type domainAssociationInOut struct {
@@ -10,9 +10,9 @@ type domainAssociationInOut struct {
 	UmlComment        string `json:"uml_comment"`
 }
 
-// ToRequirements converts the domainAssociationInOut to requirements.DomainAssociation.
-func (d domainAssociationInOut) ToRequirements() requirements.DomainAssociation {
-	return requirements.DomainAssociation{
+// ToRequirements converts the domainAssociationInOut to domain.DomainAssociation.
+func (d domainAssociationInOut) ToRequirements() domain.DomainAssociation {
+	return domain.DomainAssociation{
 		Key:               d.Key,
 		ProblemDomainKey:  d.ProblemDomainKey,
 		SolutionDomainKey: d.SolutionDomainKey,
@@ -20,8 +20,8 @@ func (d domainAssociationInOut) ToRequirements() requirements.DomainAssociation 
 	}
 }
 
-// FromRequirements creates a domainAssociationInOut from requirements.DomainAssociation.
-func FromRequirementsDomainAssociation(d requirements.DomainAssociation) domainAssociationInOut {
+// FromRequirements creates a domainAssociationInOut from domain.DomainAssociation.
+func FromRequirementsDomainAssociation(d domain.DomainAssociation) domainAssociationInOut {
 	return domainAssociationInOut{
 		Key:               d.Key,
 		ProblemDomainKey:  d.ProblemDomainKey,

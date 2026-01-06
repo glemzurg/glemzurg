@@ -59,7 +59,7 @@ func (a *Association) Other(classKey string) (otherKey string, err error) {
 	return a.ToClassKey, nil
 }
 
-func createKeyAssociationLookup(items []Association) (lookup map[string]Association) {
+func CreateKeyAssociationLookup(items []Association) (lookup map[string]Association) {
 	lookup = map[string]Association{}
 	for _, item := range items {
 		lookup[item.Key] = item

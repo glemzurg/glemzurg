@@ -5,7 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,12 +23,12 @@ func TestClassIndexSuite(t *testing.T) {
 type ClassIndexSuite struct {
 	suite.Suite
 	db         *sql.DB
-	model      requirements.Model
-	domain     requirements.Domain
-	subdomain  requirements.Subdomain
-	class      requirements.Class
-	attribute  requirements.Attribute
-	attributeB requirements.Attribute
+	model      model.Model
+	domain     domain.Domain
+	subdomain  domain.Subdomain
+	class      class.Class
+	attribute  class.Attribute
+	attributeB class.Attribute
 }
 
 func (suite *ClassIndexSuite) SetupTest() {

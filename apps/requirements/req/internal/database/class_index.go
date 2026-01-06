@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/identity"
 
 	"github.com/pkg/errors"
 )
@@ -24,15 +24,15 @@ func scanClassIndex(scanner Scanner, indexNumPtr *uint) (err error) {
 func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (indexNums []uint, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return nil, err
 	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
+	attributeKey, err = identity.PreenKey(attributeKey)
 	if err != nil {
 		return nil, err
 	}
@@ -73,15 +73,15 @@ func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey, classKey, attributeKey s
 func AddClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, indexNum uint) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
+	attributeKey, err = identity.PreenKey(attributeKey)
 	if err != nil {
 		return err
 	}
@@ -117,15 +117,15 @@ func AddClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, index
 func RemoveClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, indexNum uint) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
+	attributeKey, err = identity.PreenKey(attributeKey)
 	if err != nil {
 		return err
 	}

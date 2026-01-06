@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 
 // modelInOut is the documentation summary of a set of requirements.
 type modelInOut struct {
@@ -15,8 +15,8 @@ type modelInOut struct {
 }
 
 // ToRequirements converts the modelInOut to requirements.Requirements.
-func (m modelInOut) ToRequirements() requirements.Model {
-	model := requirements.Model{
+func (m modelInOut) ToRequirements() model.Model {
+	model := model.Model{
 		Key:                m.Key,
 		Name:               m.Name,
 		Details:            m.Details,
@@ -49,8 +49,8 @@ func (m modelInOut) ToRequirements() requirements.Model {
 	return model
 }
 
-// FromRequirements creates a modelInOut from requirements.Model.
-func FromRequirementsModel(r requirements.Model) modelInOut {
+// FromRequirements creates a modelInOut from model.Model.
+func FromRequirementsModel(r model.Model) modelInOut {
 	m := modelInOut{
 		Key:                r.Key,
 		Name:               r.Name,

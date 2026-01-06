@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/identity"
 
 	"github.com/pkg/errors"
 )
@@ -36,11 +36,11 @@ func scanAtomicSpan(scanner Scanner, dataTypeKeyPtr *string, atomicSpan *data_ty
 func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomicSpan data_type.AtomicSpan, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", data_type.AtomicSpan{}, err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return "", data_type.AtomicSpan{}, err
 	}
@@ -83,11 +83,11 @@ func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataType
 func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan data_type.AtomicSpan) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -138,11 +138,11 @@ func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan data_
 func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan data_type.AtomicSpan) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -180,11 +180,11 @@ func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan da
 func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 func QueryAtomicSpans(dbOrTx DbOrTx, modelKey string) (atomicSpans map[string]data_type.AtomicSpan, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[strin
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[strin
 	valueStrings := make([]string, 0, len(atomicSpans))
 	i := 0
 	for dataTypeKey, span := range atomicSpans {
-		dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+		dataTypeKey, err = identity.PreenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}

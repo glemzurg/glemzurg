@@ -42,7 +42,7 @@ func NewDomain(key, name, details string, realized bool, umlComment string) (dom
 	return domain, nil
 }
 
-func createKeyDomainLookup(domainClasses map[string][]class.Class, domainUseCases map[string][]use_case.UseCase, items []Domain) (lookup map[string]Domain) {
+func CreateKeyDomainLookup(domainClasses map[string][]class.Class, domainUseCases map[string][]use_case.UseCase, items []Domain) (lookup map[string]Domain) {
 
 	lookup = map[string]Domain{}
 	for _, item := range items {

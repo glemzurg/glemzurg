@@ -1,13 +1,14 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/identity"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanActor(scanner Scanner, actor *requirements.Actor) (err error) {
+func scanActor(scanner Scanner, actor *actor.Actor) (err error) {
 	if err = scanner.Scan(
 		&actor.Key,
 		&actor.Name,
@@ -25,23 +26,23 @@ func scanActor(scanner Scanner, actor *requirements.Actor) (err error) {
 }
 
 // LoadActor loads a actor from the database
-func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor requirements.Actor, err error) {
+func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (act actor.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return requirements.Actor{}, err
+		return actor.Actor{}, err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
-		return requirements.Actor{}, err
+		return actor.Actor{}, err
 	}
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanActor(scanner, &actor); err != nil {
+			if err = scanActor(scanner, &act); err != nil {
 				return err
 			}
 			return nil
@@ -61,21 +62,21 @@ func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor requirements.Act
 		modelKey,
 		actorKey)
 	if err != nil {
-		return requirements.Actor{}, errors.WithStack(err)
+		return actor.Actor{}, errors.WithStack(err)
 	}
 
-	return actor, nil
+	return act, nil
 }
 
 // AddActor adds a actor to the database.
-func AddActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err error) {
+func AddActor(dbOrTx DbOrTx, modelKey string, actor actor.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err := requirements.PreenKey(actor.Key)
+	actorKey, err := identity.PreenKey(actor.Key)
 	if err != nil {
 		return err
 	}
@@ -114,14 +115,14 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err err
 }
 
 // UpdateActor updates a actor in the database.
-func UpdateActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err error) {
+func UpdateActor(dbOrTx DbOrTx, modelKey string, actor actor.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err := requirements.PreenKey(actor.Key)
+	actorKey, err := identity.PreenKey(actor.Key)
 	if err != nil {
 		return err
 	}
@@ -156,11 +157,11 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err 
 func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return err
 	}
@@ -183,10 +184,10 @@ func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 }
 
 // QueryActors loads all actors from the database
-func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []requirements.Actor, err error) {
+func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []actor.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +196,7 @@ func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []requirements.Actor, e
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var actor requirements.Actor
+			var actor actor.Actor
 			if err = scanActor(scanner, &actor); err != nil {
 				return errors.WithStack(err)
 			}

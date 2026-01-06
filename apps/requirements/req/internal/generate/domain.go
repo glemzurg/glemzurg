@@ -5,6 +5,8 @@ import (
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 
 	"github.com/pkg/errors"
 )
@@ -67,7 +69,7 @@ func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requir
 	return nil
 }
 
-func generateDomainMdContents(reqs requirements.Requirements, model requirements.Model, domain requirements.Domain) (contents string, err error) {
+func generateDomainMdContents(reqs requirements.Requirements, model model.Model, domain domain.Domain) (contents string, err error) {
 
 	sort.Slice(domain.Classes, func(i, j int) bool {
 		return domain.Classes[i].Name < domain.Classes[j].Name
@@ -75,8 +77,8 @@ func generateDomainMdContents(reqs requirements.Requirements, model requirements
 
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
 		Reqs   requirements.Requirements
-		Model  requirements.Model
-		Domain requirements.Domain
+		Model  model.Model
+		Domain domain.Domain
 	}{
 		Reqs:   reqs,
 		Model:  model,
@@ -90,12 +92,12 @@ func generateDomainMdContents(reqs requirements.Requirements, model requirements
 }
 
 // This is the domain graph on the model page.
-func generateDomainsSvgContents(reqs requirements.Requirements, domains []requirements.Domain, associations []requirements.DomainAssociation) (svgContents string, dotContents string, err error) {
+func generateDomainsSvgContents(reqs requirements.Requirements, domains []domain.Domain, associations []domain.DomainAssociation) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_domainsDotTemplate, struct {
 		Reqs         requirements.Requirements
-		Domains      []requirements.Domain
-		Associations []requirements.DomainAssociation
+		Domains      []domain.Domain
+		Associations []domain.DomainAssociation
 	}{
 		Reqs:         reqs,
 		Domains:      domains,

@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGuardInOutRoundTrip(t *testing.T) {
-	original := requirements.Guard{
+	original := state.Guard{
 		Key:     "guard1",
 		Name:    "Authenticated",
 		Details: "User must be authenticated",

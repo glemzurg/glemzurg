@@ -4,6 +4,9 @@ import (
 	"path/filepath"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 
 	"github.com/pkg/errors"
 )
@@ -31,11 +34,11 @@ func generateUseCaseFiles(outputPath string, reqs requirements.Requirements) (er
 	return nil
 }
 
-func generateUseCaseMdContents(reqs requirements.Requirements, useCase requirements.UseCase) (contents string, err error) {
+func generateUseCaseMdContents(reqs requirements.Requirements, useCase use_case.UseCase) (contents string, err error) {
 
 	contents, err = generateFromTemplate(_useCaseMdTemplate, struct {
 		Reqs    requirements.Requirements
-		UseCase requirements.UseCase
+		UseCase use_case.UseCase
 	}{
 		Reqs:    reqs,
 		UseCase: useCase,
@@ -48,13 +51,13 @@ func generateUseCaseMdContents(reqs requirements.Requirements, useCase requireme
 }
 
 // This is the class graph on a domain and class pages.
-func generateUseCasesSvgContents(reqs requirements.Requirements, domain requirements.Domain, useCases []requirements.UseCase, actors []requirements.Actor) (svgContents string, dotContents string, err error) {
+func generateUseCasesSvgContents(reqs requirements.Requirements, domain domain.Domain, useCases []use_case.UseCase, actors []actor.Actor) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_useCasesDotTemplate, struct {
 		Reqs     requirements.Requirements
-		Domain   requirements.Domain
-		UseCases []requirements.UseCase
-		Actors   []requirements.Actor
+		Domain   domain.Domain
+		UseCases []use_case.UseCase
+		Actors   []actor.Actor
 	}{
 		Reqs:     reqs,
 		Domain:   domain,

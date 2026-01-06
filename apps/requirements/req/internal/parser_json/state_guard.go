@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 
 // guardInOut is a constraint on an event in a state machine.
 type guardInOut struct {
@@ -9,17 +9,17 @@ type guardInOut struct {
 	Details string `json:"details"` // How the details of the guard are represented, what shows in the uml.
 }
 
-// ToRequirements converts the guardInOut to requirements.Guard.
-func (g guardInOut) ToRequirements() requirements.Guard {
-	return requirements.Guard{
+// ToRequirements converts the guardInOut to state.Guard.
+func (g guardInOut) ToRequirements() state.Guard {
+	return state.Guard{
 		Key:     g.Key,
 		Name:    g.Name,
 		Details: g.Details,
 	}
 }
 
-// FromRequirements creates a guardInOut from requirements.Guard.
-func FromRequirementsGuard(g requirements.Guard) guardInOut {
+// FromRequirements creates a guardInOut from state.Guard.
+func FromRequirementsGuard(g state.Guard) guardInOut {
 	return guardInOut{
 		Key:     g.Key,
 		Name:    g.Name,

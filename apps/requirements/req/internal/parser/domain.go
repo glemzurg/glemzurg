@@ -4,17 +4,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseDomain(key, filename, contents string) (domain requirements.Domain, err error) {
+func parseDomain(key, filename, contents string) (parsedDomain domain.Domain, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return requirements.Domain{}, err
+		return domain.Domain{}, err
 	}
 
 	// There is no data for a "domain" entity. Just add to the markdown
@@ -24,7 +24,7 @@ func parseDomain(key, filename, contents string) (domain requirements.Domain, er
 	// Unmarshal into a format that can be easily checked for informative error messages.
 	yamlData := map[string]any{}
 	if err := yaml.Unmarshal([]byte(parsedFile.Data), yamlData); err != nil {
-		return requirements.Domain{}, errors.WithStack(err)
+		return domain.Domain{}, errors.WithStack(err)
 	}
 
 	realized := false
@@ -33,9 +33,9 @@ func parseDomain(key, filename, contents string) (domain requirements.Domain, er
 		realized = realizedAny.(bool)
 	}
 
-	domain, err = requirements.NewDomain(key, parsedFile.Title, markdown, realized, parsedFile.UmlComment)
+	parsedDomain, err = domain.NewDomain(key, parsedFile.Title, markdown, realized, parsedFile.UmlComment)
 	if err != nil {
-		return requirements.Domain{}, err
+		return domain.Domain{}, err
 	}
 
 	// Add any associations we found.
@@ -45,20 +45,20 @@ func parseDomain(key, filename, contents string) (domain requirements.Domain, er
 		associationsData = associationsAny.([]any)
 	}
 
-	var associations []requirements.DomainAssociation
+	var associations []domain.DomainAssociation
 	for i, associationAny := range associationsData {
-		association, err := domainAssociationFromYamlData(domain.Key, i, associationAny)
+		association, err := domainAssociationFromYamlData(parsedDomain.Key, i, associationAny)
 		if err != nil {
-			return requirements.Domain{}, err
+			return domain.Domain{}, err
 		}
 		associations = append(associations, association)
 	}
-	domain.Associations = associations
+	parsedDomain.Associations = associations
 
-	return domain, nil
+	return parsedDomain, nil
 }
 
-func domainAssociationFromYamlData(problemDomainKey string, index int, associationAny any) (association requirements.DomainAssociation, err error) {
+func domainAssociationFromYamlData(problemDomainKey string, index int, associationAny any) (association domain.DomainAssociation, err error) {
 
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
@@ -79,25 +79,25 @@ func domainAssociationFromYamlData(problemDomainKey string, index int, associati
 			umlComment = umlCommentAny.(string)
 		}
 
-		association, err = requirements.NewDomainAssociation(
+		association, err = domain.NewDomainAssociation(
 			key,
 			problemDomainKey,
 			solutionDomainKey,
 			umlComment)
 		if err != nil {
-			return requirements.DomainAssociation{}, err
+			return domain.DomainAssociation{}, err
 		}
 	}
 
 	return association, nil
 }
 
-func generateDomainContent(domain requirements.Domain) string {
-	yaml := "realized: " + strconv.FormatBool(domain.Realized)
+func generateDomainContent(d domain.Domain) string {
+	yaml := "realized: " + strconv.FormatBool(d.Realized)
 
-	if len(domain.Associations) > 0 {
+	if len(d.Associations) > 0 {
 		yaml += "\n\nassociations:\n"
-		for _, assoc := range domain.Associations {
+		for _, assoc := range d.Associations {
 			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey
 			if assoc.UmlComment != "" {
 				yaml += "\n      uml_comment: " + assoc.UmlComment
@@ -107,5 +107,5 @@ func generateDomainContent(domain requirements.Domain) string {
 	}
 
 	yamlStr := strings.TrimSpace(yaml)
-	return generateFileContent(domain.Details, domain.UmlComment, yamlStr)
+	return generateFileContent(d.Details, d.UmlComment, yamlStr)
 }

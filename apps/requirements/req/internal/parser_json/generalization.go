@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
 
 // generalizationInOut is how two or more things in the system build on each other (like a super type and sub type).
 type generalizationInOut struct {
@@ -12,9 +12,9 @@ type generalizationInOut struct {
 	UmlComment string `json:"uml_comment"`
 }
 
-// ToRequirements converts the generalizationInOut to requirements.Generalization.
-func (g generalizationInOut) ToRequirements() requirements.Generalization {
-	return requirements.Generalization{
+// ToRequirements converts the generalizationInOut to class.Generalization.
+func (g generalizationInOut) ToRequirements() class.Generalization {
+	return class.Generalization{
 		Key:        g.Key,
 		Name:       g.Name,
 		Details:    g.Details,
@@ -24,8 +24,8 @@ func (g generalizationInOut) ToRequirements() requirements.Generalization {
 	}
 }
 
-// FromRequirements creates a generalizationInOut from requirements.Generalization.
-func FromRequirementsGeneralization(g requirements.Generalization) generalizationInOut {
+// FromRequirements creates a generalizationInOut from class.Generalization.
+func FromRequirementsGeneralization(g class.Generalization) generalizationInOut {
 	return generalizationInOut{
 		Key:        g.Key,
 		Name:       g.Name,

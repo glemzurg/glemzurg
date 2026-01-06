@@ -1,6 +1,8 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+)
 
 // associationInOut is how two classes relate to each other.
 type associationInOut struct {
@@ -15,9 +17,9 @@ type associationInOut struct {
 	UmlComment          string            `json:"uml_comment"`
 }
 
-// ToRequirements converts the associationInOut to requirements.Association.
-func (a associationInOut) ToRequirements() requirements.Association {
-	return requirements.Association{
+// ToRequirements converts the associationInOut to class.Association.
+func (a associationInOut) ToRequirements() class.Association {
+	return class.Association{
 		Key:                 a.Key,
 		Name:                a.Name,
 		Details:             a.Details,
@@ -30,8 +32,8 @@ func (a associationInOut) ToRequirements() requirements.Association {
 	}
 }
 
-// FromRequirements creates a associationInOut from requirements.Association.
-func FromRequirementsAssociation(a requirements.Association) associationInOut {
+// FromRequirements creates a associationInOut from class.Association.
+func FromRequirementsAssociation(a class.Association) associationInOut {
 	return associationInOut{
 		Key:                 a.Key,
 		Name:                a.Name,

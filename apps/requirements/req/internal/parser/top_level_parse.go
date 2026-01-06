@@ -6,6 +6,11 @@ import (
 	"path/filepath"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 
 	"github.com/pkg/errors"
 )
@@ -83,43 +88,43 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 
 	// Allocate memory for structures.
 	if reqs.Subdomains == nil {
-		reqs.Subdomains = map[string][]requirements.Subdomain{}
+		reqs.Subdomains = map[string][]domain.Subdomain{}
 	}
 	if reqs.Classes == nil {
-		reqs.Classes = map[string][]requirements.Class{}
+		reqs.Classes = map[string][]class.Class{}
 	}
 	if reqs.Attributes == nil {
-		reqs.Attributes = map[string][]requirements.Attribute{}
+		reqs.Attributes = map[string][]class.Attribute{}
 	}
 	if reqs.States == nil {
-		reqs.States = map[string][]requirements.State{}
+		reqs.States = map[string][]state.State{}
 	}
 	if reqs.Events == nil {
-		reqs.Events = map[string][]requirements.Event{}
+		reqs.Events = map[string][]state.Event{}
 	}
 	if reqs.Guards == nil {
-		reqs.Guards = map[string][]requirements.Guard{}
+		reqs.Guards = map[string][]state.Guard{}
 	}
 	if reqs.Actions == nil {
-		reqs.Actions = map[string][]requirements.Action{}
+		reqs.Actions = map[string][]state.Action{}
 	}
 	if reqs.Transitions == nil {
-		reqs.Transitions = map[string][]requirements.Transition{}
+		reqs.Transitions = map[string][]state.Transition{}
 	}
 	if reqs.StateActions == nil {
-		reqs.StateActions = map[string][]requirements.StateAction{}
+		reqs.StateActions = map[string][]state.StateAction{}
 	}
 	if reqs.UseCases == nil {
-		reqs.UseCases = map[string][]requirements.UseCase{}
+		reqs.UseCases = map[string][]use_case.UseCase{}
 	}
 	if reqs.UseCaseActors == nil {
-		reqs.UseCaseActors = map[string]map[string]requirements.UseCaseActor{}
+		reqs.UseCaseActors = map[string]map[string]use_case.UseCaseActor{}
 	}
 	if reqs.Scenarios == nil {
-		reqs.Scenarios = map[string][]requirements.Scenario{}
+		reqs.Scenarios = map[string][]scenario.Scenario{}
 	}
 	if reqs.ScenarioObjects == nil {
-		reqs.ScenarioObjects = map[string][]requirements.ScenarioObject{}
+		reqs.ScenarioObjects = map[string][]scenario.ScenarioObject{}
 	}
 
 	// Now, parse each file according to its type.
@@ -160,23 +165,23 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 			reqs.Generalizations = append(reqs.Generalizations, generalization)
 
 		case _EXT_DOMAIN:
-			domain, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)
+			parsedDomain, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)
 			if err != nil {
 				return requirements.Requirements{}, err
 			}
-			reqs.Domains = append(reqs.Domains, domain)
+			reqs.Domains = append(reqs.Domains, parsedDomain)
 
 			// Migrate associations to greater structure.
-			reqs.DomainAssociations = append(reqs.DomainAssociations, domain.Associations...)
-			domain.Associations = nil
+			reqs.DomainAssociations = append(reqs.DomainAssociations, parsedDomain.Associations...)
+			parsedDomain.Associations = nil
 
 			// Give each domain a default subdomain.
-			for _, domain := range reqs.Domains {
-				subdomain, err := requirements.NewSubdomain(defaultSubdomain(domain.Key), "Default", "", "")
+			for _, d := range reqs.Domains {
+				subdomain, err := domain.NewSubdomain(defaultSubdomain(d.Key), "Default", "", "")
 				if err != nil {
 					return requirements.Requirements{}, err
 				}
-				reqs.Subdomains[domain.Key] = []requirements.Subdomain{subdomain}
+				reqs.Subdomains[d.Key] = []domain.Subdomain{subdomain}
 			}
 
 		case _EXT_CLASS:

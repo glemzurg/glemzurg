@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 
 // transitionInOut is a move between two states.
 type transitionInOut struct {
@@ -13,9 +13,9 @@ type transitionInOut struct {
 	UmlComment   string `json:"uml_comment"`
 }
 
-// ToRequirements converts the transitionInOut to requirements.Transition.
-func (t transitionInOut) ToRequirements() requirements.Transition {
-	return requirements.Transition{
+// ToRequirements converts the transitionInOut to state.Transition.
+func (t transitionInOut) ToRequirements() state.Transition {
+	return state.Transition{
 		Key:          t.Key,
 		FromStateKey: t.FromStateKey,
 		EventKey:     t.EventKey,
@@ -26,8 +26,8 @@ func (t transitionInOut) ToRequirements() requirements.Transition {
 	}
 }
 
-// FromRequirements creates a transitionInOut from requirements.Transition.
-func FromRequirementsTransition(t requirements.Transition) transitionInOut {
+// FromRequirements creates a transitionInOut from state.Transition.
+func FromRequirementsTransition(t state.Transition) transitionInOut {
 	return transitionInOut{
 		Key:          t.Key,
 		FromStateKey: t.FromStateKey,

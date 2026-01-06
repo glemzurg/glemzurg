@@ -1,13 +1,14 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/identity"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanDomain(scanner Scanner, domain *requirements.Domain) (err error) {
+func scanDomain(scanner Scanner, domain *domain.Domain) (err error) {
 	if err = scanner.Scan(
 		&domain.Key,
 		&domain.Name,
@@ -25,23 +26,23 @@ func scanDomain(scanner Scanner, domain *requirements.Domain) (err error) {
 }
 
 // LoadDomain loads a domain from the database
-func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain requirements.Domain, err error) {
+func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (dmn domain.Domain, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return requirements.Domain{}, err
+		return domain.Domain{}, err
 	}
-	domainKey, err = requirements.PreenKey(domainKey)
+	domainKey, err = identity.PreenKey(domainKey)
 	if err != nil {
-		return requirements.Domain{}, err
+		return domain.Domain{}, err
 	}
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanDomain(scanner, &domain); err != nil {
+			if err = scanDomain(scanner, &dmn); err != nil {
 				return err
 			}
 			return nil
@@ -61,21 +62,21 @@ func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain requirements.
 		modelKey,
 		domainKey)
 	if err != nil {
-		return requirements.Domain{}, errors.WithStack(err)
+		return domain.Domain{}, errors.WithStack(err)
 	}
 
-	return domain, nil
+	return dmn, nil
 }
 
 // AddDomain adds a domain to the database.
-func AddDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (err error) {
+func AddDomain(dbOrTx DbOrTx, modelKey string, domain domain.Domain) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err := requirements.PreenKey(domain.Key)
+	domainKey, err := identity.PreenKey(domain.Key)
 	if err != nil {
 		return err
 	}
@@ -114,14 +115,14 @@ func AddDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (err 
 }
 
 // UpdateDomain updates a domain in the database.
-func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (err error) {
+func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain domain.Domain) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err := requirements.PreenKey(domain.Key)
+	domainKey, err := identity.PreenKey(domain.Key)
 	if err != nil {
 		return err
 	}
@@ -156,11 +157,11 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (e
 func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err = requirements.PreenKey(domainKey)
+	domainKey, err = identity.PreenKey(domainKey)
 	if err != nil {
 		return err
 	}
@@ -183,10 +184,10 @@ func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 }
 
 // QueryDomains loads all domains from the database
-func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []requirements.Domain, err error) {
+func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []domain.Domain, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +196,7 @@ func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []requirements.Domain
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var domain requirements.Domain
+			var domain domain.Domain
 			if err = scanDomain(scanner, &domain); err != nil {
 				return errors.WithStack(err)
 			}

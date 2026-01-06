@@ -62,7 +62,7 @@ func (uc *UseCase) SetScenarios(scenarios []scenario.Scenario) {
 	uc.Scenarios = scenarios
 }
 
-func createKeyUseCaseLookup(
+func CreateKeyUseCaseLookup(
 	byCategory map[string][]UseCase,
 	useCaseActors map[string]map[string]UseCaseActor,
 	scenarios map[string][]scenario.Scenario,

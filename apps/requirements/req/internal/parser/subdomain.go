@@ -1,14 +1,14 @@
 package parser
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
 )
 
-func parseSubdomain(key, filename, contents string) (subdomain requirements.Subdomain, err error) {
+func parseSubdomain(key, filename, contents string) (subdomain domain.Subdomain, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return requirements.Subdomain{}, err
+		return domain.Subdomain{}, err
 	}
 
 	// There is no data for a "subdomain" entity. Just add to the markdown
@@ -19,13 +19,13 @@ func parseSubdomain(key, filename, contents string) (subdomain requirements.Subd
 		markdown += "\n\n" + parsedFile.Data
 	}
 
-	subdomain, err = requirements.NewSubdomain(key, parsedFile.Title, markdown, parsedFile.UmlComment)
+	subdomain, err = domain.NewSubdomain(key, parsedFile.Title, markdown, parsedFile.UmlComment)
 	if err != nil {
-		return requirements.Subdomain{}, err
+		return domain.Subdomain{}, err
 	}
 	return subdomain, nil
 }
 
-func generateSubdomainContent(subdomain requirements.Subdomain) string {
+func generateSubdomainContent(subdomain domain.Subdomain) string {
 	return generateFileContent(subdomain.Details, subdomain.UmlComment, "")
 }

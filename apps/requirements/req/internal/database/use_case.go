@@ -1,13 +1,13 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanUseCase(scanner Scanner, subdomainKeyPtr *string, useCase *requirements.UseCase) (err error) {
+func scanUseCase(scanner Scanner, subdomainKeyPtr *string, useCase *use_case.UseCase) (err error) {
 	if err = scanner.Scan(
 		subdomainKeyPtr,
 		&useCase.Key,
@@ -27,16 +27,16 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *string, useCase *requirements
 }
 
 // LoadUseCase loads a use case from the database
-func LoadUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (subdomainKey string, useCase requirements.UseCase, err error) {
+func LoadUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (subdomainKey string, useCase use_case.UseCase, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.UseCase{}, err
+		return "", use_case.UseCase{}, err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
-		return "", requirements.UseCase{}, err
+		return "", use_case.UseCase{}, err
 	}
 
 	// Query the database.
@@ -65,25 +65,25 @@ func LoadUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (subdomainKey strin
 		modelKey,
 		useCaseKey)
 	if err != nil {
-		return "", requirements.UseCase{}, errors.WithStack(err)
+		return "", use_case.UseCase{}, errors.WithStack(err)
 	}
 
 	return subdomainKey, useCase, nil
 }
 
 // AddUseCase adds a use case to the database.
-func AddUseCase(dbOrTx DbOrTx, modelKey, subdomainKey string, useCase requirements.UseCase) (err error) {
+func AddUseCase(dbOrTx DbOrTx, modelKey, subdomainKey string, useCase use_case.UseCase) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
+	subdomainKey, err = identity.PreenKey(subdomainKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err := requirements.PreenKey(useCase.Key)
+	useCaseKey, err := identity.PreenKey(useCase.Key)
 	if err != nil {
 		return err
 	}
@@ -128,14 +128,14 @@ func AddUseCase(dbOrTx DbOrTx, modelKey, subdomainKey string, useCase requiremen
 }
 
 // UpdateUseCase updates a use case in the database.
-func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase requirements.UseCase) (err error) {
+func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase use_case.UseCase) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err := requirements.PreenKey(useCase.Key)
+	useCaseKey, err := identity.PreenKey(useCase.Key)
 	if err != nil {
 		return err
 	}
@@ -172,11 +172,11 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase requirements.UseCase)
 func RemoveUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
 		return err
 	}
@@ -199,10 +199,10 @@ func RemoveUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (err error) {
 }
 
 // QueryUseCases loads all use case from the database
-func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[string]string, useCases []requirements.UseCase, err error) {
+func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[string]string, useCases []use_case.UseCase, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -212,7 +212,7 @@ func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[string]str
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var subdomainKey string
-			var useCase requirements.UseCase
+			var useCase use_case.UseCase
 			if err = scanUseCase(scanner, &subdomainKey, &useCase); err != nil {
 				return errors.WithStack(err)
 			}

@@ -1,6 +1,8 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+)
 
 // actorInOut is a external user of this system, either a person or another system.
 type actorInOut struct {
@@ -11,9 +13,9 @@ type actorInOut struct {
 	UmlComment string `json:"uml_comment"`
 }
 
-// ToRequirements converts the actorInOut to requirements.Actor.
-func (a actorInOut) ToRequirements() requirements.Actor {
-	return requirements.Actor{
+// ToRequirements converts the actorInOut to actor.Actor.
+func (a actorInOut) ToRequirements() actor.Actor {
+	return actor.Actor{
 		Key:        a.Key,
 		Name:       a.Name,
 		Details:    a.Details,
@@ -23,8 +25,8 @@ func (a actorInOut) ToRequirements() requirements.Actor {
 	}
 }
 
-// FromRequirements creates a actorInOut from requirements.Actor.
-func FromRequirementsActor(a requirements.Actor) actorInOut {
+// FromRequirements creates a actorInOut from actor.Actor.
+func FromRequirementsActor(a actor.Actor) actorInOut {
 	return actorInOut{
 		Key:        a.Key,
 		Name:       a.Name,

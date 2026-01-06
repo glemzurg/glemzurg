@@ -1,13 +1,14 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/identity"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanDomainAssociation(scanner Scanner, association *requirements.DomainAssociation) (err error) {
+func scanDomainAssociation(scanner Scanner, association *domain.DomainAssociation) (err error) {
 	if err = scanner.Scan(
 		&association.Key,
 		&association.ProblemDomainKey,
@@ -24,16 +25,16 @@ func scanDomainAssociation(scanner Scanner, association *requirements.DomainAsso
 }
 
 // LoadDomainAssociation loads a association from the database
-func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association requirements.DomainAssociation, err error) {
+func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association domain.DomainAssociation, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return requirements.DomainAssociation{}, err
+		return domain.DomainAssociation{}, err
 	}
-	associationKey, err = requirements.PreenKey(associationKey)
+	associationKey, err = identity.PreenKey(associationKey)
 	if err != nil {
-		return requirements.DomainAssociation{}, err
+		return domain.DomainAssociation{}, err
 	}
 
 	// Query the database.
@@ -60,29 +61,29 @@ func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (asso
 		modelKey,
 		associationKey)
 	if err != nil {
-		return requirements.DomainAssociation{}, errors.WithStack(err)
+		return domain.DomainAssociation{}, errors.WithStack(err)
 	}
 
 	return association, nil
 }
 
 // AddDomainAssociation adds a association to the database.
-func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association requirements.DomainAssociation) (err error) {
+func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association domain.DomainAssociation) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	associationKey, err := requirements.PreenKey(association.Key)
+	associationKey, err := identity.PreenKey(association.Key)
 	if err != nil {
 		return err
 	}
-	problemDomainKey, err := requirements.PreenKey(association.ProblemDomainKey)
+	problemDomainKey, err := identity.PreenKey(association.ProblemDomainKey)
 	if err != nil {
 		return err
 	}
-	solutionDomainKey, err := requirements.PreenKey(association.SolutionDomainKey)
+	solutionDomainKey, err := identity.PreenKey(association.SolutionDomainKey)
 	if err != nil {
 		return err
 	}
@@ -118,22 +119,22 @@ func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association requiremen
 }
 
 // UpdateDomainAssociation updates a association in the database.
-func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association requirements.DomainAssociation) (err error) {
+func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association domain.DomainAssociation) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	associationKey, err := requirements.PreenKey(association.Key)
+	associationKey, err := identity.PreenKey(association.Key)
 	if err != nil {
 		return err
 	}
-	problemDomainKey, err := requirements.PreenKey(association.ProblemDomainKey)
+	problemDomainKey, err := identity.PreenKey(association.ProblemDomainKey)
 	if err != nil {
 		return err
 	}
-	solutionDomainKey, err := requirements.PreenKey(association.SolutionDomainKey)
+	solutionDomainKey, err := identity.PreenKey(association.SolutionDomainKey)
 	if err != nil {
 		return err
 	}
@@ -166,11 +167,11 @@ func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association require
 func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	associationKey, err = requirements.PreenKey(associationKey)
+	associationKey, err = identity.PreenKey(associationKey)
 	if err != nil {
 		return err
 	}
@@ -193,10 +194,10 @@ func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (er
 }
 
 // QueryDomainAssociations loads all association from the database
-func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []requirements.DomainAssociation, err error) {
+func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []domain.DomainAssociation, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +206,7 @@ func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []req
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var association requirements.DomainAssociation
+			var association domain.DomainAssociation
 			if err = scanDomainAssociation(scanner, &association); err != nil {
 				return errors.WithStack(err)
 			}

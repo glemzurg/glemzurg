@@ -1,6 +1,8 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
+)
 
 // stateInOut is a particular set of values in a state, distinct from all other states in the state.
 type stateInOut struct {
@@ -12,9 +14,9 @@ type stateInOut struct {
 	Actions []stateActionInOut `json:"actions"`
 }
 
-// ToRequirements converts the stateInOut to requirements.State.
-func (s stateInOut) ToRequirements() requirements.State {
-	state := requirements.State{
+// ToRequirements converts the stateInOut to state.State.
+func (s stateInOut) ToRequirements() state.State {
+	st := state.State{
 		Key:        s.Key,
 		Name:       s.Name,
 		Details:    s.Details,
@@ -22,14 +24,14 @@ func (s stateInOut) ToRequirements() requirements.State {
 		Actions:    nil,
 	}
 	for _, a := range s.Actions {
-		state.Actions = append(state.Actions, a.ToRequirements())
+		st.Actions = append(st.Actions, a.ToRequirements())
 	}
-	return state
+	return st
 }
 
-// FromRequirements creates a stateInOut from requirements.State.
-func FromRequirementsState(s requirements.State) stateInOut {
-	state := stateInOut{
+// FromRequirements creates a stateInOut from state.State.
+func FromRequirementsState(s state.State) stateInOut {
+	st := stateInOut{
 		Key:        s.Key,
 		Name:       s.Name,
 		Details:    s.Details,
@@ -37,7 +39,7 @@ func FromRequirementsState(s requirements.State) stateInOut {
 		Actions:    nil,
 	}
 	for _, a := range s.Actions {
-		state.Actions = append(state.Actions, FromRequirementsStateAction(a))
+		st.Actions = append(st.Actions, FromRequirementsStateAction(a))
 	}
-	return state
+	return st
 }

@@ -1,14 +1,14 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanEvent(scanner Scanner, classKeyPtr *string, event *requirements.Event) (err error) {
+func scanEvent(scanner Scanner, classKeyPtr *string, event *state.Event) (err error) {
 	var parametersAsList []string
 
 	if err = scanner.Scan(
@@ -26,7 +26,7 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *requirements.Event) 
 
 	// Construct parameters.
 	for i := 0; i < len(parametersAsList); i += 2 {
-		event.Parameters = append(event.Parameters, requirements.EventParameter{
+		event.Parameters = append(event.Parameters, state.EventParameter{
 			Name:   parametersAsList[i],
 			Source: parametersAsList[i+1],
 		})
@@ -36,16 +36,16 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *requirements.Event) 
 }
 
 // LoadEvent loads a event from the database
-func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event requirements.Event, err error) {
+func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event state.Event, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Event{}, err
+		return "", state.Event{}, err
 	}
-	eventKey, err = requirements.PreenKey(eventKey)
+	eventKey, err = identity.PreenKey(eventKey)
 	if err != nil {
-		return "", requirements.Event{}, err
+		return "", state.Event{}, err
 	}
 
 	// Query the database.
@@ -72,25 +72,25 @@ func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event
 		modelKey,
 		eventKey)
 	if err != nil {
-		return "", requirements.Event{}, errors.WithStack(err)
+		return "", state.Event{}, errors.WithStack(err)
 	}
 
 	return classKey, event, nil
 }
 
 // AddEvent adds a event to the database.
-func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Event) (err error) {
+func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event state.Event) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	eventKey, err := requirements.PreenKey(event.Key)
+	eventKey, err := identity.PreenKey(event.Key)
 	if err != nil {
 		return err
 	}
@@ -136,18 +136,18 @@ func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Event
 }
 
 // UpdateEvent updates a event in the database.
-func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Event) (err error) {
+func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event state.Event) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	eventKey, err := requirements.PreenKey(event.Key)
+	eventKey, err := identity.PreenKey(event.Key)
 	if err != nil {
 		return err
 	}
@@ -190,15 +190,15 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Ev
 func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	eventKey, err = requirements.PreenKey(eventKey)
+	eventKey, err = identity.PreenKey(eventKey)
 	if err != nil {
 		return err
 	}
@@ -224,10 +224,10 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error)
 }
 
 // QueryEvents loads all event from the database
-func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]requirements.Event, err error) {
+func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]state.Event, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -237,12 +237,12 @@ func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]requiremen
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var classKey string
-			var event requirements.Event
+			var event state.Event
 			if err = scanEvent(scanner, &classKey, &event); err != nil {
 				return errors.WithStack(err)
 			}
 			if events == nil {
-				events = map[string][]requirements.Event{}
+				events = map[string][]state.Event{}
 			}
 			classEvents := events[classKey]
 			classEvents = append(classEvents, event)

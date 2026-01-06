@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 
 // eventParameterInOut is a parameter for events.
 type eventParameterInOut struct {
@@ -8,16 +8,16 @@ type eventParameterInOut struct {
 	Source string `json:"source"` // Where the values for this parameter are coming from.
 }
 
-// ToRequirements converts the eventParameterInOut to requirements.EventParameter.
-func (e eventParameterInOut) ToRequirements() requirements.EventParameter {
-	return requirements.EventParameter{
+// ToRequirements converts the eventParameterInOut to state.EventParameter.
+func (e eventParameterInOut) ToRequirements() state.EventParameter {
+	return state.EventParameter{
 		Name:   e.Name,
 		Source: e.Source,
 	}
 }
 
-// FromRequirements creates a eventParameterInOut from requirements.EventParameter.
-func FromRequirementsEventParameter(e requirements.EventParameter) eventParameterInOut {
+// FromRequirements creates a eventParameterInOut from state.EventParameter.
+func FromRequirementsEventParameter(e state.EventParameter) eventParameterInOut {
 	return eventParameterInOut{
 		Name:   e.Name,
 		Source: e.Source,

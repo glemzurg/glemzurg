@@ -46,7 +46,7 @@ func NewActor(key, name, details, userType, umlComment string) (actor Actor, err
 	return actor, nil
 }
 
-func createKeyActorLookup(domainClasses map[string][]class.Class, items []Actor) (lookup map[string]Actor) {
+func CreateKeyActorLookup(domainClasses map[string][]class.Class, items []Actor) (lookup map[string]Actor) {
 
 	// All the classes that are actors.
 	actorClassKeyLookup := map[string][]string{}

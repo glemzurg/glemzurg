@@ -1,6 +1,15 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
+)
 
 // UnpackRequirements converts a requirements.Requirements into a tree of parser_json objects.
 func UnpackRequirements(reqs requirements.Requirements) modelInOut {
@@ -112,7 +121,7 @@ func UnpackRequirements(reqs requirements.Requirements) modelInOut {
 // PackRequirements converts a tree of parser_json objects back into requirements.Requirements.
 func PackRequirements(tree modelInOut) requirements.Requirements {
 	reqs := requirements.Requirements{
-		Model: requirements.Model{
+		Model: model.Model{
 			Key:     tree.Key,
 			Name:    tree.Name,
 			Details: tree.Details,
@@ -127,33 +136,33 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 	// Flatten the nested structure into the top-level fields.
 
 	// Actors
-	reqs.Actors = make([]requirements.Actor, len(tree.Actors))
+	reqs.Actors = make([]actor.Actor, len(tree.Actors))
 	for i, a := range tree.Actors {
 		reqs.Actors[i] = a.ToRequirements()
 	}
 
 	// Domains
-	reqs.Domains = make([]requirements.Domain, len(tree.Domains))
+	reqs.Domains = make([]domain.Domain, len(tree.Domains))
 	for i, d := range tree.Domains {
 		reqs.Domains[i] = d.ToRequirements()
 	}
 
 	// Domain Associations
-	reqs.DomainAssociations = make([]requirements.DomainAssociation, len(tree.DomainAssociations))
+	reqs.DomainAssociations = make([]domain.DomainAssociation, len(tree.DomainAssociations))
 	for i, da := range tree.DomainAssociations {
 		reqs.DomainAssociations[i] = da.ToRequirements()
 	}
 
 	// Associations
-	reqs.Associations = make([]requirements.Association, len(tree.Associations))
+	reqs.Associations = make([]class.Association, len(tree.Associations))
 	for i, a := range tree.Associations {
 		reqs.Associations[i] = a.ToRequirements()
 	}
 
 	// Subdomains, Classes, etc.
-	reqs.Subdomains = make(map[string][]requirements.Subdomain)
-	reqs.Classes = make(map[string][]requirements.Class)
-	reqs.UseCases = make(map[string][]requirements.UseCase)
+	reqs.Subdomains = make(map[string][]domain.Subdomain)
+	reqs.Classes = make(map[string][]class.Class)
+	reqs.UseCases = make(map[string][]use_case.UseCase)
 
 	for _, domain := range tree.Domains {
 		for _, subdomain := range domain.Subdomains {
@@ -165,48 +174,58 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 			}
 
 			// Classes
-			for _, class := range subdomain.Classes {
-				reqs.Classes[subdomain.Key] = append(reqs.Classes[subdomain.Key], class.ToRequirements())
+			for _, cls := range subdomain.Classes {
+				reqs.Classes[subdomain.Key] = append(reqs.Classes[subdomain.Key], cls.ToRequirements())
 
 				// Attributes
-				if len(class.Attributes) > 0 {
+				if len(cls.Attributes) > 0 {
 					if reqs.Attributes == nil {
-						reqs.Attributes = make(map[string][]requirements.Attribute)
+						reqs.Attributes = make(map[string][]class.Attribute)
 					}
-					reqs.Attributes[class.Key] = make([]requirements.Attribute, len(class.Attributes))
-					for i, a := range class.Attributes {
-						reqs.Attributes[class.Key][i] = a.ToRequirements()
+					reqs.Attributes[cls.Key] = make([]class.Attribute, len(cls.Attributes))
+					for i, a := range cls.Attributes {
+						reqs.Attributes[cls.Key][i] = a.ToRequirements()
 					}
 				}
 
 				// States
-				if len(class.States) > 0 {
+				if len(cls.States) > 0 {
 					if reqs.States == nil {
-						reqs.States = make(map[string][]requirements.State)
+						reqs.States = make(map[string][]state.State)
 					}
-					reqs.States[class.Key] = make([]requirements.State, len(class.States))
-					for i, s := range class.States {
-						reqs.States[class.Key][i] = s.ToRequirements()
+					reqs.States[cls.Key] = make([]state.State, len(cls.States))
+					for i, s := range cls.States {
+						reqs.States[cls.Key][i] = s.ToRequirements()
 					}
 				}
 
 				// Events
-				if len(class.Events) > 0 {
+				if len(cls.Events) > 0 {
 					if reqs.Events == nil {
-						reqs.Events = make(map[string][]requirements.Event)
+						reqs.Events = make(map[string][]state.Event)
 					}
-					reqs.Events[class.Key] = make([]requirements.Event, len(class.Events))
-					for i, e := range class.Events {
-						reqs.Events[class.Key][i] = e.ToRequirements()
+					reqs.Events[cls.Key] = make([]state.Event, len(cls.Events))
+					for i, e := range cls.Events {
+						reqs.Events[cls.Key][i] = e.ToRequirements()
 					}
 				}
 
 				// Guards
-				if len(class.Guards) > 0 {
+				if len(cls.Guards) > 0 {
 					if reqs.Guards == nil {
-						reqs.Guards = make(map[string][]requirements.Guard)
+						reqs.Guards = make(map[string][]state.Guard)
 					}
-					reqs.Guards[class.Key] = make([]requirements.Guard, len(class.Guards))
+					reqs.Guards[cls.Key] = make([]state.Guard, len(cls.Guards))
+					for i, g := range cls.Guards {
+						reqs.Guards[cls.Key][i] = g.ToRequirements()
+					}
+				}
+
+				// Actions
+					if reqs.Guards == nil {
+						reqs.Guards = make(map[string][]state.Guard)
+					}
+					reqs.Guards[class.Key] = make([]state.Guard, len(class.Guards))
 					for i, g := range class.Guards {
 						reqs.Guards[class.Key][i] = g.ToRequirements()
 					}
@@ -215,9 +234,9 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 				// Actions
 				if len(class.Actions) > 0 {
 					if reqs.Actions == nil {
-						reqs.Actions = make(map[string][]requirements.Action)
+						reqs.Actions = make(map[string][]state.Action)
 					}
-					reqs.Actions[class.Key] = make([]requirements.Action, len(class.Actions))
+					reqs.Actions[class.Key] = make([]state.Action, len(class.Actions))
 					for i, a := range class.Actions {
 						reqs.Actions[class.Key][i] = a.ToRequirements()
 					}
@@ -226,9 +245,9 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 				// Transitions
 				if len(class.Transitions) > 0 {
 					if reqs.Transitions == nil {
-						reqs.Transitions = make(map[string][]requirements.Transition)
+						reqs.Transitions = make(map[string][]state.Transition)
 					}
-					reqs.Transitions[class.Key] = make([]requirements.Transition, len(class.Transitions))
+					reqs.Transitions[class.Key] = make([]state.Transition, len(class.Transitions))
 					for i, tr := range class.Transitions {
 						reqs.Transitions[class.Key][i] = tr.ToRequirements()
 					}
@@ -238,9 +257,9 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 				for _, state := range class.States {
 					if len(state.Actions) > 0 {
 						if reqs.StateActions == nil {
-							reqs.StateActions = make(map[string][]requirements.StateAction)
+							reqs.StateActions = make(map[string][]state.StateAction)
 						}
-						reqs.StateActions[state.Key] = make([]requirements.StateAction, len(state.Actions))
+						reqs.StateActions[state.Key] = make([]state.StateAction, len(state.Actions))
 						for i, sa := range state.Actions {
 							reqs.StateActions[state.Key][i] = sa.ToRequirements()
 						}
@@ -254,28 +273,28 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 
 				// Use Case Actors
 				if reqs.UseCaseActors == nil {
-					reqs.UseCaseActors = make(map[string]map[string]requirements.UseCaseActor)
+					reqs.UseCaseActors = make(map[string]map[string]use_case.UseCaseActor)
 				}
-				reqs.UseCaseActors[useCase.Key] = make(map[string]requirements.UseCaseActor)
+				reqs.UseCaseActors[useCase.Key] = make(map[string]use_case.UseCaseActor)
 				for k, v := range useCase.Actors {
 					reqs.UseCaseActors[useCase.Key][k] = v.ToRequirements()
 				}
 
 				// Scenarios
 				if reqs.Scenarios == nil {
-					reqs.Scenarios = make(map[string][]requirements.Scenario)
+					reqs.Scenarios = make(map[string][]scenario.Scenario)
 				}
-				reqs.Scenarios[useCase.Key] = make([]requirements.Scenario, len(useCase.Scenarios))
+				reqs.Scenarios[useCase.Key] = make([]scenario.Scenario, len(useCase.Scenarios))
 				for i, s := range useCase.Scenarios {
 					reqs.Scenarios[useCase.Key][i] = s.ToRequirements()
 				}
 
 				// Scenario Objects
 				if reqs.ScenarioObjects == nil {
-					reqs.ScenarioObjects = make(map[string][]requirements.ScenarioObject)
+					reqs.ScenarioObjects = make(map[string][]scenario.ScenarioObject)
 				}
 				for _, scenario := range useCase.Scenarios {
-					reqs.ScenarioObjects[scenario.Key] = make([]requirements.ScenarioObject, len(scenario.Objects))
+					reqs.ScenarioObjects[scenario.Key] = make([]scenario.ScenarioObject, len(scenario.Objects))
 					for i, o := range scenario.Objects {
 						reqs.ScenarioObjects[scenario.Key][i] = o.ToRequirements()
 					}

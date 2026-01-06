@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
 
 // nodeInOut represents a node in the scenario steps tree.
 type nodeInOut struct {
@@ -16,10 +16,10 @@ type nodeInOut struct {
 	IsDelete      bool        `json:"is_delete" yaml:"is_delete"`
 }
 
-// ToRequirements converts the nodeInOut to requirements.Node.
-func (n nodeInOut) ToRequirements() requirements.Node {
+// ToRequirements converts the nodeInOut to scenario.Node.
+func (n nodeInOut) ToRequirements() scenario.Node {
 
-	node := requirements.Node{
+	node := scenario.Node{
 		Statements:    nil,
 		Cases:         nil,
 		Loop:          n.Loop,
@@ -43,8 +43,8 @@ func (n nodeInOut) ToRequirements() requirements.Node {
 	return node
 }
 
-// FromRequirementsNode creates a nodeInOut from requirements.Node.
-func FromRequirementsNode(n requirements.Node) nodeInOut {
+// FromRequirementsNode creates a nodeInOut from scenario.Node.
+func FromRequirementsNode(n scenario.Node) nodeInOut {
 
 	node := nodeInOut{
 		Statements:    nil,

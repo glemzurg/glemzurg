@@ -3,14 +3,14 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCaseInOutConversionRoundTrip(t *testing.T) {
-	original := requirements.Case{
+	original := scenario.Case{
 		Condition: "x > 5",
-		Statements: []requirements.Node{
+		Statements: []scenario.Node{
 			{
 				Description: "Do something",
 			},

@@ -5,7 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,13 +24,13 @@ func TestClassSuite(t *testing.T) {
 type ClassSuite struct {
 	suite.Suite
 	db              *sql.DB
-	model           requirements.Model
-	domain          requirements.Domain
-	subdomain       requirements.Subdomain
-	generalization  requirements.Generalization
-	generalizationB requirements.Generalization
-	actor           requirements.Actor
-	actorB          requirements.Actor
+	model           model.Model
+	domain          domain.Domain
+	subdomain       domain.Subdomain
+	generalization  class.Generalization
+	generalizationB class.Generalization
+	actor           actor.Actor
+	actorB          actor.Actor
 }
 
 func (suite *ClassSuite) SetupTest() {
@@ -84,7 +87,7 @@ func (suite *ClassSuite) TestLoad() {
 	subdomainKey, class, err = LoadClass(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.Class{
+	assert.Equal(suite.T(), class.Class{
 		Key:             "key", // Test case-insensitive.
 		Name:            "Name",
 		Details:         "Details",
@@ -97,7 +100,7 @@ func (suite *ClassSuite) TestLoad() {
 
 func (suite *ClassSuite) TestAdd() {
 
-	err := AddClass(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), requirements.Class{
+	err := AddClass(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), class.Class{
 		Key:             "KeY", // Test case-insensitive.
 		Name:            "Name",
 		Details:         "Details",
@@ -111,7 +114,7 @@ func (suite *ClassSuite) TestAdd() {
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.Class{
+	assert.Equal(suite.T(), class.Class{
 		Key:             "key",
 		Name:            "Name",
 		Details:         "Details",
@@ -124,7 +127,7 @@ func (suite *ClassSuite) TestAdd() {
 
 func (suite *ClassSuite) TestAddNulls() {
 
-	err := AddClass(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), requirements.Class{
+	err := AddClass(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), class.Class{
 		Key:             "KeY", // Test case-insensitive.
 		Name:            "Name",
 		Details:         "Details",
@@ -138,7 +141,7 @@ func (suite *ClassSuite) TestAddNulls() {
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.Class{
+	assert.Equal(suite.T(), class.Class{
 		Key:             "key",
 		Name:            "Name",
 		Details:         "Details",
@@ -151,7 +154,7 @@ func (suite *ClassSuite) TestAddNulls() {
 
 func (suite *ClassSuite) TestUpdate() {
 
-	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, requirements.Class{
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, class.Class{
 		Key:             "key",
 		Name:            "Name",
 		Details:         "Details",
@@ -162,7 +165,7 @@ func (suite *ClassSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateClass(suite.db, strings.ToUpper(suite.model.Key), requirements.Class{
+	err = UpdateClass(suite.db, strings.ToUpper(suite.model.Key), class.Class{
 		Key:             "kEy", // Test case-insensitive.
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -176,7 +179,7 @@ func (suite *ClassSuite) TestUpdate() {
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.Class{
+	assert.Equal(suite.T(), class.Class{
 		Key:             "key",
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -189,7 +192,7 @@ func (suite *ClassSuite) TestUpdate() {
 
 func (suite *ClassSuite) TestUpdateNulls() {
 
-	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, requirements.Class{
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, class.Class{
 		Key:             "key",
 		Name:            "Name",
 		Details:         "Details",
@@ -200,7 +203,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateClass(suite.db, strings.ToUpper(suite.model.Key), requirements.Class{
+	err = UpdateClass(suite.db, strings.ToUpper(suite.model.Key), class.Class{
 		Key:             "kEy", // Test case-insensitive.
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -214,7 +217,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
-	assert.Equal(suite.T(), requirements.Class{
+	assert.Equal(suite.T(), class.Class{
 		Key:             "key",
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -227,7 +230,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 
 func (suite *ClassSuite) TestRemove() {
 
-	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, requirements.Class{
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, class.Class{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -247,7 +250,7 @@ func (suite *ClassSuite) TestRemove() {
 
 func (suite *ClassSuite) TestQuery() {
 
-	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, requirements.Class{
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, class.Class{
 		Key:             "keyx",
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -258,7 +261,7 @@ func (suite *ClassSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddClass(suite.db, suite.model.Key, suite.subdomain.Key, requirements.Class{
+	err = AddClass(suite.db, suite.model.Key, suite.subdomain.Key, class.Class{
 		Key:             "key",
 		Name:            "Name",
 		Details:         "Details",
@@ -271,7 +274,7 @@ func (suite *ClassSuite) TestQuery() {
 
 	classes, err := QueryClasses(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Class{
+	assert.Equal(suite.T(), map[string][]class.Class{
 		suite.subdomain.Key: {
 			{
 				Key:             "key",
@@ -300,9 +303,9 @@ func (suite *ClassSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, classKey string) (class requirements.Class) {
+func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, classKey string) (class class.Class) {
 
-	err := AddClass(dbOrTx, modelKey, subdomainKey, requirements.Class{
+	err := AddClass(dbOrTx, modelKey, subdomainKey, class.Class{
 		Key:        classKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -320,7 +323,7 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, classKey st
 func (suite *ClassSuite) TestVerifyTestObjects() {
 
 	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "class_key")
-	assert.Equal(suite.T(), requirements.Class{
+	assert.Equal(suite.T(), class.Class{
 		Key:        "class_key",
 		Name:       "Name",
 		Details:    "Details",

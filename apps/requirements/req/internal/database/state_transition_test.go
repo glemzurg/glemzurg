@@ -5,7 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,18 +24,18 @@ func TestTransitionSuite(t *testing.T) {
 type TransitionSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
-	stateA    requirements.State
-	stateB    requirements.State
-	event     requirements.Event
-	eventB    requirements.Event
-	guard     requirements.Guard
-	guardB    requirements.Guard
-	action    requirements.Action
-	actionB   requirements.Action
+	model     model.Model
+	domain    domain.Domain
+	subdomain domain.Subdomain
+	class     class.Class
+	stateA    state.State
+	stateB    state.State
+	event     state.Event
+	eventB    state.Event
+	guard     state.Guard
+	guardB    state.Guard
+	action    state.Action
+	actionB   state.Action
 }
 
 func (suite *TransitionSuite) SetupTest() {
@@ -94,7 +97,7 @@ func (suite *TransitionSuite) TestLoad() {
 	classKey, transition, err = LoadTransition(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Transition{
+	assert.Equal(suite.T(), state.Transition{
 		Key:          "key", // Test case-insensitive.
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -107,7 +110,7 @@ func (suite *TransitionSuite) TestLoad() {
 
 func (suite *TransitionSuite) TestAdd() {
 
-	err := AddTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Transition{
+	err := AddTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), state.Transition{
 		Key:          "KeY",         // Test case-insensitive.
 		FromStateKey: "state_KEY_a", // Test case-insensitive.
 		EventKey:     "event_KEY",   // Test case-insensitive.
@@ -121,7 +124,7 @@ func (suite *TransitionSuite) TestAdd() {
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Transition{
+	assert.Equal(suite.T(), state.Transition{
 		Key:          "key",
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -134,7 +137,7 @@ func (suite *TransitionSuite) TestAdd() {
 
 func (suite *TransitionSuite) TestAddNulls() {
 
-	err := AddTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Transition{
+	err := AddTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), state.Transition{
 		Key:          "key",
 		FromStateKey: "",
 		EventKey:     "event_key",
@@ -147,7 +150,7 @@ func (suite *TransitionSuite) TestAddNulls() {
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Transition{
+	assert.Equal(suite.T(), state.Transition{
 		Key:          "key",
 		FromStateKey: "",
 		EventKey:     "event_key",
@@ -160,7 +163,7 @@ func (suite *TransitionSuite) TestAddNulls() {
 
 func (suite *TransitionSuite) TestUpdate() {
 
-	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, requirements.Transition{
+	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, state.Transition{
 		Key:          "key",
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -171,7 +174,7 @@ func (suite *TransitionSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Transition{
+	err = UpdateTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), state.Transition{
 		Key:          "KeY",          // Test case-insensitive.
 		FromStateKey: "state_KEY_b",  // Test case-insensitive.
 		EventKey:     "event_KEY_b",  // Test case-insensitive.
@@ -185,7 +188,7 @@ func (suite *TransitionSuite) TestUpdate() {
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Transition{
+	assert.Equal(suite.T(), state.Transition{
 		Key:          "key",
 		FromStateKey: "state_key_b",
 		EventKey:     "event_key_b",
@@ -198,7 +201,7 @@ func (suite *TransitionSuite) TestUpdate() {
 
 func (suite *TransitionSuite) TestUpdateNulls() {
 
-	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, requirements.Transition{
+	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, state.Transition{
 		Key:          "key",
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -209,7 +212,7 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Transition{
+	err = UpdateTransition(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), state.Transition{
 		Key:          "key",
 		FromStateKey: "",
 		EventKey:     "event_key",
@@ -223,7 +226,7 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Transition{
+	assert.Equal(suite.T(), state.Transition{
 		Key:          "key",
 		FromStateKey: "",
 		EventKey:     "event_key",
@@ -236,7 +239,7 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 
 func (suite *TransitionSuite) TestRemove() {
 
-	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, requirements.Transition{
+	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, state.Transition{
 		Key:          "key",
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -258,7 +261,7 @@ func (suite *TransitionSuite) TestRemove() {
 
 func (suite *TransitionSuite) TestQuery() {
 
-	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, requirements.Transition{
+	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, state.Transition{
 		Key:          "keyx",
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -269,7 +272,7 @@ func (suite *TransitionSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddTransition(suite.db, suite.model.Key, suite.class.Key, requirements.Transition{
+	err = AddTransition(suite.db, suite.model.Key, suite.class.Key, state.Transition{
 		Key:          "key",
 		FromStateKey: "state_key_a",
 		EventKey:     "event_key",
@@ -282,8 +285,8 @@ func (suite *TransitionSuite) TestQuery() {
 
 	transitions, err := QueryTransitions(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Transition{
-		"class_key": []requirements.Transition{
+	assert.Equal(suite.T(), map[string][]state.Transition{
+		"class_key": []state.Transition{
 			{
 				Key:          "key",
 				FromStateKey: "state_key_a",

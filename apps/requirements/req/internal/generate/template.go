@@ -12,7 +12,12 @@ import (
 	"text/template"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/use_case"
 
 	"github.com/pkg/errors"
 )
@@ -130,7 +135,7 @@ var _funcMap = template.FuncMap{
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
-	"multiplicity": func(multiplicity requirements.Multiplicity) (value string) {
+	"multiplicity": func(multiplicity class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
 	"generalization_label": func(reqs requirements.Requirements, generalizationKey string) (value string) {
@@ -146,7 +151,7 @@ var _funcMap = template.FuncMap{
 		}
 		return complete + "\n" + static
 	},
-	"event_guard_signature": func(reqs requirements.Requirements, transition requirements.Transition) (eventCall string) {
+	"event_guard_signature": func(reqs requirements.Requirements, transition state.Transition) (eventCall string) {
 
 		eventLookup := reqs.EventLookup()
 		guardLookup := reqs.GuardLookup()
@@ -172,7 +177,7 @@ var _funcMap = template.FuncMap{
 
 		return eventCall
 	},
-	"action_signatures": func(reqs requirements.Requirements, transitions []requirements.Transition, stateActions []requirements.StateAction) (signatures []string) {
+	"action_signatures": func(reqs requirements.Requirements, transitions []state.Transition, stateActions []state.StateAction) (signatures []string) {
 
 		eventLookup := reqs.EventLookup()
 
@@ -218,35 +223,35 @@ var _funcMap = template.FuncMap{
 	},
 
 	// Lookup methods for objects.
-	"domain_lookup": func(reqs requirements.Requirements, key string) (value requirements.Domain) {
+	"domain_lookup": func(reqs requirements.Requirements, key string) (value domain.Domain) {
 		lookup, _ := reqs.DomainLookup()
 		return lookup[key]
 	},
-	"class_lookup": func(reqs requirements.Requirements, key string) (value requirements.Class) {
+	"class_lookup": func(reqs requirements.Requirements, key string) (value class.Class) {
 		lookup, _ := reqs.ClassLookup()
 		return lookup[key]
 	},
-	"state_lookup": func(reqs requirements.Requirements, key string) (value requirements.State) {
+	"state_lookup": func(reqs requirements.Requirements, key string) (value state.State) {
 		lookup := reqs.StateLookup()
 		return lookup[key]
 	},
-	"event_lookup": func(reqs requirements.Requirements, key string) (value requirements.Event) {
+	"event_lookup": func(reqs requirements.Requirements, key string) (value state.Event) {
 		lookup := reqs.EventLookup()
 		return lookup[key]
 	},
-	"guard_lookup": func(reqs requirements.Requirements, key string) (value requirements.Guard) {
+	"guard_lookup": func(reqs requirements.Requirements, key string) (value state.Guard) {
 		lookup := reqs.GuardLookup()
 		return lookup[key]
 	},
-	"action_lookup": func(reqs requirements.Requirements, key string) (value requirements.Action) {
+	"action_lookup": func(reqs requirements.Requirements, key string) (value state.Action) {
 		lookup := reqs.ActionLookup()
 		return lookup[key]
 	},
-	"use_case_lookup": func(reqs requirements.Requirements, key string) (value requirements.UseCase) {
+	"use_case_lookup": func(reqs requirements.Requirements, key string) (value use_case.UseCase) {
 		lookup := reqs.UseCaseLookup()
 		return lookup[key]
 	},
-	"scenario_lookup": func(reqs requirements.Requirements, key string) (value requirements.Scenario) {
+	"scenario_lookup": func(reqs requirements.Requirements, key string) (value scenario.Scenario) {
 		lookup := reqs.ScenarioLookup()
 		return lookup[key]
 	},

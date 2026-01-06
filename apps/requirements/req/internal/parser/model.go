@@ -1,14 +1,14 @@
 package parser
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model"
 )
 
-func parseModel(key, filename, contents string) (model requirements.Model, err error) {
+func parseModel(key, filename, contents string) (parsedModel model.Model, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return requirements.Model{}, err
+		return model.Model{}, err
 	}
 
 	// There is no uml comment for a "model" entity (it is not displayed),
@@ -24,14 +24,14 @@ func parseModel(key, filename, contents string) (model requirements.Model, err e
 		markdown += "\n\n" + parsedFile.Data
 	}
 
-	model, err = requirements.NewModel(key, parsedFile.Title, markdown)
+	parsedModel, err = model.NewModel(key, parsedFile.Title, markdown)
 	if err != nil {
-		return requirements.Model{}, err
+		return model.Model{}, err
 	}
 
-	return model, nil
+	return parsedModel, nil
 }
 
-func generateModelContent(model requirements.Model) string {
-	return generateFileContent(model.Details, "", "")
+func generateModelContent(m model.Model) string {
+	return generateFileContent(m.Details, "", "")
 }

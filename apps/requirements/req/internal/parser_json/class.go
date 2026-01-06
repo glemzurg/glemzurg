@@ -1,6 +1,8 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/class"
+)
 
 // classInOut is a thing in the system.
 type classInOut struct {
@@ -20,9 +22,9 @@ type classInOut struct {
 	Transitions []transitionInOut `json:"transitions"`
 }
 
-// ToRequirements converts the classInOut to requirements.Class.
-func (c classInOut) ToRequirements() requirements.Class {
-	class := requirements.Class{
+// ToRequirements converts the classInOut to class.Class.
+func (c classInOut) ToRequirements() class.Class {
+	cls := class.Class{
 		Key:             c.Key,
 		Name:            c.Name,
 		Details:         c.Details,
@@ -32,29 +34,29 @@ func (c classInOut) ToRequirements() requirements.Class {
 		UmlComment:      c.UmlComment,
 	}
 	for _, a := range c.Attributes {
-		class.Attributes = append(class.Attributes, a.ToRequirements())
+		cls.Attributes = append(cls.Attributes, a.ToRequirements())
 	}
 	for _, s := range c.States {
-		class.States = append(class.States, s.ToRequirements())
+		cls.States = append(cls.States, s.ToRequirements())
 	}
 	for _, e := range c.Events {
-		class.Events = append(class.Events, e.ToRequirements())
+		cls.Events = append(cls.Events, e.ToRequirements())
 	}
 	for _, g := range c.Guards {
-		class.Guards = append(class.Guards, g.ToRequirements())
+		cls.Guards = append(cls.Guards, g.ToRequirements())
 	}
 	for _, ac := range c.Actions {
-		class.Actions = append(class.Actions, ac.ToRequirements())
+		cls.Actions = append(cls.Actions, ac.ToRequirements())
 	}
 	for _, t := range c.Transitions {
-		class.Transitions = append(class.Transitions, t.ToRequirements())
+		cls.Transitions = append(cls.Transitions, t.ToRequirements())
 	}
-	return class
+	return cls
 }
 
-// FromRequirements creates a classInOut from requirements.Class.
-func FromRequirementsClass(c requirements.Class) classInOut {
-	class := classInOut{
+// FromRequirements creates a classInOut from class.Class.
+func FromRequirementsClass(c class.Class) classInOut {
+	cls := classInOut{
 		Key:             c.Key,
 		Name:            c.Name,
 		Details:         c.Details,
@@ -64,22 +66,22 @@ func FromRequirementsClass(c requirements.Class) classInOut {
 		UmlComment:      c.UmlComment,
 	}
 	for _, a := range c.Attributes {
-		class.Attributes = append(class.Attributes, FromRequirementsAttribute(a))
+		cls.Attributes = append(cls.Attributes, FromRequirementsAttribute(a))
 	}
 	for _, s := range c.States {
-		class.States = append(class.States, FromRequirementsState(s))
+		cls.States = append(cls.States, FromRequirementsState(s))
 	}
 	for _, e := range c.Events {
-		class.Events = append(class.Events, FromRequirementsEvent(e))
+		cls.Events = append(cls.Events, FromRequirementsEvent(e))
 	}
 	for _, g := range c.Guards {
-		class.Guards = append(class.Guards, FromRequirementsGuard(g))
+		cls.Guards = append(cls.Guards, FromRequirementsGuard(g))
 	}
 	for _, ac := range c.Actions {
-		class.Actions = append(class.Actions, FromRequirementsAction(ac))
+		cls.Actions = append(cls.Actions, FromRequirementsAction(ac))
 	}
 	for _, t := range c.Transitions {
-		class.Transitions = append(class.Transitions, FromRequirementsTransition(t))
+		cls.Transitions = append(cls.Transitions, FromRequirementsTransition(t))
 	}
-	return class
+	return cls
 }
