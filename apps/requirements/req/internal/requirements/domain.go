@@ -16,6 +16,7 @@ type Domain struct {
 	Associations []DomainAssociation
 	Classes      []Class
 	UseCases     []UseCase
+	Subdomains   []Subdomain
 }
 
 func NewDomain(key, name, details string, realized bool, umlComment string) (domain Domain, err error) {

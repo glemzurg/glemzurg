@@ -10,6 +10,11 @@ type Model struct {
 	Key     string
 	Name    string
 	Details string // Markdown.
+	// Data in a parsed file.
+	Actors             []Actor
+	Domains            []Domain
+	DomainAssociations []DomainAssociation
+	Associations       []Association // Associations between classes that span domains.
 }
 
 func NewModel(key, name, details string) (model Model, err error) {
