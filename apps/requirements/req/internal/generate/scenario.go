@@ -80,7 +80,7 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario model_
 func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence, statements []model_scenario.Node, scenarioLookup map[string]model_scenario.Scenario, scenarioObjectLookup map[string]model_scenario.ScenarioObject) error {
 	for _, stmt := range statements {
 		switch stmt.Inferredtype() {
-		case requirements.NODE_TYPE_LEAF:
+		case model_scenario.NODE_TYPE_LEAF:
 
 			switch {
 
@@ -160,13 +160,13 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				return errors.Errorf("leaf node must have one of event_key, scenario_key, attribute_key, or is_delete: '%+v'", stmt)
 			}
 
-		case requirements.NODE_TYPE_SEQUENCE:
+		case model_scenario.NODE_TYPE_SEQUENCE:
 			err := addSteps(eventLookup, s, stmt.Statements, scenarioLookup, scenarioObjectLookup)
 			if err != nil {
 				return err
 			}
 
-		case requirements.NODE_TYPE_SWITCH:
+		case model_scenario.NODE_TYPE_SWITCH:
 
 			sectionLabel := "(Opt)"
 			if len(stmt.Cases) > 1 {
@@ -184,7 +184,7 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				s.CloseSection()
 			}
 
-		case requirements.NODE_TYPE_LOOP:
+		case model_scenario.NODE_TYPE_LOOP:
 			s.OpenSection("(Loop) ["+stmt.Loop+"]", "")
 
 			err := addSteps(eventLookup, s, stmt.Statements, scenarioLookup, scenarioObjectLookup)
