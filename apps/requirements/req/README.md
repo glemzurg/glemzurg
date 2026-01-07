@@ -1,6 +1,15 @@
 
 
 next:
+  - build out tests in the requirements package
+    - add integrity check to keys in the validation of objects
+  - build the ravelling/unravelling tests on requirements
+  - update database to use just the model
+  - parse yaml into just a model without requirements object
+  - update json package to just work with a model
+    - update the objects to not have unique database keys on them
+  - move the requirements object to generation package
+    - moving all the generation efficient work there
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md
@@ -33,6 +42,8 @@ april (in parallel)
 - examine d2 diagramming:
   - https://github.com/terrastruct/d2?tab=readme-ov-file#d2-as-a-library
   - examine license of other libraries in use
+
+- make generalization a class object, and make a use case one too
 
 
 - tla plus peg parser
