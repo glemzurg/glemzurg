@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 // classInOut is a thing in the system.
 type classInOut struct {
@@ -20,9 +20,9 @@ type classInOut struct {
 	Transitions []transitionInOut `json:"transitions"`
 }
 
-// ToRequirements converts the classInOut to requirements.Class.
-func (c classInOut) ToRequirements() requirements.Class {
-	class := requirements.Class{
+// ToRequirements converts the classInOut to model_class.Class.
+func (c classInOut) ToRequirements() model_class.Class {
+	class := model_class.Class{
 		Key:             c.Key,
 		Name:            c.Name,
 		Details:         c.Details,
@@ -52,8 +52,8 @@ func (c classInOut) ToRequirements() requirements.Class {
 	return class
 }
 
-// FromRequirements creates a classInOut from requirements.Class.
-func FromRequirementsClass(c requirements.Class) classInOut {
+// FromRequirements creates a classInOut from model_class.Class.
+func FromRequirementsClass(c model_class.Class) classInOut {
 	class := classInOut{
 		Key:             c.Key,
 		Name:            c.Name,

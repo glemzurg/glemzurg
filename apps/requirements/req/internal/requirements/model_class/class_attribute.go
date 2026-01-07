@@ -61,7 +61,7 @@ func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nu
 	return attribute, nil
 }
 
-func createKeyAttributeLookup(byCategory map[string][]Attribute) (lookup map[string]Attribute) {
+func CreateKeyAttributeLookup(byCategory map[string][]Attribute) (lookup map[string]Attribute) {
 	lookup = map[string]Attribute{}
 	for _, items := range byCategory {
 		for _, item := range items {

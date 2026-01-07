@@ -5,23 +5,24 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseUseCase(key, filename, contents string) (useCase requirements.UseCase, err error) {
+func parseUseCase(key, filename, contents string) (useCase model_use_case.UseCase, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return requirements.UseCase{}, err
+		return model_use_case.UseCase{}, err
 	}
 
 	// Unmarshal into a format that can be easily checked for informative error messages.
 	yamlData := map[string]any{}
 	if err := yaml.Unmarshal([]byte(parsedFile.Data), yamlData); err != nil {
-		return requirements.UseCase{}, errors.WithStack(err)
+		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
 	level := "sea"
@@ -33,24 +34,24 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 	// If the title of the use case ends with "?" it is read-only.
 	readOnly := strings.HasSuffix(parsedFile.Title, "?")
 
-	useCase, err = requirements.NewUseCase(key, parsedFile.Title, parsedFile.Markdown, level, readOnly, parsedFile.UmlComment)
+	useCase, err = model_use_case.NewUseCase(key, parsedFile.Title, parsedFile.Markdown, level, readOnly, parsedFile.UmlComment)
 	if err != nil {
-		return requirements.UseCase{}, err
+		return model_use_case.UseCase{}, err
 	}
 
 	// Parse actors.
 	actorsAny, found := yamlData["actors"]
 	if found {
-		useCase.Actors = map[string]requirements.UseCaseActor{}
+		useCase.Actors = map[string]model_use_case.UseCaseActor{}
 		actorsMap := actorsAny.(map[string]any)
 		for actorKey, commentAny := range actorsMap {
 			comment := ""
 			if commentStr, ok := commentAny.(string); ok {
 				comment = commentStr
 			}
-			useCaseActor, err := requirements.NewUseCaseActor(comment)
+			useCaseActor, err := model_use_case.NewUseCaseActor(comment)
 			if err != nil {
-				return requirements.UseCase{}, err
+				return model_use_case.UseCase{}, err
 			}
 			useCase.Actors[actorKey] = useCaseActor
 		}
@@ -59,7 +60,7 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 	// Parse scenarios.
 	scenariosAny, found := yamlData["scenarios"]
 	if found {
-		useCase.Scenarios = []requirements.Scenario{}
+		useCase.Scenarios = []model_scenario.Scenario{}
 		scenariosMap := scenariosAny.(map[string]any)
 		for scenarioKey, scenarioData := range scenariosMap {
 			scenarioKey = key + "/scenario/" + strings.ToLower(scenarioKey)
@@ -78,9 +79,9 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 				details = detailsAny.(string)
 			}
 
-			scenario, err := requirements.NewScenario(scenarioKey, name, details)
+			scenario, err := model_scenario.NewScenario(scenarioKey, name, details)
 			if err != nil {
-				return requirements.UseCase{}, err
+				return model_use_case.UseCase{}, err
 			}
 
 			// Parse objects for this scenario.
@@ -90,7 +91,7 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 				for i, objAny := range objectsSlice {
 					scenarioObject, err := objectFromYamlData(scenarioKey, i, objAny)
 					if err != nil {
-						return requirements.UseCase{}, err
+						return model_use_case.UseCase{}, err
 					}
 					scenario.Objects = append(scenario.Objects, scenarioObject)
 				}
@@ -109,17 +110,17 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 				// Turn into yaml.
 				nodeYaml, err := yaml.Marshal(nodeData)
 				if err != nil {
-					return requirements.UseCase{}, err
+					return model_use_case.UseCase{}, err
 				}
 
-				var node requirements.Node
+				var node model_scenario.Node
 				if err = node.FromYAML(string(nodeYaml)); err != nil {
-					return requirements.UseCase{}, err
+					return model_use_case.UseCase{}, err
 				}
 
 				// Scope object keys to model-wide uniqueness.
 				if err = node.ScopeObjects(scenarioKey); err != nil {
-					return requirements.UseCase{}, err
+					return model_use_case.UseCase{}, err
 				}
 
 				scenario.Steps = node
@@ -138,7 +139,7 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 	return useCase, nil
 }
 
-func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object requirements.ScenarioObject, err error) {
+func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object model_scenario.ScenarioObject, err error) {
 	objectNum := uint(objectI + 1)
 
 	key := ""
@@ -190,7 +191,7 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 		}
 	}
 
-	object, err = requirements.NewScenarioObject(
+	object, err = model_scenario.NewScenarioObject(
 		key,
 		objectNum,
 		name,
@@ -199,13 +200,13 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 		multi,
 		umlComment)
 	if err != nil {
-		return requirements.ScenarioObject{}, err
+		return model_scenario.ScenarioObject{}, err
 	}
 
 	return object, nil
 }
 
-func generateUseCaseContent(useCase requirements.UseCase) string {
+func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	yaml := ""
 	if useCase.Level != "sea" {
 		yaml += "level: " + useCase.Level + "\n"
@@ -280,7 +281,7 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 	return strings.TrimSpace(content)
 }
 
-func generateSteps(nodes []requirements.Node, indent string) string {
+func generateSteps(nodes []model_scenario.Node, indent string) string {
 	s := ""
 	for _, node := range nodes {
 		s += generateNode(node, indent)
@@ -288,7 +289,7 @@ func generateSteps(nodes []requirements.Node, indent string) string {
 	return s
 }
 
-func generateNode(node requirements.Node, indent string) string {
+func generateNode(node model_scenario.Node, indent string) string {
 	s := indent + "- "
 	if node.Loop != "" {
 		s += "loop: " + node.Loop + "\n"

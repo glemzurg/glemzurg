@@ -44,7 +44,7 @@ func NewTransition(key, fromStateKey, eventKey, guardKey, actionKey, toStateKey,
 	return transition, nil
 }
 
-func createKeyTransitionLookup(byCategory map[string][]Transition) (lookup map[string]Transition) {
+func CreateKeyTransitionLookup(byCategory map[string][]Transition) (lookup map[string]Transition) {
 	lookup = map[string]Transition{}
 	for _, items := range byCategory {
 		for _, item := range items {

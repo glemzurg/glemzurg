@@ -43,7 +43,7 @@ func (a *Action) SetTriggers(transitions []Transition, stateActions []StateActio
 	a.FromStates = stateActions
 }
 
-func createKeyActionLookup(classTransitions map[string][]Transition, statStateActions map[string][]StateAction, byCategory map[string][]Action) (lookup map[string]Action) {
+func CreateKeyActionLookup(classTransitions map[string][]Transition, statStateActions map[string][]StateAction, byCategory map[string][]Action) (lookup map[string]Action) {
 
 	// Create clean lookup for triggers.
 	transitionTriggers := map[string][]Transition{}

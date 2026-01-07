@@ -5,6 +5,8 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 )
 
 const (
@@ -45,7 +47,7 @@ func NewActor(key, name, details, userType, umlComment string) (actor Actor, err
 	return actor, nil
 }
 
-func createKeyActorLookup(domainClasses map[string][]Class, items []Actor) (lookup map[string]Actor) {
+func CreateKeyActorLookup(domainClasses map[string][]model_class.Class, items []Actor) (lookup map[string]Actor) {
 
 	// All the classes that are actors.
 	actorClassKeyLookup := map[string][]string{}

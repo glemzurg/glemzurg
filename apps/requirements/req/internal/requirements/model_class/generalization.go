@@ -45,7 +45,7 @@ func (g *Generalization) SetSuperSubclassKeys(superclassKey string, subclassKeys
 	g.SubclassKeys = subclassKeys
 }
 
-func createKeyGeneralizationLookup(domainClasses map[string][]Class, items []Generalization) (lookup map[string]Generalization) {
+func CreateKeyGeneralizationLookup(domainClasses map[string][]Class, items []Generalization) (lookup map[string]Generalization) {
 
 	// Classes that are part of generalizations.
 	superclassKeyOf := map[string]string{}

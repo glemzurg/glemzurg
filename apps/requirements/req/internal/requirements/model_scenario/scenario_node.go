@@ -5,6 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 )
 
 const (
@@ -34,11 +37,11 @@ type Node struct {
 	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
 	IsDelete      bool   `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
 	// Helper fields can be added here as needed.
-	FromObject *ScenarioObject `json:"-" yaml:"-"`
-	ToObject   *ScenarioObject `json:"-" yaml:"-"`
-	Event      *Event          `json:"-" yaml:"-"`
-	Scenario   *Scenario       `json:"-" yaml:"-"`
-	Attribute  *Attribute      `json:"-" yaml:"-"`
+	FromObject *ScenarioObject     `json:"-" yaml:"-"`
+	ToObject   *ScenarioObject     `json:"-" yaml:"-"`
+	Event      *model_state.Event  `json:"-" yaml:"-"`
+	Scenario   *Scenario           `json:"-" yaml:"-"`
+	Attribute  *model_class.Attribute `json:"-" yaml:"-"`
 }
 
 // Inferredtype returns the type of the node based on its fields.
@@ -209,7 +212,7 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 
 // PopulateReferences populates the FromObject, ToObject, Event, and Scenario fields
 // from the provided lookup maps. It recursively populates references in sub-nodes.
-func (n *Node) PopulateReferences(objects map[string]ScenarioObject, events map[string]Event, attributes map[string]Attribute, scenarios map[string]Scenario) error {
+func (n *Node) PopulateReferences(objects map[string]ScenarioObject, events map[string]model_state.Event, attributes map[string]model_class.Attribute, scenarios map[string]Scenario) error {
 	// Populate this node's references
 	if n.FromObjectKey != "" {
 		if obj, exists := objects[n.FromObjectKey]; exists {

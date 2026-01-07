@@ -3,6 +3,9 @@ package model_domain
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
 // Subdomain is a nested category of the model.
@@ -12,10 +15,10 @@ type Subdomain struct {
 	Details    string // Markdown.
 	UmlComment string
 	// For parsing only, not stored here.
-	Generalizations []Generalization // Generalizations for the classes and use cases in this subdomain.
-	Classes         []Class          // Classes in this subdomain.
-	UseCases        []UseCase        // Use cases in this subdomain.
-	Associations    []Association    // Associations between classes in this subdomain.
+	Generalizations []model_class.Generalization // Generalizations for the classes and use cases in this subdomain.
+	Classes         []model_class.Class          // Classes in this subdomain.
+	UseCases        []model_use_case.UseCase        // Use cases in this subdomain.
+	Associations    []model_class.Association    // Associations between classes in this subdomain.
 }
 
 func NewSubdomain(key, name, details, umlComment string) (subdomain Subdomain, err error) {

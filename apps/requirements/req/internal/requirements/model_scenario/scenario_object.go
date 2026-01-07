@@ -3,6 +3,8 @@ package model_scenario
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 )
 
 const (
@@ -21,7 +23,7 @@ type ScenarioObject struct {
 	Multi        bool
 	UmlComment   string
 	// Helpful data.
-	Class Class `json:"-"`
+	Class model_class.Class `json:"-"`
 }
 
 func NewScenarioObject(key string, objectNumber uint, name, nameStyle, classKey string, multi bool, umlComment string) (scenarioObject ScenarioObject, err error) {
@@ -60,7 +62,7 @@ func NewScenarioObject(key string, objectNumber uint, name, nameStyle, classKey 
 	return scenarioObject, nil
 }
 
-func (so *ScenarioObject) SetClass(class Class) {
+func (so *ScenarioObject) SetClass(class model_class.Class) {
 	so.Class = class
 }
 
@@ -81,9 +83,9 @@ func (so *ScenarioObject) GetName() (name string) {
 	return name
 }
 
-func createKeyScenarioObjectLookup(
+func CreateKeyScenarioObjectLookup(
 	byScenario map[string][]ScenarioObject,
-	classLookup map[string]Class,
+	classLookup map[string]model_class.Class,
 ) (lookup map[string]ScenarioObject) {
 
 	lookup = map[string]ScenarioObject{}

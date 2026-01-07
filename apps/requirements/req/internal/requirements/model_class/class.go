@@ -5,6 +5,8 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 )
 
 // Class is a thing in the system.
@@ -19,11 +21,11 @@ type Class struct {
 	// Part of the data in a parsed file.
 	Attributes   []Attribute   // The attributes of a class.
 	Associations []Association // How this class links to other classes.
-	States       []State
-	Events       []Event
-	Guards       []Guard
-	Actions      []Action
-	Transitions  []Transition
+	States       []model_state.State
+	Events       []model_state.Event
+	Guards       []model_state.Guard
+	Actions      []model_state.Action
+	Transitions  []model_state.Transition
 	// Helpful data.
 	DomainKey string
 }
@@ -88,7 +90,7 @@ func (c *Class) SetAttributes(attributes []Attribute) {
 	c.Attributes = attributes
 }
 
-func (c *Class) SetStates(states []State) {
+func (c *Class) SetStates(states []model_state.State) {
 
 	sort.Slice(states, func(i, j int) bool {
 		return states[i].Key < states[j].Key
@@ -97,7 +99,7 @@ func (c *Class) SetStates(states []State) {
 	c.States = states
 }
 
-func (c *Class) SetEvents(events []Event) {
+func (c *Class) SetEvents(events []model_state.Event) {
 
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].Key < events[j].Key
@@ -106,7 +108,7 @@ func (c *Class) SetEvents(events []Event) {
 	c.Events = events
 }
 
-func (c *Class) SetGuards(guards []Guard) {
+func (c *Class) SetGuards(guards []model_state.Guard) {
 
 	sort.Slice(guards, func(i, j int) bool {
 		return guards[i].Key < guards[j].Key
@@ -115,7 +117,7 @@ func (c *Class) SetGuards(guards []Guard) {
 	c.Guards = guards
 }
 
-func (c *Class) SetActions(actions []Action) {
+func (c *Class) SetActions(actions []model_state.Action) {
 
 	sort.Slice(actions, func(i, j int) bool {
 		return actions[i].Key < actions[j].Key
@@ -124,7 +126,7 @@ func (c *Class) SetActions(actions []Action) {
 	c.Actions = actions
 }
 
-func (c *Class) SetTransitions(transitions []Transition) {
+func (c *Class) SetTransitions(transitions []model_state.Transition) {
 
 	sort.Slice(transitions, func(i, j int) bool {
 		return transitions[i].Key < transitions[j].Key
@@ -137,13 +139,13 @@ func (c *Class) SetDomainKey(domainKey string) {
 	c.DomainKey = domainKey
 }
 
-func createKeyClassLookup(
+func CreateKeyClassLookup(
 	classAttributes map[string][]Attribute,
-	classStates map[string][]State,
-	classEvents map[string][]Event,
-	classGuards map[string][]Guard,
-	classActions map[string][]Action,
-	classTransitions map[string][]Transition,
+	classStates map[string][]model_state.State,
+	classEvents map[string][]model_state.Event,
+	classGuards map[string][]model_state.Guard,
+	classActions map[string][]model_state.Action,
+	classTransitions map[string][]model_state.Transition,
 	byCategory map[string][]Class,
 ) (lookup map[string]Class) {
 

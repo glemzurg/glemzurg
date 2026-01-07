@@ -5,6 +5,9 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 )
 
 // Scenario is a documented scenario for a use case, such as a sequence diagram.
@@ -44,7 +47,7 @@ func (sc *Scenario) SetObjects(objects []ScenarioObject) {
 	sc.Objects = objects
 }
 
-func createKeyScenarioLookup(
+func CreateKeyScenarioLookup(
 	byUseCase map[string][]Scenario,
 	objectsByScenario map[string][]ScenarioObject,
 ) (lookup map[string]Scenario) {
@@ -59,11 +62,11 @@ func createKeyScenarioLookup(
 	return lookup
 }
 
-func populateScenarioStepReferences(
+func PopulateScenarioStepReferences(
 	scenarios map[string]Scenario,
 	objects map[string]ScenarioObject,
-	attributes map[string]Attribute,
-	events map[string]Event,
+	attributes map[string]model_class.Attribute,
+	events map[string]model_state.Event,
 ) (err error) {
 	for key := range scenarios {
 		scenario := scenarios[key]
