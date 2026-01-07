@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -64,7 +65,7 @@ func (suite *ActorSuite) TestLoad() {
 
 	actor, err = LoadActor(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Actor{
+	assert.Equal(suite.T(), model_actor.Actor{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -75,7 +76,7 @@ func (suite *ActorSuite) TestLoad() {
 
 func (suite *ActorSuite) TestAdd() {
 
-	err := AddActor(suite.db, strings.ToUpper(suite.model.Key), requirements.Actor{
+	err := AddActor(suite.db, strings.ToUpper(suite.model.Key), model_actor.Actor{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -86,7 +87,7 @@ func (suite *ActorSuite) TestAdd() {
 
 	actor, err := LoadActor(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Actor{
+	assert.Equal(suite.T(), model_actor.Actor{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -97,7 +98,7 @@ func (suite *ActorSuite) TestAdd() {
 
 func (suite *ActorSuite) TestUpdate() {
 
-	err := AddActor(suite.db, suite.model.Key, requirements.Actor{
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -106,7 +107,7 @@ func (suite *ActorSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateActor(suite.db, strings.ToUpper(suite.model.Key), requirements.Actor{
+	err = UpdateActor(suite.db, strings.ToUpper(suite.model.Key), model_actor.Actor{
 		Key:        "kEy", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -117,7 +118,7 @@ func (suite *ActorSuite) TestUpdate() {
 
 	actor, err := LoadActor(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Actor{
+	assert.Equal(suite.T(), model_actor.Actor{
 		Key:        "key", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -128,7 +129,7 @@ func (suite *ActorSuite) TestUpdate() {
 
 func (suite *ActorSuite) TestRemove() {
 
-	err := AddActor(suite.db, suite.model.Key, requirements.Actor{
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -147,7 +148,7 @@ func (suite *ActorSuite) TestRemove() {
 
 func (suite *ActorSuite) TestQuery() {
 
-	err := AddActor(suite.db, suite.model.Key, requirements.Actor{
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -156,7 +157,7 @@ func (suite *ActorSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddActor(suite.db, suite.model.Key, requirements.Actor{
+	err = AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -167,7 +168,7 @@ func (suite *ActorSuite) TestQuery() {
 
 	actors, err := QueryActors(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []requirements.Actor{
+	assert.Equal(suite.T(), []model_actor.Actor{
 		{
 			Key:        "key",
 			Name:       "Name",
@@ -190,9 +191,9 @@ func (suite *ActorSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey, actorKey string) (actor requirements.Actor) {
+func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Actor) {
 
-	err := AddActor(dbOrTx, modelKey, requirements.Actor{
+	err := AddActor(dbOrTx, modelKey, model_actor.Actor{
 		Key:        actorKey,
 		Name:       actorKey,
 		Details:    "Details",

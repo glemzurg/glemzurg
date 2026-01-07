@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,16 +16,16 @@ func TestModelInOutRoundTrip(t *testing.T) {
 		Name:    "Test Model",
 		Details: "Details",
 
-		Actors: []requirements.Actor{
+		Actors: []model_actor.Actor{
 			{Key: "actor1", Name: "User", Type: "person", UmlComment: "comment"},
 		},
-		Domains: []requirements.Domain{
+		Domains: []model_domain.Domain{
 			{Key: "domain1", Name: "Domain1", Realized: true, UmlComment: "comment"},
 		},
-		DomainAssociations: []requirements.DomainAssociation{
+		DomainAssociations: []model_domain.DomainAssociation{
 			{Key: "da1", ProblemDomainKey: "domain1", SolutionDomainKey: "domain2", UmlComment: "comment"},
 		},
-		Associations: []requirements.Association{
+		Associations: []model_class.Association{
 			{Key: "assoc1", Name: "Assoc1", FromClassKey: "class1", ToClassKey: "class2", UmlComment: "comment"},
 		},
 	}

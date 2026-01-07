@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestActorInOutRoundTrip(t *testing.T) {
-	original := requirements.Actor{
+	original := model_actor.Actor{
 		Key:        "actor1",
 		Name:       "User",
 		Details:    "A user",

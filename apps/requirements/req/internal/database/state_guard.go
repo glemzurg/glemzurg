@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanGuard(scanner Scanner, classKeyPtr *string, guard *requirements.Guard) (err error) {
+func scanGuard(scanner Scanner, classKeyPtr *string, guard *model_state.Guard) (err error) {
 	if err = scanner.Scan(
 		classKeyPtr,
 		&guard.Key,
@@ -24,16 +25,16 @@ func scanGuard(scanner Scanner, classKeyPtr *string, guard *requirements.Guard) 
 }
 
 // LoadGuard loads a guard from the database
-func LoadGuard(dbOrTx DbOrTx, modelKey, guardKey string) (classKey string, guard requirements.Guard, err error) {
+func LoadGuard(dbOrTx DbOrTx, modelKey, guardKey string) (classKey string, guard model_state.Guard, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Guard{}, err
+		return "", model_state.Guard{}, err
 	}
 	guardKey, err = requirements.PreenKey(guardKey)
 	if err != nil {
-		return "", requirements.Guard{}, err
+		return "", model_state.Guard{}, err
 	}
 
 	// Query the database.
@@ -59,14 +60,14 @@ func LoadGuard(dbOrTx DbOrTx, modelKey, guardKey string) (classKey string, guard
 		modelKey,
 		guardKey)
 	if err != nil {
-		return "", requirements.Guard{}, errors.WithStack(err)
+		return "", model_state.Guard{}, errors.WithStack(err)
 	}
 
 	return classKey, guard, nil
 }
 
 // AddGuard adds a guard to the database.
-func AddGuard(dbOrTx DbOrTx, modelKey, classKey string, guard requirements.Guard) (err error) {
+func AddGuard(dbOrTx DbOrTx, modelKey, classKey string, guard model_state.Guard) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -113,7 +114,7 @@ func AddGuard(dbOrTx DbOrTx, modelKey, classKey string, guard requirements.Guard
 }
 
 // UpdateGuard updates a guard in the database.
-func UpdateGuard(dbOrTx DbOrTx, modelKey, classKey string, guard requirements.Guard) (err error) {
+func UpdateGuard(dbOrTx DbOrTx, modelKey, classKey string, guard model_state.Guard) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -192,7 +193,7 @@ func RemoveGuard(dbOrTx DbOrTx, modelKey, classKey, guardKey string) (err error)
 }
 
 // QueryGuards loads all guard from the database
-func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[string][]requirements.Guard, err error) {
+func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[string][]model_state.Guard, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -205,12 +206,12 @@ func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[string][]requiremen
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var classKey string
-			var guard requirements.Guard
+			var guard model_state.Guard
 			if err = scanGuard(scanner, &classKey, &guard); err != nil {
 				return errors.WithStack(err)
 			}
 			if guards == nil {
-				guards = map[string][]requirements.Guard{}
+				guards = map[string][]model_state.Guard{}
 			}
 			classGuards := guards[classKey]
 			classGuards = append(classGuards, guard)

@@ -3,19 +3,19 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAssociationInOutRoundTrip(t *testing.T) {
-	original := requirements.Association{
+	original := model_class.Association{
 		Key:                 "assoc1",
 		Name:                "Assoc1",
 		Details:             "Details",
 		FromClassKey:        "class1",
-		FromMultiplicity:    requirements.Multiplicity{LowerBound: 1, HigherBound: 1},
+		FromMultiplicity:    model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
 		ToClassKey:          "class2",
-		ToMultiplicity:      requirements.Multiplicity{LowerBound: 0, HigherBound: 5},
+		ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 5},
 		AssociationClassKey: "aclass",
 		UmlComment:          "comment",
 	}

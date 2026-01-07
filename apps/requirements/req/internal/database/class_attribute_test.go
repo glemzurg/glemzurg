@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,9 +24,9 @@ type AttributeSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	class     model_class.Class
 }
 
 func (suite *AttributeSuite) SetupTest() {
@@ -78,7 +80,7 @@ func (suite *AttributeSuite) TestLoad() {
 	classKey, attribute, err = LoadAttribute(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Attribute{
+	assert.Equal(suite.T(), model_class.Attribute{
 		Key:              "key", // Test case-insensitive.
 		Name:             "Name",
 		Details:          "Details",
@@ -91,7 +93,7 @@ func (suite *AttributeSuite) TestLoad() {
 
 func (suite *AttributeSuite) TestAdd() {
 
-	err := AddAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Attribute{
+	err := AddAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_class.Attribute{
 		Key:              "KeY", // Test case-insensitive.
 		Name:             "Name",
 		Details:          "Details",
@@ -105,7 +107,7 @@ func (suite *AttributeSuite) TestAdd() {
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Attribute{
+	assert.Equal(suite.T(), model_class.Attribute{
 		Key:              "key",
 		Name:             "Name",
 		Details:          "Details",
@@ -118,7 +120,7 @@ func (suite *AttributeSuite) TestAdd() {
 
 func (suite *AttributeSuite) TestUpdate() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              "key",
 		Name:             "Name",
 		Details:          "Details",
@@ -129,7 +131,7 @@ func (suite *AttributeSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Attribute{
+	err = UpdateAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_class.Attribute{
 		Key:              "KeY", // Test case-insensitive.
 		Name:             "NameX",
 		Details:          "DetailsX",
@@ -143,7 +145,7 @@ func (suite *AttributeSuite) TestUpdate() {
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Attribute{
+	assert.Equal(suite.T(), model_class.Attribute{
 		Key:              "key",
 		Name:             "NameX",
 		Details:          "DetailsX",
@@ -156,7 +158,7 @@ func (suite *AttributeSuite) TestUpdate() {
 
 func (suite *AttributeSuite) TestRemove() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              "key",
 		Name:             "Name",
 		Details:          "Details",
@@ -178,7 +180,7 @@ func (suite *AttributeSuite) TestRemove() {
 
 func (suite *AttributeSuite) TestQuery() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              "keyx",
 		Name:             "NameX",
 		Details:          "DetailsX",
@@ -189,7 +191,7 @@ func (suite *AttributeSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
+	err = AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              "key",
 		Name:             "Name",
 		Details:          "Details",
@@ -202,8 +204,8 @@ func (suite *AttributeSuite) TestQuery() {
 
 	attributes, err := QueryAttributes(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Attribute{
-		"class_key": []requirements.Attribute{
+	assert.Equal(suite.T(), map[string][]model_class.Attribute{
+		"class_key": []model_class.Attribute{
 			{
 				Key:              "key",
 				Name:             "Name",
@@ -230,9 +232,9 @@ func (suite *AttributeSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (attribute requirements.Attribute) {
+func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (attribute model_class.Attribute) {
 
-	err := AddAttribute(dbOrTx, modelKey, classKey, requirements.Attribute{
+	err := AddAttribute(dbOrTx, modelKey, classKey, model_class.Attribute{
 		Key:              attributeKey,
 		Name:             attributeKey,
 		Details:          "Details",

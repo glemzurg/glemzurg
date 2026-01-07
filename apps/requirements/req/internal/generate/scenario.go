@@ -5,6 +5,8 @@ import (
 
 	svgsequence "github.com/aorith/svg-sequence"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +33,7 @@ func generateScenarioFiles(outputPath string, reqs requirements.Requirements) (e
 	return nil
 }
 
-func generateScenarioSvgContents(reqs requirements.Requirements, scenario requirements.Scenario) (contents string, err error) {
+func generateScenarioSvgContents(reqs requirements.Requirements, scenario model_scenario.Scenario) (contents string, err error) {
 
 	eventLookup := reqs.EventLookup()
 	scenarioLookup := reqs.ScenarioLookup()
@@ -75,7 +77,7 @@ func generateScenarioSvgContents(reqs requirements.Requirements, scenario requir
 	return contents, nil
 }
 
-func addSteps(eventLookup map[string]requirements.Event, s *svgsequence.Sequence, statements []requirements.Node, scenarioLookup map[string]requirements.Scenario, scenarioObjectLookup map[string]requirements.ScenarioObject) error {
+func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence, statements []model_scenario.Node, scenarioLookup map[string]model_scenario.Scenario, scenarioObjectLookup map[string]model_scenario.ScenarioObject) error {
 	for _, stmt := range statements {
 		switch stmt.Inferredtype() {
 		case requirements.NODE_TYPE_LEAF:

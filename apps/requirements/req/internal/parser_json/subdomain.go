@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 // subdomainInOut is a nested category of the model.
 type subdomainInOut struct {
@@ -15,9 +15,9 @@ type subdomainInOut struct {
 	Associations    []associationInOut    `json:"associations"` // Associations between classes in this subdomain.
 }
 
-// ToRequirements converts the subdomainInOut to requirements.Subdomain.
-func (s subdomainInOut) ToRequirements() requirements.Subdomain {
-	subdomain := requirements.Subdomain{
+// ToRequirements converts the subdomainInOut to model_domain.Subdomain.
+func (s subdomainInOut) ToRequirements() model_domain.Subdomain {
+	subdomain := model_domain.Subdomain{
 		Key:             s.Key,
 		Name:            s.Name,
 		Details:         s.Details,
@@ -43,8 +43,8 @@ func (s subdomainInOut) ToRequirements() requirements.Subdomain {
 	return subdomain
 }
 
-// FromRequirements creates a subdomainInOut from requirements.Subdomain.
-func FromRequirementsSubdomain(s requirements.Subdomain) subdomainInOut {
+// FromRequirements creates a subdomainInOut from model_domain.Subdomain.
+func FromRequirementsSubdomain(s model_domain.Subdomain) subdomainInOut {
 	subdomain := subdomainInOut{
 		Key:             s.Key,
 		Name:            s.Name,

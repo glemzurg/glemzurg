@@ -6,6 +6,12 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -42,7 +48,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Generalizations.
-		Generalizations: []requirements.Generalization{
+		Generalizations: []model_class.Generalization{
 			{
 				Key:  "model_key/generalization/generalization_a",
 				Name: "GeneralizationA",
@@ -50,7 +56,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Actors.
-		Actors: []requirements.Actor{
+		Actors: []model_actor.Actor{
 			{
 				Key:  "model_key/actor/actor_a",
 				Name: "ActorA",
@@ -59,7 +65,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Organization.
-		Domains: []requirements.Domain{
+		Domains: []model_domain.Domain{
 			{
 				Key:  "domain_key_a",
 				Name: "DomainA",
@@ -69,7 +75,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				Name: "DomainB",
 			},
 		},
-		Subdomains: map[string][]requirements.Subdomain{
+		Subdomains: map[string][]model_domain.Subdomain{
 			"domain_key_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa",
@@ -91,7 +97,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		DomainAssociations: []requirements.DomainAssociation{
+		DomainAssociations: []model_domain.DomainAssociation{
 			{
 				Key:               "model_key/domain_association/1",
 				ProblemDomainKey:  "domain_key_a",
@@ -100,7 +106,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Classes.
-		Classes: map[string][]requirements.Class{
+		Classes: map[string][]model_class.Class{
 			"domain_key_a/subdomain_aa": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a",
@@ -122,7 +128,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		Attributes: map[string][]requirements.Attribute{
+		Attributes: map[string][]model_class.Attribute{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:           "domain_key_a/subdomain_aa/class_a/attribute_a",
@@ -152,27 +158,27 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		Associations: []requirements.Association{
+		Associations: []model_class.Association{
 			{
 				Key:              "model_key/association/1",
 				Name:             "Child",
 				FromClassKey:     "domain_key_a/subdomain_aa/class_a",
-				FromMultiplicity: requirements.Multiplicity{LowerBound: 0, HigherBound: 1},
+				FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 				ToClassKey:       "domain_key_b/subdomain_ba/class_a",
-				ToMultiplicity:   requirements.Multiplicity{LowerBound: 2, HigherBound: 3},
+				ToMultiplicity:   model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
 			},
 			{
 				Key:              "model_key/association/2",
 				Name:             "Parent",
 				FromClassKey:     "domain_key_a/subdomain_aa/class_b",
-				FromMultiplicity: requirements.Multiplicity{LowerBound: 0, HigherBound: 1},
+				FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 				ToClassKey:       "domain_key_b/subdomain_bb/class_b",
-				ToMultiplicity:   requirements.Multiplicity{LowerBound: 2, HigherBound: 3},
+				ToMultiplicity:   model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
 			},
 		},
 
 		// Class States.
-		States: map[string][]requirements.State{
+		States: map[string][]model_state.State{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/state_a",
@@ -180,7 +186,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		Events: map[string][]requirements.Event{
+		Events: map[string][]model_state.Event{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/event_a",
@@ -188,7 +194,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		Guards: map[string][]requirements.Guard{
+		Guards: map[string][]model_state.Guard{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/guard_a",
@@ -196,7 +202,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		Actions: map[string][]requirements.Action{
+		Actions: map[string][]model_state.Action{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:  "domain_key_a/subdomain_aa/class_a/action_a",
@@ -204,7 +210,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		Transitions: map[string][]requirements.Transition{
+		Transitions: map[string][]model_state.Transition{
 			"domain_key_a/subdomain_aa/class_a": {
 				{
 					Key:        "domain_key_a/subdomain_aa/class_a/transition_a",
@@ -214,7 +220,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		StateActions: map[string][]requirements.StateAction{
+		StateActions: map[string][]model_state.StateAction{
 			"domain_key_a/subdomain_aa/class_a/state_a": {
 				{
 					Key:       "domain_key_a/subdomain_aa/class_a/state_a/state_action_a",
@@ -225,7 +231,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Use Cases.
-		UseCases: map[string][]requirements.UseCase{
+		UseCases: map[string][]model_use_case.UseCase{
 			"domain_key_a/subdomain_aa": {
 				{
 					Key:      "domain_key_a/subdomain_aa/use_case_a",
@@ -235,14 +241,14 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		UseCaseActors: map[string]map[string]requirements.UseCaseActor{
+		UseCaseActors: map[string]map[string]model_use_case.UseCaseActor{
 			"domain_key_a/subdomain_aa/use_case_a": {
 				"model_key/actor/actor_a": {},
 			},
 		},
 
 		// Scenarios.
-		Scenarios: map[string][]requirements.Scenario{
+		Scenarios: map[string][]model_scenario.Scenario{
 			"domain_key_a/subdomain_aa/use_case_a": {
 				{
 					Key:     "domain_key_a/subdomain_aa/use_case_a/scenario_a",
@@ -253,7 +259,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Scenario Objects.
-		ScenarioObjects: map[string][]requirements.ScenarioObject{
+		ScenarioObjects: map[string][]model_scenario.ScenarioObject{
 			"domain_key_a/subdomain_aa/use_case_a/scenario_a": {
 				{
 					Key:          "domain_key_a/subdomain_aa/use_case_a/scenario_a/object_a",

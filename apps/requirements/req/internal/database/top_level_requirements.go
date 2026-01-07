@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
 func WriteRequirements(db *sql.DB, reqs requirements.Requirements) (err error) {
@@ -275,7 +276,7 @@ func ReadRequirements(db *sql.DB, modelKey string) (reqs requirements.Requiremen
 		if err != nil {
 			return err
 		}
-		reqs.UseCases = make(map[string][]requirements.UseCase)
+		reqs.UseCases = make(map[string][]model_use_case.UseCase)
 		for _, uc := range useCases {
 			subdomainKey := subdomainKeys[uc.Key]
 			reqs.UseCases[subdomainKey] = append(reqs.UseCases[subdomainKey], uc)

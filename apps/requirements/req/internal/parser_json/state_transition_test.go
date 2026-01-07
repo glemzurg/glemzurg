@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTransitionInOutRoundTrip(t *testing.T) {
-	original := requirements.Transition{
+	original := model_state.Transition{
 		Key:          "transition1",
 		FromStateKey: "state1",
 		EventKey:     "event1",

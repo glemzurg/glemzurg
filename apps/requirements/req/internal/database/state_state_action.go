@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanStateAction(scanner Scanner, stateKeyPtr *string, stateAction *requirements.StateAction) (err error) {
+func scanStateAction(scanner Scanner, stateKeyPtr *string, stateAction *model_state.StateAction) (err error) {
 
 	if err = scanner.Scan(
 		stateKeyPtr,
@@ -25,16 +26,16 @@ func scanStateAction(scanner Scanner, stateKeyPtr *string, stateAction *requirem
 }
 
 // LoadStateAction loads a stateAction from the database
-func LoadStateAction(dbOrTx DbOrTx, modelKey, stateActionKey string) (stateKey string, stateAction requirements.StateAction, err error) {
+func LoadStateAction(dbOrTx DbOrTx, modelKey, stateActionKey string) (stateKey string, stateAction model_state.StateAction, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.StateAction{}, err
+		return "", model_state.StateAction{}, err
 	}
 	stateActionKey, err = requirements.PreenKey(stateActionKey)
 	if err != nil {
-		return "", requirements.StateAction{}, err
+		return "", model_state.StateAction{}, err
 	}
 
 	// Query the database.
@@ -60,14 +61,14 @@ func LoadStateAction(dbOrTx DbOrTx, modelKey, stateActionKey string) (stateKey s
 		modelKey,
 		stateActionKey)
 	if err != nil {
-		return "", requirements.StateAction{}, errors.WithStack(err)
+		return "", model_state.StateAction{}, errors.WithStack(err)
 	}
 
 	return stateKey, stateAction, nil
 }
 
 // AddStateAction adds a stateAction to the database.
-func AddStateAction(dbOrTx DbOrTx, modelKey, stateKey string, stateAction requirements.StateAction) (err error) {
+func AddStateAction(dbOrTx DbOrTx, modelKey, stateKey string, stateAction model_state.StateAction) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -118,7 +119,7 @@ func AddStateAction(dbOrTx DbOrTx, modelKey, stateKey string, stateAction requir
 }
 
 // UpdateStateAction updates a stateAction in the database.
-func UpdateStateAction(dbOrTx DbOrTx, modelKey, stateKey string, stateAction requirements.StateAction) (err error) {
+func UpdateStateAction(dbOrTx DbOrTx, modelKey, stateKey string, stateAction model_state.StateAction) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -201,7 +202,7 @@ func RemoveStateAction(dbOrTx DbOrTx, modelKey, stateKey, stateActionKey string)
 }
 
 // QueryStateActions loads all stateAction from the database
-func QueryStateActions(dbOrTx DbOrTx, modelKey string) (stateActions map[string][]requirements.StateAction, err error) {
+func QueryStateActions(dbOrTx DbOrTx, modelKey string) (stateActions map[string][]model_state.StateAction, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -214,12 +215,12 @@ func QueryStateActions(dbOrTx DbOrTx, modelKey string) (stateActions map[string]
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var stateKey string
-			var stateAction requirements.StateAction
+			var stateAction model_state.StateAction
 			if err = scanStateAction(scanner, &stateKey, &stateAction); err != nil {
 				return errors.WithStack(err)
 			}
 			if stateActions == nil {
-				stateActions = map[string][]requirements.StateAction{}
+				stateActions = map[string][]model_state.StateAction{}
 			}
 			classStateActions := stateActions[stateKey]
 			classStateActions = append(classStateActions, stateAction)

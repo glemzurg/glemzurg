@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAssociation(scanner Scanner, association *requirements.Association) (err error) {
+func scanAssociation(scanner Scanner, association *model_class.Association) (err error) {
 	var associationClassKeyPtr *string
 	var fromLowerBound, fromHigherBound, toLowerBound, toHigherBound uint
 
@@ -30,8 +31,8 @@ func scanAssociation(scanner Scanner, association *requirements.Association) (er
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
-	association.FromMultiplicity = requirements.Multiplicity{LowerBound: fromLowerBound, HigherBound: fromHigherBound}
-	association.ToMultiplicity = requirements.Multiplicity{LowerBound: toLowerBound, HigherBound: toHigherBound}
+	association.FromMultiplicity = model_class.Multiplicity{LowerBound: fromLowerBound, HigherBound: fromHigherBound}
+	association.ToMultiplicity = model_class.Multiplicity{LowerBound: toLowerBound, HigherBound: toHigherBound}
 
 	if associationClassKeyPtr != nil {
 		association.AssociationClassKey = *associationClassKeyPtr
@@ -41,16 +42,16 @@ func scanAssociation(scanner Scanner, association *requirements.Association) (er
 }
 
 // LoadAssociation loads a association from the database
-func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association requirements.Association, err error) {
+func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association model_class.Association, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return requirements.Association{}, err
+		return model_class.Association{}, err
 	}
 	associationKey, err = requirements.PreenKey(associationKey)
 	if err != nil {
-		return requirements.Association{}, err
+		return model_class.Association{}, err
 	}
 
 	// Query the database.
@@ -84,14 +85,14 @@ func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (associatio
 		modelKey,
 		associationKey)
 	if err != nil {
-		return requirements.Association{}, errors.WithStack(err)
+		return model_class.Association{}, errors.WithStack(err)
 	}
 
 	return association, nil
 }
 
 // AddAssociation adds a association to the database.
-func AddAssociation(dbOrTx DbOrTx, modelKey string, association requirements.Association) (err error) {
+func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -173,7 +174,7 @@ func AddAssociation(dbOrTx DbOrTx, modelKey string, association requirements.Ass
 }
 
 // UpdateAssociation updates a association in the database.
-func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association requirements.Association) (err error) {
+func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -272,7 +273,7 @@ func RemoveAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err erro
 }
 
 // QueryAssociations loads all association from the database
-func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []requirements.Association, err error) {
+func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_class.Association, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -284,7 +285,7 @@ func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []requireme
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var association requirements.Association
+			var association model_class.Association
 			if err = scanAssociation(scanner, &association); err != nil {
 				return errors.WithStack(err)
 			}

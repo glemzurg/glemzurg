@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -33,7 +32,7 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.T().Run(testName, func(t *testing.T) {
-			var expected, actual requirements.Class
+			var expected, actual model_class.Class
 
 			actual, err := parseClass(key, testData.Filename, testData.Contents)
 			assert.Nil(t, err, testName)

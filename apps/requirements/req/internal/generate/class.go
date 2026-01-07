@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
 )
@@ -28,7 +29,7 @@ func generateClassFiles(debug bool, outputPath string, reqs requirements.Require
 		}
 
 		// Get the data that is important for this class diagram.
-		generalizations, classes, associations := reqs.RegardingClasses([]requirements.Class{class})
+		generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
 
 		// Generate classes diagram.
 		classesSvgFilename := convertKeyToFilename("class", class.Key, "", ".svg")
@@ -65,13 +66,13 @@ func generateClassFiles(debug bool, outputPath string, reqs requirements.Require
 	return nil
 }
 
-func generateClassMdContents(reqs requirements.Requirements, class requirements.Class) (contents string, err error) {
+func generateClassMdContents(reqs requirements.Requirements, class model_class.Class) (contents string, err error) {
 
 	// Create the lookups of keys to meaningful values.
 
 	contents, err = generateFromTemplate(_classMdTemplate, struct {
 		Reqs  requirements.Requirements
-		Class requirements.Class
+		Class model_class.Class
 	}{
 		Reqs:  reqs,
 		Class: class,
@@ -83,7 +84,7 @@ func generateClassMdContents(reqs requirements.Requirements, class requirements.
 	return contents, nil
 }
 
-func generateClassStateSvgContents(reqs requirements.Requirements, class requirements.Class) (svgContents string, dotContents string, err error) {
+func generateClassStateSvgContents(reqs requirements.Requirements, class model_class.Class) (svgContents string, dotContents string, err error) {
 
 	// Create the lookups of keys to meaningful values.
 	eventNameLookup := map[string]string{}
@@ -101,7 +102,7 @@ func generateClassStateSvgContents(reqs requirements.Requirements, class require
 
 	dotContents, err = generateFromTemplate(_classStateDotTemplate, struct {
 		Reqs               requirements.Requirements
-		Class              requirements.Class
+		Class              model_class.Class
 		EventNameLookup    map[string]string
 		GuardDetailsLookup map[string]string
 		ActionNameLookup   map[string]string
@@ -125,13 +126,13 @@ func generateClassStateSvgContents(reqs requirements.Requirements, class require
 }
 
 // This is the class graph on a domain and class pages.
-func generateClassesSvgContents(reqs requirements.Requirements, generalizations []requirements.Generalization, classes []requirements.Class, associations []requirements.Association) (svgContents string, dotContents string, err error) {
+func generateClassesSvgContents(reqs requirements.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_classesDotTemplate, struct {
 		Reqs            requirements.Requirements
-		Generalizations []requirements.Generalization
-		Classes         []requirements.Class
-		Associations    []requirements.Association
+		Generalizations []model_class.Generalization
+		Classes         []model_class.Class
+		Associations    []model_class.Association
 	}{
 		Reqs:            reqs,
 		Generalizations: generalizations,

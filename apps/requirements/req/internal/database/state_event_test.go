@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,9 +25,9 @@ type EventSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	class     model_class.Class
 }
 
 func (suite *EventSuite) SetupTest() {
@@ -72,38 +75,38 @@ func (suite *EventSuite) TestLoad() {
 	classKey, event, err = LoadEvent(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Event{
+	assert.Equal(suite.T(), model_state.Event{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	}, event)
 }
 
 func (suite *EventSuite) TestAdd() {
 
-	err := AddEvent(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Event{
+	err := AddEvent(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.Event{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	})
 	assert.Nil(suite.T(), err)
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Event{
+	assert.Equal(suite.T(), model_state.Event{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	}, event)
 }
 
 func (suite *EventSuite) TestAddNoParams() {
 
-	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, requirements.Event{
+	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -114,7 +117,7 @@ func (suite *EventSuite) TestAddNoParams() {
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Event{
+	assert.Equal(suite.T(), model_state.Event{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -124,40 +127,40 @@ func (suite *EventSuite) TestAddNoParams() {
 
 func (suite *EventSuite) TestUpdate() {
 
-	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, requirements.Event{
+	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateEvent(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Event{
+	err = UpdateEvent(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.Event{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
-		Parameters: []requirements.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
 	})
 	assert.Nil(suite.T(), err)
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Event{
+	assert.Equal(suite.T(), model_state.Event{
 		Key:        "key",
 		Name:       "NameX",
 		Details:    "DetailsX",
-		Parameters: []requirements.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
 	}, event)
 }
 
 func (suite *EventSuite) TestRemove() {
 
-	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, requirements.Event{
+	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	})
 	assert.Nil(suite.T(), err)
 
@@ -172,37 +175,37 @@ func (suite *EventSuite) TestRemove() {
 
 func (suite *EventSuite) TestQuery() {
 
-	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, requirements.Event{
+	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
-		Parameters: []requirements.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddEvent(suite.db, suite.model.Key, suite.class.Key, requirements.Event{
+	err = AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	})
 	assert.Nil(suite.T(), err)
 
 	events, err := QueryEvents(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Event{
-		"class_key": []requirements.Event{
+	assert.Equal(suite.T(), map[string][]model_state.Event{
+		"class_key": []model_state.Event{
 			{
 				Key:        "key",
 				Name:       "Name",
 				Details:    "Details",
-				Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+				Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 			},
 			{
 				Key:        "keyx",
 				Name:       "NameX",
 				Details:    "DetailsX",
-				Parameters: []requirements.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+				Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
 			},
 		},
 	}, events)
@@ -212,13 +215,13 @@ func (suite *EventSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddEvent(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, eventKey string) (event requirements.Event) {
+func t_AddEvent(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, eventKey string) (event model_state.Event) {
 
-	err := AddEvent(dbOrTx, modelKey, classKey, requirements.Event{
+	err := AddEvent(dbOrTx, modelKey, classKey, model_state.Event{
 		Key:        eventKey,
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []requirements.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
 	})
 	assert.Nil(t, err)
 

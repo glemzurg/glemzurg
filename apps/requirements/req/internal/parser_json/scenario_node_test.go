@@ -3,13 +3,13 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNodeInOutConversionRoundTrip(t *testing.T) {
-	original := requirements.Node{
-		Statements: []requirements.Node{
+	original := model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description: "First step",
 			},
@@ -17,7 +17,7 @@ func TestNodeInOutConversionRoundTrip(t *testing.T) {
 				Description: "Second step",
 			},
 		},
-		Cases: []requirements.Case{
+		Cases: []model_scenario.Case{
 			{
 				Condition: "success",
 			},

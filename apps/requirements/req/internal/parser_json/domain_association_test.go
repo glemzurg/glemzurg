@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDomainAssociationInOutRoundTrip(t *testing.T) {
-	original := requirements.DomainAssociation{
+	original := model_domain.DomainAssociation{
 		Key:               "da1",
 		ProblemDomainKey:  "domain1",
 		SolutionDomainKey: "domain2",

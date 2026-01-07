@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *requirements.Attribute) (err error) {
+func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *model_class.Attribute) (err error) {
 	if err = scanner.Scan(
 		classKeyPtr,
 		&attribute.Key,
@@ -28,16 +29,16 @@ func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *requirements
 }
 
 // LoadAttribute loads a attribute from the database
-func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey string, attribute requirements.Attribute, err error) {
+func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey string, attribute model_class.Attribute, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Attribute{}, err
+		return "", model_class.Attribute{}, err
 	}
 	attributeKey, err = requirements.PreenKey(attributeKey)
 	if err != nil {
-		return "", requirements.Attribute{}, err
+		return "", model_class.Attribute{}, err
 	}
 
 	// Query the database.
@@ -67,14 +68,14 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey strin
 		modelKey,
 		attributeKey)
 	if err != nil {
-		return "", requirements.Attribute{}, errors.WithStack(err)
+		return "", model_class.Attribute{}, errors.WithStack(err)
 	}
 
 	return classKey, attribute, nil
 }
 
 // AddAttribute adds a attribute to the database.
-func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute requirements.Attribute) (err error) {
+func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_class.Attribute) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -133,7 +134,7 @@ func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute requiremen
 }
 
 // UpdateAttribute updates a attribute in the database.
-func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute requirements.Attribute) (err error) {
+func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_class.Attribute) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -220,7 +221,7 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (er
 }
 
 // QueryAttributes loads all attribute from the database
-func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]requirements.Attribute, err error) {
+func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]model_class.Attribute, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -233,12 +234,12 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]re
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var classKey string
-			var attribute requirements.Attribute
+			var attribute model_class.Attribute
 			if err = scanAttribute(scanner, &classKey, &attribute); err != nil {
 				return errors.WithStack(err)
 			}
 			if attributes == nil {
-				attributes = map[string][]requirements.Attribute{}
+				attributes = map[string][]model_class.Attribute{}
 			}
 			classAttributes := attributes[classKey]
 			classAttributes = append(classAttributes, attribute)

@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 
 // caseInOut represents a case in a switch node.
 type caseInOut struct {
@@ -8,9 +8,9 @@ type caseInOut struct {
 	Statements []nodeInOut `json:"statements" yaml:"statements"`
 }
 
-// ToRequirements converts the caseInOut to requirements.Case.
-func (c caseInOut) ToRequirements() requirements.Case {
-	nodeCase := requirements.Case{
+// ToRequirements converts the caseInOut to model_scenario.Case.
+func (c caseInOut) ToRequirements() model_scenario.Case {
+	nodeCase := model_scenario.Case{
 		Condition:  c.Condition,
 		Statements: nil,
 	}
@@ -21,8 +21,8 @@ func (c caseInOut) ToRequirements() requirements.Case {
 	return nodeCase
 }
 
-// FromRequirementsCase creates a caseInOut from requirements.Case.
-func FromRequirementsCase(c requirements.Case) caseInOut {
+// FromRequirementsCase creates a caseInOut from model_scenario.Case.
+func FromRequirementsCase(c model_scenario.Case) caseInOut {
 	nodeCase := caseInOut{
 		Condition:  c.Condition,
 		Statements: nil,

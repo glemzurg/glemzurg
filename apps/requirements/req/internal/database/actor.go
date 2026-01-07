@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanActor(scanner Scanner, actor *requirements.Actor) (err error) {
+func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 	if err = scanner.Scan(
 		&actor.Key,
 		&actor.Name,
@@ -25,16 +26,16 @@ func scanActor(scanner Scanner, actor *requirements.Actor) (err error) {
 }
 
 // LoadActor loads a actor from the database
-func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor requirements.Actor, err error) {
+func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return requirements.Actor{}, err
+		return model_actor.Actor{}, err
 	}
 	actorKey, err = requirements.PreenKey(actorKey)
 	if err != nil {
-		return requirements.Actor{}, err
+		return model_actor.Actor{}, err
 	}
 
 	// Query the database.
@@ -61,14 +62,14 @@ func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor requirements.Act
 		modelKey,
 		actorKey)
 	if err != nil {
-		return requirements.Actor{}, errors.WithStack(err)
+		return model_actor.Actor{}, errors.WithStack(err)
 	}
 
 	return actor, nil
 }
 
 // AddActor adds a actor to the database.
-func AddActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err error) {
+func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -114,7 +115,7 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err err
 }
 
 // UpdateActor updates a actor in the database.
-func UpdateActor(dbOrTx DbOrTx, modelKey string, actor requirements.Actor) (err error) {
+func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -183,7 +184,7 @@ func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 }
 
 // QueryActors loads all actors from the database
-func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []requirements.Actor, err error) {
+func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -195,7 +196,7 @@ func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []requirements.Actor, e
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var actor requirements.Actor
+			var actor model_actor.Actor
 			if err = scanActor(scanner, &actor); err != nil {
 				return errors.WithStack(err)
 			}

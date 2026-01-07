@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 // stateInOut is a particular set of values in a state, distinct from all other states in the state.
 type stateInOut struct {
@@ -12,9 +12,9 @@ type stateInOut struct {
 	Actions []stateActionInOut `json:"actions"`
 }
 
-// ToRequirements converts the stateInOut to requirements.State.
-func (s stateInOut) ToRequirements() requirements.State {
-	state := requirements.State{
+// ToRequirements converts the stateInOut to model_state.State.
+func (s stateInOut) ToRequirements() model_state.State {
+	state := model_state.State{
 		Key:        s.Key,
 		Name:       s.Name,
 		Details:    s.Details,
@@ -27,8 +27,8 @@ func (s stateInOut) ToRequirements() requirements.State {
 	return state
 }
 
-// FromRequirements creates a stateInOut from requirements.State.
-func FromRequirementsState(s requirements.State) stateInOut {
+// FromRequirements creates a stateInOut from model_state.State.
+func FromRequirementsState(s model_state.State) stateInOut {
 	state := stateInOut{
 		Key:        s.Key,
 		Name:       s.Name,

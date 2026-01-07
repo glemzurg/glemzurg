@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanTransition(scanner Scanner, classKeyPtr *string, transition *requirements.Transition) (err error) {
+func scanTransition(scanner Scanner, classKeyPtr *string, transition *model_state.Transition) (err error) {
 	var fromStateKeyPtr, guardKeyPtr, actionKeyPtr, toStateKeyPtr *string
 
 	if err = scanner.Scan(
@@ -43,16 +44,16 @@ func scanTransition(scanner Scanner, classKeyPtr *string, transition *requiremen
 }
 
 // LoadTransition loads a transition from the database
-func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey string, transition requirements.Transition, err error) {
+func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey string, transition model_state.Transition, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Transition{}, err
+		return "", model_state.Transition{}, err
 	}
 	transitionKey, err = requirements.PreenKey(transitionKey)
 	if err != nil {
-		return "", requirements.Transition{}, err
+		return "", model_state.Transition{}, err
 	}
 
 	// Query the database.
@@ -82,14 +83,14 @@ func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey str
 		modelKey,
 		transitionKey)
 	if err != nil {
-		return "", requirements.Transition{}, errors.WithStack(err)
+		return "", model_state.Transition{}, errors.WithStack(err)
 	}
 
 	return classKey, transition, nil
 }
 
 // AddTransition adds a transition to the database.
-func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requirements.Transition) (err error) {
+func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_state.Transition) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -188,7 +189,7 @@ func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requirem
 }
 
 // UpdateTransition updates a transition in the database.
-func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requirements.Transition) (err error) {
+func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_state.Transition) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -315,7 +316,7 @@ func RemoveTransition(dbOrTx DbOrTx, modelKey, classKey, transitionKey string) (
 }
 
 // QueryTransitions loads all transition from the database
-func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[string][]requirements.Transition, err error) {
+func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[string][]model_state.Transition, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -328,12 +329,12 @@ func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[string][]
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var classKey string
-			var transition requirements.Transition
+			var transition model_state.Transition
 			if err = scanTransition(scanner, &classKey, &transition); err != nil {
 				return errors.WithStack(err)
 			}
 			if transitions == nil {
-				transitions = map[string][]requirements.Transition{}
+				transitions = map[string][]model_state.Transition{}
 			}
 			classTransitions := transitions[classKey]
 			classTransitions = append(classTransitions, transition)

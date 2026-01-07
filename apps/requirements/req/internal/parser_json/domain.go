@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 // domainInOut is a root category of the model.
 type domainInOut struct {
@@ -13,9 +13,9 @@ type domainInOut struct {
 	Subdomains []subdomainInOut `json:"subdomains"`
 }
 
-// ToRequirements converts the domainInOut to requirements.Domain.
-func (d domainInOut) ToRequirements() requirements.Domain {
-	domain := requirements.Domain{
+// ToRequirements converts the domainInOut to model_domain.Domain.
+func (d domainInOut) ToRequirements() model_domain.Domain {
+	domain := model_domain.Domain{
 		Key:        d.Key,
 		Name:       d.Name,
 		Details:    d.Details,
@@ -30,8 +30,8 @@ func (d domainInOut) ToRequirements() requirements.Domain {
 	return domain
 }
 
-// FromRequirements creates a domainInOut from requirements.Domain.
-func FromRequirementsDomain(d requirements.Domain) domainInOut {
+// FromRequirements creates a domainInOut from model_domain.Domain.
+func FromRequirementsDomain(d model_domain.Domain) domainInOut {
 	domain := domainInOut{
 		Key:        d.Key,
 		Name:       d.Name,

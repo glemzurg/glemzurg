@@ -3,13 +3,13 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAttributeInOutRoundTrip(t *testing.T) {
-	original := requirements.Attribute{
+	original := model_class.Attribute{
 		Key:              "attr1",
 		Name:             "Name",
 		Details:          "Details",

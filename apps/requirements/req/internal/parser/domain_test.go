@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +31,7 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		var expected, actual requirements.Domain
+		var expected, actual model_domain.Domain
 
 		actual, err := parseDomain(key, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)

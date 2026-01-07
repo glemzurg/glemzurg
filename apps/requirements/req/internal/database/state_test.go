@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,9 +25,9 @@ type StateSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	class     model_class.Class
 }
 
 func (suite *StateSuite) SetupTest() {
@@ -72,7 +75,7 @@ func (suite *StateSuite) TestLoad() {
 	classKey, state, err = LoadState(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.State{
+	assert.Equal(suite.T(), model_state.State{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -82,7 +85,7 @@ func (suite *StateSuite) TestLoad() {
 
 func (suite *StateSuite) TestAdd() {
 
-	err := AddState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.State{
+	err := AddState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.State{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -93,7 +96,7 @@ func (suite *StateSuite) TestAdd() {
 	classKey, state, err := LoadState(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.State{
+	assert.Equal(suite.T(), model_state.State{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -103,7 +106,7 @@ func (suite *StateSuite) TestAdd() {
 
 func (suite *StateSuite) TestUpdate() {
 
-	err := AddState(suite.db, suite.model.Key, suite.class.Key, requirements.State{
+	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -111,7 +114,7 @@ func (suite *StateSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.State{
+	err = UpdateState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.State{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -122,7 +125,7 @@ func (suite *StateSuite) TestUpdate() {
 	classKey, state, err := LoadState(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.State{
+	assert.Equal(suite.T(), model_state.State{
 		Key:        "key",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -132,7 +135,7 @@ func (suite *StateSuite) TestUpdate() {
 
 func (suite *StateSuite) TestRemove() {
 
-	err := AddState(suite.db, suite.model.Key, suite.class.Key, requirements.State{
+	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -151,7 +154,7 @@ func (suite *StateSuite) TestRemove() {
 
 func (suite *StateSuite) TestQuery() {
 
-	err := AddState(suite.db, suite.model.Key, suite.class.Key, requirements.State{
+	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -159,7 +162,7 @@ func (suite *StateSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddState(suite.db, suite.model.Key, suite.class.Key, requirements.State{
+	err = AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -169,8 +172,8 @@ func (suite *StateSuite) TestQuery() {
 
 	states, err := QueryStates(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.State{
-		"class_key": []requirements.State{
+	assert.Equal(suite.T(), map[string][]model_state.State{
+		"class_key": []model_state.State{
 			{
 				Key:        "key",
 				Name:       "Name",
@@ -191,9 +194,9 @@ func (suite *StateSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddState(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, stateKey string) (state requirements.State) {
+func t_AddState(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, stateKey string) (state model_state.State) {
 
-	err := AddState(dbOrTx, modelKey, classKey, requirements.State{
+	err := AddState(dbOrTx, modelKey, classKey, model_state.State{
 		Key:        stateKey,
 		Name:       "Name",
 		Details:    "Details",

@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,9 +25,9 @@ type GuardSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	class     model_class.Class
 }
 
 func (suite *GuardSuite) SetupTest() {
@@ -70,7 +73,7 @@ func (suite *GuardSuite) TestLoad() {
 	classKey, guard, err = LoadGuard(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Guard{
+	assert.Equal(suite.T(), model_state.Guard{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
@@ -79,7 +82,7 @@ func (suite *GuardSuite) TestLoad() {
 
 func (suite *GuardSuite) TestAdd() {
 
-	err := AddGuard(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Guard{
+	err := AddGuard(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.Guard{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
@@ -89,7 +92,7 @@ func (suite *GuardSuite) TestAdd() {
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Guard{
+	assert.Equal(suite.T(), model_state.Guard{
 		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
@@ -98,14 +101,14 @@ func (suite *GuardSuite) TestAdd() {
 
 func (suite *GuardSuite) TestUpdate() {
 
-	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, requirements.Guard{
+	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateGuard(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Guard{
+	err = UpdateGuard(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.Guard{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -115,7 +118,7 @@ func (suite *GuardSuite) TestUpdate() {
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Guard{
+	assert.Equal(suite.T(), model_state.Guard{
 		Key:     "key",
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -124,7 +127,7 @@ func (suite *GuardSuite) TestUpdate() {
 
 func (suite *GuardSuite) TestRemove() {
 
-	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, requirements.Guard{
+	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
@@ -142,14 +145,14 @@ func (suite *GuardSuite) TestRemove() {
 
 func (suite *GuardSuite) TestQuery() {
 
-	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, requirements.Guard{
+	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:     "keyx",
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddGuard(suite.db, suite.model.Key, suite.class.Key, requirements.Guard{
+	err = AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
@@ -158,8 +161,8 @@ func (suite *GuardSuite) TestQuery() {
 
 	guards, err := QueryGuards(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Guard{
-		"class_key": []requirements.Guard{
+	assert.Equal(suite.T(), map[string][]model_state.Guard{
+		"class_key": []model_state.Guard{
 			{
 				Key:     "key",
 				Name:    "Name",
@@ -178,9 +181,9 @@ func (suite *GuardSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddGuard(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, guardKey string) (guard requirements.Guard) {
+func t_AddGuard(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, guardKey string) (guard model_state.Guard) {
 
-	err := AddGuard(dbOrTx, modelKey, classKey, requirements.Guard{
+	err := AddGuard(dbOrTx, modelKey, classKey, model_state.Guard{
 		Key:     guardKey,
 		Name:    "Name",
 		Details: "Details",

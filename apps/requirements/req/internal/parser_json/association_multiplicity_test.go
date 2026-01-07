@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMultiplicityInOutRoundTrip(t *testing.T) {
-	original := requirements.Multiplicity{
+	original := model_class.Multiplicity{
 		LowerBound:  1,
 		HigherBound: 5,
 	}

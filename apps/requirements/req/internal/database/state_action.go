@@ -2,13 +2,14 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAction(scanner Scanner, classKeyPtr *string, action *requirements.Action) (err error) {
+func scanAction(scanner Scanner, classKeyPtr *string, action *model_state.Action) (err error) {
 	if err = scanner.Scan(
 		classKeyPtr,
 		&action.Key,
@@ -27,16 +28,16 @@ func scanAction(scanner Scanner, classKeyPtr *string, action *requirements.Actio
 }
 
 // LoadAction loads a action from the database
-func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, action requirements.Action, err error) {
+func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, action model_state.Action, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Action{}, err
+		return "", model_state.Action{}, err
 	}
 	actionKey, err = requirements.PreenKey(actionKey)
 	if err != nil {
-		return "", requirements.Action{}, err
+		return "", model_state.Action{}, err
 	}
 
 	// Query the database.
@@ -64,14 +65,14 @@ func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, act
 		modelKey,
 		actionKey)
 	if err != nil {
-		return "", requirements.Action{}, errors.WithStack(err)
+		return "", model_state.Action{}, errors.WithStack(err)
 	}
 
 	return classKey, action, nil
 }
 
 // AddAction adds a action to the database.
-func AddAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.Action) (err error) {
+func AddAction(dbOrTx DbOrTx, modelKey, classKey string, action model_state.Action) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -124,7 +125,7 @@ func AddAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.Act
 }
 
 // UpdateAction updates a action in the database.
-func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.Action) (err error) {
+func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action model_state.Action) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -207,7 +208,7 @@ func RemoveAction(dbOrTx DbOrTx, modelKey, classKey, actionKey string) (err erro
 }
 
 // QueryActions loads all action from the database
-func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[string][]requirements.Action, err error) {
+func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[string][]model_state.Action, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -220,12 +221,12 @@ func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[string][]requirem
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var classKey string
-			var action requirements.Action
+			var action model_state.Action
 			if err = scanAction(scanner, &classKey, &action); err != nil {
 				return errors.WithStack(err)
 			}
 			if actions == nil {
-				actions = map[string][]requirements.Action{}
+				actions = map[string][]model_state.Action{}
 			}
 			classActions := actions[classKey]
 			classActions = append(classActions, action)

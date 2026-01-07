@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 
 // scenarioObjectInOut is an object that participates in a scenario.
 type scenarioObjectInOut struct {
@@ -13,9 +13,9 @@ type scenarioObjectInOut struct {
 	UmlComment   string `json:"uml_comment"`
 }
 
-// ToRequirements converts the scenarioObjectInOut to requirements.ScenarioObject.
-func (s scenarioObjectInOut) ToRequirements() requirements.ScenarioObject {
-	return requirements.ScenarioObject{
+// ToRequirements converts the scenarioObjectInOut to model_scenario.ScenarioObject.
+func (s scenarioObjectInOut) ToRequirements() model_scenario.ScenarioObject {
+	return model_scenario.ScenarioObject{
 		Key:          s.Key,
 		ObjectNumber: s.ObjectNumber,
 		Name:         s.Name,
@@ -26,8 +26,8 @@ func (s scenarioObjectInOut) ToRequirements() requirements.ScenarioObject {
 	}
 }
 
-// FromRequirements creates a scenarioObjectInOut from requirements.ScenarioObject.
-func FromRequirementsScenarioObject(s requirements.ScenarioObject) scenarioObjectInOut {
+// FromRequirements creates a scenarioObjectInOut from model_scenario.ScenarioObject.
+func FromRequirementsScenarioObject(s model_scenario.ScenarioObject) scenarioObjectInOut {
 	return scenarioObjectInOut{
 		Key:          s.Key,
 		ObjectNumber: s.ObjectNumber,

@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanDomain(scanner Scanner, domain *requirements.Domain) (err error) {
+func scanDomain(scanner Scanner, domain *model_domain.Domain) (err error) {
 	if err = scanner.Scan(
 		&domain.Key,
 		&domain.Name,
@@ -25,16 +26,16 @@ func scanDomain(scanner Scanner, domain *requirements.Domain) (err error) {
 }
 
 // LoadDomain loads a domain from the database
-func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain requirements.Domain, err error) {
+func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain model_domain.Domain, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return requirements.Domain{}, err
+		return model_domain.Domain{}, err
 	}
 	domainKey, err = requirements.PreenKey(domainKey)
 	if err != nil {
-		return requirements.Domain{}, err
+		return model_domain.Domain{}, err
 	}
 
 	// Query the database.
@@ -61,14 +62,14 @@ func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain requirements.
 		modelKey,
 		domainKey)
 	if err != nil {
-		return requirements.Domain{}, errors.WithStack(err)
+		return model_domain.Domain{}, errors.WithStack(err)
 	}
 
 	return domain, nil
 }
 
 // AddDomain adds a domain to the database.
-func AddDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (err error) {
+func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -114,7 +115,7 @@ func AddDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (err 
 }
 
 // UpdateDomain updates a domain in the database.
-func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain requirements.Domain) (err error) {
+func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -183,7 +184,7 @@ func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 }
 
 // QueryDomains loads all domains from the database
-func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []requirements.Domain, err error) {
+func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []model_domain.Domain, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -195,7 +196,7 @@ func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []requirements.Domain
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var domain requirements.Domain
+			var domain model_domain.Domain
 			if err = scanDomain(scanner, &domain); err != nil {
 				return errors.WithStack(err)
 			}

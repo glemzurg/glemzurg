@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,12 +25,12 @@ type StateActionSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
-	state     requirements.State
-	action    requirements.Action
-	actionB   requirements.Action
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	class     model_class.Class
+	state     model_state.State
+	action    model_state.Action
+	actionB   model_state.Action
 }
 
 func (suite *StateActionSuite) SetupTest() {
@@ -76,7 +79,7 @@ func (suite *StateActionSuite) TestLoad() {
 	stateKey, stateAction, err = LoadStateAction(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "state_key", stateKey)
-	assert.Equal(suite.T(), requirements.StateAction{
+	assert.Equal(suite.T(), model_state.StateAction{
 		Key:       "key", // Test case-insensitive.
 		ActionKey: "action_key",
 		When:      "entry",
@@ -85,7 +88,7 @@ func (suite *StateActionSuite) TestLoad() {
 
 func (suite *StateActionSuite) TestAdd() {
 
-	err := AddStateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.state.Key), requirements.StateAction{
+	err := AddStateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.state.Key), model_state.StateAction{
 		Key:       "KeY",        // Test case-insensitive.
 		ActionKey: "action_KEY", // Test case-insensitive.
 		When:      "entry",
@@ -95,7 +98,7 @@ func (suite *StateActionSuite) TestAdd() {
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "state_key", stateKey)
-	assert.Equal(suite.T(), requirements.StateAction{
+	assert.Equal(suite.T(), model_state.StateAction{
 		Key:       "key",
 		ActionKey: "action_key",
 		When:      "entry",
@@ -104,14 +107,14 @@ func (suite *StateActionSuite) TestAdd() {
 
 func (suite *StateActionSuite) TestUpdate() {
 
-	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, requirements.StateAction{
+	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       "key",
 		ActionKey: "action_key",
 		When:      "do",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateStateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.state.Key), requirements.StateAction{
+	err = UpdateStateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.state.Key), model_state.StateAction{
 		Key:       "KeY",          // Test case-insensitive.
 		ActionKey: "action_KEY_b", // Test case-insensitive.
 		When:      "exit",
@@ -121,7 +124,7 @@ func (suite *StateActionSuite) TestUpdate() {
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "state_key", stateKey)
-	assert.Equal(suite.T(), requirements.StateAction{
+	assert.Equal(suite.T(), model_state.StateAction{
 		Key:       "key",
 		ActionKey: "action_key_b",
 		When:      "exit",
@@ -130,7 +133,7 @@ func (suite *StateActionSuite) TestUpdate() {
 
 func (suite *StateActionSuite) TestRemove() {
 
-	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, requirements.StateAction{
+	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       "key",
 		ActionKey: "action_key",
 		When:      "entry",
@@ -148,14 +151,14 @@ func (suite *StateActionSuite) TestRemove() {
 
 func (suite *StateActionSuite) TestQuery() {
 
-	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, requirements.StateAction{
+	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       "keyx",
 		ActionKey: "action_key",
 		When:      "exit",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddStateAction(suite.db, suite.model.Key, suite.state.Key, requirements.StateAction{
+	err = AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       "key",
 		ActionKey: "action_key",
 		When:      "entry",
@@ -164,8 +167,8 @@ func (suite *StateActionSuite) TestQuery() {
 
 	stateActions, err := QueryStateActions(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.StateAction{
-		"state_key": []requirements.StateAction{
+	assert.Equal(suite.T(), map[string][]model_state.StateAction{
+		"state_key": []model_state.StateAction{
 			{
 				Key:       "key",
 				ActionKey: "action_key",

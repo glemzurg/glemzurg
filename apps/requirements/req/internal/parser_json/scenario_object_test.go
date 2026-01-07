@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestScenarioObjectInOutRoundTrip(t *testing.T) {
-	original := requirements.ScenarioObject{
+	original := model_scenario.ScenarioObject{
 		Key:          "obj1",
 		ObjectNumber: 1,
 		Name:         "Object1",

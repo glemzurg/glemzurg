@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,7 +23,7 @@ type SubdomainSuite struct {
 	suite.Suite
 	db     *sql.DB
 	model  requirements.Model
-	domain requirements.Domain
+	domain model_domain.Domain
 }
 
 func (suite *SubdomainSuite) SetupTest() {
@@ -68,7 +69,7 @@ func (suite *SubdomainSuite) TestLoad() {
 	domainKey, subdomain, err = LoadSubdomain(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `domain_key`, domainKey)
-	assert.Equal(suite.T(), requirements.Subdomain{
+	assert.Equal(suite.T(), model_domain.Subdomain{
 		Key:        "key", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -78,7 +79,7 @@ func (suite *SubdomainSuite) TestLoad() {
 
 func (suite *SubdomainSuite) TestAdd() {
 
-	err := AddSubdomain(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.domain.Key), requirements.Subdomain{
+	err := AddSubdomain(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.domain.Key), model_domain.Subdomain{
 		Key:        "KeY", // Test case-insensitive.
 		Name:       "Name",
 		Details:    "Details",
@@ -89,7 +90,7 @@ func (suite *SubdomainSuite) TestAdd() {
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `domain_key`, domainKey)
-	assert.Equal(suite.T(), requirements.Subdomain{
+	assert.Equal(suite.T(), model_domain.Subdomain{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -99,7 +100,7 @@ func (suite *SubdomainSuite) TestAdd() {
 
 func (suite *SubdomainSuite) TestUpdate() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
+	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -107,7 +108,7 @@ func (suite *SubdomainSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateSubdomain(suite.db, strings.ToUpper(suite.model.Key), requirements.Subdomain{
+	err = UpdateSubdomain(suite.db, strings.ToUpper(suite.model.Key), model_domain.Subdomain{
 		Key:        "kEy", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -118,7 +119,7 @@ func (suite *SubdomainSuite) TestUpdate() {
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), `domain_key`, domainKey)
-	assert.Equal(suite.T(), requirements.Subdomain{
+	assert.Equal(suite.T(), model_domain.Subdomain{
 		Key:        "key", // Test case-insensitive.
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -128,7 +129,7 @@ func (suite *SubdomainSuite) TestUpdate() {
 
 func (suite *SubdomainSuite) TestRemove() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
+	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -147,7 +148,7 @@ func (suite *SubdomainSuite) TestRemove() {
 
 func (suite *SubdomainSuite) TestQuery() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
+	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        "keyx",
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -155,7 +156,7 @@ func (suite *SubdomainSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
+	err = AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        "key",
 		Name:       "Name",
 		Details:    "Details",
@@ -165,7 +166,7 @@ func (suite *SubdomainSuite) TestQuery() {
 
 	subdomains, err := QuerySubdomains(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Subdomain{
+	assert.Equal(suite.T(), map[string][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{
 				Key:        "key",
@@ -188,9 +189,9 @@ func (suite *SubdomainSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey, domainKey string) (subdomain requirements.Subdomain) {
+func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey, domainKey string) (subdomain model_domain.Subdomain) {
 
-	err := AddSubdomain(dbOrTx, modelKey, domainKey, requirements.Subdomain{
+	err := AddSubdomain(dbOrTx, modelKey, domainKey, model_domain.Subdomain{
 		Key:        "subdomain_key",
 		Name:       "Name",
 		Details:    "Details",

@@ -3,32 +3,34 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSubdomainInOutRoundTrip(t *testing.T) {
-	original := requirements.Subdomain{
+	original := model_domain.Subdomain{
 		Key:        "sub1",
 		Name:       "Sub1",
 		Details:    "Details",
 		UmlComment: "comment",
-		Generalizations: []requirements.Generalization{
+		Generalizations: []model_class.Generalization{
 			{
 				Key: "gen1",
 			},
 		},
-		Classes: []requirements.Class{
+		Classes: []model_class.Class{
 			{
 				Key: "class1",
 			},
 		},
-		UseCases: []requirements.UseCase{
+		UseCases: []model_use_case.UseCase{
 			{
 				Key: "uc1",
 			},
 		},
-		Associations: []requirements.Association{
+		Associations: []model_class.Association{
 			{
 				Key: "assoc1",
 			},

@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 // stateActionInOut is a action that triggers when a state is entered or exited or happens perpetually.
 type stateActionInOut struct {
@@ -9,17 +9,17 @@ type stateActionInOut struct {
 	When      string `json:"when"`
 }
 
-// ToRequirements converts the stateActionInOut to requirements.StateAction.
-func (s stateActionInOut) ToRequirements() requirements.StateAction {
-	return requirements.StateAction{
+// ToRequirements converts the stateActionInOut to model_state.StateAction.
+func (s stateActionInOut) ToRequirements() model_state.StateAction {
+	return model_state.StateAction{
 		Key:       s.Key,
 		ActionKey: s.ActionKey,
 		When:      s.When,
 	}
 }
 
-// FromRequirements creates a stateActionInOut from requirements.StateAction.
-func FromRequirementsStateAction(s requirements.StateAction) stateActionInOut {
+// FromRequirements creates a stateActionInOut from model_state.StateAction.
+func FromRequirementsStateAction(s model_state.StateAction) stateActionInOut {
 	return stateActionInOut{
 		Key:       s.Key,
 		ActionKey: s.ActionKey,

@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 // useCaseInOut is a user story for the system.
 type useCaseInOut struct {
@@ -15,10 +15,10 @@ type useCaseInOut struct {
 	Scenarios []scenarioInOut              `json:"scenarios"`
 }
 
-// ToRequirements converts the useCaseInOut to requirements.UseCase.
-func (u useCaseInOut) ToRequirements() requirements.UseCase {
+// ToRequirements converts the useCaseInOut to model_use_case.UseCase.
+func (u useCaseInOut) ToRequirements() model_use_case.UseCase {
 
-	useCase := requirements.UseCase{
+	useCase := model_use_case.UseCase{
 		Key:        u.Key,
 		Name:       u.Name,
 		Details:    u.Details,
@@ -31,7 +31,7 @@ func (u useCaseInOut) ToRequirements() requirements.UseCase {
 
 	for k, v := range u.Actors {
 		if useCase.Actors == nil {
-			useCase.Actors = make(map[string]requirements.UseCaseActor)
+			useCase.Actors = make(map[string]model_use_case.UseCaseActor)
 		}
 		useCase.Actors[k] = v.ToRequirements()
 	}
@@ -41,8 +41,8 @@ func (u useCaseInOut) ToRequirements() requirements.UseCase {
 	return useCase
 }
 
-// FromRequirementsUseCase creates a useCaseInOut from requirements.UseCase.
-func FromRequirementsUseCase(u requirements.UseCase) useCaseInOut {
+// FromRequirementsUseCase creates a useCaseInOut from model_use_case.UseCase.
+func FromRequirementsUseCase(u model_use_case.UseCase) useCaseInOut {
 
 	useCase := useCaseInOut{
 		Key:        u.Key,

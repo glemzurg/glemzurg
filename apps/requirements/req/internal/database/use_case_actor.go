@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *string, useCaseActor *requirements.UseCaseActor) (err error) {
+func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *string, useCaseActor *model_use_case.UseCaseActor) (err error) {
 	if err = scanner.Scan(
 		useCaseKeyPtr,
 		actorKeyPtr,
@@ -23,20 +24,20 @@ func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *string, useCa
 }
 
 // LoadUseCaseActor loads a use case from the database
-func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (useCaseActor requirements.UseCaseActor, err error) {
+func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (useCaseActor model_use_case.UseCaseActor, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return requirements.UseCaseActor{}, err
+		return model_use_case.UseCaseActor{}, err
 	}
 	useCaseKey, err = requirements.PreenKey(useCaseKey)
 	if err != nil {
-		return requirements.UseCaseActor{}, err
+		return model_use_case.UseCaseActor{}, err
 	}
 	actorKey, err = requirements.PreenKey(actorKey)
 	if err != nil {
-		return requirements.UseCaseActor{}, err
+		return model_use_case.UseCaseActor{}, err
 	}
 
 	// Query the database.
@@ -67,14 +68,14 @@ func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (use
 		useCaseKey,
 		actorKey)
 	if err != nil {
-		return requirements.UseCaseActor{}, errors.WithStack(err)
+		return model_use_case.UseCaseActor{}, errors.WithStack(err)
 	}
 
 	return useCaseActor, nil
 }
 
 // AddUseCaseActor adds a use case to the database.
-func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, useCaseActor requirements.UseCaseActor) (err error) {
+func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, useCaseActor model_use_case.UseCaseActor) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -118,7 +119,7 @@ func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, useCa
 }
 
 // UpdateUseCaseActor updates a use case in the database.
-func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, useCaseActor requirements.UseCaseActor) (err error) {
+func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, useCaseActor model_use_case.UseCaseActor) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -195,7 +196,7 @@ func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (e
 }
 
 // QueryUseCaseActors loads all use case from the database
-func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (useCaseActors map[string]map[string]requirements.UseCaseActor, err error) {
+func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (useCaseActors map[string]map[string]model_use_case.UseCaseActor, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -208,16 +209,16 @@ func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (useCaseActors map[strin
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var useCaseKey, actorKey string
-			var useCaseActor requirements.UseCaseActor
+			var useCaseActor model_use_case.UseCaseActor
 			if err = scanUseCaseActor(scanner, &useCaseKey, &actorKey, &useCaseActor); err != nil {
 				return errors.WithStack(err)
 			}
 			if useCaseActors == nil {
-				useCaseActors = map[string]map[string]requirements.UseCaseActor{}
+				useCaseActors = map[string]map[string]model_use_case.UseCaseActor{}
 			}
 			oneUseCaseActors := useCaseActors[useCaseKey]
 			if oneUseCaseActors == nil {
-				oneUseCaseActors = map[string]requirements.UseCaseActor{}
+				oneUseCaseActors = map[string]model_use_case.UseCaseActor{}
 			}
 			oneUseCaseActors[actorKey] = useCaseActor
 			useCaseActors[useCaseKey] = oneUseCaseActors

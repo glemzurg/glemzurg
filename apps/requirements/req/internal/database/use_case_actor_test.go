@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,11 +25,11 @@ type UseCaseActorSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	actor     requirements.Actor
-	actorB    requirements.Actor
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	useCase   requirements.UseCase
+	actor     model_actor.Actor
+	actorB    model_actor.Actor
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	useCase   model_use_case.UseCase
 }
 
 func (suite *UseCaseActorSuite) SetupTest() {
@@ -70,47 +73,47 @@ func (suite *UseCaseActorSuite) TestLoad() {
 
 	useCaseActor, err = LoadUseCaseActor(suite.db, strings.ToUpper(suite.model.Key), "Use_Case_Key", "Actor_Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.UseCaseActor{
+	assert.Equal(suite.T(), model_use_case.UseCaseActor{
 		UmlComment: "UmlComment",
 	}, useCaseActor)
 }
 
 func (suite *UseCaseActorSuite) TestAdd() {
 
-	err := AddUseCaseActor(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.useCase.Key), strings.ToUpper(suite.actor.Key), requirements.UseCaseActor{
+	err := AddUseCaseActor(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.useCase.Key), strings.ToUpper(suite.actor.Key), model_use_case.UseCaseActor{
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
 	useCaseActor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.UseCaseActor{
+	assert.Equal(suite.T(), model_use_case.UseCaseActor{
 		UmlComment: "UmlComment",
 	}, useCaseActor)
 }
 
 func (suite *UseCaseActorSuite) TestUpdate() {
 
-	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, requirements.UseCaseActor{
+	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, model_use_case.UseCaseActor{
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateUseCaseActor(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.useCase.Key), strings.ToUpper(suite.actor.Key), requirements.UseCaseActor{
+	err = UpdateUseCaseActor(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.useCase.Key), strings.ToUpper(suite.actor.Key), model_use_case.UseCaseActor{
 		UmlComment: "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
 	useCaseActor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.UseCaseActor{
+	assert.Equal(suite.T(), model_use_case.UseCaseActor{
 		UmlComment: "UmlCommentX",
 	}, useCaseActor)
 }
 
 func (suite *UseCaseActorSuite) TestRemove() {
 
-	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, requirements.UseCaseActor{
+	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, model_use_case.UseCaseActor{
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
@@ -125,20 +128,20 @@ func (suite *UseCaseActorSuite) TestRemove() {
 
 func (suite *UseCaseActorSuite) TestQuery() {
 
-	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, requirements.UseCaseActor{
+	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, model_use_case.UseCaseActor{
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actorB.Key, requirements.UseCaseActor{
+	err = AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actorB.Key, model_use_case.UseCaseActor{
 		UmlComment: "UmlCommentB",
 	})
 	assert.Nil(suite.T(), err)
 
 	useCaseActors, err := QueryUseCaseActors(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string]map[string]requirements.UseCaseActor{
-		"use_case_key": map[string]requirements.UseCaseActor{
+	assert.Equal(suite.T(), map[string]map[string]model_use_case.UseCaseActor{
+		"use_case_key": map[string]model_use_case.UseCaseActor{
 			"actor_key": {
 				UmlComment: "UmlComment",
 			},

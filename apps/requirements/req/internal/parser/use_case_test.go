@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +31,7 @@ func (suite *UseCaseFileSuite) TestParseUseCaseFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		var expected, actual requirements.UseCase
+		var expected, actual model_use_case.UseCase
 
 		actual, err := parseUseCase(key, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)

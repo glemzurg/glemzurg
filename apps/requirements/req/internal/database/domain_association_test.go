@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,8 +23,8 @@ type DomainAssociationSuite struct {
 	suite.Suite
 	db      *sql.DB
 	model   requirements.Model
-	domain  requirements.Domain
-	domainB requirements.Domain
+	domain  model_domain.Domain
+	domainB model_domain.Domain
 }
 
 func (suite *DomainAssociationSuite) SetupTest() {
@@ -66,7 +67,7 @@ func (suite *DomainAssociationSuite) TestLoad() {
 
 	association, err = LoadDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.DomainAssociation{
+	assert.Equal(suite.T(), model_domain.DomainAssociation{
 		Key:               "key", // Test case-insensitive.
 		ProblemDomainKey:  "domain_key",
 		SolutionDomainKey: "domain_key_b",
@@ -76,7 +77,7 @@ func (suite *DomainAssociationSuite) TestLoad() {
 
 func (suite *DomainAssociationSuite) TestAdd() {
 
-	err := AddDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), requirements.DomainAssociation{
+	err := AddDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), model_domain.DomainAssociation{
 		Key:               "KeY", // Test case-insensitive.
 		ProblemDomainKey:  "domain_KEY",
 		SolutionDomainKey: "doMAIN_key_b",
@@ -86,7 +87,7 @@ func (suite *DomainAssociationSuite) TestAdd() {
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.DomainAssociation{
+	assert.Equal(suite.T(), model_domain.DomainAssociation{
 		Key:               "key",
 		ProblemDomainKey:  "domain_key",
 		SolutionDomainKey: "domain_key_b",
@@ -96,7 +97,7 @@ func (suite *DomainAssociationSuite) TestAdd() {
 
 func (suite *DomainAssociationSuite) TestUpdate() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
+	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.DomainAssociation{
 		Key:               "key",
 		ProblemDomainKey:  "domain_key",
 		SolutionDomainKey: "domain_key_b",
@@ -104,7 +105,7 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), requirements.DomainAssociation{
+	err = UpdateDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), model_domain.DomainAssociation{
 		Key:               "KeY",          // Test case-insensitive.
 		ProblemDomainKey:  "doMAIN_key_b", // Test case-insensitive.
 		SolutionDomainKey: "domain_KEY",   // Test case-insensitive.
@@ -114,7 +115,7 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.DomainAssociation{
+	assert.Equal(suite.T(), model_domain.DomainAssociation{
 		Key:               "key",
 		ProblemDomainKey:  "domain_key_b",
 		SolutionDomainKey: "domain_key",
@@ -124,7 +125,7 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 
 func (suite *DomainAssociationSuite) TestRemove() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
+	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.DomainAssociation{
 		Key:               "key",
 		ProblemDomainKey:  "domain_key",
 		SolutionDomainKey: "domain_key_b",
@@ -142,7 +143,7 @@ func (suite *DomainAssociationSuite) TestRemove() {
 
 func (suite *DomainAssociationSuite) TestQuery() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
+	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.DomainAssociation{
 		Key:               "keyx",
 		ProblemDomainKey:  "domain_key",
 		SolutionDomainKey: "domain_key_b",
@@ -150,7 +151,7 @@ func (suite *DomainAssociationSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
+	err = AddDomainAssociation(suite.db, suite.model.Key, model_domain.DomainAssociation{
 		Key:               "key",
 		ProblemDomainKey:  "domain_key",
 		SolutionDomainKey: "domain_key_b",
@@ -160,7 +161,7 @@ func (suite *DomainAssociationSuite) TestQuery() {
 
 	associations, err := QueryDomainAssociations(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []requirements.DomainAssociation{
+	assert.Equal(suite.T(), []model_domain.DomainAssociation{
 		{
 			Key:               "key",
 			ProblemDomainKey:  "domain_key",

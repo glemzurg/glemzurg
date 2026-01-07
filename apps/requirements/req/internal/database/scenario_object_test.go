@@ -6,6 +6,10 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,12 +26,12 @@ type ScenarioObjectSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
-	classB    requirements.Class
-	useCase   requirements.UseCase
-	scenario  requirements.Scenario
+	domain    model_domain.Domain
+	subdomain model_domain.Subdomain
+	class     model_class.Class
+	classB    model_class.Class
+	useCase   model_use_case.UseCase
+	scenario  model_scenario.Scenario
 }
 
 func (suite *ScenarioObjectSuite) SetupTest() {
@@ -84,7 +88,7 @@ func (suite *ScenarioObjectSuite) TestLoad() {
 	scenarioKey, scenarioObject, err = LoadScenarioObject(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "scenario_key", scenarioKey)
-	assert.Equal(suite.T(), requirements.ScenarioObject{
+	assert.Equal(suite.T(), model_scenario.ScenarioObject{
 		Key:          "key", // Test case-insensitive.
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -97,7 +101,7 @@ func (suite *ScenarioObjectSuite) TestLoad() {
 
 func (suite *ScenarioObjectSuite) TestAdd() {
 
-	err := AddScenarioObject(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper("scenario_key"), requirements.ScenarioObject{
+	err := AddScenarioObject(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper("scenario_key"), model_scenario.ScenarioObject{
 		Key:          "KeY", // Test case-insensitive.
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -111,7 +115,7 @@ func (suite *ScenarioObjectSuite) TestAdd() {
 	scenarioKey, scenarioObject, err := LoadScenarioObject(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "scenario_key", scenarioKey)
-	assert.Equal(suite.T(), requirements.ScenarioObject{
+	assert.Equal(suite.T(), model_scenario.ScenarioObject{
 		Key:          "key",
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -124,7 +128,7 @@ func (suite *ScenarioObjectSuite) TestAdd() {
 
 func (suite *ScenarioObjectSuite) TestUpdate() {
 
-	err := AddScenarioObject(suite.db, suite.model.Key, "scenario_key", requirements.ScenarioObject{
+	err := AddScenarioObject(suite.db, suite.model.Key, "scenario_key", model_scenario.ScenarioObject{
 		Key:          "key",
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -135,7 +139,7 @@ func (suite *ScenarioObjectSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateScenarioObject(suite.db, strings.ToUpper(suite.model.Key), requirements.ScenarioObject{
+	err = UpdateScenarioObject(suite.db, strings.ToUpper(suite.model.Key), model_scenario.ScenarioObject{
 		Key:          "kEy", // Test case-insensitive.
 		ObjectNumber: 2,
 		Name:         "NameX",
@@ -149,7 +153,7 @@ func (suite *ScenarioObjectSuite) TestUpdate() {
 	scenarioKey, scenarioObject, err := LoadScenarioObject(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "scenario_key", scenarioKey)
-	assert.Equal(suite.T(), requirements.ScenarioObject{
+	assert.Equal(suite.T(), model_scenario.ScenarioObject{
 		Key:          "key",
 		ObjectNumber: 2,
 		Name:         "NameX",
@@ -162,7 +166,7 @@ func (suite *ScenarioObjectSuite) TestUpdate() {
 
 func (suite *ScenarioObjectSuite) TestRemove() {
 
-	err := AddScenarioObject(suite.db, suite.model.Key, suite.scenario.Key, requirements.ScenarioObject{
+	err := AddScenarioObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.ScenarioObject{
 		Key:          "key",
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -184,7 +188,7 @@ func (suite *ScenarioObjectSuite) TestRemove() {
 
 func (suite *ScenarioObjectSuite) TestQuery() {
 
-	err := AddScenarioObject(suite.db, suite.model.Key, "scenario_key", requirements.ScenarioObject{
+	err := AddScenarioObject(suite.db, suite.model.Key, "scenario_key", model_scenario.ScenarioObject{
 		Key:          "keyx",
 		ObjectNumber: 2,
 		Name:         "NameX",
@@ -195,7 +199,7 @@ func (suite *ScenarioObjectSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddScenarioObject(suite.db, suite.model.Key, "scenario_key", requirements.ScenarioObject{
+	err = AddScenarioObject(suite.db, suite.model.Key, "scenario_key", model_scenario.ScenarioObject{
 		Key:          "key",
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -208,7 +212,7 @@ func (suite *ScenarioObjectSuite) TestQuery() {
 
 	scenarioObjects, err := QueryScenarioObjects(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	expected := map[string][]requirements.ScenarioObject{
+	expected := map[string][]model_scenario.ScenarioObject{
 		"scenario_key": {
 			{
 				Key:          "key",
@@ -237,9 +241,9 @@ func (suite *ScenarioObjectSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddScenarioObject(t *testing.T, dbOrTx DbOrTx, modelKey, scenarioKey, scenarioObjectKey string, objectNumber uint, classKey string) (scenarioObject requirements.ScenarioObject) {
+func t_AddScenarioObject(t *testing.T, dbOrTx DbOrTx, modelKey, scenarioKey, scenarioObjectKey string, objectNumber uint, classKey string) (scenarioObject model_scenario.ScenarioObject) {
 
-	err := AddScenarioObject(dbOrTx, modelKey, scenarioKey, requirements.ScenarioObject{
+	err := AddScenarioObject(dbOrTx, modelKey, scenarioKey, model_scenario.ScenarioObject{
 		Key:          scenarioObjectKey,
 		ObjectNumber: objectNumber,
 		Name:         scenarioObjectKey,

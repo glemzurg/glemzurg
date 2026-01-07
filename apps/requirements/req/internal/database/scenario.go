@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *requirements.Scenario) (err error) {
+func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *model_scenario.Scenario) (err error) {
 	var stepsJSON []byte
 	if err = scanner.Scan(
 		&scenario.Key,
@@ -33,16 +34,16 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *requirements
 }
 
 // LoadScenario loads a scenario from the database
-func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey string, scenario requirements.Scenario, err error) {
+func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey string, scenario model_scenario.Scenario, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Scenario{}, err
+		return "", model_scenario.Scenario{}, err
 	}
 	scenarioKey, err = requirements.PreenKey(scenarioKey)
 	if err != nil {
-		return "", requirements.Scenario{}, err
+		return "", model_scenario.Scenario{}, err
 	}
 
 	// Query the database.
@@ -69,14 +70,14 @@ func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey strin
 		modelKey,
 		scenarioKey)
 	if err != nil {
-		return "", requirements.Scenario{}, errors.WithStack(err)
+		return "", model_scenario.Scenario{}, errors.WithStack(err)
 	}
 
 	return useCaseKey, scenario, nil
 }
 
 // AddScenario adds a scenario to the database.
-func AddScenario(dbOrTx DbOrTx, modelKey, useCaseKey string, scenario requirements.Scenario) (err error) {
+func AddScenario(dbOrTx DbOrTx, modelKey, useCaseKey string, scenario model_scenario.Scenario) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -125,7 +126,7 @@ func AddScenario(dbOrTx DbOrTx, modelKey, useCaseKey string, scenario requiremen
 }
 
 // UpdateScenario updates a scenario in the database.
-func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario requirements.Scenario) (err error) {
+func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scenario) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -198,7 +199,7 @@ func RemoveScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (err error) {
 }
 
 // QueryScenarios queries all scenarios for a model.
-func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[string][]requirements.Scenario, err error) {
+func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[string][]model_scenario.Scenario, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -210,13 +211,13 @@ func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[string][]requ
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var scenario requirements.Scenario
+			var scenario model_scenario.Scenario
 			var useCaseKey string
 			if err = scanScenario(scanner, &useCaseKey, &scenario); err != nil {
 				return err
 			}
 			if scenarios == nil {
-				scenarios = map[string][]requirements.Scenario{}
+				scenarios = map[string][]model_scenario.Scenario{}
 			}
 			scenarios[useCaseKey] = append(scenarios[useCaseKey], scenario)
 			return nil

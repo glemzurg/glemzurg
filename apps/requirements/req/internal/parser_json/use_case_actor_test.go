@@ -3,12 +3,12 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUseCaseActorInOutRoundTrip(t *testing.T) {
-	original := requirements.UseCaseActor{
+	original := model_use_case.UseCaseActor{
 		UmlComment: "comment",
 	}
 

@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 
 	"github.com/pkg/errors"
 )
@@ -31,11 +32,11 @@ func generateActorFiles(outputPath string, reqs requirements.Requirements) (err 
 	return nil
 }
 
-func generateActorMdContents(reqs requirements.Requirements, actor requirements.Actor) (contents string, err error) {
+func generateActorMdContents(reqs requirements.Requirements, actor model_actor.Actor) (contents string, err error) {
 
 	contents, err = generateFromTemplate(_actorMdTemplate, struct {
 		Reqs  requirements.Requirements
-		Actor requirements.Actor
+		Actor model_actor.Actor
 	}{
 		Reqs:  reqs,
 		Actor: actor,

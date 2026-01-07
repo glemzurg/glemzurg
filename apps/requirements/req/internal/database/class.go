@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanClass(scanner Scanner, subdomainKeyPtr *string, class *requirements.Class) (err error) {
+func scanClass(scanner Scanner, subdomainKeyPtr *string, class *model_class.Class) (err error) {
 	var actorKeyPtr, superclassOfKey, subclassOfKey *string
 
 	if err = scanner.Scan(
@@ -40,16 +41,16 @@ func scanClass(scanner Scanner, subdomainKeyPtr *string, class *requirements.Cla
 }
 
 // LoadClass loads a class from the database
-func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, class requirements.Class, err error) {
+func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, class model_class.Class, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Class{}, err
+		return "", model_class.Class{}, err
 	}
 	classKey, err = requirements.PreenKey(classKey)
 	if err != nil {
-		return "", requirements.Class{}, err
+		return "", model_class.Class{}, err
 	}
 
 	// Query the database.
@@ -79,14 +80,14 @@ func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, c
 		modelKey,
 		classKey)
 	if err != nil {
-		return "", requirements.Class{}, errors.WithStack(err)
+		return "", model_class.Class{}, errors.WithStack(err)
 	}
 
 	return subdomainKey, class, nil
 }
 
 // AddClass adds a class to the database.
-func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class requirements.Class) (err error) {
+func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Class) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -173,7 +174,7 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class requirements.C
 }
 
 // UpdateClass updates a class in the database.
-func UpdateClass(dbOrTx DbOrTx, modelKey string, class requirements.Class) (err error) {
+func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -272,7 +273,7 @@ func RemoveClass(dbOrTx DbOrTx, modelKey, classKey string) (err error) {
 }
 
 // QueryClasses loads all classes from the database
-func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[string][]requirements.Class, err error) {
+func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[string][]model_class.Class, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -285,12 +286,12 @@ func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[string][]requirem
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var subdomainKey string
-			var class requirements.Class
+			var class model_class.Class
 			if err = scanClass(scanner, &subdomainKey, &class); err != nil {
 				return errors.WithStack(err)
 			}
 			if classes == nil {
-				classes = map[string][]requirements.Class{}
+				classes = map[string][]model_class.Class{}
 			}
 			subdomainClasses := classes[subdomainKey]
 			subdomainClasses = append(subdomainClasses, class)

@@ -3,20 +3,20 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestScenarioInOutConversionRoundTrip(t *testing.T) {
-	original := requirements.Scenario{
+	original := model_scenario.Scenario{
 		Key:     "scenario1",
 		Name:    "Login Scenario",
 		Details: "User logs into the system",
-		Steps: requirements.Node{
+		Steps: model_scenario.Node{
 			Description: "User enters credentials",
 			EventKey:    "login",
 		},
-		Objects: []requirements.ScenarioObject{
+		Objects: []model_scenario.ScenarioObject{
 			{
 				Key:          "user",
 				ObjectNumber: 1,

@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 // actionInOut is what happens in a transition between states.
 type actionInOut struct {
@@ -11,9 +11,9 @@ type actionInOut struct {
 	Guarantees []string `json:"guarantees"`
 }
 
-// ToRequirements converts the actionInOut to requirements.Action.
-func (a actionInOut) ToRequirements() requirements.Action {
-	return requirements.Action{
+// ToRequirements converts the actionInOut to model_state.Action.
+func (a actionInOut) ToRequirements() model_state.Action {
+	return model_state.Action{
 		Key:        a.Key,
 		Name:       a.Name,
 		Details:    a.Details,
@@ -22,8 +22,8 @@ func (a actionInOut) ToRequirements() requirements.Action {
 	}
 }
 
-// FromRequirements creates a actionInOut from requirements.Action.
-func FromRequirementsAction(a requirements.Action) actionInOut {
+// FromRequirements creates a actionInOut from model_state.Action.
+func FromRequirementsAction(a model_state.Action) actionInOut {
 	return actionInOut{
 		Key:        a.Key,
 		Name:       a.Name,

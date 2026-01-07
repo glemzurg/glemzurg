@@ -2,12 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanSubdomain(scanner Scanner, domainKeyPtr *string, subdomain *requirements.Subdomain) (err error) {
+func scanSubdomain(scanner Scanner, domainKeyPtr *string, subdomain *model_domain.Subdomain) (err error) {
 	if err = scanner.Scan(
 		domainKeyPtr,
 		&subdomain.Key,
@@ -25,16 +26,16 @@ func scanSubdomain(scanner Scanner, domainKeyPtr *string, subdomain *requirement
 }
 
 // LoadSubdomain loads a subdomain from the database
-func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey string, subdomain requirements.Subdomain, err error) {
+func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey string, subdomain model_domain.Subdomain, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", requirements.Subdomain{}, err
+		return "", model_domain.Subdomain{}, err
 	}
 	subdomainKey, err = requirements.PreenKey(subdomainKey)
 	if err != nil {
-		return "", requirements.Subdomain{}, err
+		return "", model_domain.Subdomain{}, err
 	}
 
 	// Query the database.
@@ -61,14 +62,14 @@ func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey stri
 		modelKey,
 		subdomainKey)
 	if err != nil {
-		return "", requirements.Subdomain{}, errors.WithStack(err)
+		return "", model_domain.Subdomain{}, errors.WithStack(err)
 	}
 
 	return domainKey, subdomain, nil
 }
 
 // AddSubdomain adds a subdomain to the database.
-func AddSubdomain(dbOrTx DbOrTx, modelKey, domainKey string, subdomain requirements.Subdomain) (err error) {
+func AddSubdomain(dbOrTx DbOrTx, modelKey, domainKey string, subdomain model_domain.Subdomain) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -118,7 +119,7 @@ func AddSubdomain(dbOrTx DbOrTx, modelKey, domainKey string, subdomain requireme
 }
 
 // UpdateSubdomain updates a subdomain in the database.
-func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain requirements.Subdomain) (err error) {
+func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subdomain) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -185,7 +186,7 @@ func RemoveSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (err error) {
 }
 
 // QuerySubdomains loads all subdomains from the database
-func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[string][]requirements.Subdomain, err error) {
+func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[string][]model_domain.Subdomain, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -198,12 +199,12 @@ func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[string][]re
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var domainKey string
-			var subdomain requirements.Subdomain
+			var subdomain model_domain.Subdomain
 			if err = scanSubdomain(scanner, &domainKey, &subdomain); err != nil {
 				return errors.WithStack(err)
 			}
 			if subdomains == nil {
-				subdomains = map[string][]requirements.Subdomain{}
+				subdomains = map[string][]model_domain.Subdomain{}
 			}
 			domainSubdomains := subdomains[domainKey]
 			domainSubdomains = append(domainSubdomains, subdomain)
