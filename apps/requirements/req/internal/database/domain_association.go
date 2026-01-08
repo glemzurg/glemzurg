@@ -8,7 +8,7 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanDomainAssociation(scanner Scanner, association *model_domain.DomainAssociation) (err error) {
+func scanDomainAssociation(scanner Scanner, association *model_domain.Association) (err error) {
 	if err = scanner.Scan(
 		&association.Key,
 		&association.ProblemDomainKey,
@@ -25,16 +25,16 @@ func scanDomainAssociation(scanner Scanner, association *model_domain.DomainAsso
 }
 
 // LoadDomainAssociation loads a association from the database
-func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association model_domain.DomainAssociation, err error) {
+func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association model_domain.Association, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return model_domain.DomainAssociation{}, err
+		return model_domain.Association{}, err
 	}
 	associationKey, err = requirements.PreenKey(associationKey)
 	if err != nil {
-		return model_domain.DomainAssociation{}, err
+		return model_domain.Association{}, err
 	}
 
 	// Query the database.
@@ -61,14 +61,14 @@ func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (asso
 		modelKey,
 		associationKey)
 	if err != nil {
-		return model_domain.DomainAssociation{}, errors.WithStack(err)
+		return model_domain.Association{}, errors.WithStack(err)
 	}
 
 	return association, nil
 }
 
 // AddDomainAssociation adds a association to the database.
-func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.DomainAssociation) (err error) {
+func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.Association) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -119,7 +119,7 @@ func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_doma
 }
 
 // UpdateDomainAssociation updates a association in the database.
-func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.DomainAssociation) (err error) {
+func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.Association) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -194,7 +194,7 @@ func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (er
 }
 
 // QueryDomainAssociations loads all association from the database
-func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_domain.DomainAssociation, err error) {
+func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_domain.Association, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -206,7 +206,7 @@ func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []mod
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var association model_domain.DomainAssociation
+			var association model_domain.Association
 			if err = scanDomainAssociation(scanner, &association); err != nil {
 				return errors.WithStack(err)
 			}

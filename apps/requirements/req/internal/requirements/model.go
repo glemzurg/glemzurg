@@ -17,7 +17,7 @@ type Model struct {
 	// Data in a parsed file.
 	Actors             []model_actor.Actor
 	Domains            []model_domain.Domain
-	DomainAssociations []model_domain.DomainAssociation
+	DomainAssociations []model_domain.Association
 	Associations       []model_class.Association // Associations between classes that span domains.
 }
 

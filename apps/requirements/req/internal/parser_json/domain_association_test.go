@@ -8,7 +8,7 @@ import (
 )
 
 func TestDomainAssociationInOutRoundTrip(t *testing.T) {
-	original := model_domain.DomainAssociation{
+	original := model_domain.Association{
 		Key:               "da1",
 		ProblemDomainKey:  "domain1",
 		SolutionDomainKey: "domain2",

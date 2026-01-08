@@ -45,7 +45,7 @@ func parseDomain(key, filename, contents string) (domain model_domain.Domain, er
 		associationsData = associationsAny.([]any)
 	}
 
-	var associations []model_domain.DomainAssociation
+	var associations []model_domain.Association
 	for i, associationAny := range associationsData {
 		association, err := domainAssociationFromYamlData(domain.Key, i, associationAny)
 		if err != nil {
@@ -58,7 +58,7 @@ func parseDomain(key, filename, contents string) (domain model_domain.Domain, er
 	return domain, nil
 }
 
-func domainAssociationFromYamlData(problemDomainKey string, index int, associationAny any) (association model_domain.DomainAssociation, err error) {
+func domainAssociationFromYamlData(problemDomainKey string, index int, associationAny any) (association model_domain.Association, err error) {
 
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
@@ -79,13 +79,13 @@ func domainAssociationFromYamlData(problemDomainKey string, index int, associati
 			umlComment = umlCommentAny.(string)
 		}
 
-		association, err = model_domain.NewDomainAssociation(
+		association, err = model_domain.NewAssociation(
 			key,
 			problemDomainKey,
 			solutionDomainKey,
 			umlComment)
 		if err != nil {
-			return model_domain.DomainAssociation{}, err
+			return model_domain.Association{}, err
 		}
 	}
 

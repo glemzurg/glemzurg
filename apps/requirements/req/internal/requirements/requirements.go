@@ -22,7 +22,7 @@ type Requirements struct {
 	// Organization.
 	Domains            []model_domain.Domain
 	Subdomains         map[string][]model_domain.Subdomain // All the subdomains in a domain.
-	DomainAssociations []model_domain.DomainAssociation
+	DomainAssociations []model_domain.Association
 	// Classes.
 	Classes      map[string][]model_class.Class     // All the classes in a subdomain.
 	Attributes   map[string][]model_class.Attribute // All the attributes in a class.
@@ -112,7 +112,7 @@ func (r *Requirements) ActorLookup() (actorLookup map[string]model_actor.Actor) 
 	return r.actorLookup
 }
 
-func (r *Requirements) DomainLookup() (domainLookup map[string]model_domain.Domain, associations []model_domain.DomainAssociation) {
+func (r *Requirements) DomainLookup() (domainLookup map[string]model_domain.Domain, associations []model_domain.Association) {
 	r.prepLookups()
 	return r.domainLookup, r.DomainAssociations
 }

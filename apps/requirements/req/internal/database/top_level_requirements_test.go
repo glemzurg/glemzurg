@@ -97,7 +97,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		DomainAssociations: []model_domain.DomainAssociation{
+		DomainAssociations: []model_domain.Association{
 			{
 				Key:               "model_key/domain_association/1",
 				ProblemDomainKey:  "domain_key_a",

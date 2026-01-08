@@ -10,9 +10,9 @@ type domainAssociationInOut struct {
 	UmlComment        string `json:"uml_comment"`
 }
 
-// ToRequirements converts the domainAssociationInOut to model_domain.DomainAssociation.
-func (d domainAssociationInOut) ToRequirements() model_domain.DomainAssociation {
-	return model_domain.DomainAssociation{
+// ToRequirements converts the domainAssociationInOut to model_domain.Association.
+func (d domainAssociationInOut) ToRequirements() model_domain.Association {
+	return model_domain.Association{
 		Key:               d.Key,
 		ProblemDomainKey:  d.ProblemDomainKey,
 		SolutionDomainKey: d.SolutionDomainKey,
@@ -20,8 +20,8 @@ func (d domainAssociationInOut) ToRequirements() model_domain.DomainAssociation 
 	}
 }
 
-// FromRequirements creates a domainAssociationInOut from model_domain.DomainAssociation.
-func FromRequirementsDomainAssociation(d model_domain.DomainAssociation) domainAssociationInOut {
+// FromRequirements creates a domainAssociationInOut from model_domain.Association.
+func FromRequirementsDomainAssociation(d model_domain.Association) domainAssociationInOut {
 	return domainAssociationInOut{
 		Key:               d.Key,
 		ProblemDomainKey:  d.ProblemDomainKey,

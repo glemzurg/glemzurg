@@ -6,30 +6,30 @@ import (
 )
 
 // When a domain enforces requirements on another domain.
-type DomainAssociation struct {
-	Key               string // The key of unique in the model.
-	ProblemDomainKey  string // The domain that enforces requirements on the other domain.
-	SolutionDomainKey string // The domain that has requirements enforced upon it.
-	UmlComment        string
-}
-
-func NewDomainAssociation(key, problemDomainKey, solutionDomainKey, umlComment string) (domainAssociation DomainAssociation, err error) {
-
-	domainAssociation = DomainAssociation{
-		Key:               key,
-		ProblemDomainKey:  problemDomainKey,
-		SolutionDomainKey: solutionDomainKey,
-		UmlComment:        umlComment,
+	type Association struct {
+		Key               string // The key of unique in the model.
+		ProblemDomainKey  string // The domain that enforces requirements on the other domain.
+		SolutionDomainKey string // The domain that has requirements enforced upon it.
+		UmlComment        string
 	}
 
-	err = validation.ValidateStruct(&domainAssociation,
-		validation.Field(&domainAssociation.Key, validation.Required),
-		validation.Field(&domainAssociation.ProblemDomainKey, validation.Required),
-		validation.Field(&domainAssociation.SolutionDomainKey, validation.Required),
-	)
-	if err != nil {
-		return DomainAssociation{}, errors.WithStack(err)
-	}
+	func NewAssociation(key, problemDomainKey, solutionDomainKey, umlComment string) (association Association, err error) {
 
-	return domainAssociation, nil
-}
+		association = Association{
+			Key:               key,
+			ProblemDomainKey:  problemDomainKey,
+			SolutionDomainKey: solutionDomainKey,
+			UmlComment:        umlComment,
+		}
+
+		err = validation.ValidateStruct(&association,
+			validation.Field(&association.Key, validation.Required),
+			validation.Field(&association.ProblemDomainKey, validation.Required),
+			validation.Field(&association.SolutionDomainKey, validation.Required),
+		)
+		if err != nil {
+			return Association{}, errors.WithStack(err)
+		}
+
+		return association, nil
+	}

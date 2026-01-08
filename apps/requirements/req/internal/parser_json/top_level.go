@@ -147,7 +147,7 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 	}
 
 	// Domain Associations
-	reqs.DomainAssociations = make([]model_domain.DomainAssociation, len(tree.DomainAssociations))
+	reqs.DomainAssociations = make([]model_domain.Association, len(tree.DomainAssociations))
 	for i, da := range tree.DomainAssociations {
 		reqs.DomainAssociations[i] = da.ToRequirements()
 	}

@@ -91,12 +91,12 @@ func generateDomainMdContents(reqs requirements.Requirements, model requirements
 }
 
 // This is the domain graph on the model page.
-func generateDomainsSvgContents(reqs requirements.Requirements, domains []model_domain.Domain, associations []model_domain.DomainAssociation) (svgContents string, dotContents string, err error) {
+func generateDomainsSvgContents(reqs requirements.Requirements, domains []model_domain.Domain, associations []model_domain.Association) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_domainsDotTemplate, struct {
 		Reqs         requirements.Requirements
 		Domains      []model_domain.Domain
-		Associations []model_domain.DomainAssociation
+		Associations []model_domain.Association
 	}{
 		Reqs:         reqs,
 		Domains:      domains,

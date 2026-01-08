@@ -22,7 +22,7 @@ func TestModelInOutRoundTrip(t *testing.T) {
 		Domains: []model_domain.Domain{
 			{Key: "domain1", Name: "Domain1", Realized: true, UmlComment: "comment"},
 		},
-		DomainAssociations: []model_domain.DomainAssociation{
+		DomainAssociations: []model_domain.Association{
 			{Key: "da1", ProblemDomainKey: "domain1", SolutionDomainKey: "domain2", UmlComment: "comment"},
 		},
 		Associations: []model_class.Association{
