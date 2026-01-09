@@ -18,6 +18,47 @@ type SubdomainSuite struct {
 	suite.Suite
 }
 
+func (suite *SubdomainSuite) TestNewSubdomainKey() {
+	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
+
+	tests := []struct {
+		domainKey identity.Key
+		subKey    string
+		expected  identity.Key
+		errstr    string
+	}{
+		// OK.
+		{
+			domainKey: domainKey,
+			subKey:    "subdomain1",
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, "subdomain1")),
+		},
+
+		// Errors.
+		{
+			domainKey: helper.Must(identity.NewRootKey(identity.KEY_TYPE_USE_CASE, "usecase1")),
+			subKey:    "subdomain1",
+			errstr:    "parent key cannot be of type 'use_case' for 'subdomain' key",
+		},
+		{
+			domainKey: domainKey,
+			subKey:    "",
+			errstr:    "cannot be blank",
+		},
+	}
+	for i, test := range tests {
+		testName := fmt.Sprintf("Case %d: %+v", i, test)
+		key, err := NewSubdomainKey(test.domainKey, test.subKey)
+		if test.errstr == "" {
+			assert.Nil(suite.T(), err, testName)
+			assert.Equal(suite.T(), test.expected, key, testName)
+		} else {
+			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			assert.Equal(suite.T(), identity.Key{}, key, testName)
+		}
+	}
+}
+
 func (suite *SubdomainSuite) TestNew() {
 
 	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
@@ -56,18 +97,18 @@ func (suite *SubdomainSuite) TestNew() {
 			},
 		},
 
-		// Error states.
+		// Errors.
 		{
 			key:     identity.Key{},
 			name:    "Name",
 			details: "Details",
-			errstr:  "Key: (childType: cannot be blank; subKey: cannot be blank.).",
+			errstr:  "keyType: cannot be blank",
 		},
 		{
 			key:     helper.Must(identity.NewKey(domainKey.String(), "class", "subdomain1")),
 			name:    "Name",
 			details: "Details",
-			errstr:  "Key: invalid child type for subdomain.",
+			errstr:  "Key: invalid key type for subdomain.",
 		},
 		{
 			key:     helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
@@ -85,52 +126,6 @@ func (suite *SubdomainSuite) TestNew() {
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
 			assert.Empty(suite.T(), obj, testName)
-		}
-	}
-}
-
-func (suite *SubdomainSuite) TestNewSubdomainKey() {
-	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
-
-	tests := []struct {
-		domainKey identity.Key
-		subKey    string
-		expected  identity.Key
-		errstr    string
-	}{
-		// OK.
-		{
-			domainKey: domainKey,
-			subKey:    "subdomain1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, "subdomain1")),
-		},
-		{
-			domainKey: domainKey,
-			subKey:    "subdomain2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, "subdomain2")),
-		},
-
-		// OK case: blank parentKey.
-		{
-			domainKey: identity.Key{},
-			subKey:    "subdomain1",
-			expected:  helper.Must(identity.NewKey("", identity.KEY_TYPE_SUBDOMAIN, "subdomain1")),
-		},
-		{
-			domainKey: domainKey,
-			subKey:    "",
-			errstr:    "cannot be blank",
-		},
-	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewSubdomainKey(test.domainKey, test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), identity.Key{}, key, testName)
 		}
 	}
 }

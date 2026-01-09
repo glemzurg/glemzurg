@@ -11,6 +11,12 @@ import (
 
 // Construct a key that sits correctly in the model shape.
 func NewSubdomainKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
+
+	// The parent must be a domain.
+	if domainKey.KeyType() != identity.KEY_TYPE_DOMAIN {
+		return identity.Key{}, errors.Errorf("parent key cannot be of type '%s' for 'subdomain' key", domainKey.KeyType())
+	}
+
 	return identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, subKey)
 }
 
