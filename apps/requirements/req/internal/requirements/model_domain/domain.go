@@ -40,7 +40,7 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 				return err
 			}
 			if k.KeyType() != identity.KEY_TYPE_DOMAIN {
-				return errors.New("invalid key type for domain")
+				return errors.Errorf("invalid key type '%s' for domain", k.KeyType())
 			}
 			return nil
 		})),

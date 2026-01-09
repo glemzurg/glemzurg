@@ -16,12 +16,16 @@ func TestAssociationSuite(t *testing.T) {
 
 type AssociationSuite struct {
 	suite.Suite
+	problemDomainKey  identity.Key
+	solutionDomainKey identity.Key
+}
+
+func (suite *AssociationSuite) SetupTest() {
+	suite.problemDomainKey = helper.Must(identity.NewDomainKey("domain1"))
+	suite.solutionDomainKey = helper.Must(identity.NewDomainKey("domain2"))
 }
 
 func (suite *AssociationSuite) TestNew() {
-
-	problemDomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
-	solutionDomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain2"))
 
 	tests := []struct {
 		key               identity.Key
@@ -33,26 +37,26 @@ func (suite *AssociationSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
-			problemDomainKey:  problemDomainKey,
-			solutionDomainKey: solutionDomainKey,
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			problemDomainKey:  suite.problemDomainKey,
+			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
 			obj: Association{
-				Key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
-				ProblemDomainKey:  problemDomainKey,
-				SolutionDomainKey: solutionDomainKey,
+				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: suite.solutionDomainKey,
 				UmlComment:        "UmlComment",
 			},
 		},
 		{
-			key:               helper.Must(NewAssociationKey(problemDomainKey, "2")),
-			problemDomainKey:  problemDomainKey,
-			solutionDomainKey: solutionDomainKey,
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "2")),
+			problemDomainKey:  suite.problemDomainKey,
+			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "",
 			obj: Association{
-				Key:               helper.Must(NewAssociationKey(problemDomainKey, "2")),
-				ProblemDomainKey:  problemDomainKey,
-				SolutionDomainKey: solutionDomainKey,
+				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "2")),
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: suite.solutionDomainKey,
 				UmlComment:        "",
 			},
 		},
@@ -60,22 +64,43 @@ func (suite *AssociationSuite) TestNew() {
 		// Error states.
 		{
 			key:               identity.Key{},
-			problemDomainKey:  problemDomainKey,
-			solutionDomainKey: solutionDomainKey,
+			problemDomainKey:  suite.problemDomainKey,
+			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
 			errstr:            `Key: (keyType: cannot be blank;`,
 		},
 		{
-			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
+			key:               helper.Must(identity.NewActorKey("actor1")),
+			problemDomainKey:  suite.problemDomainKey,
+			solutionDomainKey: suite.solutionDomainKey,
+			umlComment:        "UmlComment",
+			errstr:            `Key: (keyType: cannot be blankxx;`,
+		},
+		{
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
 			problemDomainKey:  identity.Key{},
-			solutionDomainKey: solutionDomainKey,
+			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
 			errstr:            `ProblemDomainKey: (keyType: cannot be blank;`,
 		},
 		{
-			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
-			problemDomainKey:  problemDomainKey,
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			problemDomainKey:  helper.Must(identity.NewActorKey("actor1")),
+			solutionDomainKey: suite.solutionDomainKey,
+			umlComment:        "UmlComment",
+			errstr:            `ProblemDomainKey: (keyType: cannot be blankxxx;`,
+		},
+		{
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: identity.Key{},
+			umlComment:        "UmlComment",
+			errstr:            `SolutionDomainKey: (keyType: cannot be blank;`,
+		},
+		{
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			problemDomainKey:  suite.problemDomainKey,
+			solutionDomainKey: helper.Must(identity.NewActorKey("actor1")),
 			umlComment:        "UmlComment",
 			errstr:            `SolutionDomainKey: (keyType: cannot be blank;`,
 		},

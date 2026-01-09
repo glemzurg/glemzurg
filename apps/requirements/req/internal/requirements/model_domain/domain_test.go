@@ -31,13 +31,13 @@ func (suite *DomainSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
+			key:        helper.Must(identity.NewDomainKey("domain1")),
 			name:       "Name",
 			details:    "Details",
 			realized:   true,
 			umlComment: "UmlComment",
 			obj: Domain{
-				Key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
+				Key:        helper.Must(identity.NewDomainKey("domain1")),
 				Name:       "Name",
 				Details:    "Details",
 				Realized:   true,
@@ -45,13 +45,13 @@ func (suite *DomainSuite) TestNew() {
 			},
 		},
 		{
-			key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
+			key:        helper.Must(identity.NewDomainKey("domain1")),
 			name:       "Name",
 			details:    "",
 			realized:   false,
 			umlComment: "",
 			obj: Domain{
-				Key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
+				Key:        helper.Must(identity.NewDomainKey("domain1")),
 				Name:       "Name",
 				Details:    "",
 				Realized:   false,
@@ -66,7 +66,12 @@ func (suite *DomainSuite) TestNew() {
 			errstr: "keyType: cannot be blank",
 		},
 		{
-			key:    helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
+			key:    helper.Must(identity.NewActorKey("actor1")),
+			name:   "Name",
+			errstr: "Key: invalid key type 'actor' for domain.",
+		},
+		{
+			key:    helper.Must(identity.NewDomainKey("domain1")),
 			name:   "",
 			errstr: `Name: cannot be blank.`,
 		},
