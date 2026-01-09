@@ -205,3 +205,60 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 		}
 	}
 }
+
+func (suite *KeyTypeSuite) TestNewUseCaseKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		subdomainKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			subdomainKey: subdomainKey,
+			subKey:       "usecase1",
+			expected:     helper.Must(newKey(subdomainKey.String(), KEY_TYPE_USE_CASE, "usecase1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			subdomainKey: Key{},
+			subKey:       "usecase1",
+			errstr:       "parent key cannot be of type '' for 'usecase' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			subdomainKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "usecase1",
+			errstr:       "parent key cannot be of type 'actor' for 'usecase' key",
+		},
+		{
+			testName:     "error blank subKey",
+			subdomainKey: subdomainKey,
+			subKey:       "",
+			errstr:       "cannot be blank",
+		},
+	}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewUseCaseKey(tt.subdomainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+	}
+}

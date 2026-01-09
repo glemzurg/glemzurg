@@ -8,15 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 )
 
-// // Construct a key that sits correctly in the model shape.
-// func NewUseCaseKey(parentKey identity.Key, subKey string) (key identity.Key, err error) {
-// 	key, err = identity.NewKey(parentKey.String(), identity.KEY_TYPE_USE_CASE, subKey)
-// 	if err != nil {
-// 		return identity.Key{}, err
-// 	}
-// 	return key, key.Validate()
-// }
-
 const (
 	_USE_CASE_LEVEL_SKY = "sky" // A high-level organizational user story.
 	_USE_CASE_LEVEL_SEA = "sea" // A straight forward user story.

@@ -42,10 +42,10 @@ func (k *Key) Validate() error {
 	return validation.ValidateStruct(k,
 		validation.Field(&k.keyType, validation.Required, validation.In(
 			KEY_TYPE_DOMAIN,
-			KEY_TYPE_SUBDOMAIN,
 			KEY_TYPE_DOMAIN_ASSOCIATION,
-			KEY_TYPE_CLASS,
+			KEY_TYPE_SUBDOMAIN,
 			KEY_TYPE_USE_CASE,
+			KEY_TYPE_CLASS,
 			KEY_TYPE_STATE,
 			KEY_TYPE_EVENT,
 			KEY_TYPE_GUARD,
@@ -59,7 +59,7 @@ func (k *Key) Validate() error {
 			switch k.keyType {
 			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR:
 				if parent != "" {
-					return errors.Errorf("parentKey must be blank for '%s' keys", k.keyType)
+					return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.keyType, parent)
 				}
 			default:
 				if parent == "" {
