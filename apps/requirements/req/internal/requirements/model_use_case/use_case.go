@@ -10,7 +10,7 @@ import (
 
 // Construct a key that sits correctly in the model shape.
 func NewUseCaseKey(parentKey identity.Key, subKey string) (key identity.Key, err error) {
-	return identity.NewKey(parentKey.String(), identity.USE_CASE_CHILD_TYPE, subKey)
+	return identity.NewKey(parentKey.String(), identity.USE_CASE_KEY_TYPE, subKey)
 }
 
 const (
@@ -51,7 +51,7 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 			if err := k.Validate(); err != nil {
 				return err
 			}
-			if k.ChildType() != identity.USE_CASE_CHILD_TYPE {
+			if k.ChildType() != identity.USE_CASE_KEY_TYPE {
 				return errors.New("invalid child type for use_case")
 			}
 			return nil

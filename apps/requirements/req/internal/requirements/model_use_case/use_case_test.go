@@ -89,10 +89,10 @@ func (suite *UseCaseSuite) TestNew() {
 			level:      "sea",
 			readOnly:   true,
 			umlComment: "UmlComment",
-			errstr:     `Key: (subKey: cannot be blank.).`,
+			errstr:     `Key: (childType: cannot be blank; subKey: cannot be blank.).`,
 		},
 		{
-			key:        helper.Must(identity.NewKey(subdomainKey.String(), "unknown", "usecase1")),
+			key:        helper.Must(identity.NewKey(subdomainKey.String(), "class", "usecase1")),
 			name:       "Name",
 			details:    "Details",
 			level:      "sea",
@@ -152,7 +152,7 @@ func (suite *UseCaseSuite) TestNewUseCaseKey() {
 		{
 			subdomainKey: subdomainKey,
 			subKey:       "usecase1",
-			expected:     helper.Must(identity.NewKey(subdomainKey.String(), identity.USE_CASE_CHILD_TYPE, "usecase1")),
+			expected:     helper.Must(identity.NewKey(subdomainKey.String(), identity.USE_CASE_KEY_TYPE, "usecase1")),
 		},
 	}
 	for i, test := range tests {

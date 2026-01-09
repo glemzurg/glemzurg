@@ -63,10 +63,10 @@ func (suite *AssociationSuite) TestNew() {
 			problemDomainKey:  problemDomainKey,
 			solutionDomainKey: solutionDomainKey,
 			umlComment:        "UmlComment",
-			errstr:            `Key: (subKey: cannot be blank.)`,
+			errstr:            `Key: (childType: cannot be blank; subKey: cannot be blank.).`,
 		},
 		{
-			key:               helper.Must(identity.NewKey(problemDomainKey.String(), "unknown", "1")),
+			key:               helper.Must(identity.NewKey(problemDomainKey.String(), "class", "1")),
 			problemDomainKey:  problemDomainKey,
 			solutionDomainKey: solutionDomainKey,
 			umlComment:        "UmlComment",
@@ -77,14 +77,14 @@ func (suite *AssociationSuite) TestNew() {
 			problemDomainKey:  identity.Key{},
 			solutionDomainKey: solutionDomainKey,
 			umlComment:        "UmlComment",
-			errstr:            `ProblemDomainKey: (subKey: cannot be blank.)`,
+			errstr:            `ProblemDomainKey: (childType: cannot be blank; subKey: cannot be blank.).`,
 		},
 		{
 			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
 			problemDomainKey:  problemDomainKey,
 			solutionDomainKey: identity.Key{},
 			umlComment:        "UmlComment",
-			errstr:            `SolutionDomainKey: (subKey: cannot be blank.)`,
+			errstr:            `SolutionDomainKey: (childType: cannot be blank; subKey: cannot be blank.).`,
 		},
 	}
 	for i, test := range tests {
@@ -112,19 +112,19 @@ func (suite *AssociationSuite) TestNewAssociationKey() {
 		{
 			domainKey: domainKey,
 			subKey:    "1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_CHILD_TYPE, "1")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_KEY_TYPE, "1")),
 		},
 		{
 			domainKey: domainKey,
 			subKey:    "2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_CHILD_TYPE, "2")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_KEY_TYPE, "2")),
 		},
 
-		// Error states.
+		// OK case: blank parentKey.
 		{
 			domainKey: identity.Key{},
 			subKey:    "1",
-			errstr:    "parentKey: ParentKey and ChildType must both be set or both be blank.",
+			expected:  helper.Must(identity.NewKey("", identity.ASSOCIATION_KEY_TYPE, "1")),
 		},
 		{
 			domainKey: domainKey,

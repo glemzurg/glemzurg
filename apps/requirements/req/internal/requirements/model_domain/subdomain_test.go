@@ -61,10 +61,10 @@ func (suite *SubdomainSuite) TestNew() {
 			key:     identity.Key{},
 			name:    "Name",
 			details: "Details",
-			errstr:  "Key: (subKey: cannot be blank.).",
+			errstr:  "Key: (childType: cannot be blank; subKey: cannot be blank.).",
 		},
 		{
-			key:     helper.Must(identity.NewKey(domainKey.String(), "unknown", "subdomain1")),
+			key:     helper.Must(identity.NewKey(domainKey.String(), "class", "subdomain1")),
 			name:    "Name",
 			details: "Details",
 			errstr:  "Key: invalid child type for subdomain.",
@@ -102,19 +102,19 @@ func (suite *SubdomainSuite) TestNewSubdomainKey() {
 		{
 			domainKey: domainKey,
 			subKey:    "subdomain1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_CHILD_TYPE, "subdomain1")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_KEY_TYPE, "subdomain1")),
 		},
 		{
 			domainKey: domainKey,
 			subKey:    "subdomain2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_CHILD_TYPE, "subdomain2")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_KEY_TYPE, "subdomain2")),
 		},
 
-		// Error states.
+		// OK case: blank parentKey.
 		{
 			domainKey: identity.Key{},
 			subKey:    "subdomain1",
-			errstr:    "parentKey: ParentKey and ChildType must both be set or both be blank.",
+			expected:  helper.Must(identity.NewKey("", identity.SUBDOMAIN_KEY_TYPE, "subdomain1")),
 		},
 		{
 			domainKey: domainKey,

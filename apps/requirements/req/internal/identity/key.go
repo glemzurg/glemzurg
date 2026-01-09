@@ -19,6 +19,10 @@ func NewKey(parentKey, childType, subKey string) (key Key, err error) {
 	childType = strings.ToLower(strings.TrimSpace(childType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
 
+	if parentKey == "" && childType == "" {
+		childType = "model"
+	}
+
 	key = Key{
 		parentKey: parentKey,
 		childType: childType,
@@ -33,31 +37,27 @@ func NewKey(parentKey, childType, subKey string) (key Key, err error) {
 	return key, nil
 }
 
-func NewRootKey(rootKey string) (key Key, err error) {
-	return NewKey("", "", rootKey)
+func NewModelKey(rootKey string) (key Key, err error) {
+	return NewKey("", "model", rootKey)
 }
 
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
 	return validation.ValidateStruct(k,
 		validation.Field(&k.subKey, validation.Required),
-		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
-			parent := value.(string)
-			childType := k.childType
-			if (parent == "" && childType != "") || (parent != "" && childType == "") {
-				return errors.New("ParentKey and ChildType must both be set or both be blank")
-			}
-			return nil
-		})),
+		validation.Field(&k.childType, validation.Required, validation.In("model", "subdomain", "association", "class", "use_case", "state", "event", "guard", "generalization", "scenario", "actor")),
 	)
 }
 
 // String returns the string representation of the key.
 func (k *Key) String() string {
-	if k.parentKey != "" && k.childType != "" {
+	if k.parentKey != "" {
 		return k.parentKey + "/" + k.childType + "/" + k.subKey
+	} else if k.childType != "" {
+		return k.childType + "/" + k.subKey
+	} else {
+		return k.subKey
 	}
-	return k.subKey
 }
 
 // SubKey returns the subKey of the Key.
@@ -78,10 +78,14 @@ func ParseKey(s string) (key Key, err error) {
 	var parentKey, childType, subKey string
 	switch len(parts) {
 	case 1:
+		childType = "model"
 		subKey = parts[0]
 		if subKey == "" {
 			return Key{}, errors.New("invalid key format")
 		}
+	case 2:
+		childType = parts[0]
+		subKey = parts[1]
 	case 3:
 		parentKey = parts[0]
 		childType = parts[1]

@@ -63,7 +63,7 @@ func (suite *DomainSuite) TestNew() {
 		{
 			key:    identity.Key{},
 			name:   "Name",
-			errstr: "Key: (subKey: cannot be blank.).",
+			errstr: "Key: (childType: cannot be blank; subKey: cannot be blank.).",
 		},
 		{
 			key:    helper.Must(identity.NewRootKey("domain1")),
