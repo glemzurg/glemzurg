@@ -4,13 +4,19 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
+// Construct a key that sits correctly in the model shape.
+func NewSubdomainKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
+	return identity.NewKey(domainKey.String(), "subdomain", subKey)
+}
+
 // Subdomain is a nested category of the model.
 type Subdomain struct {
-	Key        string // Unique in model. Prefix pattern is the domain key.
+	Key        identity.Key
 	Name       string
 	Details    string // Markdown.
 	UmlComment string
@@ -21,7 +27,7 @@ type Subdomain struct {
 	Associations    []model_class.Association    // Associations between classes in this subdomain.
 }
 
-func NewSubdomain(key, name, details, umlComment string) (subdomain Subdomain, err error) {
+func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain Subdomain, err error) {
 
 	subdomain = Subdomain{
 		Key:        key,
@@ -31,7 +37,10 @@ func NewSubdomain(key, name, details, umlComment string) (subdomain Subdomain, e
 	}
 
 	err = validation.ValidateStruct(&subdomain,
-		validation.Field(&subdomain.Key, validation.Required),
+		validation.Field(&subdomain.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			return k.Validate()
+		})),
 		validation.Field(&subdomain.Name, validation.Required),
 	)
 	if err != nil {

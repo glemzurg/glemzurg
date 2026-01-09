@@ -1,19 +1,25 @@
 package model_domain
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
 
+// Construct a key that sits correctly in the model shape.
+func NewAssociationKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
+	return identity.NewKey(domainKey.String(), "association", subKey)
+}
+
 // When a domain enforces requirements on another domain.
 type Association struct {
-	Key               string // // Unique in model. Prefix pattern is the domain key for the problem domain.
-	ProblemDomainKey  string // The domain that enforces requirements on the other domain.
-	SolutionDomainKey string // The domain that has requirements enforced upon it.
+	Key               identity.Key
+	ProblemDomainKey  identity.Key
+	SolutionDomainKey identity.Key
 	UmlComment        string
 }
 
-func NewAssociation(key, problemDomainKey, solutionDomainKey, umlComment string) (association Association, err error) {
+func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlComment string) (association Association, err error) {
 
 	association = Association{
 		Key:               key,
@@ -23,9 +29,18 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey, umlComment string)
 	}
 
 	err = validation.ValidateStruct(&association,
-		validation.Field(&association.Key, validation.Required),
-		validation.Field(&association.ProblemDomainKey, validation.Required),
-		validation.Field(&association.SolutionDomainKey, validation.Required),
+		validation.Field(&association.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			return k.Validate()
+		})),
+		validation.Field(&association.ProblemDomainKey, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			return k.Validate()
+		})),
+		validation.Field(&association.SolutionDomainKey, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			return k.Validate()
+		})),
 	)
 	if err != nil {
 		return Association{}, errors.WithStack(err)

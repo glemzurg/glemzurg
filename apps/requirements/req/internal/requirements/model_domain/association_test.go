@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,61 +19,65 @@ type AssociationSuite struct {
 }
 
 func (suite *AssociationSuite) TestNew() {
+
+	problemDomainKey := helper.Must(identity.NewRootKey("domain1"))
+	solutionDomainKey := helper.Must(identity.NewRootKey("domain2"))
+
 	tests := []struct {
-		key               string
-		problemDomainKey  string
-		solutionDomainKey string
+		key               identity.Key
+		problemDomainKey  identity.Key
+		solutionDomainKey identity.Key
 		umlComment        string
 		obj               Association
 		errstr            string
 	}{
 		// OK.
 		{
-			key:               "Key",
-			problemDomainKey:  "ProblemDomainKey",
-			solutionDomainKey: "SolutionDomainKey",
+			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: solutionDomainKey,
 			umlComment:        "UmlComment",
 			obj: Association{
-				Key:               "Key",
-				ProblemDomainKey:  "ProblemDomainKey",
-				SolutionDomainKey: "SolutionDomainKey",
+				Key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
+				ProblemDomainKey:  problemDomainKey,
+				SolutionDomainKey: solutionDomainKey,
 				UmlComment:        "UmlComment",
 			},
 		},
 		{
-			key:               "Key",
-			problemDomainKey:  "ProblemDomainKey",
-			solutionDomainKey: "SolutionDomainKey",
+			key:               helper.Must(NewAssociationKey(problemDomainKey, "2")),
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: solutionDomainKey,
 			umlComment:        "",
 			obj: Association{
-				Key:               "Key",
-				ProblemDomainKey:  "ProblemDomainKey",
-				SolutionDomainKey: "SolutionDomainKey",
+				Key:               helper.Must(NewAssociationKey(problemDomainKey, "2")),
+				ProblemDomainKey:  problemDomainKey,
+				SolutionDomainKey: solutionDomainKey,
 				UmlComment:        "",
 			},
 		},
 
 		// Error states.
 		{
-			key:               "",
-			problemDomainKey:  "ProblemDomainKey",
-			solutionDomainKey: "SolutionDomainKey",
+			key:               identity.Key{},
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: solutionDomainKey,
 			umlComment:        "UmlComment",
-			errstr:            `Key: cannot be blank`,
+			errstr:            `Key: (subKey: cannot be blank.)`,
 		},
 		{
-			key:               "Key",
-			problemDomainKey:  "",
-			solutionDomainKey: "SolutionDomainKey",
+			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
+			problemDomainKey:  identity.Key{},
+			solutionDomainKey: solutionDomainKey,
 			umlComment:        "UmlComment",
-			errstr:            `ProblemDomainKey: cannot be blank`,
+			errstr:            `ProblemDomainKey: (subKey: cannot be blank.)`,
 		},
 		{
-			key:               "Key",
-			problemDomainKey:  "ProblemDomainKey",
-			solutionDomainKey: "",
+			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: identity.Key{},
 			umlComment:        "UmlComment",
-			errstr:            `SolutionDomainKey: cannot be blank`,
+			errstr:            `SolutionDomainKey: (subKey: cannot be blank.)`,
 		},
 	}
 	for i, test := range tests {
@@ -83,6 +89,51 @@ func (suite *AssociationSuite) TestNew() {
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
 			assert.Empty(suite.T(), obj, testName)
+		}
+	}
+}
+func (suite *AssociationSuite) TestNewAssociationKey() {
+	domainKey := helper.Must(identity.NewRootKey("domain1"))
+
+	tests := []struct {
+		domainKey identity.Key
+		subKey    string
+		expected  identity.Key
+		errstr    string
+	}{
+		// OK.
+		{
+			domainKey: domainKey,
+			subKey:    "1",
+			expected:  helper.Must(identity.NewKey(domainKey.String(), "association", "1")),
+		},
+		{
+			domainKey: domainKey,
+			subKey:    "2",
+			expected:  helper.Must(identity.NewKey(domainKey.String(), "association", "2")),
+		},
+
+		// Error states.
+		{
+			domainKey: identity.Key{},
+			subKey:    "1",
+			errstr:    "parentKey: ParentKey and ChildType must both be set or both be blank.",
+		},
+		{
+			domainKey: domainKey,
+			subKey:    "",
+			errstr:    "cannot be blank",
+		},
+	}
+	for i, test := range tests {
+		testName := fmt.Sprintf("Case %d: %+v", i, test)
+		key, err := NewAssociationKey(test.domainKey, test.subKey)
+		if test.errstr == "" {
+			assert.Nil(suite.T(), err, testName)
+			assert.Equal(suite.T(), test.expected, key, testName)
+		} else {
+			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			assert.Equal(suite.T(), identity.Key{}, key, testName)
 		}
 	}
 }
