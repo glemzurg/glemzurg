@@ -106,7 +106,7 @@ func (suite *KeySuite) TestParseKey() {
 		},
 		{
 			input:  "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
-			errstr: "keyType: cannot be blank.",
+			errstr: "keyType: must be a valid value.",
 		},
 	}
 	for i, test := range tests {

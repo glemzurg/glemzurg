@@ -93,24 +93,16 @@ func ParseKey(s string) (key Key, err error) {
 		return Key{}, errors.New("invalid key format")
 	}
 	parts := strings.Split(s, "/")
-	var parentKey, keyType, subKey string
-	switch len(parts) {
-	case 1:
-		keyType = "model"
-		subKey = parts[0]
-		if subKey == "" {
-			return Key{}, errors.New("invalid key format")
-		}
-	case 2:
-		keyType = parts[0]
-		subKey = parts[1]
-	case 3:
-		parentKey = parts[0]
-		keyType = parts[1]
-		subKey = parts[2]
-	default:
-		return Key{}, errors.New("invalid key format")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
 	}
+	if len(parts) < 2 {
+		return Key{}, errors.New("invalid key format2")
+	}
+	subKey := parts[len(parts)-1]
+	keyType := parts[len(parts)-2]
+	parentParts := parts[:len(parts)-2]
+	parentKey := strings.Join(parentParts, "/")
 
 	return NewKey(parentKey, keyType, subKey)
 }
