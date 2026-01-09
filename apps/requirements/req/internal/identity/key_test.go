@@ -49,13 +49,6 @@ func (suite *KeySuite) TestNewKey() {
 			subKey:    "rootkey",
 			expected:  Key{parentKey: "", keyType: "model", subKey: "rootkey"},
 		},
-		{
-			parentKey: "",
-			keyType:   "class",
-			subKey:    "thing1",
-			expected:  Key{parentKey: "", keyType: "class", subKey: "thing1"},
-		},
-
 		// Error cases: blank subKey.
 		{
 			parentKey: "domain1",
@@ -70,6 +63,12 @@ func (suite *KeySuite) TestNewKey() {
 			keyType:   "",
 			subKey:    "thing1",
 			errstr:    "keyType: cannot be blank.",
+		},
+		{
+			parentKey: "",
+			keyType:   "class",
+			subKey:    "thing1",
+			errstr:    "parentKey: parentKey must be non-blank for non-model keys.",
 		},
 	}
 	for i, test := range tests {
@@ -108,7 +107,7 @@ func (suite *KeySuite) TestParseKey() {
 		// Error cases: invalid format.
 		{
 			input:  "domain1/class",
-			errstr: "keyType: must be a valid value.",
+			errstr: "keyType: must be a valid value; parentKey: parentKey must be non-blank for non-model keys.",
 		},
 		{
 			input:  "domain1/class/thing1/extra",
@@ -163,26 +162,34 @@ func (suite *KeySuite) TestValidate() {
 	}{
 		// OK cases.
 		{
-			key: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
+			key: Key{parentKey: "", keyType: "model", subKey: "model1"},
 		},
 		{
-			key: Key{parentKey: "", keyType: "class", subKey: "thing1"},
+			key: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 
-		// Error cases: blank SubKey.
+		// Error cases.
 		{
 			key:    Key{parentKey: "domain1", keyType: "class", subKey: ""},
 			errstr: "cannot be blank",
 		},
-
-		// Error cases: blank ChildType.
-		{
-			key:    Key{parentKey: "", keyType: "", subKey: "rootkey"},
-			errstr: "keyType: cannot be blank.",
-		},
 		{
 			key:    Key{parentKey: "domain1", keyType: "", subKey: "thing1"},
-			errstr: "keyType: cannot be blank.",
+			errstr: "cannot be blank",
+		},
+		{
+			key:    Key{parentKey: "domain1", keyType: "unknown", subKey: "thing1"},
+			errstr: "keyType: must be a valid value.",
+		},
+
+		// Error cases: parentKey issues.
+		{
+			key:    Key{parentKey: "notallowed", keyType: "model", subKey: "model1"},
+			errstr: "parentKey: parentKey must be blank for model keys.",
+		},
+		{
+			key:    Key{parentKey: "", keyType: "class", subKey: "thing1"},
+			errstr: "parentKey: parentKey must be non-blank for non-model keys.",
 		},
 	}
 	for i, test := range tests {

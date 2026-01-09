@@ -19,6 +19,10 @@ func NewKey(parentKey, keyType, subKey string) (key Key, err error) {
 	keyType = strings.ToLower(strings.TrimSpace(keyType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
 
+	if parentKey == "" && keyType == "" {
+		keyType = KEY_TYPE_MODEL
+	}
+
 	key = Key{
 		parentKey: parentKey,
 		keyType:   keyType,
@@ -42,6 +46,19 @@ func (k *Key) Validate() error {
 	return validation.ValidateStruct(k,
 		validation.Field(&k.keyType, validation.Required, validation.In(KEY_TYPE_MODEL, KEY_TYPE_SUBDOMAIN, KEY_TYPE_ASSOCIATION, "class", KEY_TYPE_USE_CASE, KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_GENERALIZATION, KEY_TYPE_SCENARIO, KEY_TYPE_ACTOR)),
 		validation.Field(&k.subKey, validation.Required),
+		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
+			parent := value.(string)
+			if k.keyType == KEY_TYPE_MODEL {
+				if parent != "" {
+					return errors.New("parentKey must be blank for model keys")
+				}
+			} else {
+				if parent == "" {
+					return errors.New("parentKey must be non-blank for non-model keys")
+				}
+			}
+			return nil
+		})),
 	)
 }
 

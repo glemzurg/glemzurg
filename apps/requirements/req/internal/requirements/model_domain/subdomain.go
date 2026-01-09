@@ -42,8 +42,8 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 			if err := k.Validate(); err != nil {
 				return err
 			}
-			if k.ChildType() != identity.SUBDOMAIN_KEY_TYPE {
-				return errors.New("invalid child type for subdomain")
+			if k.KeyType() != identity.SUBDOMAIN_CHILD_TYPE {
+				return errors.New("invalid key type for subdomain")
 			}
 			return nil
 		})),

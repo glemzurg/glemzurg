@@ -34,8 +34,8 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 			if err := k.Validate(); err != nil {
 				return err
 			}
-			if k.ChildType() != identity.ASSOCIATION_KEY_TYPE {
-				return errors.New("invalid child type for association")
+			if k.KeyType() != identity.ASSOCIATION_CHILD_TYPE {
+				return errors.New("invalid key type for association")
 			}
 			return nil
 		})),
