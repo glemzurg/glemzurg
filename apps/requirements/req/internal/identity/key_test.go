@@ -32,10 +32,10 @@ func (suite *KeySuite) TestNewKey() {
 			expected:  Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 		{
-			parentKey: "01_order_fulfillment",
+			parentKey: "domain1",
 			keyType:   "association",
 			subKey:    "1",
-			expected:  Key{parentKey: "01_order_fulfillment", keyType: "association", subKey: "1"},
+			expected:  Key{parentKey: "domain1", keyType: "association", subKey: "1"},
 		},
 		{
 			parentKey: " PARENT ",
@@ -45,10 +45,11 @@ func (suite *KeySuite) TestNewKey() {
 		},
 		{
 			parentKey: "",
-			keyType:   "model",
+			keyType:   "use_case",
 			subKey:    "rootkey",
-			expected:  Key{parentKey: "", keyType: "model", subKey: "rootkey"},
+			expected:  Key{parentKey: "", keyType: "use_case", subKey: "rootkey"},
 		},
+
 		// Error cases: blank subKey.
 		{
 			parentKey: "domain1",
@@ -162,7 +163,10 @@ func (suite *KeySuite) TestValidate() {
 	}{
 		// OK cases.
 		{
-			key: Key{parentKey: "", keyType: "model", subKey: "model1"},
+			key: Key{parentKey: "", keyType: "domain", subKey: "domain1"},
+		},
+		{
+			key: Key{parentKey: "", keyType: "use_case", subKey: "usecase1"},
 		},
 		{
 			key: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
@@ -184,12 +188,12 @@ func (suite *KeySuite) TestValidate() {
 
 		// Error cases: parentKey issues.
 		{
-			key:    Key{parentKey: "notallowed", keyType: "model", subKey: "model1"},
-			errstr: "parentKey: parentKey must be blank for model keys.",
+			key:    Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
+			errstr: "parentKey: parentKey must be blank for domain, use_case keys.",
 		},
 		{
 			key:    Key{parentKey: "", keyType: "class", subKey: "thing1"},
-			errstr: "parentKey: parentKey must be non-blank for non-model keys.",
+			errstr: "parentKey: parentKey must be non-blank for non-domain, non-use_case keys.",
 		},
 	}
 	for i, test := range tests {

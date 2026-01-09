@@ -1,11 +1,17 @@
 package identity
 
 const (
-	KEY_TYPE_MODEL          = "model"
-	KEY_TYPE_DOMAIN         = "domain"
+
+	// Models do not have a key type.
+	// It is a string that is unique in the system.
+
+	// Keys without parents (parent is the model itself).
+	KEY_TYPE_DOMAIN   = "domain"
+	KEY_TYPE_USE_CASE = "use_case"
+
+	// Keys with parents.
 	KEY_TYPE_ASSOCIATION    = "association"
 	KEY_TYPE_SUBDOMAIN      = "subdomain"
-	KEY_TYPE_USE_CASE       = "use_case"
 	KEY_TYPE_STATE          = "state"
 	KEY_TYPE_EVENT          = "event"
 	KEY_TYPE_GUARD          = "guard"
