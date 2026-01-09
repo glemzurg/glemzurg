@@ -55,3 +55,26 @@ func (k Key) String() string {
 	}
 	return k.SubKey
 }
+
+func ParseKey(s string) (key Key, err error) {
+	if s == "" {
+		return Key{}, errors.New("invalid key format")
+	}
+	parts := strings.Split(s, "/")
+	var parentKey, childType, subKey string
+	switch len(parts) {
+	case 1:
+		subKey = parts[0]
+		if subKey == "" {
+			return Key{}, errors.New("invalid key format")
+		}
+	case 3:
+		parentKey = parts[0]
+		childType = parts[1]
+		subKey = parts[2]
+	default:
+		return Key{}, errors.New("invalid key format")
+	}
+
+	return NewKey(parentKey, childType, subKey)
+}

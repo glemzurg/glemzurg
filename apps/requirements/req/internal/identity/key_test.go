@@ -85,6 +85,57 @@ func (suite *KeySuite) TestNewKey() {
 	}
 }
 
+func (suite *KeySuite) TestParseKey() {
+	tests := []struct {
+		input    string
+		expected Key
+		errstr   string
+	}{
+		// OK cases.
+		{
+			input:    "domain1/class/thing1",
+			expected: Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+		},
+		{
+			input:    "rootkey",
+			expected: Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+		},
+		{
+			input:    "  DOMAIN1  /  CLASS  /  THING1  ", // with spaces
+			expected: Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+		},
+
+		// Error cases: invalid format.
+		{
+			input:  "domain1/class",
+			errstr: "invalid key format",
+		},
+		{
+			input:  "domain1/class/thing1/extra",
+			errstr: "invalid key format",
+		},
+		{
+			input:  "",
+			errstr: "invalid key format",
+		},
+		{
+			input:  "domain1//thing1", // empty childType
+			errstr: "ParentKey and ChildType must both be set or both be blank",
+		},
+	}
+	for i, test := range tests {
+		testName := fmt.Sprintf("Case %d: %+v", i, test)
+		key, err := ParseKey(test.input)
+		if test.errstr == "" {
+			assert.Nil(suite.T(), err, testName)
+			assert.Equal(suite.T(), test.expected, key, testName)
+		} else {
+			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			assert.Equal(suite.T(), Key{}, key, testName)
+		}
+	}
+}
+
 func (suite *KeySuite) TestString() {
 	tests := []struct {
 		key      Key
