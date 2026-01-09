@@ -7,6 +7,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Key is a string that uniquely identifies an entity in the model.
+type Key string
+
 func NewKey(parentKey, childType, subKey string) (constructed string, err error) {
 	parentKey, err = PreenKey(parentKey)
 	if err != nil {
