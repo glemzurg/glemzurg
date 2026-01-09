@@ -19,10 +19,6 @@ func NewKey(parentKey, keyType, subKey string) (key Key, err error) {
 	keyType = strings.ToLower(strings.TrimSpace(keyType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
 
-	if parentKey == "" && keyType == "" {
-		keyType = KEY_TYPE_MODEL
-	}
-
 	key = Key{
 		parentKey: parentKey,
 		keyType:   keyType,

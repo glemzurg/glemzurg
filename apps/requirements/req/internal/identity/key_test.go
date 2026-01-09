@@ -45,7 +45,7 @@ func (suite *KeySuite) TestNewKey() {
 		},
 		{
 			parentKey: "",
-			keyType:   "",
+			keyType:   "model",
 			subKey:    "rootkey",
 			expected:  Key{parentKey: "", keyType: "model", subKey: "rootkey"},
 		},
@@ -145,8 +145,8 @@ func (suite *KeySuite) TestString() {
 			expected: "domain1/class/thing1",
 		},
 		{
-			key:      Key{parentKey: "", keyType: "", subKey: "rootkey"},
-			expected: "rootkey",
+			key:      Key{parentKey: "", keyType: "model", subKey: "rootkey"},
+			expected: "model/rootkey",
 		},
 	}
 	for i, test := range tests {
