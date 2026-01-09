@@ -79,33 +79,33 @@ func (suite *KeySuite) TestParseKey() {
 	}{
 		// OK cases.
 		{
-			input:    "domain1/class/thing1",
-			expected: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
+			input:    "domain/domain1",
+			expected: Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 		},
 		{
-			input:    "rootkey",
-			expected: Key{parentKey: "", keyType: "model", subKey: "rootkey"},
+			input:    "domain/domain1/subdomain/subdomain1",
+			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
 		},
 		{
-			input:    "  DOMAIN1  /  CLASS  /  THING1  ", // with spaces
-			expected: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
+			input:    "domain/domain1/subdomain/subdomain1/class/thing1",
+			expected: Key{parentKey: "domain/domain1/subdomain/subdomain1", keyType: "class", subKey: "thing1"},
+		},
+		{
+			input:    " DOMAIN / DOMAIN1  /  SUBDOMAIN  /  SUBDOMAIN1  ", // with spaces
+			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
 		},
 
 		// Error cases: invalid format.
 		{
-			input:  "domain1/class",
-			errstr: "keyType: must be a valid value; parentKey: parentKey must be non-blank for non-model keys.",
-		},
-		{
-			input:  "domain1/class/thing1/extra",
+			input:  "", // empty string
 			errstr: "invalid key format",
 		},
 		{
-			input:  "",
-			errstr: "invalid key format",
+			input:  "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
+			errstr: "keyType: cannot be blank.",
 		},
 		{
-			input:  "domain1//thing1", // empty keyType
+			input:  "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
 			errstr: "keyType: cannot be blank.",
 		},
 	}
