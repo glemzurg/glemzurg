@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
@@ -44,11 +44,11 @@ func scanClass(scanner Scanner, subdomainKeyPtr *string, class *model_class.Clas
 func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, class model_class.Class, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_class.Class{}, err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return "", model_class.Class{}, err
 	}
@@ -90,15 +90,15 @@ func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, c
 func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Class) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
+	subdomainKey, err = identity.PreenKey(subdomainKey)
 	if err != nil {
 		return err
 	}
-	classKey, err := requirements.PreenKey(class.Key)
+	classKey, err := identity.PreenKey(class.Key)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Cl
 	// We may or may not be an actor.
 	var actorKeyPtr *string
 	if class.ActorKey != "" {
-		actorKey, err := requirements.PreenKey(class.ActorKey)
+		actorKey, err := identity.PreenKey(class.ActorKey)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Cl
 	// We may or may not be a superclass.
 	var superclassOfKeyPtr *string
 	if class.SuperclassOfKey != "" {
-		superclassOfKey, err := requirements.PreenKey(class.SuperclassOfKey)
+		superclassOfKey, err := identity.PreenKey(class.SuperclassOfKey)
 		if err != nil {
 			return err
 		}
@@ -124,7 +124,7 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Cl
 	// We may or may not be a subclass.
 	var subclassOfKeyPtr *string
 	if class.SubclassOfKey != "" {
-		subclassOfKey, err := requirements.PreenKey(class.SubclassOfKey)
+		subclassOfKey, err := identity.PreenKey(class.SubclassOfKey)
 		if err != nil {
 			return err
 		}
@@ -177,18 +177,18 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Cl
 func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err := requirements.PreenKey(class.Key)
+	classKey, err := identity.PreenKey(class.Key)
 	if err != nil {
 		return err
 	}
 	// We may or may not be an actor.
 	var actorKeyPtr *string
 	if class.ActorKey != "" {
-		actorKey, err := requirements.PreenKey(class.ActorKey)
+		actorKey, err := identity.PreenKey(class.ActorKey)
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 	// We may or may not be a superclass.
 	var superclassOfKeyPtr *string
 	if class.SuperclassOfKey != "" {
-		superclassOfKey, err := requirements.PreenKey(class.SuperclassOfKey)
+		superclassOfKey, err := identity.PreenKey(class.SuperclassOfKey)
 		if err != nil {
 			return err
 		}
@@ -206,7 +206,7 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 	// We may or may not be a subclass.
 	var subclassOfKeyPtr *string
 	if class.SubclassOfKey != "" {
-		subclassOfKey, err := requirements.PreenKey(class.SubclassOfKey)
+		subclassOfKey, err := identity.PreenKey(class.SubclassOfKey)
 		if err != nil {
 			return err
 		}
@@ -246,11 +246,11 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 func RemoveClass(dbOrTx DbOrTx, modelKey, classKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func RemoveClass(dbOrTx DbOrTx, modelKey, classKey string) (err error) {
 func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[string][]model_class.Class, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

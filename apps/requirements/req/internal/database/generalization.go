@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
@@ -30,11 +30,11 @@ func scanGeneralization(scanner Scanner, generalization *model_class.Generalizat
 func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (generalization model_class.Generalization, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return model_class.Generalization{}, err
 	}
-	generalizationKey, err = requirements.PreenKey(generalizationKey)
+	generalizationKey, err = identity.PreenKey(generalizationKey)
 	if err != nil {
 		return model_class.Generalization{}, err
 	}
@@ -74,11 +74,11 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (gene
 func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	generalizationKey, err := requirements.PreenKey(generalization.Key)
+	generalizationKey, err := identity.PreenKey(generalization.Key)
 	if err != nil {
 		return err
 	}
@@ -123,11 +123,11 @@ func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_clas
 func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	generalizationKey, err := requirements.PreenKey(generalization.Key)
+	generalizationKey, err := identity.PreenKey(generalization.Key)
 	if err != nil {
 		return err
 	}
@@ -164,11 +164,11 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_c
 func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	generalizationKey, err = requirements.PreenKey(generalizationKey)
+	generalizationKey, err = identity.PreenKey(generalizationKey)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (er
 func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []model_class.Generalization, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

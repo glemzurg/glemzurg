@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
@@ -32,11 +32,11 @@ func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *model_class.
 func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey string, attribute model_class.Attribute, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_class.Attribute{}, err
 	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
+	attributeKey, err = identity.PreenKey(attributeKey)
 	if err != nil {
 		return "", model_class.Attribute{}, err
 	}
@@ -78,15 +78,15 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey strin
 func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_class.Attribute) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	attributeKey, err := requirements.PreenKey(attribute.Key)
+	attributeKey, err := identity.PreenKey(attribute.Key)
 	if err != nil {
 		return err
 	}
@@ -137,15 +137,15 @@ func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_clas
 func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_class.Attribute) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	attributeKey, err := requirements.PreenKey(attribute.Key)
+	attributeKey, err := identity.PreenKey(attribute.Key)
 	if err != nil {
 		return err
 	}
@@ -187,15 +187,15 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_c
 func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
+	attributeKey, err = identity.PreenKey(attributeKey)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (er
 func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]model_class.Attribute, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

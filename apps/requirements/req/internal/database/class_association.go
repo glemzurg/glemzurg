@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 
 	"github.com/pkg/errors"
@@ -45,11 +45,11 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association model_class.Association, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return model_class.Association{}, err
 	}
-	associationKey, err = requirements.PreenKey(associationKey)
+	associationKey, err = identity.PreenKey(associationKey)
 	if err != nil {
 		return model_class.Association{}, err
 	}
@@ -95,19 +95,19 @@ func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (associatio
 func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	associationKey, err := requirements.PreenKey(association.Key)
+	associationKey, err := identity.PreenKey(association.Key)
 	if err != nil {
 		return err
 	}
-	toClassKey, err := requirements.PreenKey(association.ToClassKey)
+	toClassKey, err := identity.PreenKey(association.ToClassKey)
 	if err != nil {
 		return err
 	}
-	fromClassKey, err := requirements.PreenKey(association.FromClassKey)
+	fromClassKey, err := identity.PreenKey(association.FromClassKey)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Asso
 	// We may or may not have an association class.
 	var associationClassKeyPtr *string
 	if association.AssociationClassKey != "" {
-		associationClassKey, err := requirements.PreenKey(association.AssociationClassKey)
+		associationClassKey, err := identity.PreenKey(association.AssociationClassKey)
 		if err != nil {
 			return err
 		}
@@ -177,19 +177,19 @@ func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Asso
 func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	associationKey, err := requirements.PreenKey(association.Key)
+	associationKey, err := identity.PreenKey(association.Key)
 	if err != nil {
 		return err
 	}
-	toClassKey, err := requirements.PreenKey(association.ToClassKey)
+	toClassKey, err := identity.PreenKey(association.ToClassKey)
 	if err != nil {
 		return err
 	}
-	fromClassKey, err := requirements.PreenKey(association.FromClassKey)
+	fromClassKey, err := identity.PreenKey(association.FromClassKey)
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 	// We may or may not have an association class.
 	var associationClassKeyPtr *string
 	if association.AssociationClassKey != "" {
-		associationClassKey, err := requirements.PreenKey(association.AssociationClassKey)
+		associationClassKey, err := identity.PreenKey(association.AssociationClassKey)
 		if err != nil {
 			return err
 		}
@@ -246,11 +246,11 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 func RemoveAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	associationKey, err = requirements.PreenKey(associationKey)
+	associationKey, err = identity.PreenKey(associationKey)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func RemoveAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err erro
 func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_class.Association, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

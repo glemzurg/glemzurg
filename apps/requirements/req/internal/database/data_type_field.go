@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 	"github.com/pkg/errors"
@@ -34,11 +34,11 @@ func scanField(scanner Scanner, dataTypeKeyPtr *string, field *model_data_type.F
 func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map[string][]model_data_type.Field, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return nil, err
 	}
@@ -87,18 +87,18 @@ func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map
 func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
 	if field.FieldDataType == nil {
 		return errors.New("FieldDataType cannot be nil")
 	}
-	fieldDataTypeKey, err := requirements.PreenKey(field.FieldDataType.Key)
+	fieldDataTypeKey, err := identity.PreenKey(field.FieldDataType.Key)
 	if err != nil {
 		return err
 	}
@@ -131,18 +131,18 @@ func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type
 func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
 	if field.FieldDataType == nil {
 		return errors.New("FieldDataType cannot be nil")
 	}
-	fieldDataTypeKey, err := requirements.PreenKey(field.FieldDataType.Key)
+	fieldDataTypeKey, err := identity.PreenKey(field.FieldDataType.Key)
 	if err != nil {
 		return err
 	}
@@ -169,11 +169,11 @@ func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_t
 func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) 
 func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]model_data_type.Field, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]mode
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]mode
 	valueStrings := make([]string, 0, totalFields)
 	i := 0
 	for dataTypeKey, fields := range fieldMap {
-		dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+		dataTypeKey, err = identity.PreenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}
@@ -264,7 +264,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]mode
 			if field.FieldDataType == nil {
 				return errors.New("FieldDataType cannot be nil")
 			}
-			fieldDataTypeKey, err := requirements.PreenKey(field.FieldDataType.Key)
+			fieldDataTypeKey, err := identity.PreenKey(field.FieldDataType.Key)
 			if err != nil {
 				return err
 			}

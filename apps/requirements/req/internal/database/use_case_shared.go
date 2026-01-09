@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/pkg/errors"
@@ -28,15 +28,15 @@ func scanUseCaseShared(scanner Scanner, seaLevelKeyPtr, mudlevelKeyPtr *string, 
 func LoadUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string) (useCaseShared model_use_case.UseCaseShared, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return model_use_case.UseCaseShared{}, err
 	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
+	seaLevelKey, err = identity.PreenKey(seaLevelKey)
 	if err != nil {
 		return model_use_case.UseCaseShared{}, err
 	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
+	mudLevelKey, err = identity.PreenKey(mudLevelKey)
 	if err != nil {
 		return model_use_case.UseCaseShared{}, err
 	}
@@ -80,15 +80,15 @@ func LoadUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string)
 func AddUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string, useCaseShared model_use_case.UseCaseShared) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
+	seaLevelKey, err = identity.PreenKey(seaLevelKey)
 	if err != nil {
 		return err
 	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
+	mudLevelKey, err = identity.PreenKey(mudLevelKey)
 	if err != nil {
 		return err
 	}
@@ -127,15 +127,15 @@ func AddUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string, 
 func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string, useCaseShared model_use_case.UseCaseShared) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
+	seaLevelKey, err = identity.PreenKey(seaLevelKey)
 	if err != nil {
 		return err
 	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
+	mudLevelKey, err = identity.PreenKey(mudLevelKey)
 	if err != nil {
 		return err
 	}
@@ -169,15 +169,15 @@ func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey strin
 func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
+	seaLevelKey, err = identity.PreenKey(seaLevelKey)
 	if err != nil {
 		return err
 	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
+	mudLevelKey, err = identity.PreenKey(mudLevelKey)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey strin
 func QueryUseCaseShareds(dbOrTx DbOrTx, modelKey string) (useCaseShareds map[string]map[string]model_use_case.UseCaseShared, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

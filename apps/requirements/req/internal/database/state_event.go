@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/lib/pq"
@@ -40,11 +40,11 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *model_state.Event) (
 func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event model_state.Event, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_state.Event{}, err
 	}
-	eventKey, err = requirements.PreenKey(eventKey)
+	eventKey, err = identity.PreenKey(eventKey)
 	if err != nil {
 		return "", model_state.Event{}, err
 	}
@@ -83,15 +83,15 @@ func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event
 func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	eventKey, err := requirements.PreenKey(event.Key)
+	eventKey, err := identity.PreenKey(event.Key)
 	if err != nil {
 		return err
 	}
@@ -140,15 +140,15 @@ func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event)
 func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	eventKey, err := requirements.PreenKey(event.Key)
+	eventKey, err := identity.PreenKey(event.Key)
 	if err != nil {
 		return err
 	}
@@ -191,15 +191,15 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Eve
 func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	eventKey, err = requirements.PreenKey(eventKey)
+	eventKey, err = identity.PreenKey(eventKey)
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error)
 func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]model_state.Event, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

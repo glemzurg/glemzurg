@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/pkg/errors"
@@ -47,11 +47,11 @@ func scanTransition(scanner Scanner, classKeyPtr *string, transition *model_stat
 func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey string, transition model_state.Transition, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_state.Transition{}, err
 	}
-	transitionKey, err = requirements.PreenKey(transitionKey)
+	transitionKey, err = identity.PreenKey(transitionKey)
 	if err != nil {
 		return "", model_state.Transition{}, err
 	}
@@ -93,35 +93,35 @@ func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey str
 func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_state.Transition) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	transitionKey, err := requirements.PreenKey(transition.Key)
+	transitionKey, err := identity.PreenKey(transition.Key)
 	if err != nil {
 		return err
 	}
 	// We may or may not have a from state.
 	var fromStateKeyPtr *string
 	if transition.FromStateKey != "" {
-		fromStateKey, err := requirements.PreenKey(transition.FromStateKey)
+		fromStateKey, err := identity.PreenKey(transition.FromStateKey)
 		if err != nil {
 			return err
 		}
 		fromStateKeyPtr = &fromStateKey
 	}
-	eventKey, err := requirements.PreenKey(transition.EventKey)
+	eventKey, err := identity.PreenKey(transition.EventKey)
 	if err != nil {
 		return err
 	}
 	// We may or may not have a guard.
 	var guardKeyPtr *string
 	if transition.GuardKey != "" {
-		guardKey, err := requirements.PreenKey(transition.GuardKey)
+		guardKey, err := identity.PreenKey(transition.GuardKey)
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_st
 	// We may or may not have an action.
 	var actionKeyPtr *string
 	if transition.ActionKey != "" {
-		actionKey, err := requirements.PreenKey(transition.ActionKey)
+		actionKey, err := identity.PreenKey(transition.ActionKey)
 		if err != nil {
 			return err
 		}
@@ -139,7 +139,7 @@ func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_st
 	// We may or may not have a to state.
 	var toStateKeyPtr *string
 	if transition.ToStateKey != "" {
-		toStateKey, err := requirements.PreenKey(transition.ToStateKey)
+		toStateKey, err := identity.PreenKey(transition.ToStateKey)
 		if err != nil {
 			return err
 		}
@@ -192,35 +192,35 @@ func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_st
 func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model_state.Transition) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	transitionKey, err := requirements.PreenKey(transition.Key)
+	transitionKey, err := identity.PreenKey(transition.Key)
 	if err != nil {
 		return err
 	}
 	// We may or may not have a from state.
 	var fromStateKeyPtr *string
 	if transition.FromStateKey != "" {
-		fromStateKey, err := requirements.PreenKey(transition.FromStateKey)
+		fromStateKey, err := identity.PreenKey(transition.FromStateKey)
 		if err != nil {
 			return err
 		}
 		fromStateKeyPtr = &fromStateKey
 	}
-	eventKey, err := requirements.PreenKey(transition.EventKey)
+	eventKey, err := identity.PreenKey(transition.EventKey)
 	if err != nil {
 		return err
 	}
 	// We may or may not have a guard.
 	var guardKeyPtr *string
 	if transition.GuardKey != "" {
-		guardKey, err := requirements.PreenKey(transition.GuardKey)
+		guardKey, err := identity.PreenKey(transition.GuardKey)
 		if err != nil {
 			return err
 		}
@@ -229,7 +229,7 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model
 	// We may or may not have an action.
 	var actionKeyPtr *string
 	if transition.ActionKey != "" {
-		actionKey, err := requirements.PreenKey(transition.ActionKey)
+		actionKey, err := identity.PreenKey(transition.ActionKey)
 		if err != nil {
 			return err
 		}
@@ -238,7 +238,7 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model
 	// We may or may not have a to state.
 	var toStateKeyPtr *string
 	if transition.ToStateKey != "" {
-		toStateKey, err := requirements.PreenKey(transition.ToStateKey)
+		toStateKey, err := identity.PreenKey(transition.ToStateKey)
 		if err != nil {
 			return err
 		}
@@ -282,15 +282,15 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition model
 func RemoveTransition(dbOrTx DbOrTx, modelKey, classKey, transitionKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	transitionKey, err = requirements.PreenKey(transitionKey)
+	transitionKey, err = identity.PreenKey(transitionKey)
 	if err != nil {
 		return err
 	}
@@ -319,7 +319,7 @@ func RemoveTransition(dbOrTx DbOrTx, modelKey, classKey, transitionKey string) (
 func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[string][]model_state.Transition, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

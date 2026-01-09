@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 
 	"github.com/pkg/errors"
@@ -29,11 +29,11 @@ func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return model_actor.Actor{}, err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return model_actor.Actor{}, err
 	}
@@ -72,11 +72,11 @@ func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Acto
 func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err := requirements.PreenKey(actor.Key)
+	actorKey, err := identity.PreenKey(actor.Key)
 	if err != nil {
 		return err
 	}
@@ -118,11 +118,11 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err erro
 func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err := requirements.PreenKey(actor.Key)
+	actorKey, err := identity.PreenKey(actor.Key)
 	if err != nil {
 		return err
 	}
@@ -157,11 +157,11 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

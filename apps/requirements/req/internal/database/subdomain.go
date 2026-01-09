@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/pkg/errors"
@@ -29,11 +29,11 @@ func scanSubdomain(scanner Scanner, domainKeyPtr *string, subdomain *model_domai
 func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey string, subdomain model_domain.Subdomain, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_domain.Subdomain{}, err
 	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
+	subdomainKey, err = identity.PreenKey(subdomainKey)
 	if err != nil {
 		return "", model_domain.Subdomain{}, err
 	}
@@ -72,15 +72,15 @@ func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey stri
 func AddSubdomain(dbOrTx DbOrTx, modelKey, domainKey string, subdomain model_domain.Subdomain) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err = requirements.PreenKey(domainKey)
+	domainKey, err = identity.PreenKey(domainKey)
 	if err != nil {
 		return err
 	}
-	subdomainKey, err := requirements.PreenKey(subdomain.Key)
+	subdomainKey, err := identity.PreenKey(subdomain.Key)
 	if err != nil {
 		return err
 	}
@@ -122,11 +122,11 @@ func AddSubdomain(dbOrTx DbOrTx, modelKey, domainKey string, subdomain model_dom
 func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subdomain) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	subdomainKey, err := requirements.PreenKey(subdomain.Key)
+	subdomainKey, err := identity.PreenKey(subdomain.Key)
 	if err != nil {
 		return err
 	}
@@ -159,11 +159,11 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subd
 func RemoveSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
+	subdomainKey, err = identity.PreenKey(subdomainKey)
 	if err != nil {
 		return err
 	}
@@ -189,7 +189,7 @@ func RemoveSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (err error) {
 func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[string][]model_domain.Subdomain, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

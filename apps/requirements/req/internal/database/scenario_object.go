@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 
 	"github.com/pkg/errors"
@@ -32,11 +32,11 @@ func scanObject(scanner Scanner, scenarioKeyPtr *string, object *model_scenario.
 func LoadObject(dbOrTx DbOrTx, modelKey, objectKey string) (scenarioKey string, object model_scenario.Object, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_scenario.Object{}, err
 	}
-	objectKey, err = requirements.PreenKey(objectKey)
+	objectKey, err = identity.PreenKey(objectKey)
 	if err != nil {
 		return "", model_scenario.Object{}, err
 	}
@@ -78,19 +78,19 @@ func LoadObject(dbOrTx DbOrTx, modelKey, objectKey string) (scenarioKey string, 
 func AddObject(dbOrTx DbOrTx, modelKey, scenarioKey string, object model_scenario.Object) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	objectKey, err := requirements.PreenKey(object.Key)
+	objectKey, err := identity.PreenKey(object.Key)
 	if err != nil {
 		return err
 	}
-	scenarioKey, err = requirements.PreenKey(scenarioKey)
+	scenarioKey, err = identity.PreenKey(scenarioKey)
 	if err != nil {
 		return err
 	}
-	classKey, err := requirements.PreenKey(object.ClassKey)
+	classKey, err := identity.PreenKey(object.ClassKey)
 	if err != nil {
 		return err
 	}
@@ -140,15 +140,15 @@ func AddObject(dbOrTx DbOrTx, modelKey, scenarioKey string, object model_scenari
 func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	objectKey, err := requirements.PreenKey(object.Key)
+	objectKey, err := identity.PreenKey(object.Key)
 	if err != nil {
 		return err
 	}
-	classKey, err := requirements.PreenKey(object.ClassKey)
+	classKey, err := identity.PreenKey(object.ClassKey)
 	if err != nil {
 		return err
 	}
@@ -187,11 +187,11 @@ func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) 
 func RemoveObject(dbOrTx DbOrTx, modelKey, objectKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	objectKey, err = requirements.PreenKey(objectKey)
+	objectKey, err = identity.PreenKey(objectKey)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func RemoveObject(dbOrTx DbOrTx, modelKey, objectKey string) (err error) {
 func QueryObjects(dbOrTx DbOrTx, modelKey string) (objects map[string][]model_scenario.Object, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

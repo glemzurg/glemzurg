@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
 	"github.com/pkg/errors"
@@ -29,11 +29,11 @@ func scanDomain(scanner Scanner, domain *model_domain.Domain) (err error) {
 func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain model_domain.Domain, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return model_domain.Domain{}, err
 	}
-	domainKey, err = requirements.PreenKey(domainKey)
+	domainKey, err = identity.PreenKey(domainKey)
 	if err != nil {
 		return model_domain.Domain{}, err
 	}
@@ -72,11 +72,11 @@ func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain model_domain.
 func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err := requirements.PreenKey(domain.Key)
+	domainKey, err := identity.PreenKey(domain.Key)
 	if err != nil {
 		return err
 	}
@@ -118,11 +118,11 @@ func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err 
 func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err := requirements.PreenKey(domain.Key)
+	domainKey, err := identity.PreenKey(domain.Key)
 	if err != nil {
 		return err
 	}
@@ -157,11 +157,11 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (e
 func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	domainKey, err = requirements.PreenKey(domainKey)
+	domainKey, err = identity.PreenKey(domainKey)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []model_domain.Domain, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/pkg/errors"
@@ -29,11 +29,11 @@ func scanState(scanner Scanner, classKeyPtr *string, state *model_state.State) (
 func LoadState(dbOrTx DbOrTx, modelKey, stateKey string) (classKey string, state model_state.State, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_state.State{}, err
 	}
-	stateKey, err = requirements.PreenKey(stateKey)
+	stateKey, err = identity.PreenKey(stateKey)
 	if err != nil {
 		return "", model_state.State{}, err
 	}
@@ -72,15 +72,15 @@ func LoadState(dbOrTx DbOrTx, modelKey, stateKey string) (classKey string, state
 func AddState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	stateKey, err := requirements.PreenKey(state.Key)
+	stateKey, err := identity.PreenKey(state.Key)
 	if err != nil {
 		return err
 	}
@@ -122,15 +122,15 @@ func AddState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State)
 func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	stateKey, err := requirements.PreenKey(state.Key)
+	stateKey, err := identity.PreenKey(state.Key)
 	if err != nil {
 		return err
 	}
@@ -166,15 +166,15 @@ func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.Sta
 func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	stateKey, err = requirements.PreenKey(stateKey)
+	stateKey, err = identity.PreenKey(stateKey)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error)
 func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[string][]model_state.State, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

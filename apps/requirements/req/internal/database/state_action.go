@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/lib/pq"
@@ -31,11 +31,11 @@ func scanAction(scanner Scanner, classKeyPtr *string, action *model_state.Action
 func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, action model_state.Action, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_state.Action{}, err
 	}
-	actionKey, err = requirements.PreenKey(actionKey)
+	actionKey, err = identity.PreenKey(actionKey)
 	if err != nil {
 		return "", model_state.Action{}, err
 	}
@@ -75,15 +75,15 @@ func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, act
 func AddAction(dbOrTx DbOrTx, modelKey, classKey string, action model_state.Action) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	actionKey, err := requirements.PreenKey(action.Key)
+	actionKey, err := identity.PreenKey(action.Key)
 	if err != nil {
 		return err
 	}
@@ -128,15 +128,15 @@ func AddAction(dbOrTx DbOrTx, modelKey, classKey string, action model_state.Acti
 func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action model_state.Action) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	actionKey, err := requirements.PreenKey(action.Key)
+	actionKey, err := identity.PreenKey(action.Key)
 	if err != nil {
 		return err
 	}
@@ -174,15 +174,15 @@ func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action model_state.A
 func RemoveAction(dbOrTx DbOrTx, modelKey, classKey, actionKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	actionKey, err = requirements.PreenKey(actionKey)
+	actionKey, err = identity.PreenKey(actionKey)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func RemoveAction(dbOrTx DbOrTx, modelKey, classKey, actionKey string) (err erro
 func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[string][]model_state.Action, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

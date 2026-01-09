@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 
 	"github.com/pkg/errors"
@@ -27,15 +27,15 @@ func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *string, actor
 func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (actor model_use_case.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return model_use_case.Actor{}, err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
 		return model_use_case.Actor{}, err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return model_use_case.Actor{}, err
 	}
@@ -78,15 +78,15 @@ func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (act
 func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor model_use_case.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return err
 	}
@@ -122,15 +122,15 @@ func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor
 func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor model_use_case.Actor) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return err
 	}
@@ -162,15 +162,15 @@ func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, ac
 func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
 		return err
 	}
-	actorKey, err = requirements.PreenKey(actorKey)
+	actorKey, err = identity.PreenKey(actorKey)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (e
 func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (actors map[string]map[string]model_use_case.Actor, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

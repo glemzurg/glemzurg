@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 
 	"github.com/pkg/errors"
@@ -28,11 +28,11 @@ func scanGuard(scanner Scanner, classKeyPtr *string, guard *model_state.Guard) (
 func LoadGuard(dbOrTx DbOrTx, modelKey, guardKey string) (classKey string, guard model_state.Guard, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_state.Guard{}, err
 	}
-	guardKey, err = requirements.PreenKey(guardKey)
+	guardKey, err = identity.PreenKey(guardKey)
 	if err != nil {
 		return "", model_state.Guard{}, err
 	}
@@ -70,15 +70,15 @@ func LoadGuard(dbOrTx DbOrTx, modelKey, guardKey string) (classKey string, guard
 func AddGuard(dbOrTx DbOrTx, modelKey, classKey string, guard model_state.Guard) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	guardKey, err := requirements.PreenKey(guard.Key)
+	guardKey, err := identity.PreenKey(guard.Key)
 	if err != nil {
 		return err
 	}
@@ -117,15 +117,15 @@ func AddGuard(dbOrTx DbOrTx, modelKey, classKey string, guard model_state.Guard)
 func UpdateGuard(dbOrTx DbOrTx, modelKey, classKey string, guard model_state.Guard) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	guardKey, err := requirements.PreenKey(guard.Key)
+	guardKey, err := identity.PreenKey(guard.Key)
 	if err != nil {
 		return err
 	}
@@ -159,15 +159,15 @@ func UpdateGuard(dbOrTx DbOrTx, modelKey, classKey string, guard model_state.Gua
 func RemoveGuard(dbOrTx DbOrTx, modelKey, classKey, guardKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	classKey, err = requirements.PreenKey(classKey)
+	classKey, err = identity.PreenKey(classKey)
 	if err != nil {
 		return err
 	}
-	guardKey, err = requirements.PreenKey(guardKey)
+	guardKey, err = identity.PreenKey(guardKey)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func RemoveGuard(dbOrTx DbOrTx, modelKey, classKey, guardKey string) (err error)
 func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[string][]model_state.Guard, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}

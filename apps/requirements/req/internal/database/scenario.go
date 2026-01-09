@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 
 	"github.com/pkg/errors"
@@ -37,11 +37,11 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *model_scenar
 func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey string, scenario model_scenario.Scenario, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return "", model_scenario.Scenario{}, err
 	}
-	scenarioKey, err = requirements.PreenKey(scenarioKey)
+	scenarioKey, err = identity.PreenKey(scenarioKey)
 	if err != nil {
 		return "", model_scenario.Scenario{}, err
 	}
@@ -80,15 +80,15 @@ func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey strin
 func AddScenario(dbOrTx DbOrTx, modelKey, useCaseKey string, scenario model_scenario.Scenario) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
+	useCaseKey, err = identity.PreenKey(useCaseKey)
 	if err != nil {
 		return err
 	}
-	scenario.Key, err = requirements.PreenKey(scenario.Key)
+	scenario.Key, err = identity.PreenKey(scenario.Key)
 	if err != nil {
 		return err
 	}
@@ -129,11 +129,11 @@ func AddScenario(dbOrTx DbOrTx, modelKey, useCaseKey string, scenario model_scen
 func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scenario) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	scenarioKey, err := requirements.PreenKey(scenario.Key)
+	scenarioKey, err := identity.PreenKey(scenario.Key)
 	if err != nil {
 		return err
 	}
@@ -172,11 +172,11 @@ func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scen
 func RemoveScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	scenarioKey, err = requirements.PreenKey(scenarioKey)
+	scenarioKey, err = identity.PreenKey(scenarioKey)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func RemoveScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (err error) {
 func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[string][]model_scenario.Scenario, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
