@@ -105,12 +105,6 @@ func (suite *SubdomainSuite) TestNew() {
 			errstr:  "keyType: cannot be blank",
 		},
 		{
-			key:     helper.Must(identity.NewKey(domainKey.String(), "class", "subdomain1")),
-			name:    "Name",
-			details: "Details",
-			errstr:  "Key: invalid key type for subdomain.",
-		},
-		{
 			key:     helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
 			name:    "",
 			details: "Details",

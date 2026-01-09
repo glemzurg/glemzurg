@@ -8,6 +8,11 @@ import (
 
 // Construct a key that sits correctly in the model shape.
 func NewAssociationKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
+	// The parent must be a domain.
+	if domainKey.KeyType() != identity.KEY_TYPE_DOMAIN {
+		return identity.Key{}, errors.Errorf("parent key cannot be of type '%s' for 'association' key", domainKey.KeyType())
+	}
+
 	return identity.NewKey(domainKey.String(), identity.KEY_TYPE_ASSOCIATION, subKey)
 }
 
