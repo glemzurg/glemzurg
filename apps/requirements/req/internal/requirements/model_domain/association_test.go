@@ -114,7 +114,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewAssociation(tt.key, tt.problemDomainKey, tt.solutionDomainKey, tt.umlComment)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
@@ -124,8 +124,5 @@ func (suite *AssociationSuite) TestNew() {
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }

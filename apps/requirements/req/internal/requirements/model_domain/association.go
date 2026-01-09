@@ -36,11 +36,23 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 		})),
 		validation.Field(&association.ProblemDomainKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
-			return k.Validate()
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_DOMAIN {
+				return errors.Errorf("invalid key type '%s' for domain", k.KeyType())
+			}
+			return nil
 		})),
 		validation.Field(&association.SolutionDomainKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
-			return k.Validate()
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_DOMAIN {
+				return errors.Errorf("invalid key type '%s' for domain", k.KeyType())
+			}
+			return nil
 		})),
 	)
 	if err != nil {
