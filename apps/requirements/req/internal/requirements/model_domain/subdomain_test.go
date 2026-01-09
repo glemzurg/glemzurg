@@ -102,12 +102,12 @@ func (suite *SubdomainSuite) TestNewSubdomainKey() {
 		{
 			domainKey: domainKey,
 			subKey:    "subdomain1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), "subdomain", "subdomain1")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_CHILD_TYPE, "subdomain1")),
 		},
 		{
 			domainKey: domainKey,
 			subKey:    "subdomain2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), "subdomain", "subdomain2")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_CHILD_TYPE, "subdomain2")),
 		},
 
 		// Error states.

@@ -19,7 +19,7 @@ type UseCaseSuite struct {
 }
 
 func (suite *UseCaseSuite) TestNew() {
-	domainKey := helper.Must(identity.NewRootKey("domain1"))
+	subdomainKey := helper.Must(identity.NewRootKey("subdomain1"))
 
 	tests := []struct {
 		key        identity.Key
@@ -33,14 +33,14 @@ func (suite *UseCaseSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:        helper.Must(NewUseCaseKey(domainKey, "usecase1")),
+			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase1")),
 			name:       "Name",
 			details:    "Details",
 			level:      "sea",
 			readOnly:   true,
 			umlComment: "UmlComment",
 			obj: UseCase{
-				Key:        helper.Must(NewUseCaseKey(domainKey, "usecase1")),
+				Key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase1")),
 				Name:       "Name",
 				Details:    "Details",
 				Level:      "sea",
@@ -49,14 +49,14 @@ func (suite *UseCaseSuite) TestNew() {
 			},
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(domainKey, "usecase2")),
+			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase2")),
 			name:       "Name",
 			details:    "",
 			level:      "sky",
 			readOnly:   false,
 			umlComment: "",
 			obj: UseCase{
-				Key:        helper.Must(NewUseCaseKey(domainKey, "usecase2")),
+				Key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase2")),
 				Name:       "Name",
 				Details:    "",
 				Level:      "sky",
@@ -65,14 +65,14 @@ func (suite *UseCaseSuite) TestNew() {
 			},
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(domainKey, "usecase3")),
+			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase3")),
 			name:       "Name",
 			details:    "",
 			level:      "mud",
 			readOnly:   false,
 			umlComment: "",
 			obj: UseCase{
-				Key:        helper.Must(NewUseCaseKey(domainKey, "usecase3")),
+				Key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase3")),
 				Name:       "Name",
 				Details:    "",
 				Level:      "mud",
@@ -92,7 +92,7 @@ func (suite *UseCaseSuite) TestNew() {
 			errstr:     `Key: (subKey: cannot be blank.).`,
 		},
 		{
-			key:        helper.Must(identity.NewKey(domainKey.String(), "unknown", "usecase1")),
+			key:        helper.Must(identity.NewKey(subdomainKey.String(), "unknown", "usecase1")),
 			name:       "Name",
 			details:    "Details",
 			level:      "sea",
@@ -101,7 +101,7 @@ func (suite *UseCaseSuite) TestNew() {
 			errstr:     `Key: invalid child type for use_case.`,
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(domainKey, "usecase4")),
+			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase4")),
 			name:       "",
 			details:    "Details",
 			level:      "sea",
@@ -110,7 +110,7 @@ func (suite *UseCaseSuite) TestNew() {
 			errstr:     `Name: cannot be blank.`,
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(domainKey, "usecase5")),
+			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase5")),
 			name:       "Name",
 			details:    "Details",
 			level:      "",
@@ -119,7 +119,7 @@ func (suite *UseCaseSuite) TestNew() {
 			errstr:     `Level: cannot be blank.`,
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(domainKey, "usecase6")),
+			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase6")),
 			name:       "Name",
 			details:    "Details",
 			level:      "unknown",
@@ -141,23 +141,23 @@ func (suite *UseCaseSuite) TestNew() {
 	}
 }
 func (suite *UseCaseSuite) TestNewUseCaseKey() {
-	domainKey := helper.Must(identity.NewRootKey("domain1"))
+	subdomainKey := helper.Must(identity.NewRootKey("subdomain1"))
 
 	tests := []struct {
-		domainKey identity.Key
-		subKey    string
-		expected  identity.Key
-		errstr    string
+		subdomainKey identity.Key
+		subKey       string
+		expected     identity.Key
+		errstr       string
 	}{
 		{
-			domainKey: domainKey,
-			subKey:    "usecase1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), "use_case", "usecase1")),
+			subdomainKey: subdomainKey,
+			subKey:       "usecase1",
+			expected:     helper.Must(identity.NewKey(subdomainKey.String(), identity.USE_CASE_CHILD_TYPE, "usecase1")),
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewUseCaseKey(test.domainKey, test.subKey)
+		obj, err := NewUseCaseKey(test.subdomainKey, test.subKey)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.expected, obj, testName)

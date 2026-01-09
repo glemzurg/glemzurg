@@ -8,16 +8,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 )
 
-// For key construction.
-const _USE_CASE_CHILD_TYPE = "use_case"
-
 // Construct a key that sits correctly in the model shape.
 func NewUseCaseKey(parentKey identity.Key, subKey string) (key identity.Key, err error) {
-	key, err = identity.NewKey(parentKey.String(), _USE_CASE_CHILD_TYPE, subKey)
-	if err != nil {
-		return identity.Key{}, err
-	}
-	return key, key.Validate()
+	return identity.NewKey(parentKey.String(), identity.USE_CASE_CHILD_TYPE, subKey)
 }
 
 const (
@@ -58,7 +51,7 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 			if err := k.Validate(); err != nil {
 				return err
 			}
-			if k.ChildType() != _USE_CASE_CHILD_TYPE {
+			if k.ChildType() != identity.USE_CASE_CHILD_TYPE {
 				return errors.New("invalid child type for use_case")
 			}
 			return nil

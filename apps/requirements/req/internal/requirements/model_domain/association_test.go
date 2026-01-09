@@ -112,12 +112,12 @@ func (suite *AssociationSuite) TestNewAssociationKey() {
 		{
 			domainKey: domainKey,
 			subKey:    "1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), "association", "1")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_CHILD_TYPE, "1")),
 		},
 		{
 			domainKey: domainKey,
 			subKey:    "2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), "association", "2")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_CHILD_TYPE, "2")),
 		},
 
 		// Error states.
