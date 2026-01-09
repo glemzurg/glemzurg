@@ -15,11 +15,14 @@ func TestSubdomainSuite(t *testing.T) {
 
 type SubdomainSuite struct {
 	suite.Suite
+	domainKey identity.Key
+}
+
+func (suite *SubdomainSuite) SetupTest() {
+	suite.domainKey = helper.Must(identity.NewDomainKey("domain1"))
 }
 
 func (suite *SubdomainSuite) TestNew() {
-
-	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
 
 	tests := []struct {
 		testName   string
@@ -33,25 +36,25 @@ func (suite *SubdomainSuite) TestNew() {
 		// OK.
 		{
 			testName:   "ok with details",
-			key:        helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
+			key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
 			name:       "Name",
 			details:    "Details",
 			umlComment: "UmlComment",
 			obj: Subdomain{
-				Key:        helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
+				Key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
 				Name:       "Name",
 				Details:    "Details",
 				UmlComment: "UmlComment",
 			},
 		},
 		{
-			testName:   "ok with blank values",
-			key:        helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
+			testName:   "ok minimal",
+			key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
 			name:       "Name",
 			details:    "",
 			umlComment: "",
 			obj: Subdomain{
-				Key:        helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
+				Key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
 				Name:       "Name",
 				Details:    "",
 				UmlComment: "",
@@ -67,15 +70,22 @@ func (suite *SubdomainSuite) TestNew() {
 			errstr:   "keyType: cannot be blank",
 		},
 		{
+			testName: "error empty key",
+			key:      helper.Must(identity.NewActorKey("actor1")),
+			name:     "Name",
+			details:  "Details",
+			errstr:   "Key: invalid key type 'actor' for subdomain.",
+		},
+		{
 			testName: "error blank name",
-			key:      helper.Must(NewSubdomainKey(domainKey, "subdomain1")),
+			key:      helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
 			name:     "",
 			details:  "Details",
 			errstr:   "Name: cannot be blank.",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewSubdomain(tt.key, tt.name, tt.details, tt.umlComment)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
@@ -85,8 +95,5 @@ func (suite *SubdomainSuite) TestNew() {
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }

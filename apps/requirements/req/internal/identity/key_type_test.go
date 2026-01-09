@@ -25,16 +25,16 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 	}{
 		// OK.
 		{
-			testName:     "ok",
+			testName: "ok",
 			subKey:   "actor1",
 			expected: helper.Must(newRootKey(KEY_TYPE_ACTOR, "actor1")),
 		},
 
 		// Errors.
 		{
-			testName:   "error blank",
-			subKey: "",
-			errstr: "cannot be blank",
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "cannot be blank",
 		},
 	}
 	for _, tt := range tests {
@@ -63,16 +63,16 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 	}{
 		// OK.
 		{
-			testName:     "ok",
+			testName: "ok",
 			subKey:   "domain1",
 			expected: helper.Must(newRootKey(KEY_TYPE_DOMAIN, "domain1")),
 		},
 
 		// Errors.
 		{
-			testName:   "error blank",
-			subKey: "",
-			errstr: "cannot be blank",
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "cannot be blank",
 		},
 	}
 	for _, tt := range tests {
@@ -106,7 +106,7 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 	}{
 		// OK.
 		{
-			testName:      "ok",
+			testName:  "ok",
 			domainKey: domainKey,
 			subKey:    "1",
 			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, "1")),
@@ -114,19 +114,19 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 
 		// Errors.
 		{
-			testName:      "error empty parent",
+			testName:  "error empty parent",
 			domainKey: Key{},
 			subKey:    "1",
 			errstr:    "parent key cannot be of type '' for 'association' key",
 		},
 		{
-			testName:      "error wrong parent type",
+			testName:  "error wrong parent type",
 			domainKey: helper.Must(NewActorKey("actor1")),
 			subKey:    "1",
 			errstr:    "parent key cannot be of type 'actor' for 'association' key",
 		},
 		{
-			testName:      "error blank subKey",
+			testName:  "error blank subKey",
 			domainKey: domainKey,
 			subKey:    "",
 			errstr:    "cannot be blank",
@@ -163,7 +163,7 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 	}{
 		// OK.
 		{
-			testName:      "ok",
+			testName:  "ok",
 			domainKey: domainKey,
 			subKey:    "subdomain1",
 			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_SUBDOMAIN, "subdomain1")),
@@ -171,19 +171,19 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 
 		// Errors.
 		{
-			testName:      "error empty parent",
+			testName:  "error empty parent",
 			domainKey: Key{},
 			subKey:    "subdomain1",
 			errstr:    "parent key cannot be of type '' for 'subdomain' key",
 		},
 		{
-			testName:      "error wrong parent type",
+			testName:  "error wrong parent type",
 			domainKey: helper.Must(NewActorKey("actor1")),
 			subKey:    "subdomain1",
 			errstr:    "parent key cannot be of type 'actor' for 'subdomain' key",
 		},
 		{
-			testName:      "error blank subKey",
+			testName:  "error blank subKey",
 			domainKey: domainKey,
 			subKey:    "",
 			errstr:    "cannot be blank",

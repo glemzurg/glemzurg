@@ -50,7 +50,7 @@ func (suite *AssociationSuite) TestNew() {
 			},
 		},
 		{
-			testName:          "ok without blank values",
+			testName:          "ok minimal",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "2")),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,

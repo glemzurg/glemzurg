@@ -26,28 +26,28 @@ func (suite *KeySuite) TestNewKey() {
 	}{
 		// OK cases.
 		{
-			testName:      "ok basic",
+			testName:  "ok basic",
 			parentKey: "domain1",
 			keyType:   "class",
 			subKey:    "thing1",
 			expected:  Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 		{
-			testName:      "ok association",
+			testName:  "ok domain association",
 			parentKey: "domain1",
-			keyType:   "association",
+			keyType:   "dassociation",
 			subKey:    "1",
-			expected:  Key{parentKey: "domain1", keyType: "association", subKey: "1"},
+			expected:  Key{parentKey: "domain1", keyType: "dassociation", subKey: "1"},
 		},
 		{
-			testName:      "ok with spaces",
+			testName:  "ok with spaces",
 			parentKey: " PARENT ",
 			keyType:   "class",
 			subKey:    " KEY ",
 			expected:  Key{parentKey: "parent", keyType: "class", subKey: "key"},
 		},
 		{
-			testName:      "ok root",
+			testName:  "ok root",
 			parentKey: "",
 			keyType:   "actor",
 			subKey:    "rootkey",
@@ -56,7 +56,7 @@ func (suite *KeySuite) TestNewKey() {
 
 		// Error cases: verify that validate is being called.
 		{
-			testName:      "validate being called",
+			testName:  "validate being called",
 			parentKey: "domain1",
 			keyType:   "", // Trigger validation error.
 			subKey:    "thing1",
@@ -89,41 +89,41 @@ func (suite *KeySuite) TestParseKey() {
 	}{
 		// OK cases.
 		{
-			testName:     "ok simple",
+			testName: "ok simple",
 			input:    "domain/domain1",
 			expected: Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 		},
 		{
-			testName:     "ok nested",
+			testName: "ok nested",
 			input:    "domain/domain1/subdomain/subdomain1",
 			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
 		},
 		{
-			testName:     "ok deep",
+			testName: "ok deep",
 			input:    "domain/domain1/subdomain/subdomain1/class/thing1",
 			expected: Key{parentKey: "domain/domain1/subdomain/subdomain1", keyType: "class", subKey: "thing1"},
 		},
 		{
-			testName:     "ok with spaces",
+			testName: "ok with spaces",
 			input:    " DOMAIN / DOMAIN1  /  SUBDOMAIN  /  SUBDOMAIN1  ", // with spaces
 			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
 		},
 
 		// Error cases: invalid format.
 		{
-			testName:   "error empty",
-			input:  "", // empty string
-			errstr: "invalid key format",
+			testName: "error empty",
+			input:    "", // empty string
+			errstr:   "invalid key format",
 		},
 		{
-			testName:   "error empty keyType",
-			input:  "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
-			errstr: "keyType: cannot be blank.",
+			testName: "error empty keyType",
+			input:    "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
+			errstr:   "keyType: cannot be blank.",
 		},
 		{
-			testName:   "error unknown keyType",
-			input:  "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
-			errstr: "keyType: must be a valid value.",
+			testName: "error unknown keyType",
+			input:    "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
+			errstr:   "keyType: must be a valid value.",
 		},
 	}
 	for _, tt := range tests {
@@ -150,12 +150,12 @@ func (suite *KeySuite) TestString() {
 		expected string
 	}{
 		{
-			testName:     "with parent",
+			testName: "with parent",
 			key:      Key{parentKey: "domain/domain1", keyType: "class", subKey: "thing1"},
 			expected: "domain/domain1/class/thing1",
 		},
 		{
-			testName:     "root",
+			testName: "root",
 			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 			expected: "domain/domain1",
 		},
@@ -179,49 +179,49 @@ func (suite *KeySuite) TestValidate() {
 		// OK cases.
 		{
 			testName: "ok domain",
-			key:  Key{parentKey: "", keyType: "domain", subKey: "domain1"},
+			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 		},
 		{
 			testName: "ok actor",
-			key:  Key{parentKey: "", keyType: "actor", subKey: "actor1"},
+			key:      Key{parentKey: "", keyType: "actor", subKey: "actor1"},
 		},
 		{
 			testName: "ok class",
-			key:  Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
+			key:      Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 
 		// Error cases.
 		{
-			testName:   "error blank subKey",
-			key:    Key{parentKey: "domain1", keyType: "class", subKey: ""},
-			errstr: "cannot be blank",
+			testName: "error blank subKey",
+			key:      Key{parentKey: "domain1", keyType: "class", subKey: ""},
+			errstr:   "cannot be blank",
 		},
 		{
-			testName:   "error blank keyType",
-			key:    Key{parentKey: "domain1", keyType: "", subKey: "thing1"},
-			errstr: "cannot be blank",
+			testName: "error blank keyType",
+			key:      Key{parentKey: "domain1", keyType: "", subKey: "thing1"},
+			errstr:   "cannot be blank",
 		},
 		{
-			testName:   "error invalid keyType",
-			key:    Key{parentKey: "domain1", keyType: "unknown", subKey: "thing1"},
-			errstr: "keyType: must be a valid value.",
+			testName: "error invalid keyType",
+			key:      Key{parentKey: "domain1", keyType: "unknown", subKey: "thing1"},
+			errstr:   "keyType: must be a valid value.",
 		},
 
 		// Error cases: parentKey issues.
 		{
-			testName:   "error parentKey for domain",
-			key:    Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
-			errstr: "parentKey: parentKey must be blank for 'domain' keys.",
+			testName: "error parentKey for domain",
+			key:      Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
+			errstr:   "parentKey: parentKey must be blank for 'domain' keys.",
 		},
 		{
-			testName:   "error parentKey for actor",
-			key:    Key{parentKey: "notallowed", keyType: "actor", subKey: "domain1"},
-			errstr: "parentKey: parentKey must be blank for 'actor' keys.",
+			testName: "error parentKey for actor",
+			key:      Key{parentKey: "notallowed", keyType: "actor", subKey: "domain1"},
+			errstr:   "parentKey: parentKey must be blank for 'actor' keys.",
 		},
 		{
-			testName:   "error blank parentKey for class",
-			key:    Key{parentKey: "", keyType: "class", subKey: "thing1"},
-			errstr: "parentKey: parentKey must be non-blank for 'class' keys.",
+			testName: "error blank parentKey for class",
+			key:      Key{parentKey: "", keyType: "class", subKey: "thing1"},
+			errstr:   "parentKey: parentKey must be non-blank for 'class' keys.",
 		},
 	}
 	for _, tt := range tests {

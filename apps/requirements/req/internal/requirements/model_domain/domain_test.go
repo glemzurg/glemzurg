@@ -82,7 +82,7 @@ func (suite *DomainSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewDomain(tt.key, tt.name, tt.details, tt.realized, tt.umlComment)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
@@ -92,8 +92,5 @@ func (suite *DomainSuite) TestNew() {
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }
