@@ -6,6 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 func TestDomainSuite(t *testing.T) {
@@ -18,7 +21,7 @@ type DomainSuite struct {
 
 func (suite *DomainSuite) TestNew() {
 	tests := []struct {
-		key        string
+		key        identity.Key
 		name       string
 		details    string
 		realized   bool
@@ -28,13 +31,13 @@ func (suite *DomainSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:        "Key",
+			key:        helper.Must(identity.NewRootKey("domain1")),
 			name:       "Name",
 			details:    "Details",
 			realized:   true,
 			umlComment: "UmlComment",
 			obj: Domain{
-				Key:        "Key",
+				Key:        helper.Must(identity.NewRootKey("domain1")),
 				Name:       "Name",
 				Details:    "Details",
 				Realized:   true,
@@ -42,13 +45,13 @@ func (suite *DomainSuite) TestNew() {
 			},
 		},
 		{
-			key:        "Key",
+			key:        helper.Must(identity.NewRootKey("domain1")),
 			name:       "Name",
 			details:    "",
 			realized:   false,
 			umlComment: "",
 			obj: Domain{
-				Key:        "Key",
+				Key:        helper.Must(identity.NewRootKey("domain1")),
 				Name:       "Name",
 				Details:    "",
 				Realized:   false,
@@ -58,18 +61,19 @@ func (suite *DomainSuite) TestNew() {
 
 		// Error states.
 		{
-			key:    "",
+			key:    identity.Key{},
 			name:   "Name",
-			errstr: `cannot be blank`,
+			errstr: "Key: (subKey: cannot be blank.).",
 		},
 		{
-			key:    "Key",
+			key:    helper.Must(identity.NewRootKey("domain1")),
 			name:   "",
 			errstr: `Name: cannot be blank.`,
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
+
 		obj, err := NewDomain(test.key, test.name, test.details, test.realized, test.umlComment)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)

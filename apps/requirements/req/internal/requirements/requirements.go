@@ -69,7 +69,7 @@ func (r *Requirements) prepLookups() {
 		// Put data into an easy to lookup format.
 		r.generalizationLookup = model_class.CreateKeyGeneralizationLookup(r.Classes, r.Generalizations)
 		r.actorLookup = model_actor.CreateKeyActorLookup(r.Classes, r.Actors)
-		r.domainLookup = model_domain.CreateKeyDomainLookup(r.Classes, r.UseCases, r.Domains)
+		r.domainLookup = createKeyDomainLookup(r.Classes, r.UseCases, r.Domains)
 		r.classLookup = model_class.CreateKeyClassLookup(r.Attributes, r.States, r.Events, r.Guards, r.Actions, r.Transitions, r.Classes)
 		r.attributeLookup = model_class.CreateKeyAttributeLookup(r.Attributes)
 		r.associationLookup = model_class.CreateKeyAssociationLookup(r.Associations)
@@ -337,7 +337,7 @@ func (r *Requirements) ToTree() Model {
 	// Populate domains
 	for i := range tree.Domains {
 		domain := &tree.Domains[i]
-		domain.Subdomains = r.Subdomains[domain.Key]
+		domain.Subdomains = r.Subdomains[domain.Key.String()]
 
 		// Populate subdomains
 		for j := range domain.Subdomains {
@@ -430,7 +430,7 @@ func (r *Requirements) FromTree(tree Model) {
 
 	// Populate from tree
 	for _, domain := range tree.Domains {
-		r.Subdomains[domain.Key] = domain.Subdomains
+		r.Subdomains[domain.Key.String()] = domain.Subdomains
 
 		for _, subdomain := range domain.Subdomains {
 			r.Classes[subdomain.Key] = subdomain.Classes
@@ -496,4 +496,17 @@ func (r *Requirements) FromTree(tree Model) {
 			// Subdomains empty
 		}
 	}
+}
+
+func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainUseCases map[string][]model_use_case.UseCase, items []model_domain.Domain) (lookup map[string]model_domain.Domain) {
+
+	lookup = map[string]model_domain.Domain{}
+	for _, item := range items {
+
+		item.Classes = domainClasses[item.Key.String()]
+		item.UseCases = domainUseCases[item.Key.String()]
+
+		lookup[item.Key.String()] = item
+	}
+	return lookup
 }

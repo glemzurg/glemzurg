@@ -4,13 +4,14 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
 // Domain is a root category of the mode.
 type Domain struct {
-	Key        string // Unique in model. No prefix pattern.
+	Key        identity.Key // Unique in model. No prefix pattern.
 	Name       string
 	Details    string // Markdown.
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
@@ -22,7 +23,7 @@ type Domain struct {
 	Subdomains   []Subdomain
 }
 
-func NewDomain(key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
+func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
 
 	domain = Domain{
 		Key:        key,
@@ -33,7 +34,10 @@ func NewDomain(key, name, details string, realized bool, umlComment string) (dom
 	}
 
 	err = validation.ValidateStruct(&domain,
-		validation.Field(&domain.Key, validation.Required),
+		validation.Field(&domain.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			return k.Validate()
+		})),
 		validation.Field(&domain.Name, validation.Required),
 	)
 	if err != nil {
@@ -41,17 +45,4 @@ func NewDomain(key, name, details string, realized bool, umlComment string) (dom
 	}
 
 	return domain, nil
-}
-
-func CreateKeyDomainLookup(domainClasses map[string][]model_class.Class, domainUseCases map[string][]model_use_case.UseCase, items []Domain) (lookup map[string]Domain) {
-
-	lookup = map[string]Domain{}
-	for _, item := range items {
-
-		item.Classes = domainClasses[item.Key]
-		item.UseCases = domainUseCases[item.Key]
-
-		lookup[item.Key] = item
-	}
-	return lookup
 }
