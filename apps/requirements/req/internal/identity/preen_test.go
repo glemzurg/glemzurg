@@ -1,7 +1,6 @@
 package identity
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,39 +17,48 @@ type PreenSuite struct {
 
 func (suite *PreenSuite) TestPreen() {
 	tests := []struct {
+		name    string
 		key     string
 		preened string
 		errstr  string
 	}{
 		// OK.
 		{
+			name:    "ok no spaces",
 			key:     "key",
 			preened: "key",
 		},
 		{
+			name:    "ok with spaces",
 			key:     " key ",
 			preened: "key",
 		},
 		{
+			name:    "ok uppercase",
 			key:     "KEY",
 			preened: "key",
 		},
 
 		// Error states.
 		{
+			name:   "error blank",
 			key:    "   ",
 			errstr: `cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		preened, err := PreenKey(test.key)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.preened, preened, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), preened, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.name, func(t *testing.T) {
+			preened, err := PreenKey(tt.key)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.preened, preened)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, preened)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }

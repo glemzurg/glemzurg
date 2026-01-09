@@ -1,7 +1,6 @@
 package identity
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -19,62 +18,76 @@ type KeyTypeSuite struct {
 
 func (suite *KeyTypeSuite) TestNewActorKey() {
 	tests := []struct {
+		name     string
 		subKey   string
 		expected Key
 		errstr   string
 	}{
 		// OK.
 		{
+			name:     "ok",
 			subKey:   "actor1",
 			expected: helper.Must(newRootKey(KEY_TYPE_ACTOR, "actor1")),
 		},
 
 		// Errors.
 		{
+			name:   "error blank",
 			subKey: "",
 			errstr: "cannot be blank",
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewActorKey(test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), Key{}, key, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.name, func(t *testing.T) {
+			key, err := NewActorKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
 
 func (suite *KeyTypeSuite) TestNewDomainKey() {
 	tests := []struct {
+		name     string
 		subKey   string
 		expected Key
 		errstr   string
 	}{
 		// OK.
 		{
+			name:     "ok",
 			subKey:   "domain1",
 			expected: helper.Must(newRootKey(KEY_TYPE_DOMAIN, "domain1")),
 		},
 
 		// Errors.
 		{
+			name:   "error blank",
 			subKey: "",
 			errstr: "cannot be blank",
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewDomainKey(test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), Key{}, key, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.name, func(t *testing.T) {
+			key, err := NewDomainKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
@@ -82,9 +95,10 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 
 	domainKey, err := NewDomainKey("domain1")
-	assert.Nil(suite.T(), err)
+	assert.NoError(suite.T(), err)
 
 	tests := []struct {
+		name      string
 		domainKey Key
 		subKey    string
 		expected  Key
@@ -92,6 +106,7 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 	}{
 		// OK.
 		{
+			name:      "ok",
 			domainKey: domainKey,
 			subKey:    "1",
 			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_ASSOCIATION, "1")),
@@ -99,30 +114,37 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 
 		// Errors.
 		{
+			name:      "error empty parent",
 			domainKey: Key{},
 			subKey:    "1",
 			errstr:    "parent key cannot be of type '' for 'association' key",
 		},
 		{
+			name:      "error wrong parent type",
 			domainKey: helper.Must(NewActorKey("actor1")),
 			subKey:    "1",
 			errstr:    "parent key cannot be of type 'actor' for 'association' key",
 		},
 		{
+			name:      "error blank subKey",
 			domainKey: domainKey,
 			subKey:    "",
 			errstr:    "cannot be blank",
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewDomainAssociationKey(test.domainKey, test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), Key{}, key, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.name, func(t *testing.T) {
+			key, err := NewDomainAssociationKey(tt.domainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
@@ -130,9 +152,10 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 
 	domainKey, err := NewDomainKey("domain1")
-	assert.Nil(suite.T(), err)
+	assert.NoError(suite.T(), err)
 
 	tests := []struct {
+		name      string
 		domainKey Key
 		subKey    string
 		expected  Key
@@ -140,6 +163,7 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 	}{
 		// OK.
 		{
+			name:      "ok",
 			domainKey: domainKey,
 			subKey:    "subdomain1",
 			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_SUBDOMAIN, "subdomain1")),
@@ -147,30 +171,37 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 
 		// Errors.
 		{
+			name:      "error empty parent",
 			domainKey: Key{},
 			subKey:    "subdomain1",
 			errstr:    "parent key cannot be of type '' for 'subdomain' key",
 		},
 		{
+			name:      "error wrong parent type",
 			domainKey: helper.Must(NewActorKey("actor1")),
 			subKey:    "subdomain1",
 			errstr:    "parent key cannot be of type 'actor' for 'subdomain' key",
 		},
 		{
+			name:      "error blank subKey",
 			domainKey: domainKey,
 			subKey:    "",
 			errstr:    "cannot be blank",
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewSubdomainKey(test.domainKey, test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), Key{}, key, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.name, func(t *testing.T) {
+			key, err := NewSubdomainKey(tt.domainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
