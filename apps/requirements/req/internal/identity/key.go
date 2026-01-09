@@ -23,9 +23,21 @@ func PreenKey(key string) (preened string, err error) {
 	return preened, nil
 }
 
-// HasPrefix returns a validation rule that checks if the string value has the specified prefix.
-// This is used for validating derivative keys that should start with their parent key.
-func HasPrefix(prefix string) validation.Rule {
+// HasPrefix returns a validation rule that checks if the string value has a prefix constructed from parent and childType.
+// The prefix is parent/childType/, and both parent and childType must be non-blank.
+// This is used for validating derivative keys that should start with their parent key followed by the child type.
+func HasPrefix(parent, childType string) validation.Rule {
+	if parent == "" {
+		return validation.By(func(interface{}) error {
+			return errors.New("parent cannot be blank")
+		})
+	}
+	if childType == "" {
+		return validation.By(func(interface{}) error {
+			return errors.New("childType cannot be blank")
+		})
+	}
+	prefix := parent + "/" + childType + "/"
 	return validation.By(func(value interface{}) error {
 		s, ok := value.(string)
 		if !ok {
@@ -33,6 +45,9 @@ func HasPrefix(prefix string) validation.Rule {
 		}
 		if !strings.HasPrefix(s, prefix) {
 			return errors.Errorf("must have prefix %s", prefix)
+		}
+		if strings.Contains(s[len(prefix):], "/") {
+			return errors.Errorf("must not contain '/' after prefix %s", prefix)
 		}
 		return nil
 	})
