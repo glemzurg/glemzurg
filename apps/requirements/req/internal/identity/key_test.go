@@ -50,26 +50,12 @@ func (suite *KeySuite) TestNewKey() {
 			expected:  Key{parentKey: "", keyType: "use_case", subKey: "rootkey"},
 		},
 
-		// Error cases: blank subKey.
-		{
-			parentKey: "domain1",
-			keyType:   "class",
-			subKey:    "",
-			errstr:    "cannot be blank",
-		},
-
-		// Error cases: only one of parentKey or keyType set.
+		// Error cases: verify that validate is being called.
 		{
 			parentKey: "domain1",
 			keyType:   "",
 			subKey:    "thing1",
 			errstr:    "keyType: cannot be blank.",
-		},
-		{
-			parentKey: "",
-			keyType:   "class",
-			subKey:    "thing1",
-			errstr:    "parentKey: parentKey must be non-blank for non-model keys.",
 		},
 	}
 	for i, test := range tests {
@@ -146,8 +132,8 @@ func (suite *KeySuite) TestString() {
 			expected: "domain1/class/thing1",
 		},
 		{
-			key:      Key{parentKey: "", keyType: "model", subKey: "rootkey"},
-			expected: "model/rootkey",
+			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
+			expected: "domain/domain1",
 		},
 	}
 	for i, test := range tests {
@@ -189,6 +175,10 @@ func (suite *KeySuite) TestValidate() {
 		// Error cases: parentKey issues.
 		{
 			key:    Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
+			errstr: "parentKey: parentKey must be blank for domain, use_case keys.",
+		},
+		{
+			key:    Key{parentKey: "notallowed", keyType: "use_case", subKey: "domain1"},
 			errstr: "parentKey: parentKey must be blank for domain, use_case keys.",
 		},
 		{

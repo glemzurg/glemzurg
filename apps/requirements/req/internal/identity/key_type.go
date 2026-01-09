@@ -10,6 +10,7 @@ const (
 	KEY_TYPE_USE_CASE = "use_case"
 
 	// Keys with parents.
+	KEY_TYPE_CLASS          = "class"
 	KEY_TYPE_ASSOCIATION    = "association"
 	KEY_TYPE_SUBDOMAIN      = "subdomain"
 	KEY_TYPE_STATE          = "state"
