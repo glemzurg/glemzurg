@@ -6,6 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 func TestModelSuite(t *testing.T) {
@@ -18,7 +21,7 @@ type ModelSuite struct {
 
 func (suite *ModelSuite) TestNew() {
 	tests := []struct {
-		key     string
+		key     identity.Key
 		name    string
 		details string
 		obj     Model
@@ -26,21 +29,21 @@ func (suite *ModelSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:     "Key",
+			key:     helper.Must(identity.NewRootKey("model1")),
 			name:    "Name",
 			details: "Details",
 			obj: Model{
-				Key:     "Key",
+				Key:     helper.Must(identity.NewRootKey("model1")),
 				Name:    "Name",
 				Details: "Details",
 			},
 		},
 		{
-			key:     "Key",
+			key:     helper.Must(identity.NewRootKey("model1")),
 			name:    "Name",
 			details: "",
 			obj: Model{
-				Key:     "Key",
+				Key:     helper.Must(identity.NewRootKey("model1")),
 				Name:    "Name",
 				Details: "",
 			},
@@ -48,20 +51,21 @@ func (suite *ModelSuite) TestNew() {
 
 		// Error states.
 		{
-			key:     "",
+			key:     identity.Key{},
 			name:    "Name",
 			details: "Details",
-			errstr:  `cannot be blank`,
+			errstr:  "Key: (subKey: cannot be blank.).",
 		},
 		{
-			key:     "Key",
+			key:     helper.Must(identity.NewRootKey("model1")),
 			name:    "",
 			details: "Details",
-			errstr:  `Name: cannot be blank.`,
+			errstr:  "Name: cannot be blank.",
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
+
 		obj, err := NewModel(test.key, test.name, test.details)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)

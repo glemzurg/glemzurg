@@ -33,6 +33,10 @@ func NewKey(parentKey, childType, subKey string) (key Key, err error) {
 	return key, nil
 }
 
+func NewRootKey(rootKey string) (key Key, err error) {
+	return NewKey("", "", rootKey)
+}
+
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
 	return validation.ValidateStruct(k,

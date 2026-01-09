@@ -4,6 +4,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
@@ -11,7 +12,7 @@ import (
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key     string
+	Key     identity.Key
 	Name    string
 	Details string // Markdown.
 	// Data in a parsed file.
@@ -21,7 +22,7 @@ type Model struct {
 	Associations       []model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string) (model Model, err error) {
+func NewModel(key identity.Key, name, details string) (model Model, err error) {
 
 	model = Model{
 		Key:     key,
@@ -30,7 +31,10 @@ func NewModel(key, name, details string) (model Model, err error) {
 	}
 
 	err = validation.ValidateStruct(&model,
-		validation.Field(&model.Key, validation.Required),
+		validation.Field(&model.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			return k.Validate()
+		})),
 		validation.Field(&model.Name, validation.Required),
 	)
 	if err != nil {
