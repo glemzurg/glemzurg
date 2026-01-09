@@ -79,7 +79,7 @@ func (r *Requirements) prepLookups() {
 		r.actionLookup = model_state.CreateKeyActionLookup(r.Transitions, r.StateActions, r.Actions)
 		r.transitionLookup = model_state.CreateKeyTransitionLookup(r.Transitions)
 		r.stateActionLookup = model_state.CreateKeyStateActionLookup(r.StateActions)
-		r.useCaseLookup = model_use_case.CreateKeyUseCaseLookup(r.UseCases, r.UseCaseActors, r.Scenarios)
+		r.useCaseLookup = createKeyUseCaseLookup(r.UseCases, r.UseCaseActors, r.Scenarios)
 		r.scenarioLookup = model_scenario.CreateKeyScenarioLookup(r.Scenarios, r.Objects)
 		r.objectLookup = model_scenario.CreateKeyObjectLookup(r.Objects, r.classLookup)
 
@@ -94,7 +94,7 @@ func (r *Requirements) prepLookups() {
 			return r.Actors[i].Key < r.Actors[j].Key
 		})
 		sort.Slice(r.DomainAssociations, func(i, j int) bool {
-			return r.DomainAssociations[i].Key < r.DomainAssociations[j].Key
+			return r.DomainAssociations[i].Key.String() < r.DomainAssociations[j].Key.String()
 		})
 		sort.Slice(r.Associations, func(i, j int) bool {
 			return r.Associations[i].Key < r.Associations[j].Key
@@ -215,9 +215,9 @@ func (r *Requirements) RegardingUseCases(inUseCases []model_use_case.UseCase) (u
 
 	// Get the use cases that are fully loaded with data.
 	for _, useCase := range inUseCases {
-		populatedUseCase, found := useCaseLookup[useCase.Key]
+		populatedUseCase, found := useCaseLookup[useCase.Key.String()]
 		if !found {
-			return nil, nil, errors.New("use case not found in lookup: " + useCase.Key)
+			return nil, nil, errors.New("use case not found in lookup: " + useCase.Key.String())
 		}
 		useCases = append(useCases, populatedUseCase)
 	}
@@ -242,7 +242,7 @@ func (r *Requirements) RegardingUseCases(inUseCases []model_use_case.UseCase) (u
 
 	// Sort.
 	sort.Slice(useCases, func(i, j int) bool {
-		return useCases[i].Key < useCases[j].Key
+		return useCases[i].Key.String() < useCases[j].Key.String()
 	})
 	sort.Slice(actors, func(i, j int) bool {
 		return actors[i].Key < actors[j].Key
@@ -342,8 +342,8 @@ func (r *Requirements) ToTree() Model {
 		// Populate subdomains
 		for j := range domain.Subdomains {
 			subdomain := &domain.Subdomains[j]
-			subdomain.Classes = r.Classes[subdomain.Key]
-			subdomain.UseCases = r.UseCases[subdomain.Key]
+			subdomain.Classes = r.Classes[subdomain.Key.String()]
+			subdomain.UseCases = r.UseCases[subdomain.Key.String()]
 
 			// Populate classes
 			for k := range subdomain.Classes {
@@ -365,8 +365,8 @@ func (r *Requirements) ToTree() Model {
 			// Populate use cases
 			for k := range subdomain.UseCases {
 				useCase := &subdomain.UseCases[k]
-				useCase.Actors = r.UseCaseActors[useCase.Key]
-				useCase.Scenarios = r.Scenarios[useCase.Key]
+				useCase.Actors = r.UseCaseActors[useCase.Key.String()]
+				useCase.Scenarios = r.Scenarios[useCase.Key.String()]
 
 				// Populate scenarios with objects
 				for l := range useCase.Scenarios {
@@ -383,7 +383,7 @@ func (r *Requirements) ToTree() Model {
 		if subdomainKey != "" {
 			for i := range tree.Domains {
 				for j := range tree.Domains[i].Subdomains {
-					if tree.Domains[i].Subdomains[j].Key == subdomainKey {
+					if tree.Domains[i].Subdomains[j].Key.String() == subdomainKey {
 						tree.Domains[i].Subdomains[j].Generalizations = append(tree.Domains[i].Subdomains[j].Generalizations, g)
 					}
 				}
@@ -398,7 +398,7 @@ func (r *Requirements) ToTree() Model {
 		if fromSubdomain == toSubdomain && fromSubdomain != "" {
 			for i := range tree.Domains {
 				for j := range tree.Domains[i].Subdomains {
-					if tree.Domains[i].Subdomains[j].Key == fromSubdomain {
+					if tree.Domains[i].Subdomains[j].Key.String() == fromSubdomain {
 						tree.Domains[i].Subdomains[j].Associations = append(tree.Domains[i].Subdomains[j].Associations, association)
 					}
 				}
@@ -433,8 +433,8 @@ func (r *Requirements) FromTree(tree Model) {
 		r.Subdomains[domain.Key.String()] = domain.Subdomains
 
 		for _, subdomain := range domain.Subdomains {
-			r.Classes[subdomain.Key] = subdomain.Classes
-			r.UseCases[subdomain.Key] = subdomain.UseCases
+			r.Classes[subdomain.Key.String()] = subdomain.Classes
+			r.UseCases[subdomain.Key.String()] = subdomain.UseCases
 
 			for _, class := range subdomain.Classes {
 				r.Attributes[class.Key] = class.Attributes
@@ -450,8 +450,8 @@ func (r *Requirements) FromTree(tree Model) {
 			}
 
 			for _, useCase := range subdomain.UseCases {
-				r.UseCaseActors[useCase.Key] = useCase.Actors
-				r.Scenarios[useCase.Key] = useCase.Scenarios
+				r.UseCaseActors[useCase.Key.String()] = useCase.Actors
+				r.Scenarios[useCase.Key.String()] = useCase.Scenarios
 
 				for _, scenario := range useCase.Scenarios {
 					r.Objects[scenario.Key] = scenario.Objects
@@ -507,6 +507,26 @@ func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainU
 		item.UseCases = domainUseCases[item.Key.String()]
 
 		lookup[item.Key.String()] = item
+	}
+	return lookup
+}
+
+func createKeyUseCaseLookup(
+	byCategory map[string][]model_use_case.UseCase,
+	actors map[string]map[string]model_use_case.Actor,
+	scenarios map[string][]model_scenario.Scenario,
+) (lookup map[string]model_use_case.UseCase) {
+
+	lookup = map[string]model_use_case.UseCase{}
+	for domainKey, items := range byCategory {
+		for _, item := range items {
+
+			item.SetDomainKey(domainKey)
+			item.SetActors(actors[item.Key.String()])
+			item.SetScenarios(scenarios[item.Key.String()])
+
+			lookup[item.Key.String()] = item
+		}
 	}
 	return lookup
 }

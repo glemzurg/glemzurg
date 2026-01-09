@@ -4,8 +4,21 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
 )
+
+// For key construction.
+const _USE_CASE_CHILD_TYPE = "use_case"
+
+// Construct a key that sits correctly in the model shape.
+func NewUseCaseKey(parentKey identity.Key, subKey string) (key identity.Key, err error) {
+	key, err = identity.NewKey(parentKey.String(), _USE_CASE_CHILD_TYPE, subKey)
+	if err != nil {
+		return identity.Key{}, err
+	}
+	return key, key.Validate()
+}
 
 const (
 	_USE_CASE_LEVEL_SKY = "sky" // A high-level organizational user story.
@@ -15,7 +28,7 @@ const (
 
 // UseCase is a user story for the system.
 type UseCase struct {
-	Key        string
+	Key        identity.Key
 	Name       string
 	Details    string // Markdown.
 	Level      string // How high cocept or tightly focused the user case is.
@@ -28,7 +41,7 @@ type UseCase struct {
 	DomainKey string
 }
 
-func NewUseCase(key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
 
 	useCase = UseCase{
 		Key:        key,
@@ -40,7 +53,16 @@ func NewUseCase(key, name, details, level string, readOnly bool, umlComment stri
 	}
 
 	err = validation.ValidateStruct(&useCase,
-		validation.Field(&useCase.Key, validation.Required),
+		validation.Field(&useCase.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.ChildType() != _USE_CASE_CHILD_TYPE {
+				return errors.New("invalid child type for use_case")
+			}
+			return nil
+		})),
 		validation.Field(&useCase.Name, validation.Required),
 		validation.Field(&useCase.Level, validation.Required, validation.In(_USE_CASE_LEVEL_SKY, _USE_CASE_LEVEL_SEA, _USE_CASE_LEVEL_MUD)),
 	)
@@ -61,24 +83,4 @@ func (uc *UseCase) SetActors(actors map[string]Actor) {
 
 func (uc *UseCase) SetScenarios(scenarios []model_scenario.Scenario) {
 	uc.Scenarios = scenarios
-}
-
-func CreateKeyUseCaseLookup(
-	byCategory map[string][]UseCase,
-	actors map[string]map[string]Actor,
-	scenarios map[string][]model_scenario.Scenario,
-) (lookup map[string]UseCase) {
-
-	lookup = map[string]UseCase{}
-	for domainKey, items := range byCategory {
-		for _, item := range items {
-
-			item.SetDomainKey(domainKey)
-			item.SetActors(actors[item.Key])
-			item.SetScenarios(scenarios[item.Key])
-
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
 }
