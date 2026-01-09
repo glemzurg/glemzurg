@@ -8,75 +8,83 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestActionSuite(t *testing.T) {
-	suite.Run(t, new(ActionSuite))
+func TestStateActionSuite(t *testing.T) {
+	suite.Run(t, new(StateActionSuite))
 }
 
-type ActionSuite struct {
+type StateActionSuite struct {
 	suite.Suite
 }
 
-func (suite *ActionSuite) TestNew() {
+func (suite *StateActionSuite) TestNew() {
 	tests := []struct {
-		key        string
-		name       string
-		details    string
-		requires   []string
-		guarantees []string
-		obj        Action
-		errstr     string
+		key       string
+		actionKey string
+		when      string
+		obj       StateAction
+		errstr    string
 	}{
 		// OK.
 		{
-			key:        "Key",
-			name:       "Name",
-			details:    "Details",
-			requires:   []string{"Requires"},
-			guarantees: []string{"Guarantees"},
-			obj: Action{
-				Key:        "Key",
-				Name:       "Name",
-				Details:    "Details",
-				Requires:   []string{"Requires"},
-				Guarantees: []string{"Guarantees"},
+			key:       "Key",
+			actionKey: "ActionKey",
+			when:      "entry",
+			obj: StateAction{
+				Key:       "Key",
+				ActionKey: "ActionKey",
+				When:      "entry",
 			},
 		},
 		{
-			key:        "Key",
-			name:       "Name",
-			details:    "",
-			requires:   nil,
-			guarantees: nil,
-			obj: Action{
-				Key:        "Key",
-				Name:       "Name",
-				Details:    "",
-				Requires:   nil,
-				Guarantees: nil,
+			key:       "Key",
+			actionKey: "ActionKey",
+			when:      "exit",
+			obj: StateAction{
+				Key:       "Key",
+				ActionKey: "ActionKey",
+				When:      "exit",
+			},
+		},
+		{
+			key:       "Key",
+			actionKey: "ActionKey",
+			when:      "do",
+			obj: StateAction{
+				Key:       "Key",
+				ActionKey: "ActionKey",
+				When:      "do",
 			},
 		},
 
 		// Error states.
 		{
-			key:        "",
-			name:       "Name",
-			details:    "Details",
-			requires:   []string{"Requires"},
-			guarantees: []string{"Guarantees"},
-			errstr:     `Key: cannot be blank`,
+			key:       "",
+			actionKey: "ActionKey",
+			when:      "entry",
+			errstr:    `Key: cannot be blank`,
 		},
 		{
-			key:        "Key",
-			name:       "",
-			details:    "Details",
-			requires:   []string{"Requires"},
-			guarantees: []string{"Guarantees"},
-			errstr:     `Name: cannot be blank`,
+			key:       "Key",
+			actionKey: "",
+			when:      "entry",
+			errstr:    `ActionKey: cannot be blank`,
+		},
+		{
+			key:       "Key",
+			actionKey: "ActionKey",
+			when:      "",
+			errstr:    `When: cannot be blank`,
+		},
+		{
+			key:       "Key",
+			actionKey: "ActionKey",
+			when:      "unknown",
+			errstr:    `When: must be a valid value`,
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewAction(test.key, test.name, test.details, test.requires, test.guarantees)
+		obj, err := NewStateAction(test.key, test.actionKey, test.when)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.obj, obj, testName)

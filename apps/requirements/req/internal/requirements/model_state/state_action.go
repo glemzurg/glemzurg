@@ -5,76 +5,62 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Action is what happens in a transition between states.
-type Action struct {
-	Key        string
-	Name       string
-	Details    string
-	Requires   []string // To enter this action.
-	Guarantees []string
-	// Derived values for template display.
-	FromTransitions []Transition  // Where this action is called from events.
-	FromStates      []StateAction // Where this action is called from a state.
+const (
+	_WHEN_ENTRY = "entry" // An action triggered on entering a state.
+	_WHEN_EXIT  = "exit"  // An action triggered on exiting a state.
+	_WHEN_DO    = "do"    // An action that runs persistenly in a state.
+)
+
+var _whenSortValue = map[string]int{
+	_WHEN_ENTRY: 1, // Sorts first.
+	_WHEN_DO:    2,
+	_WHEN_EXIT:  3,
 }
 
-func NewAction(key, name, details string, requires, guarantees []string) (action Action, err error) {
+// StateAction is a action that triggers when a state is entered or exited or happens perpetually.
+type StateAction struct {
+	Key       string
+	ActionKey string
+	When      string
+	// Derived data for templates.
+	StateKey string
+}
 
-	action = Action{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Requires:   requires,
-		Guarantees: guarantees,
+func NewStateAction(key, actionKey string, when string) (stateAction StateAction, err error) {
+
+	stateAction = StateAction{
+		Key:       key,
+		ActionKey: actionKey,
+		When:      when,
 	}
 
-	err = validation.ValidateStruct(&action,
-		validation.Field(&action.Key, validation.Required),
-		validation.Field(&action.Name, validation.Required),
+	err = validation.ValidateStruct(&stateAction,
+		validation.Field(&stateAction.Key, validation.Required),
+		validation.Field(&stateAction.ActionKey, validation.Required),
+		validation.Field(&stateAction.When, validation.Required, validation.In(_WHEN_ENTRY, _WHEN_EXIT, _WHEN_DO)),
 	)
 	if err != nil {
-		return Action{}, errors.WithStack(err)
+		return StateAction{}, errors.WithStack(err)
 	}
 
-	return action, nil
+	return stateAction, nil
 }
 
-func (a *Action) SetTriggers(transitions []Transition, stateActions []StateAction) {
-	a.FromTransitions = transitions
-	a.FromStates = stateActions
+func lessThanStateAction(a, b StateAction) (less bool) {
+
+	// Sort by when first.
+	if _whenSortValue[a.When] != _whenSortValue[b.When] {
+		return _whenSortValue[a.When] < _whenSortValue[b.When]
+	}
+
+	// Sort by key next.
+	return a.Key < b.Key
 }
 
-func CreateKeyActionLookup(classTransitions map[string][]Transition, statStateActions map[string][]StateAction, byCategory map[string][]Action) (lookup map[string]Action) {
-
-	// Create clean lookup for triggers.
-	transitionTriggers := map[string][]Transition{}
-	for _, transitions := range classTransitions {
-		for _, transition := range transitions {
-			if transition.ActionKey != "" {
-				triggers := transitionTriggers[transition.ActionKey]
-				triggers = append(triggers, transition)
-				transitionTriggers[transition.ActionKey] = triggers
-			}
-		}
-	}
-
-	// And for state actions.
-	stateActionTriggers := map[string][]StateAction{}
-	for _, stateActions := range statStateActions {
-		for _, stateAction := range stateActions {
-			if stateAction.ActionKey != "" {
-				triggers := stateActionTriggers[stateAction.ActionKey]
-				triggers = append(triggers, stateAction)
-				stateActionTriggers[stateAction.ActionKey] = triggers
-			}
-		}
-	}
-
-	lookup = map[string]Action{}
+func CreateKeyStateActionLookup(byCategory map[string][]StateAction) (lookup map[string]StateAction) {
+	lookup = map[string]StateAction{}
 	for _, items := range byCategory {
 		for _, item := range items {
-
-			item.SetTriggers(transitionTriggers[item.Key], stateActionTriggers[item.Key])
-
 			lookup[item.Key] = item
 		}
 	}
