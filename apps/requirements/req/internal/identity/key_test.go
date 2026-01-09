@@ -29,25 +29,25 @@ func (suite *KeySuite) TestNewKey() {
 			parentKey: "domain1",
 			childType: "class",
 			subKey:    "thing1",
-			expected:  Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+			expected:  Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
 		},
 		{
 			parentKey: "01_order_fulfillment",
 			childType: "association",
 			subKey:    "1",
-			expected:  Key{ParentKey: "01_order_fulfillment", ChildType: "association", SubKey: "1"},
+			expected:  Key{parentKey: "01_order_fulfillment", childType: "association", subKey: "1"},
 		},
 		{
 			parentKey: " PARENT ",
 			childType: "child",
 			subKey:    " KEY ",
-			expected:  Key{ParentKey: "parent", ChildType: "child", SubKey: "key"},
+			expected:  Key{parentKey: "parent", childType: "child", subKey: "key"},
 		},
 		{
 			parentKey: "",
 			childType: "",
 			subKey:    "rootkey",
-			expected:  Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+			expected:  Key{parentKey: "", childType: "", subKey: "rootkey"},
 		},
 
 		// Error cases: blank subKey.
@@ -94,15 +94,15 @@ func (suite *KeySuite) TestParseKey() {
 		// OK cases.
 		{
 			input:    "domain1/class/thing1",
-			expected: Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+			expected: Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
 		},
 		{
 			input:    "rootkey",
-			expected: Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+			expected: Key{parentKey: "", childType: "", subKey: "rootkey"},
 		},
 		{
 			input:    "  DOMAIN1  /  CLASS  /  THING1  ", // with spaces
-			expected: Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+			expected: Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
 		},
 
 		// Error cases: invalid format.
@@ -142,11 +142,11 @@ func (suite *KeySuite) TestString() {
 		expected string
 	}{
 		{
-			key:      Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+			key:      Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
 			expected: "domain1/class/thing1",
 		},
 		{
-			key:      Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+			key:      Key{parentKey: "", childType: "", subKey: "rootkey"},
 			expected: "rootkey",
 		},
 	}
@@ -163,27 +163,27 @@ func (suite *KeySuite) TestValidate() {
 	}{
 		// OK cases.
 		{
-			key: Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+			key: Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
 		},
 		{
-			key: Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+			key: Key{parentKey: "", childType: "", subKey: "rootkey"},
 		},
 
 		// Error cases: blank SubKey.
 		{
-			key:    Key{ParentKey: "domain1", ChildType: "class", SubKey: ""},
+			key:    Key{parentKey: "domain1", childType: "class", subKey: ""},
 			errstr: "cannot be blank",
 		},
 
 		// Error cases: only ParentKey set.
 		{
-			key:    Key{ParentKey: "domain1", ChildType: "", SubKey: "thing1"},
+			key:    Key{parentKey: "domain1", childType: "", subKey: "thing1"},
 			errstr: "ParentKey and ChildType must both be set or both be blank",
 		},
 
 		// Error cases: only ChildType set.
 		{
-			key:    Key{ParentKey: "", ChildType: "class", SubKey: "thing1"},
+			key:    Key{parentKey: "", childType: "class", subKey: "thing1"},
 			errstr: "ParentKey and ChildType must both be set or both be blank",
 		},
 	}

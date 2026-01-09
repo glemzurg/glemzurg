@@ -9,9 +9,9 @@ import (
 
 // Key uniquely identifies an entity in the model.
 type Key struct {
-	ParentKey string // The parent entity's key.
-	ChildType string // The type of the child entity, e.g., "class", "association".
-	SubKey    string // The unique key of the child entity within its parent and type.
+	parentKey string // The parent entity's key.
+	childType string // The type of the child entity, e.g., "class", "association".
+	subKey    string // The unique key of the child entity within its parent and type.
 }
 
 func NewKey(parentKey, childType, subKey string) (key Key, err error) {
@@ -20,9 +20,9 @@ func NewKey(parentKey, childType, subKey string) (key Key, err error) {
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
 
 	key = Key{
-		ParentKey: parentKey,
-		ChildType: childType,
-		SubKey:    subKey,
+		parentKey: parentKey,
+		childType: childType,
+		subKey:    subKey,
 	}
 
 	err = key.Validate()
@@ -34,12 +34,12 @@ func NewKey(parentKey, childType, subKey string) (key Key, err error) {
 }
 
 // Validate validates the Key struct.
-func (k Key) Validate() error {
-	return validation.ValidateStruct(&k,
-		validation.Field(&k.SubKey, validation.Required),
-		validation.Field(&k.ParentKey, validation.By(func(value interface{}) error {
+func (k *Key) Validate() error {
+	return validation.ValidateStruct(k,
+		validation.Field(&k.subKey, validation.Required),
+		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
 			parent := value.(string)
-			childType := k.ChildType
+			childType := k.childType
 			if (parent == "" && childType != "") || (parent != "" && childType == "") {
 				return errors.New("ParentKey and ChildType must both be set or both be blank")
 			}
@@ -49,11 +49,16 @@ func (k Key) Validate() error {
 }
 
 // String returns the string representation of the key.
-func (k Key) String() string {
-	if k.ParentKey != "" && k.ChildType != "" {
-		return k.ParentKey + "/" + k.ChildType + "/" + k.SubKey
+func (k *Key) String() string {
+	if k.parentKey != "" && k.childType != "" {
+		return k.parentKey + "/" + k.childType + "/" + k.subKey
 	}
-	return k.SubKey
+	return k.subKey
+}
+
+// SubKey returns the subKey of the Key.
+func (k *Key) SubKey() string {
+	return k.subKey
 }
 
 func ParseKey(s string) (key Key, err error) {
