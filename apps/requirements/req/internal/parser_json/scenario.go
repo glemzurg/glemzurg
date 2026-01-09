@@ -9,7 +9,7 @@ type scenarioInOut struct {
 	Details string    `json:"details"` // Markdown.
 	Steps   nodeInOut `json:"steps"`   // The "abstract syntax tree" of the scenario.
 	// Nested.
-	Objects []scenarioObjectInOut `json:"objects"`
+	Objects []objectInOut `json:"objects"`
 }
 
 // ToRequirements converts the scenarioInOut to model_scenario.Scenario.
@@ -42,7 +42,7 @@ func FromRequirementsScenario(s model_scenario.Scenario) scenarioInOut {
 	}
 
 	for _, o := range s.Objects {
-		scenario.Objects = append(scenario.Objects, FromRequirementsScenarioObject(o))
+		scenario.Objects = append(scenario.Objects, FromRequirementsObject(o))
 	}
 	return scenario
 }

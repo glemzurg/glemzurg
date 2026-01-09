@@ -89,11 +89,11 @@ func parseUseCase(key, filename, contents string) (useCase model_use_case.UseCas
 			if found {
 				objectsSlice := objectsAny.([]any)
 				for i, objAny := range objectsSlice {
-					scenarioObject, err := objectFromYamlData(scenarioKey, i, objAny)
+					object, err := objectFromYamlData(scenarioKey, i, objAny)
 					if err != nil {
 						return model_use_case.UseCase{}, err
 					}
-					scenario.Objects = append(scenario.Objects, scenarioObject)
+					scenario.Objects = append(scenario.Objects, object)
 				}
 			}
 
@@ -139,7 +139,7 @@ func parseUseCase(key, filename, contents string) (useCase model_use_case.UseCas
 	return useCase, nil
 }
 
-func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object model_scenario.ScenarioObject, err error) {
+func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object model_scenario.Object, err error) {
 	objectNum := uint(objectI + 1)
 
 	key := ""
@@ -191,7 +191,7 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 		}
 	}
 
-	object, err = model_scenario.NewScenarioObject(
+	object, err = model_scenario.NewObject(
 		key,
 		objectNum,
 		name,
@@ -200,7 +200,7 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 		multi,
 		umlComment)
 	if err != nil {
-		return model_scenario.ScenarioObject{}, err
+		return model_scenario.Object{}, err
 	}
 
 	return object, nil

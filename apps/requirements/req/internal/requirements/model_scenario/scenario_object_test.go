@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestScenarioObjectSuite(t *testing.T) {
-	suite.Run(t, new(ScenarioObjectSuite))
+func TestObjectSuite(t *testing.T) {
+	suite.Run(t, new(ObjectSuite))
 }
 
-type ScenarioObjectSuite struct {
+type ObjectSuite struct {
 	suite.Suite
 }
 
-func (suite *ScenarioObjectSuite) TestNew() {
+func (suite *ObjectSuite) TestNew() {
 	tests := []struct {
 		key          string
 		objectNumber uint
@@ -25,7 +25,7 @@ func (suite *ScenarioObjectSuite) TestNew() {
 		classKey     string
 		multi        bool
 		umlComment   string
-		obj          ScenarioObject
+		obj          Object
 		errstr       string
 	}{
 		// OK.
@@ -37,7 +37,7 @@ func (suite *ScenarioObjectSuite) TestNew() {
 			classKey:     "ClassKey",
 			multi:        true,
 			umlComment:   "UmlComment",
-			obj: ScenarioObject{
+			obj: Object{
 				Key:          "Key",
 				ObjectNumber: 1,
 				Name:         "Name",
@@ -55,7 +55,7 @@ func (suite *ScenarioObjectSuite) TestNew() {
 			classKey:     "ClassKey",
 			multi:        true,
 			umlComment:   "UmlComment",
-			obj: ScenarioObject{
+			obj: Object{
 				Key:          "Key",
 				ObjectNumber: 1,
 				Name:         "Name",
@@ -73,7 +73,7 @@ func (suite *ScenarioObjectSuite) TestNew() {
 			classKey:     "ClassKey",
 			multi:        false,
 			umlComment:   "",
-			obj: ScenarioObject{
+			obj: Object{
 				Key:          "Key",
 				ObjectNumber: 0,
 				Name:         "",
@@ -138,7 +138,7 @@ func (suite *ScenarioObjectSuite) TestNew() {
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewScenarioObject(test.key, test.objectNumber, test.name, test.nameStyle, test.classKey, test.multi, test.umlComment)
+		obj, err := NewObject(test.key, test.objectNumber, test.name, test.nameStyle, test.classKey, test.multi, test.umlComment)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.obj, obj, testName)

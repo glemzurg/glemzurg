@@ -17,7 +17,7 @@ type Scenario struct {
 	Details string // Markdown.
 	Steps   Node   // The "abstract syntax tree" of the scenario.
 	// Part of the data in a parsed file.
-	Objects []ScenarioObject
+	Objects []Object
 	// Steps represent the structured program steps of the scenario.
 }
 
@@ -40,7 +40,7 @@ func NewScenario(key, name, details string) (scenario Scenario, err error) {
 	return scenario, nil
 }
 
-func (sc *Scenario) SetObjects(objects []ScenarioObject) {
+func (sc *Scenario) SetObjects(objects []Object) {
 	sort.Slice(objects, func(i, j int) bool {
 		return objects[i].ObjectNumber < objects[j].ObjectNumber
 	})
@@ -49,7 +49,7 @@ func (sc *Scenario) SetObjects(objects []ScenarioObject) {
 
 func CreateKeyScenarioLookup(
 	byUseCase map[string][]Scenario,
-	objectsByScenario map[string][]ScenarioObject,
+	objectsByScenario map[string][]Object,
 ) (lookup map[string]Scenario) {
 
 	lookup = map[string]Scenario{}
@@ -64,7 +64,7 @@ func CreateKeyScenarioLookup(
 
 func PopulateScenarioStepReferences(
 	scenarios map[string]Scenario,
-	objects map[string]ScenarioObject,
+	objects map[string]Object,
 	attributes map[string]model_class.Attribute,
 	events map[string]model_state.Event,
 ) (err error) {

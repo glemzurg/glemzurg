@@ -170,9 +170,9 @@ func WriteRequirements(db *sql.DB, reqs requirements.Requirements) (err error) {
 				}
 			}
 		}
-		for scenarioKey, scenarioObjects := range reqs.ScenarioObjects {
-			for _, scenarioObject := range scenarioObjects {
-				if err = AddScenarioObject(tx, modelKey, scenarioKey, scenarioObject); err != nil {
+		for scenarioKey, objects := range reqs.Objects {
+			for _, object := range objects {
+				if err = AddObject(tx, modelKey, scenarioKey, object); err != nil {
 					return err
 				}
 			}
@@ -292,7 +292,7 @@ func ReadRequirements(db *sql.DB, modelKey string) (reqs requirements.Requiremen
 			return err
 		}
 
-		reqs.ScenarioObjects, err = QueryScenarioObjects(tx, modelKey)
+		reqs.Objects, err = QueryObjects(tx, modelKey)
 		if err != nil {
 			return err
 		}

@@ -8,16 +8,16 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanScenarioObject(scanner Scanner, scenarioKeyPtr *string, scenarioObject *model_scenario.ScenarioObject) (err error) {
+func scanObject(scanner Scanner, scenarioKeyPtr *string, object *model_scenario.Object) (err error) {
 	if err = scanner.Scan(
-		&scenarioObject.Key,
+		&object.Key,
 		scenarioKeyPtr,
-		&scenarioObject.ObjectNumber,
-		&scenarioObject.Name,
-		&scenarioObject.NameStyle,
-		&scenarioObject.ClassKey,
-		&scenarioObject.Multi,
-		&scenarioObject.UmlComment,
+		&object.ObjectNumber,
+		&object.Name,
+		&object.NameStyle,
+		&object.ClassKey,
+		&object.Multi,
+		&object.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -28,24 +28,24 @@ func scanScenarioObject(scanner Scanner, scenarioKeyPtr *string, scenarioObject 
 	return nil
 }
 
-// LoadScenarioObject loads a scenario object from the database
-func LoadScenarioObject(dbOrTx DbOrTx, modelKey, scenarioObjectKey string) (scenarioKey string, scenarioObject model_scenario.ScenarioObject, err error) {
+// LoadObject loads a scenario object from the database
+func LoadObject(dbOrTx DbOrTx, modelKey, objectKey string) (scenarioKey string, object model_scenario.Object, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return "", model_scenario.ScenarioObject{}, err
+		return "", model_scenario.Object{}, err
 	}
-	scenarioObjectKey, err = requirements.PreenKey(scenarioObjectKey)
+	objectKey, err = requirements.PreenKey(objectKey)
 	if err != nil {
-		return "", model_scenario.ScenarioObject{}, err
+		return "", model_scenario.Object{}, err
 	}
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanScenarioObject(scanner, &scenarioKey, &scenarioObject); err != nil {
+			if err = scanObject(scanner, &scenarioKey, &object); err != nil {
 				return err
 			}
 			return nil
@@ -66,23 +66,23 @@ func LoadScenarioObject(dbOrTx DbOrTx, modelKey, scenarioObjectKey string) (scen
 		AND
 			model_key = $1`,
 		modelKey,
-		scenarioObjectKey)
+		objectKey)
 	if err != nil {
-		return "", model_scenario.ScenarioObject{}, errors.WithStack(err)
+		return "", model_scenario.Object{}, errors.WithStack(err)
 	}
 
-	return scenarioKey, scenarioObject, nil
+	return scenarioKey, object, nil
 }
 
-// AddScenarioObject adds a scenario object to the database.
-func AddScenarioObject(dbOrTx DbOrTx, modelKey, scenarioKey string, scenarioObject model_scenario.ScenarioObject) (err error) {
+// AddObject adds a scenario object to the database.
+func AddObject(dbOrTx DbOrTx, modelKey, scenarioKey string, object model_scenario.Object) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	scenarioObjectKey, err := requirements.PreenKey(scenarioObject.Key)
+	objectKey, err := requirements.PreenKey(object.Key)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func AddScenarioObject(dbOrTx DbOrTx, modelKey, scenarioKey string, scenarioObje
 	if err != nil {
 		return err
 	}
-	classKey, err := requirements.PreenKey(scenarioObject.ClassKey)
+	classKey, err := requirements.PreenKey(object.ClassKey)
 	if err != nil {
 		return err
 	}
@@ -121,14 +121,14 @@ func AddScenarioObject(dbOrTx DbOrTx, modelKey, scenarioKey string, scenarioObje
 					$9
 				)`,
 		modelKey,
-		scenarioObjectKey,
+		objectKey,
 		scenarioKey,
-		scenarioObject.ObjectNumber,
-		scenarioObject.Name,
-		scenarioObject.NameStyle,
+		object.ObjectNumber,
+		object.Name,
+		object.NameStyle,
 		classKey,
-		scenarioObject.Multi,
-		scenarioObject.UmlComment)
+		object.Multi,
+		object.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -136,19 +136,19 @@ func AddScenarioObject(dbOrTx DbOrTx, modelKey, scenarioKey string, scenarioObje
 	return nil
 }
 
-// UpdateScenarioObject updates a scenario object in the database.
-func UpdateScenarioObject(dbOrTx DbOrTx, modelKey string, scenarioObject model_scenario.ScenarioObject) (err error) {
+// UpdateObject updates a scenario object in the database.
+func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	scenarioObjectKey, err := requirements.PreenKey(scenarioObject.Key)
+	objectKey, err := requirements.PreenKey(object.Key)
 	if err != nil {
 		return err
 	}
-	classKey, err := requirements.PreenKey(scenarioObject.ClassKey)
+	classKey, err := requirements.PreenKey(object.ClassKey)
 	if err != nil {
 		return err
 	}
@@ -169,13 +169,13 @@ func UpdateScenarioObject(dbOrTx DbOrTx, modelKey string, scenarioObject model_s
 		AND
 			scenario_object_key = $2`,
 		modelKey,
-		scenarioObjectKey,
-		scenarioObject.ObjectNumber,
-		scenarioObject.Name,
-		scenarioObject.NameStyle,
+		objectKey,
+		object.ObjectNumber,
+		object.Name,
+		object.NameStyle,
 		classKey,
-		scenarioObject.Multi,
-		scenarioObject.UmlComment)
+		object.Multi,
+		object.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -183,15 +183,15 @@ func UpdateScenarioObject(dbOrTx DbOrTx, modelKey string, scenarioObject model_s
 	return nil
 }
 
-// RemoveScenarioObject deletes a scenario object from the database.
-func RemoveScenarioObject(dbOrTx DbOrTx, modelKey, scenarioObjectKey string) (err error) {
+// RemoveObject deletes a scenario object from the database.
+func RemoveObject(dbOrTx DbOrTx, modelKey, objectKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	scenarioObjectKey, err = requirements.PreenKey(scenarioObjectKey)
+	objectKey, err = requirements.PreenKey(objectKey)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func RemoveScenarioObject(dbOrTx DbOrTx, modelKey, scenarioObjectKey string) (er
 			AND
 				scenario_object_key = $2`,
 		modelKey,
-		scenarioObjectKey)
+		objectKey)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -213,8 +213,8 @@ func RemoveScenarioObject(dbOrTx DbOrTx, modelKey, scenarioObjectKey string) (er
 	return nil
 }
 
-// QueryScenarioObjects loads all scenario objects from the database grouped by scenario key
-func QueryScenarioObjects(dbOrTx DbOrTx, modelKey string) (scenarioObjects map[string][]model_scenario.ScenarioObject, err error) {
+// QueryObjects loads all scenario objects from the database grouped by scenario key
+func QueryObjects(dbOrTx DbOrTx, modelKey string) (objects map[string][]model_scenario.Object, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -222,18 +222,18 @@ func QueryScenarioObjects(dbOrTx DbOrTx, modelKey string) (scenarioObjects map[s
 		return nil, err
 	}
 
-	scenarioObjects = make(map[string][]model_scenario.ScenarioObject)
+	objects = make(map[string][]model_scenario.Object)
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var scenarioKey string
-			var scenarioObject model_scenario.ScenarioObject
-			if err = scanScenarioObject(scanner, &scenarioKey, &scenarioObject); err != nil {
+			var object model_scenario.Object
+			if err = scanObject(scanner, &scenarioKey, &object); err != nil {
 				return errors.WithStack(err)
 			}
-			scenarioObjects[scenarioKey] = append(scenarioObjects[scenarioKey], scenarioObject)
+			objects[scenarioKey] = append(objects[scenarioKey], object)
 			return nil
 		},
 		`SELECT
@@ -255,5 +255,5 @@ func QueryScenarioObjects(dbOrTx DbOrTx, modelKey string) (scenarioObjects map[s
 		return nil, errors.WithStack(err)
 	}
 
-	return scenarioObjects, nil
+	return objects, nil
 }

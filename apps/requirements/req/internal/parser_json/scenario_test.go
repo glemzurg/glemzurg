@@ -16,7 +16,7 @@ func TestScenarioInOutConversionRoundTrip(t *testing.T) {
 			Description: "User enters credentials",
 			EventKey:    "login",
 		},
-		Objects: []model_scenario.ScenarioObject{
+		Objects: []model_scenario.Object{
 			{
 				Key:          "user",
 				ObjectNumber: 1,

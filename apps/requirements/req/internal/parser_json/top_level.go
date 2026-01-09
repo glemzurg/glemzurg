@@ -90,8 +90,8 @@ func UnpackRequirements(reqs requirements.Requirements) modelInOut {
 					scenarioInOut := FromRequirementsScenario(scenario)
 					// Add objects
 					scenarioInOut.Objects = nil
-					for _, obj := range reqs.ScenarioObjects[scenario.Key] {
-						scenarioInOut.Objects = append(scenarioInOut.Objects, FromRequirementsScenarioObject(obj))
+					for _, obj := range reqs.Objects[scenario.Key] {
+						scenarioInOut.Objects = append(scenarioInOut.Objects, FromRequirementsObject(obj))
 					}
 					useCaseInOut.Scenarios = append(useCaseInOut.Scenarios, scenarioInOut)
 				}
@@ -279,13 +279,13 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 				}
 
 				// Scenario Objects
-				if reqs.ScenarioObjects == nil {
-					reqs.ScenarioObjects = make(map[string][]model_scenario.ScenarioObject)
+				if reqs.Objects == nil {
+					reqs.Objects = make(map[string][]model_scenario.Object)
 				}
 				for _, scenario := range useCase.Scenarios {
-					reqs.ScenarioObjects[scenario.Key] = make([]model_scenario.ScenarioObject, len(scenario.Objects))
+					reqs.Objects[scenario.Key] = make([]model_scenario.Object, len(scenario.Objects))
 					for i, o := range scenario.Objects {
-						reqs.ScenarioObjects[scenario.Key][i] = o.ToRequirements()
+						reqs.Objects[scenario.Key][i] = o.ToRequirements()
 					}
 				}
 			}

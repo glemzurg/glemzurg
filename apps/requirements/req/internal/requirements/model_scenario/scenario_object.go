@@ -13,8 +13,8 @@ const (
 	_NAME_STYLE_UNNAMED = "unnamed" // Name must be blank.
 )
 
-// ScenarioObject is an object that participates in a scenario.
-type ScenarioObject struct {
+// Object is an object that participates in a scenario.
+type Object struct {
 	Key          string
 	ObjectNumber uint   // Order in the scenario diagram.
 	Name         string // The name or id of the object.
@@ -26,9 +26,9 @@ type ScenarioObject struct {
 	Class model_class.Class `json:"-"`
 }
 
-func NewScenarioObject(key string, objectNumber uint, name, nameStyle, classKey string, multi bool, umlComment string) (scenarioObject ScenarioObject, err error) {
+func NewObject(key string, objectNumber uint, name, nameStyle, classKey string, multi bool, umlComment string) (object Object, err error) {
 
-	scenarioObject = ScenarioObject{
+	object = Object{
 		Key:          key,
 		ObjectNumber: objectNumber,
 		Name:         name,
@@ -38,11 +38,11 @@ func NewScenarioObject(key string, objectNumber uint, name, nameStyle, classKey 
 		UmlComment:   umlComment,
 	}
 
-	err = validation.ValidateStruct(&scenarioObject,
-		validation.Field(&scenarioObject.Key, validation.Required),
-		validation.Field(&scenarioObject.Name, validation.By(func(value interface{}) error {
+	err = validation.ValidateStruct(&object,
+		validation.Field(&object.Key, validation.Required),
+		validation.Field(&object.Name, validation.By(func(value interface{}) error {
 			name := value.(string)
-			if scenarioObject.NameStyle == _NAME_STYLE_UNNAMED {
+			if object.NameStyle == _NAME_STYLE_UNNAMED {
 				if name != "" {
 					return errors.New("Name must be blank for unnamed style")
 				}
@@ -52,21 +52,21 @@ func NewScenarioObject(key string, objectNumber uint, name, nameStyle, classKey 
 				}
 			}
 			return nil
-		})), validation.Field(&scenarioObject.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
-		validation.Field(&scenarioObject.ClassKey, validation.Required),
+		})), validation.Field(&object.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
+		validation.Field(&object.ClassKey, validation.Required),
 	)
 	if err != nil {
-		return ScenarioObject{}, errors.WithStack(err)
+		return Object{}, errors.WithStack(err)
 	}
 
-	return scenarioObject, nil
+	return object, nil
 }
 
-func (so *ScenarioObject) SetClass(class model_class.Class) {
+func (so *Object) SetClass(class model_class.Class) {
 	so.Class = class
 }
 
-func (so *ScenarioObject) GetName() (name string) {
+func (so *Object) GetName() (name string) {
 	switch so.NameStyle {
 	case _NAME_STYLE_NAME:
 		name = so.Name + ":" + so.Class.Name
@@ -83,12 +83,12 @@ func (so *ScenarioObject) GetName() (name string) {
 	return name
 }
 
-func CreateKeyScenarioObjectLookup(
-	byScenario map[string][]ScenarioObject,
+func CreateKeyObjectLookup(
+	byScenario map[string][]Object,
 	classLookup map[string]model_class.Class,
-) (lookup map[string]ScenarioObject) {
+) (lookup map[string]Object) {
 
-	lookup = map[string]ScenarioObject{}
+	lookup = map[string]Object{}
 	for _, items := range byScenario {
 		for _, item := range items {
 			item.SetClass(classLookup[item.ClassKey])

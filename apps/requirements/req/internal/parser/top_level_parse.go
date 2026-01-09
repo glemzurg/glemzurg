@@ -123,8 +123,8 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 	if reqs.Scenarios == nil {
 		reqs.Scenarios = map[string][]model_scenario.Scenario{}
 	}
-	if reqs.ScenarioObjects == nil {
-		reqs.ScenarioObjects = map[string][]model_scenario.ScenarioObject{}
+	if reqs.Objects == nil {
+		reqs.Objects = map[string][]model_scenario.Object{}
 	}
 
 	// Now, parse each file according to its type.
@@ -245,7 +245,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 			reqs.UseCaseActors[useCase.Key] = useCase.Actors
 			reqs.Scenarios[useCase.Key] = useCase.Scenarios
 			for _, scenario := range useCase.Scenarios {
-				reqs.ScenarioObjects[scenario.Key] = scenario.Objects
+				reqs.Objects[scenario.Key] = scenario.Objects
 			}
 
 		default:

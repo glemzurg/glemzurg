@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestScenarioObjectInOutRoundTrip(t *testing.T) {
-	original := model_scenario.ScenarioObject{
+func TestObjectInOutRoundTrip(t *testing.T) {
+	original := model_scenario.Object{
 		Key:          "obj1",
 		ObjectNumber: 1,
 		Name:         "Object1",
@@ -18,7 +18,7 @@ func TestScenarioObjectInOutRoundTrip(t *testing.T) {
 		UmlComment:   "comment",
 	}
 
-	inOut := FromRequirementsScenarioObject(original)
+	inOut := FromRequirementsObject(original)
 	back := inOut.ToRequirements()
 	assert.Equal(t, original, back)
 }

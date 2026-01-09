@@ -259,7 +259,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 
 		// Scenario Objects.
-		ScenarioObjects: map[string][]model_scenario.ScenarioObject{
+		Objects: map[string][]model_scenario.Object{
 			"domain_key_a/subdomain_aa/use_case_a/scenario_a": {
 				{
 					Key:          "domain_key_a/subdomain_aa/use_case_a/scenario_a/object_a",

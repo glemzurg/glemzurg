@@ -38,8 +38,8 @@ type Requirements struct {
 	UseCases      map[string][]model_use_case.UseCase               // All the use cases in a subdomain.
 	UseCaseActors map[string]map[string]model_use_case.UseCaseActor // All the use cases actors.
 	// Scenarios.
-	Scenarios       map[string][]model_scenario.Scenario       // All scenarios in a use case.
-	ScenarioObjects map[string][]model_scenario.ScenarioObject // All scenario objects in a scenario.
+	Scenarios map[string][]model_scenario.Scenario // All scenarios in a use case.
+	Objects   map[string][]model_scenario.Object   // All scenario objects in a scenario.
 	// Convenience structures.
 	generalizationLookup map[string]model_class.Generalization
 	actorLookup          map[string]model_actor.Actor
@@ -55,7 +55,7 @@ type Requirements struct {
 	stateActionLookup    map[string]model_state.StateAction
 	useCaseLookup        map[string]model_use_case.UseCase
 	scenarioLookup       map[string]model_scenario.Scenario
-	scenarioObjectLookup map[string]model_scenario.ScenarioObject
+	objectLookup         map[string]model_scenario.Object
 }
 
 // Prepare data for templating.
@@ -80,12 +80,12 @@ func (r *Requirements) prepLookups() {
 		r.transitionLookup = model_state.CreateKeyTransitionLookup(r.Transitions)
 		r.stateActionLookup = model_state.CreateKeyStateActionLookup(r.StateActions)
 		r.useCaseLookup = model_use_case.CreateKeyUseCaseLookup(r.UseCases, r.UseCaseActors, r.Scenarios)
-		r.scenarioLookup = model_scenario.CreateKeyScenarioLookup(r.Scenarios, r.ScenarioObjects)
-		r.scenarioObjectLookup = model_scenario.CreateKeyScenarioObjectLookup(r.ScenarioObjects, r.classLookup)
+		r.scenarioLookup = model_scenario.CreateKeyScenarioLookup(r.Scenarios, r.Objects)
+		r.objectLookup = model_scenario.CreateKeyObjectLookup(r.Objects, r.classLookup)
 
 		// Populate references in scenarios. Their steps are like and abstract symbol tree.
 		// And any references to objects, events, attributes, or scenarios need to be populated.
-		if err := model_scenario.PopulateScenarioStepReferences(r.scenarioLookup, r.scenarioObjectLookup, r.attributeLookup, r.eventLookup); err != nil {
+		if err := model_scenario.PopulateScenarioStepReferences(r.scenarioLookup, r.objectLookup, r.attributeLookup, r.eventLookup); err != nil {
 			panic(errors.Errorf("error populating scenario step references: %+v", err))
 		}
 
@@ -152,9 +152,9 @@ func (r *Requirements) ScenarioLookup() (scenarioLookup map[string]model_scenari
 	return r.scenarioLookup
 }
 
-func (r *Requirements) ScenarioObjectLookup() (scenarioObjectLookup map[string]model_scenario.ScenarioObject) {
+func (r *Requirements) ObjectLookup() (objectLookup map[string]model_scenario.Object) {
 	r.prepLookups()
-	return r.scenarioObjectLookup
+	return r.objectLookup
 }
 
 // Get all the objects connected to one or more classes for rending in a uml diagram.
@@ -371,7 +371,7 @@ func (r *Requirements) ToTree() Model {
 				// Populate scenarios with objects
 				for l := range useCase.Scenarios {
 					scenario := &useCase.Scenarios[l]
-					scenario.Objects = r.ScenarioObjects[scenario.Key]
+					scenario.Objects = r.Objects[scenario.Key]
 				}
 			}
 		}
@@ -426,7 +426,7 @@ func (r *Requirements) FromTree(tree Model) {
 	r.UseCases = make(map[string][]model_use_case.UseCase)
 	r.UseCaseActors = make(map[string]map[string]model_use_case.UseCaseActor)
 	r.Scenarios = make(map[string][]model_scenario.Scenario)
-	r.ScenarioObjects = make(map[string][]model_scenario.ScenarioObject)
+	r.Objects = make(map[string][]model_scenario.Object)
 
 	// Populate from tree
 	for _, domain := range tree.Domains {
@@ -454,7 +454,7 @@ func (r *Requirements) FromTree(tree Model) {
 				r.Scenarios[useCase.Key] = useCase.Scenarios
 
 				for _, scenario := range useCase.Scenarios {
-					r.ScenarioObjects[scenario.Key] = scenario.Objects
+					r.Objects[scenario.Key] = scenario.Objects
 				}
 			}
 		}
