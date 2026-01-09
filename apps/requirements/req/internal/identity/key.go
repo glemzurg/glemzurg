@@ -7,20 +7,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-func PreenKey(key string) (preened string, err error) {
-
-	preened = key
-	preened = strings.ToLower(preened)
-	preened = strings.TrimSpace(preened)
-
-	err = validation.Validate(preened,
-		validation.Required, // not empty
-	)
+func NewKey(parentKey, childType, subKey string) (constructed string, err error) {
+	parentKey, err = PreenKey(parentKey)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-
-	return preened, nil
+	subKey, err = PreenKey(subKey)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	constructed = parentKey + "/" + childType + "/" + subKey
+	err = validation.Validate(constructed, HasPrefix(parentKey, childType))
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return constructed, nil
 }
 
 // HasPrefix returns a validation rule that checks if the string value has a prefix constructed from parent and childType.

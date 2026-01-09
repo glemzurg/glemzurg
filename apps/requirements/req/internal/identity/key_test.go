@@ -17,41 +17,59 @@ type KeySuite struct {
 	suite.Suite
 }
 
-func (suite *KeySuite) TestPreen() {
+func (suite *KeySuite) TestNewKey() {
 	tests := []struct {
-		key     string
-		preened string
-		errstr  string
+		parentKey   string
+		childType   string
+		subKey      string
+		constructed string
+		errstr      string
 	}{
-		// OK.
+		// OK cases.
 		{
-			key:     "key",
-			preened: "key",
+			parentKey:   "domain1",
+			childType:   "class",
+			subKey:      "thing1",
+			constructed: "domain1/class/thing1",
 		},
 		{
-			key:     " key ",
-			preened: "key",
+			parentKey:   "01_order_fulfillment",
+			childType:   "association",
+			subKey:      "1",
+			constructed: "01_order_fulfillment/association/1",
 		},
 		{
-			key:     "KEY",
-			preened: "key",
+			parentKey:   " PARENT ",
+			childType:   "child",
+			subKey:      " KEY ",
+			constructed: "parent/child/key",
 		},
 
-		// Error states.
+		// Error cases: blank parentKey.
 		{
-			key:    "   ",
-			errstr: `cannot be blank`,
+			parentKey: "",
+			childType: "class",
+			subKey:    "thing1",
+			errstr:    "cannot be blank",
+		},
+
+		// Error cases: blank key.
+		{
+			parentKey: "domain1",
+			childType: "class",
+			subKey:    "",
+			errstr:    "cannot be blank",
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		preened, err := PreenKey(test.key)
+		constructed, err := NewKey(test.parentKey, test.childType, test.subKey)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.preened, preened, testName)
+			assert.Equal(suite.T(), test.constructed, constructed, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), preened, testName)
+			assert.Empty(suite.T(), constructed, testName)
 		}
 	}
 }
