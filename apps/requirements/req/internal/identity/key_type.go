@@ -11,10 +11,14 @@ const (
 	KEY_TYPE_ACTOR  = "actor"
 	KEY_TYPE_DOMAIN = "domain"
 
-	// Keys with parents.
+	// Keys with domain parents.
+	KEY_TYPE_SUBDOMAIN          = "subdomain"
+	KEY_TYPE_DOMAIN_ASSOCIATION = "dassociation"
+
+	// Keys with subdomain parents.
+
+	// remaining
 	KEY_TYPE_CLASS          = "class"
-	KEY_TYPE_ASSOCIATION    = "association"
-	KEY_TYPE_SUBDOMAIN      = "subdomain"
 	KEY_TYPE_STATE          = "state"
 	KEY_TYPE_EVENT          = "event"
 	KEY_TYPE_GUARD          = "guard"
@@ -44,5 +48,5 @@ func NewDomainAssociationKey(domainKey Key, subKey string) (key Key, err error) 
 	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'association' key", domainKey.KeyType())
 	}
-	return newKey(domainKey.String(), KEY_TYPE_ASSOCIATION, subKey)
+	return newKey(domainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, subKey)
 }

@@ -43,7 +43,7 @@ func (k *Key) Validate() error {
 		validation.Field(&k.keyType, validation.Required, validation.In(
 			KEY_TYPE_DOMAIN,
 			KEY_TYPE_SUBDOMAIN,
-			KEY_TYPE_ASSOCIATION,
+			KEY_TYPE_DOMAIN_ASSOCIATION,
 			KEY_TYPE_CLASS,
 			KEY_TYPE_USE_CASE,
 			KEY_TYPE_STATE,

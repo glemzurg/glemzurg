@@ -109,7 +109,7 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 			name:      "ok",
 			domainKey: domainKey,
 			subKey:    "1",
-			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_ASSOCIATION, "1")),
+			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, "1")),
 		},
 
 		// Errors.

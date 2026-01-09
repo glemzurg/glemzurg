@@ -29,7 +29,7 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 			if err := k.Validate(); err != nil {
 				return err
 			}
-			if k.KeyType() != identity.KEY_TYPE_ASSOCIATION {
+			if k.KeyType() != identity.KEY_TYPE_DOMAIN_ASSOCIATION {
 				return errors.New("invalid key type for association")
 			}
 			return nil
