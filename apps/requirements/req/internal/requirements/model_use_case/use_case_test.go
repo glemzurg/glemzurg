@@ -6,6 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,7 +20,7 @@ type UseCaseSuite struct {
 }
 
 func (suite *UseCaseSuite) TestNew() {
-	subdomainKey := helper.Must(identity.NewRootKey("subdomain1"))
+	subdomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_SUBDOMAIN, "subdomain1"))
 
 	tests := []struct {
 		key        identity.Key
@@ -141,7 +142,9 @@ func (suite *UseCaseSuite) TestNew() {
 	}
 }
 func (suite *UseCaseSuite) TestNewUseCaseKey() {
-	subdomainKey := helper.Must(identity.NewRootKey("subdomain1"))
+	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
+
+	subdomainKey := helper.Must(model_domain.NewSubdomainKey(domainKey, "subdomain1"))
 
 	tests := []struct {
 		subdomainKey identity.Key
@@ -152,7 +155,7 @@ func (suite *UseCaseSuite) TestNewUseCaseKey() {
 		{
 			subdomainKey: subdomainKey,
 			subKey:       "usecase1",
-			expected:     helper.Must(identity.NewKey(subdomainKey.String(), identity.USE_CASE_KEY_TYPE, "usecase1")),
+			expected:     helper.Must(identity.NewKey(subdomainKey.String(), identity.KEY_TYPE_USE_CASE, "usecase1")),
 		},
 	}
 	for i, test := range tests {

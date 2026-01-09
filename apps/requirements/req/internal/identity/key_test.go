@@ -45,9 +45,9 @@ func (suite *KeySuite) TestNewKey() {
 		},
 		{
 			parentKey: "",
-			keyType:   "use_case",
+			keyType:   "actor",
 			subKey:    "rootkey",
-			expected:  Key{parentKey: "", keyType: "use_case", subKey: "rootkey"},
+			expected:  Key{parentKey: "", keyType: "actor", subKey: "rootkey"},
 		},
 
 		// Error cases: verify that validate is being called.
@@ -60,7 +60,7 @@ func (suite *KeySuite) TestNewKey() {
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewKey(test.parentKey, test.keyType, test.subKey)
+		key, err := newKey(test.parentKey, test.keyType, test.subKey)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.expected, key, testName)
@@ -152,7 +152,7 @@ func (suite *KeySuite) TestValidate() {
 			key: Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 		},
 		{
-			key: Key{parentKey: "", keyType: "use_case", subKey: "usecase1"},
+			key: Key{parentKey: "", keyType: "actor", subKey: "actor1"},
 		},
 		{
 			key: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
@@ -178,8 +178,8 @@ func (suite *KeySuite) TestValidate() {
 			errstr: "parentKey: parentKey must be blank for 'domain' keys.",
 		},
 		{
-			key:    Key{parentKey: "notallowed", keyType: "use_case", subKey: "domain1"},
-			errstr: "parentKey: parentKey must be blank for 'use_case' keys.",
+			key:    Key{parentKey: "notallowed", keyType: "actor", subKey: "domain1"},
+			errstr: "parentKey: parentKey must be blank for 'actor' keys.",
 		},
 		{
 			key:    Key{parentKey: "", keyType: "class", subKey: "thing1"},

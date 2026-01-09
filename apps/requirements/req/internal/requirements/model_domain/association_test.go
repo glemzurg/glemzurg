@@ -18,47 +18,6 @@ type AssociationSuite struct {
 	suite.Suite
 }
 
-func (suite *AssociationSuite) TestNewAssociationKey() {
-	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
-
-	tests := []struct {
-		domainKey identity.Key
-		subKey    string
-		expected  identity.Key
-		errstr    string
-	}{
-		// OK.
-		{
-			domainKey: domainKey,
-			subKey:    "1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_ASSOCIATION, "1")),
-		},
-
-		// Errors.
-		{
-			domainKey: helper.Must(identity.NewRootKey(identity.KEY_TYPE_USE_CASE, "usecase1")),
-			subKey:    "1",
-			errstr:    "parent key cannot be of type 'use_case' for 'association' key",
-		},
-		{
-			domainKey: domainKey,
-			subKey:    "",
-			errstr:    "cannot be blank",
-		},
-	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewAssociationKey(test.domainKey, test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), identity.Key{}, key, testName)
-		}
-	}
-}
-
 func (suite *AssociationSuite) TestNew() {
 
 	problemDomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))

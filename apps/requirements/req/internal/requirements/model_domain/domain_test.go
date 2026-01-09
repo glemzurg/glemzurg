@@ -19,37 +19,6 @@ type DomainSuite struct {
 	suite.Suite
 }
 
-func (suite *DomainSuite) TestNewDomainKey() {
-	tests := []struct {
-		subKey   string
-		expected identity.Key
-		errstr   string
-	}{
-		// OK.
-		{
-			subKey:   "domain1",
-			expected: helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
-		},
-
-		// Errors.
-		{
-			subKey: "",
-			errstr: "cannot be blank",
-		},
-	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewDomainKey(test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, key, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Equal(suite.T(), identity.Key{}, key, testName)
-		}
-	}
-}
-
 func (suite *DomainSuite) TestNew() {
 	tests := []struct {
 		key        identity.Key

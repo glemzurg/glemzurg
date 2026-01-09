@@ -14,7 +14,7 @@ type Key struct {
 	subKey    string // The unique key of the child entity within its parent and type.
 }
 
-func NewKey(parentKey, keyType, subKey string) (key Key, err error) {
+func newKey(parentKey, keyType, subKey string) (key Key, err error) {
 	parentKey = strings.ToLower(strings.TrimSpace(parentKey))
 	keyType = strings.ToLower(strings.TrimSpace(keyType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
@@ -33,8 +33,8 @@ func NewKey(parentKey, keyType, subKey string) (key Key, err error) {
 	return key, nil
 }
 
-func NewRootKey(keyType, rootKey string) (key Key, err error) {
-	return NewKey("", keyType, rootKey)
+func newRootKey(keyType, rootKey string) (key Key, err error) {
+	return newKey("", keyType, rootKey)
 }
 
 // Validate validates the Key struct.
@@ -57,7 +57,7 @@ func (k *Key) Validate() error {
 		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
 			parent := value.(string)
 			switch k.keyType {
-			case KEY_TYPE_DOMAIN, KEY_TYPE_USE_CASE:
+			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR:
 				if parent != "" {
 					return errors.Errorf("parentKey must be blank for '%s' keys", k.keyType)
 				}
@@ -105,5 +105,5 @@ func ParseKey(s string) (key Key, err error) {
 	parentParts := parts[:len(parts)-2]
 	parentKey := strings.Join(parentParts, "/")
 
-	return NewKey(parentKey, keyType, subKey)
+	return newKey(parentKey, keyType, subKey)
 }

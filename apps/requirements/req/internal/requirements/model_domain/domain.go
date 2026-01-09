@@ -9,11 +9,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
-// Construct a key that sits correctly in the model shape.
-func NewDomainKey(subKey string) (key identity.Key, err error) {
-	return identity.NewRootKey(identity.KEY_TYPE_DOMAIN, subKey)
-}
-
 // Domain is a root category of the mode.
 type Domain struct {
 	Key        identity.Key

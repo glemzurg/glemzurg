@@ -1,13 +1,15 @@
 package identity
 
+import "github.com/pkg/errors"
+
 const (
 
 	// Models do not have a key type.
 	// It is a string that is unique in the system.
 
 	// Keys without parents (parent is the model itself).
-	KEY_TYPE_DOMAIN   = "domain"
-	KEY_TYPE_USE_CASE = "use_case"
+	KEY_TYPE_ACTOR  = "actor"
+	KEY_TYPE_DOMAIN = "domain"
 
 	// Keys with parents.
 	KEY_TYPE_CLASS          = "class"
@@ -18,5 +20,29 @@ const (
 	KEY_TYPE_GUARD          = "guard"
 	KEY_TYPE_GENERALIZATION = "generalization"
 	KEY_TYPE_SCENARIO       = "scenario"
-	KEY_TYPE_ACTOR          = "actor"
+	KEY_TYPE_USE_CASE       = "use_case"
 )
+
+func NewActorKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_ACTOR, subKey)
+}
+
+func NewDomainKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_DOMAIN, subKey)
+}
+
+func NewSubdomainKey(domainKey Key, subKey string) (key Key, err error) {
+	// The parent must be a domain.
+	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'subdomain' key", domainKey.KeyType())
+	}
+	return newKey(domainKey.String(), KEY_TYPE_SUBDOMAIN, subKey)
+}
+
+func NewDomainAssociationKey(domainKey Key, subKey string) (key Key, err error) {
+	// The parent must be a domain.
+	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'association' key", domainKey.KeyType())
+	}
+	return newKey(domainKey.String(), KEY_TYPE_ASSOCIATION, subKey)
+}
