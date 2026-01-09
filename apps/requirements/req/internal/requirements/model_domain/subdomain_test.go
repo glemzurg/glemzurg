@@ -67,7 +67,7 @@ func (suite *SubdomainSuite) TestNew() {
 			key:     helper.Must(identity.NewKey(domainKey.String(), "unknown", "subdomain1")),
 			name:    "Name",
 			details: "Details",
-			errstr:  "Key: (childType: invalid value.).",
+			errstr:  "Key: invalid child type for subdomain.",
 		},
 		{
 			key:     helper.Must(NewSubdomainKey(domainKey, "subdomain1")),

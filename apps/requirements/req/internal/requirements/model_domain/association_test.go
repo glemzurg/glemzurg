@@ -66,6 +66,13 @@ func (suite *AssociationSuite) TestNew() {
 			errstr:            `Key: (subKey: cannot be blank.)`,
 		},
 		{
+			key:               helper.Must(identity.NewKey(problemDomainKey.String(), "unknown", "1")),
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: solutionDomainKey,
+			umlComment:        "UmlComment",
+			errstr:            "Key: invalid child type for association.",
+		},
+		{
 			key:               helper.Must(NewAssociationKey(problemDomainKey, "1")),
 			problemDomainKey:  identity.Key{},
 			solutionDomainKey: solutionDomainKey,

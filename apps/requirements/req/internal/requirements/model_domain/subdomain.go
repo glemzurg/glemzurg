@@ -42,7 +42,13 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 	err = validation.ValidateStruct(&subdomain,
 		validation.Field(&subdomain.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
-			return k.Validate()
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.ChildType() != _SUBDOMAIN_CHILD_TYPE {
+				return errors.New("invalid child type for subdomain")
+			}
+			return nil
 		})),
 		validation.Field(&subdomain.Name, validation.Required),
 	)

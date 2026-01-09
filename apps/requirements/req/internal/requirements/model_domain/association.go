@@ -6,9 +6,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// For key construction.
+const _ASSOCIATION_CHILD_TYPE = "association"
+
 // Construct a key that sits correctly in the model shape.
 func NewAssociationKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
-	return identity.NewKey(domainKey.String(), "association", subKey)
+	return identity.NewKey(domainKey.String(), _ASSOCIATION_CHILD_TYPE, subKey)
 }
 
 // When a domain enforces requirements on another domain.
@@ -31,7 +34,13 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 	err = validation.ValidateStruct(&association,
 		validation.Field(&association.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
-			return k.Validate()
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.ChildType() != _ASSOCIATION_CHILD_TYPE {
+				return errors.New("invalid child type for association")
+			}
+			return nil
 		})),
 		validation.Field(&association.ProblemDomainKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
