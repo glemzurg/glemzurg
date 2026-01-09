@@ -7,52 +7,51 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Key is a string that uniquely identifies an entity in the model.
-type Key string
-
-func NewKey(parentKey, childType, subKey string) (constructed string, err error) {
-	parentKey, err = PreenKey(parentKey)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	subKey, err = PreenKey(subKey)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	constructed = parentKey + "/" + childType + "/" + subKey
-	err = validation.Validate(constructed, HasPrefix(parentKey, childType))
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-	return constructed, nil
+// Key uniquely identifies an entity in the model.
+type Key struct {
+	ParentKey string // The parent entity's key.
+	ChildType string // The type of the child entity, e.g., "class", "association".
+	SubKey    string // The unique key of the child entity within its parent and type.
 }
 
-// HasPrefix returns a validation rule that checks if the string value has a prefix constructed from parent and childType.
-// The prefix is parent/childType/, and both parent and childType must be non-blank.
-// This is used for validating derivative keys that should start with their parent key followed by the child type.
-func HasPrefix(parent, childType string) validation.Rule {
-	if parent == "" {
-		return validation.By(func(interface{}) error {
-			return errors.New("parent cannot be blank")
-		})
+func NewKey(parentKey, childType, subKey string) (key Key, err error) {
+	parentKey = strings.ToLower(strings.TrimSpace(parentKey))
+	childType = strings.ToLower(strings.TrimSpace(childType))
+	subKey = strings.ToLower(strings.TrimSpace(subKey))
+
+	key = Key{
+		ParentKey: parentKey,
+		ChildType: childType,
+		SubKey:    subKey,
 	}
-	if childType == "" {
-		return validation.By(func(interface{}) error {
-			return errors.New("childType cannot be blank")
-		})
+
+	err = key.Validate()
+	if err != nil {
+		return Key{}, errors.WithStack(err)
 	}
-	prefix := parent + "/" + childType + "/"
-	return validation.By(func(value interface{}) error {
-		s, ok := value.(string)
-		if !ok {
-			return errors.New("must be a string")
-		}
-		if !strings.HasPrefix(s, prefix) {
-			return errors.Errorf("must have prefix %s", prefix)
-		}
-		if strings.Contains(s[len(prefix):], "/") {
-			return errors.Errorf("must not contain '/' after prefix %s", prefix)
-		}
-		return nil
-	})
+
+	return key, nil
+}
+
+// Validate validates the Key struct.
+func (k Key) Validate() error {
+	return validation.ValidateStruct(&k,
+		validation.Field(&k.SubKey, validation.Required),
+		validation.Field(&k.ParentKey, validation.By(func(value interface{}) error {
+			parent := value.(string)
+			childType := k.ChildType
+			if (parent == "" && childType != "") || (parent != "" && childType == "") {
+				return errors.New("ParentKey and ChildType must both be set or both be blank")
+			}
+			return nil
+		})),
+	)
+}
+
+// String returns the string representation of the key.
+func (k Key) String() string {
+	if k.ParentKey != "" && k.ChildType != "" {
+		return k.ParentKey + "/" + k.ChildType + "/" + k.SubKey
+	}
+	return k.SubKey
 }

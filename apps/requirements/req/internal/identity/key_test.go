@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,132 +18,127 @@ type KeySuite struct {
 
 func (suite *KeySuite) TestNewKey() {
 	tests := []struct {
-		parentKey   string
-		childType   string
-		subKey      string
-		constructed string
-		errstr      string
+		parentKey string
+		childType string
+		subKey    string
+		expected  Key
+		errstr    string
 	}{
 		// OK cases.
 		{
-			parentKey:   "domain1",
-			childType:   "class",
-			subKey:      "thing1",
-			constructed: "domain1/class/thing1",
-		},
-		{
-			parentKey:   "01_order_fulfillment",
-			childType:   "association",
-			subKey:      "1",
-			constructed: "01_order_fulfillment/association/1",
-		},
-		{
-			parentKey:   " PARENT ",
-			childType:   "child",
-			subKey:      " KEY ",
-			constructed: "parent/child/key",
-		},
-
-		// Error cases: blank parentKey.
-		{
-			parentKey: "",
+			parentKey: "domain1",
 			childType: "class",
 			subKey:    "thing1",
-			errstr:    "cannot be blank",
+			expected:  Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+		},
+		{
+			parentKey: "01_order_fulfillment",
+			childType: "association",
+			subKey:    "1",
+			expected:  Key{ParentKey: "01_order_fulfillment", ChildType: "association", SubKey: "1"},
+		},
+		{
+			parentKey: " PARENT ",
+			childType: "child",
+			subKey:    " KEY ",
+			expected:  Key{ParentKey: "parent", ChildType: "child", SubKey: "key"},
+		},
+		{
+			parentKey: "",
+			childType: "",
+			subKey:    "rootkey",
+			expected:  Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
 		},
 
-		// Error cases: blank key.
+		// Error cases: blank subKey.
 		{
 			parentKey: "domain1",
 			childType: "class",
 			subKey:    "",
 			errstr:    "cannot be blank",
 		},
+
+		// Error cases: only one of parentKey or childType set.
+		{
+			parentKey: "domain1",
+			childType: "",
+			subKey:    "thing1",
+			errstr:    "ParentKey and ChildType must both be set or both be blank",
+		},
+		{
+			parentKey: "",
+			childType: "class",
+			subKey:    "thing1",
+			errstr:    "ParentKey and ChildType must both be set or both be blank",
+		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		constructed, err := NewKey(test.parentKey, test.childType, test.subKey)
+		key, err := NewKey(test.parentKey, test.childType, test.subKey)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.constructed, constructed, testName)
+			assert.Equal(suite.T(), test.expected, key, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), constructed, testName)
+			assert.Equal(suite.T(), Key{}, key, testName)
 		}
 	}
 }
 
-func (suite *KeySuite) TestHasPrefix() {
+func (suite *KeySuite) TestString() {
 	tests := []struct {
-		parent    string
-		childType string
-		value     interface{}
-		errstr    string
+		key      Key
+		expected string
 	}{
-		// OK cases.
 		{
-			parent:    "01_order_fulfillment",
-			childType: "association",
-			value:     "01_order_fulfillment/association/1",
+			key:      Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+			expected: "domain1/class/thing1",
 		},
 		{
-			parent:    "domain1",
-			childType: "class",
-			value:     "domain1/class/thing1",
-		},
-		{
-			parent:    "parent",
-			childType: "child",
-			value:     "parent/child/extrastuff",
-		},
-
-		// Error cases: wrong prefix.
-		{
-			parent:    "01_order_fulfillment",
-			childType: "association",
-			value:     "wrong/association/1",
-			errstr:    `must have prefix 01_order_fulfillment/association/`,
-		},
-		{
-			parent:    "domain1",
-			childType: "class",
-			value:     "domain1/wrong/5",
-			errstr:    `must have prefix domain1/class/`,
-		},
-		{
-			parent:    "parent",
-			childType: "child",
-			value:     "parent/child/extra/stuff",
-			errstr:    `must not contain '/' after prefix parent/child/`,
-		},
-
-		// Error cases: blank parent.
-		{
-			parent:    "",
-			childType: "association",
-			value:     "anything",
-			errstr:    "parent cannot be blank",
-		},
-
-		// Error cases: blank childType.
-		{
-			parent:    "01_order_fulfillment",
-			childType: "",
-			value:     "anything",
-			errstr:    "childType cannot be blank",
-		},
-
-		// Error cases: non-string value.
-		{
-			parent:    "01_order_fulfillment",
-			childType: "association",
-			value:     123, // non-string
-			errstr:    "must be a string",
+			key:      Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+			expected: "rootkey",
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		err := validation.Validate(test.value, HasPrefix(test.parent, test.childType))
+		assert.Equal(suite.T(), test.expected, test.key.String(), testName)
+	}
+}
+
+func (suite *KeySuite) TestValidate() {
+	tests := []struct {
+		key    Key
+		errstr string
+	}{
+		// OK cases.
+		{
+			key: Key{ParentKey: "domain1", ChildType: "class", SubKey: "thing1"},
+		},
+		{
+			key: Key{ParentKey: "", ChildType: "", SubKey: "rootkey"},
+		},
+
+		// Error cases: blank SubKey.
+		{
+			key:    Key{ParentKey: "domain1", ChildType: "class", SubKey: ""},
+			errstr: "cannot be blank",
+		},
+
+		// Error cases: only ParentKey set.
+		{
+			key:    Key{ParentKey: "domain1", ChildType: "", SubKey: "thing1"},
+			errstr: "ParentKey and ChildType must both be set or both be blank",
+		},
+
+		// Error cases: only ChildType set.
+		{
+			key:    Key{ParentKey: "", ChildType: "class", SubKey: "thing1"},
+			errstr: "ParentKey and ChildType must both be set or both be blank",
+		},
+	}
+	for i, test := range tests {
+		testName := fmt.Sprintf("Case %d: %+v", i, test)
+		err := test.key.Validate()
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 		} else {
