@@ -10,22 +10,18 @@ import (
 // Key uniquely identifies an entity in the model.
 type Key struct {
 	parentKey string // The parent entity's key.
-	childType string // The type of the child entity, e.g., "class", "association".
+	keyType   string // The type of the key, e.g., "class", "association".
 	subKey    string // The unique key of the child entity within its parent and type.
 }
 
-func NewKey(parentKey, childType, subKey string) (key Key, err error) {
+func NewKey(parentKey, keyType, subKey string) (key Key, err error) {
 	parentKey = strings.ToLower(strings.TrimSpace(parentKey))
-	childType = strings.ToLower(strings.TrimSpace(childType))
+	keyType = strings.ToLower(strings.TrimSpace(keyType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
-
-	if parentKey == "" && childType == "" {
-		childType = "model"
-	}
 
 	key = Key{
 		parentKey: parentKey,
-		childType: childType,
+		keyType:   keyType,
 		subKey:    subKey,
 	}
 
@@ -38,23 +34,23 @@ func NewKey(parentKey, childType, subKey string) (key Key, err error) {
 }
 
 func NewModelKey(rootKey string) (key Key, err error) {
-	return NewKey("", "model", rootKey)
+	return NewKey("", KEY_TYPE_MODEL, rootKey)
 }
 
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
 	return validation.ValidateStruct(k,
+		validation.Field(&k.keyType, validation.Required, validation.In(KEY_TYPE_MODEL, KEY_TYPE_SUBDOMAIN, KEY_TYPE_ASSOCIATION, "class", KEY_TYPE_USE_CASE, KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_GENERALIZATION, KEY_TYPE_SCENARIO, KEY_TYPE_ACTOR)),
 		validation.Field(&k.subKey, validation.Required),
-		validation.Field(&k.childType, validation.Required, validation.In("model", "subdomain", "association", "class", "use_case", "state", "event", "guard", "generalization", "scenario", "actor")),
 	)
 }
 
 // String returns the string representation of the key.
 func (k *Key) String() string {
 	if k.parentKey != "" {
-		return k.parentKey + "/" + k.childType + "/" + k.subKey
-	} else if k.childType != "" {
-		return k.childType + "/" + k.subKey
+		return k.parentKey + "/" + k.keyType + "/" + k.subKey
+	} else if k.keyType != "" {
+		return k.keyType + "/" + k.subKey
 	} else {
 		return k.subKey
 	}
@@ -65,9 +61,9 @@ func (k *Key) SubKey() string {
 	return k.subKey
 }
 
-// ChildType returns the childType of the Key.
-func (k *Key) ChildType() string {
-	return k.childType
+// KeyType returns the keyType of the Key.
+func (k *Key) KeyType() string {
+	return k.keyType
 }
 
 func ParseKey(s string) (key Key, err error) {
@@ -75,24 +71,24 @@ func ParseKey(s string) (key Key, err error) {
 		return Key{}, errors.New("invalid key format")
 	}
 	parts := strings.Split(s, "/")
-	var parentKey, childType, subKey string
+	var parentKey, keyType, subKey string
 	switch len(parts) {
 	case 1:
-		childType = "model"
+		keyType = "model"
 		subKey = parts[0]
 		if subKey == "" {
 			return Key{}, errors.New("invalid key format")
 		}
 	case 2:
-		childType = parts[0]
+		keyType = parts[0]
 		subKey = parts[1]
 	case 3:
 		parentKey = parts[0]
-		childType = parts[1]
+		keyType = parts[1]
 		subKey = parts[2]
 	default:
 		return Key{}, errors.New("invalid key format")
 	}
 
-	return NewKey(parentKey, childType, subKey)
+	return NewKey(parentKey, keyType, subKey)
 }

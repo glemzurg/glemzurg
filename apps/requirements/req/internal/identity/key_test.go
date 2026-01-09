@@ -19,7 +19,7 @@ type KeySuite struct {
 func (suite *KeySuite) TestNewKey() {
 	tests := []struct {
 		parentKey string
-		childType string
+		keyType   string
 		subKey    string
 		expected  Key
 		errstr    string
@@ -27,54 +27,54 @@ func (suite *KeySuite) TestNewKey() {
 		// OK cases.
 		{
 			parentKey: "domain1",
-			childType: "class",
+			keyType:   "class",
 			subKey:    "thing1",
-			expected:  Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
+			expected:  Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 		{
 			parentKey: "01_order_fulfillment",
-			childType: "association",
+			keyType:   "association",
 			subKey:    "1",
-			expected:  Key{parentKey: "01_order_fulfillment", childType: "association", subKey: "1"},
+			expected:  Key{parentKey: "01_order_fulfillment", keyType: "association", subKey: "1"},
 		},
 		{
 			parentKey: " PARENT ",
-			childType: "class",
+			keyType:   "class",
 			subKey:    " KEY ",
-			expected:  Key{parentKey: "parent", childType: "class", subKey: "key"},
+			expected:  Key{parentKey: "parent", keyType: "class", subKey: "key"},
 		},
 		{
 			parentKey: "",
-			childType: "",
+			keyType:   "",
 			subKey:    "rootkey",
-			expected:  Key{parentKey: "", childType: "model", subKey: "rootkey"},
+			expected:  Key{parentKey: "", keyType: "model", subKey: "rootkey"},
 		},
 		{
 			parentKey: "",
-			childType: "class",
+			keyType:   "class",
 			subKey:    "thing1",
-			expected:  Key{parentKey: "", childType: "class", subKey: "thing1"},
+			expected:  Key{parentKey: "", keyType: "class", subKey: "thing1"},
 		},
 
 		// Error cases: blank subKey.
 		{
 			parentKey: "domain1",
-			childType: "class",
+			keyType:   "class",
 			subKey:    "",
 			errstr:    "cannot be blank",
 		},
 
-		// Error cases: only one of parentKey or childType set.
+		// Error cases: only one of parentKey or keyType set.
 		{
 			parentKey: "domain1",
-			childType: "",
+			keyType:   "",
 			subKey:    "thing1",
-			errstr:    "childType: cannot be blank.",
+			errstr:    "keyType: cannot be blank.",
 		},
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		key, err := NewKey(test.parentKey, test.childType, test.subKey)
+		key, err := NewKey(test.parentKey, test.keyType, test.subKey)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			assert.Equal(suite.T(), test.expected, key, testName)
@@ -94,21 +94,21 @@ func (suite *KeySuite) TestParseKey() {
 		// OK cases.
 		{
 			input:    "domain1/class/thing1",
-			expected: Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
+			expected: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 		{
 			input:    "rootkey",
-			expected: Key{parentKey: "", childType: "model", subKey: "rootkey"},
+			expected: Key{parentKey: "", keyType: "model", subKey: "rootkey"},
 		},
 		{
 			input:    "  DOMAIN1  /  CLASS  /  THING1  ", // with spaces
-			expected: Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
+			expected: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 
 		// Error cases: invalid format.
 		{
 			input:  "domain1/class",
-			errstr: "childType: must be a valid value.",
+			errstr: "keyType: must be a valid value.",
 		},
 		{
 			input:  "domain1/class/thing1/extra",
@@ -119,8 +119,8 @@ func (suite *KeySuite) TestParseKey() {
 			errstr: "invalid key format",
 		},
 		{
-			input:  "domain1//thing1", // empty childType
-			errstr: "childType: cannot be blank.",
+			input:  "domain1//thing1", // empty keyType
+			errstr: "keyType: cannot be blank.",
 		},
 	}
 	for i, test := range tests {
@@ -142,11 +142,11 @@ func (suite *KeySuite) TestString() {
 		expected string
 	}{
 		{
-			key:      Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
+			key:      Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 			expected: "domain1/class/thing1",
 		},
 		{
-			key:      Key{parentKey: "", childType: "", subKey: "rootkey"},
+			key:      Key{parentKey: "", keyType: "", subKey: "rootkey"},
 			expected: "rootkey",
 		},
 	}
@@ -163,26 +163,26 @@ func (suite *KeySuite) TestValidate() {
 	}{
 		// OK cases.
 		{
-			key: Key{parentKey: "domain1", childType: "class", subKey: "thing1"},
+			key: Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 		{
-			key: Key{parentKey: "", childType: "class", subKey: "thing1"},
+			key: Key{parentKey: "", keyType: "class", subKey: "thing1"},
 		},
 
 		// Error cases: blank SubKey.
 		{
-			key:    Key{parentKey: "domain1", childType: "class", subKey: ""},
+			key:    Key{parentKey: "domain1", keyType: "class", subKey: ""},
 			errstr: "cannot be blank",
 		},
 
 		// Error cases: blank ChildType.
 		{
-			key:    Key{parentKey: "", childType: "", subKey: "rootkey"},
-			errstr: "childType: cannot be blank.",
+			key:    Key{parentKey: "", keyType: "", subKey: "rootkey"},
+			errstr: "keyType: cannot be blank.",
 		},
 		{
-			key:    Key{parentKey: "domain1", childType: "", subKey: "thing1"},
-			errstr: "childType: cannot be blank.",
+			key:    Key{parentKey: "domain1", keyType: "", subKey: "thing1"},
+			errstr: "keyType: cannot be blank.",
 		},
 	}
 	for i, test := range tests {
