@@ -221,7 +221,7 @@ func TestUnpackPackRequirementsRoundTrip(t *testing.T) {
 				},
 			},
 		},
-		UseCaseActors: map[string]map[string]model_use_case.UseCaseActor{
+		Actors: map[string]map[string]model_use_case.Actor{
 			"domain_key_a/subdomain_aa/use_case_a": {
 				"model_key/actor/actor_a": {},
 			},

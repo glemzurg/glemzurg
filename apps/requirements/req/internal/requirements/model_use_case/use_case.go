@@ -22,7 +22,7 @@ type UseCase struct {
 	ReadOnly   bool   // This is a user story that does not change the state of the system.
 	UmlComment string
 	// Part of the data in a parsed file.
-	Actors    map[string]UseCaseActor
+	Actors    map[string]Actor
 	Scenarios []model_scenario.Scenario
 	// Helpful data.
 	DomainKey string
@@ -55,7 +55,7 @@ func (uc *UseCase) SetDomainKey(domainKey string) {
 	uc.DomainKey = domainKey
 }
 
-func (uc *UseCase) SetActors(actors map[string]UseCaseActor) {
+func (uc *UseCase) SetActors(actors map[string]Actor) {
 	uc.Actors = actors
 }
 
@@ -65,7 +65,7 @@ func (uc *UseCase) SetScenarios(scenarios []model_scenario.Scenario) {
 
 func CreateKeyUseCaseLookup(
 	byCategory map[string][]UseCase,
-	useCaseActors map[string]map[string]UseCaseActor,
+	actors map[string]map[string]Actor,
 	scenarios map[string][]model_scenario.Scenario,
 ) (lookup map[string]UseCase) {
 
@@ -74,7 +74,7 @@ func CreateKeyUseCaseLookup(
 		for _, item := range items {
 
 			item.SetDomainKey(domainKey)
-			item.SetActors(useCaseActors[item.Key])
+			item.SetActors(actors[item.Key])
 			item.SetScenarios(scenarios[item.Key])
 
 			lookup[item.Key] = item

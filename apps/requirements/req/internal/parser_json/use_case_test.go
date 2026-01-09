@@ -16,7 +16,7 @@ func TestUseCaseInOutConversionRoundTrip(t *testing.T) {
 		Level:      "sea",
 		ReadOnly:   true,
 		UmlComment: "Login flow",
-		Actors: map[string]model_use_case.UseCaseActor{
+		Actors: map[string]model_use_case.Actor{
 			"user": {
 				UmlComment: "The user",
 			},

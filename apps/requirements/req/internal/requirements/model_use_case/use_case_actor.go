@@ -1,15 +1,15 @@
 package model_use_case
 
-// UseCaseActor is an actor who acts in a user story.
-type UseCaseActor struct {
+// Actor is an actor who acts in a user story.
+type Actor struct {
 	UmlComment string
 }
 
-func NewUseCaseActor(umlComment string) (useCaseActor UseCaseActor, err error) {
+func NewActor(umlComment string) (actor Actor, err error) {
 
-	useCaseActor = UseCaseActor{
+	actor = Actor{
 		UmlComment: umlComment,
 	}
 
-	return useCaseActor, nil
+	return actor, nil
 }

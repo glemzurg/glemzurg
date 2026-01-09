@@ -35,8 +35,8 @@ type Requirements struct {
 	Transitions  map[string][]model_state.Transition  // All the state transitions in a class.
 	StateActions map[string][]model_state.StateAction // All the state actions in a state.
 	// Use Cases.
-	UseCases      map[string][]model_use_case.UseCase               // All the use cases in a subdomain.
-	UseCaseActors map[string]map[string]model_use_case.UseCaseActor // All the use cases actors.
+	UseCases      map[string][]model_use_case.UseCase        // All the use cases in a subdomain.
+	UseCaseActors map[string]map[string]model_use_case.Actor // All the use cases actors.
 	// Scenarios.
 	Scenarios map[string][]model_scenario.Scenario // All scenarios in a use case.
 	Objects   map[string][]model_scenario.Object   // All scenario objects in a scenario.
@@ -424,7 +424,7 @@ func (r *Requirements) FromTree(tree Model) {
 	r.Transitions = make(map[string][]model_state.Transition)
 	r.StateActions = make(map[string][]model_state.StateAction)
 	r.UseCases = make(map[string][]model_use_case.UseCase)
-	r.UseCaseActors = make(map[string]map[string]model_use_case.UseCaseActor)
+	r.UseCaseActors = make(map[string]map[string]model_use_case.Actor)
 	r.Scenarios = make(map[string][]model_scenario.Scenario)
 	r.Objects = make(map[string][]model_scenario.Object)
 

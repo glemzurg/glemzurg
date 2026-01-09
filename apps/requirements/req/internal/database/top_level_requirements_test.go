@@ -241,9 +241,11 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				},
 			},
 		},
-		UseCaseActors: map[string]map[string]model_use_case.UseCaseActor{
+		UseCaseActors: map[string]map[string]model_use_case.Actor{
 			"domain_key_a/subdomain_aa/use_case_a": {
-				"model_key/actor/actor_a": {},
+				"model_key/actor/actor_a": {
+					UmlComment: "UmlCommentA",
+				},
 			},
 		},
 

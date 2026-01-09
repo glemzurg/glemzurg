@@ -8,7 +8,7 @@ import (
 )
 
 func TestUseCaseActorInOutRoundTrip(t *testing.T) {
-	original := model_use_case.UseCaseActor{
+	original := model_use_case.Actor{
 		UmlComment: "comment",
 	}
 

@@ -31,7 +31,7 @@ func (u useCaseInOut) ToRequirements() model_use_case.UseCase {
 
 	for k, v := range u.Actors {
 		if useCase.Actors == nil {
-			useCase.Actors = make(map[string]model_use_case.UseCaseActor)
+			useCase.Actors = make(map[string]model_use_case.Actor)
 		}
 		useCase.Actors[k] = v.ToRequirements()
 	}

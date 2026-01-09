@@ -7,15 +7,15 @@ type useCaseActorInOut struct {
 	UmlComment string `json:"uml_comment"`
 }
 
-// ToRequirements converts the useCaseActorInOut to model_use_case.UseCaseActor.
-func (u useCaseActorInOut) ToRequirements() model_use_case.UseCaseActor {
-	return model_use_case.UseCaseActor{
+// ToRequirements converts the useCaseActorInOut to model_use_case.Actor.
+func (u useCaseActorInOut) ToRequirements() model_use_case.Actor {
+	return model_use_case.Actor{
 		UmlComment: u.UmlComment,
 	}
 }
 
-// FromRequirements creates a useCaseActorInOut from model_use_case.UseCaseActor.
-func FromRequirementsUseCaseActor(u model_use_case.UseCaseActor) useCaseActorInOut {
+// FromRequirements creates a useCaseActorInOut from model_use_case.Actor.
+func FromRequirementsUseCaseActor(u model_use_case.Actor) useCaseActorInOut {
 	return useCaseActorInOut{
 		UmlComment: u.UmlComment,
 	}

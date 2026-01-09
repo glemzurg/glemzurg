@@ -42,18 +42,18 @@ func parseUseCase(key, filename, contents string) (useCase model_use_case.UseCas
 	// Parse actors.
 	actorsAny, found := yamlData["actors"]
 	if found {
-		useCase.Actors = map[string]model_use_case.UseCaseActor{}
+		useCase.Actors = map[string]model_use_case.Actor{}
 		actorsMap := actorsAny.(map[string]any)
 		for actorKey, commentAny := range actorsMap {
 			comment := ""
 			if commentStr, ok := commentAny.(string); ok {
 				comment = commentStr
 			}
-			useCaseActor, err := model_use_case.NewUseCaseActor(comment)
+			actor, err := model_use_case.NewActor(comment)
 			if err != nil {
 				return model_use_case.UseCase{}, err
 			}
-			useCase.Actors[actorKey] = useCaseActor
+			useCase.Actors[actorKey] = actor
 		}
 	}
 

@@ -281,7 +281,6 @@ func ReadRequirements(db *sql.DB, modelKey string) (reqs requirements.Requiremen
 			subdomainKey := subdomainKeys[uc.Key]
 			reqs.UseCases[subdomainKey] = append(reqs.UseCases[subdomainKey], uc)
 		}
-
 		reqs.UseCaseActors, err = QueryUseCaseActors(tx, modelKey)
 		if err != nil {
 			return err

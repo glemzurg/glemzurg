@@ -262,9 +262,9 @@ func PackRequirements(tree modelInOut) requirements.Requirements {
 
 				// Use Case Actors
 				if reqs.UseCaseActors == nil {
-					reqs.UseCaseActors = make(map[string]map[string]model_use_case.UseCaseActor)
+					reqs.UseCaseActors = make(map[string]map[string]model_use_case.Actor)
 				}
-				reqs.UseCaseActors[useCase.Key] = make(map[string]model_use_case.UseCaseActor)
+				reqs.UseCaseActors[useCase.Key] = make(map[string]model_use_case.Actor)
 				for k, v := range useCase.Actors {
 					reqs.UseCaseActors[useCase.Key][k] = v.ToRequirements()
 				}

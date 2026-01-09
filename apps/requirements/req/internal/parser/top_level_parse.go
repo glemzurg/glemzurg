@@ -118,7 +118,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 		reqs.UseCases = map[string][]model_use_case.UseCase{}
 	}
 	if reqs.UseCaseActors == nil {
-		reqs.UseCaseActors = map[string]map[string]model_use_case.UseCaseActor{}
+		reqs.UseCaseActors = map[string]map[string]model_use_case.Actor{}
 	}
 	if reqs.Scenarios == nil {
 		reqs.Scenarios = map[string][]model_scenario.Scenario{}
