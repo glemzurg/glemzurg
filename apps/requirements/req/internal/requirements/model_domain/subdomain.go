@@ -11,7 +11,7 @@ import (
 
 // Construct a key that sits correctly in the model shape.
 func NewSubdomainKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
-	return identity.NewKey(domainKey.String(), identity.SUBDOMAIN_KEY_TYPE, subKey)
+	return identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, subKey)
 }
 
 // Subdomain is a nested category of the model.
@@ -42,7 +42,7 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 			if err := k.Validate(); err != nil {
 				return err
 			}
-			if k.KeyType() != identity.SUBDOMAIN_CHILD_TYPE {
+			if k.KeyType() != identity.KEY_TYPE_SUBDOMAIN {
 				return errors.New("invalid key type for subdomain")
 			}
 			return nil

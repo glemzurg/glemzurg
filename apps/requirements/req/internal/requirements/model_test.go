@@ -6,9 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 func TestModelSuite(t *testing.T) {
@@ -21,7 +18,7 @@ type ModelSuite struct {
 
 func (suite *ModelSuite) TestNew() {
 	tests := []struct {
-		key     identity.Key
+		key     string
 		name    string
 		details string
 		obj     Model
@@ -29,21 +26,21 @@ func (suite *ModelSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:     helper.Must(identity.NewRootKey("model1")),
+			key:     "model1",
 			name:    "Name",
 			details: "Details",
 			obj: Model{
-				Key:     helper.Must(identity.NewRootKey("model1")),
+				Key:     "model1",
 				Name:    "Name",
 				Details: "Details",
 			},
 		},
 		{
-			key:     helper.Must(identity.NewRootKey("model1")),
+			key:     "  MODEL1  ",
 			name:    "Name",
 			details: "",
 			obj: Model{
-				Key:     helper.Must(identity.NewRootKey("model1")),
+				Key:     "model1",
 				Name:    "Name",
 				Details: "",
 			},
@@ -51,13 +48,13 @@ func (suite *ModelSuite) TestNew() {
 
 		// Error states.
 		{
-			key:     identity.Key{},
+			key:     "",
 			name:    "Name",
 			details: "Details",
 			errstr:  "Key: (subKey: cannot be blank.).",
 		},
 		{
-			key:     helper.Must(identity.NewRootKey("model1")),
+			key:     "model1",
 			name:    "",
 			details: "Details",
 			errstr:  "Name: cannot be blank.",

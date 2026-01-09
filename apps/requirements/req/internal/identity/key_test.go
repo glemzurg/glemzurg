@@ -175,15 +175,15 @@ func (suite *KeySuite) TestValidate() {
 		// Error cases: parentKey issues.
 		{
 			key:    Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
-			errstr: "parentKey: parentKey must be blank for domain, use_case keys.",
+			errstr: "parentKey: parentKey must be blank for 'domain' keys.",
 		},
 		{
 			key:    Key{parentKey: "notallowed", keyType: "use_case", subKey: "domain1"},
-			errstr: "parentKey: parentKey must be blank for domain, use_case keys.",
+			errstr: "parentKey: parentKey must be blank for 'use_case' keys.",
 		},
 		{
 			key:    Key{parentKey: "", keyType: "class", subKey: "thing1"},
-			errstr: "parentKey: parentKey must be non-blank for non-domain, non-use_case keys.",
+			errstr: "parentKey: parentKey must be non-blank for 'class' keys.",
 		},
 	}
 	for i, test := range tests {

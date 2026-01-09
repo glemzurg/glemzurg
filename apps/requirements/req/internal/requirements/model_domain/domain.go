@@ -9,6 +9,11 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
+// Construct a key that sits correctly in the model shape.
+func NewDomainKey(subKey string) (key identity.Key, err error) {
+	return identity.NewRootKey(identity.KEY_TYPE_DOMAIN, subKey)
+}
+
 // Domain is a root category of the mode.
 type Domain struct {
 	Key        identity.Key
@@ -36,7 +41,13 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 	err = validation.ValidateStruct(&domain,
 		validation.Field(&domain.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
-			return k.Validate()
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_DOMAIN {
+				return errors.New("invalid key type for domain")
+			}
+			return nil
 		})),
 		validation.Field(&domain.Name, validation.Required),
 	)

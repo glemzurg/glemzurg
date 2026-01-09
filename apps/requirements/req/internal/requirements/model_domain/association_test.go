@@ -20,8 +20,8 @@ type AssociationSuite struct {
 
 func (suite *AssociationSuite) TestNew() {
 
-	problemDomainKey := helper.Must(identity.NewRootKey("domain1"))
-	solutionDomainKey := helper.Must(identity.NewRootKey("domain2"))
+	problemDomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
+	solutionDomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain2"))
 
 	tests := []struct {
 		key               identity.Key
@@ -100,7 +100,7 @@ func (suite *AssociationSuite) TestNew() {
 	}
 }
 func (suite *AssociationSuite) TestNewAssociationKey() {
-	domainKey := helper.Must(identity.NewRootKey("domain1"))
+	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
 
 	tests := []struct {
 		domainKey identity.Key
@@ -112,19 +112,19 @@ func (suite *AssociationSuite) TestNewAssociationKey() {
 		{
 			domainKey: domainKey,
 			subKey:    "1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_KEY_TYPE, "1")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_ASSOCIATION, "1")),
 		},
 		{
 			domainKey: domainKey,
 			subKey:    "2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.ASSOCIATION_KEY_TYPE, "2")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_ASSOCIATION, "2")),
 		},
 
 		// OK case: blank parentKey.
 		{
 			domainKey: identity.Key{},
 			subKey:    "1",
-			expected:  helper.Must(identity.NewKey("", identity.ASSOCIATION_KEY_TYPE, "1")),
+			expected:  helper.Must(identity.NewKey("", identity.KEY_TYPE_ASSOCIATION, "1")),
 		},
 		{
 			domainKey: domainKey,

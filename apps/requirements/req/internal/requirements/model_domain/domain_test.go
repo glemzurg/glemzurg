@@ -19,6 +19,37 @@ type DomainSuite struct {
 	suite.Suite
 }
 
+func (suite *DomainSuite) TestNewDomainKey() {
+	tests := []struct {
+		subKey   string
+		expected identity.Key
+		errstr   string
+	}{
+		// OK.
+		{
+			subKey:   "domain1",
+			expected: helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
+		},
+
+		// Errors.
+		{
+			subKey: "",
+			errstr: "cannot be blank",
+		},
+	}
+	for i, test := range tests {
+		testName := fmt.Sprintf("Case %d: %+v", i, test)
+		key, err := NewDomainKey(test.subKey)
+		if test.errstr == "" {
+			assert.Nil(suite.T(), err, testName)
+			assert.Equal(suite.T(), test.expected, key, testName)
+		} else {
+			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			assert.Equal(suite.T(), identity.Key{}, key, testName)
+		}
+	}
+}
+
 func (suite *DomainSuite) TestNew() {
 	tests := []struct {
 		key        identity.Key
@@ -31,13 +62,13 @@ func (suite *DomainSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:        helper.Must(identity.NewRootKey("domain1")),
+			key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
 			name:       "Name",
 			details:    "Details",
 			realized:   true,
 			umlComment: "UmlComment",
 			obj: Domain{
-				Key:        helper.Must(identity.NewRootKey("domain1")),
+				Key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
 				Name:       "Name",
 				Details:    "Details",
 				Realized:   true,
@@ -45,13 +76,13 @@ func (suite *DomainSuite) TestNew() {
 			},
 		},
 		{
-			key:        helper.Must(identity.NewRootKey("domain1")),
+			key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
 			name:       "Name",
 			details:    "",
 			realized:   false,
 			umlComment: "",
 			obj: Domain{
-				Key:        helper.Must(identity.NewRootKey("domain1")),
+				Key:        helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
 				Name:       "Name",
 				Details:    "",
 				Realized:   false,
@@ -63,10 +94,10 @@ func (suite *DomainSuite) TestNew() {
 		{
 			key:    identity.Key{},
 			name:   "Name",
-			errstr: "Key: (childType: cannot be blank; subKey: cannot be blank.).",
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			key:    helper.Must(identity.NewRootKey("domain1")),
+			key:    helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1")),
 			name:   "",
 			errstr: `Name: cannot be blank.`,
 		},

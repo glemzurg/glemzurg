@@ -20,7 +20,7 @@ type SubdomainSuite struct {
 
 func (suite *SubdomainSuite) TestNew() {
 
-	domainKey := helper.Must(identity.NewRootKey("domain1"))
+	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
 
 	tests := []struct {
 		key        identity.Key
@@ -90,7 +90,7 @@ func (suite *SubdomainSuite) TestNew() {
 }
 
 func (suite *SubdomainSuite) TestNewSubdomainKey() {
-	domainKey := helper.Must(identity.NewRootKey("domain1"))
+	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
 
 	tests := []struct {
 		domainKey identity.Key
@@ -102,19 +102,19 @@ func (suite *SubdomainSuite) TestNewSubdomainKey() {
 		{
 			domainKey: domainKey,
 			subKey:    "subdomain1",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_KEY_TYPE, "subdomain1")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, "subdomain1")),
 		},
 		{
 			domainKey: domainKey,
 			subKey:    "subdomain2",
-			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.SUBDOMAIN_KEY_TYPE, "subdomain2")),
+			expected:  helper.Must(identity.NewKey(domainKey.String(), identity.KEY_TYPE_SUBDOMAIN, "subdomain2")),
 		},
 
 		// OK case: blank parentKey.
 		{
 			domainKey: identity.Key{},
 			subKey:    "subdomain1",
-			expected:  helper.Must(identity.NewKey("", identity.SUBDOMAIN_KEY_TYPE, "subdomain1")),
+			expected:  helper.Must(identity.NewKey("", identity.KEY_TYPE_SUBDOMAIN, "subdomain1")),
 		},
 		{
 			domainKey: domainKey,

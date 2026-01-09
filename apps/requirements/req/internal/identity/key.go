@@ -56,13 +56,14 @@ func (k *Key) Validate() error {
 		validation.Field(&k.subKey, validation.Required),
 		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
 			parent := value.(string)
-			if k.keyType == KEY_TYPE_DOMAIN || k.keyType == KEY_TYPE_USE_CASE {
+			switch k.keyType {
+			case KEY_TYPE_DOMAIN, KEY_TYPE_USE_CASE:
 				if parent != "" {
-					return errors.New("parentKey must be blank for domain, use_case keys")
+					return errors.Errorf("parentKey must be blank for '%s' keys", k.keyType)
 				}
-			} else {
+			default:
 				if parent == "" {
-					return errors.New("parentKey must be non-blank for non-domain, non-use_case keys")
+					return errors.Errorf("parentKey must be non-blank for '%s' keys", k.keyType)
 				}
 			}
 			return nil
