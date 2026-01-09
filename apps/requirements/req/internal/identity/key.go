@@ -1,7 +1,6 @@
 package identity
 
 import (
-	"fmt"
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -33,7 +32,7 @@ func HasPrefix(prefix string) validation.Rule {
 			return errors.New("must be a string")
 		}
 		if !strings.HasPrefix(s, prefix) {
-			return fmt.Errorf("must have prefix %s", prefix)
+			return errors.Errorf("must have prefix %s", prefix)
 		}
 		return nil
 	})
