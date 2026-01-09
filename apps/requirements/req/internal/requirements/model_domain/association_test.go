@@ -1,7 +1,6 @@
 package model_domain
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -28,6 +27,7 @@ func (suite *AssociationSuite) SetupTest() {
 func (suite *AssociationSuite) TestNew() {
 
 	tests := []struct {
+		testName          string
 		key               identity.Key
 		problemDomainKey  identity.Key
 		solutionDomainKey identity.Key
@@ -37,6 +37,7 @@ func (suite *AssociationSuite) TestNew() {
 	}{
 		// OK.
 		{
+			testName:          "ok with comment",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,
@@ -49,6 +50,7 @@ func (suite *AssociationSuite) TestNew() {
 			},
 		},
 		{
+			testName:          "ok without blank values",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "2")),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,
@@ -63,6 +65,7 @@ func (suite *AssociationSuite) TestNew() {
 
 		// Error states.
 		{
+			testName:          "error empty key",
 			key:               identity.Key{},
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,
@@ -70,13 +73,15 @@ func (suite *AssociationSuite) TestNew() {
 			errstr:            `Key: (keyType: cannot be blank;`,
 		},
 		{
+			testName:          "error wrong key type",
 			key:               helper.Must(identity.NewActorKey("actor1")),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
-			errstr:            `Key: (keyType: cannot be blankxx;`,
+			errstr:            `Key: invalid key type 'actor' for domain association.`,
 		},
 		{
+			testName:          "error empty problem key",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
 			problemDomainKey:  identity.Key{},
 			solutionDomainKey: suite.solutionDomainKey,
@@ -84,13 +89,15 @@ func (suite *AssociationSuite) TestNew() {
 			errstr:            `ProblemDomainKey: (keyType: cannot be blank;`,
 		},
 		{
+			testName:          "error wrong problem key type",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
 			problemDomainKey:  helper.Must(identity.NewActorKey("actor1")),
 			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
-			errstr:            `ProblemDomainKey: (keyType: cannot be blankxxx;`,
+			errstr:            `ProblemDomainKey: invalid key type 'actor' for domain.`,
 		},
 		{
+			testName:          "error empty solution key",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: identity.Key{},
@@ -98,22 +105,27 @@ func (suite *AssociationSuite) TestNew() {
 			errstr:            `SolutionDomainKey: (keyType: cannot be blank;`,
 		},
 		{
+			testName:          "error wrong solution key type",
 			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: helper.Must(identity.NewActorKey("actor1")),
 			umlComment:        "UmlComment",
-			errstr:            `SolutionDomainKey: (keyType: cannot be blank;`,
+			errstr:            `SolutionDomainKey: invalid key type 'actor' for domain.`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewAssociation(test.key, test.problemDomainKey, test.solutionDomainKey, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewAssociation(tt.key, tt.problemDomainKey, tt.solutionDomainKey, tt.umlComment)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }

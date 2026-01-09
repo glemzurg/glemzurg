@@ -1,7 +1,6 @@
 package model_domain
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,6 +20,7 @@ type DomainSuite struct {
 
 func (suite *DomainSuite) TestNew() {
 	tests := []struct {
+		testName   string
 		key        identity.Key
 		name       string
 		details    string
@@ -31,6 +31,7 @@ func (suite *DomainSuite) TestNew() {
 	}{
 		// OK.
 		{
+			testName:   "ok with details",
 			key:        helper.Must(identity.NewDomainKey("domain1")),
 			name:       "Name",
 			details:    "Details",
@@ -45,6 +46,7 @@ func (suite *DomainSuite) TestNew() {
 			},
 		},
 		{
+			testName:   "ok with blank values",
 			key:        helper.Must(identity.NewDomainKey("domain1")),
 			name:       "Name",
 			details:    "",
@@ -61,31 +63,37 @@ func (suite *DomainSuite) TestNew() {
 
 		// Error states.
 		{
-			key:    identity.Key{},
-			name:   "Name",
-			errstr: "keyType: cannot be blank",
+			testName: "error empty key",
+			key:      identity.Key{},
+			name:     "Name",
+			errstr:   "keyType: cannot be blank",
 		},
 		{
-			key:    helper.Must(identity.NewActorKey("actor1")),
-			name:   "Name",
-			errstr: "Key: invalid key type 'actor' for domain.",
+			testName: "error wrong key type",
+			key:      helper.Must(identity.NewActorKey("actor1")),
+			name:     "Name",
+			errstr:   "Key: invalid key type 'actor' for domain.",
 		},
 		{
-			key:    helper.Must(identity.NewDomainKey("domain1")),
-			name:   "",
-			errstr: `Name: cannot be blank.`,
+			testName: "error blank name",
+			key:      helper.Must(identity.NewDomainKey("domain1")),
+			name:     "",
+			errstr:   `Name: cannot be blank.`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-
-		obj, err := NewDomain(test.key, test.name, test.details, test.realized, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewDomain(tt.key, tt.name, tt.details, tt.realized, tt.umlComment)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
