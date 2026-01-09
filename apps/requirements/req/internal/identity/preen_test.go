@@ -17,37 +17,37 @@ type PreenSuite struct {
 
 func (suite *PreenSuite) TestPreen() {
 	tests := []struct {
-		name    string
-		key     string
-		preened string
-		errstr  string
+		testName string
+		key      string
+		preened  string
+		errstr   string
 	}{
 		// OK.
 		{
-			name:    "ok no spaces",
+			testName:    "ok no spaces",
 			key:     "key",
 			preened: "key",
 		},
 		{
-			name:    "ok with spaces",
+			testName:    "ok with spaces",
 			key:     " key ",
 			preened: "key",
 		},
 		{
-			name:    "ok uppercase",
+			testName:    "ok uppercase",
 			key:     "KEY",
 			preened: "key",
 		},
 
 		// Error states.
 		{
-			name:   "error blank",
+			testName:   "error blank",
 			key:    "   ",
 			errstr: `cannot be blank`,
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.name, func(t *testing.T) {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			preened, err := PreenKey(tt.key)
 			if tt.errstr == "" {
 				assert.NoError(t, err)

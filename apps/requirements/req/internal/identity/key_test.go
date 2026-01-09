@@ -17,7 +17,7 @@ type KeySuite struct {
 
 func (suite *KeySuite) TestNewKey() {
 	tests := []struct {
-		name      string
+		testName  string
 		parentKey string
 		keyType   string
 		subKey    string
@@ -26,28 +26,28 @@ func (suite *KeySuite) TestNewKey() {
 	}{
 		// OK cases.
 		{
-			name:      "ok basic",
+			testName:      "ok basic",
 			parentKey: "domain1",
 			keyType:   "class",
 			subKey:    "thing1",
 			expected:  Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 		{
-			name:      "ok association",
+			testName:      "ok association",
 			parentKey: "domain1",
 			keyType:   "association",
 			subKey:    "1",
 			expected:  Key{parentKey: "domain1", keyType: "association", subKey: "1"},
 		},
 		{
-			name:      "ok with spaces",
+			testName:      "ok with spaces",
 			parentKey: " PARENT ",
 			keyType:   "class",
 			subKey:    " KEY ",
 			expected:  Key{parentKey: "parent", keyType: "class", subKey: "key"},
 		},
 		{
-			name:      "ok root",
+			testName:      "ok root",
 			parentKey: "",
 			keyType:   "actor",
 			subKey:    "rootkey",
@@ -56,7 +56,7 @@ func (suite *KeySuite) TestNewKey() {
 
 		// Error cases: verify that validate is being called.
 		{
-			name:      "validate being called",
+			testName:      "validate being called",
 			parentKey: "domain1",
 			keyType:   "", // Trigger validation error.
 			subKey:    "thing1",
@@ -64,7 +64,7 @@ func (suite *KeySuite) TestNewKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.name, func(t *testing.T) {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			key, err := newKey(tt.parentKey, tt.keyType, tt.subKey)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
@@ -82,52 +82,52 @@ func (suite *KeySuite) TestNewKey() {
 
 func (suite *KeySuite) TestParseKey() {
 	tests := []struct {
-		name     string
+		testName string
 		input    string
 		expected Key
 		errstr   string
 	}{
 		// OK cases.
 		{
-			name:     "ok simple",
+			testName:     "ok simple",
 			input:    "domain/domain1",
 			expected: Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 		},
 		{
-			name:     "ok nested",
+			testName:     "ok nested",
 			input:    "domain/domain1/subdomain/subdomain1",
 			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
 		},
 		{
-			name:     "ok deep",
+			testName:     "ok deep",
 			input:    "domain/domain1/subdomain/subdomain1/class/thing1",
 			expected: Key{parentKey: "domain/domain1/subdomain/subdomain1", keyType: "class", subKey: "thing1"},
 		},
 		{
-			name:     "ok with spaces",
+			testName:     "ok with spaces",
 			input:    " DOMAIN / DOMAIN1  /  SUBDOMAIN  /  SUBDOMAIN1  ", // with spaces
 			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
 		},
 
 		// Error cases: invalid format.
 		{
-			name:   "error empty",
+			testName:   "error empty",
 			input:  "", // empty string
 			errstr: "invalid key format",
 		},
 		{
-			name:   "error empty keyType",
+			testName:   "error empty keyType",
 			input:  "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
 			errstr: "keyType: cannot be blank.",
 		},
 		{
-			name:   "error unknown keyType",
+			testName:   "error unknown keyType",
 			input:  "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
 			errstr: "keyType: must be a valid value.",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.name, func(t *testing.T) {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			key, err := ParseKey(tt.input)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
@@ -145,23 +145,23 @@ func (suite *KeySuite) TestParseKey() {
 
 func (suite *KeySuite) TestString() {
 	tests := []struct {
-		name     string
+		testName string
 		key      Key
 		expected string
 	}{
 		{
-			name:     "with parent",
+			testName:     "with parent",
 			key:      Key{parentKey: "domain/domain1", keyType: "class", subKey: "thing1"},
 			expected: "domain/domain1/class/thing1",
 		},
 		{
-			name:     "root",
+			testName:     "root",
 			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 			expected: "domain/domain1",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.name, func(t *testing.T) {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.key.String())
 		})
 		if !pass {
@@ -172,60 +172,60 @@ func (suite *KeySuite) TestString() {
 
 func (suite *KeySuite) TestValidate() {
 	tests := []struct {
-		name   string
-		key    Key
-		errstr string
+		testName string
+		key      Key
+		errstr   string
 	}{
 		// OK cases.
 		{
-			name: "ok domain",
+			testName: "ok domain",
 			key:  Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 		},
 		{
-			name: "ok actor",
+			testName: "ok actor",
 			key:  Key{parentKey: "", keyType: "actor", subKey: "actor1"},
 		},
 		{
-			name: "ok class",
+			testName: "ok class",
 			key:  Key{parentKey: "domain1", keyType: "class", subKey: "thing1"},
 		},
 
 		// Error cases.
 		{
-			name:   "error blank subKey",
+			testName:   "error blank subKey",
 			key:    Key{parentKey: "domain1", keyType: "class", subKey: ""},
 			errstr: "cannot be blank",
 		},
 		{
-			name:   "error blank keyType",
+			testName:   "error blank keyType",
 			key:    Key{parentKey: "domain1", keyType: "", subKey: "thing1"},
 			errstr: "cannot be blank",
 		},
 		{
-			name:   "error invalid keyType",
+			testName:   "error invalid keyType",
 			key:    Key{parentKey: "domain1", keyType: "unknown", subKey: "thing1"},
 			errstr: "keyType: must be a valid value.",
 		},
 
 		// Error cases: parentKey issues.
 		{
-			name:   "error parentKey for domain",
+			testName:   "error parentKey for domain",
 			key:    Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
 			errstr: "parentKey: parentKey must be blank for 'domain' keys.",
 		},
 		{
-			name:   "error parentKey for actor",
+			testName:   "error parentKey for actor",
 			key:    Key{parentKey: "notallowed", keyType: "actor", subKey: "domain1"},
 			errstr: "parentKey: parentKey must be blank for 'actor' keys.",
 		},
 		{
-			name:   "error blank parentKey for class",
+			testName:   "error blank parentKey for class",
 			key:    Key{parentKey: "", keyType: "class", subKey: "thing1"},
 			errstr: "parentKey: parentKey must be non-blank for 'class' keys.",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.name, func(t *testing.T) {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			err := tt.key.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
