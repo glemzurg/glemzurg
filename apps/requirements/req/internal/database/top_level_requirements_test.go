@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
@@ -134,10 +134,10 @@ func (suite *RequirementsSuite) TestWriteRead() {
 					Key:           "domain_key_a/subdomain_aa/class_a/attribute_a",
 					Name:          "AttributeA",
 					DataTypeRules: "unconstrained",
-					DataType: &data_type.DataType{
+					DataType: &model_data_type.DataType{
 						Key:            "domain_key_a/subdomain_aa/class_a/attribute_a",
 						CollectionType: "atomic",
-						Atomic: &data_type.Atomic{
+						Atomic: &model_data_type.Atomic{
 							ConstraintType: "unconstrained",
 						},
 					},

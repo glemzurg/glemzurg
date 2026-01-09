@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
@@ -148,7 +148,7 @@ func WriteRequirements(db *sql.DB, reqs requirements.Requirements) (err error) {
 		}
 
 		// Collect all data types from attributes.
-		dataTypes := make(map[string]data_type.DataType)
+		dataTypes := make(map[string]model_data_type.DataType)
 		for _, attributes := range reqs.Attributes {
 			for _, attribute := range attributes {
 				if attribute.DataType != nil {

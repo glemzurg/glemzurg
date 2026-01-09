@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -89,10 +89,10 @@ func (suite *AttributeSuite) TestNew() {
 				Nullable:         true,
 				UmlComment:       "UmlComment",
 				IndexNums:        []uint{1, 2},
-				DataType: &data_type.DataType{
+				DataType: &model_data_type.DataType{
 					Key:            "KeyParsed",
 					CollectionType: "atomic",
-					Atomic: &data_type.Atomic{
+					Atomic: &model_data_type.Atomic{
 						ConstraintType: "unconstrained",
 					},
 				},

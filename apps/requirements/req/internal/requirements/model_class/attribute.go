@@ -1,7 +1,7 @@
 package model_class
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -17,7 +17,7 @@ type Attribute struct {
 	UmlComment       string
 	// Part of the data in a parsed file.
 	IndexNums []uint              // The indexes this attribute is part of.
-	DataType  *data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
+	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
 func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
@@ -38,10 +38,10 @@ func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nu
 
 		// Use the attribute key as the key of this data type.
 		dataTypeKey := attribute.Key
-		parsedDataType, err := data_type.New(dataTypeKey, attribute.DataTypeRules)
+		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules)
 
 		// Only an error if it is not a parse error.
-		var parseError *data_type.CannotParseError // Use a pointer for type checking.
+		var parseError *model_data_type.CannotParseError // Use a pointer for type checking.
 		if err != nil && !errors.As(err, &parseError) {
 			return Attribute{}, err
 		}

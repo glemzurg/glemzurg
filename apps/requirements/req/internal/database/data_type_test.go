@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -65,7 +65,7 @@ func (suite *DataTypeSuite) TestLoad() {
 
 	dataType, err = LoadDataType(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), data_type.DataType{
+	assert.Equal(suite.T(), model_data_type.DataType{
 		Key:              "key", // Test case-insensitive.
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
@@ -76,7 +76,7 @@ func (suite *DataTypeSuite) TestLoad() {
 
 func (suite *DataTypeSuite) TestAdd() {
 
-	err := AddDataType(suite.db, strings.ToUpper(suite.model.Key), data_type.DataType{
+	err := AddDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
 		Key:              "KeY", // Test case-insensitive.
 		CollectionType:   "record",
 		CollectionUnique: t_BoolPtr(true),
@@ -87,7 +87,7 @@ func (suite *DataTypeSuite) TestAdd() {
 
 	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), data_type.DataType{
+	assert.Equal(suite.T(), model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "record",
 		CollectionUnique: t_BoolPtr(true),
@@ -98,7 +98,7 @@ func (suite *DataTypeSuite) TestAdd() {
 
 func (suite *DataTypeSuite) TestAddNulls() {
 
-	err := AddDataType(suite.db, strings.ToUpper(suite.model.Key), data_type.DataType{
+	err := AddDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
 		Key:              "KeY", // Test case-insensitive.
 		CollectionType:   "unordered",
 		CollectionUnique: nil,
@@ -109,7 +109,7 @@ func (suite *DataTypeSuite) TestAddNulls() {
 
 	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), data_type.DataType{
+	assert.Equal(suite.T(), model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "unordered",
 		CollectionUnique: nil,
@@ -120,7 +120,7 @@ func (suite *DataTypeSuite) TestAddNulls() {
 
 func (suite *DataTypeSuite) TestUpdate() {
 
-	err := AddDataType(suite.db, suite.model.Key, data_type.DataType{
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
@@ -129,7 +129,7 @@ func (suite *DataTypeSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateDataType(suite.db, strings.ToUpper(suite.model.Key), data_type.DataType{
+	err = UpdateDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
 		Key:              "kEy", // Test case-insensitive.
 		CollectionType:   "stack",
 		CollectionUnique: t_BoolPtr(false),
@@ -140,7 +140,7 @@ func (suite *DataTypeSuite) TestUpdate() {
 
 	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), data_type.DataType{
+	assert.Equal(suite.T(), model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "stack",
 		CollectionUnique: t_BoolPtr(false),
@@ -151,7 +151,7 @@ func (suite *DataTypeSuite) TestUpdate() {
 
 func (suite *DataTypeSuite) TestUpdateNulls() {
 
-	err := AddDataType(suite.db, suite.model.Key, data_type.DataType{
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
@@ -160,7 +160,7 @@ func (suite *DataTypeSuite) TestUpdateNulls() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateDataType(suite.db, strings.ToUpper(suite.model.Key), data_type.DataType{
+	err = UpdateDataType(suite.db, strings.ToUpper(suite.model.Key), model_data_type.DataType{
 		Key:              "kEy", // Test case-insensitive.
 		CollectionType:   "queue",
 		CollectionUnique: nil,
@@ -171,7 +171,7 @@ func (suite *DataTypeSuite) TestUpdateNulls() {
 
 	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), data_type.DataType{
+	assert.Equal(suite.T(), model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "queue",
 		CollectionUnique: nil,
@@ -182,7 +182,7 @@ func (suite *DataTypeSuite) TestUpdateNulls() {
 
 func (suite *DataTypeSuite) TestDelete() {
 
-	err := AddDataType(suite.db, suite.model.Key, data_type.DataType{
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:              "key",
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
@@ -202,7 +202,7 @@ func (suite *DataTypeSuite) TestDelete() {
 func (suite *DataTypeSuite) TestQuery() {
 
 	// Add some data types.
-	err := AddDataType(suite.db, suite.model.Key, data_type.DataType{
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:              "key2",
 		CollectionType:   "record",
 		CollectionUnique: t_BoolPtr(false),
@@ -211,7 +211,7 @@ func (suite *DataTypeSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = AddDataType(suite.db, suite.model.Key, data_type.DataType{
+	err = AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:              "key1",
 		CollectionType:   "atomic",
 		CollectionUnique: t_BoolPtr(true),
@@ -222,7 +222,7 @@ func (suite *DataTypeSuite) TestQuery() {
 
 	dataTypes, err := QueryDataTypes(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []data_type.DataType{
+	assert.Equal(suite.T(), []model_data_type.DataType{
 		{
 			Key:              "key1",
 			CollectionType:   "atomic",
@@ -242,7 +242,7 @@ func (suite *DataTypeSuite) TestQuery() {
 
 func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 
-	err := BulkInsertDataTypes(suite.db, strings.ToUpper(suite.model.Key), []data_type.DataType{
+	err := BulkInsertDataTypes(suite.db, strings.ToUpper(suite.model.Key), []model_data_type.DataType{
 		{
 			Key:              "key1",
 			CollectionType:   "atomic",
@@ -262,7 +262,7 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 
 	dataTypes, err := QueryDataTypes(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []data_type.DataType{
+	assert.Equal(suite.T(), []model_data_type.DataType{
 		{
 			Key:              "key1",
 			CollectionType:   "atomic",
@@ -284,9 +284,9 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddDataType(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType data_type.DataType) {
+func t_AddDataType(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType) {
 
-	err := AddDataType(dbOrTx, modelKey, data_type.DataType{
+	err := AddDataType(dbOrTx, modelKey, model_data_type.DataType{
 		Key:            dataTypeKey,
 		CollectionType: "atomic",
 	})
@@ -301,7 +301,7 @@ func t_AddDataType(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string) (d
 func (suite *DataTypeSuite) TestVerifyTestObjects() {
 
 	dataType := t_AddDataType(suite.T(), suite.db, suite.model.Key, "data_type_key")
-	assert.Equal(suite.T(), data_type.DataType{
+	assert.Equal(suite.T(), model_data_type.DataType{
 		Key:            "data_type_key",
 		CollectionType: "atomic",
 	}, dataType)

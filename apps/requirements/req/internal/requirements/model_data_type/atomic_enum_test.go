@@ -1,4 +1,4 @@
-package data_type
+package model_data_type
 
 import (
 	"testing"

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,10 +23,10 @@ type AtomicEnumSuite struct {
 	suite.Suite
 	db        *sql.DB
 	model     requirements.Model
-	dataType  data_type.DataType
-	dataTypeB data_type.DataType
-	atomic    data_type.Atomic
-	atomicB   data_type.Atomic
+	dataType  model_data_type.DataType
+	dataTypeB model_data_type.DataType
+	atomic    model_data_type.Atomic
+	atomicB   model_data_type.Atomic
 }
 
 func (suite *AtomicEnumSuite) SetupTest() {
@@ -75,7 +75,7 @@ func (suite *AtomicEnumSuite) TestLoad() {
 
 	atomicEnums, err = LoadAtomicEnums(suite.db, strings.ToUpper(suite.model.Key), "data_Type_Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]data_type.AtomicEnum{
+	assert.Equal(suite.T(), map[string][]model_data_type.AtomicEnum{
 		"data_type_key": {
 			{Value: "Value1", SortOrder: 1},
 			{Value: "Value2", SortOrder: 2},
@@ -85,7 +85,7 @@ func (suite *AtomicEnumSuite) TestLoad() {
 
 func (suite *AtomicEnumSuite) TestAdd() {
 
-	err := AddAtomicEnum(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), data_type.AtomicEnum{
+	err := AddAtomicEnum(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.AtomicEnum{
 		Value:     "Value1",
 		SortOrder: 1,
 	})
@@ -93,7 +93,7 @@ func (suite *AtomicEnumSuite) TestAdd() {
 
 	atomicEnums, err := LoadAtomicEnums(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]data_type.AtomicEnum{
+	assert.Equal(suite.T(), map[string][]model_data_type.AtomicEnum{
 		suite.dataType.Key: {
 			{Value: "Value1", SortOrder: 1},
 		},
@@ -102,13 +102,13 @@ func (suite *AtomicEnumSuite) TestAdd() {
 
 func (suite *AtomicEnumSuite) TestUpdate() {
 
-	err := AddAtomicEnum(suite.db, suite.model.Key, suite.dataType.Key, data_type.AtomicEnum{
+	err := AddAtomicEnum(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.AtomicEnum{
 		Value:     "Value1",
 		SortOrder: 1,
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateAtomicEnum(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), "Value1", data_type.AtomicEnum{
+	err = UpdateAtomicEnum(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), "Value1", model_data_type.AtomicEnum{
 		Value:     "Value1Updated",
 		SortOrder: 10,
 	})
@@ -116,7 +116,7 @@ func (suite *AtomicEnumSuite) TestUpdate() {
 
 	atomicEnums, err := LoadAtomicEnums(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]data_type.AtomicEnum{
+	assert.Equal(suite.T(), map[string][]model_data_type.AtomicEnum{
 		suite.dataType.Key: {
 			{Value: "Value1Updated", SortOrder: 10},
 		},
@@ -125,7 +125,7 @@ func (suite *AtomicEnumSuite) TestUpdate() {
 
 func (suite *AtomicEnumSuite) TestRemove() {
 
-	err := AddAtomicEnum(suite.db, suite.model.Key, suite.dataType.Key, data_type.AtomicEnum{
+	err := AddAtomicEnum(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.AtomicEnum{
 		Value:     "Value1",
 		SortOrder: 1,
 	})
@@ -141,14 +141,14 @@ func (suite *AtomicEnumSuite) TestRemove() {
 
 func (suite *AtomicEnumSuite) TestQuery() {
 
-	err := AddAtomicEnum(suite.db, suite.model.Key, suite.dataType.Key, data_type.AtomicEnum{
+	err := AddAtomicEnum(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.AtomicEnum{
 		Value:     "Value",
 		SortOrder: 1,
 	})
 	assert.Nil(suite.T(), err)
 
 	// Add another data type and atomic enum
-	err = AddAtomicEnum(suite.db, suite.model.Key, suite.dataTypeB.Key, data_type.AtomicEnum{
+	err = AddAtomicEnum(suite.db, suite.model.Key, suite.dataTypeB.Key, model_data_type.AtomicEnum{
 		Value:     "Value",
 		SortOrder: 10,
 	})
@@ -156,7 +156,7 @@ func (suite *AtomicEnumSuite) TestQuery() {
 
 	atomicEnums, err := QueryAtomicEnums(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]data_type.AtomicEnum{
+	assert.Equal(suite.T(), map[string][]model_data_type.AtomicEnum{
 		suite.dataType.Key: {
 			{Value: "Value", SortOrder: 1},
 		},
@@ -168,7 +168,7 @@ func (suite *AtomicEnumSuite) TestQuery() {
 
 func (suite *AtomicEnumSuite) TestBulkInsertAtomicEnums() {
 
-	err := BulkInsertAtomicEnums(suite.db, strings.ToUpper(suite.model.Key), map[string][]data_type.AtomicEnum{
+	err := BulkInsertAtomicEnums(suite.db, strings.ToUpper(suite.model.Key), map[string][]model_data_type.AtomicEnum{
 		"data_type_key": {
 			{Value: "Value1", SortOrder: 1},
 			{Value: "Value2", SortOrder: 2},
@@ -181,7 +181,7 @@ func (suite *AtomicEnumSuite) TestBulkInsertAtomicEnums() {
 
 	atomicEnums, err := QueryAtomicEnums(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]data_type.AtomicEnum{
+	assert.Equal(suite.T(), map[string][]model_data_type.AtomicEnum{
 		"data_type_key": {
 			{Value: "Value1", SortOrder: 1},
 			{Value: "Value2", SortOrder: 2},

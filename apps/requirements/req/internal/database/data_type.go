@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanDataType(scanner Scanner, dataType *data_type.DataType) (err error) {
+func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err error) {
 
 	if err = scanner.Scan(
 		&dataType.Key,
@@ -30,16 +30,16 @@ func scanDataType(scanner Scanner, dataType *data_type.DataType) (err error) {
 }
 
 // LoadDataType loads a data type from the database
-func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType data_type.DataType, err error) {
+func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
 	if err != nil {
-		return data_type.DataType{}, err
+		return model_data_type.DataType{}, err
 	}
 	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
 	if err != nil {
-		return data_type.DataType{}, err
+		return model_data_type.DataType{}, err
 	}
 
 	// Query the database.
@@ -66,14 +66,14 @@ func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType data_ty
 		modelKey,
 		dataTypeKey)
 	if err != nil {
-		return data_type.DataType{}, errors.WithStack(err)
+		return model_data_type.DataType{}, errors.WithStack(err)
 	}
 
 	return dataType, nil
 }
 
 // AddDataType adds a data type to the database.
-func AddDataType(dbOrTx DbOrTx, modelKey string, dataType data_type.DataType) (err error) {
+func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -119,7 +119,7 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType data_type.DataType) (e
 }
 
 // UpdateDataType updates a data type in the database.
-func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType data_type.DataType) (err error) {
+func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -186,7 +186,7 @@ func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 }
 
 // QueryDataTypes lists all data types for a model from the database.
-func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []data_type.DataType, err error) {
+func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []model_data_type.DataType, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -195,11 +195,11 @@ func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []data_type.DataT
 	}
 
 	// Query the database.
-	dataTypes = []data_type.DataType{}
+	dataTypes = []model_data_type.DataType{}
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var dataType data_type.DataType
+			var dataType model_data_type.DataType
 			if err = scanDataType(scanner, &dataType); err != nil {
 				return err
 			}
@@ -226,7 +226,7 @@ func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []data_type.DataT
 }
 
 // BulkInsertDataTypes inserts multiple data types in a single SQL statement.
-func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []data_type.DataType) (err error) {
+func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_type.DataType) (err error) {
 	if len(dataTypes) == 0 {
 		return nil
 	}

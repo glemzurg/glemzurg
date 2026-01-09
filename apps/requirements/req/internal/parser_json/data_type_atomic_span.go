@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 // atomicSpanInOut represents a range of allowed values.
 type atomicSpanInOut struct {
@@ -18,9 +18,9 @@ type atomicSpanInOut struct {
 	Precision float64 `json:"precision"`
 }
 
-// ToRequirements converts the atomicSpanInOut to data_type.AtomicSpan.
-func (a atomicSpanInOut) ToRequirements() data_type.AtomicSpan {
-	return data_type.AtomicSpan{
+// ToRequirements converts the atomicSpanInOut to model_data_type.AtomicSpan.
+func (a atomicSpanInOut) ToRequirements() model_data_type.AtomicSpan {
+	return model_data_type.AtomicSpan{
 		LowerType:         a.LowerType,
 		LowerValue:        a.LowerValue,
 		LowerDenominator:  a.LowerDenominator,
@@ -32,8 +32,8 @@ func (a atomicSpanInOut) ToRequirements() data_type.AtomicSpan {
 	}
 }
 
-// FromRequirements creates a atomicSpanInOut from data_type.AtomicSpan.
-func FromRequirementsAtomicSpan(a data_type.AtomicSpan) atomicSpanInOut {
+// FromRequirements creates a atomicSpanInOut from model_data_type.AtomicSpan.
+func FromRequirementsAtomicSpan(a model_data_type.AtomicSpan) atomicSpanInOut {
 	return atomicSpanInOut{
 		LowerType:         a.LowerType,
 		LowerValue:        a.LowerValue,

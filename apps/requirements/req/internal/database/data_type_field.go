@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanField(scanner Scanner, dataTypeKeyPtr *string, field *data_type.Field) (err error) {
+func scanField(scanner Scanner, dataTypeKeyPtr *string, field *model_data_type.Field) (err error) {
 	var fieldDataTypeKey string
 	if err = scanner.Scan(
 		dataTypeKeyPtr,
@@ -25,13 +25,13 @@ func scanField(scanner Scanner, dataTypeKeyPtr *string, field *data_type.Field) 
 	}
 
 	// Set the FieldDataType to a partial DataType with just the key.
-	field.FieldDataType = &data_type.DataType{Key: fieldDataTypeKey}
+	field.FieldDataType = &model_data_type.DataType{Key: fieldDataTypeKey}
 
 	return nil
 }
 
 // LoadDataTypeFields loads all fields for a data type from the database
-func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map[string][]data_type.Field, err error) {
+func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map[string][]model_data_type.Field, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -48,12 +48,12 @@ func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var parentDataTypeKey string
-			var field data_type.Field
+			var field model_data_type.Field
 			if err = scanField(scanner, &parentDataTypeKey, &field); err != nil {
 				return errors.WithStack(err)
 			}
 			if fields == nil {
-				fields = map[string][]data_type.Field{}
+				fields = map[string][]model_data_type.Field{}
 			}
 			fields[parentDataTypeKey] = append(fields[parentDataTypeKey], field)
 			return nil
@@ -84,7 +84,7 @@ func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map
 }
 
 // AddField adds a data type field to the database
-func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Field) (err error) {
+func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -128,7 +128,7 @@ func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Field
 }
 
 // UpdateField updates a data type field in the database
-func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Field) (err error) {
+func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -195,7 +195,7 @@ func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) 
 }
 
 // QueryFields loads all data type fields for a model from the database
-func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]data_type.Field, err error) {
+func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]model_data_type.Field, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = requirements.PreenKey(modelKey)
@@ -208,12 +208,12 @@ func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]data_type.
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var parentDataTypeKey string
-			var field data_type.Field
+			var field model_data_type.Field
 			if err = scanField(scanner, &parentDataTypeKey, &field); err != nil {
 				return errors.WithStack(err)
 			}
 			if fields == nil {
-				fields = map[string][]data_type.Field{}
+				fields = map[string][]model_data_type.Field{}
 			}
 			fields[parentDataTypeKey] = append(fields[parentDataTypeKey], field)
 			return nil
@@ -236,7 +236,7 @@ func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]data_type.
 }
 
 // BulkInsertFields inserts multiple fields in a single SQL statement.
-func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]data_type.Field) (err error) {
+func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]model_data_type.Field) (err error) {
 	totalFields := 0
 	for _, fields := range fieldMap {
 		totalFields += len(fields)

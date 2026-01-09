@@ -3,7 +3,7 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +18,7 @@ func TestAttributeInOutRoundTrip(t *testing.T) {
 		Nullable:         true,
 		UmlComment:       "comment",
 		IndexNums:        []uint{1},
-		DataType: &data_type.DataType{
+		DataType: &model_data_type.DataType{
 			Key: "dt1",
 		},
 	}

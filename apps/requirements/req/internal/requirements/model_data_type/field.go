@@ -1,4 +1,4 @@
-package data_type
+package model_data_type
 
 import validation "github.com/go-ozzo/ozzo-validation/v4"
 

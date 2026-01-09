@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -37,34 +37,34 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 	// The nested child and grandchild keys are created on the insertion.
 
 	// Add to database
-	err := AddTopLevelDataTypes(suite.db, suite.model.Key, map[string]data_type.DataType{
+	err := AddTopLevelDataTypes(suite.db, suite.model.Key, map[string]model_data_type.DataType{
 
-		"enum_type": data_type.DataType{
+		"enum_type": model_data_type.DataType{
 			Key:            "enum_type",
 			CollectionType: "atomic",
-			Atomic: &data_type.Atomic{
+			Atomic: &model_data_type.Atomic{
 				ConstraintType: "enumeration",
-				Enums: []data_type.AtomicEnum{
+				Enums: []model_data_type.AtomicEnum{
 					{Value: "value1"},
 					{Value: "value2"},
 				},
 			},
 		},
 
-		"root1": data_type.DataType{
+		"root1": model_data_type.DataType{
 			Key:            "root1",
 			CollectionType: "record",
-			RecordFields: []data_type.Field{
+			RecordFields: []model_data_type.Field{
 				{
 					Name: "child_field",
-					FieldDataType: &data_type.DataType{
+					FieldDataType: &model_data_type.DataType{
 						CollectionType: "record",
-						RecordFields: []data_type.Field{
+						RecordFields: []model_data_type.Field{
 							{
 								Name: "grandchild_field",
-								FieldDataType: &data_type.DataType{
+								FieldDataType: &model_data_type.DataType{
 									CollectionType: "atomic",
-									Atomic:         &data_type.Atomic{ConstraintType: "unconstrained"},
+									Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
 								},
 							},
 						},
@@ -73,20 +73,20 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"root2": data_type.DataType{
+		"root2": model_data_type.DataType{
 			Key:            "root2",
 			CollectionType: "record",
-			RecordFields: []data_type.Field{
+			RecordFields: []model_data_type.Field{
 				{
 					Name: "child_field",
-					FieldDataType: &data_type.DataType{
+					FieldDataType: &model_data_type.DataType{
 						CollectionType: "record",
-						RecordFields: []data_type.Field{
+						RecordFields: []model_data_type.Field{
 							{
 								Name: "grandchild_field",
-								FieldDataType: &data_type.DataType{
+								FieldDataType: &model_data_type.DataType{
 									CollectionType: "atomic",
-									Atomic:         &data_type.Atomic{ConstraintType: "unconstrained"},
+									Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
 								},
 							},
 						},
@@ -95,12 +95,12 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"span_type": data_type.DataType{
+		"span_type": model_data_type.DataType{
 			Key:            "span_type",
 			CollectionType: "atomic",
-			Atomic: &data_type.Atomic{
+			Atomic: &model_data_type.Atomic{
 				ConstraintType: "span",
-				Span: &data_type.AtomicSpan{
+				Span: &model_data_type.AtomicSpan{
 					LowerType:  "unconstrained",
 					HigherType: "unconstrained",
 					Precision:  1.0,
@@ -115,36 +115,36 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 	assert.NoError(suite.T(), err)
 
 	// Verify that loaded matches original
-	assert.Equal(suite.T(), map[string]data_type.DataType{
+	assert.Equal(suite.T(), map[string]model_data_type.DataType{
 
-		"enum_type": data_type.DataType{
+		"enum_type": model_data_type.DataType{
 			Key:            "enum_type",
 			CollectionType: "atomic",
-			Atomic: &data_type.Atomic{
+			Atomic: &model_data_type.Atomic{
 				ConstraintType: "enumeration",
-				Enums: []data_type.AtomicEnum{
+				Enums: []model_data_type.AtomicEnum{
 					{Value: "value1"},
 					{Value: "value2"},
 				},
 			},
 		},
 
-		"root1": data_type.DataType{
+		"root1": model_data_type.DataType{
 			Key:            "root1",
 			CollectionType: "record",
-			RecordFields: []data_type.Field{
+			RecordFields: []model_data_type.Field{
 				{
 					Name: "child_field",
-					FieldDataType: &data_type.DataType{
+					FieldDataType: &model_data_type.DataType{
 						Key:            "root1/child_field",
 						CollectionType: "record",
-						RecordFields: []data_type.Field{
+						RecordFields: []model_data_type.Field{
 							{
 								Name: "grandchild_field",
-								FieldDataType: &data_type.DataType{
+								FieldDataType: &model_data_type.DataType{
 									Key:            "root1/child_field/grandchild_field",
 									CollectionType: "atomic",
-									Atomic:         &data_type.Atomic{ConstraintType: "unconstrained"},
+									Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
 								},
 							},
 						},
@@ -153,22 +153,22 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"root2": data_type.DataType{
+		"root2": model_data_type.DataType{
 			Key:            "root2",
 			CollectionType: "record",
-			RecordFields: []data_type.Field{
+			RecordFields: []model_data_type.Field{
 				{
 					Name: "child_field",
-					FieldDataType: &data_type.DataType{
+					FieldDataType: &model_data_type.DataType{
 						Key:            "root2/child_field",
 						CollectionType: "record",
-						RecordFields: []data_type.Field{
+						RecordFields: []model_data_type.Field{
 							{
 								Name: "grandchild_field",
-								FieldDataType: &data_type.DataType{
+								FieldDataType: &model_data_type.DataType{
 									Key:            "root2/child_field/grandchild_field",
 									CollectionType: "atomic",
-									Atomic:         &data_type.Atomic{ConstraintType: "unconstrained"},
+									Atomic:         &model_data_type.Atomic{ConstraintType: "unconstrained"},
 								},
 							},
 						},
@@ -177,12 +177,12 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		"span_type": data_type.DataType{
+		"span_type": model_data_type.DataType{
 			Key:            "span_type",
 			CollectionType: "atomic",
-			Atomic: &data_type.Atomic{
+			Atomic: &model_data_type.Atomic{
 				ConstraintType: "span",
-				Span: &data_type.AtomicSpan{
+				Span: &model_data_type.AtomicSpan{
 					LowerType:  "unconstrained",
 					HigherType: "unconstrained",
 					Precision:  1.0,

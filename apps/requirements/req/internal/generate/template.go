@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
@@ -123,7 +123,7 @@ var _funcMap = template.FuncMap{
 	"filename": func(objType, key, suffix, ext string) (filename string) {
 		return convertKeyToFilename(objType, key, suffix, ext)
 	},
-	"data_type_rules": func(rules string, dataType *data_type.DataType) (value string) {
+	"data_type_rules": func(rules string, dataType *model_data_type.DataType) (value string) {
 		if dataType == nil {
 			return `_(unparsed)_ ` + rules
 		}

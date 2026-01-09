@@ -3,15 +3,15 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAtomicInOutRoundTrip(t *testing.T) {
 
-	original := data_type.Atomic{
+	original := model_data_type.Atomic{
 		ConstraintType: "enumeration",
-		Span: &data_type.AtomicSpan{
+		Span: &model_data_type.AtomicSpan{
 			LowerType:         "closed",
 			LowerValue:        t_IntPtr(1),
 			LowerDenominator:  t_IntPtr(2),
@@ -23,7 +23,7 @@ func TestAtomicInOutRoundTrip(t *testing.T) {
 		},
 		Reference:   t_StrPtr("ref1"),
 		EnumOrdered: t_BoolPtr(true),
-		Enums: []data_type.AtomicEnum{
+		Enums: []model_data_type.AtomicEnum{
 			{Value: "val1", SortOrder: 1},
 			{Value: "val2", SortOrder: 2},
 		},
