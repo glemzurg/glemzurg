@@ -7,7 +7,7 @@ import (
 
 // When a domain enforces requirements on another domain.
 type Association struct {
-	Key               string // The key of unique in the model.
+	Key               string // // Unique in model. Prefix pattern is the domain key for the problem domain.
 	ProblemDomainKey  string // The domain that enforces requirements on the other domain.
 	SolutionDomainKey string // The domain that has requirements enforced upon it.
 	UmlComment        string

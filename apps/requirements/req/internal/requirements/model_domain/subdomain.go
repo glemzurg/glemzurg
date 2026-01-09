@@ -10,14 +10,14 @@ import (
 
 // Subdomain is a nested category of the model.
 type Subdomain struct {
-	Key        string
+	Key        string // Unique in model. Prefix pattern is the domain key.
 	Name       string
 	Details    string // Markdown.
 	UmlComment string
 	// For parsing only, not stored here.
 	Generalizations []model_class.Generalization // Generalizations for the classes and use cases in this subdomain.
 	Classes         []model_class.Class          // Classes in this subdomain.
-	UseCases        []model_use_case.UseCase        // Use cases in this subdomain.
+	UseCases        []model_use_case.UseCase     // Use cases in this subdomain.
 	Associations    []model_class.Association    // Associations between classes in this subdomain.
 }
 

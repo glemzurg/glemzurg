@@ -16,7 +16,7 @@ const (
 
 // An actor is a external user of this sytem, either a person or another system.
 type Actor struct {
-	Key        string
+	Key        string // Unique in model. No prefix pattern.
 	Name       string
 	Details    string // Markdown.
 	Type       string // "person" or "system"

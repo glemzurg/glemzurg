@@ -10,7 +10,7 @@ import (
 
 // Domain is a root category of the mode.
 type Domain struct {
-	Key        string
+	Key        string // Unique in model. No prefix pattern.
 	Name       string
 	Details    string // Markdown.
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
