@@ -9,9 +9,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
 )
 
+// For key construction.
+const _SUBDOMAIN_CHILD_TYPE = "subdomain"
+
 // Construct a key that sits correctly in the model shape.
 func NewSubdomainKey(domainKey identity.Key, subKey string) (key identity.Key, err error) {
-	return identity.NewKey(domainKey.String(), "subdomain", subKey)
+	return identity.NewKey(domainKey.String(), _SUBDOMAIN_CHILD_TYPE, subKey)
 }
 
 // Subdomain is a nested category of the model.

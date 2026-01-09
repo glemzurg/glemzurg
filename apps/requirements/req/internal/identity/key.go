@@ -65,6 +65,11 @@ func (k *Key) SubKey() string {
 	return k.subKey
 }
 
+// ChildType returns the childType of the Key.
+func (k *Key) ChildType() string {
+	return k.childType
+}
+
 func ParseKey(s string) (key Key, err error) {
 	if s == "" {
 		return Key{}, errors.New("invalid key format")
