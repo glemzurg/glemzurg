@@ -1,9 +1,10 @@
 package model_actor
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -18,7 +19,8 @@ type ActorSuite struct {
 
 func (suite *ActorSuite) TestNew() {
 	tests := []struct {
-		key        string
+		testName   string
+		key        identity.Key
 		name       string
 		details    string
 		userType   string
@@ -28,13 +30,14 @@ func (suite *ActorSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:        "Key",
+			testName:   "ok with person type",
+			key:        helper.Must(identity.NewActorKey("actor1")),
 			name:       "Name",
 			details:    "Details",
 			userType:   _USER_TYPE_PERSON,
 			umlComment: "UmlComment",
 			obj: Actor{
-				Key:        "Key",
+				Key:        helper.Must(identity.NewActorKey("actor1")),
 				Name:       "Name",
 				Details:    "Details",
 				Type:       "person",
@@ -42,13 +45,14 @@ func (suite *ActorSuite) TestNew() {
 			},
 		},
 		{
-			key:        "Key",
+			testName:   "ok with system type",
+			key:        helper.Must(identity.NewActorKey("actor2")),
 			name:       "Name",
 			details:    "",
 			userType:   _USER_TYPE_SYSTEM,
 			umlComment: "",
 			obj: Actor{
-				Key:        "Key",
+				Key:        helper.Must(identity.NewActorKey("actor2")),
 				Name:       "Name",
 				Details:    "",
 				Type:       "system",
@@ -58,15 +62,26 @@ func (suite *ActorSuite) TestNew() {
 
 		// Error states.
 		{
-			key:        "",
+			testName:   "error empty key",
+			key:        identity.Key{},
 			name:       "Name",
 			details:    "Details",
 			userType:   _USER_TYPE_PERSON,
 			umlComment: "UmlComment",
-			errstr:     `Key: cannot be blank`,
+			errstr:     "keyType: cannot be blank",
 		},
 		{
-			key:        "Key",
+			testName:   "error wrong key type",
+			key:        helper.Must(identity.NewDomainKey("domain1")),
+			name:       "Name",
+			details:    "Details",
+			userType:   _USER_TYPE_PERSON,
+			umlComment: "UmlComment",
+			errstr:     "Key: invalid key type 'domain' for actor.",
+		},
+		{
+			testName:   "error with blank name",
+			key:        helper.Must(identity.NewActorKey("actor3")),
 			name:       "",
 			details:    "Details",
 			userType:   _USER_TYPE_PERSON,
@@ -74,7 +89,8 @@ func (suite *ActorSuite) TestNew() {
 			errstr:     `Name: cannot be blank.`,
 		},
 		{
-			key:        "Key",
+			testName:   "error with blank type",
+			key:        helper.Must(identity.NewActorKey("actor4")),
 			name:       "Name",
 			details:    "Details",
 			userType:   "",
@@ -82,7 +98,8 @@ func (suite *ActorSuite) TestNew() {
 			errstr:     `Type: cannot be blank.`,
 		},
 		{
-			key:        "Key",
+			testName:   "error with invalid type",
+			key:        helper.Must(identity.NewActorKey("actor5")),
 			name:       "Name",
 			details:    "Details",
 			userType:   "unknown",
@@ -90,15 +107,19 @@ func (suite *ActorSuite) TestNew() {
 			errstr:     `Type: must be a valid value.`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewActor(test.key, test.name, test.details, test.userType, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewActor(tt.key, tt.name, tt.details, tt.userType, tt.umlComment)
+			if tt.errstr == "" {
+				assert.Nil(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
