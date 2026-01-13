@@ -22,7 +22,7 @@ func (suite *ClassSuite) TestNew() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	actorKey := helper.Must(identity.NewActorKey("actor1"))
-	generalizationKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	generalizationKey := helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen1"))
 
 	tests := []struct {
 		testName        string

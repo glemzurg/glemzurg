@@ -36,14 +36,14 @@ func (suite *GeneralizationSuite) TestNew() {
 		// OK.
 		{
 			testName:   "ok with all fields",
-			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1")),
+			key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen1")),
 			name:       "Name",
 			details:    "Details",
 			isComplete: true,
 			isStatic:   false,
 			umlComment: "UmlComment",
 			obj: Generalization{
-				Key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1")),
+				Key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen1")),
 				Name:       "Name",
 				IsComplete: true,
 				IsStatic:   false,
@@ -53,14 +53,14 @@ func (suite *GeneralizationSuite) TestNew() {
 		},
 		{
 			testName:   "ok with minimal fields",
-			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2")),
+			key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen2")),
 			name:       "Name",
 			details:    "",
 			isComplete: false,
 			isStatic:   true,
 			umlComment: "",
 			obj: Generalization{
-				Key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2")),
+				Key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen2")),
 				Name:       "Name",
 				Details:    "",
 				IsComplete: false,
@@ -82,7 +82,7 @@ func (suite *GeneralizationSuite) TestNew() {
 		},
 		{
 			testName:   "error with blank name",
-			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen3")),
+			key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen3")),
 			name:       "",
 			details:    "Details",
 			isComplete: true,

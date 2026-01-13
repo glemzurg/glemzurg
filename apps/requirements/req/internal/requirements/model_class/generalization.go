@@ -11,8 +11,8 @@ func validateGeneralizationKey(value interface{}) error {
 	if !ok {
 		return errors.New("invalid key type")
 	}
-	if key.KeyType() != identity.KEY_TYPE_GENERALIZATION {
-		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_GENERALIZATION, key.KeyType())
+	if key.KeyType() != identity.KEY_TYPE_CLASS_GENERALIZATION {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS_GENERALIZATION, key.KeyType())
 	}
 	return nil
 }
