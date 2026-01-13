@@ -51,7 +51,7 @@ func (suite *ModelSuite) TestNew() {
 			key:     "",
 			name:    "Name",
 			details: "Details",
-			errstr:  "Key: (subKey: cannot be blank.).",
+			errstr:  "Key: cannot be blank",
 		},
 		{
 			key:     "model1",

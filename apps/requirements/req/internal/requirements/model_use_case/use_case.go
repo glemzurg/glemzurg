@@ -25,6 +25,8 @@ type UseCase struct {
 	// Part of the data in a parsed file.
 	Actors    map[identity.Key]Actor
 	Scenarios []model_scenario.Scenario
+	// Helpful data.
+	DomainKey identity.Key
 }
 
 func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
@@ -59,11 +61,11 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 	return useCase, nil
 }
 
-func (uc *UseCase) SetDomainKey(domainKey string) {
+func (uc *UseCase) SetDomainKey(domainKey identity.Key) {
 	uc.DomainKey = domainKey
 }
 
-func (uc *UseCase) SetActors(actors map[string]Actor) {
+func (uc *UseCase) SetActors(actors map[identity.Key]Actor) {
 	uc.Actors = actors
 }
 

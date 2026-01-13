@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
@@ -35,8 +36,8 @@ type Requirements struct {
 	Transitions  map[string][]model_state.Transition  // All the state transitions in a class.
 	StateActions map[string][]model_state.StateAction // All the state actions in a state.
 	// Use Cases.
-	UseCases      map[string][]model_use_case.UseCase        // All the use cases in a subdomain.
-	UseCaseActors map[string]map[string]model_use_case.Actor // All the use cases actors.
+	UseCases      map[string][]model_use_case.UseCase              // All the use cases in a subdomain.
+	UseCaseActors map[string]map[identity.Key]model_use_case.Actor // All the use cases actors.
 	// Scenarios.
 	Scenarios map[string][]model_scenario.Scenario // All scenarios in a use case.
 	Objects   map[string][]model_scenario.Object   // All scenario objects in a scenario.
@@ -226,11 +227,11 @@ func (r *Requirements) RegardingUseCases(inUseCases []model_use_case.UseCase) (u
 	uniqueActors := map[string]model_actor.Actor{}
 	for _, useCase := range useCases {
 		for actorKey := range useCase.Actors {
-			actor, found := actorLookup[actorKey]
+			actor, found := actorLookup[actorKey.String()]
 			if !found {
-				return nil, nil, errors.New("actor not found in lookup: " + actorKey)
+				return nil, nil, errors.New("actor not found in lookup: " + actorKey.String())
 			}
-			uniqueActors[actorKey] = actor
+			uniqueActors[actorKey.String()] = actor
 
 		}
 	}
@@ -424,7 +425,7 @@ func (r *Requirements) FromTree(tree Model) {
 	r.Transitions = make(map[string][]model_state.Transition)
 	r.StateActions = make(map[string][]model_state.StateAction)
 	r.UseCases = make(map[string][]model_use_case.UseCase)
-	r.UseCaseActors = make(map[string]map[string]model_use_case.Actor)
+	r.UseCaseActors = make(map[string]map[identity.Key]model_use_case.Actor)
 	r.Scenarios = make(map[string][]model_scenario.Scenario)
 	r.Objects = make(map[string][]model_scenario.Object)
 
@@ -513,12 +514,13 @@ func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainU
 
 func createKeyUseCaseLookup(
 	byCategory map[string][]model_use_case.UseCase,
-	actors map[string]map[string]model_use_case.Actor,
+	actors map[string]map[identity.Key]model_use_case.Actor,
 	scenarios map[string][]model_scenario.Scenario,
 ) (lookup map[string]model_use_case.UseCase) {
 
 	lookup = map[string]model_use_case.UseCase{}
-	for domainKey, items := range byCategory {
+	for domainKeyStr, items := range byCategory {
+		domainKey, _ := identity.ParseKey(domainKeyStr)
 		for _, item := range items {
 
 			item.SetDomainKey(domainKey)

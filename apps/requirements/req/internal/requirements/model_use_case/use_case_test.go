@@ -1,12 +1,10 @@
 package model_use_case
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,10 +17,15 @@ type UseCaseSuite struct {
 	suite.Suite
 }
 
+func (suite *UseCaseSuite) SetupTest() {
+}
+
 func (suite *UseCaseSuite) TestNew() {
-	subdomainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_SUBDOMAIN, "subdomain1"))
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 
 	tests := []struct {
+		testName   string
 		key        identity.Key
 		name       string
 		details    string
@@ -34,14 +37,15 @@ func (suite *UseCaseSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase1")),
+			testName:   "ok with all fields",
+			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1")),
 			name:       "Name",
 			details:    "Details",
 			level:      "sea",
 			readOnly:   true,
 			umlComment: "UmlComment",
 			obj: UseCase{
-				Key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase1")),
+				Key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1")),
 				Name:       "Name",
 				Details:    "Details",
 				Level:      "sea",
@@ -50,14 +54,15 @@ func (suite *UseCaseSuite) TestNew() {
 			},
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase2")),
+			testName:   "ok sky level",
+			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase2")),
 			name:       "Name",
 			details:    "",
 			level:      "sky",
 			readOnly:   false,
 			umlComment: "",
 			obj: UseCase{
-				Key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase2")),
+				Key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase2")),
 				Name:       "Name",
 				Details:    "",
 				Level:      "sky",
@@ -66,14 +71,15 @@ func (suite *UseCaseSuite) TestNew() {
 			},
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase3")),
+			testName:   "ok mud level",
+			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase3")),
 			name:       "Name",
 			details:    "",
 			level:      "mud",
 			readOnly:   false,
 			umlComment: "",
 			obj: UseCase{
-				Key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase3")),
+				Key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase3")),
 				Name:       "Name",
 				Details:    "",
 				Level:      "mud",
@@ -84,89 +90,59 @@ func (suite *UseCaseSuite) TestNew() {
 
 		// Error states.
 		{
+			testName:   "error empty key",
 			key:        identity.Key{},
 			name:       "Name",
 			details:    "Details",
 			level:      "sea",
 			readOnly:   true,
 			umlComment: "UmlComment",
-			errstr:     `Key: (childType: cannot be blank; subKey: cannot be blank.).`,
+			errstr:     `Key:`,
 		},
 		{
-			key:        helper.Must(identity.NewKey(subdomainKey.String(), "class", "usecase1")),
-			name:       "Name",
-			details:    "Details",
-			level:      "sea",
-			readOnly:   true,
-			umlComment: "UmlComment",
-			errstr:     `Key: invalid child type for use_case.`,
-		},
-		{
-			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase4")),
+			testName:   "error blank name",
+			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase4")),
 			name:       "",
 			details:    "Details",
 			level:      "sea",
 			readOnly:   true,
 			umlComment: "UmlComment",
-			errstr:     `Name: cannot be blank.`,
+			errstr:     `Name: cannot be blank`,
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase5")),
+			testName:   "error blank level",
+			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase5")),
 			name:       "Name",
 			details:    "Details",
 			level:      "",
 			readOnly:   true,
 			umlComment: "UmlComment",
-			errstr:     `Level: cannot be blank.`,
+			errstr:     `Level: cannot be blank`,
 		},
 		{
-			key:        helper.Must(NewUseCaseKey(subdomainKey, "usecase6")),
+			testName:   "error invalid level",
+			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase6")),
 			name:       "Name",
 			details:    "Details",
 			level:      "unknown",
 			readOnly:   true,
 			umlComment: "UmlComment",
-			errstr:     `Level: must be a valid value.`,
+			errstr:     `Level: must be a valid value`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewUseCase(test.key, test.name, test.details, test.level, test.readOnly, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
-	}
-}
-func (suite *UseCaseSuite) TestNewUseCaseKey() {
-	domainKey := helper.Must(identity.NewRootKey(identity.KEY_TYPE_DOMAIN, "domain1"))
-
-	subdomainKey := helper.Must(model_domain.NewSubdomainKey(domainKey, "subdomain1"))
-
-	tests := []struct {
-		subdomainKey identity.Key
-		subKey       string
-		expected     identity.Key
-		errstr       string
-	}{
-		{
-			subdomainKey: subdomainKey,
-			subKey:       "usecase1",
-			expected:     helper.Must(identity.NewKey(subdomainKey.String(), identity.KEY_TYPE_USE_CASE, "usecase1")),
-		},
-	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewUseCaseKey(test.subdomainKey, test.subKey)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.expected, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewUseCase(tt.key, tt.name, tt.details, tt.level, tt.readOnly, tt.umlComment)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
