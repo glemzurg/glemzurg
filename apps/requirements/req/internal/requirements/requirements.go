@@ -22,7 +22,7 @@ type Requirements struct {
 	Actors []model_actor.Actor
 	// Organization.
 	Domains            []model_domain.Domain
-	Subdomains         map[string][]model_domain.Subdomain // All the subdomains in a domain.
+	Subdomains         map[identity.Key][]model_domain.Subdomain // All the subdomains in a domain.
 	DomainAssociations []model_domain.Association
 	// Classes.
 	Classes      map[string][]model_class.Class     // All the classes in a subdomain.
@@ -36,8 +36,8 @@ type Requirements struct {
 	Transitions  map[string][]model_state.Transition  // All the state transitions in a class.
 	StateActions map[string][]model_state.StateAction // All the state actions in a state.
 	// Use Cases.
-	UseCases      map[string][]model_use_case.UseCase              // All the use cases in a subdomain.
-	UseCaseActors map[string]map[identity.Key]model_use_case.Actor // All the use cases actors.
+	UseCases      map[identity.Key][]model_use_case.UseCase              // All the use cases in a subdomain.
+	UseCaseActors map[identity.Key]map[identity.Key]model_use_case.Actor // All the use cases actors.
 	// Scenarios.
 	Scenarios map[string][]model_scenario.Scenario // All scenarios in a use case.
 	Objects   map[string][]model_scenario.Object   // All scenario objects in a scenario.
@@ -338,13 +338,13 @@ func (r *Requirements) ToTree() Model {
 	// Populate domains
 	for i := range tree.Domains {
 		domain := &tree.Domains[i]
-		domain.Subdomains = r.Subdomains[domain.Key.String()]
+		domain.Subdomains = r.Subdomains[domain.Key]
 
 		// Populate subdomains
 		for j := range domain.Subdomains {
 			subdomain := &domain.Subdomains[j]
 			subdomain.Classes = r.Classes[subdomain.Key.String()]
-			subdomain.UseCases = r.UseCases[subdomain.Key.String()]
+			subdomain.UseCases = r.UseCases[subdomain.Key]
 
 			// Populate classes
 			for k := range subdomain.Classes {
@@ -366,7 +366,7 @@ func (r *Requirements) ToTree() Model {
 			// Populate use cases
 			for k := range subdomain.UseCases {
 				useCase := &subdomain.UseCases[k]
-				useCase.Actors = r.UseCaseActors[useCase.Key.String()]
+				useCase.Actors = r.UseCaseActors[useCase.Key]
 				useCase.Scenarios = r.Scenarios[useCase.Key.String()]
 
 				// Populate scenarios with objects
@@ -415,7 +415,7 @@ func (r *Requirements) ToTree() Model {
 // FromTree flattens the nested tree structure into the Requirements maps and slices.
 func (r *Requirements) FromTree(tree Model) {
 	// Clear the maps
-	r.Subdomains = make(map[string][]model_domain.Subdomain)
+	r.Subdomains = make(map[identity.Key][]model_domain.Subdomain)
 	r.Classes = make(map[string][]model_class.Class)
 	r.Attributes = make(map[string][]model_class.Attribute)
 	r.States = make(map[string][]model_state.State)
@@ -424,18 +424,18 @@ func (r *Requirements) FromTree(tree Model) {
 	r.Actions = make(map[string][]model_state.Action)
 	r.Transitions = make(map[string][]model_state.Transition)
 	r.StateActions = make(map[string][]model_state.StateAction)
-	r.UseCases = make(map[string][]model_use_case.UseCase)
-	r.UseCaseActors = make(map[string]map[identity.Key]model_use_case.Actor)
+	r.UseCases = make(map[identity.Key][]model_use_case.UseCase)
+	r.UseCaseActors = make(map[identity.Key]map[identity.Key]model_use_case.Actor)
 	r.Scenarios = make(map[string][]model_scenario.Scenario)
 	r.Objects = make(map[string][]model_scenario.Object)
 
 	// Populate from tree
 	for _, domain := range tree.Domains {
-		r.Subdomains[domain.Key.String()] = domain.Subdomains
+		r.Subdomains[domain.Key] = domain.Subdomains
 
 		for _, subdomain := range domain.Subdomains {
 			r.Classes[subdomain.Key.String()] = subdomain.Classes
-			r.UseCases[subdomain.Key.String()] = subdomain.UseCases
+			r.UseCases[subdomain.Key] = subdomain.UseCases
 
 			for _, class := range subdomain.Classes {
 				r.Attributes[class.Key] = class.Attributes
@@ -451,7 +451,7 @@ func (r *Requirements) FromTree(tree Model) {
 			}
 
 			for _, useCase := range subdomain.UseCases {
-				r.UseCaseActors[useCase.Key.String()] = useCase.Actors
+				r.UseCaseActors[useCase.Key] = useCase.Actors
 				r.Scenarios[useCase.Key.String()] = useCase.Scenarios
 
 				for _, scenario := range useCase.Scenarios {
@@ -499,13 +499,13 @@ func (r *Requirements) FromTree(tree Model) {
 	}
 }
 
-func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainUseCases map[string][]model_use_case.UseCase, items []model_domain.Domain) (lookup map[string]model_domain.Domain) {
+func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainUseCases map[identity.Key][]model_use_case.UseCase, items []model_domain.Domain) (lookup map[string]model_domain.Domain) {
 
 	lookup = map[string]model_domain.Domain{}
 	for _, item := range items {
 
 		item.Classes = domainClasses[item.Key.String()]
-		item.UseCases = domainUseCases[item.Key.String()]
+		item.UseCases = domainUseCases[item.Key]
 
 		lookup[item.Key.String()] = item
 	}
@@ -513,18 +513,17 @@ func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainU
 }
 
 func createKeyUseCaseLookup(
-	byCategory map[string][]model_use_case.UseCase,
-	actors map[string]map[identity.Key]model_use_case.Actor,
+	byCategory map[identity.Key][]model_use_case.UseCase,
+	actors map[identity.Key]map[identity.Key]model_use_case.Actor,
 	scenarios map[string][]model_scenario.Scenario,
 ) (lookup map[string]model_use_case.UseCase) {
 
 	lookup = map[string]model_use_case.UseCase{}
-	for domainKeyStr, items := range byCategory {
-		domainKey, _ := identity.ParseKey(domainKeyStr)
+	for subdomainKey, items := range byCategory {
 		for _, item := range items {
 
-			item.SetDomainKey(domainKey)
-			item.SetActors(actors[item.Key.String()])
+			item.SetDomainKey(subdomainKey)
+			item.SetActors(actors[item.Key])
 			item.SetScenarios(scenarios[item.Key.String()])
 
 			lookup[item.Key.String()] = item
