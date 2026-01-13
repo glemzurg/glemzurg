@@ -39,7 +39,7 @@ type Class struct {
 	Actions      []model_state.Action
 	Transitions  []model_state.Transition
 	// Helpful data.
-	DomainKey string
+	DomainKey identity.Key
 }
 
 func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey identity.Key, umlComment string) (class Class, err error) {
