@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,15 +17,17 @@ type EventParameterSuite struct {
 
 func (suite *EventParameterSuite) TestNew() {
 	tests := []struct {
-		name   string
-		source string
-		obj    EventParameter
-		errstr string
+		testName string
+		name     string
+		source   string
+		obj      EventParameter
+		errstr   string
 	}{
 		// OK.
 		{
-			name:   "Name",
-			source: "Source",
+			testName: "ok with all fields",
+			name:     "Name",
+			source:   "Source",
 			obj: EventParameter{
 				Name:   "Name",
 				Source: "Source",
@@ -35,25 +36,28 @@ func (suite *EventParameterSuite) TestNew() {
 
 		// Error states.
 		{
-			name:   "",
-			source: "Source",
-			errstr: `Name: cannot be blank`,
+			testName: "error with blank name",
+			name:     "",
+			source:   "Source",
+			errstr:   `Name: cannot be blank`,
 		},
 		{
-			name:   "Name",
-			source: "",
-			errstr: `Source: cannot be blank`,
+			testName: "error with blank source",
+			name:     "Name",
+			source:   "",
+			errstr:   `Source: cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewEventParameter(test.name, test.source)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewEventParameter(tt.name, tt.source)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
 	}
 }

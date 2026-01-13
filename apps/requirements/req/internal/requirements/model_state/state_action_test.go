@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,6 +17,7 @@ type StateActionSuite struct {
 
 func (suite *StateActionSuite) TestNew() {
 	tests := []struct {
+		testName  string
 		key       string
 		actionKey string
 		when      string
@@ -26,6 +26,7 @@ func (suite *StateActionSuite) TestNew() {
 	}{
 		// OK.
 		{
+			testName:  "ok with entry",
 			key:       "Key",
 			actionKey: "ActionKey",
 			when:      "entry",
@@ -36,6 +37,7 @@ func (suite *StateActionSuite) TestNew() {
 			},
 		},
 		{
+			testName:  "ok with exit",
 			key:       "Key",
 			actionKey: "ActionKey",
 			when:      "exit",
@@ -46,6 +48,7 @@ func (suite *StateActionSuite) TestNew() {
 			},
 		},
 		{
+			testName:  "ok with do",
 			key:       "Key",
 			actionKey: "ActionKey",
 			when:      "do",
@@ -58,39 +61,44 @@ func (suite *StateActionSuite) TestNew() {
 
 		// Error states.
 		{
+			testName:  "error with blank key",
 			key:       "",
 			actionKey: "ActionKey",
 			when:      "entry",
 			errstr:    `Key: cannot be blank`,
 		},
 		{
+			testName:  "error with blank action key",
 			key:       "Key",
 			actionKey: "",
 			when:      "entry",
 			errstr:    `ActionKey: cannot be blank`,
 		},
 		{
+			testName:  "error with blank when",
 			key:       "Key",
 			actionKey: "ActionKey",
 			when:      "",
 			errstr:    `When: cannot be blank`,
 		},
 		{
+			testName:  "error with unknown when",
 			key:       "Key",
 			actionKey: "ActionKey",
 			when:      "unknown",
 			errstr:    `When: must be a valid value`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewStateAction(test.key, test.actionKey, test.when)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewStateAction(tt.key, tt.actionKey, tt.when)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
 	}
 }

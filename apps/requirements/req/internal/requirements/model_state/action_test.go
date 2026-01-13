@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,6 +17,7 @@ type ActionSuite struct {
 
 func (suite *ActionSuite) TestNew() {
 	tests := []struct {
+		testName   string
 		key        string
 		name       string
 		details    string
@@ -28,6 +28,7 @@ func (suite *ActionSuite) TestNew() {
 	}{
 		// OK.
 		{
+			testName:   "ok with all fields",
 			key:        "Key",
 			name:       "Name",
 			details:    "Details",
@@ -42,6 +43,7 @@ func (suite *ActionSuite) TestNew() {
 			},
 		},
 		{
+			testName:   "ok with minimal fields",
 			key:        "Key",
 			name:       "Name",
 			details:    "",
@@ -58,6 +60,7 @@ func (suite *ActionSuite) TestNew() {
 
 		// Error states.
 		{
+			testName:   "error with blank key",
 			key:        "",
 			name:       "Name",
 			details:    "Details",
@@ -66,6 +69,7 @@ func (suite *ActionSuite) TestNew() {
 			errstr:     `Key: cannot be blank`,
 		},
 		{
+			testName:   "error with blank name",
 			key:        "Key",
 			name:       "",
 			details:    "Details",
@@ -74,15 +78,16 @@ func (suite *ActionSuite) TestNew() {
 			errstr:     `Name: cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewAction(test.key, test.name, test.details, test.requires, test.guarantees)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewAction(tt.key, tt.name, tt.details, tt.requires, tt.guarantees)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
 	}
 }

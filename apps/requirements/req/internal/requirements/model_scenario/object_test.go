@@ -1,7 +1,6 @@
 package model_scenario
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,6 +17,7 @@ type ObjectSuite struct {
 
 func (suite *ObjectSuite) TestNew() {
 	tests := []struct {
+		testName     string
 		key          string
 		objectNumber uint
 		name         string
@@ -30,6 +30,7 @@ func (suite *ObjectSuite) TestNew() {
 	}{
 		// OK.
 		{
+			testName:     "ok with name style",
 			key:          "Key",
 			objectNumber: 1,
 			name:         "Name",
@@ -48,6 +49,7 @@ func (suite *ObjectSuite) TestNew() {
 			},
 		},
 		{
+			testName:     "ok with id style",
 			key:          "Key",
 			objectNumber: 1,
 			name:         "Name",
@@ -66,6 +68,7 @@ func (suite *ObjectSuite) TestNew() {
 			},
 		},
 		{
+			testName:     "ok with unnamed style",
 			key:          "Key",
 			objectNumber: 0,
 			name:         "",
@@ -86,6 +89,7 @@ func (suite *ObjectSuite) TestNew() {
 
 		// Error states.
 		{
+			testName:     "error with blank key",
 			key:          "",
 			objectNumber: 1,
 			name:         "Name",
@@ -96,6 +100,7 @@ func (suite *ObjectSuite) TestNew() {
 			errstr:       `Key: cannot be blank`,
 		},
 		{
+			testName:     "error with blank name for name style",
 			key:          "Key",
 			objectNumber: 1,
 			name:         "",
@@ -106,6 +111,7 @@ func (suite *ObjectSuite) TestNew() {
 			errstr:       `Name: Name cannot be blank`,
 		},
 		{
+			testName:     "error with blank name for id style",
 			key:          "Key",
 			objectNumber: 1,
 			name:         "",
@@ -116,6 +122,7 @@ func (suite *ObjectSuite) TestNew() {
 			errstr:       `Name: Name cannot be blank`,
 		},
 		{
+			testName:     "error with name for unnamed style",
 			key:          "Key",
 			objectNumber: 1,
 			name:         "Name",
@@ -126,6 +133,7 @@ func (suite *ObjectSuite) TestNew() {
 			errstr:       `Name: Name must be blank for unnamed style`,
 		},
 		{
+			testName:     "error with blank class key",
 			key:          "",
 			objectNumber: 1,
 			name:         "Name",
@@ -136,15 +144,16 @@ func (suite *ObjectSuite) TestNew() {
 			errstr:       `ClassKey: cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewObject(test.key, test.objectNumber, test.name, test.nameStyle, test.classKey, test.multi, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewObject(tt.key, tt.objectNumber, tt.name, tt.nameStyle, tt.classKey, tt.multi, tt.umlComment)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
 	}
 }

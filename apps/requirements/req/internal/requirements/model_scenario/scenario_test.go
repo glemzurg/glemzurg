@@ -1,7 +1,6 @@
 package model_scenario
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,17 +17,19 @@ type ScenarioSuite struct {
 
 func (suite *ScenarioSuite) TestNew() {
 	tests := []struct {
-		key     string
-		name    string
-		details string
-		obj     Scenario
-		errstr  string
+		testName string
+		key      string
+		name     string
+		details  string
+		obj      Scenario
+		errstr   string
 	}{
 		// OK.
 		{
-			key:     "Key",
-			name:    "Name",
-			details: "Details",
+			testName: "ok with all fields",
+			key:      "Key",
+			name:     "Name",
+			details:  "Details",
 			obj: Scenario{
 				Key:     "Key",
 				Name:    "Name",
@@ -36,9 +37,10 @@ func (suite *ScenarioSuite) TestNew() {
 			},
 		},
 		{
-			key:     "Key",
-			name:    "Name",
-			details: "",
+			testName: "ok with minimal fields",
+			key:      "Key",
+			name:     "Name",
+			details:  "",
 			obj: Scenario{
 				Key:     "Key",
 				Name:    "Name",
@@ -48,27 +50,30 @@ func (suite *ScenarioSuite) TestNew() {
 
 		// Error states.
 		{
-			key:     "",
-			name:    "Name",
-			details: "Details",
-			errstr:  `Key: cannot be blank`,
+			testName: "error with blank key",
+			key:      "",
+			name:     "Name",
+			details:  "Details",
+			errstr:   `Key: cannot be blank`,
 		},
 		{
-			key:     "Key",
-			name:    "",
-			details: "Details",
-			errstr:  `Name: cannot be blank`,
+			testName: "error with blank name",
+			key:      "Key",
+			name:     "",
+			details:  "Details",
+			errstr:   `Name: cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewScenario(test.key, test.name, test.details)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewScenario(tt.key, tt.name, tt.details)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
 	}
 }

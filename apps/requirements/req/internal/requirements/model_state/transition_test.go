@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,6 +17,7 @@ type TransitionSuite struct {
 
 func (suite *TransitionSuite) TestNew() {
 	tests := []struct {
+		testName     string
 		key          string
 		fromStateKey string
 		eventKey     string
@@ -30,6 +30,7 @@ func (suite *TransitionSuite) TestNew() {
 	}{
 		// OK.
 		{
+			testName:     "ok with all fields",
 			key:          "Key",
 			fromStateKey: "FromStateKey",
 			eventKey:     "EventKey",
@@ -48,6 +49,7 @@ func (suite *TransitionSuite) TestNew() {
 			},
 		},
 		{
+			testName:     "ok with minimal fields",
 			key:          "Key",
 			fromStateKey: "FromStateKey",
 			eventKey:     "EventKey",
@@ -68,6 +70,7 @@ func (suite *TransitionSuite) TestNew() {
 
 		// Error states.
 		{
+			testName:     "error with blank key",
 			key:          "",
 			fromStateKey: "FromStateKey",
 			eventKey:     "EventKey",
@@ -78,6 +81,7 @@ func (suite *TransitionSuite) TestNew() {
 			errstr:       `Key: cannot be blank`,
 		},
 		{
+			testName:     "error with blank event key",
 			key:          "Key",
 			fromStateKey: "FromStateKey",
 			eventKey:     "",
@@ -88,6 +92,7 @@ func (suite *TransitionSuite) TestNew() {
 			errstr:       `EventKey: cannot be blank`,
 		},
 		{
+			testName:     "error with both state keys blank",
 			key:          "Key",
 			fromStateKey: "",
 			eventKey:     "EventKey",
@@ -98,15 +103,16 @@ func (suite *TransitionSuite) TestNew() {
 			errstr:       `FromStateKey, ToStateKey: cannot both be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewTransition(test.key, test.fromStateKey, test.eventKey, test.guardKey, test.actionKey, test.toStateKey, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewTransition(tt.key, tt.fromStateKey, tt.eventKey, tt.guardKey, tt.actionKey, tt.toStateKey, tt.umlComment)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
 	}
 }
