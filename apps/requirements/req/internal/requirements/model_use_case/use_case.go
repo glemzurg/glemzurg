@@ -23,10 +23,8 @@ type UseCase struct {
 	ReadOnly   bool   // This is a user story that does not change the state of the system.
 	UmlComment string
 	// Part of the data in a parsed file.
-	Actors    map[string]Actor
+	Actors    map[identity.Key]Actor
 	Scenarios []model_scenario.Scenario
-	// Helpful data.
-	DomainKey string
 }
 
 func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
