@@ -1,6 +1,7 @@
 package model_class
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
@@ -8,7 +9,7 @@ import (
 
 // Attribute is a member of a class.
 type Attribute struct {
-	Key              string
+	Key              identity.Key
 	Name             string
 	Details          string // Markdown.
 	DataTypeRules    string // What are the bounds of this data type.
@@ -16,7 +17,7 @@ type Attribute struct {
 	Nullable         bool   // Is this attribute optional.
 	UmlComment       string
 	// Part of the data in a parsed file.
-	IndexNums []uint              // The indexes this attribute is part of.
+	IndexNums []uint                    // The indexes this attribute is part of.
 	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 

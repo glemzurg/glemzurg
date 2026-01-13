@@ -6,17 +6,18 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 )
 
 // Class is a thing in the system.
 type Class struct {
-	Key             string
+	Key             identity.Key
 	Name            string
-	Details         string // Markdown.
-	ActorKey        string // If this class is an Actor this is the key of that actor.
-	SuperclassOfKey string // If this class is part of a generalization as the superclass.
-	SubclassOfKey   string // If this class is part of a generalization as a subclass.
+	Details         string       // Markdown.
+	ActorKey        identity.Key // If this class is an Actor this is the key of that actor.
+	SuperclassOfKey identity.Key // If this class is part of a generalization as the superclass.
+	SubclassOfKey   identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Part of the data in a parsed file.
 	Attributes   []Attribute   // The attributes of a class.

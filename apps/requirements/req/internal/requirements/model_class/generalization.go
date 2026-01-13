@@ -1,21 +1,22 @@
 package model_class
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
 
 // Generalization is how two or more things in the system build on each other (like a super type and sub type).
 type Generalization struct {
-	Key        string
+	Key        identity.Key
 	Name       string
 	Details    string // Markdown.
 	IsComplete bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
 	IsStatic   bool   // Are the specializations static and unchanging or can they change during runtime.
 	UmlComment string
 	// Part of the data in a parsed file.
-	SuperclassKey string   // If this generalization is classes, the superclass for it.
-	SubclassKeys  []string // If this generalization is classes, the subclasses for it.
+	SuperclassKey identity.Key   // If this generalization is classes, the superclass for it.
+	SubclassKeys  []identity.Key // If this generalization is classes, the subclasses for it.
 }
 
 func NewGeneralization(key, name, details string, isComplete, isStatic bool, umlComment string) (generalization Generalization, err error) {

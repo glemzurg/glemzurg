@@ -6,6 +6,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 )
 
@@ -16,16 +17,16 @@ const (
 
 // An actor is a external user of this sytem, either a person or another system.
 type Actor struct {
-	Key        string // Unique in model. No prefix pattern.
+	Key        identity.Key
 	Name       string
 	Details    string // Markdown.
 	Type       string // "person" or "system"
 	UmlComment string
 	// Helpful data.
-	ClassKeys []string // Classes that implement this actor.
+	ClassKeys []identity.Key // Classes that implement this actor.
 }
 
-func NewActor(key, name, details, userType, umlComment string) (actor Actor, err error) {
+func NewActor(key identity.Key, name, details, userType, umlComment string) (actor Actor, err error) {
 
 	actor = Actor{
 		Key:        key,

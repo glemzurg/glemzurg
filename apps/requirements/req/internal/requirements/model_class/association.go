@@ -1,20 +1,21 @@
 package model_class
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
 
 // Association is how two classes relate to each other.
 type Association struct {
-	Key                 string
+	Key                 identity.Key
 	Name                string
 	Details             string       // Markdown.
-	FromClassKey        string       // The class on one end of the association.
+	FromClassKey        identity.Key // The class on one end of the association.
 	FromMultiplicity    Multiplicity // The multiplicity from one end of the association.
-	ToClassKey          string       // The class on the other end of the association.
+	ToClassKey          identity.Key // The class on the other end of the association.
 	ToMultiplicity      Multiplicity // The multiplicity on the other end of the association.
-	AssociationClassKey string       // Any class that points to this association.
+	AssociationClassKey identity.Key // Any class that points to this association.
 	UmlComment          string
 }
 
