@@ -101,18 +101,15 @@ func (suite *ClassSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewClass(tt.key, tt.name, tt.details, tt.actorKey, tt.superclassOfKey, tt.subclassOfKey, tt.umlComment)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }

@@ -10,17 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 )
 
-func validateClassKey(value interface{}) error {
-	key, ok := value.(identity.Key)
-	if !ok {
-		return errors.New("invalid key type")
-	}
-	if key.KeyType() != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS, key.KeyType())
-	}
-	return nil
-}
-
 // Class is a thing in the system.
 type Class struct {
 	Key             identity.Key
@@ -55,7 +44,13 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 	}
 
 	err = validation.ValidateStruct(&class,
-		validation.Field(&class.Key, validation.By(validateClassKey)),
+		validation.Field(&class.Key, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if k.KeyType() != identity.KEY_TYPE_CLASS {
+				return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS, k.KeyType())
+			}
+			return nil
+		})),
 		validation.Field(&class.Name, validation.Required),
 	)
 	if err != nil {

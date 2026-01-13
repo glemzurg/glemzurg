@@ -137,18 +137,15 @@ func (suite *AttributeSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewAttribute(tt.key, tt.name, tt.details, tt.dataTypeRules, tt.derivationPolicy, tt.nullable, tt.umlComment, tt.indexNums)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }

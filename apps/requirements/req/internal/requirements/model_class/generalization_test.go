@@ -78,7 +78,7 @@ func (suite *GeneralizationSuite) TestNew() {
 			isComplete: true,
 			isStatic:   true,
 			umlComment: "UmlComment",
-			errstr:     `Key: key must be of type 'generalization', not ''`,
+			errstr:     `Key: key must be of type 'cgeneralization', not ''`,
 		},
 		{
 			testName:   "error with blank name",
@@ -92,18 +92,15 @@ func (suite *GeneralizationSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewGeneralization(tt.key, tt.name, tt.details, tt.isComplete, tt.isStatic, tt.umlComment)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }
