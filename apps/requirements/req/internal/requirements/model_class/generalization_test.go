@@ -71,14 +71,24 @@ func (suite *GeneralizationSuite) TestNew() {
 
 		// Error states.
 		{
-			testName:   "error with blank key",
+			testName:   "error empty key",
 			key:        identity.Key{},
 			name:       "Name",
 			details:    "Details",
 			isComplete: true,
 			isStatic:   true,
 			umlComment: "UmlComment",
-			errstr:     `Key: key must be of type 'generalization', not ''`,
+			errstr:     "keyType: cannot be blank",
+		},
+		{
+			testName:   "error wrong key type",
+			key:        helper.Must(identity.NewDomainKey("domain1")),
+			name:       "Name",
+			details:    "Details",
+			isComplete: true,
+			isStatic:   true,
+			umlComment: "UmlComment",
+			errstr:     "Key: invalid key type 'domain' for generalization.",
 		},
 		{
 			testName:   "error with blank name",
@@ -92,18 +102,15 @@ func (suite *GeneralizationSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewGeneralization(tt.key, tt.name, tt.details, tt.isComplete, tt.isStatic, tt.umlComment)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }

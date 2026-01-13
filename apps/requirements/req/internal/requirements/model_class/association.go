@@ -6,28 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func validateClassAssociationKey(value interface{}) error {
-	key, ok := value.(identity.Key)
-	if !ok {
-		return errors.New("invalid key type")
-	}
-	if key.KeyType() != identity.KEY_TYPE_CLASS_ASSOCIATION {
-		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS_ASSOCIATION, key.KeyType())
-	}
-	return nil
-}
-
-func validateClassKeyForAssociation(value interface{}) error {
-	key, ok := value.(identity.Key)
-	if !ok {
-		return errors.New("invalid key type")
-	}
-	if key.KeyType() != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS, key.KeyType())
-	}
-	return nil
-}
-
 // Association is how two classes relate to each other.
 type Association struct {
 	Key                 identity.Key
@@ -56,10 +34,37 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 	}
 
 	err = validation.ValidateStruct(&association,
-		validation.Field(&association.Key, validation.By(validateClassAssociationKey)),
+		validation.Field(&association.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_CLASS_ASSOCIATION {
+				return errors.Errorf("invalid key type '%s' for association", k.KeyType())
+			}
+			return nil
+		})),
 		validation.Field(&association.Name, validation.Required),
-		validation.Field(&association.FromClassKey, validation.By(validateClassKeyForAssociation)),
-		validation.Field(&association.ToClassKey, validation.By(validateClassKeyForAssociation)),
+		validation.Field(&association.FromClassKey, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_CLASS {
+				return errors.Errorf("invalid key type '%s' for from class", k.KeyType())
+			}
+			return nil
+		})),
+		validation.Field(&association.ToClassKey, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_CLASS {
+				return errors.Errorf("invalid key type '%s' for to class", k.KeyType())
+			}
+			return nil
+		})),
 	)
 	if err != nil {
 		return Association{}, errors.WithStack(err)

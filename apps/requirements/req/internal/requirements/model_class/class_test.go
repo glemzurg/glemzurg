@@ -78,7 +78,7 @@ func (suite *ClassSuite) TestNew() {
 
 		// Error states.
 		{
-			testName:        "error with blank key",
+			testName:        "error empty key",
 			key:             identity.Key{},
 			name:            "Name",
 			details:         "Details",
@@ -86,7 +86,18 @@ func (suite *ClassSuite) TestNew() {
 			superclassOfKey: &generalizationKey,
 			subclassOfKey:   &generalizationKey,
 			umlComment:      "UmlComment",
-			errstr:          `Key: key must be of type 'class', not ''`,
+			errstr:          "keyType: cannot be blank",
+		},
+		{
+			testName:        "error wrong key type",
+			key:             helper.Must(identity.NewDomainKey("domain1")),
+			name:            "Name",
+			details:         "Details",
+			actorKey:        &actorKey,
+			superclassOfKey: &generalizationKey,
+			subclassOfKey:   &generalizationKey,
+			umlComment:      "UmlComment",
+			errstr:          "Key: invalid key type 'domain' for class.",
 		},
 		{
 			testName:        "error with blank name",

@@ -44,10 +44,13 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 	}
 
 	err = validation.ValidateStruct(&class,
-		validation.Field(&class.Key, validation.By(func(value interface{}) error {
+		validation.Field(&class.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
 			if k.KeyType() != identity.KEY_TYPE_CLASS {
-				return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS, k.KeyType())
+				return errors.Errorf("invalid key type '%s' for class", k.KeyType())
 			}
 			return nil
 		})),

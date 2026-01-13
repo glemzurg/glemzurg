@@ -112,7 +112,7 @@ func (suite *AttributeSuite) TestNew() {
 
 		// Error states.
 		{
-			testName:         "error with blank key",
+			testName:         "error empty key",
 			key:              identity.Key{},
 			name:             "Name",
 			details:          "Details",
@@ -121,7 +121,19 @@ func (suite *AttributeSuite) TestNew() {
 			nullable:         true,
 			umlComment:       "UmlComment",
 			indexNums:        []uint{1, 2},
-			errstr:           `Key: key must be of type 'attribute', not ''`,
+			errstr:           "keyType: cannot be blank",
+		},
+		{
+			testName:         "error wrong key type",
+			key:              helper.Must(identity.NewDomainKey("domain1")),
+			name:             "Name",
+			details:          "Details",
+			dataTypeRules:    "DataTypeRules",
+			derivationPolicy: "DerivationPolicy",
+			nullable:         true,
+			umlComment:       "UmlComment",
+			indexNums:        []uint{1, 2},
+			errstr:           "Key: invalid key type 'domain' for attribute.",
 		},
 		{
 			testName:         "error with blank name",
@@ -137,18 +149,15 @@ func (suite *AttributeSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewAttribute(tt.key, tt.name, tt.details, tt.dataTypeRules, tt.derivationPolicy, tt.nullable, tt.umlComment, tt.indexNums)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }

@@ -92,7 +92,7 @@ func (suite *AssociationSuite) TestNew() {
 
 		// Error states.
 		{
-			testName:            "error with blank key",
+			testName:            "error empty key",
 			key:                 identity.Key{},
 			name:                "Name",
 			details:             "Details",
@@ -102,7 +102,20 @@ func (suite *AssociationSuite) TestNew() {
 			toMultiplicity:      multiplicity,
 			associationClassKey: assocClassKey,
 			umlComment:          "UmlComment",
-			errstr:              `Key: key must be of type 'cassociation', not ''`,
+			errstr:              "keyType: cannot be blank",
+		},
+		{
+			testName:            "error wrong key type",
+			key:                 helper.Must(identity.NewDomainKey("domain1")),
+			name:                "Name",
+			details:             "Details",
+			fromClassKey:        fromClassKey,
+			fromMultiplicity:    multiplicity,
+			toClassKey:          toClassKey,
+			toMultiplicity:      multiplicity,
+			associationClassKey: assocClassKey,
+			umlComment:          "UmlComment",
+			errstr:              "Key: invalid key type 'domain' for association.",
 		},
 		{
 			testName:            "error with blank name",
@@ -118,7 +131,7 @@ func (suite *AssociationSuite) TestNew() {
 			errstr:              `Name: cannot be blank`,
 		},
 		{
-			testName:            "error with blank from class key",
+			testName:            "error empty from class key",
 			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc4")),
 			name:                "Name",
 			details:             "Details",
@@ -128,11 +141,24 @@ func (suite *AssociationSuite) TestNew() {
 			toMultiplicity:      multiplicity,
 			associationClassKey: assocClassKey,
 			umlComment:          "UmlComment",
-			errstr:              `FromClassKey: key must be of type 'class', not ''`,
+			errstr:              "keyType: cannot be blank",
 		},
 		{
-			testName:            "error with blank to class key",
+			testName:            "error wrong from class key type",
 			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc5")),
+			name:                "Name",
+			details:             "Details",
+			fromClassKey:        domainKey,
+			fromMultiplicity:    multiplicity,
+			toClassKey:          toClassKey,
+			toMultiplicity:      multiplicity,
+			associationClassKey: assocClassKey,
+			umlComment:          "UmlComment",
+			errstr:              "FromClassKey: invalid key type 'domain' for from class.",
+		},
+		{
+			testName:            "error empty to class key",
+			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc6")),
 			name:                "Name",
 			details:             "Details",
 			fromClassKey:        fromClassKey,
@@ -141,23 +167,33 @@ func (suite *AssociationSuite) TestNew() {
 			toMultiplicity:      multiplicity,
 			associationClassKey: assocClassKey,
 			umlComment:          "UmlComment",
-			errstr:              `ToClassKey: key must be of type 'class', not ''`,
+			errstr:              "keyType: cannot be blank",
+		},
+		{
+			testName:            "error wrong to class key type",
+			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc7")),
+			name:                "Name",
+			details:             "Details",
+			fromClassKey:        fromClassKey,
+			fromMultiplicity:    multiplicity,
+			toClassKey:          domainKey,
+			toMultiplicity:      multiplicity,
+			associationClassKey: assocClassKey,
+			umlComment:          "UmlComment",
+			errstr:              "ToClassKey: invalid key type 'domain' for to class.",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewAssociation(tt.key, tt.name, tt.details, tt.fromClassKey, tt.fromMultiplicity, tt.toClassKey, tt.toMultiplicity, tt.associationClassKey, tt.umlComment)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }
 
@@ -230,18 +266,15 @@ func (suite *AssociationSuite) TestOther() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			otherKey, err := tt.obj.Other(tt.classKey)
 			if tt.errstr == "" {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tt.otherKey, otherKey)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, otherKey)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
 }
