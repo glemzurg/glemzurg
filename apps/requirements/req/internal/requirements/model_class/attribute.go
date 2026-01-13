@@ -7,6 +7,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+func validateAttributeKey(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_ATTRIBUTE {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_ATTRIBUTE, key.KeyType())
+	}
+	return nil
+}
+
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
@@ -52,13 +63,7 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPoli
 	}
 
 	err = validation.ValidateStruct(&attribute,
-		validation.Field(&attribute.Key, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if k.KeyType() != identity.KEY_TYPE_ATTRIBUTE {
-				return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_ATTRIBUTE, k.KeyType())
-			}
-			return nil
-		})),
+		validation.Field(&attribute.Key, validation.By(validateAttributeKey)),
 		validation.Field(&attribute.Name, validation.Required),
 	)
 	if err != nil {

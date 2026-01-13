@@ -14,10 +14,10 @@ import (
 type Class struct {
 	Key             identity.Key
 	Name            string
-	Details         string       // Markdown.
-	ActorKey        identity.Key // If this class is an Actor this is the key of that actor.
-	SuperclassOfKey identity.Key // If this class is part of a generalization as the superclass.
-	SubclassOfKey   identity.Key // If this class is part of a generalization as a subclass.
+	Details         string        // Markdown.
+	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
+	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
+	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Part of the data in a parsed file.
 	Attributes   []Attribute   // The attributes of a class.
@@ -28,10 +28,10 @@ type Class struct {
 	Actions      []model_state.Action
 	Transitions  []model_state.Transition
 	// Helpful data.
-	DomainKey identity.Key
+	DomainKey string
 }
 
-func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey identity.Key, umlComment string) (class Class, err error) {
+func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (class Class, err error) {
 
 	class = Class{
 		Key:             key,
@@ -142,6 +142,6 @@ func (c *Class) SetTransitions(transitions []model_state.Transition) {
 	c.Transitions = transitions
 }
 
-func (c *Class) SetDomainKey(domainKey identity.Key) {
+func (c *Class) SetDomainKey(domainKey string) {
 	c.DomainKey = domainKey
 }

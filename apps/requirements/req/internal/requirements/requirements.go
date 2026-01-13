@@ -187,7 +187,7 @@ func (r *Requirements) RegardingClasses(inClasses []model_class.Class) (generali
 	for _, class := range relevantClassLookup {
 		// Only include classes *not* in a generalization.
 		// The classes in a generalization will be drawn by the generalization code.
-		if (class.SuperclassOfKey == identity.Key{}) && (class.SubclassOfKey == identity.Key{}) {
+		if class.SuperclassOfKey == nil && class.SubclassOfKey == nil {
 			classes = append(classes, class)
 		}
 	}
@@ -275,10 +275,10 @@ func classGeneralizationsAsLookup(classLookup map[string]model_class.Class, gene
 	lookup = map[string]model_class.Generalization{}
 	for _, class := range classLookup {
 		for _, generalization := range generalizationLookup {
-			if class.SuperclassOfKey == generalization.Key {
+			if class.SuperclassOfKey != nil && *class.SuperclassOfKey == generalization.Key {
 				lookup[generalization.Key.String()] = generalization
 			}
-			if class.SubclassOfKey == generalization.Key {
+			if class.SubclassOfKey != nil && *class.SubclassOfKey == generalization.Key {
 				lookup[generalization.Key.String()] = generalization
 			}
 		}
@@ -540,7 +540,7 @@ func createKeyActorLookup(domainClasses map[string][]model_class.Class, items []
 	actorClassKeyLookup := map[string][]identity.Key{}
 	for _, classes := range domainClasses {
 		for _, class := range classes {
-			if (class.ActorKey != identity.Key{}) {
+			if class.ActorKey != nil {
 				actorKeyStr := class.ActorKey.String()
 				actorClasses := actorClassKeyLookup[actorKeyStr]
 				actorClasses = append(actorClasses, class.Key)
@@ -599,10 +599,10 @@ func createKeyGeneralizationLookup(domainClasses map[string][]model_class.Class,
 	subclassKeysOf := map[string][]identity.Key{}
 	for _, classes := range domainClasses {
 		for _, class := range classes {
-			if (class.SuperclassOfKey != identity.Key{}) {
+			if class.SuperclassOfKey != nil {
 				superclassKeyOf[class.SuperclassOfKey.String()] = class.Key
 			}
-			if (class.SubclassOfKey != identity.Key{}) {
+			if class.SubclassOfKey != nil {
 				generalizationKeyStr := class.SubclassOfKey.String()
 				subclassKeys := subclassKeysOf[generalizationKeyStr]
 				subclassKeys = append(subclassKeys, class.Key)

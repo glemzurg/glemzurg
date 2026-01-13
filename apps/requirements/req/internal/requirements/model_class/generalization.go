@@ -6,6 +6,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+func validateGeneralizationKey(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_GENERALIZATION {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_GENERALIZATION, key.KeyType())
+	}
+	return nil
+}
+
 // Generalization is how two or more things in the system build on each other (like a super type and sub type).
 type Generalization struct {
 	Key        identity.Key
@@ -31,13 +42,7 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 	}
 
 	err = validation.ValidateStruct(&generalization,
-		validation.Field(&generalization.Key, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if k.KeyType() != identity.KEY_TYPE_CLASS_GENERALIZATION {
-				return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS_GENERALIZATION, k.KeyType())
-			}
-			return nil
-		})),
+		validation.Field(&generalization.Key, validation.By(validateGeneralizationKey)),
 		validation.Field(&generalization.Name, validation.Required),
 	)
 	if err != nil {

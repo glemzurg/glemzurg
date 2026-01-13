@@ -22,16 +22,16 @@ func (suite *ClassSuite) TestNew() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	actorKey := helper.Must(identity.NewActorKey("actor1"))
-	generalizationKey := helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen1"))
+	generalizationKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
 
 	tests := []struct {
 		testName        string
 		key             identity.Key
 		name            string
 		details         string
-		actorKey        identity.Key
-		superclassOfKey identity.Key
-		subclassOfKey   identity.Key
+		actorKey        *identity.Key
+		superclassOfKey *identity.Key
+		subclassOfKey   *identity.Key
 		umlComment      string
 		obj             Class
 		errstr          string
@@ -42,17 +42,17 @@ func (suite *ClassSuite) TestNew() {
 			key:             helper.Must(identity.NewClassKey(subdomainKey, "class1")),
 			name:            "Name",
 			details:         "Details",
-			actorKey:        actorKey,
-			superclassOfKey: generalizationKey,
-			subclassOfKey:   generalizationKey,
+			actorKey:        &actorKey,
+			superclassOfKey: &generalizationKey,
+			subclassOfKey:   &generalizationKey,
 			umlComment:      "UmlComment",
 			obj: Class{
 				Key:             helper.Must(identity.NewClassKey(subdomainKey, "class1")),
 				Name:            "Name",
 				Details:         "Details",
-				ActorKey:        actorKey,
-				SuperclassOfKey: generalizationKey,
-				SubclassOfKey:   generalizationKey,
+				ActorKey:        &actorKey,
+				SuperclassOfKey: &generalizationKey,
+				SubclassOfKey:   &generalizationKey,
 				UmlComment:      "UmlComment",
 			},
 		},
@@ -61,17 +61,17 @@ func (suite *ClassSuite) TestNew() {
 			key:             helper.Must(identity.NewClassKey(subdomainKey, "class2")),
 			name:            "Name",
 			details:         "",
-			actorKey:        identity.Key{},
-			superclassOfKey: identity.Key{},
-			subclassOfKey:   identity.Key{},
+			actorKey:        nil,
+			superclassOfKey: nil,
+			subclassOfKey:   nil,
 			umlComment:      "",
 			obj: Class{
 				Key:             helper.Must(identity.NewClassKey(subdomainKey, "class2")),
 				Name:            "Name",
 				Details:         "",
-				ActorKey:        identity.Key{},
-				SuperclassOfKey: identity.Key{},
-				SubclassOfKey:   identity.Key{},
+				ActorKey:        nil,
+				SuperclassOfKey: nil,
+				SubclassOfKey:   nil,
 				UmlComment:      "",
 			},
 		},
@@ -82,9 +82,9 @@ func (suite *ClassSuite) TestNew() {
 			key:             identity.Key{},
 			name:            "Name",
 			details:         "Details",
-			actorKey:        actorKey,
-			superclassOfKey: generalizationKey,
-			subclassOfKey:   generalizationKey,
+			actorKey:        &actorKey,
+			superclassOfKey: &generalizationKey,
+			subclassOfKey:   &generalizationKey,
 			umlComment:      "UmlComment",
 			errstr:          `Key: key must be of type 'class', not ''`,
 		},
@@ -93,9 +93,9 @@ func (suite *ClassSuite) TestNew() {
 			key:             helper.Must(identity.NewClassKey(subdomainKey, "class3")),
 			name:            "",
 			details:         "Details",
-			actorKey:        actorKey,
-			superclassOfKey: generalizationKey,
-			subclassOfKey:   generalizationKey,
+			actorKey:        &actorKey,
+			superclassOfKey: &generalizationKey,
+			subclassOfKey:   &generalizationKey,
 			umlComment:      "UmlComment",
 			errstr:          `Name: cannot be blank`,
 		},

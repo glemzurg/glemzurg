@@ -36,14 +36,14 @@ func (suite *GeneralizationSuite) TestNew() {
 		// OK.
 		{
 			testName:   "ok with all fields",
-			key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen1")),
+			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1")),
 			name:       "Name",
 			details:    "Details",
 			isComplete: true,
 			isStatic:   false,
 			umlComment: "UmlComment",
 			obj: Generalization{
-				Key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen1")),
+				Key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1")),
 				Name:       "Name",
 				IsComplete: true,
 				IsStatic:   false,
@@ -53,14 +53,14 @@ func (suite *GeneralizationSuite) TestNew() {
 		},
 		{
 			testName:   "ok with minimal fields",
-			key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen2")),
+			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2")),
 			name:       "Name",
 			details:    "",
 			isComplete: false,
 			isStatic:   true,
 			umlComment: "",
 			obj: Generalization{
-				Key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen2")),
+				Key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2")),
 				Name:       "Name",
 				Details:    "",
 				IsComplete: false,
@@ -78,11 +78,11 @@ func (suite *GeneralizationSuite) TestNew() {
 			isComplete: true,
 			isStatic:   true,
 			umlComment: "UmlComment",
-			errstr:     `Key: key must be of type 'cgeneralization', not ''`,
+			errstr:     `Key: key must be of type 'generalization', not ''`,
 		},
 		{
 			testName:   "error with blank name",
-			key:        helper.Must(identity.NewClassGeneralizationKey(subdomainKey, "gen3")),
+			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen3")),
 			name:       "",
 			details:    "Details",
 			isComplete: true,
@@ -92,15 +92,18 @@ func (suite *GeneralizationSuite) TestNew() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			obj, err := NewGeneralization(tt.key, tt.name, tt.details, tt.isComplete, tt.isStatic, tt.umlComment)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				assert.Nil(t, err)
 				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 				assert.Empty(t, obj)
 			}
 		})
+		if !pass {
+			break
+		}
 	}
 }
