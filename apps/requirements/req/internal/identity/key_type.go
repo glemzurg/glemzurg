@@ -63,20 +63,20 @@ func NewUseCaseKey(subdomainKey Key, subKey string) (key Key, err error) {
 	return newKey(subdomainKey.String(), KEY_TYPE_USE_CASE, subKey)
 }
 
-func NewClassKey(domainKey Key, subKey string) (key Key, err error) {
-	// The parent must be a domain.
-	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'class' key", domainKey.KeyType())
+func NewClassKey(subdomainKey Key, subKey string) (key Key, err error) {
+	// The parent must be a subdomain.
+	if subdomainKey.KeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'class' key", subdomainKey.KeyType())
 	}
-	return newKey(domainKey.String(), KEY_TYPE_CLASS, subKey)
+	return newKey(subdomainKey.String(), KEY_TYPE_CLASS, subKey)
 }
 
-func NewGeneralizationKey(domainKey Key, subKey string) (key Key, err error) {
-	// The parent must be a domain.
-	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'generalization' key", domainKey.KeyType())
+func NewGeneralizationKey(subdomainKey Key, subKey string) (key Key, err error) {
+	// The parent must be a subdomain.
+	if subdomainKey.KeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'generalization' key", subdomainKey.KeyType())
 	}
-	return newKey(domainKey.String(), KEY_TYPE_GENERALIZATION, subKey)
+	return newKey(subdomainKey.String(), KEY_TYPE_GENERALIZATION, subKey)
 }
 
 func NewScenarioKey(useCaseKey Key, subKey string) (key Key, err error) {

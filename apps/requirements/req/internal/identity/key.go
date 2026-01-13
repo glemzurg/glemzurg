@@ -93,6 +93,11 @@ func (k *Key) KeyType() string {
 	return k.keyType
 }
 
+// IsEmpty returns true if the key is empty (zero value).
+func (k Key) IsEmpty() bool {
+	return k.keyType == "" && k.subKey == "" && k.parentKey == ""
+}
+
 func ParseKey(s string) (key Key, err error) {
 	if s == "" {
 		return Key{}, errors.New("invalid key format")
