@@ -31,13 +31,3 @@ func NewGuard(key, name, details string) (guard Guard, err error) {
 
 	return guard, nil
 }
-
-func CreateKeyGuardLookup(byCategory map[string][]Guard) (lookup map[string]Guard) {
-	lookup = map[string]Guard{}
-	for _, items := range byCategory {
-		for _, item := range items {
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
-}

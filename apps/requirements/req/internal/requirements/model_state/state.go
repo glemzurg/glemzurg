@@ -45,17 +45,3 @@ func (s *State) SetActions(actions []StateAction) {
 
 	s.Actions = actions
 }
-
-func CreateKeyStateLookup(stateStateActions map[string][]StateAction, byCategory map[string][]State) (lookup map[string]State) {
-
-	lookup = map[string]State{}
-	for _, items := range byCategory {
-		for _, item := range items {
-
-			item.SetActions(stateStateActions[item.Key])
-
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
-}

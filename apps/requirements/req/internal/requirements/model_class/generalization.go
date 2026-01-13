@@ -6,6 +6,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+func validateGeneralizationKey(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_GENERALIZATION {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_GENERALIZATION, key.KeyType())
+	}
+	return nil
+}
+
 // Generalization is how two or more things in the system build on each other (like a super type and sub type).
 type Generalization struct {
 	Key        identity.Key
@@ -19,7 +30,7 @@ type Generalization struct {
 	SubclassKeys  []identity.Key // If this generalization is classes, the subclasses for it.
 }
 
-func NewGeneralization(key, name, details string, isComplete, isStatic bool, umlComment string) (generalization Generalization, err error) {
+func NewGeneralization(key identity.Key, name, details string, isComplete, isStatic bool, umlComment string) (generalization Generalization, err error) {
 
 	generalization = Generalization{
 		Key:        key,
@@ -31,7 +42,7 @@ func NewGeneralization(key, name, details string, isComplete, isStatic bool, uml
 	}
 
 	err = validation.ValidateStruct(&generalization,
-		validation.Field(&generalization.Key, validation.Required),
+		validation.Field(&generalization.Key, validation.By(validateGeneralizationKey)),
 		validation.Field(&generalization.Name, validation.Required),
 	)
 	if err != nil {
@@ -41,35 +52,7 @@ func NewGeneralization(key, name, details string, isComplete, isStatic bool, uml
 	return generalization, nil
 }
 
-func (g *Generalization) SetSuperSubclassKeys(superclassKey string, subclassKeys []string) {
+func (g *Generalization) SetSuperSubclassKeys(superclassKey identity.Key, subclassKeys []identity.Key) {
 	g.SuperclassKey = superclassKey
 	g.SubclassKeys = subclassKeys
-}
-
-func CreateKeyGeneralizationLookup(domainClasses map[string][]Class, items []Generalization) (lookup map[string]Generalization) {
-
-	// Classes that are part of generalizations.
-	superclassKeyOf := map[string]string{}
-	subclassKeysOf := map[string][]string{}
-	for _, classes := range domainClasses {
-		for _, class := range classes {
-			if class.SuperclassOfKey != "" {
-				superclassKeyOf[class.SuperclassOfKey] = class.Key
-			}
-			if class.SubclassOfKey != "" {
-				subclassKeys := subclassKeysOf[class.SubclassOfKey]
-				subclassKeys = append(subclassKeys, class.Key)
-				subclassKeysOf[class.SubclassOfKey] = subclassKeys
-			}
-		}
-	}
-
-	lookup = map[string]Generalization{}
-	for _, item := range items {
-
-		item.SetSuperSubclassKeys(superclassKeyOf[item.Key], subclassKeysOf[item.Key])
-
-		lookup[item.Key] = item
-	}
-	return lookup
 }

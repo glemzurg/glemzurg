@@ -6,6 +6,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+func validateClassAssociationKey(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_CLASS_ASSOCIATION {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS_ASSOCIATION, key.KeyType())
+	}
+	return nil
+}
+
+func validateClassKeyForAssociation(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS, key.KeyType())
+	}
+	return nil
+}
+
 // Association is how two classes relate to each other.
 type Association struct {
 	Key                 identity.Key
@@ -19,7 +41,7 @@ type Association struct {
 	UmlComment          string
 }
 
-func NewAssociation(key, name, details, fromClassKey string, fromMultiplicity Multiplicity, toClassKey string, toMultiplicity Multiplicity, associationClassKey, umlComment string) (association Association, err error) {
+func NewAssociation(key identity.Key, name, details string, fromClassKey identity.Key, fromMultiplicity Multiplicity, toClassKey identity.Key, toMultiplicity Multiplicity, associationClassKey identity.Key, umlComment string) (association Association, err error) {
 
 	association = Association{
 		Key:                 key,
@@ -34,10 +56,10 @@ func NewAssociation(key, name, details, fromClassKey string, fromMultiplicity Mu
 	}
 
 	err = validation.ValidateStruct(&association,
-		validation.Field(&association.Key, validation.Required),
+		validation.Field(&association.Key, validation.By(validateClassAssociationKey)),
 		validation.Field(&association.Name, validation.Required),
-		validation.Field(&association.FromClassKey, validation.Required),
-		validation.Field(&association.ToClassKey, validation.Required),
+		validation.Field(&association.FromClassKey, validation.By(validateClassKeyForAssociation)),
+		validation.Field(&association.ToClassKey, validation.By(validateClassKeyForAssociation)),
 	)
 	if err != nil {
 		return Association{}, errors.WithStack(err)
@@ -46,24 +68,16 @@ func NewAssociation(key, name, details, fromClassKey string, fromMultiplicity Mu
 	return association, nil
 }
 
-func (a *Association) Includes(classKey string) (included bool) {
+func (a *Association) Includes(classKey identity.Key) (included bool) {
 	return a.FromClassKey == classKey || a.ToClassKey == classKey || a.AssociationClassKey == classKey
 }
 
-func (a *Association) Other(classKey string) (otherKey string, err error) {
+func (a *Association) Other(classKey identity.Key) (otherKey identity.Key, err error) {
 	if !a.Includes(classKey) {
-		return "", errors.WithStack(errors.Errorf(`association does not include class: '%s'`, classKey))
+		return identity.Key{}, errors.WithStack(errors.Errorf(`association does not include class: '%s'`, classKey.String()))
 	}
 	if a.FromClassKey != classKey {
 		return a.FromClassKey, nil
 	}
 	return a.ToClassKey, nil
-}
-
-func CreateKeyAssociationLookup(items []Association) (lookup map[string]Association) {
-	lookup = map[string]Association{}
-	for _, item := range items {
-		lookup[item.Key] = item
-	}
-	return lookup
 }

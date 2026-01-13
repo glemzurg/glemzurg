@@ -1,9 +1,10 @@
 package model_class
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,86 +18,101 @@ type ClassSuite struct {
 }
 
 func (suite *ClassSuite) TestNew() {
+
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	actorKey := helper.Must(identity.NewActorKey("actor1"))
+	generalizationKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+
 	tests := []struct {
-		key             string
+		testName        string
+		key             identity.Key
 		name            string
 		details         string
-		actorKey        string
-		superclassOfKey string
-		subclassOfKey   string
+		actorKey        identity.Key
+		superclassOfKey identity.Key
+		subclassOfKey   identity.Key
 		umlComment      string
 		obj             Class
 		errstr          string
 	}{
 		// OK.
 		{
-			key:             "Key",
+			testName:        "ok with all fields",
+			key:             helper.Must(identity.NewClassKey(subdomainKey, "class1")),
 			name:            "Name",
 			details:         "Details",
-			actorKey:        "ActorKey",
-			superclassOfKey: "SuperclassOfKey",
-			subclassOfKey:   "SubclassOfKey",
+			actorKey:        actorKey,
+			superclassOfKey: generalizationKey,
+			subclassOfKey:   generalizationKey,
 			umlComment:      "UmlComment",
 			obj: Class{
-				Key:             "Key",
+				Key:             helper.Must(identity.NewClassKey(subdomainKey, "class1")),
 				Name:            "Name",
 				Details:         "Details",
-				ActorKey:        "ActorKey",
-				SuperclassOfKey: "SuperclassOfKey",
-				SubclassOfKey:   "SubclassOfKey",
+				ActorKey:        actorKey,
+				SuperclassOfKey: generalizationKey,
+				SubclassOfKey:   generalizationKey,
 				UmlComment:      "UmlComment",
 			},
 		},
 		{
-			key:             "Key",
+			testName:        "ok with minimal fields",
+			key:             helper.Must(identity.NewClassKey(subdomainKey, "class2")),
 			name:            "Name",
 			details:         "",
-			actorKey:        "",
-			superclassOfKey: "",
-			subclassOfKey:   "",
+			actorKey:        identity.Key{},
+			superclassOfKey: identity.Key{},
+			subclassOfKey:   identity.Key{},
 			umlComment:      "",
 			obj: Class{
-				Key:             "Key",
+				Key:             helper.Must(identity.NewClassKey(subdomainKey, "class2")),
 				Name:            "Name",
 				Details:         "",
-				ActorKey:        "",
-				SuperclassOfKey: "",
-				SubclassOfKey:   "",
+				ActorKey:        identity.Key{},
+				SuperclassOfKey: identity.Key{},
+				SubclassOfKey:   identity.Key{},
 				UmlComment:      "",
 			},
 		},
 
 		// Error states.
 		{
-			key:             "",
+			testName:        "error with blank key",
+			key:             identity.Key{},
 			name:            "Name",
 			details:         "Details",
-			actorKey:        "ActorKey",
-			superclassOfKey: "SuperclassOfKey",
-			subclassOfKey:   "SubclassOfKey",
+			actorKey:        actorKey,
+			superclassOfKey: generalizationKey,
+			subclassOfKey:   generalizationKey,
 			umlComment:      "UmlComment",
-			errstr:          `Key: cannot be blank`,
+			errstr:          `Key: key must be of type 'class', not ''`,
 		},
 		{
-			key:             "Key",
+			testName:        "error with blank name",
+			key:             helper.Must(identity.NewClassKey(subdomainKey, "class3")),
 			name:            "",
 			details:         "Details",
-			actorKey:        "ActorKey",
-			superclassOfKey: "SuperclassOfKey",
-			subclassOfKey:   "SubclassOfKey",
+			actorKey:        actorKey,
+			superclassOfKey: generalizationKey,
+			subclassOfKey:   generalizationKey,
 			umlComment:      "UmlComment",
 			errstr:          `Name: cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewClass(test.key, test.name, test.details, test.actorKey, test.superclassOfKey, test.subclassOfKey, test.umlComment)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewClass(tt.key, tt.name, tt.details, tt.actorKey, tt.superclassOfKey, tt.subclassOfKey, tt.umlComment)
+			if tt.errstr == "" {
+				assert.Nil(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }

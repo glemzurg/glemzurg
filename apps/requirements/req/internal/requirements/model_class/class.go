@@ -10,6 +10,17 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
 )
 
+func validateClassKey(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_CLASS, key.KeyType())
+	}
+	return nil
+}
+
 // Class is a thing in the system.
 type Class struct {
 	Key             identity.Key
@@ -31,7 +42,7 @@ type Class struct {
 	DomainKey string
 }
 
-func NewClass(key, name, details, actorKey, superclassOfKey, subclassOfKey, umlComment string) (class Class, err error) {
+func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey identity.Key, umlComment string) (class Class, err error) {
 
 	class = Class{
 		Key:             key,
@@ -44,7 +55,7 @@ func NewClass(key, name, details, actorKey, superclassOfKey, subclassOfKey, umlC
 	}
 
 	err = validation.ValidateStruct(&class,
-		validation.Field(&class.Key, validation.Required),
+		validation.Field(&class.Key, validation.By(validateClassKey)),
 		validation.Field(&class.Name, validation.Required),
 	)
 	if err != nil {
@@ -136,34 +147,6 @@ func (c *Class) SetTransitions(transitions []model_state.Transition) {
 	c.Transitions = transitions
 }
 
-func (c *Class) SetDomainKey(domainKey string) {
+func (c *Class) SetDomainKey(domainKey identity.Key) {
 	c.DomainKey = domainKey
-}
-
-func CreateKeyClassLookup(
-	classAttributes map[string][]Attribute,
-	classStates map[string][]model_state.State,
-	classEvents map[string][]model_state.Event,
-	classGuards map[string][]model_state.Guard,
-	classActions map[string][]model_state.Action,
-	classTransitions map[string][]model_state.Transition,
-	byCategory map[string][]Class,
-) (lookup map[string]Class) {
-
-	lookup = map[string]Class{}
-	for domainKey, items := range byCategory {
-		for _, item := range items {
-
-			item.SetDomainKey(domainKey)
-			item.SetAttributes(classAttributes[item.Key])
-			item.SetStates(classStates[item.Key])
-			item.SetEvents(classEvents[item.Key])
-			item.SetGuards(classGuards[item.Key])
-			item.SetActions(classActions[item.Key])
-			item.SetTransitions(classTransitions[item.Key])
-
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
 }

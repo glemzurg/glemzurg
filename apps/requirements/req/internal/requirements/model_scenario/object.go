@@ -82,18 +82,3 @@ func (so *Object) GetName() (name string) {
 	}
 	return name
 }
-
-func CreateKeyObjectLookup(
-	byScenario map[string][]Object,
-	classLookup map[string]model_class.Class,
-) (lookup map[string]Object) {
-
-	lookup = map[string]Object{}
-	for _, items := range byScenario {
-		for _, item := range items {
-			item.SetClass(classLookup[item.ClassKey])
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
-}

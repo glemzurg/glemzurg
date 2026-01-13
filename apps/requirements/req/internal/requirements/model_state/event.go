@@ -32,13 +32,3 @@ func NewEvent(key, name, details string, parameters []EventParameter) (event Eve
 
 	return event, nil
 }
-
-func CreateKeyEventLookup(byCategory map[string][]Event) (lookup map[string]Event) {
-	lookup = map[string]Event{}
-	for _, items := range byCategory {
-		for _, item := range items {
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
-}

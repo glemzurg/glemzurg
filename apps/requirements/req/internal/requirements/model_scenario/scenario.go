@@ -47,21 +47,6 @@ func (sc *Scenario) SetObjects(objects []Object) {
 	sc.Objects = objects
 }
 
-func CreateKeyScenarioLookup(
-	byUseCase map[string][]Scenario,
-	objectsByScenario map[string][]Object,
-) (lookup map[string]Scenario) {
-
-	lookup = map[string]Scenario{}
-	for _, items := range byUseCase {
-		for _, item := range items {
-			item.SetObjects(objectsByScenario[item.Key])
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
-}
-
 func PopulateScenarioStepReferences(
 	scenarios map[string]Scenario,
 	objects map[string]Object,

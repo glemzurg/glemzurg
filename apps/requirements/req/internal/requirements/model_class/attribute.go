@@ -7,6 +7,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+func validateAttributeKey(value interface{}) error {
+	key, ok := value.(identity.Key)
+	if !ok {
+		return errors.New("invalid key type")
+	}
+	if key.KeyType() != identity.KEY_TYPE_ATTRIBUTE {
+		return errors.Errorf("key must be of type '%s', not '%s'", identity.KEY_TYPE_ATTRIBUTE, key.KeyType())
+	}
+	return nil
+}
+
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
@@ -21,7 +32,7 @@ type Attribute struct {
 	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
-func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
+func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
 
 	attribute = Attribute{
 		Key:              key,
@@ -38,7 +49,7 @@ func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nu
 	if attribute.DataTypeRules != "" {
 
 		// Use the attribute key as the key of this data type.
-		dataTypeKey := attribute.Key
+		dataTypeKey := attribute.Key.String()
 		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules)
 
 		// Only an error if it is not a parse error.
@@ -52,7 +63,7 @@ func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nu
 	}
 
 	err = validation.ValidateStruct(&attribute,
-		validation.Field(&attribute.Key, validation.Required),
+		validation.Field(&attribute.Key, validation.By(validateAttributeKey)),
 		validation.Field(&attribute.Name, validation.Required),
 	)
 	if err != nil {
@@ -60,14 +71,4 @@ func NewAttribute(key, name, details, dataTypeRules, derivationPolicy string, nu
 	}
 
 	return attribute, nil
-}
-
-func CreateKeyAttributeLookup(byCategory map[string][]Attribute) (lookup map[string]Attribute) {
-	lookup = map[string]Attribute{}
-	for _, items := range byCategory {
-		for _, item := range items {
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
 }

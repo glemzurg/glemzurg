@@ -56,13 +56,3 @@ func lessThanStateAction(a, b StateAction) (less bool) {
 	// Sort by key next.
 	return a.Key < b.Key
 }
-
-func CreateKeyStateActionLookup(byCategory map[string][]StateAction) (lookup map[string]StateAction) {
-	lookup = map[string]StateAction{}
-	for _, items := range byCategory {
-		for _, item := range items {
-			lookup[item.Key] = item
-		}
-	}
-	return lookup
-}

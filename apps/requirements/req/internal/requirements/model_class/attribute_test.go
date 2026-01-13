@@ -1,9 +1,10 @@
 package model_class
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,8 +19,15 @@ type AttributeSuite struct {
 }
 
 func (suite *AttributeSuite) TestNew() {
+
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
+
 	tests := []struct {
-		key              string
+		testName         string
+		key              identity.Key
 		name             string
 		details          string
 		dataTypeRules    string
@@ -32,7 +40,8 @@ func (suite *AttributeSuite) TestNew() {
 	}{
 		// OK.
 		{
-			key:              "Key",
+			testName:         "ok with all fields",
+			key:              helper.Must(identity.NewAttributeKey(classKey, "attr1")),
 			name:             "Name",
 			details:          "Details",
 			dataTypeRules:    "DataTypeRules",
@@ -41,7 +50,7 @@ func (suite *AttributeSuite) TestNew() {
 			umlComment:       "UmlComment",
 			indexNums:        []uint{1, 2},
 			obj: Attribute{
-				Key:              "Key",
+				Key:              helper.Must(identity.NewAttributeKey(classKey, "attr1")),
 				Name:             "Name",
 				Details:          "Details",
 				DataTypeRules:    "DataTypeRules",
@@ -52,7 +61,8 @@ func (suite *AttributeSuite) TestNew() {
 			},
 		},
 		{
-			key:              "Key",
+			testName:         "ok with minimal fields",
+			key:              helper.Must(identity.NewAttributeKey(classKey, "attr2")),
 			name:             "Name",
 			details:          "",
 			dataTypeRules:    "",
@@ -61,7 +71,7 @@ func (suite *AttributeSuite) TestNew() {
 			umlComment:       "",
 			indexNums:        nil,
 			obj: Attribute{
-				Key:              "Key",
+				Key:              helper.Must(identity.NewAttributeKey(classKey, "attr2")),
 				Name:             "Name",
 				Details:          "",
 				DataTypeRules:    "",
@@ -72,7 +82,8 @@ func (suite *AttributeSuite) TestNew() {
 			},
 		},
 		{
-			key:              "KeyParsed",
+			testName:         "ok with parsed data type",
+			key:              attrParsedKey,
 			name:             "NameParsed",
 			details:          "Details",
 			dataTypeRules:    "unconstrained",
@@ -81,7 +92,7 @@ func (suite *AttributeSuite) TestNew() {
 			umlComment:       "UmlComment",
 			indexNums:        []uint{1, 2},
 			obj: Attribute{
-				Key:              "KeyParsed",
+				Key:              attrParsedKey,
 				Name:             "NameParsed",
 				Details:          "Details",
 				DataTypeRules:    "unconstrained",
@@ -90,7 +101,7 @@ func (suite *AttributeSuite) TestNew() {
 				UmlComment:       "UmlComment",
 				IndexNums:        []uint{1, 2},
 				DataType: &model_data_type.DataType{
-					Key:            "KeyParsed",
+					Key:            attrParsedKey.String(),
 					CollectionType: "atomic",
 					Atomic: &model_data_type.Atomic{
 						ConstraintType: "unconstrained",
@@ -101,7 +112,8 @@ func (suite *AttributeSuite) TestNew() {
 
 		// Error states.
 		{
-			key:              "",
+			testName:         "error with blank key",
+			key:              identity.Key{},
 			name:             "Name",
 			details:          "Details",
 			dataTypeRules:    "DataTypeRules",
@@ -109,10 +121,11 @@ func (suite *AttributeSuite) TestNew() {
 			nullable:         true,
 			umlComment:       "UmlComment",
 			indexNums:        []uint{1, 2},
-			errstr:           `Key: cannot be blank`,
+			errstr:           `Key: key must be of type 'attribute', not ''`,
 		},
 		{
-			key:              "Key",
+			testName:         "error with blank name",
+			key:              helper.Must(identity.NewAttributeKey(classKey, "attr3")),
 			name:             "",
 			details:          "Details",
 			dataTypeRules:    "DataTypeRules",
@@ -123,15 +136,19 @@ func (suite *AttributeSuite) TestNew() {
 			errstr:           `Name: cannot be blank`,
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewAttribute(test.key, test.name, test.details, test.dataTypeRules, test.derivationPolicy, test.nullable, test.umlComment, test.indexNums)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			obj, err := NewAttribute(tt.key, tt.name, tt.details, tt.dataTypeRules, tt.derivationPolicy, tt.nullable, tt.umlComment, tt.indexNums)
+			if tt.errstr == "" {
+				assert.Nil(t, err)
+				assert.Equal(t, tt.obj, obj)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Empty(t, obj)
+			}
+		})
+		if !pass {
+			break
 		}
 	}
 }
