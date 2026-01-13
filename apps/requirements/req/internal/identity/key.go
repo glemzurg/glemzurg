@@ -49,9 +49,13 @@ func (k *Key) Validate() error {
 			KEY_TYPE_STATE,
 			KEY_TYPE_EVENT,
 			KEY_TYPE_GUARD,
+			KEY_TYPE_ACTION,
+			KEY_TYPE_TRANSITION,
 			KEY_TYPE_GENERALIZATION,
 			KEY_TYPE_SCENARIO,
 			KEY_TYPE_ACTOR,
+			KEY_TYPE_CLASS_ASSOCIATION,
+			KEY_TYPE_ATTRIBUTE,
 		)),
 		validation.Field(&k.subKey, validation.Required),
 		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
