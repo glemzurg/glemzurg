@@ -51,6 +51,58 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 			}
 			return nil
 		})),
+		validation.Field(&transition.FromStateKey, validation.By(func(value interface{}) error {
+			k := value.(*identity.Key)
+			if k == nil {
+				return nil
+			}
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_STATE {
+				return errors.Errorf("invalid key type '%s' for from state", k.KeyType())
+			}
+			return nil
+		})),
+		validation.Field(&transition.ToStateKey, validation.By(func(value interface{}) error {
+			k := value.(*identity.Key)
+			if k == nil {
+				return nil
+			}
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_STATE {
+				return errors.Errorf("invalid key type '%s' for to state", k.KeyType())
+			}
+			return nil
+		})),
+		validation.Field(&transition.GuardKey, validation.By(func(value interface{}) error {
+			k := value.(*identity.Key)
+			if k == nil {
+				return nil
+			}
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_GUARD {
+				return errors.Errorf("invalid key type '%s' for guard", k.KeyType())
+			}
+			return nil
+		})),
+		validation.Field(&transition.ActionKey, validation.By(func(value interface{}) error {
+			k := value.(*identity.Key)
+			if k == nil {
+				return nil
+			}
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_ACTION {
+				return errors.Errorf("invalid key type '%s' for action", k.KeyType())
+			}
+			return nil
+		})),
 	)
 	if err != nil {
 		return Transition{}, errors.WithStack(err)

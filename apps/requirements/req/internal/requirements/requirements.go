@@ -25,8 +25,8 @@ type Requirements struct {
 	Subdomains         map[identity.Key][]model_domain.Subdomain // All the subdomains in a domain.
 	DomainAssociations []model_domain.Association
 	// Classes.
-	Classes      map[string][]model_class.Class     // All the classes in a subdomain.
-	Attributes   map[string][]model_class.Attribute // All the attributes in a class.
+	Classes      map[identity.Key][]model_class.Class     // All the classes in a subdomain.
+	Attributes   map[identity.Key][]model_class.Attribute // All the attributes in a class.
 	Associations []model_class.Association
 	// Class States.
 	States       map[identity.Key][]model_state.State       // All the states in a class.
@@ -328,7 +328,7 @@ func (r *Requirements) ToTree() Model {
 	tree := r.Model
 
 	// Build class to subdomain map
-	classToSubdomain := make(map[string]string)
+	classToSubdomain := make(map[string]identity.Key)
 	for subdomainKey, classes := range r.Classes {
 		for _, class := range classes {
 			classToSubdomain[class.Key.String()] = subdomainKey
@@ -343,14 +343,13 @@ func (r *Requirements) ToTree() Model {
 		// Populate subdomains
 		for j := range domain.Subdomains {
 			subdomain := &domain.Subdomains[j]
-			subdomain.Classes = r.Classes[subdomain.Key.String()]
+			subdomain.Classes = r.Classes[subdomain.Key]
 			subdomain.UseCases = r.UseCases[subdomain.Key]
 
 			// Populate classes
 			for k := range subdomain.Classes {
 				class := &subdomain.Classes[k]
-				classKeyStr := class.Key.String()
-				class.Attributes = r.Attributes[classKeyStr]
+				class.Attributes = r.Attributes[class.Key]
 				class.States = r.States[class.Key]
 				class.Events = r.Events[class.Key]
 				class.Guards = r.Guards[class.Key]
@@ -381,11 +380,11 @@ func (r *Requirements) ToTree() Model {
 
 	// Group generalizations by subdomain
 	for _, g := range r.Generalizations {
-		subdomainKey := classToSubdomain[g.SuperclassKey.String()]
-		if subdomainKey != "" {
+		subdomainKey, found := classToSubdomain[g.SuperclassKey.String()]
+		if found {
 			for i := range tree.Domains {
 				for j := range tree.Domains[i].Subdomains {
-					if tree.Domains[i].Subdomains[j].Key.String() == subdomainKey {
+					if tree.Domains[i].Subdomains[j].Key == subdomainKey {
 						tree.Domains[i].Subdomains[j].Generalizations = append(tree.Domains[i].Subdomains[j].Generalizations, g)
 					}
 				}
@@ -395,12 +394,12 @@ func (r *Requirements) ToTree() Model {
 
 	// Group associations by subdomain or model
 	for _, association := range r.Associations {
-		fromSubdomain := classToSubdomain[association.FromClassKey.String()]
-		toSubdomain := classToSubdomain[association.ToClassKey.String()]
-		if fromSubdomain == toSubdomain && fromSubdomain != "" {
+		fromSubdomain, fromFound := classToSubdomain[association.FromClassKey.String()]
+		toSubdomain, toFound := classToSubdomain[association.ToClassKey.String()]
+		if fromFound && toFound && fromSubdomain == toSubdomain {
 			for i := range tree.Domains {
 				for j := range tree.Domains[i].Subdomains {
-					if tree.Domains[i].Subdomains[j].Key.String() == fromSubdomain {
+					if tree.Domains[i].Subdomains[j].Key == fromSubdomain {
 						tree.Domains[i].Subdomains[j].Associations = append(tree.Domains[i].Subdomains[j].Associations, association)
 					}
 				}
@@ -417,8 +416,8 @@ func (r *Requirements) ToTree() Model {
 func (r *Requirements) FromTree(tree Model) {
 	// Clear the maps
 	r.Subdomains = make(map[identity.Key][]model_domain.Subdomain)
-	r.Classes = make(map[string][]model_class.Class)
-	r.Attributes = make(map[string][]model_class.Attribute)
+	r.Classes = make(map[identity.Key][]model_class.Class)
+	r.Attributes = make(map[identity.Key][]model_class.Attribute)
 	r.States = make(map[identity.Key][]model_state.State)
 	r.Events = make(map[identity.Key][]model_state.Event)
 	r.Guards = make(map[identity.Key][]model_state.Guard)
@@ -435,12 +434,11 @@ func (r *Requirements) FromTree(tree Model) {
 		r.Subdomains[domain.Key] = domain.Subdomains
 
 		for _, subdomain := range domain.Subdomains {
-			r.Classes[subdomain.Key.String()] = subdomain.Classes
+			r.Classes[subdomain.Key] = subdomain.Classes
 			r.UseCases[subdomain.Key] = subdomain.UseCases
 
 			for _, class := range subdomain.Classes {
-				classKeyStr := class.Key.String()
-				r.Attributes[classKeyStr] = class.Attributes
+				r.Attributes[class.Key] = class.Attributes
 				r.States[class.Key] = class.States
 				r.Events[class.Key] = class.Events
 				r.Guards[class.Key] = class.Guards
@@ -501,12 +499,12 @@ func (r *Requirements) FromTree(tree Model) {
 	}
 }
 
-func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainUseCases map[identity.Key][]model_use_case.UseCase, items []model_domain.Domain) (lookup map[string]model_domain.Domain) {
+func createKeyDomainLookup(domainClasses map[identity.Key][]model_class.Class, domainUseCases map[identity.Key][]model_use_case.UseCase, items []model_domain.Domain) (lookup map[string]model_domain.Domain) {
 
 	lookup = map[string]model_domain.Domain{}
 	for _, item := range items {
 
-		item.Classes = domainClasses[item.Key.String()]
+		item.Classes = domainClasses[item.Key]
 		item.UseCases = domainUseCases[item.Key]
 
 		lookup[item.Key.String()] = item
@@ -534,7 +532,7 @@ func createKeyUseCaseLookup(
 	return lookup
 }
 
-func createKeyActorLookup(domainClasses map[string][]model_class.Class, items []model_actor.Actor) (lookup map[string]model_actor.Actor) {
+func createKeyActorLookup(domainClasses map[identity.Key][]model_class.Class, items []model_actor.Actor) (lookup map[string]model_actor.Actor) {
 
 	// All the classes that are actors.
 	actorClassKeyLookup := map[string][]identity.Key{}
@@ -564,13 +562,13 @@ func createKeyActorLookup(domainClasses map[string][]model_class.Class, items []
 }
 
 func createKeyClassLookup(
-	classAttributes map[string][]model_class.Attribute,
+	classAttributes map[identity.Key][]model_class.Attribute,
 	classStates map[identity.Key][]model_state.State,
 	classEvents map[identity.Key][]model_state.Event,
 	classGuards map[identity.Key][]model_state.Guard,
 	classActions map[identity.Key][]model_state.Action,
 	classTransitions map[identity.Key][]model_state.Transition,
-	byCategory map[string][]model_class.Class,
+	byCategory map[identity.Key][]model_class.Class,
 ) (lookup map[string]model_class.Class) {
 
 	lookup = map[string]model_class.Class{}
@@ -578,8 +576,8 @@ func createKeyClassLookup(
 		for _, item := range items {
 
 			itemKeyStr := item.Key.String()
-			item.SetDomainKey(domainKey)
-			item.SetAttributes(classAttributes[itemKeyStr])
+			item.SetDomainKey(domainKey.String())
+			item.SetAttributes(classAttributes[item.Key])
 			item.SetStates(classStates[item.Key])
 			item.SetEvents(classEvents[item.Key])
 			item.SetGuards(classGuards[item.Key])
@@ -592,7 +590,7 @@ func createKeyClassLookup(
 	return lookup
 }
 
-func createKeyGeneralizationLookup(domainClasses map[string][]model_class.Class, items []model_class.Generalization) (lookup map[string]model_class.Generalization) {
+func createKeyGeneralizationLookup(domainClasses map[identity.Key][]model_class.Class, items []model_class.Generalization) (lookup map[string]model_class.Generalization) {
 
 	// Classes that are part of generalizations.
 	superclassKeyOf := map[string]identity.Key{}
@@ -622,7 +620,7 @@ func createKeyGeneralizationLookup(domainClasses map[string][]model_class.Class,
 	return lookup
 }
 
-func createKeyAttributeLookup(byCategory map[string][]model_class.Attribute) (lookup map[string]model_class.Attribute) {
+func createKeyAttributeLookup(byCategory map[identity.Key][]model_class.Attribute) (lookup map[string]model_class.Attribute) {
 	lookup = map[string]model_class.Attribute{}
 	for _, items := range byCategory {
 		for _, item := range items {
