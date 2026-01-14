@@ -39,8 +39,8 @@ type Requirements struct {
 	UseCases      map[identity.Key][]model_use_case.UseCase              // All the use cases in a subdomain.
 	UseCaseActors map[identity.Key]map[identity.Key]model_use_case.Actor // All the use cases actors.
 	// Scenarios.
-	Scenarios map[string][]model_scenario.Scenario // All scenarios in a use case.
-	Objects   map[string][]model_scenario.Object   // All scenario objects in a scenario.
+	Scenarios map[identity.Key][]model_scenario.Scenario // All scenarios in a use case.
+	Objects   map[identity.Key][]model_scenario.Object   // All scenario objects in a scenario.
 	// Convenience structures.
 	generalizationLookup map[string]model_class.Generalization
 	actorLookup          map[string]model_actor.Actor
@@ -368,12 +368,12 @@ func (r *Requirements) ToTree() Model {
 			for k := range subdomain.UseCases {
 				useCase := &subdomain.UseCases[k]
 				useCase.Actors = r.UseCaseActors[useCase.Key]
-				useCase.Scenarios = r.Scenarios[useCase.Key.String()]
+				useCase.Scenarios = r.Scenarios[useCase.Key]
 
 				// Populate scenarios with objects
 				for l := range useCase.Scenarios {
 					scenario := &useCase.Scenarios[l]
-					scenario.Objects = r.Objects[scenario.Key.String()]
+					scenario.Objects = r.Objects[scenario.Key]
 				}
 			}
 		}
@@ -427,8 +427,8 @@ func (r *Requirements) FromTree(tree Model) {
 	r.StateActions = make(map[string][]model_state.StateAction)
 	r.UseCases = make(map[identity.Key][]model_use_case.UseCase)
 	r.UseCaseActors = make(map[identity.Key]map[identity.Key]model_use_case.Actor)
-	r.Scenarios = make(map[string][]model_scenario.Scenario)
-	r.Objects = make(map[string][]model_scenario.Object)
+	r.Scenarios = make(map[identity.Key][]model_scenario.Scenario)
+	r.Objects = make(map[identity.Key][]model_scenario.Object)
 
 	// Populate from tree
 	for _, domain := range tree.Domains {
@@ -454,10 +454,10 @@ func (r *Requirements) FromTree(tree Model) {
 
 			for _, useCase := range subdomain.UseCases {
 				r.UseCaseActors[useCase.Key] = useCase.Actors
-				r.Scenarios[useCase.Key.String()] = useCase.Scenarios
+				r.Scenarios[useCase.Key] = useCase.Scenarios
 
 				for _, scenario := range useCase.Scenarios {
-					r.Objects[scenario.Key.String()] = scenario.Objects
+					r.Objects[scenario.Key] = scenario.Objects
 				}
 			}
 		}
@@ -517,7 +517,7 @@ func createKeyDomainLookup(domainClasses map[string][]model_class.Class, domainU
 func createKeyUseCaseLookup(
 	byCategory map[identity.Key][]model_use_case.UseCase,
 	actors map[identity.Key]map[identity.Key]model_use_case.Actor,
-	scenarios map[string][]model_scenario.Scenario,
+	scenarios map[identity.Key][]model_scenario.Scenario,
 ) (lookup map[string]model_use_case.UseCase) {
 
 	lookup = map[string]model_use_case.UseCase{}
@@ -526,7 +526,7 @@ func createKeyUseCaseLookup(
 
 			item.SetDomainKey(subdomainKey)
 			item.SetActors(actors[item.Key])
-			item.SetScenarios(scenarios[item.Key.String()])
+			item.SetScenarios(scenarios[item.Key])
 
 			lookup[item.Key.String()] = item
 		}
@@ -733,7 +733,7 @@ func createKeyTransitionLookup(byCategory map[string][]model_state.Transition) (
 }
 
 func createKeyObjectLookup(
-	byScenario map[string][]model_scenario.Object,
+	byScenario map[identity.Key][]model_scenario.Object,
 	classLookup map[string]model_class.Class,
 ) (lookup map[string]model_scenario.Object) {
 
@@ -748,14 +748,14 @@ func createKeyObjectLookup(
 }
 
 func createKeyScenarioLookup(
-	byUseCase map[string][]model_scenario.Scenario,
-	objectsByScenario map[string][]model_scenario.Object,
+	byUseCase map[identity.Key][]model_scenario.Scenario,
+	objectsByScenario map[identity.Key][]model_scenario.Object,
 ) (lookup map[string]model_scenario.Scenario) {
 
 	lookup = map[string]model_scenario.Scenario{}
 	for _, items := range byUseCase {
 		for _, item := range items {
-			item.SetObjects(objectsByScenario[item.Key.String()])
+			item.SetObjects(objectsByScenario[item.Key])
 			lookup[item.Key.String()] = item
 		}
 	}
