@@ -4,6 +4,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 )
 
@@ -15,18 +16,18 @@ const (
 
 // Object is an object that participates in a scenario.
 type Object struct {
-	Key          string
+	Key          identity.Key
 	ObjectNumber uint   // Order in the scenario diagram.
 	Name         string // The name or id of the object.
 	NameStyle    string // Used to format the name in the diagram.
-	ClassKey     string // The class key this object is an instance of.
+	ClassKey     identity.Key // The class key this object is an instance of.
 	Multi        bool
 	UmlComment   string
 	// Helpful data.
 	Class model_class.Class `json:"-"`
 }
 
-func NewObject(key string, objectNumber uint, name, nameStyle, classKey string, multi bool, umlComment string) (object Object, err error) {
+func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) (object Object, err error) {
 
 	object = Object{
 		Key:          key,
@@ -39,7 +40,16 @@ func NewObject(key string, objectNumber uint, name, nameStyle, classKey string, 
 	}
 
 	err = validation.ValidateStruct(&object,
-		validation.Field(&object.Key, validation.Required),
+		validation.Field(&object.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_SCENARIO_OBJECT {
+				return errors.Errorf("invalid key type '%s' for scenario object", k.KeyType())
+			}
+			return nil
+		})),
 		validation.Field(&object.Name, validation.By(func(value interface{}) error {
 			name := value.(string)
 			if object.NameStyle == _NAME_STYLE_UNNAMED {
@@ -52,8 +62,18 @@ func NewObject(key string, objectNumber uint, name, nameStyle, classKey string, 
 				}
 			}
 			return nil
-		})), validation.Field(&object.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
-		validation.Field(&object.ClassKey, validation.Required),
+		})),
+		validation.Field(&object.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
+		validation.Field(&object.ClassKey, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_CLASS {
+				return errors.Errorf("invalid key type '%s' for class", k.KeyType())
+			}
+			return nil
+		})),
 	)
 	if err != nil {
 		return Object{}, errors.WithStack(err)

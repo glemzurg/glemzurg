@@ -27,6 +27,7 @@ const (
 	KEY_TYPE_TRANSITION        = "transition"
 	KEY_TYPE_GENERALIZATION    = "generalization"
 	KEY_TYPE_SCENARIO          = "scenario"
+	KEY_TYPE_SCENARIO_OBJECT   = "sobject"
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 	KEY_TYPE_ATTRIBUTE         = "attribute"
 )
@@ -85,6 +86,14 @@ func NewScenarioKey(useCaseKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'scenario' key", useCaseKey.KeyType())
 	}
 	return newKey(useCaseKey.String(), KEY_TYPE_SCENARIO, subKey)
+}
+
+func NewScenarioObjectKey(scenarioKey Key, subKey string) (key Key, err error) {
+	// The parent must be a scenario.
+	if scenarioKey.KeyType() != KEY_TYPE_SCENARIO {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'sobject' key", scenarioKey.KeyType())
+	}
+	return newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_OBJECT, subKey)
 }
 
 func NewStateKey(classKey Key, subKey string) (key Key, err error) {

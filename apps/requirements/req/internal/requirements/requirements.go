@@ -373,7 +373,7 @@ func (r *Requirements) ToTree() Model {
 				// Populate scenarios with objects
 				for l := range useCase.Scenarios {
 					scenario := &useCase.Scenarios[l]
-					scenario.Objects = r.Objects[scenario.Key]
+					scenario.Objects = r.Objects[scenario.Key.String()]
 				}
 			}
 		}
@@ -457,7 +457,7 @@ func (r *Requirements) FromTree(tree Model) {
 				r.Scenarios[useCase.Key.String()] = useCase.Scenarios
 
 				for _, scenario := range useCase.Scenarios {
-					r.Objects[scenario.Key] = scenario.Objects
+					r.Objects[scenario.Key.String()] = scenario.Objects
 				}
 			}
 		}
@@ -740,8 +740,8 @@ func createKeyObjectLookup(
 	lookup = map[string]model_scenario.Object{}
 	for _, items := range byScenario {
 		for _, item := range items {
-			item.SetClass(classLookup[item.ClassKey])
-			lookup[item.Key] = item
+			item.SetClass(classLookup[item.ClassKey.String()])
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup
@@ -755,8 +755,8 @@ func createKeyScenarioLookup(
 	lookup = map[string]model_scenario.Scenario{}
 	for _, items := range byUseCase {
 		for _, item := range items {
-			item.SetObjects(objectsByScenario[item.Key])
-			lookup[item.Key] = item
+			item.SetObjects(objectsByScenario[item.Key.String()])
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup

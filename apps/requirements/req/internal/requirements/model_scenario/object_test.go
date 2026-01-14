@@ -3,6 +3,8 @@ package model_scenario
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -16,13 +18,20 @@ type ObjectSuite struct {
 }
 
 func (suite *ObjectSuite) TestNew() {
+
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+
 	tests := []struct {
 		testName     string
-		key          string
+		key          identity.Key
 		objectNumber uint
 		name         string
 		nameStyle    string
-		classKey     string
+		classKey     identity.Key
 		multi        bool
 		umlComment   string
 		obj          Object
@@ -31,57 +40,57 @@ func (suite *ObjectSuite) TestNew() {
 		// OK.
 		{
 			testName:     "ok with name style",
-			key:          "Key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1")),
 			objectNumber: 1,
 			name:         "Name",
 			nameStyle:    "name",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        true,
 			umlComment:   "UmlComment",
 			obj: Object{
-				Key:          "Key",
+				Key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1")),
 				ObjectNumber: 1,
 				Name:         "Name",
 				NameStyle:    "name",
-				ClassKey:     "ClassKey",
+				ClassKey:     classKey,
 				Multi:        true,
 				UmlComment:   "UmlComment",
 			},
 		},
 		{
 			testName:     "ok with id style",
-			key:          "Key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj2")),
 			objectNumber: 1,
 			name:         "Name",
 			nameStyle:    "id",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        true,
 			umlComment:   "UmlComment",
 			obj: Object{
-				Key:          "Key",
+				Key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj2")),
 				ObjectNumber: 1,
 				Name:         "Name",
 				NameStyle:    "id",
-				ClassKey:     "ClassKey",
+				ClassKey:     classKey,
 				Multi:        true,
 				UmlComment:   "UmlComment",
 			},
 		},
 		{
 			testName:     "ok with unnamed style",
-			key:          "Key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj3")),
 			objectNumber: 0,
 			name:         "",
 			nameStyle:    "unnamed",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        false,
 			umlComment:   "",
 			obj: Object{
-				Key:          "Key",
+				Key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj3")),
 				ObjectNumber: 0,
 				Name:         "",
 				NameStyle:    "unnamed",
-				ClassKey:     "ClassKey",
+				ClassKey:     classKey,
 				Multi:        false,
 				UmlComment:   "",
 			},
@@ -89,59 +98,81 @@ func (suite *ObjectSuite) TestNew() {
 
 		// Error states.
 		{
-			testName:     "error with blank key",
-			key:          "",
+			testName:     "error empty key",
+			key:          identity.Key{},
 			objectNumber: 1,
 			name:         "Name",
 			nameStyle:    "name",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        false,
 			umlComment:   "UmlComment",
-			errstr:       `Key: cannot be blank`,
+			errstr:       "keyType: cannot be blank",
+		},
+		{
+			testName:     "error wrong key type",
+			key:          helper.Must(identity.NewDomainKey("domain1")),
+			objectNumber: 1,
+			name:         "Name",
+			nameStyle:    "name",
+			classKey:     classKey,
+			multi:        false,
+			umlComment:   "UmlComment",
+			errstr:       "Key: invalid key type 'domain' for scenario object.",
 		},
 		{
 			testName:     "error with blank name for name style",
-			key:          "Key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj4")),
 			objectNumber: 1,
 			name:         "",
 			nameStyle:    "name",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        false,
 			umlComment:   "UmlComment",
 			errstr:       `Name: Name cannot be blank`,
 		},
 		{
 			testName:     "error with blank name for id style",
-			key:          "Key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj5")),
 			objectNumber: 1,
 			name:         "",
 			nameStyle:    "id",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        false,
 			umlComment:   "UmlComment",
 			errstr:       `Name: Name cannot be blank`,
 		},
 		{
 			testName:     "error with name for unnamed style",
-			key:          "Key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj6")),
 			objectNumber: 1,
 			name:         "Name",
 			nameStyle:    "unnamed",
-			classKey:     "ClassKey",
+			classKey:     classKey,
 			multi:        false,
 			umlComment:   "UmlComment",
 			errstr:       `Name: Name must be blank for unnamed style`,
 		},
 		{
-			testName:     "error with blank class key",
-			key:          "",
+			testName:     "error empty class key",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj7")),
 			objectNumber: 1,
 			name:         "Name",
 			nameStyle:    "name",
-			classKey:     "",
+			classKey:     identity.Key{},
 			multi:        false,
 			umlComment:   "UmlComment",
-			errstr:       `ClassKey: cannot be blank`,
+			errstr:       "keyType: cannot be blank",
+		},
+		{
+			testName:     "error wrong class key type",
+			key:          helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj8")),
+			objectNumber: 1,
+			name:         "Name",
+			nameStyle:    "name",
+			classKey:     helper.Must(identity.NewDomainKey("domain1")),
+			multi:        false,
+			umlComment:   "UmlComment",
+			errstr:       "ClassKey: invalid key type 'domain' for class.",
 		},
 	}
 	for _, tt := range tests {
