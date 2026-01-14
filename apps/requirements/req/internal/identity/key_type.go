@@ -30,6 +30,7 @@ const (
 	KEY_TYPE_SCENARIO_OBJECT   = "sobject"
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 	KEY_TYPE_ATTRIBUTE         = "attribute"
+	KEY_TYPE_STATE_ACTION      = "saction"
 )
 
 func NewActorKey(subKey string) (key Key, err error) {
@@ -150,4 +151,12 @@ func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'attribute' key", classKey.KeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_ATTRIBUTE, subKey)
+}
+
+func NewStateActionKey(stateKey Key, subKey string) (key Key, err error) {
+	// The parent must be a state.
+	if stateKey.KeyType() != KEY_TYPE_STATE {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'saction' key", stateKey.KeyType())
+	}
+	return newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, subKey)
 }

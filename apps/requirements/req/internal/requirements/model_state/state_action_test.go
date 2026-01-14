@@ -3,6 +3,8 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -16,10 +18,17 @@ type StateActionSuite struct {
 }
 
 func (suite *StateActionSuite) TestNew() {
+
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+
 	tests := []struct {
 		testName  string
-		key       string
-		actionKey string
+		key       identity.Key
+		actionKey identity.Key
 		when      string
 		obj       StateAction
 		errstr    string
@@ -27,64 +36,78 @@ func (suite *StateActionSuite) TestNew() {
 		// OK.
 		{
 			testName:  "ok with entry",
-			key:       "Key",
-			actionKey: "ActionKey",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction1")),
+			actionKey: actionKey,
 			when:      "entry",
 			obj: StateAction{
-				Key:       "Key",
-				ActionKey: "ActionKey",
+				Key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction1")),
+				ActionKey: actionKey,
 				When:      "entry",
 			},
 		},
 		{
 			testName:  "ok with exit",
-			key:       "Key",
-			actionKey: "ActionKey",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction2")),
+			actionKey: actionKey,
 			when:      "exit",
 			obj: StateAction{
-				Key:       "Key",
-				ActionKey: "ActionKey",
+				Key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction2")),
+				ActionKey: actionKey,
 				When:      "exit",
 			},
 		},
 		{
 			testName:  "ok with do",
-			key:       "Key",
-			actionKey: "ActionKey",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction3")),
+			actionKey: actionKey,
 			when:      "do",
 			obj: StateAction{
-				Key:       "Key",
-				ActionKey: "ActionKey",
+				Key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction3")),
+				ActionKey: actionKey,
 				When:      "do",
 			},
 		},
 
 		// Error states.
 		{
-			testName:  "error with blank key",
-			key:       "",
-			actionKey: "ActionKey",
+			testName:  "error empty key",
+			key:       identity.Key{},
+			actionKey: actionKey,
 			when:      "entry",
-			errstr:    `Key: cannot be blank`,
+			errstr:    "keyType: cannot be blank",
 		},
 		{
-			testName:  "error with blank action key",
-			key:       "Key",
-			actionKey: "",
+			testName:  "error wrong key type",
+			key:       helper.Must(identity.NewDomainKey("domain1")),
+			actionKey: actionKey,
 			when:      "entry",
-			errstr:    `ActionKey: cannot be blank`,
+			errstr:    "Key: invalid key type 'domain' for state action",
+		},
+		{
+			testName:  "error empty action key",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction4")),
+			actionKey: identity.Key{},
+			when:      "entry",
+			errstr:    "keyType: cannot be blank",
+		},
+		{
+			testName:  "error wrong action key type",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction5")),
+			actionKey: helper.Must(identity.NewDomainKey("domain1")),
+			when:      "entry",
+			errstr:    "ActionKey: invalid key type 'domain' for action",
 		},
 		{
 			testName:  "error with blank when",
-			key:       "Key",
-			actionKey: "ActionKey",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction6")),
+			actionKey: actionKey,
 			when:      "",
 			errstr:    `When: cannot be blank`,
 		},
 		{
 			testName:  "error with unknown when",
-			key:       "Key",
-			actionKey: "ActionKey",
+			key:       helper.Must(identity.NewStateActionKey(stateKey, "stateaction7")),
+			actionKey: actionKey,
 			when:      "unknown",
 			errstr:    `When: must be a valid value`,
 		},

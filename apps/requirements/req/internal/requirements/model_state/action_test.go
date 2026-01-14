@@ -3,6 +3,8 @@ package model_state
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -16,9 +18,14 @@ type ActionSuite struct {
 }
 
 func (suite *ActionSuite) TestNew() {
+
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+
 	tests := []struct {
 		testName   string
-		key        string
+		key        identity.Key
 		name       string
 		details    string
 		requires   []string
@@ -29,13 +36,13 @@ func (suite *ActionSuite) TestNew() {
 		// OK.
 		{
 			testName:   "ok with all fields",
-			key:        "Key",
+			key:        helper.Must(identity.NewActionKey(classKey, "action1")),
 			name:       "Name",
 			details:    "Details",
 			requires:   []string{"Requires"},
 			guarantees: []string{"Guarantees"},
 			obj: Action{
-				Key:        "Key",
+				Key:        helper.Must(identity.NewActionKey(classKey, "action1")),
 				Name:       "Name",
 				Details:    "Details",
 				Requires:   []string{"Requires"},
@@ -44,13 +51,13 @@ func (suite *ActionSuite) TestNew() {
 		},
 		{
 			testName:   "ok with minimal fields",
-			key:        "Key",
+			key:        helper.Must(identity.NewActionKey(classKey, "action2")),
 			name:       "Name",
 			details:    "",
 			requires:   nil,
 			guarantees: nil,
 			obj: Action{
-				Key:        "Key",
+				Key:        helper.Must(identity.NewActionKey(classKey, "action2")),
 				Name:       "Name",
 				Details:    "",
 				Requires:   nil,
@@ -60,17 +67,26 @@ func (suite *ActionSuite) TestNew() {
 
 		// Error states.
 		{
-			testName:   "error with blank key",
-			key:        "",
+			testName:   "error empty key",
+			key:        identity.Key{},
 			name:       "Name",
 			details:    "Details",
 			requires:   []string{"Requires"},
 			guarantees: []string{"Guarantees"},
-			errstr:     `Key: cannot be blank`,
+			errstr:     "keyType: cannot be blank",
+		},
+		{
+			testName:   "error wrong key type",
+			key:        helper.Must(identity.NewDomainKey("domain1")),
+			name:       "Name",
+			details:    "Details",
+			requires:   []string{"Requires"},
+			guarantees: []string{"Guarantees"},
+			errstr:     "Key: invalid key type 'domain' for action",
 		},
 		{
 			testName:   "error with blank name",
-			key:        "Key",
+			key:        helper.Must(identity.NewActionKey(classKey, "action3")),
 			name:       "",
 			details:    "Details",
 			requires:   []string{"Requires"},

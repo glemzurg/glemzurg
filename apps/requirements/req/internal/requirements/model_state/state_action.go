@@ -3,6 +3,8 @@ package model_state
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 const (
@@ -19,14 +21,14 @@ var _whenSortValue = map[string]int{
 
 // StateAction is a action that triggers when a state is entered or exited or happens perpetually.
 type StateAction struct {
-	Key       string
-	ActionKey string
+	Key       identity.Key
+	ActionKey identity.Key
 	When      string
 	// Derived data for templates.
-	StateKey string
+	StateKey identity.Key
 }
 
-func NewStateAction(key, actionKey string, when string) (stateAction StateAction, err error) {
+func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {
 
 	stateAction = StateAction{
 		Key:       key,
@@ -35,8 +37,26 @@ func NewStateAction(key, actionKey string, when string) (stateAction StateAction
 	}
 
 	err = validation.ValidateStruct(&stateAction,
-		validation.Field(&stateAction.Key, validation.Required),
-		validation.Field(&stateAction.ActionKey, validation.Required),
+		validation.Field(&stateAction.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_STATE_ACTION {
+				return errors.Errorf("invalid key type '%s' for state action", k.KeyType())
+			}
+			return nil
+		})),
+		validation.Field(&stateAction.ActionKey, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_ACTION {
+				return errors.Errorf("invalid key type '%s' for action", k.KeyType())
+			}
+			return nil
+		})),
 		validation.Field(&stateAction.When, validation.Required, validation.In(_WHEN_ENTRY, _WHEN_EXIT, _WHEN_DO)),
 	)
 	if err != nil {
@@ -54,5 +74,5 @@ func lessThanStateAction(a, b StateAction) (less bool) {
 	}
 
 	// Sort by key next.
-	return a.Key < b.Key
+	return a.Key.String() < b.Key.String()
 }

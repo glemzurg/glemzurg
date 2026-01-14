@@ -29,12 +29,12 @@ type Requirements struct {
 	Attributes   map[string][]model_class.Attribute // All the attributes in a class.
 	Associations []model_class.Association
 	// Class States.
-	States       map[string][]model_state.State       // All the states in a class.
-	Events       map[string][]model_state.Event       // All the state events in a class.
-	Guards       map[string][]model_state.Guard       // All the state guards in a class.
-	Actions      map[string][]model_state.Action      // All the state actions in a class.
-	Transitions  map[string][]model_state.Transition  // All the state transitions in a class.
-	StateActions map[string][]model_state.StateAction // All the state actions in a state.
+	States       map[identity.Key][]model_state.State       // All the states in a class.
+	Events       map[identity.Key][]model_state.Event       // All the state events in a class.
+	Guards       map[identity.Key][]model_state.Guard       // All the state guards in a class.
+	Actions      map[identity.Key][]model_state.Action      // All the state actions in a class.
+	Transitions  map[identity.Key][]model_state.Transition  // All the state transitions in a class.
+	StateActions map[identity.Key][]model_state.StateAction // All the state actions in a state.
 	// Use Cases.
 	UseCases      map[identity.Key][]model_use_case.UseCase              // All the use cases in a subdomain.
 	UseCaseActors map[identity.Key]map[identity.Key]model_use_case.Actor // All the use cases actors.
@@ -351,11 +351,11 @@ func (r *Requirements) ToTree() Model {
 				class := &subdomain.Classes[k]
 				classKeyStr := class.Key.String()
 				class.Attributes = r.Attributes[classKeyStr]
-				class.States = r.States[classKeyStr]
-				class.Events = r.Events[classKeyStr]
-				class.Guards = r.Guards[classKeyStr]
-				class.Actions = r.Actions[classKeyStr]
-				class.Transitions = r.Transitions[classKeyStr]
+				class.States = r.States[class.Key]
+				class.Events = r.Events[class.Key]
+				class.Guards = r.Guards[class.Key]
+				class.Actions = r.Actions[class.Key]
+				class.Transitions = r.Transitions[class.Key]
 
 				// Populate states with actions
 				for l := range class.States {
@@ -419,12 +419,12 @@ func (r *Requirements) FromTree(tree Model) {
 	r.Subdomains = make(map[identity.Key][]model_domain.Subdomain)
 	r.Classes = make(map[string][]model_class.Class)
 	r.Attributes = make(map[string][]model_class.Attribute)
-	r.States = make(map[string][]model_state.State)
-	r.Events = make(map[string][]model_state.Event)
-	r.Guards = make(map[string][]model_state.Guard)
-	r.Actions = make(map[string][]model_state.Action)
-	r.Transitions = make(map[string][]model_state.Transition)
-	r.StateActions = make(map[string][]model_state.StateAction)
+	r.States = make(map[identity.Key][]model_state.State)
+	r.Events = make(map[identity.Key][]model_state.Event)
+	r.Guards = make(map[identity.Key][]model_state.Guard)
+	r.Actions = make(map[identity.Key][]model_state.Action)
+	r.Transitions = make(map[identity.Key][]model_state.Transition)
+	r.StateActions = make(map[identity.Key][]model_state.StateAction)
 	r.UseCases = make(map[identity.Key][]model_use_case.UseCase)
 	r.UseCaseActors = make(map[identity.Key]map[identity.Key]model_use_case.Actor)
 	r.Scenarios = make(map[identity.Key][]model_scenario.Scenario)
@@ -441,11 +441,11 @@ func (r *Requirements) FromTree(tree Model) {
 			for _, class := range subdomain.Classes {
 				classKeyStr := class.Key.String()
 				r.Attributes[classKeyStr] = class.Attributes
-				r.States[classKeyStr] = class.States
-				r.Events[classKeyStr] = class.Events
-				r.Guards[classKeyStr] = class.Guards
-				r.Actions[classKeyStr] = class.Actions
-				r.Transitions[classKeyStr] = class.Transitions
+				r.States[class.Key] = class.States
+				r.Events[class.Key] = class.Events
+				r.Guards[class.Key] = class.Guards
+				r.Actions[class.Key] = class.Actions
+				r.Transitions[class.Key] = class.Transitions
 
 				for _, state := range class.States {
 					r.StateActions[state.Key] = state.Actions
@@ -565,11 +565,11 @@ func createKeyActorLookup(domainClasses map[string][]model_class.Class, items []
 
 func createKeyClassLookup(
 	classAttributes map[string][]model_class.Attribute,
-	classStates map[string][]model_state.State,
-	classEvents map[string][]model_state.Event,
-	classGuards map[string][]model_state.Guard,
-	classActions map[string][]model_state.Action,
-	classTransitions map[string][]model_state.Transition,
+	classStates map[identity.Key][]model_state.State,
+	classEvents map[identity.Key][]model_state.Event,
+	classGuards map[identity.Key][]model_state.Guard,
+	classActions map[identity.Key][]model_state.Action,
+	classTransitions map[identity.Key][]model_state.Transition,
 	byCategory map[string][]model_class.Class,
 ) (lookup map[string]model_class.Class) {
 
@@ -580,11 +580,11 @@ func createKeyClassLookup(
 			itemKeyStr := item.Key.String()
 			item.SetDomainKey(domainKey)
 			item.SetAttributes(classAttributes[itemKeyStr])
-			item.SetStates(classStates[itemKeyStr])
-			item.SetEvents(classEvents[itemKeyStr])
-			item.SetGuards(classGuards[itemKeyStr])
-			item.SetActions(classActions[itemKeyStr])
-			item.SetTransitions(classTransitions[itemKeyStr])
+			item.SetStates(classStates[item.Key])
+			item.SetEvents(classEvents[item.Key])
+			item.SetGuards(classGuards[item.Key])
+			item.SetActions(classActions[item.Key])
+			item.SetTransitions(classTransitions[item.Key])
 
 			lookup[itemKeyStr] = item
 		}
@@ -640,7 +640,7 @@ func createKeyAssociationLookup(items []model_class.Association) (lookup map[str
 	return lookup
 }
 
-func createKeyStateLookup(stateStateActions map[string][]model_state.StateAction, byCategory map[string][]model_state.State) (lookup map[string]model_state.State) {
+func createKeyStateLookup(stateStateActions map[identity.Key][]model_state.StateAction, byCategory map[identity.Key][]model_state.State) (lookup map[string]model_state.State) {
 
 	lookup = map[string]model_state.State{}
 	for _, items := range byCategory {
@@ -648,42 +648,42 @@ func createKeyStateLookup(stateStateActions map[string][]model_state.StateAction
 
 			item.SetActions(stateStateActions[item.Key])
 
-			lookup[item.Key] = item
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup
 }
 
-func createKeyEventLookup(byCategory map[string][]model_state.Event) (lookup map[string]model_state.Event) {
+func createKeyEventLookup(byCategory map[identity.Key][]model_state.Event) (lookup map[string]model_state.Event) {
 	lookup = map[string]model_state.Event{}
 	for _, items := range byCategory {
 		for _, item := range items {
-			lookup[item.Key] = item
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup
 }
 
-func createKeyGuardLookup(byCategory map[string][]model_state.Guard) (lookup map[string]model_state.Guard) {
+func createKeyGuardLookup(byCategory map[identity.Key][]model_state.Guard) (lookup map[string]model_state.Guard) {
 	lookup = map[string]model_state.Guard{}
 	for _, items := range byCategory {
 		for _, item := range items {
-			lookup[item.Key] = item
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup
 }
 
-func createKeyActionLookup(classTransitions map[string][]model_state.Transition, statStateActions map[string][]model_state.StateAction, byCategory map[string][]model_state.Action) (lookup map[string]model_state.Action) {
+func createKeyActionLookup(classTransitions map[identity.Key][]model_state.Transition, statStateActions map[identity.Key][]model_state.StateAction, byCategory map[identity.Key][]model_state.Action) (lookup map[string]model_state.Action) {
 
 	// Create clean lookup for triggers.
 	transitionTriggers := map[string][]model_state.Transition{}
 	for _, transitions := range classTransitions {
 		for _, transition := range transitions {
-			if transition.ActionKey != "" {
-				triggers := transitionTriggers[transition.ActionKey]
+			if transition.ActionKey != nil {
+				triggers := transitionTriggers[transition.ActionKey.String()]
 				triggers = append(triggers, transition)
-				transitionTriggers[transition.ActionKey] = triggers
+				transitionTriggers[transition.ActionKey.String()] = triggers
 			}
 		}
 	}
@@ -692,10 +692,10 @@ func createKeyActionLookup(classTransitions map[string][]model_state.Transition,
 	stateActionTriggers := map[string][]model_state.StateAction{}
 	for _, stateActions := range statStateActions {
 		for _, stateAction := range stateActions {
-			if stateAction.ActionKey != "" {
-				triggers := stateActionTriggers[stateAction.ActionKey]
+			if (stateAction.ActionKey != identity.Key{}) {
+				triggers := stateActionTriggers[stateAction.ActionKey.String()]
 				triggers = append(triggers, stateAction)
-				stateActionTriggers[stateAction.ActionKey] = triggers
+				stateActionTriggers[stateAction.ActionKey.String()] = triggers
 			}
 		}
 	}
@@ -704,29 +704,29 @@ func createKeyActionLookup(classTransitions map[string][]model_state.Transition,
 	for _, items := range byCategory {
 		for _, item := range items {
 
-			item.SetTriggers(transitionTriggers[item.Key], stateActionTriggers[item.Key])
+			item.SetTriggers(transitionTriggers[item.Key.String()], stateActionTriggers[item.Key.String()])
 
-			lookup[item.Key] = item
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup
 }
 
-func createKeyStateActionLookup(byCategory map[string][]model_state.StateAction) (lookup map[string]model_state.StateAction) {
+func createKeyStateActionLookup(byCategory map[identity.Key][]model_state.StateAction) (lookup map[string]model_state.StateAction) {
 	lookup = map[string]model_state.StateAction{}
 	for _, items := range byCategory {
 		for _, item := range items {
-			lookup[item.Key] = item
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup
 }
 
-func createKeyTransitionLookup(byCategory map[string][]model_state.Transition) (lookup map[string]model_state.Transition) {
+func createKeyTransitionLookup(byCategory map[identity.Key][]model_state.Transition) (lookup map[string]model_state.Transition) {
 	lookup = map[string]model_state.Transition{}
 	for _, items := range byCategory {
 		for _, item := range items {
-			lookup[item.Key] = item
+			lookup[item.Key.String()] = item
 		}
 	}
 	return lookup

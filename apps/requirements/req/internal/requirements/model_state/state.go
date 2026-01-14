@@ -5,11 +5,13 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // State is a particular set of values in a state, distinct from all other states in the state.
 type State struct {
-	Key        string
+	Key        identity.Key
 	Name       string
 	Details    string // Markdown.
 	UmlComment string
@@ -17,7 +19,7 @@ type State struct {
 	Actions []StateAction
 }
 
-func NewState(key, name, details, umlComment string) (state State, err error) {
+func NewState(key identity.Key, name, details, umlComment string) (state State, err error) {
 
 	state = State{
 		Key:        key,
@@ -27,7 +29,16 @@ func NewState(key, name, details, umlComment string) (state State, err error) {
 	}
 
 	err = validation.ValidateStruct(&state,
-		validation.Field(&state.Key, validation.Required),
+		validation.Field(&state.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_STATE {
+				return errors.Errorf("invalid key type '%s' for state", k.KeyType())
+			}
+			return nil
+		})),
 		validation.Field(&state.Name, validation.Required),
 	)
 	if err != nil {

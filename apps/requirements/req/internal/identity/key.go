@@ -57,6 +57,7 @@ func (k *Key) Validate() error {
 			KEY_TYPE_ACTOR,
 			KEY_TYPE_CLASS_ASSOCIATION,
 			KEY_TYPE_ATTRIBUTE,
+			KEY_TYPE_STATE_ACTION,
 		)),
 		validation.Field(&k.subKey, validation.Required),
 		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {

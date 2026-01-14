@@ -103,7 +103,7 @@ func (c *Class) SetAttributes(attributes []Attribute) {
 func (c *Class) SetStates(states []model_state.State) {
 
 	sort.Slice(states, func(i, j int) bool {
-		return states[i].Key < states[j].Key
+		return states[i].Key.String() < states[j].Key.String()
 	})
 
 	c.States = states
@@ -112,7 +112,7 @@ func (c *Class) SetStates(states []model_state.State) {
 func (c *Class) SetEvents(events []model_state.Event) {
 
 	sort.Slice(events, func(i, j int) bool {
-		return events[i].Key < events[j].Key
+		return events[i].Key.String() < events[j].Key.String()
 	})
 
 	c.Events = events
@@ -121,7 +121,7 @@ func (c *Class) SetEvents(events []model_state.Event) {
 func (c *Class) SetGuards(guards []model_state.Guard) {
 
 	sort.Slice(guards, func(i, j int) bool {
-		return guards[i].Key < guards[j].Key
+		return guards[i].Key.String() < guards[j].Key.String()
 	})
 
 	c.Guards = guards
@@ -130,7 +130,7 @@ func (c *Class) SetGuards(guards []model_state.Guard) {
 func (c *Class) SetActions(actions []model_state.Action) {
 
 	sort.Slice(actions, func(i, j int) bool {
-		return actions[i].Key < actions[j].Key
+		return actions[i].Key.String() < actions[j].Key.String()
 	})
 
 	c.Actions = actions
@@ -139,7 +139,7 @@ func (c *Class) SetActions(actions []model_state.Action) {
 func (c *Class) SetTransitions(transitions []model_state.Transition) {
 
 	sort.Slice(transitions, func(i, j int) bool {
-		return transitions[i].Key < transitions[j].Key
+		return transitions[i].Key.String() < transitions[j].Key.String()
 	})
 
 	c.Transitions = transitions

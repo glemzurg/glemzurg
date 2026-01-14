@@ -3,11 +3,13 @@ package model_state
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Action is what happens in a transition between states.
 type Action struct {
-	Key        string
+	Key        identity.Key
 	Name       string
 	Details    string
 	Requires   []string // To enter this action.
@@ -17,7 +19,7 @@ type Action struct {
 	FromStates      []StateAction // Where this action is called from a state.
 }
 
-func NewAction(key, name, details string, requires, guarantees []string) (action Action, err error) {
+func NewAction(key identity.Key, name, details string, requires, guarantees []string) (action Action, err error) {
 
 	action = Action{
 		Key:        key,
@@ -28,7 +30,16 @@ func NewAction(key, name, details string, requires, guarantees []string) (action
 	}
 
 	err = validation.ValidateStruct(&action,
-		validation.Field(&action.Key, validation.Required),
+		validation.Field(&action.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_ACTION {
+				return errors.Errorf("invalid key type '%s' for action", k.KeyType())
+			}
+			return nil
+		})),
 		validation.Field(&action.Name, validation.Required),
 	)
 	if err != nil {
