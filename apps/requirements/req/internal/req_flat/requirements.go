@@ -6,13 +6,17 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
+
+// Model is an alias to req_model.Model for convenience.
+type Model = req_model.Model
 
 type Requirements struct {
 	Model Model

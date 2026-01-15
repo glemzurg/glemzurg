@@ -21,6 +21,8 @@ jan (in parallel):
   - generate to the level of architecture diagrams
   - create complete model
     - add TLA+ parsing to create complete model
+    - model an AST with an Adjacency Listf and CTE query
+
   
 feb (in parallel)
   - generate ui designs compilers
