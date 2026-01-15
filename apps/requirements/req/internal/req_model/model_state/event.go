@@ -43,3 +43,14 @@ func NewEvent(key identity.Key, name, details string, parameters []EventParamete
 
 	return event, nil
 }
+
+// ValidateWithParent validates the Event and verifies its key has the correct parent.
+// The parent must be a Class.
+func (e *Event) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := e.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Event has no children with keys that need validation.
+	return nil
+}

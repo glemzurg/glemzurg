@@ -66,6 +66,17 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 	return stateAction, nil
 }
 
+// ValidateWithParent validates the StateAction and verifies its key has the correct parent.
+// The parent must be a State.
+func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := sa.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// StateAction has no children with keys that need validation.
+	return nil
+}
+
 func lessThanStateAction(a, b StateAction) (less bool) {
 
 	// Sort by when first.

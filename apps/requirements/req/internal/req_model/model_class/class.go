@@ -148,3 +148,46 @@ func (c *Class) SetTransitions(transitions []model_state.Transition) {
 func (c *Class) SetDomainKey(domainKey string) {
 	c.DomainKey = domainKey
 }
+
+// ValidateWithParent validates the Class and verifies its key has the correct parent.
+// The parent must be a Subdomain.
+func (c *Class) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := c.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range c.Attributes {
+		if err := c.Attributes[i].ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	for i := range c.States {
+		if err := c.States[i].ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	for i := range c.Events {
+		if err := c.Events[i].ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	for i := range c.Guards {
+		if err := c.Guards[i].ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	for i := range c.Actions {
+		if err := c.Actions[i].ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	for i := range c.Transitions {
+		if err := c.Transitions[i].ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	// Note: Associations on Class are validated by the parent (Subdomain) since they
+	// might reference classes in other subdomains.
+	return nil
+}

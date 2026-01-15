@@ -50,3 +50,34 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 
 	return subdomain, nil
 }
+
+// ValidateWithParent validates the Subdomain and verifies its key has the correct parent.
+// The parent must be a Domain.
+func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := s.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range s.Generalizations {
+		if err := s.Generalizations[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	for i := range s.Classes {
+		if err := s.Classes[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	for i := range s.UseCases {
+		if err := s.UseCases[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	for i := range s.Associations {
+		if err := s.Associations[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}

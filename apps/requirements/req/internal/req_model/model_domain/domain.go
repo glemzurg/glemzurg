@@ -52,3 +52,27 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 
 	return domain, nil
 }
+
+// ValidateWithParent validates the Domain and verifies its key has the correct parent.
+// The parent must be nil (domains are root-level entities).
+func (d *Domain) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := d.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range d.Subdomains {
+		if err := d.Subdomains[i].ValidateWithParent(&d.Key); err != nil {
+			return err
+		}
+	}
+	// Domain-level classes (if any) - these would have the domain as implicit parent
+	// but since Class expects a subdomain parent, we validate domain-level associations
+	// which span subdomains within this domain.
+	for i := range d.Associations {
+		if err := d.Associations[i].ValidateWithParent(&d.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}

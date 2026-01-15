@@ -41,3 +41,29 @@ func NewModel(key, name, details string) (model Model, err error) {
 
 	return model, nil
 }
+
+// ValidateWithParent validates the Model and all its children.
+// This is the entry point for validating the entire model tree.
+// For Model, parent should always be nil.
+func (m *Model) ValidateWithParent() error {
+	// Validate all children - they all have nil as their parent since Model
+	// doesn't have an identity.Key.
+	for i := range m.Actors {
+		if err := m.Actors[i].ValidateWithParent(nil); err != nil {
+			return err
+		}
+	}
+	for i := range m.Domains {
+		if err := m.Domains[i].ValidateWithParent(nil); err != nil {
+			return err
+		}
+	}
+	// DomainAssociations are validated when Domains are validated.
+	// Model-level Associations (spanning domains) have nil parent.
+	for i := range m.Associations {
+		if err := m.Associations[i].ValidateWithParent(nil); err != nil {
+			return err
+		}
+	}
+	return nil
+}

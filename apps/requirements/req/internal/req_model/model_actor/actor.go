@@ -53,3 +53,14 @@ func NewActor(key identity.Key, name, details, userType, umlComment string) (act
 
 	return actor, nil
 }
+
+// ValidateWithParent validates the Actor and verifies its key has the correct parent.
+// The parent must be nil (actors are root-level entities).
+func (a *Actor) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := a.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Actor has no children with keys that need validation.
+	return nil
+}

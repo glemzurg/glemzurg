@@ -53,3 +53,14 @@ func (a *Action) SetTriggers(transitions []Transition, stateActions []StateActio
 	a.FromTransitions = transitions
 	a.FromStates = stateActions
 }
+
+// ValidateWithParent validates the Action and verifies its key has the correct parent.
+// The parent must be a Class.
+func (a *Action) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := a.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Action has no children with keys that need validation.
+	return nil
+}

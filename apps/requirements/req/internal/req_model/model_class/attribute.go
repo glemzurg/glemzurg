@@ -70,3 +70,14 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPoli
 
 	return attribute, nil
 }
+
+// ValidateWithParent validates the Attribute and verifies its key has the correct parent.
+// The parent must be a Class.
+func (a *Attribute) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := a.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Attribute has no children with keys that need validation.
+	return nil
+}

@@ -102,3 +102,14 @@ func (so *Object) GetName() (name string) {
 	}
 	return name
 }
+
+// ValidateWithParent validates the Object and verifies its key has the correct parent.
+// The parent must be a Scenario.
+func (o *Object) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := o.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Object has no children with keys that need validation.
+	return nil
+}

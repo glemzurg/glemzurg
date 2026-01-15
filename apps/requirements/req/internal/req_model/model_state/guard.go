@@ -42,3 +42,14 @@ func NewGuard(key identity.Key, name, details string) (guard Guard, err error) {
 
 	return guard, nil
 }
+
+// ValidateWithParent validates the Guard and verifies its key has the correct parent.
+// The parent must be a Class.
+func (g *Guard) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := g.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Guard has no children with keys that need validation.
+	return nil
+}

@@ -86,3 +86,14 @@ func (a *Association) Other(classKey identity.Key) (otherKey identity.Key, err e
 	}
 	return a.ToClassKey, nil
 }
+
+// ValidateWithParent validates the Association and verifies its key has the correct parent.
+// The parent may be a Subdomain, Domain, or nil (for model-level associations).
+func (a *Association) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := a.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Association has no children with keys that need validation.
+	return nil
+}

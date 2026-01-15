@@ -56,3 +56,19 @@ func (s *State) SetActions(actions []StateAction) {
 
 	s.Actions = actions
 }
+
+// ValidateWithParent validates the State and verifies its key has the correct parent.
+// The parent must be a Class.
+func (s *State) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := s.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range s.Actions {
+		if err := s.Actions[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}

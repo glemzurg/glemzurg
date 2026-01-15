@@ -54,3 +54,14 @@ func (g *Generalization) SetSuperSubclassKeys(superclassKey identity.Key, subcla
 	g.SuperclassKey = superclassKey
 	g.SubclassKeys = subclassKeys
 }
+
+// ValidateWithParent validates the Generalization and verifies its key has the correct parent.
+// The parent must be a Subdomain.
+func (g *Generalization) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := g.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Generalization has no children with keys that need validation.
+	return nil
+}

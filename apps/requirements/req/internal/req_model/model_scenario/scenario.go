@@ -73,3 +73,19 @@ func PopulateScenarioStepReferences(
 	}
 	return nil
 }
+
+// ValidateWithParent validates the Scenario and verifies its key has the correct parent.
+// The parent must be a UseCase.
+func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := s.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range s.Objects {
+		if err := s.Objects[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}

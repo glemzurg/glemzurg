@@ -61,3 +61,14 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 
 	return association, nil
 }
+
+// ValidateWithParent validates the domain Association and verifies its key has the correct parent.
+// The parent must be a Domain.
+func (a *Association) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := a.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Association has no children with keys that need validation.
+	return nil
+}

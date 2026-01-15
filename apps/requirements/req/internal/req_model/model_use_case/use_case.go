@@ -72,3 +72,19 @@ func (uc *UseCase) SetActors(actors map[identity.Key]Actor) {
 func (uc *UseCase) SetScenarios(scenarios []model_scenario.Scenario) {
 	uc.Scenarios = scenarios
 }
+
+// ValidateWithParent validates the UseCase and verifies its key has the correct parent.
+// The parent must be a Subdomain.
+func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
+	// Validate the key has the correct parent.
+	if err := uc.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range uc.Scenarios {
+		if err := uc.Scenarios[i].ValidateWithParent(&uc.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
