@@ -10,6 +10,7 @@ next:
     - update the objects to not have unique database keys on them
   - move the requirements object to generation package
     - moving all the generation efficient work there
+  - update json model to have levels of class associations model/domain/subdomain
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md

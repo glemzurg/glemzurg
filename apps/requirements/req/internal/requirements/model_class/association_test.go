@@ -28,6 +28,9 @@ func (suite *AssociationSuite) TestNew() {
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
 	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
 
+	// For error tests with wrong class key types, we need valid class keys.
+	otherFromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "otherfrom"))
+
 	tests := []struct {
 		testName            string
 		key                 identity.Key
@@ -45,7 +48,7 @@ func (suite *AssociationSuite) TestNew() {
 		// OK.
 		{
 			testName:            "ok with all fields",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc1")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
 			name:                "Name",
 			details:             "Details",
 			fromClassKey:        fromClassKey,
@@ -55,7 +58,7 @@ func (suite *AssociationSuite) TestNew() {
 			associationClassKey: assocClassKey,
 			umlComment:          "UmlComment",
 			obj: Association{
-				Key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc1")),
+				Key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
 				Name:                "Name",
 				Details:             "Details",
 				FromClassKey:        fromClassKey,
@@ -68,22 +71,22 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:            "ok with minimal fields",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc2")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, assocClassKey)),
 			name:                "Name",
 			details:             "",
 			fromClassKey:        fromClassKey,
 			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
+			toClassKey:          assocClassKey,
 			toMultiplicity:      multiplicity,
 			associationClassKey: identity.Key{},
 			umlComment:          "",
 			obj: Association{
-				Key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc2")),
+				Key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, assocClassKey)),
 				Name:                "Name",
 				Details:             "",
 				FromClassKey:        fromClassKey,
 				FromMultiplicity:    multiplicity,
-				ToClassKey:          toClassKey,
+				ToClassKey:          assocClassKey,
 				ToMultiplicity:      multiplicity,
 				AssociationClassKey: identity.Key{},
 				UmlComment:          "",
@@ -119,7 +122,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:            "error with blank name",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc3")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
 			name:                "",
 			details:             "Details",
 			fromClassKey:        fromClassKey,
@@ -132,7 +135,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:            "error empty from class key",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc4")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
 			name:                "Name",
 			details:             "Details",
 			fromClassKey:        identity.Key{},
@@ -145,7 +148,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:            "error wrong from class key type",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc5")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
 			name:                "Name",
 			details:             "Details",
 			fromClassKey:        domainKey,
@@ -158,7 +161,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:            "error empty to class key",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc6")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
 			name:                "Name",
 			details:             "Details",
 			fromClassKey:        fromClassKey,
@@ -171,7 +174,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:            "error wrong to class key type",
-			key:                 helper.Must(identity.NewClassAssociationKey(domainKey, "assoc7")),
+			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, otherFromClassKey, toClassKey)),
 			name:                "Name",
 			details:             "Details",
 			fromClassKey:        fromClassKey,
@@ -204,9 +207,9 @@ func (suite *AssociationSuite) TestOther() {
 	multiplicity, err := NewMultiplicity("2..3")
 	assert.Nil(suite.T(), err)
 
-	assocKey := helper.Must(identity.NewClassAssociationKey(domainKey, "assoc1"))
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
 	unknownClassKey := helper.Must(identity.NewClassKey(subdomainKey, "unknown"))
 
 	tests := []struct {
