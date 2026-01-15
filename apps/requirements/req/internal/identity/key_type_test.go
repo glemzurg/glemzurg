@@ -94,47 +94,62 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 
 func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 
-	domainKey, err := NewDomainKey("domain1")
+	problemDomainKey, err := NewDomainKey("problem1")
 	assert.NoError(suite.T(), err)
 
+	solutionDomainKey, err := NewDomainKey("solution1")
+	assert.NoError(suite.T(), err)
+
+	solution1SubKey := "solution1"
 	tests := []struct {
-		testName  string
-		domainKey Key
-		subKey    string
-		expected  Key
-		errstr    string
+		testName          string
+		problemDomainKey  Key
+		solutionDomainKey Key
+		expected          Key
+		errstr            string
 	}{
 		// OK.
 		{
-			testName:  "ok",
-			domainKey: domainKey,
-			subKey:    "1",
-			expected:  helper.Must(newKey(domainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, "1")),
+			testName:          "ok",
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: solutionDomainKey,
+			expected: Key{
+				parentKey: problemDomainKey.String(),
+				keyType:   KEY_TYPE_DOMAIN_ASSOCIATION,
+				subKey:    "problem1",
+				subKey2:   &solution1SubKey,
+			},
 		},
 
 		// Errors.
 		{
-			testName:  "error empty parent",
-			domainKey: Key{},
-			subKey:    "1",
-			errstr:    "parent key cannot be of type '' for 'association' key",
+			testName:          "error empty problem domain",
+			problemDomainKey:  Key{},
+			solutionDomainKey: solutionDomainKey,
+			errstr:            "problem domain key cannot be of type '' for 'dassociation' key",
 		},
 		{
-			testName:  "error wrong parent type",
-			domainKey: helper.Must(NewActorKey("actor1")),
-			subKey:    "1",
-			errstr:    "parent key cannot be of type 'actor' for 'association' key",
+			testName:          "error wrong problem domain type",
+			problemDomainKey:  helper.Must(NewActorKey("actor1")),
+			solutionDomainKey: solutionDomainKey,
+			errstr:            "problem domain key cannot be of type 'actor' for 'dassociation' key",
 		},
 		{
-			testName:  "error blank subKey",
-			domainKey: domainKey,
-			subKey:    "",
-			errstr:    "cannot be blank",
+			testName:          "error empty solution domain",
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: Key{},
+			errstr:            "solution domain key cannot be of type '' for 'dassociation' key",
+		},
+		{
+			testName:          "error wrong solution domain type",
+			problemDomainKey:  problemDomainKey,
+			solutionDomainKey: helper.Must(NewActorKey("actor1")),
+			errstr:            "solution domain key cannot be of type 'actor' for 'dassociation' key",
 		},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
-			key, err := NewDomainAssociationKey(tt.domainKey, tt.subKey)
+			key, err := NewDomainAssociationKey(tt.problemDomainKey, tt.solutionDomainKey)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, key)

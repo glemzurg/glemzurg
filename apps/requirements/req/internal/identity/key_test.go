@@ -74,6 +74,7 @@ func (suite *KeySuite) TestNewKey() {
 }
 
 func (suite *KeySuite) TestParseKey() {
+	solution1SubKey := "solution1"
 	tests := []struct {
 		testName string
 		input    string
@@ -100,6 +101,11 @@ func (suite *KeySuite) TestParseKey() {
 			testName: "ok with spaces",
 			input:    " DOMAIN / DOMAIN1  /  SUBDOMAIN  /  SUBDOMAIN1  ", // with spaces
 			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
+		},
+		{
+			testName: "ok domain association with subKey2",
+			input:    "domain/problem1/dassociation/problem1/solution1",
+			expected: Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: &solution1SubKey},
 		},
 
 		// Error cases: invalid format.
@@ -137,6 +143,7 @@ func (suite *KeySuite) TestParseKey() {
 }
 
 func (suite *KeySuite) TestString() {
+	subKey2 := "solution1"
 	tests := []struct {
 		testName string
 		key      Key
@@ -151,6 +158,11 @@ func (suite *KeySuite) TestString() {
 			testName: "root",
 			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
 			expected: "domain/domain1",
+		},
+		{
+			testName: "with subKey2",
+			key:      Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: &subKey2},
+			expected: "domain/problem1/dassociation/problem1/solution1",
 		},
 	}
 	for _, tt := range tests {

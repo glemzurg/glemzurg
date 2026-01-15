@@ -41,12 +41,17 @@ func NewDomainKey(subKey string) (key Key, err error) {
 	return newRootKey(KEY_TYPE_DOMAIN, subKey)
 }
 
-func NewDomainAssociationKey(domainKey Key, subKey string) (key Key, err error) {
-	// The parent must be a domain.
-	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'association' key", domainKey.KeyType())
+func NewDomainAssociationKey(problemDomainKey, solutionDomainKey Key) (key Key, err error) {
+	// Both must be domains.
+	if problemDomainKey.KeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("problem domain key cannot be of type '%s' for 'dassociation' key", problemDomainKey.KeyType())
 	}
-	return newKey(domainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, subKey)
+	if solutionDomainKey.KeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("solution domain key cannot be of type '%s' for 'dassociation' key", solutionDomainKey.KeyType())
+	}
+	// Parent is the problem domain, subKey is the problem domain's subKey, subKey2 is the solution domain's subKey.
+	subKey2 := solutionDomainKey.SubKey()
+	return newKeyWithSubKey2(problemDomainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, problemDomainKey.SubKey(), &subKey2)
 }
 
 func NewSubdomainKey(domainKey Key, subKey string) (key Key, err error) {
