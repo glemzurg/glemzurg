@@ -116,8 +116,8 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 			expected: Key{
 				parentKey: problemDomainKey.String(),
 				keyType:   KEY_TYPE_DOMAIN_ASSOCIATION,
-				subKey:    "problem1",
-				subKey2:   &solution1SubKey,
+				subKey:    solution1SubKey,
+				subKey2:   nil,
 			},
 		},
 
