@@ -3,13 +3,14 @@ package parser
 import (
 	"strconv"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseGeneralization(key, filename, contents string) (generalization model_class.Generalization, err error) {
+func parseGeneralization(subdomainKey identity.Key, generalizationSubKey, filename, contents string) (generalization model_class.Generalization, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
@@ -34,7 +35,13 @@ func parseGeneralization(key, filename, contents string) (generalization model_c
 		isStatic = isStaticAny.(bool)
 	}
 
-	generalization, err = model_class.NewGeneralization(key, parsedFile.Title, parsedFile.Markdown, isComplete, isStatic, parsedFile.UmlComment)
+	// Construct the identity key for this generalization.
+	generalizationKey, err := identity.NewGeneralizationKey(subdomainKey, generalizationSubKey)
+	if err != nil {
+		return model_class.Generalization{}, errors.WithStack(err)
+	}
+
+	generalization, err = model_class.NewGeneralization(generalizationKey, parsedFile.Title, parsedFile.Markdown, isComplete, isStatic, parsedFile.UmlComment)
 	if err != nil {
 		return model_class.Generalization{}, err
 	}

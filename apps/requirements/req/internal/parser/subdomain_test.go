@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,7 +25,11 @@ type SubdomainFileSuite struct {
 
 func (suite *SubdomainFileSuite) TestParseSubdomainFiles() {
 
-	key := "subdomain_key"
+	// Create a parent domain key for testing.
+	domainKey, err := identity.NewDomainKey("test_domain")
+	assert.Nil(suite.T(), err)
+
+	subdomainSubKey := "subdomain_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_SUBDOMAIN_PATH_OK)
 	assert.Nil(suite.T(), err)
@@ -33,7 +38,7 @@ func (suite *SubdomainFileSuite) TestParseSubdomainFiles() {
 		testName := testData.Filename
 		var expected, actual model_domain.Subdomain
 
-		actual, err := parseSubdomain(key, testData.Filename, testData.Contents)
+		actual, err := parseSubdomain(domainKey, subdomainSubKey, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)

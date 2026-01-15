@@ -4,13 +4,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseDomain(key, filename, contents string) (domain model_domain.Domain, err error) {
+func parseDomain(domainSubKey, filename, contents string) (domain model_domain.Domain, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
@@ -33,7 +34,13 @@ func parseDomain(key, filename, contents string) (domain model_domain.Domain, er
 		realized = realizedAny.(bool)
 	}
 
-	domain, err = model_domain.NewDomain(key, parsedFile.Title, markdown, realized, parsedFile.UmlComment)
+	// Construct the identity key for this domain.
+	domainKey, err := identity.NewDomainKey(domainSubKey)
+	if err != nil {
+		return model_domain.Domain{}, errors.WithStack(err)
+	}
+
+	domain, err = model_domain.NewDomain(domainKey, parsedFile.Title, markdown, realized, parsedFile.UmlComment)
 	if err != nil {
 		return model_domain.Domain{}, err
 	}
@@ -47,7 +54,7 @@ func parseDomain(key, filename, contents string) (domain model_domain.Domain, er
 
 	var associations []model_domain.Association
 	for i, associationAny := range associationsData {
-		association, err := domainAssociationFromYamlData(domain.Key, i, associationAny)
+		association, err := domainAssociationFromYamlData(domainKey, i, associationAny)
 		if err != nil {
 			return model_domain.Domain{}, err
 		}
@@ -58,19 +65,19 @@ func parseDomain(key, filename, contents string) (domain model_domain.Domain, er
 	return domain, nil
 }
 
-func domainAssociationFromYamlData(problemDomainKey string, index int, associationAny any) (association model_domain.Association, err error) {
+func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, associationAny any) (association model_domain.Association, err error) {
 
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
 		// Get each of the values.
 
-		key := problemDomainKey + "/association/" + strconv.Itoa(index+1) // Don't start at zero.
+		_ = strconv.Itoa(index + 1) // Don't start at zero (kept for reference but not used in key construction).
 
-		solutionDomainKey := ""
+		solutionDomainKeyStr := ""
 		solutionDomainKeyAny, found := associationData["solution_domain_key"]
 		if found {
-			solutionDomainKey = solutionDomainKeyAny.(string)
+			solutionDomainKeyStr = solutionDomainKeyAny.(string)
 		}
 
 		umlComment := ""
@@ -79,8 +86,20 @@ func domainAssociationFromYamlData(problemDomainKey string, index int, associati
 			umlComment = umlCommentAny.(string)
 		}
 
+		// Construct the solution domain key.
+		solutionDomainKey, err := identity.NewDomainKey(solutionDomainKeyStr)
+		if err != nil {
+			return model_domain.Association{}, errors.WithStack(err)
+		}
+
+		// Construct the domain association key using both domain keys.
+		assocKey, err := identity.NewDomainAssociationKey(problemDomainKey, solutionDomainKey)
+		if err != nil {
+			return model_domain.Association{}, errors.WithStack(err)
+		}
+
 		association, err = model_domain.NewAssociation(
-			key,
+			assocKey,
 			problemDomainKey,
 			solutionDomainKey,
 			umlComment)
@@ -98,7 +117,7 @@ func generateDomainContent(domain model_domain.Domain) string {
 	if len(domain.Associations) > 0 {
 		yaml += "\n\nassociations:\n"
 		for _, assoc := range domain.Associations {
-			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey
+			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey()
 			if assoc.UmlComment != "" {
 				yaml += "\n      uml_comment: " + assoc.UmlComment
 			}

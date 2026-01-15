@@ -1,10 +1,13 @@
 package parser
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+
+	"github.com/pkg/errors"
 )
 
-func parseSubdomain(key, filename, contents string) (subdomain model_domain.Subdomain, err error) {
+func parseSubdomain(domainKey identity.Key, subdomainSubKey, filename, contents string) (subdomain model_domain.Subdomain, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
@@ -19,7 +22,13 @@ func parseSubdomain(key, filename, contents string) (subdomain model_domain.Subd
 		markdown += "\n\n" + parsedFile.Data
 	}
 
-	subdomain, err = model_domain.NewSubdomain(key, parsedFile.Title, markdown, parsedFile.UmlComment)
+	// Construct the identity key for this subdomain.
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, subdomainSubKey)
+	if err != nil {
+		return model_domain.Subdomain{}, errors.WithStack(err)
+	}
+
+	subdomain, err = model_domain.NewSubdomain(subdomainKey, parsedFile.Title, markdown, parsedFile.UmlComment)
 	if err != nil {
 		return model_domain.Subdomain{}, err
 	}

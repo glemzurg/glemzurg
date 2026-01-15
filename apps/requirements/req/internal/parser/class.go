@@ -4,14 +4,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseClass(classKey, filename, contents string) (class model_class.Class, err error) {
+func parseClass(subdomainKey identity.Key, classSubKey, filename, contents string) (class model_class.Class, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
@@ -24,22 +25,50 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 		return model_class.Class{}, errors.WithStack(err)
 	}
 
-	actorKey := ""
+	// Parse optional key references from YAML (stored as strings, converted to keys later as needed).
+	var actorKey *identity.Key
 	actorAny, found := yamlData["actor_key"]
 	if found {
-		actorKey = actorAny.(string)
+		actorKeyStr := actorAny.(string)
+		if actorKeyStr != "" {
+			key, err := identity.NewActorKey(actorKeyStr)
+			if err != nil {
+				return model_class.Class{}, errors.WithStack(err)
+			}
+			actorKey = &key
+		}
 	}
 
-	superclassOfKey := ""
+	var superclassOfKey *identity.Key
 	superclassOfAny, found := yamlData["superclass_of_key"]
 	if found {
-		superclassOfKey = superclassOfAny.(string)
+		superclassOfStr := superclassOfAny.(string)
+		if superclassOfStr != "" {
+			key, err := identity.ParseKey(superclassOfStr)
+			if err != nil {
+				return model_class.Class{}, errors.WithStack(err)
+			}
+			superclassOfKey = &key
+		}
 	}
 
-	subclassOfKey := ""
+	var subclassOfKey *identity.Key
 	subclassOfAny, found := yamlData["subclass_of_key"]
 	if found {
-		subclassOfKey = subclassOfAny.(string)
+		subclassOfStr := subclassOfAny.(string)
+		if subclassOfStr != "" {
+			key, err := identity.ParseKey(subclassOfStr)
+			if err != nil {
+				return model_class.Class{}, errors.WithStack(err)
+			}
+			subclassOfKey = &key
+		}
+	}
+
+	// Construct the identity key for this class.
+	classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
+	if err != nil {
+		return model_class.Class{}, errors.WithStack(err)
 	}
 
 	class, err = model_class.NewClass(classKey, parsedFile.Title, parsedFile.Markdown, actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
@@ -55,12 +84,8 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 	}
 
 	var attributes []model_class.Attribute
-	for key, attributeAny := range attributesData {
-
-		// Join the class to the key so it is unique in the model.
-		key = classKey + "/" + key
-
-		attribute, err := attributeFromYamlData(key, attributeAny)
+	for attrSubKey, attributeAny := range attributesData {
+		attribute, err := attributeFromYamlData(classKey, attrSubKey, attributeAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -77,7 +102,7 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 
 	var associations []model_class.Association
 	for i, associationAny := range associationsData {
-		association, err := associationFromYamlData(class.Key, i, associationAny)
+		association, err := associationFromYamlData(subdomainKey, classKey, i, associationAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -93,9 +118,9 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 	}
 
 	var actions []model_state.Action
-	actionKeyLookup := map[string]string{}
+	actionKeyLookup := map[string]identity.Key{}
 	for name, actionAny := range actionsData {
-		action, err := actionFromYamlData(class.Key, name, actionAny)
+		action, err := actionFromYamlData(classKey, name, actionAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -112,9 +137,9 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 	}
 
 	var states []model_state.State
-	stateKeyLookup := map[string]string{}
+	stateKeyLookup := map[string]identity.Key{}
 	for name, stateAny := range statesData {
-		state, err := stateFromYamlData(actionKeyLookup, class.Key, name, stateAny)
+		state, err := stateFromYamlData(actionKeyLookup, classKey, name, stateAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -131,9 +156,9 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 	}
 
 	var events []model_state.Event
-	eventKeyLookup := map[string]string{}
+	eventKeyLookup := map[string]identity.Key{}
 	for name, eventAny := range eventsData {
-		event, err := eventFromYamlData(class.Key, name, eventAny)
+		event, err := eventFromYamlData(classKey, name, eventAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -150,9 +175,9 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 	}
 
 	var guards []model_state.Guard
-	guardKeyLookup := map[string]string{}
+	guardKeyLookup := map[string]identity.Key{}
 	for name, guardAny := range guardsData {
-		guard, err := guardFromYamlData(class.Key, name, guardAny)
+		guard, err := guardFromYamlData(classKey, name, guardAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -170,7 +195,7 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 
 	var transitions []model_state.Transition
 	for i, transitionAny := range transitionsData {
-		transition, err := transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup, class.Key, i, transitionAny)
+		transition, err := transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup, classKey, i, transitionAny)
 		if err != nil {
 			return model_class.Class{}, err
 		}
@@ -181,7 +206,7 @@ func parseClass(classKey, filename, contents string) (class model_class.Class, e
 	return class, nil
 }
 
-func attributeFromYamlData(key string, attributeAny any) (attribute model_class.Attribute, err error) {
+func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAny any) (attribute model_class.Attribute, err error) {
 
 	attributeData, ok := attributeAny.(map[string]any)
 	if ok {
@@ -234,8 +259,14 @@ func attributeFromYamlData(key string, attributeAny any) (attribute model_class.
 			}
 		}
 
+		// Construct the identity key for this attribute.
+		attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+		if err != nil {
+			return model_class.Attribute{}, errors.WithStack(err)
+		}
+
 		attribute, err = model_class.NewAttribute(
-			key,
+			attrKey,
 			name,
 			normalizeWhitespace(details),
 			dataTypeRules,
@@ -251,14 +282,14 @@ func attributeFromYamlData(key string, attributeAny any) (attribute model_class.
 	return attribute, nil
 }
 
-func associationFromYamlData(fromClassKey string, index int, associationAny any) (association model_class.Association, err error) {
+func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int, associationAny any) (association model_class.Association, err error) {
 
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
 		// Get each of the values.
 
-		key := fromClassKey + "/association/" + strconv.Itoa(index+1) // Don't start at zero.
+		_ = strconv.Itoa(index + 1) // Don't start at zero (kept for reference but key constructed differently now).
 
 		name := ""
 		nameAny, found := associationData["name"]
@@ -282,10 +313,10 @@ func associationFromYamlData(fromClassKey string, index int, associationAny any)
 			return model_class.Association{}, err
 		}
 
-		toClassKey := ""
+		toClassKeyStr := ""
 		toClassKeyAny, found := associationData["to_class_key"]
 		if found {
-			toClassKey = toClassKeyAny.(string)
+			toClassKeyStr = toClassKeyAny.(string)
 		}
 
 		toMultiplicityValue := ""
@@ -298,10 +329,19 @@ func associationFromYamlData(fromClassKey string, index int, associationAny any)
 			return model_class.Association{}, err
 		}
 
-		associationClassKey := ""
+		// Parse association class key if present.
+		var associationClassKey identity.Key
+		associationClassKeyStr := ""
 		associationClassKeyAny, found := associationData["association_class_key"]
 		if found {
-			associationClassKey = associationClassKeyAny.(string)
+			associationClassKeyStr = associationClassKeyAny.(string)
+			if associationClassKeyStr != "" {
+				// Parse the key - it should be a class key relative to subdomain.
+				associationClassKey, err = identity.NewClassKey(subdomainKey, associationClassKeyStr)
+				if err != nil {
+					return model_class.Association{}, errors.WithStack(err)
+				}
+			}
 		}
 
 		umlComment := ""
@@ -310,8 +350,21 @@ func associationFromYamlData(fromClassKey string, index int, associationAny any)
 			umlComment = umlCommentAny.(string)
 		}
 
+		// Construct the to class key - assuming it's in the same subdomain.
+		toClassKey, err := identity.NewClassKey(subdomainKey, toClassKeyStr)
+		if err != nil {
+			return model_class.Association{}, errors.WithStack(err)
+		}
+
+		// Construct the class association key using the subdomain as parent
+		// since both classes are in the same subdomain.
+		assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)
+		if err != nil {
+			return model_class.Association{}, errors.WithStack(err)
+		}
+
 		association, err = model_class.NewAssociation(
-			key,
+			assocKey,
 			name,
 			details,
 			fromClassKey,
@@ -328,9 +381,13 @@ func associationFromYamlData(fromClassKey string, index int, associationAny any)
 	return association, nil
 }
 
-func stateFromYamlData(actionKeyLookup map[string]string, classKey, name string, stateAny any) (state model_state.State, err error) {
+func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identity.Key, name string, stateAny any) (state model_state.State, err error) {
 
-	key := classKey + "/state/" + strings.ToLower(name)
+	// Construct the state key.
+	stateKey, err := identity.NewStateKey(classKey, strings.ToLower(name))
+	if err != nil {
+		return model_state.State{}, errors.WithStack(err)
+	}
 
 	details := ""
 	umlComment := ""
@@ -357,7 +414,7 @@ func stateFromYamlData(actionKeyLookup map[string]string, classKey, name string,
 			for _, actionAny := range actionsData {
 				actionData := actionAny.(map[string]any)
 
-				actionKey := ""
+				var actionKey identity.Key
 				actionName := ""
 				actionNameAny, found := actionData["action"]
 				if found {
@@ -374,7 +431,12 @@ func stateFromYamlData(actionKeyLookup map[string]string, classKey, name string,
 					when = whenAny.(string)
 				}
 
-				stateActionKey := key + "/action/" + strings.ToLower(when) + "/" + strings.ToLower(actionName)
+				// Construct the state action key.
+				stateActionSubKey := strings.ToLower(when) + "/" + strings.ToLower(actionName)
+				stateActionKey, err := identity.NewStateActionKey(stateKey, stateActionSubKey)
+				if err != nil {
+					return model_state.State{}, errors.WithStack(err)
+				}
 
 				action, err := model_state.NewStateAction(
 					stateActionKey,
@@ -392,7 +454,7 @@ func stateFromYamlData(actionKeyLookup map[string]string, classKey, name string,
 	}
 
 	state, err = model_state.NewState(
-		key,
+		stateKey,
 		name,
 		details,
 		umlComment)
@@ -406,9 +468,13 @@ func stateFromYamlData(actionKeyLookup map[string]string, classKey, name string,
 	return state, nil
 }
 
-func eventFromYamlData(classKey, name string, eventAny any) (event model_state.Event, err error) {
+func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event model_state.Event, err error) {
 
-	key := classKey + "/event/" + strings.ToLower(name)
+	// Construct the event key.
+	eventKey, err := identity.NewEventKey(classKey, strings.ToLower(name))
+	if err != nil {
+		return model_state.Event{}, errors.WithStack(err)
+	}
 
 	var params []model_state.EventParameter
 	details := ""
@@ -454,7 +520,7 @@ func eventFromYamlData(classKey, name string, eventAny any) (event model_state.E
 	}
 
 	event, err = model_state.NewEvent(
-		key,
+		eventKey,
 		name,
 		details,
 		params)
@@ -465,9 +531,13 @@ func eventFromYamlData(classKey, name string, eventAny any) (event model_state.E
 	return event, nil
 }
 
-func guardFromYamlData(classKey, name string, guardAny any) (guard model_state.Guard, err error) {
+func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard model_state.Guard, err error) {
 
-	key := classKey + "/guard/" + strings.ToLower(name)
+	// Construct the guard key.
+	guardKey, err := identity.NewGuardKey(classKey, strings.ToLower(name))
+	if err != nil {
+		return model_state.Guard{}, errors.WithStack(err)
+	}
 
 	details := ""
 
@@ -483,7 +553,7 @@ func guardFromYamlData(classKey, name string, guardAny any) (guard model_state.G
 	}
 
 	guard, err = model_state.NewGuard(
-		key,
+		guardKey,
 		name,
 		details)
 	if err != nil {
@@ -493,9 +563,13 @@ func guardFromYamlData(classKey, name string, guardAny any) (guard model_state.G
 	return guard, nil
 }
 
-func actionFromYamlData(classKey, name string, actionAny any) (action model_state.Action, err error) {
+func actionFromYamlData(classKey identity.Key, name string, actionAny any) (action model_state.Action, err error) {
 
-	key := classKey + "/action/" + strings.ToLower(name)
+	// Construct the action key.
+	actionKey, err := identity.NewActionKey(classKey, strings.ToLower(name))
+	if err != nil {
+		return model_state.Action{}, errors.WithStack(err)
+	}
 
 	details := ""
 	var requires []string
@@ -529,7 +603,7 @@ func actionFromYamlData(classKey, name string, actionAny any) (action model_stat
 	}
 
 	action, err = model_state.NewAction(
-		key,
+		actionKey,
 		name,
 		details,
 		requires,
@@ -541,28 +615,33 @@ func actionFromYamlData(classKey, name string, actionAny any) (action model_stat
 	return action, nil
 }
 
-func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup map[string]string, fromClassKey string, index int, transitionAny any) (transition model_state.Transition, err error) {
+func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup map[string]identity.Key, classKey identity.Key, index int, transitionAny any) (transition model_state.Transition, err error) {
 
 	transitionData, ok := transitionAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
 		// Get each of the values.
 
-		key := fromClassKey + "/transition/" + strconv.Itoa(index+1) // Don't start at zero.
+		// Construct the transition key.
+		transitionKey, err := identity.NewTransitionKey(classKey, strconv.Itoa(index+1))
+		if err != nil {
+			return model_state.Transition{}, errors.WithStack(err)
+		}
 
-		fromStateKey := ""
+		var fromStateKey *identity.Key
 		fromStateNameAny, found := transitionData["from"]
 		if found {
 			stateName := fromStateNameAny.(string)
 			if stateName != "" {
-				fromStateKey, found = stateKeyLookup[stateName]
+				key, found := stateKeyLookup[stateName]
 				if !found {
 					return model_state.Transition{}, errors.WithStack(errors.Errorf(`unknown state: '%s'`, stateName))
 				}
+				fromStateKey = &key
 			}
 		}
 
-		eventKey := ""
+		var eventKey identity.Key
 		eventNameAny, found := transitionData["event"]
 		if found {
 			eventName := eventNameAny.(string)
@@ -572,35 +651,38 @@ func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, acti
 			}
 		}
 
-		guardKey := ""
+		var guardKey *identity.Key
 		guardNameAny, found := transitionData["guard"]
 		if found {
 			guardName := guardNameAny.(string)
-			guardKey, found = guardKeyLookup[guardName]
+			key, found := guardKeyLookup[guardName]
 			if !found {
 				return model_state.Transition{}, errors.WithStack(errors.Errorf(`unknown guard: '%s'`, guardName))
 			}
+			guardKey = &key
 		}
 
-		actionKey := ""
+		var actionKey *identity.Key
 		actionNameAny, found := transitionData["action"]
 		if found {
 			actionName := actionNameAny.(string)
-			actionKey, found = actionKeyLookup[actionName]
+			key, found := actionKeyLookup[actionName]
 			if !found {
 				return model_state.Transition{}, errors.WithStack(errors.Errorf(`unknown action: '%s'`, actionName))
 			}
+			actionKey = &key
 		}
 
-		toStateKey := ""
+		var toStateKey *identity.Key
 		toStateNameAny, found := transitionData["to"]
 		if found {
 			stateName := toStateNameAny.(string)
 			if stateName != "" {
-				toStateKey = stateKeyLookup[stateName]
+				key, found := stateKeyLookup[stateName]
 				if !found {
 					return model_state.Transition{}, errors.WithStack(errors.Errorf(`unknown state: '%s'`, stateName))
 				}
+				toStateKey = &key
 			}
 		}
 
@@ -611,7 +693,7 @@ func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, acti
 		}
 
 		transition, err = model_state.NewTransition(
-			key,
+			transitionKey,
 			fromStateKey,
 			eventKey,
 			guardKey,
@@ -628,21 +710,21 @@ func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, acti
 
 func generateClassContent(class model_class.Class) string {
 	yaml := ""
-	if class.ActorKey != "" {
-		yaml += "actor_key: " + class.ActorKey + "\n"
+	if class.ActorKey != nil {
+		yaml += "actor_key: " + class.ActorKey.SubKey() + "\n"
 	}
-	if class.SuperclassOfKey != "" {
-		yaml += "superclass_of_key: " + class.SuperclassOfKey + "\n"
+	if class.SuperclassOfKey != nil {
+		yaml += "superclass_of_key: " + class.SuperclassOfKey.String() + "\n"
 	}
-	if class.SubclassOfKey != "" {
-		yaml += "subclass_of_key: " + class.SubclassOfKey + "\n"
+	if class.SubclassOfKey != nil {
+		yaml += "subclass_of_key: " + class.SubclassOfKey.String() + "\n"
 	}
 	if len(class.Attributes) > 0 {
 		yaml += "\n"
 		yaml += "attributes:\n"
 		for _, attr := range class.Attributes {
 			yaml += "\n"
-			name := strings.Split(attr.Key, "/")[len(strings.Split(attr.Key, "/"))-1]
+			name := attr.Key.SubKey()
 			yaml += "    " + name + ":\n"
 			yaml += "        name: " + attr.Name + "\n"
 			if attr.Details != "" {
@@ -694,10 +776,10 @@ func generateClassContent(class model_class.Class) string {
 				yaml += "      details: " + assoc.Details + "\n"
 			}
 			yaml += "      from_multiplicity: " + fromMultiplicityValue + "\n"
-			yaml += "      to_class_key: " + assoc.ToClassKey + "\n"
+			yaml += "      to_class_key: " + assoc.ToClassKey.SubKey() + "\n"
 			yaml += "      to_multiplicity: " + toMultiplicityValue + "\n"
-			if assoc.AssociationClassKey != "" {
-				yaml += "      association_class_key: " + assoc.AssociationClassKey + "\n"
+			if assoc.AssociationClassKey != (identity.Key{}) {
+				yaml += "      association_class_key: " + assoc.AssociationClassKey.SubKey() + "\n"
 			}
 			if assoc.UmlComment != "" {
 				yaml += "      uml_comment: " + assoc.UmlComment + "\n"
@@ -708,19 +790,19 @@ func generateClassContent(class model_class.Class) string {
 	// We need a lookup of actions to display names where they need to be.
 	stateKeyLookups := map[string]model_state.State{}
 	for _, state := range class.States {
-		stateKeyLookups[state.Key] = state
+		stateKeyLookups[state.Key.String()] = state
 	}
 	actionKeyLookup := map[string]model_state.Action{}
 	for _, action := range class.Actions {
-		actionKeyLookup[action.Key] = action
+		actionKeyLookup[action.Key.String()] = action
 	}
 	eventKeyLookup := map[string]model_state.Event{}
 	for _, event := range class.Events {
-		eventKeyLookup[event.Key] = event
+		eventKeyLookup[event.Key.String()] = event
 	}
 	guardKeyLookup := map[string]model_state.Guard{}
 	for _, guard := range class.Guards {
-		guardKeyLookup[guard.Key] = guard
+		guardKeyLookup[guard.Key.String()] = guard
 	}
 
 	if len(class.States) > 0 {
@@ -738,7 +820,7 @@ func generateClassContent(class model_class.Class) string {
 			if len(state.Actions) > 0 {
 				yaml += "    actions:\n"
 				for _, sa := range state.Actions {
-					yaml += "        - action: " + actionKeyLookup[sa.ActionKey].Name + "\n"
+					yaml += "        - action: " + actionKeyLookup[sa.ActionKey.String()].Name + "\n"
 					yaml += "          when: " + sa.When + "\n"
 				}
 			}
@@ -804,24 +886,22 @@ func generateClassContent(class model_class.Class) string {
 		yaml += "\n"
 		for _, trans := range class.Transitions {
 			from := ""
-			if trans.FromStateKey != "" {
-				from = stateKeyLookups[trans.FromStateKey].Name
+			if trans.FromStateKey != nil {
+				from = stateKeyLookups[trans.FromStateKey.String()].Name
 			}
 			event := ""
-			if trans.EventKey != "" {
-				event = eventKeyLookup[trans.EventKey].Name
-			}
+			event = eventKeyLookup[trans.EventKey.String()].Name
 			to := ""
-			if trans.ToStateKey != "" {
-				to = stateKeyLookups[trans.ToStateKey].Name
+			if trans.ToStateKey != nil {
+				to = stateKeyLookups[trans.ToStateKey.String()].Name
 			}
 			guard := ""
-			if trans.GuardKey != "" {
-				guard = guardKeyLookup[trans.GuardKey].Name
+			if trans.GuardKey != nil {
+				guard = guardKeyLookup[trans.GuardKey.String()].Name
 			}
 			action := ""
-			if trans.ActionKey != "" {
-				action = actionKeyLookup[trans.ActionKey].Name
+			if trans.ActionKey != nil {
+				action = actionKeyLookup[trans.ActionKey.String()].Name
 			}
 			yaml += "    - {from: \"" + from + "\", event: \"" + event + "\", to: \"" + to + "\""
 			if guard != "" {

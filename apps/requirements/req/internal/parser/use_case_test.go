@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,7 +25,13 @@ type UseCaseFileSuite struct {
 
 func (suite *UseCaseFileSuite) TestParseUseCaseFiles() {
 
-	key := "use_case_key"
+	// Create a parent subdomain key for testing.
+	domainKey, err := identity.NewDomainKey("test_domain")
+	assert.Nil(suite.T(), err)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "test_subdomain")
+	assert.Nil(suite.T(), err)
+
+	useCaseSubKey := "use_case_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_USE_CASE_PATH_OK)
 	assert.Nil(suite.T(), err)
@@ -33,7 +40,7 @@ func (suite *UseCaseFileSuite) TestParseUseCaseFiles() {
 		testName := testData.Filename
 		var expected, actual model_use_case.UseCase
 
-		actual, err := parseUseCase(key, testData.Filename, testData.Contents)
+		actual, err := parseUseCase(subdomainKey, useCaseSubKey, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)

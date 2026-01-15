@@ -1,13 +1,14 @@
 package parser
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseActor(key, filename, contents string) (actor model_actor.Actor, err error) {
+func parseActor(actorSubKey, filename, contents string) (actor model_actor.Actor, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
@@ -26,7 +27,13 @@ func parseActor(key, filename, contents string) (actor model_actor.Actor, err er
 		userType = userTypeAny.(string)
 	}
 
-	actor, err = model_actor.NewActor(key, parsedFile.Title, parsedFile.Markdown, userType, parsedFile.UmlComment)
+	// Construct the identity key for this actor.
+	actorKey, err := identity.NewActorKey(actorSubKey)
+	if err != nil {
+		return model_actor.Actor{}, errors.WithStack(err)
+	}
+
+	actor, err = model_actor.NewActor(actorKey, parsedFile.Title, parsedFile.Markdown, userType, parsedFile.UmlComment)
 	if err != nil {
 		return model_actor.Actor{}, err
 	}
