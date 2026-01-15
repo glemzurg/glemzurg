@@ -49,9 +49,8 @@ func NewDomainAssociationKey(problemDomainKey, solutionDomainKey Key) (key Key, 
 	if solutionDomainKey.KeyType() != KEY_TYPE_DOMAIN {
 		return Key{}, errors.Errorf("solution domain key cannot be of type '%s' for 'dassociation' key", solutionDomainKey.KeyType())
 	}
-	// Parent is the problem domain, subKey is the problem domain's subKey, subKey2 is the solution domain's subKey.
-	subKey2 := solutionDomainKey.SubKey()
-	return newKeyWithSubKey2(problemDomainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, problemDomainKey.SubKey(), &subKey2)
+	// Parent is the problem domain, subKey is the solution domain's subKey.
+	return newKey(problemDomainKey.String(), KEY_TYPE_DOMAIN_ASSOCIATION, solutionDomainKey.SubKey())
 }
 
 func NewSubdomainKey(domainKey Key, subKey string) (key Key, err error) {
