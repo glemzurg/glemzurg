@@ -268,3 +268,192 @@ func (suite *KeySuite) TestValidate() {
 		})
 	}
 }
+
+func (suite *KeySuite) TestValidateParent() {
+	// Create some test keys.
+	domainKey, _ := NewDomainKey("testdomain")
+	domainKey2, _ := NewDomainKey("testdomain2")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "testsubdomain")
+	subdomainKey2, _ := NewSubdomainKey(domainKey, "testsubdomain2")
+	classKey, _ := NewClassKey(subdomainKey, "testclass")
+	classKey2, _ := NewClassKey(subdomainKey2, "testclass2")
+	useCaseKey, _ := NewUseCaseKey(subdomainKey, "testusecase")
+	scenarioKey, _ := NewScenarioKey(useCaseKey, "testscenario")
+	stateKey, _ := NewStateKey(classKey, "teststate")
+	actorKey, _ := NewActorKey("testactor")
+
+	// Class associations at different levels.
+	subdomainCassocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey)
+	domainCassocKey, _ := NewClassAssociationKey(domainKey, classKey, classKey2)
+
+	// For model-level class association, we need classes from different domains.
+	domainKey3, _ := NewDomainKey("testdomain3")
+	subdomainKey3, _ := NewSubdomainKey(domainKey3, "testsubdomain3")
+	classKey3, _ := NewClassKey(subdomainKey3, "testclass3")
+	modelCassocKey, _ := NewClassAssociationKey(Key{}, classKey, classKey3)
+
+	tests := []struct {
+		testName string
+		key      Key
+		parent   *Key
+		errstr   string
+	}{
+		// Root keys (no parent).
+		{
+			testName: "ok actor nil parent",
+			key:      actorKey,
+			parent:   nil,
+		},
+		{
+			testName: "ok domain nil parent",
+			key:      domainKey,
+			parent:   nil,
+		},
+		{
+			testName: "error actor with parent",
+			key:      actorKey,
+			parent:   &domainKey,
+			errstr:   "should not have a parent",
+		},
+		{
+			testName: "error domain with parent",
+			key:      domainKey,
+			parent:   &domainKey2,
+			errstr:   "should not have a parent",
+		},
+
+		// Subdomain requires domain parent.
+		{
+			testName: "ok subdomain with domain parent",
+			key:      subdomainKey,
+			parent:   &domainKey,
+		},
+		{
+			testName: "error subdomain nil parent",
+			key:      subdomainKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'domain'",
+		},
+		{
+			testName: "error subdomain wrong parent type",
+			key:      subdomainKey,
+			parent:   &subdomainKey2,
+			errstr:   "requires parent of type 'domain', but got 'subdomain'",
+		},
+		{
+			testName: "error subdomain wrong parent key",
+			key:      subdomainKey,
+			parent:   &domainKey2,
+			errstr:   "does not match expected parent",
+		},
+
+		// Class requires subdomain parent.
+		{
+			testName: "ok class with subdomain parent",
+			key:      classKey,
+			parent:   &subdomainKey,
+		},
+		{
+			testName: "error class nil parent",
+			key:      classKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'subdomain'",
+		},
+		{
+			testName: "error class wrong parent type",
+			key:      classKey,
+			parent:   &domainKey,
+			errstr:   "requires parent of type 'subdomain', but got 'domain'",
+		},
+
+		// State requires class parent.
+		{
+			testName: "ok state with class parent",
+			key:      stateKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error state nil parent",
+			key:      stateKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+
+		// Scenario requires use case parent.
+		{
+			testName: "ok scenario with usecase parent",
+			key:      scenarioKey,
+			parent:   &useCaseKey,
+		},
+		{
+			testName: "error scenario nil parent",
+			key:      scenarioKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'usecase'",
+		},
+
+		// Class association at subdomain level.
+		{
+			testName: "ok subdomain cassoc with subdomain parent",
+			key:      subdomainCassocKey,
+			parent:   &subdomainKey,
+		},
+		{
+			testName: "error subdomain cassoc with nil parent",
+			key:      subdomainCassocKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'subdomain'",
+		},
+		{
+			testName: "error subdomain cassoc with domain parent",
+			key:      subdomainCassocKey,
+			parent:   &domainKey,
+			errstr:   "requires parent of type 'subdomain', but got 'domain'",
+		},
+
+		// Class association at domain level.
+		{
+			testName: "ok domain cassoc with domain parent",
+			key:      domainCassocKey,
+			parent:   &domainKey,
+		},
+		{
+			testName: "error domain cassoc with nil parent",
+			key:      domainCassocKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'domain'",
+		},
+		{
+			testName: "error domain cassoc with subdomain parent",
+			key:      domainCassocKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'domain', but got 'subdomain'",
+		},
+
+		// Class association at model level.
+		{
+			testName: "ok model cassoc with nil parent",
+			key:      modelCassocKey,
+			parent:   nil,
+		},
+		{
+			testName: "error model cassoc with domain parent",
+			key:      modelCassocKey,
+			parent:   &domainKey,
+			errstr:   "should not have a parent",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.key.ValidateParent(tt.parent)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}

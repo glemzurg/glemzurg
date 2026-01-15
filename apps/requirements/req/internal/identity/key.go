@@ -122,6 +122,192 @@ func (k *Key) KeyType() string {
 	return k.keyType
 }
 
+// ValidateParent validates that this key is correctly constructed based on the expected parent.
+// The parent may be nil if this key type should have no parent (e.g., actor, domain).
+// For class associations, the parent is determined by parsing the key structure.
+func (k *Key) ValidateParent(parent *Key) error {
+	// First validate the key itself.
+	if err := k.Validate(); err != nil {
+		return err
+	}
+
+	switch k.keyType {
+	case KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN:
+		// These are root keys - parent must be nil.
+		if parent != nil {
+			return errors.Errorf("key type '%s' should not have a parent, but got parent of type '%s'", k.keyType, parent.keyType)
+		}
+		if k.parentKey != "" {
+			return errors.Errorf("key type '%s' should have empty parentKey, but got '%s'", k.keyType, k.parentKey)
+		}
+
+	case KEY_TYPE_SUBDOMAIN:
+		// Parent must be a domain.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_DOMAIN)
+		}
+		if parent.keyType != KEY_TYPE_DOMAIN {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_DOMAIN, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_DOMAIN_ASSOCIATION:
+		// Parent must be a domain (the problem domain).
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_DOMAIN)
+		}
+		if parent.keyType != KEY_TYPE_DOMAIN {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_DOMAIN, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_USE_CASE, KEY_TYPE_CLASS, KEY_TYPE_GENERALIZATION:
+		// Parent must be a subdomain.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_SUBDOMAIN)
+		}
+		if parent.keyType != KEY_TYPE_SUBDOMAIN {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_SUBDOMAIN, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_SCENARIO:
+		// Parent must be a use case.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_USE_CASE)
+		}
+		if parent.keyType != KEY_TYPE_USE_CASE {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_USE_CASE, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_SCENARIO_OBJECT:
+		// Parent must be a scenario.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_SCENARIO)
+		}
+		if parent.keyType != KEY_TYPE_SCENARIO {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_SCENARIO, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_ACTION, KEY_TYPE_TRANSITION, KEY_TYPE_ATTRIBUTE:
+		// Parent must be a class.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_CLASS)
+		}
+		if parent.keyType != KEY_TYPE_CLASS {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_CLASS, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_STATE_ACTION:
+		// Parent must be a state.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_STATE)
+		}
+		if parent.keyType != KEY_TYPE_STATE {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_STATE, parent.keyType)
+		}
+		if k.parentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+		}
+
+	case KEY_TYPE_CLASS_ASSOCIATION:
+		// Class associations are special - the parent can be subdomain, domain, or model (empty).
+		// We need to determine the expected parent type by parsing the key structure.
+		expectedParentType, err := k.determineClassAssociationParentType()
+		if err != nil {
+			return err
+		}
+
+		switch expectedParentType {
+		case "": // Model level - no parent
+			if parent != nil {
+				return errors.Errorf("model-level class association should not have a parent, but got parent of type '%s'", parent.keyType)
+			}
+			if k.parentKey != "" {
+				return errors.Errorf("model-level class association should have empty parentKey, but got '%s'", k.parentKey)
+			}
+		case KEY_TYPE_DOMAIN:
+			if parent == nil {
+				return errors.Errorf("domain-level class association requires a parent of type '%s'", KEY_TYPE_DOMAIN)
+			}
+			if parent.keyType != KEY_TYPE_DOMAIN {
+				return errors.Errorf("domain-level class association requires parent of type '%s', but got '%s'", KEY_TYPE_DOMAIN, parent.keyType)
+			}
+			if k.parentKey != parent.String() {
+				return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+			}
+		case KEY_TYPE_SUBDOMAIN:
+			if parent == nil {
+				return errors.Errorf("subdomain-level class association requires a parent of type '%s'", KEY_TYPE_SUBDOMAIN)
+			}
+			if parent.keyType != KEY_TYPE_SUBDOMAIN {
+				return errors.Errorf("subdomain-level class association requires parent of type '%s', but got '%s'", KEY_TYPE_SUBDOMAIN, parent.keyType)
+			}
+			if k.parentKey != parent.String() {
+				return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
+			}
+		}
+
+	default:
+		return errors.Errorf("unknown key type '%s'", k.keyType)
+	}
+
+	return nil
+}
+
+// determineClassAssociationParentType determines what type of parent a class association should have
+// by examining the structure of its subKey and subKey2 values.
+// Returns "" for model-level, KEY_TYPE_DOMAIN for domain-level, or KEY_TYPE_SUBDOMAIN for subdomain-level.
+func (k *Key) determineClassAssociationParentType() (string, error) {
+	if k.keyType != KEY_TYPE_CLASS_ASSOCIATION {
+		return "", errors.Errorf("determineClassAssociationParentType called on non-class-association key of type '%s'", k.keyType)
+	}
+
+	if k.subKey2 == nil {
+		return "", errors.New("class association key missing subKey2")
+	}
+
+	// Parse the subKey to understand the structure.
+	// Model level: subKey is full class path like "domain/x/subdomain/y/class/z"
+	// Domain level: subKey is "subdomain/y/class/z"
+	// Subdomain level: subKey is "class/z"
+	subKeyParts := strings.Split(k.subKey, "/")
+
+	if len(subKeyParts) < 2 {
+		return "", errors.Errorf("invalid class association subKey structure: '%s'", k.subKey)
+	}
+
+	// Check the first part to determine the level.
+	switch subKeyParts[0] {
+	case KEY_TYPE_DOMAIN:
+		// Model level - subKey starts with "domain/"
+		return "", nil
+	case KEY_TYPE_SUBDOMAIN:
+		// Domain level - subKey starts with "subdomain/"
+		return KEY_TYPE_DOMAIN, nil
+	case KEY_TYPE_CLASS:
+		// Subdomain level - subKey starts with "class/"
+		return KEY_TYPE_SUBDOMAIN, nil
+	default:
+		return "", errors.Errorf("cannot determine class association parent type from subKey '%s'", k.subKey)
+	}
+}
+
 func ParseKey(s string) (key Key, err error) {
 	if s == "" {
 		return Key{}, errors.New("invalid key format")
