@@ -277,3 +277,165 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 		})
 	}
 }
+
+func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
+
+	// Create keys for testing.
+	domain1Key := helper.Must(NewDomainKey("domain1"))
+	domain2Key := helper.Must(NewDomainKey("domain2"))
+
+	subdomain1Key := helper.Must(NewSubdomainKey(domain1Key, "subdomain1"))
+	subdomain2Key := helper.Must(NewSubdomainKey(domain1Key, "subdomain2"))
+	subdomain3Key := helper.Must(NewSubdomainKey(domain2Key, "subdomain3"))
+
+	// Classes in subdomain1.
+	class1Key := helper.Must(NewClassKey(subdomain1Key, "class1"))
+	class2Key := helper.Must(NewClassKey(subdomain1Key, "class2"))
+
+	// Classes in subdomain2 (same domain as subdomain1).
+	class3Key := helper.Must(NewClassKey(subdomain2Key, "class3"))
+
+	// Classes in subdomain3 (different domain).
+	class4Key := helper.Must(NewClassKey(subdomain3Key, "class4"))
+
+	// Helper for creating string pointers.
+	strPtr := func(s string) *string { return &s }
+
+	tests := []struct {
+		testName     string
+		parentKey    Key
+		fromClassKey Key
+		toClassKey   Key
+		expected     Key
+		errstr       string
+	}{
+		// OK: Parent is subdomain - both classes in same subdomain.
+		{
+			testName:     "ok subdomain parent",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			expected: Key{
+				parentKey: subdomain1Key.String(),
+				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				subKey:    "class/class1",
+				subKey2:   strPtr("class/class2"),
+			},
+		},
+
+		// OK: Parent is domain - classes in different subdomains of same domain.
+		{
+			testName:     "ok domain parent",
+			parentKey:    domain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class3Key,
+			expected: Key{
+				parentKey: domain1Key.String(),
+				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				subKey:    "subdomain/subdomain1/class/class1",
+				subKey2:   strPtr("subdomain/subdomain2/class/class3"),
+			},
+		},
+
+		// OK: Parent is model (empty) - classes in different domains.
+		{
+			testName:     "ok model parent",
+			parentKey:    Key{},
+			fromClassKey: class1Key,
+			toClassKey:   class4Key,
+			expected: Key{
+				parentKey: "",
+				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				subKey:    "domain/domain1/subdomain/subdomain1/class/class1",
+				subKey2:   strPtr("domain/domain2/subdomain/subdomain3/class/class4"),
+			},
+		},
+
+		// Errors: Wrong key types for classes.
+		{
+			testName:     "error from class wrong type",
+			parentKey:    subdomain1Key,
+			fromClassKey: helper.Must(NewActorKey("actor1")),
+			toClassKey:   class2Key,
+			errstr:       "from class key cannot be of type 'actor' for 'cassociation' key",
+		},
+		{
+			testName:     "error to class wrong type",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   helper.Must(NewActorKey("actor1")),
+			errstr:       "to class key cannot be of type 'actor' for 'cassociation' key",
+		},
+
+		// Errors: Wrong parent type.
+		{
+			testName:     "error wrong parent type",
+			parentKey:    helper.Must(NewActorKey("actor1")),
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			errstr:       "parent key cannot be of type 'actor' for 'cassociation' key",
+		},
+
+		// Errors: Subdomain parent - class not in subdomain.
+		{
+			testName:     "error subdomain parent from class not in subdomain",
+			parentKey:    subdomain1Key,
+			fromClassKey: class3Key, // class3 is in subdomain2, not subdomain1.
+			toClassKey:   class2Key,
+			errstr:       "from class key 'domain/domain1/subdomain/subdomain2/class/class3' is not in subdomain",
+		},
+		{
+			testName:     "error subdomain parent to class not in subdomain",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class3Key, // class3 is in subdomain2, not subdomain1.
+			errstr:       "to class key 'domain/domain1/subdomain/subdomain2/class/class3' is not in subdomain",
+		},
+
+		// Errors: Domain parent - class not in domain.
+		{
+			testName:     "error domain parent from class not in domain",
+			parentKey:    domain1Key,
+			fromClassKey: class4Key, // class4 is in domain2, not domain1.
+			toClassKey:   class3Key,
+			errstr:       "from class key 'domain/domain2/subdomain/subdomain3/class/class4' is not in domain",
+		},
+		{
+			testName:     "error domain parent to class not in domain",
+			parentKey:    domain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class4Key, // class4 is in domain2, not domain1.
+			errstr:       "to class key 'domain/domain2/subdomain/subdomain3/class/class4' is not in domain",
+		},
+
+		// Errors: Domain parent - classes in same subdomain (should use subdomain parent).
+		{
+			testName:     "error domain parent classes in same subdomain",
+			parentKey:    domain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key, // Both in subdomain1.
+			errstr:       "classes are in the same subdomain 'subdomain1', use subdomain as parent instead",
+		},
+
+		// Errors: Model parent - classes in same domain (should use domain parent).
+		{
+			testName:     "error model parent classes in same domain",
+			parentKey:    Key{},
+			fromClassKey: class1Key,
+			toClassKey:   class3Key, // Both in domain1.
+			errstr:       "classes are in the same domain 'domain1', use domain as parent instead",
+		},
+	}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewClassAssociationKey(tt.parentKey, tt.fromClassKey, tt.toClassKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+	}
+}

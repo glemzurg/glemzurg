@@ -1,6 +1,10 @@
 package identity
 
-import "github.com/pkg/errors"
+import (
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 const (
 
@@ -141,12 +145,110 @@ func NewTransitionKey(classKey Key, subKey string) (key Key, err error) {
 	return newKey(classKey.String(), KEY_TYPE_TRANSITION, subKey)
 }
 
-func NewClassAssociationKey(domainKey Key, subKey string) (key Key, err error) {
-	// The parent must be a domain.
-	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassociation' key", domainKey.KeyType())
+func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key) (key Key, err error) {
+	// Both must be classes.
+	if fromClassKey.KeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("from class key cannot be of type '%s' for 'cassociation' key", fromClassKey.KeyType())
 	}
-	return newKey(domainKey.String(), KEY_TYPE_CLASS_ASSOCIATION, subKey)
+	if toClassKey.KeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("to class key cannot be of type '%s' for 'cassociation' key", toClassKey.KeyType())
+	}
+
+	var subKey, subKey2 string
+
+	switch parentKey.KeyType() {
+	case KEY_TYPE_SUBDOMAIN:
+		// Parent is a subdomain - both classes must be in this subdomain.
+		// subKey and subKey2 are "class/something" portions.
+		fromPrefix := parentKey.String() + "/"
+		toPrefix := parentKey.String() + "/"
+		fromStr := fromClassKey.String()
+		toStr := toClassKey.String()
+
+		if !strings.HasPrefix(fromStr, fromPrefix) {
+			return Key{}, errors.Errorf("from class key '%s' is not in subdomain '%s'", fromStr, parentKey.String())
+		}
+		if !strings.HasPrefix(toStr, toPrefix) {
+			return Key{}, errors.Errorf("to class key '%s' is not in subdomain '%s'", toStr, parentKey.String())
+		}
+
+		subKey = strings.TrimPrefix(fromStr, fromPrefix)
+		subKey2 = strings.TrimPrefix(toStr, toPrefix)
+
+	case KEY_TYPE_DOMAIN:
+		// Parent is a domain - both classes must be in this domain but NOT in the same subdomain.
+		// subKey and subKey2 are "subdomain/where/class/something" portions.
+		fromPrefix := parentKey.String() + "/"
+		toPrefix := parentKey.String() + "/"
+		fromStr := fromClassKey.String()
+		toStr := toClassKey.String()
+
+		if !strings.HasPrefix(fromStr, fromPrefix) {
+			return Key{}, errors.Errorf("from class key '%s' is not in domain '%s'", fromStr, parentKey.String())
+		}
+		if !strings.HasPrefix(toStr, toPrefix) {
+			return Key{}, errors.Errorf("to class key '%s' is not in domain '%s'", toStr, parentKey.String())
+		}
+
+		// Extract the subdomain portions to verify they're different.
+		fromRemainder := strings.TrimPrefix(fromStr, fromPrefix)
+		toRemainder := strings.TrimPrefix(toStr, toPrefix)
+
+		// Parse to find subdomain - format is "subdomain/subdomainName/..."
+		fromParts := strings.SplitN(fromRemainder, "/", 3)
+		toParts := strings.SplitN(toRemainder, "/", 3)
+
+		if len(fromParts) < 2 || fromParts[0] != KEY_TYPE_SUBDOMAIN {
+			return Key{}, errors.Errorf("from class key '%s' does not have expected subdomain structure", fromStr)
+		}
+		if len(toParts) < 2 || toParts[0] != KEY_TYPE_SUBDOMAIN {
+			return Key{}, errors.Errorf("to class key '%s' does not have expected subdomain structure", toStr)
+		}
+
+		// Classes in the same subdomain should use subdomain as parent instead.
+		if fromParts[1] == toParts[1] {
+			return Key{}, errors.Errorf("classes are in the same subdomain '%s', use subdomain as parent instead", fromParts[1])
+		}
+
+		subKey = fromRemainder
+		subKey2 = toRemainder
+
+	case "":
+		// Parent is model (empty key) - classes must be in different domains.
+		// subKey and subKey2 are the full class keys.
+		fromStr := fromClassKey.String()
+		toStr := toClassKey.String()
+
+		// Parse to find domain - format is "domain/domainName/..."
+		fromParts := strings.SplitN(fromStr, "/", 3)
+		toParts := strings.SplitN(toStr, "/", 3)
+
+		if len(fromParts) < 2 || fromParts[0] != KEY_TYPE_DOMAIN {
+			return Key{}, errors.Errorf("from class key '%s' does not have expected domain structure", fromStr)
+		}
+		if len(toParts) < 2 || toParts[0] != KEY_TYPE_DOMAIN {
+			return Key{}, errors.Errorf("to class key '%s' does not have expected domain structure", toStr)
+		}
+
+		// Classes in the same domain should use domain as parent instead.
+		if fromParts[1] == toParts[1] {
+			return Key{}, errors.Errorf("classes are in the same domain '%s', use domain as parent instead", fromParts[1])
+		}
+
+		subKey = fromStr
+		subKey2 = toStr
+
+	default:
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassociation' key, must be subdomain, domain, or empty (model)", parentKey.KeyType())
+	}
+
+	// For model parent (empty key), use empty string; otherwise use the key string.
+	var parentKeyStr string
+	if parentKey.KeyType() != "" {
+		parentKeyStr = parentKey.String()
+	}
+
+	return newKeyWithSubKey2(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, &subKey2)
 }
 
 func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {

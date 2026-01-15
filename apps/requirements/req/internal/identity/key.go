@@ -76,9 +76,13 @@ func (k *Key) Validate() error {
 			parent := value.(string)
 			switch k.keyType {
 			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR:
+				// These key types must have blank parentKey.
 				if parent != "" {
 					return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.keyType, parent)
 				}
+			case KEY_TYPE_CLASS_ASSOCIATION:
+				// Class associations can have blank parentKey (model-level) or non-blank (domain/subdomain level).
+				// No validation needed - both are valid.
 			default:
 				if parent == "" {
 					return errors.Errorf("parentKey must be non-blank for '%s' keys", k.keyType)
