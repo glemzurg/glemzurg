@@ -38,12 +38,12 @@ func (suite *AssociationSuite) TestNew() {
 		// OK.
 		{
 			testName:          "ok with comment",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
 			obj: Association{
-				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
 				UmlComment:        "UmlComment",
@@ -51,12 +51,12 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:          "ok minimal",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "2")),
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "",
 			obj: Association{
-				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "2")),
+				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
 				UmlComment:        "",
@@ -82,7 +82,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:          "error empty problem key",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 			problemDomainKey:  identity.Key{},
 			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
@@ -90,7 +90,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:          "error wrong problem key type",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 			problemDomainKey:  helper.Must(identity.NewActorKey("actor1")),
 			solutionDomainKey: suite.solutionDomainKey,
 			umlComment:        "UmlComment",
@@ -98,7 +98,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:          "error empty solution key",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: identity.Key{},
 			umlComment:        "UmlComment",
@@ -106,7 +106,7 @@ func (suite *AssociationSuite) TestNew() {
 		},
 		{
 			testName:          "error wrong solution key type",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, "1")),
+			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
 			problemDomainKey:  suite.problemDomainKey,
 			solutionDomainKey: helper.Must(identity.NewActorKey("actor1")),
 			umlComment:        "UmlComment",
