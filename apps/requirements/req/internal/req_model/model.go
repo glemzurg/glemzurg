@@ -1,4 +1,4 @@
-package requirements
+package req_model
 
 import (
 	"strings"

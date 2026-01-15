@@ -1,4 +1,4 @@
-package requirements
+package req_flat
 
 import (
 	"sort"
