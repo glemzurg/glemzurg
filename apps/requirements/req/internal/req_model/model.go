@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -31,21 +30,29 @@ func NewModel(key, name, details string) (model Model, err error) {
 		Details: details,
 	}
 
-	err = validation.ValidateStruct(&model,
-		validation.Field(&model.Key, validation.Required),
-		validation.Field(&model.Name, validation.Required),
-	)
-	if err != nil {
-		return Model{}, errors.WithStack(err)
+	if err = model.Validate(); err != nil {
+		return Model{}, err
 	}
 
 	return model, nil
+}
+
+// Validate validates the Model struct.
+func (m *Model) Validate() error {
+	return validation.ValidateStruct(m,
+		validation.Field(&m.Key, validation.Required),
+		validation.Field(&m.Name, validation.Required),
+	)
 }
 
 // ValidateWithParent validates the Model and all its children.
 // This is the entry point for validating the entire model tree.
 // For Model, parent should always be nil.
 func (m *Model) ValidateWithParent() error {
+	// Validate the model itself.
+	if err := m.Validate(); err != nil {
+		return err
+	}
 	// Validate all children - they all have nil as their parent since Model
 	// doesn't have an identity.Key.
 	for i := range m.Actors {
@@ -58,7 +65,12 @@ func (m *Model) ValidateWithParent() error {
 			return err
 		}
 	}
-	// DomainAssociations are validated when Domains are validated.
+	// DomainAssociations need to be validated.
+	for i := range m.DomainAssociations {
+		if err := m.DomainAssociations[i].ValidateWithParent(nil); err != nil {
+			return err
+		}
+	}
 	// Model-level Associations (spanning domains) have nil parent.
 	for i := range m.Associations {
 		if err := m.Associations[i].ValidateWithParent(nil); err != nil {

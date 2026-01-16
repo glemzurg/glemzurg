@@ -30,8 +30,17 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 		UmlComment:   umlComment,
 	}
 
-	err = validation.ValidateStruct(&transition,
-		validation.Field(&transition.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = transition.Validate(); err != nil {
+		return Transition{}, err
+	}
+
+	return transition, nil
+}
+
+// Validate validates the Transition struct.
+func (t *Transition) Validate() error {
+	err := validation.ValidateStruct(t,
+		validation.Field(&t.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -41,7 +50,7 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 			}
 			return nil
 		})),
-		validation.Field(&transition.EventKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&t.EventKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -51,7 +60,7 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 			}
 			return nil
 		})),
-		validation.Field(&transition.FromStateKey, validation.By(func(value interface{}) error {
+		validation.Field(&t.FromStateKey, validation.By(func(value interface{}) error {
 			k := value.(*identity.Key)
 			if k == nil {
 				return nil
@@ -64,7 +73,7 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 			}
 			return nil
 		})),
-		validation.Field(&transition.ToStateKey, validation.By(func(value interface{}) error {
+		validation.Field(&t.ToStateKey, validation.By(func(value interface{}) error {
 			k := value.(*identity.Key)
 			if k == nil {
 				return nil
@@ -77,7 +86,7 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 			}
 			return nil
 		})),
-		validation.Field(&transition.GuardKey, validation.By(func(value interface{}) error {
+		validation.Field(&t.GuardKey, validation.By(func(value interface{}) error {
 			k := value.(*identity.Key)
 			if k == nil {
 				return nil
@@ -90,7 +99,7 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 			}
 			return nil
 		})),
-		validation.Field(&transition.ActionKey, validation.By(func(value interface{}) error {
+		validation.Field(&t.ActionKey, validation.By(func(value interface{}) error {
 			k := value.(*identity.Key)
 			if k == nil {
 				return nil
@@ -105,20 +114,24 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 		})),
 	)
 	if err != nil {
-		return Transition{}, errors.WithStack(err)
+		return err
 	}
 
 	// We must have either from or to state or both.
-	if transition.FromStateKey == nil && transition.ToStateKey == nil {
-		return Transition{}, errors.WithStack(errors.Errorf(`FromStateKey, ToStateKey: cannot both be blank`))
+	if t.FromStateKey == nil && t.ToStateKey == nil {
+		return errors.Errorf(`FromStateKey, ToStateKey: cannot both be blank`)
 	}
 
-	return transition, nil
+	return nil
 }
 
-// ValidateWithParent validates the Transition and verifies its key has the correct parent.
+// ValidateWithParent validates the Transition, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (t *Transition) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := t.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := t.Key.ValidateParent(parent); err != nil {
 		return err

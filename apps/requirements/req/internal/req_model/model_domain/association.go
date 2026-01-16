@@ -23,8 +23,17 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 		UmlComment:        umlComment,
 	}
 
-	err = validation.ValidateStruct(&association,
-		validation.Field(&association.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = association.Validate(); err != nil {
+		return Association{}, err
+	}
+
+	return association, nil
+}
+
+// Validate validates the domain Association struct.
+func (a *Association) Validate() error {
+	return validation.ValidateStruct(a,
+		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -34,7 +43,7 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 			}
 			return nil
 		})),
-		validation.Field(&association.ProblemDomainKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&a.ProblemDomainKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -44,7 +53,7 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 			}
 			return nil
 		})),
-		validation.Field(&association.SolutionDomainKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&a.SolutionDomainKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -55,16 +64,15 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 			return nil
 		})),
 	)
-	if err != nil {
-		return Association{}, errors.WithStack(err)
-	}
-
-	return association, nil
 }
 
-// ValidateWithParent validates the domain Association and verifies its key has the correct parent.
-// The parent must be a Domain.
+// ValidateWithParent validates the domain Association, its key's parent relationship, and all children.
+// The parent must be nil (domain associations are root-level entities).
 func (a *Association) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := a.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err

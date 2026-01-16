@@ -43,8 +43,17 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 		UmlComment:      umlComment,
 	}
 
-	err = validation.ValidateStruct(&class,
-		validation.Field(&class.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = class.Validate(); err != nil {
+		return Class{}, err
+	}
+
+	return class, nil
+}
+
+// Validate validates the Class struct.
+func (c *Class) Validate() error {
+	return validation.ValidateStruct(c,
+		validation.Field(&c.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -54,13 +63,8 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 			}
 			return nil
 		})),
-		validation.Field(&class.Name, validation.Required),
+		validation.Field(&c.Name, validation.Required),
 	)
-	if err != nil {
-		return Class{}, errors.WithStack(err)
-	}
-
-	return class, nil
 }
 
 // Sort attributes by indexes first.
@@ -149,9 +153,13 @@ func (c *Class) SetDomainKey(domainKey string) {
 	c.DomainKey = domainKey
 }
 
-// ValidateWithParent validates the Class and verifies its key has the correct parent.
+// ValidateWithParent validates the Class, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (c *Class) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := c.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := c.Key.ValidateParent(parent); err != nil {
 		return err

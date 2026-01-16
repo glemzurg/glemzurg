@@ -29,8 +29,17 @@ func NewAction(key identity.Key, name, details string, requires, guarantees []st
 		Guarantees: guarantees,
 	}
 
-	err = validation.ValidateStruct(&action,
-		validation.Field(&action.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = action.Validate(); err != nil {
+		return Action{}, err
+	}
+
+	return action, nil
+}
+
+// Validate validates the Action struct.
+func (a *Action) Validate() error {
+	return validation.ValidateStruct(a,
+		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -40,13 +49,8 @@ func NewAction(key identity.Key, name, details string, requires, guarantees []st
 			}
 			return nil
 		})),
-		validation.Field(&action.Name, validation.Required),
+		validation.Field(&a.Name, validation.Required),
 	)
-	if err != nil {
-		return Action{}, errors.WithStack(err)
-	}
-
-	return action, nil
 }
 
 func (a *Action) SetTriggers(transitions []Transition, stateActions []StateAction) {
@@ -54,9 +58,13 @@ func (a *Action) SetTriggers(transitions []Transition, stateActions []StateActio
 	a.FromStates = stateActions
 }
 
-// ValidateWithParent validates the Action and verifies its key has the correct parent.
+// ValidateWithParent validates the Action, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (a *Action) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := a.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err

@@ -28,8 +28,17 @@ func NewState(key identity.Key, name, details, umlComment string) (state State, 
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&state,
-		validation.Field(&state.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = state.Validate(); err != nil {
+		return State{}, err
+	}
+
+	return state, nil
+}
+
+// Validate validates the State struct.
+func (s *State) Validate() error {
+	return validation.ValidateStruct(s,
+		validation.Field(&s.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -39,13 +48,8 @@ func NewState(key identity.Key, name, details, umlComment string) (state State, 
 			}
 			return nil
 		})),
-		validation.Field(&state.Name, validation.Required),
+		validation.Field(&s.Name, validation.Required),
 	)
-	if err != nil {
-		return State{}, errors.WithStack(err)
-	}
-
-	return state, nil
 }
 
 func (s *State) SetActions(actions []StateAction) {
@@ -57,9 +61,13 @@ func (s *State) SetActions(actions []StateAction) {
 	s.Actions = actions
 }
 
-// ValidateWithParent validates the State and verifies its key has the correct parent.
+// ValidateWithParent validates the State, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (s *State) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := s.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := s.Key.ValidateParent(parent); err != nil {
 		return err

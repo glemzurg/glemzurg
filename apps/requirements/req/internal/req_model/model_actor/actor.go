@@ -33,8 +33,17 @@ func NewActor(key identity.Key, name, details, userType, umlComment string) (act
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&actor,
-		validation.Field(&actor.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = actor.Validate(); err != nil {
+		return Actor{}, err
+	}
+
+	return actor, nil
+}
+
+// Validate validates the Actor struct.
+func (a *Actor) Validate() error {
+	return validation.ValidateStruct(a,
+		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -44,19 +53,18 @@ func NewActor(key identity.Key, name, details, userType, umlComment string) (act
 			}
 			return nil
 		})),
-		validation.Field(&actor.Name, validation.Required),
-		validation.Field(&actor.Type, validation.Required, validation.In(_USER_TYPE_PERSON, _USER_TYPE_SYSTEM)),
+		validation.Field(&a.Name, validation.Required),
+		validation.Field(&a.Type, validation.Required, validation.In(_USER_TYPE_PERSON, _USER_TYPE_SYSTEM)),
 	)
-	if err != nil {
-		return Actor{}, errors.WithStack(err)
-	}
-
-	return actor, nil
 }
 
-// ValidateWithParent validates the Actor and verifies its key has the correct parent.
+// ValidateWithParent validates the Actor, its key's parent relationship, and all children.
 // The parent must be nil (actors are root-level entities).
 func (a *Actor) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := a.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err

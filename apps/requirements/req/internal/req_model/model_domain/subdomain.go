@@ -31,8 +31,17 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&subdomain,
-		validation.Field(&subdomain.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = subdomain.Validate(); err != nil {
+		return Subdomain{}, err
+	}
+
+	return subdomain, nil
+}
+
+// Validate validates the Subdomain struct.
+func (s *Subdomain) Validate() error {
+	return validation.ValidateStruct(s,
+		validation.Field(&s.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -42,18 +51,17 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 			}
 			return nil
 		})),
-		validation.Field(&subdomain.Name, validation.Required),
+		validation.Field(&s.Name, validation.Required),
 	)
-	if err != nil {
-		return Subdomain{}, errors.WithStack(err)
-	}
-
-	return subdomain, nil
 }
 
-// ValidateWithParent validates the Subdomain and verifies its key has the correct parent.
+// ValidateWithParent validates the Subdomain, its key's parent relationship, and all children.
 // The parent must be a Domain.
 func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := s.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := s.Key.ValidateParent(parent); err != nil {
 		return err

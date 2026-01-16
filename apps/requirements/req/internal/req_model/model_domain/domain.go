@@ -33,8 +33,17 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&domain,
-		validation.Field(&domain.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = domain.Validate(); err != nil {
+		return Domain{}, err
+	}
+
+	return domain, nil
+}
+
+// Validate validates the Domain struct.
+func (d *Domain) Validate() error {
+	return validation.ValidateStruct(d,
+		validation.Field(&d.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -44,18 +53,17 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 			}
 			return nil
 		})),
-		validation.Field(&domain.Name, validation.Required),
+		validation.Field(&d.Name, validation.Required),
 	)
-	if err != nil {
-		return Domain{}, errors.WithStack(err)
-	}
-
-	return domain, nil
 }
 
-// ValidateWithParent validates the Domain and verifies its key has the correct parent.
+// ValidateWithParent validates the Domain, its key's parent relationship, and all children.
 // The parent must be nil (domains are root-level entities).
 func (d *Domain) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := d.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := d.Key.ValidateParent(parent); err != nil {
 		return err

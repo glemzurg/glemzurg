@@ -51,8 +51,17 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPoli
 		attribute.DataType = parsedDataType
 	}
 
-	err = validation.ValidateStruct(&attribute,
-		validation.Field(&attribute.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = attribute.Validate(); err != nil {
+		return Attribute{}, err
+	}
+
+	return attribute, nil
+}
+
+// Validate validates the Attribute struct.
+func (a *Attribute) Validate() error {
+	return validation.ValidateStruct(a,
+		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -62,18 +71,17 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPoli
 			}
 			return nil
 		})),
-		validation.Field(&attribute.Name, validation.Required),
+		validation.Field(&a.Name, validation.Required),
 	)
-	if err != nil {
-		return Attribute{}, errors.WithStack(err)
-	}
-
-	return attribute, nil
 }
 
-// ValidateWithParent validates the Attribute and verifies its key has the correct parent.
+// ValidateWithParent validates the Attribute, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (a *Attribute) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := a.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err

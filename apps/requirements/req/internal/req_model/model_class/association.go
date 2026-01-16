@@ -33,8 +33,17 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 		UmlComment:          umlComment,
 	}
 
-	err = validation.ValidateStruct(&association,
-		validation.Field(&association.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = association.Validate(); err != nil {
+		return Association{}, err
+	}
+
+	return association, nil
+}
+
+// Validate validates the Association struct.
+func (a *Association) Validate() error {
+	return validation.ValidateStruct(a,
+		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -44,8 +53,8 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 			}
 			return nil
 		})),
-		validation.Field(&association.Name, validation.Required),
-		validation.Field(&association.FromClassKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&a.Name, validation.Required),
+		validation.Field(&a.FromClassKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -55,7 +64,7 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 			}
 			return nil
 		})),
-		validation.Field(&association.ToClassKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&a.ToClassKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -66,11 +75,6 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 			return nil
 		})),
 	)
-	if err != nil {
-		return Association{}, errors.WithStack(err)
-	}
-
-	return association, nil
 }
 
 func (a *Association) Includes(classKey identity.Key) (included bool) {
@@ -87,9 +91,13 @@ func (a *Association) Other(classKey identity.Key) (otherKey identity.Key, err e
 	return a.ToClassKey, nil
 }
 
-// ValidateWithParent validates the Association and verifies its key has the correct parent.
+// ValidateWithParent validates the Association, its key's parent relationship, and all children.
 // The parent may be a Subdomain, Domain, or nil (for model-level associations).
 func (a *Association) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := a.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err

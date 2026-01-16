@@ -39,8 +39,17 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 		UmlComment:   umlComment,
 	}
 
-	err = validation.ValidateStruct(&object,
-		validation.Field(&object.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = object.Validate(); err != nil {
+		return Object{}, err
+	}
+
+	return object, nil
+}
+
+// Validate validates the Object struct.
+func (o *Object) Validate() error {
+	return validation.ValidateStruct(o,
+		validation.Field(&o.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -50,9 +59,9 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 			}
 			return nil
 		})),
-		validation.Field(&object.Name, validation.By(func(value interface{}) error {
+		validation.Field(&o.Name, validation.By(func(value interface{}) error {
 			name := value.(string)
-			if object.NameStyle == _NAME_STYLE_UNNAMED {
+			if o.NameStyle == _NAME_STYLE_UNNAMED {
 				if name != "" {
 					return errors.New("Name must be blank for unnamed style")
 				}
@@ -63,8 +72,8 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 			}
 			return nil
 		})),
-		validation.Field(&object.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
-		validation.Field(&object.ClassKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&o.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
+		validation.Field(&o.ClassKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -75,11 +84,6 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 			return nil
 		})),
 	)
-	if err != nil {
-		return Object{}, errors.WithStack(err)
-	}
-
-	return object, nil
 }
 
 func (so *Object) SetClass(class model_class.Class) {
@@ -103,9 +107,13 @@ func (so *Object) GetName() (name string) {
 	return name
 }
 
-// ValidateWithParent validates the Object and verifies its key has the correct parent.
+// ValidateWithParent validates the Object, its key's parent relationship, and all children.
 // The parent must be a Scenario.
 func (o *Object) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := o.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := o.Key.ValidateParent(parent); err != nil {
 		return err

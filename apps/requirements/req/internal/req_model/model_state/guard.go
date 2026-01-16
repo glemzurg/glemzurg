@@ -22,8 +22,17 @@ func NewGuard(key identity.Key, name, details string) (guard Guard, err error) {
 		Details: details,
 	}
 
-	err = validation.ValidateStruct(&guard,
-		validation.Field(&guard.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = guard.Validate(); err != nil {
+		return Guard{}, err
+	}
+
+	return guard, nil
+}
+
+// Validate validates the Guard struct.
+func (g *Guard) Validate() error {
+	return validation.ValidateStruct(g,
+		validation.Field(&g.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -33,19 +42,18 @@ func NewGuard(key identity.Key, name, details string) (guard Guard, err error) {
 			}
 			return nil
 		})),
-		validation.Field(&guard.Name, validation.Required),
-		validation.Field(&guard.Details, validation.Required),
+		validation.Field(&g.Name, validation.Required),
+		validation.Field(&g.Details, validation.Required),
 	)
-	if err != nil {
-		return Guard{}, errors.WithStack(err)
-	}
-
-	return guard, nil
 }
 
-// ValidateWithParent validates the Guard and verifies its key has the correct parent.
+// ValidateWithParent validates the Guard, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (g *Guard) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := g.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := g.Key.ValidateParent(parent); err != nil {
 		return err

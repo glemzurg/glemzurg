@@ -30,8 +30,17 @@ func NewScenario(key identity.Key, name, details string) (scenario Scenario, err
 		Details: details,
 	}
 
-	err = validation.ValidateStruct(&scenario,
-		validation.Field(&scenario.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = scenario.Validate(); err != nil {
+		return Scenario{}, err
+	}
+
+	return scenario, nil
+}
+
+// Validate validates the Scenario struct.
+func (s *Scenario) Validate() error {
+	return validation.ValidateStruct(s,
+		validation.Field(&s.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -41,13 +50,8 @@ func NewScenario(key identity.Key, name, details string) (scenario Scenario, err
 			}
 			return nil
 		})),
-		validation.Field(&scenario.Name, validation.Required),
+		validation.Field(&s.Name, validation.Required),
 	)
-	if err != nil {
-		return Scenario{}, errors.WithStack(err)
-	}
-
-	return scenario, nil
 }
 
 func (sc *Scenario) SetObjects(objects []Object) {
@@ -74,9 +78,13 @@ func PopulateScenarioStepReferences(
 	return nil
 }
 
-// ValidateWithParent validates the Scenario and verifies its key has the correct parent.
+// ValidateWithParent validates the Scenario, its key's parent relationship, and all children.
 // The parent must be a UseCase.
 func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := s.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := s.Key.ValidateParent(parent); err != nil {
 		return err

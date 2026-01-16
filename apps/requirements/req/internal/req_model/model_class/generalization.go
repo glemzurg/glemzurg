@@ -30,8 +30,17 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&generalization,
-		validation.Field(&generalization.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = generalization.Validate(); err != nil {
+		return Generalization{}, err
+	}
+
+	return generalization, nil
+}
+
+// Validate validates the Generalization struct.
+func (g *Generalization) Validate() error {
+	return validation.ValidateStruct(g,
+		validation.Field(&g.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -41,13 +50,8 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 			}
 			return nil
 		})),
-		validation.Field(&generalization.Name, validation.Required),
+		validation.Field(&g.Name, validation.Required),
 	)
-	if err != nil {
-		return Generalization{}, errors.WithStack(err)
-	}
-
-	return generalization, nil
 }
 
 func (g *Generalization) SetSuperSubclassKeys(superclassKey identity.Key, subclassKeys []identity.Key) {
@@ -55,9 +59,13 @@ func (g *Generalization) SetSuperSubclassKeys(superclassKey identity.Key, subcla
 	g.SubclassKeys = subclassKeys
 }
 
-// ValidateWithParent validates the Generalization and verifies its key has the correct parent.
+// ValidateWithParent validates the Generalization, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (g *Generalization) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := g.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := g.Key.ValidateParent(parent); err != nil {
 		return err

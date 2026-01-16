@@ -36,8 +36,17 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 		When:      when,
 	}
 
-	err = validation.ValidateStruct(&stateAction,
-		validation.Field(&stateAction.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = stateAction.Validate(); err != nil {
+		return StateAction{}, err
+	}
+
+	return stateAction, nil
+}
+
+// Validate validates the StateAction struct.
+func (sa *StateAction) Validate() error {
+	return validation.ValidateStruct(sa,
+		validation.Field(&sa.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -47,7 +56,7 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 			}
 			return nil
 		})),
-		validation.Field(&stateAction.ActionKey, validation.Required, validation.By(func(value interface{}) error {
+		validation.Field(&sa.ActionKey, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -57,18 +66,17 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 			}
 			return nil
 		})),
-		validation.Field(&stateAction.When, validation.Required, validation.In(_WHEN_ENTRY, _WHEN_EXIT, _WHEN_DO)),
+		validation.Field(&sa.When, validation.Required, validation.In(_WHEN_ENTRY, _WHEN_EXIT, _WHEN_DO)),
 	)
-	if err != nil {
-		return StateAction{}, errors.WithStack(err)
-	}
-
-	return stateAction, nil
 }
 
-// ValidateWithParent validates the StateAction and verifies its key has the correct parent.
+// ValidateWithParent validates the StateAction, its key's parent relationship, and all children.
 // The parent must be a State.
 func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := sa.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := sa.Key.ValidateParent(parent); err != nil {
 		return err

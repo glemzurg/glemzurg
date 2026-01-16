@@ -24,8 +24,17 @@ func NewEvent(key identity.Key, name, details string, parameters []EventParamete
 		Parameters: parameters,
 	}
 
-	err = validation.ValidateStruct(&event,
-		validation.Field(&event.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = event.Validate(); err != nil {
+		return Event{}, err
+	}
+
+	return event, nil
+}
+
+// Validate validates the Event struct.
+func (e *Event) Validate() error {
+	return validation.ValidateStruct(e,
+		validation.Field(&e.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -35,18 +44,17 @@ func NewEvent(key identity.Key, name, details string, parameters []EventParamete
 			}
 			return nil
 		})),
-		validation.Field(&event.Name, validation.Required),
+		validation.Field(&e.Name, validation.Required),
 	)
-	if err != nil {
-		return Event{}, errors.WithStack(err)
-	}
-
-	return event, nil
 }
 
-// ValidateWithParent validates the Event and verifies its key has the correct parent.
+// ValidateWithParent validates the Event, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (e *Event) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := e.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := e.Key.ValidateParent(parent); err != nil {
 		return err

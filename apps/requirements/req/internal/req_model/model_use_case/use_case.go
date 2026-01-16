@@ -40,8 +40,17 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&useCase,
-		validation.Field(&useCase.Key, validation.Required, validation.By(func(value interface{}) error {
+	if err = useCase.Validate(); err != nil {
+		return UseCase{}, err
+	}
+
+	return useCase, nil
+}
+
+// Validate validates the UseCase struct.
+func (uc *UseCase) Validate() error {
+	return validation.ValidateStruct(uc,
+		validation.Field(&uc.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
 				return err
@@ -51,14 +60,9 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 			}
 			return nil
 		})),
-		validation.Field(&useCase.Name, validation.Required),
-		validation.Field(&useCase.Level, validation.Required, validation.In(_USE_CASE_LEVEL_SKY, _USE_CASE_LEVEL_SEA, _USE_CASE_LEVEL_MUD)),
+		validation.Field(&uc.Name, validation.Required),
+		validation.Field(&uc.Level, validation.Required, validation.In(_USE_CASE_LEVEL_SKY, _USE_CASE_LEVEL_SEA, _USE_CASE_LEVEL_MUD)),
 	)
-	if err != nil {
-		return UseCase{}, errors.WithStack(err)
-	}
-
-	return useCase, nil
 }
 
 func (uc *UseCase) SetDomainKey(domainKey identity.Key) {
@@ -73,9 +77,13 @@ func (uc *UseCase) SetScenarios(scenarios []model_scenario.Scenario) {
 	uc.Scenarios = scenarios
 }
 
-// ValidateWithParent validates the UseCase and verifies its key has the correct parent.
+// ValidateWithParent validates the UseCase, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := uc.Validate(); err != nil {
+		return err
+	}
 	// Validate the key has the correct parent.
 	if err := uc.Key.ValidateParent(parent); err != nil {
 		return err
