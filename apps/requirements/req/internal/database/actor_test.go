@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
@@ -35,11 +36,9 @@ func (suite *ActorSuite) SetupTest() {
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
 
-	// Create the actor key for reuse.
-	var err error
-	suite.actorKey, err = identity.NewActorKey("key")
-	suite.actorKey, err = identity.NewActorKey("key_b")
-	assert.Nil(suite.T(), err)
+	// Create the actor keys for reuse.
+	suite.actorKey = helper.Must(identity.NewActorKey("key"))
+	suite.actorKeyB = helper.Must(identity.NewActorKey("key_b"))
 }
 
 func (suite *ActorSuite) TestLoad() {
