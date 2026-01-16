@@ -21,7 +21,7 @@ func TestTopLevelDataTypeSuite(t *testing.T) {
 type TopLevelDataTypeSuite struct {
 	suite.Suite
 	db    *sql.DB
-	model requirements.Model
+	model req_model.Model
 }
 
 func (suite *TopLevelDataTypeSuite) SetupTest() {

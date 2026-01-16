@@ -22,7 +22,7 @@ func TestSubdomainSuite(t *testing.T) {
 type SubdomainSuite struct {
 	suite.Suite
 	db     *sql.DB
-	model  requirements.Model
+	model  req_model.Model
 	domain model_domain.Domain
 }
 

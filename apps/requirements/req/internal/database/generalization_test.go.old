@@ -22,7 +22,7 @@ func TestGeneralizationSuite(t *testing.T) {
 type GeneralizationSuite struct {
 	suite.Suite
 	db    *sql.DB
-	model requirements.Model
+	model req_model.Model
 }
 
 func (suite *GeneralizationSuite) SetupTest() {

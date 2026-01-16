@@ -22,7 +22,7 @@ func TestAtomicSuite(t *testing.T) {
 type AtomicSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
+	model     req_model.Model
 	dataType  model_data_type.DataType
 	dataTypeB model_data_type.DataType
 }

@@ -3,6 +3,7 @@ package generate
 import (
 	"path/filepath"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
@@ -46,11 +47,11 @@ func generateModelFiles(debug bool, outputPath string, reqs requirements.Require
 	return nil
 }
 
-func generateModelMdContents(reqs requirements.Requirements, model requirements.Model, actors []model_actor.Actor, domains []model_domain.Domain) (contents string, err error) {
+func generateModelMdContents(reqs requirements.Requirements, model req_model.Model, actors []model_actor.Actor, domains []model_domain.Domain) (contents string, err error) {
 
 	contents, err = generateFromTemplate(_modelMdTemplate, struct {
 		Reqs    requirements.Requirements
-		Model   requirements.Model
+		Model   req_model.Model
 		Actors  []model_actor.Actor
 		Domains []model_domain.Domain
 	}{

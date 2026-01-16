@@ -1,6 +1,7 @@
 package parser_json
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
@@ -120,7 +121,7 @@ func UnpackRequirements(reqs requirements.Requirements) modelInOut {
 // PackRequirements converts a tree of parser_json objects back into requirements.Requirements.
 func PackRequirements(tree modelInOut) requirements.Requirements {
 	reqs := requirements.Requirements{
-		Model: requirements.Model{
+		Model: req_model.Model{
 			Key:     tree.Key,
 			Name:    tree.Name,
 			Details: tree.Details,

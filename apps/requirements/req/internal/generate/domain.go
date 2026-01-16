@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
 
@@ -68,7 +69,7 @@ func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requir
 	return nil
 }
 
-func generateDomainMdContents(reqs requirements.Requirements, model requirements.Model, domain model_domain.Domain) (contents string, err error) {
+func generateDomainMdContents(reqs requirements.Requirements, model req_model.Model, domain model_domain.Domain) (contents string, err error) {
 
 	sort.Slice(domain.Classes, func(i, j int) bool {
 		return domain.Classes[i].Name < domain.Classes[j].Name
@@ -76,7 +77,7 @@ func generateDomainMdContents(reqs requirements.Requirements, model requirements
 
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
 		Reqs   requirements.Requirements
-		Model  requirements.Model
+		Model  req_model.Model
 		Domain model_domain.Domain
 	}{
 		Reqs:   reqs,

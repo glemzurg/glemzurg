@@ -42,7 +42,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	input := requirements.Requirements{
 
 		// Model
-		Model: requirements.Model{
+		Model: req_model.Model{
 			Key:  "model_key",
 			Name: "Model",
 		},

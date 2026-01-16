@@ -24,7 +24,7 @@ func TestScenarioSuite(t *testing.T) {
 type ScenarioSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
+	model     req_model.Model
 	domain    model_domain.Domain
 	subdomain model_domain.Subdomain
 	useCase   model_use_case.UseCase

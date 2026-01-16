@@ -22,7 +22,7 @@ func TestDataTypeSuite(t *testing.T) {
 type DataTypeSuite struct {
 	suite.Suite
 	db    *sql.DB
-	model requirements.Model
+	model req_model.Model
 }
 
 func (suite *DataTypeSuite) SetupTest() {

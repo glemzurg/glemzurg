@@ -22,7 +22,7 @@ func TestDomainAssociationSuite(t *testing.T) {
 type DomainAssociationSuite struct {
 	suite.Suite
 	db      *sql.DB
-	model   requirements.Model
+	model   req_model.Model
 	domain  model_domain.Domain
 	domainB model_domain.Domain
 }

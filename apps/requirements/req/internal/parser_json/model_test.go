@@ -3,7 +3,7 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
@@ -11,7 +11,7 @@ import (
 )
 
 func TestModelInOutRoundTrip(t *testing.T) {
-	original := requirements.Model{
+	original := req_model.Model{
 		Key:     "model1",
 		Name:    "Test Model",
 		Details: "Details",

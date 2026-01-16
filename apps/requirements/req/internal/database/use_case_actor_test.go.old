@@ -24,7 +24,7 @@ func TestUseCaseActorSuite(t *testing.T) {
 type UseCaseActorSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
+	model     req_model.Model
 	actor     model_actor.Actor
 	actorB    model_actor.Actor
 	domain    model_domain.Domain

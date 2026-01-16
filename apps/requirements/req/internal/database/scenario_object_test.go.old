@@ -25,7 +25,7 @@ func TestObjectSuite(t *testing.T) {
 type ObjectSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     requirements.Model
+	model     req_model.Model
 	domain    model_domain.Domain
 	subdomain model_domain.Subdomain
 	class     model_class.Class
