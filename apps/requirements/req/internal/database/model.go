@@ -2,13 +2,13 @@ package database
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanModel(scanner Scanner, model *requirements.Model) (err error) {
+func scanModel(scanner Scanner, model *req_model.Model) (err error) {
 	if err = scanner.Scan(
 		&model.Key,
 		&model.Name,
@@ -24,12 +24,12 @@ func scanModel(scanner Scanner, model *requirements.Model) (err error) {
 }
 
 // LoadModel loads a model from the database
-func LoadModel(dbOrTx DbOrTx, modelKey string) (model requirements.Model, err error) {
+func LoadModel(dbOrTx DbOrTx, modelKey string) (model req_model.Model, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return requirements.Model{}, err
+		return req_model.Model{}, err
 	}
 
 	// Query the database.
@@ -51,14 +51,14 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model requirements.Model, err er
 			model_key = $1`,
 		modelKey)
 	if err != nil {
-		return requirements.Model{}, errors.WithStack(err)
+		return req_model.Model{}, errors.WithStack(err)
 	}
 
 	return model, nil
 }
 
 // AddModel adds a model to the database.
-func AddModel(dbOrTx DbOrTx, model requirements.Model) (err error) {
+func AddModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err := identity.PreenKey(model.Key)
@@ -91,7 +91,7 @@ func AddModel(dbOrTx DbOrTx, model requirements.Model) (err error) {
 }
 
 // UpdateModel updates a model in the database.
-func UpdateModel(dbOrTx DbOrTx, model requirements.Model) (err error) {
+func UpdateModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err := identity.PreenKey(model.Key)
@@ -142,13 +142,13 @@ func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 }
 
 // QueryModels loads all models from the database
-func QueryModels(dbOrTx DbOrTx) (models []requirements.Model, err error) {
+func QueryModels(dbOrTx DbOrTx) (models []req_model.Model, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var model requirements.Model
+			var model req_model.Model
 			if err = scanModel(scanner, &model); err != nil {
 				return errors.WithStack(err)
 			}

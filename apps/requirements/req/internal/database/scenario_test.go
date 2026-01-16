@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
