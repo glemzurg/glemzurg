@@ -9,8 +9,10 @@ import (
 
 // Populate a golang struct from a database row.
 func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
+	var keyStr string
+
 	if err = scanner.Scan(
-		&actor.Key,
+		&keyStr,
 		&actor.Name,
 		&actor.Details,
 		&actor.Type,
@@ -22,21 +24,17 @@ func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the key string into an identity.Key.
+	actor.Key, err = identity.ParseKey(keyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadActor loads a actor from the database
-func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Actor, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return model_actor.Actor{}, err
-	}
-	actorKey, err = identity.PreenKey(actorKey)
-	if err != nil {
-		return model_actor.Actor{}, err
-	}
+func LoadActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor model_actor.Actor, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -60,7 +58,7 @@ func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Acto
 		AND
 			model_key = $1`,
 		modelKey,
-		actorKey)
+		actorKey.String())
 	if err != nil {
 		return model_actor.Actor{}, errors.WithStack(err)
 	}
@@ -70,16 +68,6 @@ func LoadActor(dbOrTx DbOrTx, modelKey, actorKey string) (actor model_actor.Acto
 
 // AddActor adds a actor to the database.
 func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	actorKey, err := identity.PreenKey(actor.Key)
-	if err != nil {
-		return err
-	}
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -102,7 +90,7 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err erro
 					$6
 				)`,
 		modelKey,
-		actorKey,
+		actor.Key.String(),
 		actor.Name,
 		actor.Details,
 		actor.Type,
@@ -116,16 +104,6 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err erro
 
 // UpdateActor updates a actor in the database.
 func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	actorKey, err := identity.PreenKey(actor.Key)
-	if err != nil {
-		return err
-	}
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -141,7 +119,7 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 		AND
 			actor_key = $2`,
 		modelKey,
-		actorKey,
+		actor.Key.String(),
 		actor.Name,
 		actor.Details,
 		actor.Type,
@@ -154,17 +132,7 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 }
 
 // RemoveActor deletes a actor from the database.
-func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	actorKey, err = identity.PreenKey(actorKey)
-	if err != nil {
-		return err
-	}
+func RemoveActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -175,7 +143,7 @@ func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 			AND
 				actor_key = $2`,
 		modelKey,
-		actorKey)
+		actorKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -185,12 +153,6 @@ func RemoveActor(dbOrTx DbOrTx, modelKey, actorKey string) (err error) {
 
 // QueryActors loads all actors from the database
 func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
 
 	// Query the database.
 	err = dbQuery(
