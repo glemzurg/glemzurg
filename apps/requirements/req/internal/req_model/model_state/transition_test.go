@@ -17,8 +17,8 @@ type TransitionSuite struct {
 	suite.Suite
 }
 
-func (suite *TransitionSuite) TestNew() {
-
+// TestValidate tests all validation rules for Transition.
+func (suite *TransitionSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
@@ -27,208 +27,207 @@ func (suite *TransitionSuite) TestNew() {
 	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
 	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	validKey := helper.Must(identity.NewTransitionKey(classKey, "transition1"))
 
 	tests := []struct {
-		testName     string
-		key          identity.Key
-		fromStateKey *identity.Key
-		eventKey     identity.Key
-		guardKey     *identity.Key
-		actionKey    *identity.Key
-		toStateKey   *identity.Key
-		umlComment   string
-		obj          Transition
-		errstr       string
+		testName   string
+		transition Transition
+		errstr     string
 	}{
-		// OK.
 		{
-			testName:     "ok with all fields",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition1")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     &guardKey,
-			actionKey:    &actionKey,
-			toStateKey:   &toStateKey,
-			umlComment:   "UmlComment",
-			obj: Transition{
-				Key:          helper.Must(identity.NewTransitionKey(classKey, "transition1")),
+			testName: "valid transition with all fields",
+			transition: Transition{
+				Key:          validKey,
 				FromStateKey: &fromStateKey,
 				EventKey:     eventKey,
 				GuardKey:     &guardKey,
 				ActionKey:    &actionKey,
 				ToStateKey:   &toStateKey,
-				UmlComment:   "UmlComment",
 			},
 		},
 		{
-			testName:     "ok with minimal fields",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition2")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     nil,
-			actionKey:    nil,
-			toStateKey:   &toStateKey,
-			umlComment:   "",
-			obj: Transition{
-				Key:          helper.Must(identity.NewTransitionKey(classKey, "transition2")),
+			testName: "valid transition with only from state",
+			transition: Transition{
+				Key:          validKey,
 				FromStateKey: &fromStateKey,
 				EventKey:     eventKey,
-				GuardKey:     nil,
-				ActionKey:    nil,
-				ToStateKey:   &toStateKey,
-				UmlComment:   "",
-			},
-		},
-		{
-			testName:     "ok with only from state",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition3")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     nil,
-			actionKey:    nil,
-			toStateKey:   nil,
-			umlComment:   "",
-			obj: Transition{
-				Key:          helper.Must(identity.NewTransitionKey(classKey, "transition3")),
-				FromStateKey: &fromStateKey,
-				EventKey:     eventKey,
-				GuardKey:     nil,
-				ActionKey:    nil,
 				ToStateKey:   nil,
-				UmlComment:   "",
 			},
 		},
 		{
-			testName:     "ok with only to state",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition4")),
-			fromStateKey: nil,
-			eventKey:     eventKey,
-			guardKey:     nil,
-			actionKey:    nil,
-			toStateKey:   &toStateKey,
-			umlComment:   "",
-			obj: Transition{
-				Key:          helper.Must(identity.NewTransitionKey(classKey, "transition4")),
+			testName: "valid transition with only to state",
+			transition: Transition{
+				Key:          validKey,
 				FromStateKey: nil,
 				EventKey:     eventKey,
-				GuardKey:     nil,
-				ActionKey:    nil,
 				ToStateKey:   &toStateKey,
-				UmlComment:   "",
 			},
 		},
-
-		// Error states.
 		{
-			testName:     "error empty key",
-			key:          identity.Key{},
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     &guardKey,
-			actionKey:    &actionKey,
-			toStateKey:   &toStateKey,
-			umlComment:   "UmlComment",
-			errstr:       "keyType: cannot be blank",
+			testName: "error empty key",
+			transition: Transition{
+				Key:          identity.Key{},
+				FromStateKey: &fromStateKey,
+				EventKey:     eventKey,
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:     "error wrong key type",
-			key:          helper.Must(identity.NewDomainKey("domain1")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     &guardKey,
-			actionKey:    &actionKey,
-			toStateKey:   &toStateKey,
-			umlComment:   "UmlComment",
-			errstr:       "Key: invalid key type 'domain' for transition",
+			testName: "error wrong key type",
+			transition: Transition{
+				Key:          domainKey,
+				FromStateKey: &fromStateKey,
+				EventKey:     eventKey,
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "Key: invalid key type 'domain' for transition",
 		},
 		{
-			testName:     "error empty event key",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition5")),
-			fromStateKey: &fromStateKey,
-			eventKey:     identity.Key{},
-			guardKey:     &guardKey,
-			actionKey:    &actionKey,
-			toStateKey:   &toStateKey,
-			umlComment:   "UmlComment",
-			errstr:       "keyType: cannot be blank",
+			testName: "error empty event key",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: &fromStateKey,
+				EventKey:     identity.Key{},
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:     "error wrong event key type",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition6")),
-			fromStateKey: &fromStateKey,
-			eventKey:     helper.Must(identity.NewDomainKey("domain1")),
-			guardKey:     &guardKey,
-			actionKey:    &actionKey,
-			toStateKey:   &toStateKey,
-			umlComment:   "UmlComment",
-			errstr:       "EventKey: invalid key type 'domain' for event",
+			testName: "error wrong event key type",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: &fromStateKey,
+				EventKey:     domainKey,
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "EventKey: invalid key type 'domain' for event",
 		},
 		{
-			testName:     "error with both state keys nil",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition7")),
-			fromStateKey: nil,
-			eventKey:     eventKey,
-			guardKey:     &guardKey,
-			actionKey:    &actionKey,
-			toStateKey:   nil,
-			umlComment:   "UmlComment",
-			errstr:       `FromStateKey, ToStateKey: cannot both be blank`,
+			testName: "error both state keys nil",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: nil,
+				EventKey:     eventKey,
+				ToStateKey:   nil,
+			},
+			errstr: "FromStateKey, ToStateKey: cannot both be blank",
 		},
 		{
-			testName:     "error wrong from state key type",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition8")),
-			fromStateKey: &domainKey,
-			eventKey:     eventKey,
-			guardKey:     nil,
-			actionKey:    nil,
-			toStateKey:   &toStateKey,
-			umlComment:   "",
-			errstr:       "FromStateKey: invalid key type 'domain' for from state",
+			testName: "error wrong from state key type",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: &domainKey,
+				EventKey:     eventKey,
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "FromStateKey: invalid key type 'domain' for from state",
 		},
 		{
-			testName:     "error wrong to state key type",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition9")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     nil,
-			actionKey:    nil,
-			toStateKey:   &domainKey,
-			umlComment:   "",
-			errstr:       "ToStateKey: invalid key type 'domain' for to state",
+			testName: "error wrong to state key type",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: &fromStateKey,
+				EventKey:     eventKey,
+				ToStateKey:   &domainKey,
+			},
+			errstr: "ToStateKey: invalid key type 'domain' for to state",
 		},
 		{
-			testName:     "error wrong guard key type",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition10")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     &domainKey,
-			actionKey:    nil,
-			toStateKey:   &toStateKey,
-			umlComment:   "",
-			errstr:       "GuardKey: invalid key type 'domain' for guard",
+			testName: "error wrong guard key type",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: &fromStateKey,
+				EventKey:     eventKey,
+				GuardKey:     &domainKey,
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "GuardKey: invalid key type 'domain' for guard",
 		},
 		{
-			testName:     "error wrong action key type",
-			key:          helper.Must(identity.NewTransitionKey(classKey, "transition11")),
-			fromStateKey: &fromStateKey,
-			eventKey:     eventKey,
-			guardKey:     nil,
-			actionKey:    &domainKey,
-			toStateKey:   &toStateKey,
-			umlComment:   "",
-			errstr:       "ActionKey: invalid key type 'domain' for action",
+			testName: "error wrong action key type",
+			transition: Transition{
+				Key:          validKey,
+				FromStateKey: &fromStateKey,
+				EventKey:     eventKey,
+				ActionKey:    &domainKey,
+				ToStateKey:   &toStateKey,
+			},
+			errstr: "ActionKey: invalid key type 'domain' for action",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewTransition(tt.key, tt.fromStateKey, tt.eventKey, tt.guardKey, tt.actionKey, tt.toStateKey, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.transition.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewTransition maps parameters correctly and calls Validate.
+func (suite *TransitionSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	fromStateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	toStateKey := helper.Must(identity.NewStateKey(classKey, "state2"))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
+	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	key := helper.Must(identity.NewTransitionKey(classKey, "transition1"))
+
+	// Test parameters are mapped correctly.
+	transition, err := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, transition.Key)
+	assert.Equal(suite.T(), &fromStateKey, transition.FromStateKey)
+	assert.Equal(suite.T(), eventKey, transition.EventKey)
+	assert.Equal(suite.T(), &guardKey, transition.GuardKey)
+	assert.Equal(suite.T(), &actionKey, transition.ActionKey)
+	assert.Equal(suite.T(), &toStateKey, transition.ToStateKey)
+	assert.Equal(suite.T(), "UmlComment", transition.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewTransition(key, nil, eventKey, nil, nil, nil, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "FromStateKey, ToStateKey: cannot both be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *TransitionSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	fromStateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	toStateKey := helper.Must(identity.NewStateKey(classKey, "state2"))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
+	validKey := helper.Must(identity.NewTransitionKey(classKey, "transition1"))
+	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+
+	// Test that Validate is called.
+	transition := Transition{
+		Key:          validKey,
+		FromStateKey: nil, // Invalid - both nil
+		EventKey:     eventKey,
+		ToStateKey:   nil, // Invalid - both nil
+	}
+	err := transition.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "FromStateKey, ToStateKey: cannot both be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - transition key has class1 as parent, but we pass other_class.
+	transition = Transition{
+		Key:          validKey,
+		FromStateKey: &fromStateKey,
+		EventKey:     eventKey,
+		ToStateKey:   &toStateKey,
+	}
+	err = transition.ValidateWithParent(&otherClassKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = transition.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
 }

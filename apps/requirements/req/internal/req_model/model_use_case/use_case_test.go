@@ -17,132 +17,146 @@ type UseCaseSuite struct {
 	suite.Suite
 }
 
-func (suite *UseCaseSuite) SetupTest() {
-}
-
-func (suite *UseCaseSuite) TestNew() {
+// TestValidate tests all validation rules for UseCase.
+func (suite *UseCaseSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
 
 	tests := []struct {
-		testName   string
-		key        identity.Key
-		name       string
-		details    string
-		level      string
-		readOnly   bool
-		umlComment string
-		obj        UseCase
-		errstr     string
+		testName string
+		useCase  UseCase
+		errstr   string
 	}{
-		// OK.
 		{
-			testName:   "ok with all fields",
-			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1")),
-			name:       "Name",
-			details:    "Details",
-			level:      "sea",
-			readOnly:   true,
-			umlComment: "UmlComment",
-			obj: UseCase{
-				Key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1")),
-				Name:       "Name",
-				Details:    "Details",
-				Level:      "sea",
-				ReadOnly:   true,
-				UmlComment: "UmlComment",
+			testName: "valid use case with sea level",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SEA,
 			},
 		},
 		{
-			testName:   "ok sky level",
-			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase2")),
-			name:       "Name",
-			details:    "",
-			level:      "sky",
-			readOnly:   false,
-			umlComment: "",
-			obj: UseCase{
-				Key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase2")),
-				Name:       "Name",
-				Details:    "",
-				Level:      "sky",
-				ReadOnly:   false,
-				UmlComment: "",
+			testName: "valid use case with sky level",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SKY,
 			},
 		},
 		{
-			testName:   "ok mud level",
-			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase3")),
-			name:       "Name",
-			details:    "",
-			level:      "mud",
-			readOnly:   false,
-			umlComment: "",
-			obj: UseCase{
-				Key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase3")),
-				Name:       "Name",
-				Details:    "",
-				Level:      "mud",
-				ReadOnly:   false,
-				UmlComment: "",
+			testName: "valid use case with mud level",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_MUD,
 			},
 		},
-
-		// Error states.
 		{
-			testName:   "error empty key",
-			key:        identity.Key{},
-			name:       "Name",
-			details:    "Details",
-			level:      "sea",
-			readOnly:   true,
-			umlComment: "UmlComment",
-			errstr:     `Key:`,
+			testName: "error empty key",
+			useCase: UseCase{
+				Key:   identity.Key{},
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SEA,
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:   "error blank name",
-			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase4")),
-			name:       "",
-			details:    "Details",
-			level:      "sea",
-			readOnly:   true,
-			umlComment: "UmlComment",
-			errstr:     `Name: cannot be blank`,
+			testName: "error wrong key type",
+			useCase: UseCase{
+				Key:   domainKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SEA,
+			},
+			errstr: "invalid key type for use_case",
 		},
 		{
-			testName:   "error blank level",
-			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase5")),
-			name:       "Name",
-			details:    "Details",
-			level:      "",
-			readOnly:   true,
-			umlComment: "UmlComment",
-			errstr:     `Level: cannot be blank`,
+			testName: "error blank name",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "",
+				Level: _USE_CASE_LEVEL_SEA,
+			},
+			errstr: "Name: cannot be blank",
 		},
 		{
-			testName:   "error invalid level",
-			key:        helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase6")),
-			name:       "Name",
-			details:    "Details",
-			level:      "unknown",
-			readOnly:   true,
-			umlComment: "UmlComment",
-			errstr:     `Level: must be a valid value`,
+			testName: "error blank level",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: "",
+			},
+			errstr: "Level: cannot be blank",
+		},
+		{
+			testName: "error invalid level",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: "unknown",
+			},
+			errstr: "Level: must be a valid value",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewUseCase(tt.key, tt.name, tt.details, tt.level, tt.readOnly, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.useCase.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
+}
+
+// TestNew tests that NewUseCase maps parameters correctly and calls Validate.
+func (suite *UseCaseSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	key := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+
+	// Test parameters are mapped correctly.
+	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, useCase.Key)
+	assert.Equal(suite.T(), "Name", useCase.Name)
+	assert.Equal(suite.T(), "Details", useCase.Details)
+	assert.Equal(suite.T(), _USE_CASE_LEVEL_SEA, useCase.Level)
+	assert.Equal(suite.T(), true, useCase.ReadOnly)
+	assert.Equal(suite.T(), "UmlComment", useCase.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *UseCaseSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
+
+	// Test that Validate is called.
+	useCase := UseCase{
+		Key:   validKey,
+		Name:  "", // Invalid
+		Level: _USE_CASE_LEVEL_SEA,
+	}
+	err := useCase.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - use case key has subdomain1 as parent, but we pass other_subdomain.
+	useCase = UseCase{
+		Key:   validKey,
+		Name:  "Name",
+		Level: _USE_CASE_LEVEL_SEA,
+	}
+	err = useCase.ValidateWithParent(&otherSubdomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = useCase.ValidateWithParent(&subdomainKey)
+	assert.NoError(suite.T(), err)
 }

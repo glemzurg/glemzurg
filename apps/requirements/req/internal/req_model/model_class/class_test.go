@@ -17,110 +17,109 @@ type ClassSuite struct {
 	suite.Suite
 }
 
-func (suite *ClassSuite) TestNew() {
-
+// TestValidate tests all validation rules for Class.
+func (suite *ClassSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	actorKey := helper.Must(identity.NewActorKey("actor1"))
-	generalizationKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	validKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 
 	tests := []struct {
-		testName        string
-		key             identity.Key
-		name            string
-		details         string
-		actorKey        *identity.Key
-		superclassOfKey *identity.Key
-		subclassOfKey   *identity.Key
-		umlComment      string
-		obj             Class
-		errstr          string
+		testName string
+		class    Class
+		errstr   string
 	}{
-		// OK.
 		{
-			testName:        "ok with all fields",
-			key:             helper.Must(identity.NewClassKey(subdomainKey, "class1")),
-			name:            "Name",
-			details:         "Details",
-			actorKey:        &actorKey,
-			superclassOfKey: &generalizationKey,
-			subclassOfKey:   &generalizationKey,
-			umlComment:      "UmlComment",
-			obj: Class{
-				Key:             helper.Must(identity.NewClassKey(subdomainKey, "class1")),
-				Name:            "Name",
-				Details:         "Details",
-				ActorKey:        &actorKey,
-				SuperclassOfKey: &generalizationKey,
-				SubclassOfKey:   &generalizationKey,
-				UmlComment:      "UmlComment",
+			testName: "valid class",
+			class: Class{
+				Key:  validKey,
+				Name: "Name",
 			},
 		},
 		{
-			testName:        "ok with minimal fields",
-			key:             helper.Must(identity.NewClassKey(subdomainKey, "class2")),
-			name:            "Name",
-			details:         "",
-			actorKey:        nil,
-			superclassOfKey: nil,
-			subclassOfKey:   nil,
-			umlComment:      "",
-			obj: Class{
-				Key:             helper.Must(identity.NewClassKey(subdomainKey, "class2")),
-				Name:            "Name",
-				Details:         "",
-				ActorKey:        nil,
-				SuperclassOfKey: nil,
-				SubclassOfKey:   nil,
-				UmlComment:      "",
+			testName: "error empty key",
+			class: Class{
+				Key:  identity.Key{},
+				Name: "Name",
 			},
-		},
-
-		// Error states.
-		{
-			testName:        "error empty key",
-			key:             identity.Key{},
-			name:            "Name",
-			details:         "Details",
-			actorKey:        &actorKey,
-			superclassOfKey: &generalizationKey,
-			subclassOfKey:   &generalizationKey,
-			umlComment:      "UmlComment",
-			errstr:          "keyType: cannot be blank",
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:        "error wrong key type",
-			key:             helper.Must(identity.NewDomainKey("domain1")),
-			name:            "Name",
-			details:         "Details",
-			actorKey:        &actorKey,
-			superclassOfKey: &generalizationKey,
-			subclassOfKey:   &generalizationKey,
-			umlComment:      "UmlComment",
-			errstr:          "Key: invalid key type 'domain' for class.",
+			testName: "error wrong key type",
+			class: Class{
+				Key:  domainKey,
+				Name: "Name",
+			},
+			errstr: "Key: invalid key type 'domain' for class.",
 		},
 		{
-			testName:        "error with blank name",
-			key:             helper.Must(identity.NewClassKey(subdomainKey, "class3")),
-			name:            "",
-			details:         "Details",
-			actorKey:        &actorKey,
-			superclassOfKey: &generalizationKey,
-			subclassOfKey:   &generalizationKey,
-			umlComment:      "UmlComment",
-			errstr:          `Name: cannot be blank`,
+			testName: "error blank name",
+			class: Class{
+				Key:  validKey,
+				Name: "",
+			},
+			errstr: "Name: cannot be blank",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewClass(tt.key, tt.name, tt.details, tt.actorKey, tt.superclassOfKey, tt.subclassOfKey, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.class.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewClass maps parameters correctly and calls Validate.
+func (suite *ClassSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	key := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	actorKey := helper.Must(identity.NewActorKey("actor1"))
+	generalizationKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+
+	// Test parameters are mapped correctly.
+	class, err := NewClass(key, "Name", "Details", &actorKey, &generalizationKey, &generalizationKey, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, class.Key)
+	assert.Equal(suite.T(), "Name", class.Name)
+	assert.Equal(suite.T(), "Details", class.Details)
+	assert.Equal(suite.T(), &actorKey, class.ActorKey)
+	assert.Equal(suite.T(), &generalizationKey, class.SuperclassOfKey)
+	assert.Equal(suite.T(), &generalizationKey, class.SubclassOfKey)
+	assert.Equal(suite.T(), "UmlComment", class.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewClass(key, "", "Details", nil, nil, nil, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *ClassSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
+
+	// Test that Validate is called.
+	class := Class{
+		Key:  validKey,
+		Name: "", // Invalid
+	}
+	err := class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - class key has subdomain1 as parent, but we pass other_subdomain.
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+	}
+	err = class.ValidateWithParent(&otherSubdomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.NoError(suite.T(), err)
 }

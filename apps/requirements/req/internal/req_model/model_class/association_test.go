@@ -17,195 +17,179 @@ type AssociationSuite struct {
 	suite.Suite
 }
 
-func (suite *AssociationSuite) TestNew() {
-
+// TestValidate tests all validation rules for Association.
+func (suite *AssociationSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	multiplicity, err := NewMultiplicity("2..3")
-	assert.Nil(suite.T(), err)
-
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
-	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
-
-	// For error tests with wrong class key types, we need valid class keys.
-	otherFromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "otherfrom"))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
 
 	tests := []struct {
-		testName            string
-		key                 identity.Key
-		name                string
-		details             string
-		fromClassKey        identity.Key
-		fromMultiplicity    Multiplicity
-		toClassKey          identity.Key
-		toMultiplicity      Multiplicity
-		associationClassKey identity.Key
-		umlComment          string
-		obj                 Association
-		errstr              string
+		testName    string
+		association Association
+		errstr      string
 	}{
-		// OK.
 		{
-			testName:            "ok with all fields",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			obj: Association{
-				Key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
-				Name:                "Name",
-				Details:             "Details",
-				FromClassKey:        fromClassKey,
-				FromMultiplicity:    multiplicity,
-				ToClassKey:          toClassKey,
-				ToMultiplicity:      multiplicity,
-				AssociationClassKey: assocClassKey,
-				UmlComment:          "UmlComment",
+			testName: "valid association",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
 			},
 		},
 		{
-			testName:            "ok with minimal fields",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, assocClassKey)),
-			name:                "Name",
-			details:             "",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          assocClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: identity.Key{},
-			umlComment:          "",
-			obj: Association{
-				Key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, assocClassKey)),
-				Name:                "Name",
-				Details:             "",
-				FromClassKey:        fromClassKey,
-				FromMultiplicity:    multiplicity,
-				ToClassKey:          assocClassKey,
-				ToMultiplicity:      multiplicity,
-				AssociationClassKey: identity.Key{},
-				UmlComment:          "",
+			testName: "error empty key",
+			association: Association{
+				Key:          identity.Key{},
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
 			},
-		},
-
-		// Error states.
-		{
-			testName:            "error empty key",
-			key:                 identity.Key{},
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              "keyType: cannot be blank",
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:            "error wrong key type",
-			key:                 helper.Must(identity.NewDomainKey("domain1")),
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              "Key: invalid key type 'domain' for association.",
+			testName: "error wrong key type",
+			association: Association{
+				Key:          domainKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+			},
+			errstr: "Key: invalid key type 'domain' for association.",
 		},
 		{
-			testName:            "error with blank name",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
-			name:                "",
-			details:             "Details",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              `Name: cannot be blank`,
+			testName: "error blank name",
+			association: Association{
+				Key:          validKey,
+				Name:         "",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+			},
+			errstr: "Name: cannot be blank",
 		},
 		{
-			testName:            "error empty from class key",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        identity.Key{},
-			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              "keyType: cannot be blank",
+			testName: "error empty from class key",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: identity.Key{},
+				ToClassKey:   toClassKey,
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:            "error wrong from class key type",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        domainKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          toClassKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              "FromClassKey: invalid key type 'domain' for from class.",
+			testName: "error wrong from class key type",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: domainKey,
+				ToClassKey:   toClassKey,
+			},
+			errstr: "FromClassKey: invalid key type 'domain' for from class.",
 		},
 		{
-			testName:            "error empty to class key",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)),
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          identity.Key{},
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              "keyType: cannot be blank",
+			testName: "error empty to class key",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   identity.Key{},
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:            "error wrong to class key type",
-			key:                 helper.Must(identity.NewClassAssociationKey(subdomainKey, otherFromClassKey, toClassKey)),
-			name:                "Name",
-			details:             "Details",
-			fromClassKey:        fromClassKey,
-			fromMultiplicity:    multiplicity,
-			toClassKey:          domainKey,
-			toMultiplicity:      multiplicity,
-			associationClassKey: assocClassKey,
-			umlComment:          "UmlComment",
-			errstr:              "ToClassKey: invalid key type 'domain' for to class.",
+			testName: "error wrong to class key type",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   domainKey,
+			},
+			errstr: "ToClassKey: invalid key type 'domain' for to class.",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewAssociation(tt.key, tt.name, tt.details, tt.fromClassKey, tt.fromMultiplicity, tt.toClassKey, tt.toMultiplicity, tt.associationClassKey, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.association.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
 }
 
-func (suite *AssociationSuite) TestOther() {
+// TestNew tests that NewAssociation maps parameters correctly and calls Validate.
+func (suite *AssociationSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
+	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
+	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
+	key := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	multiplicity, err := NewMultiplicity("2..3")
+	assert.NoError(suite.T(), err)
 
+	// Test parameters are mapped correctly.
+	assoc, err := NewAssociation(key, "Name", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, assocClassKey, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, assoc.Key)
+	assert.Equal(suite.T(), "Name", assoc.Name)
+	assert.Equal(suite.T(), "Details", assoc.Details)
+	assert.Equal(suite.T(), fromClassKey, assoc.FromClassKey)
+	assert.Equal(suite.T(), multiplicity, assoc.FromMultiplicity)
+	assert.Equal(suite.T(), toClassKey, assoc.ToClassKey)
+	assert.Equal(suite.T(), multiplicity, assoc.ToMultiplicity)
+	assert.Equal(suite.T(), assocClassKey, assoc.AssociationClassKey)
+	assert.Equal(suite.T(), "UmlComment", assoc.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, assocClassKey, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *AssociationSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
+	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
+
+	// Test that Validate is called.
+	assoc := Association{
+		Key:          validKey,
+		Name:         "", // Invalid
+		FromClassKey: fromClassKey,
+		ToClassKey:   toClassKey,
+	}
+	err := assoc.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - association key has subdomain1 as parent, but we pass other_subdomain.
+	assoc = Association{
+		Key:          validKey,
+		Name:         "Name",
+		FromClassKey: fromClassKey,
+		ToClassKey:   toClassKey,
+	}
+	err = assoc.ValidateWithParent(&otherSubdomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = assoc.ValidateWithParent(&subdomainKey)
+	assert.NoError(suite.T(), err)
+}
+
+func (suite *AssociationSuite) TestOther() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	multiplicity, err := NewMultiplicity("2..3")
-	assert.Nil(suite.T(), err)
+	assert.NoError(suite.T(), err)
 
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
@@ -219,18 +203,15 @@ func (suite *AssociationSuite) TestOther() {
 		otherKey identity.Key
 		errstr   string
 	}{
-		// OK.
 		{
 			testName: "other of from is to",
 			obj: Association{
 				Key:              assocKey,
 				Name:             "Name",
-				Details:          "Details",
 				FromClassKey:     fromClassKey,
 				FromMultiplicity: multiplicity,
 				ToClassKey:       toClassKey,
 				ToMultiplicity:   multiplicity,
-				UmlComment:       "UmlComment",
 			},
 			classKey: fromClassKey,
 			otherKey: toClassKey,
@@ -240,36 +221,30 @@ func (suite *AssociationSuite) TestOther() {
 			obj: Association{
 				Key:              assocKey,
 				Name:             "Name",
-				Details:          "Details",
 				FromClassKey:     fromClassKey,
 				FromMultiplicity: multiplicity,
 				ToClassKey:       toClassKey,
 				ToMultiplicity:   multiplicity,
-				UmlComment:       "UmlComment",
 			},
 			classKey: toClassKey,
 			otherKey: fromClassKey,
 		},
-
-		// Error states.
 		{
 			testName: "error with unknown class key",
 			obj: Association{
 				Key:              assocKey,
 				Name:             "Name",
-				Details:          "Details",
 				FromClassKey:     fromClassKey,
 				FromMultiplicity: multiplicity,
 				ToClassKey:       toClassKey,
 				ToMultiplicity:   multiplicity,
-				UmlComment:       "UmlComment",
 			},
 			classKey: unknownClassKey,
 			errstr:   `association does not include class:`,
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.T().Run(tt.testName, func(t *testing.T) {
 			otherKey, err := tt.obj.Other(tt.classKey)
 			if tt.errstr == "" {
 				assert.NoError(t, err)

@@ -22,78 +22,98 @@ func (suite *SubdomainSuite) SetupTest() {
 	suite.domainKey = helper.Must(identity.NewDomainKey("domain1"))
 }
 
-func (suite *SubdomainSuite) TestNew() {
+// TestValidate tests all validation rules for Subdomain.
+func (suite *SubdomainSuite) TestValidate() {
+	validKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
 
 	tests := []struct {
-		testName   string
-		key        identity.Key
-		name       string
-		details    string
-		umlComment string
-		obj        Subdomain
-		errstr     string
+		testName  string
+		subdomain Subdomain
+		errstr    string
 	}{
-		// OK.
 		{
-			testName:   "ok with details",
-			key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
-			name:       "Name",
-			details:    "Details",
-			umlComment: "UmlComment",
-			obj: Subdomain{
-				Key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
-				Name:       "Name",
-				Details:    "Details",
-				UmlComment: "UmlComment",
+			testName: "valid subdomain",
+			subdomain: Subdomain{
+				Key:  validKey,
+				Name: "Name",
 			},
 		},
 		{
-			testName:   "ok minimal",
-			key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
-			name:       "Name",
-			details:    "",
-			umlComment: "",
-			obj: Subdomain{
-				Key:        helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
-				Name:       "Name",
-				Details:    "",
-				UmlComment: "",
+			testName: "error empty key",
+			subdomain: Subdomain{
+				Key:  identity.Key{},
+				Name: "Name",
 			},
-		},
-
-		// Errors.
-		{
-			testName: "error empty key",
-			key:      identity.Key{},
-			name:     "Name",
-			details:  "Details",
-			errstr:   "keyType: cannot be blank",
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName: "error empty key",
-			key:      helper.Must(identity.NewActorKey("actor1")),
-			name:     "Name",
-			details:  "Details",
-			errstr:   "Key: invalid key type 'actor' for subdomain.",
+			testName: "error wrong key type",
+			subdomain: Subdomain{
+				Key:  helper.Must(identity.NewActorKey("actor1")),
+				Name: "Name",
+			},
+			errstr: "Key: invalid key type 'actor' for subdomain.",
 		},
 		{
 			testName: "error blank name",
-			key:      helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1")),
-			name:     "",
-			details:  "Details",
-			errstr:   "Name: cannot be blank.",
+			subdomain: Subdomain{
+				Key:  validKey,
+				Name: "",
+			},
+			errstr: "Name: cannot be blank",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewSubdomain(tt.key, tt.name, tt.details, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.subdomain.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewSubdomain maps parameters correctly and calls Validate.
+func (suite *SubdomainSuite) TestNew() {
+	key := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
+
+	// Test parameters are mapped correctly.
+	subdomain, err := NewSubdomain(key, "Name", "Details", "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, subdomain.Key)
+	assert.Equal(suite.T(), "Name", subdomain.Name)
+	assert.Equal(suite.T(), "Details", subdomain.Details)
+	assert.Equal(suite.T(), "UmlComment", subdomain.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewSubdomain(key, "", "Details", "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *SubdomainSuite) TestValidateWithParent() {
+	validKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
+	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
+
+	// Test that Validate is called.
+	subdomain := Subdomain{
+		Key:  validKey,
+		Name: "", // Invalid
+	}
+	err := subdomain.ValidateWithParent(&suite.domainKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - subdomain key has domain1 as parent, but we pass other_domain.
+	subdomain = Subdomain{
+		Key:  validKey,
+		Name: "Name",
+	}
+	err = subdomain.ValidateWithParent(&otherDomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = subdomain.ValidateWithParent(&suite.domainKey)
+	assert.NoError(suite.T(), err)
 }

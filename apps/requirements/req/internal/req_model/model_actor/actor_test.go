@@ -17,109 +17,131 @@ type ActorSuite struct {
 	suite.Suite
 }
 
-func (suite *ActorSuite) TestNew() {
-	tests := []struct {
-		testName   string
-		key        identity.Key
-		name       string
-		details    string
-		userType   string
-		umlComment string
-		obj        Actor
-		errstr     string
-	}{
-		// OK.
-		{
-			testName:   "ok with person type",
-			key:        helper.Must(identity.NewActorKey("actor1")),
-			name:       "Name",
-			details:    "Details",
-			userType:   _USER_TYPE_PERSON,
-			umlComment: "UmlComment",
-			obj: Actor{
-				Key:        helper.Must(identity.NewActorKey("actor1")),
-				Name:       "Name",
-				Details:    "Details",
-				Type:       "person",
-				UmlComment: "UmlComment",
-			},
-		},
-		{
-			testName:   "ok with system type",
-			key:        helper.Must(identity.NewActorKey("actor2")),
-			name:       "Name",
-			details:    "",
-			userType:   _USER_TYPE_SYSTEM,
-			umlComment: "",
-			obj: Actor{
-				Key:        helper.Must(identity.NewActorKey("actor2")),
-				Name:       "Name",
-				Details:    "",
-				Type:       "system",
-				UmlComment: "",
-			},
-		},
+// TestValidate tests all validation rules for Actor.
+func (suite *ActorSuite) TestValidate() {
+	validKey := helper.Must(identity.NewActorKey("actor1"))
 
-		// Error states.
+	tests := []struct {
+		testName string
+		actor    Actor
+		errstr   string
+	}{
 		{
-			testName:   "error empty key",
-			key:        identity.Key{},
-			name:       "Name",
-			details:    "Details",
-			userType:   _USER_TYPE_PERSON,
-			umlComment: "UmlComment",
-			errstr:     "keyType: cannot be blank",
+			testName: "valid actor with person type",
+			actor: Actor{
+				Key:  validKey,
+				Name: "Name",
+				Type: _USER_TYPE_PERSON,
+			},
 		},
 		{
-			testName:   "error wrong key type",
-			key:        helper.Must(identity.NewDomainKey("domain1")),
-			name:       "Name",
-			details:    "Details",
-			userType:   _USER_TYPE_PERSON,
-			umlComment: "UmlComment",
-			errstr:     "Key: invalid key type 'domain' for actor.",
+			testName: "valid actor with system type",
+			actor: Actor{
+				Key:  validKey,
+				Name: "Name",
+				Type: _USER_TYPE_SYSTEM,
+			},
 		},
 		{
-			testName:   "error with blank name",
-			key:        helper.Must(identity.NewActorKey("actor3")),
-			name:       "",
-			details:    "Details",
-			userType:   _USER_TYPE_PERSON,
-			umlComment: "UmlComment",
-			errstr:     `Name: cannot be blank.`,
+			testName: "error empty key",
+			actor: Actor{
+				Key:  identity.Key{},
+				Name: "Name",
+				Type: _USER_TYPE_PERSON,
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:   "error with blank type",
-			key:        helper.Must(identity.NewActorKey("actor4")),
-			name:       "Name",
-			details:    "Details",
-			userType:   "",
-			umlComment: "UmlComment",
-			errstr:     `Type: cannot be blank.`,
+			testName: "error wrong key type",
+			actor: Actor{
+				Key:  helper.Must(identity.NewDomainKey("domain1")),
+				Name: "Name",
+				Type: _USER_TYPE_PERSON,
+			},
+			errstr: "Key: invalid key type 'domain' for actor.",
 		},
 		{
-			testName:   "error with invalid type",
-			key:        helper.Must(identity.NewActorKey("actor5")),
-			name:       "Name",
-			details:    "Details",
-			userType:   "unknown",
-			umlComment: "UmlComment",
-			errstr:     `Type: must be a valid value.`,
+			testName: "error blank name",
+			actor: Actor{
+				Key:  validKey,
+				Name: "",
+				Type: _USER_TYPE_PERSON,
+			},
+			errstr: "Name: cannot be blank",
+		},
+		{
+			testName: "error blank type",
+			actor: Actor{
+				Key:  validKey,
+				Name: "Name",
+				Type: "",
+			},
+			errstr: "Type: cannot be blank",
+		},
+		{
+			testName: "error invalid type",
+			actor: Actor{
+				Key:  validKey,
+				Name: "Name",
+				Type: "unknown",
+			},
+			errstr: "Type: must be a valid value",
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewActor(tt.key, tt.name, tt.details, tt.userType, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.actor.Validate()
 			if tt.errstr == "" {
-				assert.Nil(t, err)
-				assert.Equal(t, tt.obj, obj)
+				assert.NoError(t, err)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
-		if !pass {
-			break
-		}
 	}
+}
+
+// TestNew tests that NewActor maps parameters correctly and calls Validate.
+func (suite *ActorSuite) TestNew() {
+	key := helper.Must(identity.NewActorKey("actor1"))
+
+	// Test parameters are mapped correctly.
+	actor, err := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, actor.Key)
+	assert.Equal(suite.T(), "Name", actor.Name)
+	assert.Equal(suite.T(), "Details", actor.Details)
+	assert.Equal(suite.T(), _USER_TYPE_PERSON, actor.Type)
+	assert.Equal(suite.T(), "UmlComment", actor.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *ActorSuite) TestValidateWithParent() {
+	validKey := helper.Must(identity.NewActorKey("actor1"))
+
+	// Test that Validate is called.
+	actor := Actor{
+		Key:  validKey,
+		Name: "", // Invalid
+		Type: _USER_TYPE_PERSON,
+	}
+	err := actor.ValidateWithParent(nil)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - actors should have nil parent.
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	actor = Actor{
+		Key:  validKey,
+		Name: "Name",
+		Type: _USER_TYPE_PERSON,
+	}
+	err = actor.ValidateWithParent(&domainKey)
+	assert.ErrorContains(suite.T(), err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = actor.ValidateWithParent(nil)
+	assert.NoError(suite.T(), err)
 }

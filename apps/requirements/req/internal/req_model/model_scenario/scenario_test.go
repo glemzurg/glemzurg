@@ -17,77 +17,106 @@ type ScenarioSuite struct {
 	suite.Suite
 }
 
-func (suite *ScenarioSuite) TestNew() {
-
+// TestValidate tests all validation rules for Scenario.
+func (suite *ScenarioSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	validKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
 
 	tests := []struct {
 		testName string
-		key      identity.Key
-		name     string
-		details  string
-		obj      Scenario
+		scenario Scenario
 		errstr   string
 	}{
-		// OK.
 		{
-			testName: "ok with all fields",
-			key:      helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1")),
-			name:     "Name",
-			details:  "Details",
-			obj: Scenario{
-				Key:     helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1")),
-				Name:    "Name",
-				Details: "Details",
+			testName: "valid scenario",
+			scenario: Scenario{
+				Key:  validKey,
+				Name: "Name",
 			},
 		},
-		{
-			testName: "ok with minimal fields",
-			key:      helper.Must(identity.NewScenarioKey(useCaseKey, "scenario2")),
-			name:     "Name",
-			details:  "",
-			obj: Scenario{
-				Key:     helper.Must(identity.NewScenarioKey(useCaseKey, "scenario2")),
-				Name:    "Name",
-				Details: "",
-			},
-		},
-
-		// Error states.
 		{
 			testName: "error empty key",
-			key:      identity.Key{},
-			name:     "Name",
-			details:  "Details",
-			errstr:   "keyType: cannot be blank",
+			scenario: Scenario{
+				Key:  identity.Key{},
+				Name: "Name",
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
 			testName: "error wrong key type",
-			key:      helper.Must(identity.NewDomainKey("domain1")),
-			name:     "Name",
-			details:  "Details",
-			errstr:   "Key: invalid key type 'domain' for scenario.",
+			scenario: Scenario{
+				Key:  domainKey,
+				Name: "Name",
+			},
+			errstr: "Key: invalid key type 'domain' for scenario.",
 		},
 		{
-			testName: "error with blank name",
-			key:      helper.Must(identity.NewScenarioKey(useCaseKey, "scenario3")),
-			name:     "",
-			details:  "Details",
-			errstr:   `Name: cannot be blank`,
+			testName: "error blank name",
+			scenario: Scenario{
+				Key:  validKey,
+				Name: "",
+			},
+			errstr: "Name: cannot be blank",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewScenario(tt.key, tt.name, tt.details)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.scenario.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewScenario maps parameters correctly and calls Validate.
+func (suite *ScenarioSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	key := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+
+	// Test parameters are mapped correctly.
+	scenario, err := NewScenario(key, "Name", "Details")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, scenario.Key)
+	assert.Equal(suite.T(), "Name", scenario.Name)
+	assert.Equal(suite.T(), "Details", scenario.Details)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewScenario(key, "", "Details")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *ScenarioSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	validKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+	otherUseCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "other_usecase"))
+
+	// Test that Validate is called.
+	scenario := Scenario{
+		Key:  validKey,
+		Name: "", // Invalid
+	}
+	err := scenario.ValidateWithParent(&useCaseKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - scenario key has usecase1 as parent, but we pass other_usecase.
+	scenario = Scenario{
+		Key:  validKey,
+		Name: "Name",
+	}
+	err = scenario.ValidateWithParent(&otherUseCaseKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = scenario.ValidateWithParent(&useCaseKey)
+	assert.NoError(suite.T(), err)
 }

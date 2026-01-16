@@ -17,100 +17,106 @@ type GeneralizationSuite struct {
 	suite.Suite
 }
 
-func (suite *GeneralizationSuite) TestNew() {
-
+// TestValidate tests all validation rules for Generalization.
+func (suite *GeneralizationSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
 
 	tests := []struct {
-		testName   string
-		key        identity.Key
-		name       string
-		details    string
-		isComplete bool
-		isStatic   bool
-		umlComment string
-		obj        Generalization
-		errstr     string
+		testName       string
+		generalization Generalization
+		errstr         string
 	}{
-		// OK.
 		{
-			testName:   "ok with all fields",
-			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1")),
-			name:       "Name",
-			details:    "Details",
-			isComplete: true,
-			isStatic:   false,
-			umlComment: "UmlComment",
-			obj: Generalization{
-				Key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1")),
-				Name:       "Name",
-				IsComplete: true,
-				IsStatic:   false,
-				Details:    "Details",
-				UmlComment: "UmlComment",
+			testName: "valid generalization",
+			generalization: Generalization{
+				Key:  validKey,
+				Name: "Name",
 			},
 		},
 		{
-			testName:   "ok with minimal fields",
-			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2")),
-			name:       "Name",
-			details:    "",
-			isComplete: false,
-			isStatic:   true,
-			umlComment: "",
-			obj: Generalization{
-				Key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2")),
-				Name:       "Name",
-				Details:    "",
-				IsComplete: false,
-				IsStatic:   true,
-				UmlComment: "",
+			testName: "error empty key",
+			generalization: Generalization{
+				Key:  identity.Key{},
+				Name: "Name",
 			},
-		},
-
-		// Error states.
-		{
-			testName:   "error empty key",
-			key:        identity.Key{},
-			name:       "Name",
-			details:    "Details",
-			isComplete: true,
-			isStatic:   true,
-			umlComment: "UmlComment",
-			errstr:     "keyType: cannot be blank",
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:   "error wrong key type",
-			key:        helper.Must(identity.NewDomainKey("domain1")),
-			name:       "Name",
-			details:    "Details",
-			isComplete: true,
-			isStatic:   true,
-			umlComment: "UmlComment",
-			errstr:     "Key: invalid key type 'domain' for generalization.",
+			testName: "error wrong key type",
+			generalization: Generalization{
+				Key:  domainKey,
+				Name: "Name",
+			},
+			errstr: "Key: invalid key type 'domain' for generalization.",
 		},
 		{
-			testName:   "error with blank name",
-			key:        helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen3")),
-			name:       "",
-			details:    "Details",
-			isComplete: true,
-			isStatic:   true,
-			umlComment: "UmlComment",
-			errstr:     `Name: cannot be blank`,
+			testName: "error blank name",
+			generalization: Generalization{
+				Key:  validKey,
+				Name: "",
+			},
+			errstr: "Name: cannot be blank",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewGeneralization(tt.key, tt.name, tt.details, tt.isComplete, tt.isStatic, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.generalization.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewGeneralization maps parameters correctly and calls Validate.
+func (suite *GeneralizationSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	key := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+
+	// Test parameters are mapped correctly.
+	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, gen.Key)
+	assert.Equal(suite.T(), "Name", gen.Name)
+	assert.Equal(suite.T(), "Details", gen.Details)
+	assert.Equal(suite.T(), true, gen.IsComplete)
+	assert.Equal(suite.T(), false, gen.IsStatic)
+	assert.Equal(suite.T(), "UmlComment", gen.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *GeneralizationSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
+
+	// Test that Validate is called.
+	gen := Generalization{
+		Key:  validKey,
+		Name: "", // Invalid
+	}
+	err := gen.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - generalization key has subdomain1 as parent, but we pass other_subdomain.
+	gen = Generalization{
+		Key:  validKey,
+		Name: "Name",
+	}
+	err = gen.ValidateWithParent(&otherSubdomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = gen.ValidateWithParent(&subdomainKey)
+	assert.NoError(suite.T(), err)
 }

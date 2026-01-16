@@ -17,85 +17,107 @@ type EventSuite struct {
 	suite.Suite
 }
 
-func (suite *EventSuite) TestNew() {
-
+// TestValidate tests all validation rules for Event.
+func (suite *EventSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	validKey := helper.Must(identity.NewEventKey(classKey, "event1"))
 
 	tests := []struct {
-		testName   string
-		key        identity.Key
-		name       string
-		details    string
-		parameters []EventParameter
-		obj        Event
-		errstr     string
+		testName string
+		event    Event
+		errstr   string
 	}{
-		// OK.
 		{
-			testName:   "ok with all fields",
-			key:        helper.Must(identity.NewEventKey(classKey, "event1")),
-			name:       "Name",
-			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
-			obj: Event{
-				Key:        helper.Must(identity.NewEventKey(classKey, "event1")),
-				Name:       "Name",
-				Details:    "Details",
-				Parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+			testName: "valid event",
+			event: Event{
+				Key:  validKey,
+				Name: "Name",
 			},
 		},
 		{
-			testName:   "ok with minimal fields",
-			key:        helper.Must(identity.NewEventKey(classKey, "event2")),
-			name:       "Name",
-			details:    "",
-			parameters: nil,
-			obj: Event{
-				Key:        helper.Must(identity.NewEventKey(classKey, "event2")),
-				Name:       "Name",
-				Details:    "",
-				Parameters: nil,
+			testName: "error empty key",
+			event: Event{
+				Key:  identity.Key{},
+				Name: "Name",
 			},
-		},
-
-		// Error states.
-		{
-			testName:   "error empty key",
-			key:        identity.Key{},
-			name:       "Name",
-			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
-			errstr:     "keyType: cannot be blank",
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:   "error wrong key type",
-			key:        helper.Must(identity.NewDomainKey("domain1")),
-			name:       "Name",
-			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
-			errstr:     "Key: invalid key type 'domain' for event",
+			testName: "error wrong key type",
+			event: Event{
+				Key:  domainKey,
+				Name: "Name",
+			},
+			errstr: "Key: invalid key type 'domain' for event",
 		},
 		{
-			testName:   "error with blank name",
-			key:        helper.Must(identity.NewEventKey(classKey, "event3")),
-			name:       "",
-			details:    "Details",
-			parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
-			errstr:     `Name: cannot be blank`,
+			testName: "error blank name",
+			event: Event{
+				Key:  validKey,
+				Name: "",
+			},
+			errstr: "Name: cannot be blank",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewEvent(tt.key, tt.name, tt.details, tt.parameters)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.event.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewEvent maps parameters correctly and calls Validate.
+func (suite *EventSuite) TestNew() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	key := helper.Must(identity.NewEventKey(classKey, "event1"))
+
+	// Test parameters are mapped correctly.
+	event, err := NewEvent(key, "Name", "Details", []EventParameter{{Name: "ParamA", Source: "SourceA"}})
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, event.Key)
+	assert.Equal(suite.T(), "Name", event.Name)
+	assert.Equal(suite.T(), "Details", event.Details)
+	assert.Equal(suite.T(), []EventParameter{{Name: "ParamA", Source: "SourceA"}}, event.Parameters)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewEvent(key, "", "Details", nil)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *EventSuite) TestValidateWithParent() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	validKey := helper.Must(identity.NewEventKey(classKey, "event1"))
+	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+
+	// Test that Validate is called.
+	event := Event{
+		Key:  validKey,
+		Name: "", // Invalid
+	}
+	err := event.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - event key has class1 as parent, but we pass other_class.
+	event = Event{
+		Key:  validKey,
+		Name: "Name",
+	}
+	err = event.ValidateWithParent(&otherClassKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case.
+	err = event.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
 }

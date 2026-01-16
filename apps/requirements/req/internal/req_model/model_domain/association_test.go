@@ -24,105 +24,131 @@ func (suite *AssociationSuite) SetupTest() {
 	suite.solutionDomainKey = helper.Must(identity.NewDomainKey("domain2"))
 }
 
-func (suite *AssociationSuite) TestNew() {
+// TestValidate tests all validation rules for Association.
+func (suite *AssociationSuite) TestValidate() {
+	validKey := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
 
 	tests := []struct {
-		testName          string
-		key               identity.Key
-		problemDomainKey  identity.Key
-		solutionDomainKey identity.Key
-		umlComment        string
-		obj               Association
-		errstr            string
+		testName    string
+		association Association
+		errstr      string
 	}{
-		// OK.
 		{
-			testName:          "ok with comment",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
-			problemDomainKey:  suite.problemDomainKey,
-			solutionDomainKey: suite.solutionDomainKey,
-			umlComment:        "UmlComment",
-			obj: Association{
-				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
+			testName: "valid association",
+			association: Association{
+				Key:               validKey,
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
-				UmlComment:        "UmlComment",
 			},
 		},
 		{
-			testName:          "ok minimal",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
-			problemDomainKey:  suite.problemDomainKey,
-			solutionDomainKey: suite.solutionDomainKey,
-			umlComment:        "",
-			obj: Association{
-				Key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
+			testName: "error empty key",
+			association: Association{
+				Key:               identity.Key{},
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
-				UmlComment:        "",
 			},
-		},
-
-		// Error states.
-		{
-			testName:          "error empty key",
-			key:               identity.Key{},
-			problemDomainKey:  suite.problemDomainKey,
-			solutionDomainKey: suite.solutionDomainKey,
-			umlComment:        "UmlComment",
-			errstr:            `Key: (keyType: cannot be blank;`,
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:          "error wrong key type",
-			key:               helper.Must(identity.NewActorKey("actor1")),
-			problemDomainKey:  suite.problemDomainKey,
-			solutionDomainKey: suite.solutionDomainKey,
-			umlComment:        "UmlComment",
-			errstr:            `Key: invalid key type 'actor' for domain association.`,
+			testName: "error wrong key type",
+			association: Association{
+				Key:               helper.Must(identity.NewActorKey("actor1")),
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: suite.solutionDomainKey,
+			},
+			errstr: "Key: invalid key type 'actor' for domain association.",
 		},
 		{
-			testName:          "error empty problem key",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
-			problemDomainKey:  identity.Key{},
-			solutionDomainKey: suite.solutionDomainKey,
-			umlComment:        "UmlComment",
-			errstr:            `ProblemDomainKey: (keyType: cannot be blank;`,
+			testName: "error empty problem key",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  identity.Key{},
+				SolutionDomainKey: suite.solutionDomainKey,
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:          "error wrong problem key type",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
-			problemDomainKey:  helper.Must(identity.NewActorKey("actor1")),
-			solutionDomainKey: suite.solutionDomainKey,
-			umlComment:        "UmlComment",
-			errstr:            `ProblemDomainKey: invalid key type 'actor' for domain.`,
+			testName: "error wrong problem key type",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  helper.Must(identity.NewActorKey("actor1")),
+				SolutionDomainKey: suite.solutionDomainKey,
+			},
+			errstr: "ProblemDomainKey: invalid key type 'actor' for domain.",
 		},
 		{
-			testName:          "error empty solution key",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
-			problemDomainKey:  suite.problemDomainKey,
-			solutionDomainKey: identity.Key{},
-			umlComment:        "UmlComment",
-			errstr:            `SolutionDomainKey: (keyType: cannot be blank;`,
+			testName: "error empty solution key",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: identity.Key{},
+			},
+			errstr: "keyType: cannot be blank",
 		},
 		{
-			testName:          "error wrong solution key type",
-			key:               helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey)),
-			problemDomainKey:  suite.problemDomainKey,
-			solutionDomainKey: helper.Must(identity.NewActorKey("actor1")),
-			umlComment:        "UmlComment",
-			errstr:            `SolutionDomainKey: invalid key type 'actor' for domain.`,
+			testName: "error wrong solution key type",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: helper.Must(identity.NewActorKey("actor1")),
+			},
+			errstr: "SolutionDomainKey: invalid key type 'actor' for domain.",
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			obj, err := NewAssociation(tt.key, tt.problemDomainKey, tt.solutionDomainKey, tt.umlComment)
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.association.Validate()
 			if tt.errstr == "" {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.obj, obj)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, obj)
 			}
 		})
 	}
+}
+
+// TestNew tests that NewAssociation maps parameters correctly and calls Validate.
+func (suite *AssociationSuite) TestNew() {
+	key := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
+
+	// Test parameters are mapped correctly.
+	assoc, err := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), key, assoc.Key)
+	assert.Equal(suite.T(), suite.problemDomainKey, assoc.ProblemDomainKey)
+	assert.Equal(suite.T(), suite.solutionDomainKey, assoc.SolutionDomainKey)
+	assert.Equal(suite.T(), "UmlComment", assoc.UmlComment)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "keyType: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (suite *AssociationSuite) TestValidateWithParent() {
+	validKey := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
+	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
+
+	// Test that Validate is called.
+	assoc := Association{
+		Key:               identity.Key{}, // Invalid
+		ProblemDomainKey:  suite.problemDomainKey,
+		SolutionDomainKey: suite.solutionDomainKey,
+	}
+	err := assoc.ValidateWithParent(nil)
+	assert.ErrorContains(suite.T(), err, "keyType: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test that ValidateParent is called - association key has problem domain as parent, but we pass other_domain.
+	assoc = Association{
+		Key:               validKey,
+		ProblemDomainKey:  suite.problemDomainKey,
+		SolutionDomainKey: suite.solutionDomainKey,
+	}
+	err = assoc.ValidateWithParent(&otherDomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+
+	// Test valid case - domain association key's parent is problem domain.
+	err = assoc.ValidateWithParent(&suite.problemDomainKey)
+	assert.NoError(suite.T(), err)
 }

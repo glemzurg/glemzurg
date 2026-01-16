@@ -1,7 +1,6 @@
 package req_model
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -20,62 +19,61 @@ type ModelSuite struct {
 	suite.Suite
 }
 
-func (suite *ModelSuite) TestNew() {
+// TestValidate tests all validation rules for Model.
+func (suite *ModelSuite) TestValidate() {
 	tests := []struct {
-		key     string
-		name    string
-		details string
-		obj     Model
-		errstr  string
+		testName string
+		model    Model
+		errstr   string
 	}{
-		// OK.
 		{
-			key:     "model1",
-			name:    "Name",
-			details: "Details",
-			obj: Model{
-				Key:     "model1",
-				Name:    "Name",
-				Details: "Details",
+			testName: "valid model",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
 			},
 		},
 		{
-			key:     "  MODEL1  ",
-			name:    "Name",
-			details: "",
-			obj: Model{
-				Key:     "model1",
-				Name:    "Name",
-				Details: "",
+			testName: "error blank key",
+			model: Model{
+				Key:  "",
+				Name: "Name",
 			},
-		},
-
-		// Error states.
-		{
-			key:     "",
-			name:    "Name",
-			details: "Details",
-			errstr:  "Key: cannot be blank",
+			errstr: "Key: cannot be blank",
 		},
 		{
-			key:     "model1",
-			name:    "",
-			details: "Details",
-			errstr:  "Name: cannot be blank.",
+			testName: "error blank name",
+			model: Model{
+				Key:  "model1",
+				Name: "",
+			},
+			errstr: "Name: cannot be blank",
 		},
 	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-
-		obj, err := NewModel(test.key, test.name, test.details)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.model.Validate()
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
 	}
+}
+
+// TestNew tests that NewModel maps parameters correctly and calls Validate.
+func (suite *ModelSuite) TestNew() {
+	// Test parameters are mapped correctly (key is normalized to lowercase and trimmed).
+	model, err := NewModel("  MODEL1  ", "Name", "Details")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "model1", model.Key)
+	assert.Equal(suite.T(), "Name", model.Name)
+	assert.Equal(suite.T(), "Details", model.Details)
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewModel("model1", "", "Details")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls both Validate() and ValidateParent().
