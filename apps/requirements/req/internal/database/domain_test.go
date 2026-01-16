@@ -2,9 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
@@ -21,8 +22,10 @@ func TestDomainSuite(t *testing.T) {
 
 type DomainSuite struct {
 	suite.Suite
-	db    *sql.DB
-	model req_model.Model
+	db         *sql.DB
+	model      req_model.Model
+	domainKey  identity.Key
+	domainKeyB identity.Key
 }
 
 func (suite *DomainSuite) SetupTest() {
@@ -32,12 +35,16 @@ func (suite *DomainSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
+
+	// Create the domain keys for reuse.
+	suite.domainKey = helper.Must(identity.NewDomainKey("key"))
+	suite.domainKeyB = helper.Must(identity.NewDomainKey("key_b"))
 }
 
 func (suite *DomainSuite) TestLoad() {
 
 	// Nothing in database yet.
-	domain, err := LoadDomain(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), domain)
 
@@ -54,7 +61,7 @@ func (suite *DomainSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'key',
+				'domain/key',
 				'Name',
 				'Details',
 				true,
@@ -63,10 +70,10 @@ func (suite *DomainSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	domain, err = LoadDomain(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	domain, err = LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_domain.Domain{
-		Key:        "key", // Test case-insensitive.
+		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
 		Realized:   true,
@@ -76,8 +83,8 @@ func (suite *DomainSuite) TestLoad() {
 
 func (suite *DomainSuite) TestAdd() {
 
-	err := AddDomain(suite.db, strings.ToUpper(suite.model.Key), model_domain.Domain{
-		Key:        "KeY", // Test case-insensitive.
+	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
+		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
 		Realized:   true,
@@ -85,10 +92,10 @@ func (suite *DomainSuite) TestAdd() {
 	})
 	assert.Nil(suite.T(), err)
 
-	domain, err := LoadDomain(suite.db, suite.model.Key, "key")
+	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_domain.Domain{
-		Key:        "key",
+		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
 		Realized:   true,
@@ -99,7 +106,7 @@ func (suite *DomainSuite) TestAdd() {
 func (suite *DomainSuite) TestUpdate() {
 
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        "key",
+		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
 		Realized:   true,
@@ -107,8 +114,8 @@ func (suite *DomainSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateDomain(suite.db, strings.ToUpper(suite.model.Key), model_domain.Domain{
-		Key:        "kEy", // Test case-insensitive.
+	err = UpdateDomain(suite.db, suite.model.Key, model_domain.Domain{
+		Key:        suite.domainKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Realized:   false,
@@ -116,10 +123,10 @@ func (suite *DomainSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	domain, err := LoadDomain(suite.db, suite.model.Key, "key")
+	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_domain.Domain{
-		Key:        "key", // Test case-insensitive.
+		Key:        suite.domainKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Realized:   false,
@@ -130,7 +137,7 @@ func (suite *DomainSuite) TestUpdate() {
 func (suite *DomainSuite) TestRemove() {
 
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        "key",
+		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
 		Realized:   true,
@@ -138,10 +145,10 @@ func (suite *DomainSuite) TestRemove() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveDomain(suite.db, strings.ToUpper(suite.model.Key), "kEy") // Test case-insensitive.
+	err = RemoveDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.Nil(suite.T(), err)
 
-	domain, err := LoadDomain(suite.db, suite.model.Key, "key")
+	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), domain)
 }
@@ -149,7 +156,7 @@ func (suite *DomainSuite) TestRemove() {
 func (suite *DomainSuite) TestQuery() {
 
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        "keyx",
+		Key:        suite.domainKeyB,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Realized:   false,
@@ -158,7 +165,7 @@ func (suite *DomainSuite) TestQuery() {
 	assert.Nil(suite.T(), err)
 
 	err = AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        "key",
+		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
 		Realized:   true,
@@ -166,19 +173,18 @@ func (suite *DomainSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	domains, err := QueryDomains(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	domains, err := QueryDomains(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), []model_domain.Domain{
 		{
-			Key:        "key",
+			Key:        suite.domainKey,
 			Name:       "Name",
 			Details:    "Details",
 			Realized:   true,
 			UmlComment: "UmlComment",
 		},
 		{
-
-			Key:        "keyx",
+			Key:        suite.domainKeyB,
 			Name:       "NameX",
 			Details:    "DetailsX",
 			Realized:   false,
@@ -191,24 +197,18 @@ func (suite *DomainSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddDomain(t *testing.T, dbOrTx DbOrTx, modelKey string, opts ...string) (domain model_domain.Domain) {
-
-	// If there is an optional parameter it is the key.
-	key := "domain_key"
-	if len(opts) > 0 {
-		key = opts[0]
-	}
+func t_AddDomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain model_domain.Domain) {
 
 	err := AddDomain(dbOrTx, modelKey, model_domain.Domain{
-		Key:        key,
-		Name:       "Name",
+		Key:        domainKey,
+		Name:       domainKey.String(),
 		Details:    "Details",
 		Realized:   false,
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(t, err)
 
-	domain, err = LoadDomain(dbOrTx, modelKey, "domain_key")
+	domain, err = LoadDomain(dbOrTx, modelKey, domainKey)
 	assert.Nil(t, err)
 
 	return domain

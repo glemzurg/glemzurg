@@ -9,8 +9,10 @@ import (
 
 // Populate a golang struct from a database row.
 func scanDomain(scanner Scanner, domain *model_domain.Domain) (err error) {
+	var keyStr string
+
 	if err = scanner.Scan(
-		&domain.Key,
+		&keyStr,
 		&domain.Name,
 		&domain.Details,
 		&domain.Realized,
@@ -22,21 +24,17 @@ func scanDomain(scanner Scanner, domain *model_domain.Domain) (err error) {
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the key string into an identity.Key.
+	domain.Key, err = identity.ParseKey(keyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadDomain loads a domain from the database
-func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain model_domain.Domain, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return model_domain.Domain{}, err
-	}
-	domainKey, err = identity.PreenKey(domainKey)
-	if err != nil {
-		return model_domain.Domain{}, err
-	}
+func LoadDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain model_domain.Domain, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -60,7 +58,7 @@ func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain model_domain.
 		AND
 			model_key = $1`,
 		modelKey,
-		domainKey)
+		domainKey.String())
 	if err != nil {
 		return model_domain.Domain{}, errors.WithStack(err)
 	}
@@ -70,16 +68,6 @@ func LoadDomain(dbOrTx DbOrTx, modelKey, domainKey string) (domain model_domain.
 
 // AddDomain adds a domain to the database.
 func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	domainKey, err := identity.PreenKey(domain.Key)
-	if err != nil {
-		return err
-	}
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -102,7 +90,7 @@ func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err 
 					$6
 				)`,
 		modelKey,
-		domainKey,
+		domain.Key.String(),
 		domain.Name,
 		domain.Details,
 		domain.Realized,
@@ -116,16 +104,6 @@ func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err 
 
 // UpdateDomain updates a domain in the database.
 func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	domainKey, err := identity.PreenKey(domain.Key)
-	if err != nil {
-		return err
-	}
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -141,7 +119,7 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (e
 		AND
 			domain_key = $2`,
 		modelKey,
-		domainKey,
+		domain.Key.String(),
 		domain.Name,
 		domain.Details,
 		domain.Realized,
@@ -154,17 +132,7 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (e
 }
 
 // RemoveDomain deletes a domain from the database.
-func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	domainKey, err = identity.PreenKey(domainKey)
-	if err != nil {
-		return err
-	}
+func RemoveDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -175,7 +143,7 @@ func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 			AND
 				domain_key = $2`,
 		modelKey,
-		domainKey)
+		domainKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -185,12 +153,6 @@ func RemoveDomain(dbOrTx DbOrTx, modelKey, domainKey string) (err error) {
 
 // QueryDomains loads all domains from the database
 func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []model_domain.Domain, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
 
 	// Query the database.
 	err = dbQuery(
