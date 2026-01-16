@@ -83,13 +83,15 @@ func (suite *ClassSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	class, err := NewClass(key, "Name", "Details", &actorKey, &generalizationKey, &generalizationKey, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, class.Key)
-	assert.Equal(suite.T(), "Name", class.Name)
-	assert.Equal(suite.T(), "Details", class.Details)
-	assert.Equal(suite.T(), &actorKey, class.ActorKey)
-	assert.Equal(suite.T(), &generalizationKey, class.SuperclassOfKey)
-	assert.Equal(suite.T(), &generalizationKey, class.SubclassOfKey)
-	assert.Equal(suite.T(), "UmlComment", class.UmlComment)
+	assert.Equal(suite.T(), Class{
+		Key:             key,
+		Name:            "Name",
+		Details:         "Details",
+		ActorKey:        &actorKey,
+		SuperclassOfKey: &generalizationKey,
+		SubclassOfKey:   &generalizationKey,
+		UmlComment:      "UmlComment",
+	}, class)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewClass(key, "", "Details", nil, nil, nil, "UmlComment")

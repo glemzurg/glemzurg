@@ -134,9 +134,11 @@ func (suite *StateActionSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	stateAction, err := NewStateAction(key, actionKey, "entry")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, stateAction.Key)
-	assert.Equal(suite.T(), actionKey, stateAction.ActionKey)
-	assert.Equal(suite.T(), "entry", stateAction.When)
+	assert.Equal(suite.T(), StateAction{
+		Key:       key,
+		ActionKey: actionKey,
+		When:      "entry",
+	}, stateAction)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewStateAction(key, actionKey, "")

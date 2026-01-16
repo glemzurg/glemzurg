@@ -183,13 +183,15 @@ func (suite *TransitionSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	transition, err := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, transition.Key)
-	assert.Equal(suite.T(), &fromStateKey, transition.FromStateKey)
-	assert.Equal(suite.T(), eventKey, transition.EventKey)
-	assert.Equal(suite.T(), &guardKey, transition.GuardKey)
-	assert.Equal(suite.T(), &actionKey, transition.ActionKey)
-	assert.Equal(suite.T(), &toStateKey, transition.ToStateKey)
-	assert.Equal(suite.T(), "UmlComment", transition.UmlComment)
+	assert.Equal(suite.T(), Transition{
+		Key:          key,
+		FromStateKey: &fromStateKey,
+		EventKey:     eventKey,
+		GuardKey:     &guardKey,
+		ActionKey:    &actionKey,
+		ToStateKey:   &toStateKey,
+		UmlComment:   "UmlComment",
+	}, transition)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewTransition(key, nil, eventKey, nil, nil, nil, "UmlComment")

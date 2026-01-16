@@ -78,11 +78,13 @@ func (suite *DomainSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	domain, err := NewDomain(key, "Name", "Details", true, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, domain.Key)
-	assert.Equal(suite.T(), "Name", domain.Name)
-	assert.Equal(suite.T(), "Details", domain.Details)
-	assert.Equal(suite.T(), true, domain.Realized)
-	assert.Equal(suite.T(), "UmlComment", domain.UmlComment)
+	assert.Equal(suite.T(), Domain{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		Realized:   true,
+		UmlComment: "UmlComment",
+	}, domain)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewDomain(key, "", "Details", true, "UmlComment")

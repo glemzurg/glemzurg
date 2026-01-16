@@ -82,10 +82,12 @@ func (suite *SubdomainSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	subdomain, err := NewSubdomain(key, "Name", "Details", "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, subdomain.Key)
-	assert.Equal(suite.T(), "Name", subdomain.Name)
-	assert.Equal(suite.T(), "Details", subdomain.Details)
-	assert.Equal(suite.T(), "UmlComment", subdomain.UmlComment)
+	assert.Equal(suite.T(), Subdomain{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		UmlComment: "UmlComment",
+	}, subdomain)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewSubdomain(key, "", "Details", "UmlComment")

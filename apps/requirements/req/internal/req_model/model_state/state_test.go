@@ -83,10 +83,12 @@ func (suite *StateSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	state, err := NewState(key, "Name", "Details", "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, state.Key)
-	assert.Equal(suite.T(), "Name", state.Name)
-	assert.Equal(suite.T(), "Details", state.Details)
-	assert.Equal(suite.T(), "UmlComment", state.UmlComment)
+	assert.Equal(suite.T(), State{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		UmlComment: "UmlComment",
+	}, state)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewState(key, "", "Details", "UmlComment")

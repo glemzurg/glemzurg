@@ -119,12 +119,14 @@ func (suite *UseCaseSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, useCase.Key)
-	assert.Equal(suite.T(), "Name", useCase.Name)
-	assert.Equal(suite.T(), "Details", useCase.Details)
-	assert.Equal(suite.T(), _USE_CASE_LEVEL_SEA, useCase.Level)
-	assert.Equal(suite.T(), true, useCase.ReadOnly)
-	assert.Equal(suite.T(), "UmlComment", useCase.UmlComment)
+	assert.Equal(suite.T(), UseCase{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		Level:      _USE_CASE_LEVEL_SEA,
+		ReadOnly:   true,
+		UmlComment: "UmlComment",
+	}, useCase)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")

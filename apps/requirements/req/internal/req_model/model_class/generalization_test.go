@@ -81,12 +81,14 @@ func (suite *GeneralizationSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, gen.Key)
-	assert.Equal(suite.T(), "Name", gen.Name)
-	assert.Equal(suite.T(), "Details", gen.Details)
-	assert.Equal(suite.T(), true, gen.IsComplete)
-	assert.Equal(suite.T(), false, gen.IsStatic)
-	assert.Equal(suite.T(), "UmlComment", gen.UmlComment)
+	assert.Equal(suite.T(), Generalization{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		IsComplete: true,
+		IsStatic:   false,
+		UmlComment: "UmlComment",
+	}, gen)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")

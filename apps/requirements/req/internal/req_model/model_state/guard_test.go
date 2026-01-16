@@ -96,9 +96,11 @@ func (suite *GuardSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	guard, err := NewGuard(key, "Name", "Details")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, guard.Key)
-	assert.Equal(suite.T(), "Name", guard.Name)
-	assert.Equal(suite.T(), "Details", guard.Details)
+	assert.Equal(suite.T(), Guard{
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
+	}, guard)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGuard(key, "", "Details")

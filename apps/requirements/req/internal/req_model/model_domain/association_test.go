@@ -115,10 +115,12 @@ func (suite *AssociationSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	assoc, err := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, assoc.Key)
-	assert.Equal(suite.T(), suite.problemDomainKey, assoc.ProblemDomainKey)
-	assert.Equal(suite.T(), suite.solutionDomainKey, assoc.SolutionDomainKey)
-	assert.Equal(suite.T(), "UmlComment", assoc.UmlComment)
+	assert.Equal(suite.T(), Association{
+		Key:               key,
+		ProblemDomainKey:  suite.problemDomainKey,
+		SolutionDomainKey: suite.solutionDomainKey,
+		UmlComment:        "UmlComment",
+	}, assoc)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")

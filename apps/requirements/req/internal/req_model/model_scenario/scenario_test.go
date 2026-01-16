@@ -83,9 +83,11 @@ func (suite *ScenarioSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	scenario, err := NewScenario(key, "Name", "Details")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, scenario.Key)
-	assert.Equal(suite.T(), "Name", scenario.Name)
-	assert.Equal(suite.T(), "Details", scenario.Details)
+	assert.Equal(suite.T(), Scenario{
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
+	}, scenario)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewScenario(key, "", "Details")

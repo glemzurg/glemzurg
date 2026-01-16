@@ -143,13 +143,15 @@ func (suite *ObjectSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	obj, err := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, obj.Key)
-	assert.Equal(suite.T(), uint(1), obj.ObjectNumber)
-	assert.Equal(suite.T(), "Name", obj.Name)
-	assert.Equal(suite.T(), _NAME_STYLE_NAME, obj.NameStyle)
-	assert.Equal(suite.T(), classKey, obj.ClassKey)
-	assert.Equal(suite.T(), true, obj.Multi)
-	assert.Equal(suite.T(), "UmlComment", obj.UmlComment)
+	assert.Equal(suite.T(), Object{
+		Key:          key,
+		ObjectNumber: 1,
+		Name:         "Name",
+		NameStyle:    _NAME_STYLE_NAME,
+		ClassKey:     classKey,
+		Multi:        true,
+		UmlComment:   "UmlComment",
+	}, obj)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewObject(key, 1, "", _NAME_STYLE_NAME, classKey, true, "UmlComment")

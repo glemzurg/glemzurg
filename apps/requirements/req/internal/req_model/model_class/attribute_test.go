@@ -84,27 +84,38 @@ func (suite *AttributeSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", "DerivationPolicy", true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, attr.Key)
-	assert.Equal(suite.T(), "Name", attr.Name)
-	assert.Equal(suite.T(), "Details", attr.Details)
-	assert.Equal(suite.T(), "DataTypeRules", attr.DataTypeRules)
-	assert.Equal(suite.T(), "DerivationPolicy", attr.DerivationPolicy)
-	assert.Equal(suite.T(), true, attr.Nullable)
-	assert.Equal(suite.T(), "UmlComment", attr.UmlComment)
-	assert.Equal(suite.T(), []uint{1, 2}, attr.IndexNums)
+	assert.Equal(suite.T(), Attribute{
+		Key:              key,
+		Name:             "Name",
+		Details:          "Details",
+		DataTypeRules:    "DataTypeRules",
+		DerivationPolicy: "DerivationPolicy",
+		Nullable:         true,
+		UmlComment:       "UmlComment",
+		IndexNums:        []uint{1, 2},
+	}, attr)
 
 	// Test parseable data type rules result in DataType being set.
 	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
 	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", "DerivationPolicy", true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), attrParsed.DataType)
-	assert.Equal(suite.T(), &model_data_type.DataType{
-		Key:            attrParsedKey.String(),
-		CollectionType: "atomic",
-		Atomic: &model_data_type.Atomic{
-			ConstraintType: "unconstrained",
+	assert.Equal(suite.T(), Attribute{
+		Key:              attrParsedKey,
+		Name:             "NameParsed",
+		Details:          "Details",
+		DataTypeRules:    "unconstrained",
+		DerivationPolicy: "DerivationPolicy",
+		Nullable:         true,
+		UmlComment:       "UmlComment",
+		IndexNums:        []uint{1, 2},
+		DataType: &model_data_type.DataType{
+			Key:            attrParsedKey.String(),
+			CollectionType: "atomic",
+			Atomic: &model_data_type.Atomic{
+				ConstraintType: "unconstrained",
+			},
 		},
-	}, attrParsed.DataType)
+	}, attrParsed)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAttribute(key, "", "Details", "DataTypeRules", "DerivationPolicy", true, "UmlComment", nil)

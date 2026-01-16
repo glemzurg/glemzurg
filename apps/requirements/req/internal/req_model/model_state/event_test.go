@@ -83,10 +83,12 @@ func (suite *EventSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	event, err := NewEvent(key, "Name", "Details", []EventParameter{{Name: "ParamA", Source: "SourceA"}})
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, event.Key)
-	assert.Equal(suite.T(), "Name", event.Name)
-	assert.Equal(suite.T(), "Details", event.Details)
-	assert.Equal(suite.T(), []EventParameter{{Name: "ParamA", Source: "SourceA"}}, event.Parameters)
+	assert.Equal(suite.T(), Event{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		Parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}},
+	}, event)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewEvent(key, "", "Details", nil)

@@ -83,11 +83,13 @@ func (suite *ActionSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	action, err := NewAction(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"})
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, action.Key)
-	assert.Equal(suite.T(), "Name", action.Name)
-	assert.Equal(suite.T(), "Details", action.Details)
-	assert.Equal(suite.T(), []string{"Requires"}, action.Requires)
-	assert.Equal(suite.T(), []string{"Guarantees"}, action.Guarantees)
+	assert.Equal(suite.T(), Action{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		Requires:   []string{"Requires"},
+		Guarantees: []string{"Guarantees"},
+	}, action)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAction(key, "", "Details", nil, nil)

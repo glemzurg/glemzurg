@@ -107,11 +107,13 @@ func (suite *ActorSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	actor, err := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, "UmlComment")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), key, actor.Key)
-	assert.Equal(suite.T(), "Name", actor.Name)
-	assert.Equal(suite.T(), "Details", actor.Details)
-	assert.Equal(suite.T(), _USER_TYPE_PERSON, actor.Type)
-	assert.Equal(suite.T(), "UmlComment", actor.UmlComment)
+	assert.Equal(suite.T(), Actor{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		Type:       _USER_TYPE_PERSON,
+		UmlComment: "UmlComment",
+	}, actor)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, "UmlComment")

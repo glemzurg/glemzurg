@@ -67,9 +67,11 @@ func (suite *ModelSuite) TestNew() {
 	// Test parameters are mapped correctly (key is normalized to lowercase and trimmed).
 	model, err := NewModel("  MODEL1  ", "Name", "Details")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "model1", model.Key)
-	assert.Equal(suite.T(), "Name", model.Name)
-	assert.Equal(suite.T(), "Details", model.Details)
+	assert.Equal(suite.T(), Model{
+		Key:     "model1",
+		Name:    "Name",
+		Details: "Details",
+	}, model)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewModel("model1", "", "Details")
