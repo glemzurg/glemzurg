@@ -21,9 +21,9 @@ const (
 
 	// Keys with subdomain parents.
 	KEY_TYPE_USE_CASE = "usecase"
+	KEY_TYPE_CLASS    = "class"
 
 	// remaining
-	KEY_TYPE_CLASS             = "class"
 	KEY_TYPE_STATE             = "state"
 	KEY_TYPE_EVENT             = "event"
 	KEY_TYPE_GUARD             = "guard"
