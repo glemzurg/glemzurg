@@ -24,7 +24,7 @@ type UseCase struct {
 	UmlComment string
 	// Children
 	Actors    map[identity.Key]Actor
-	Scenarios []model_scenario.Scenario
+	Scenarios map[identity.Key]model_scenario.Scenario
 }
 
 func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
@@ -67,7 +67,7 @@ func (uc *UseCase) SetActors(actors map[identity.Key]Actor) {
 	uc.Actors = actors
 }
 
-func (uc *UseCase) SetScenarios(scenarios []model_scenario.Scenario) {
+func (uc *UseCase) SetScenarios(scenarios map[identity.Key]model_scenario.Scenario) {
 	uc.Scenarios = scenarios
 }
 
@@ -83,8 +83,8 @@ func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
 		return err
 	}
 	// Validate all children.
-	for i := range uc.Scenarios {
-		if err := uc.Scenarios[i].ValidateWithParent(&uc.Key); err != nil {
+	for _, scenario := range uc.Scenarios {
+		if err := scenario.ValidateWithParent(&uc.Key); err != nil {
 			return err
 		}
 	}
