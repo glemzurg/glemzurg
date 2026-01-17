@@ -134,7 +134,7 @@ func (suite *AssociationSuite) TestNew() {
 	assert.NoError(suite.T(), err)
 
 	// Test parameters are mapped correctly.
-	assoc, err := NewAssociation(key, "Name", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, assocClassKey, "UmlComment")
+	assoc, err := NewAssociation(key, "Name", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Association{
 		Key:                 key,
@@ -144,12 +144,12 @@ func (suite *AssociationSuite) TestNew() {
 		FromMultiplicity:    multiplicity,
 		ToClassKey:          toClassKey,
 		ToMultiplicity:      multiplicity,
-		AssociationClassKey: assocClassKey,
+		AssociationClassKey: &assocClassKey,
 		UmlComment:          "UmlComment",
 	}, assoc)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, assocClassKey, "UmlComment")
+	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 
