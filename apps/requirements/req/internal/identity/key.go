@@ -320,6 +320,12 @@ func (k *Key) IsParent(parentKey Key) bool {
 	return strings.HasPrefix(k.String(), parentKey.String()+"/")
 }
 
+// HasNoParent returns true if this key has no parent component.
+// This is true for root-level keys like domain and actor.
+func (k *Key) HasNoParent() bool {
+	return k.parentKey == ""
+}
+
 func ParseKey(s string) (key Key, err error) {
 	if s == "" {
 		return Key{}, errors.New("invalid key format")

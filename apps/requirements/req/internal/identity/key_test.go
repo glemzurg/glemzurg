@@ -504,6 +504,59 @@ func (suite *KeySuite) TestValidateParent() {
 	}
 }
 
+func (suite *KeySuite) TestHasNoParent() {
+	// Create hierarchy of keys.
+	domainKey, _ := NewDomainKey("testdomain")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "testsubdomain")
+	classKey, _ := NewClassKey(subdomainKey, "testclass")
+	stateKey, _ := NewStateKey(classKey, "teststate")
+	actorKey, _ := NewActorKey("testactor")
+
+	tests := []struct {
+		testName string
+		key      Key
+		expected bool
+	}{
+		// Root keys (no parent).
+		{
+			testName: "domain has no parent",
+			key:      domainKey,
+			expected: true,
+		},
+		{
+			testName: "actor has no parent",
+			key:      actorKey,
+			expected: true,
+		},
+
+		// Keys with parents.
+		{
+			testName: "subdomain has parent",
+			key:      subdomainKey,
+			expected: false,
+		},
+		{
+			testName: "class has parent",
+			key:      classKey,
+			expected: false,
+		},
+		{
+			testName: "state has parent",
+			key:      stateKey,
+			expected: false,
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			result := tt.key.HasNoParent()
+			assert.Equal(t, tt.expected, result)
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeySuite) TestIsParent() {
 	// Create hierarchy of keys.
 	domainKey, _ := NewDomainKey("testdomain")
