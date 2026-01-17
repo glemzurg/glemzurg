@@ -3,6 +3,7 @@
 next:
   - update the class members
   - update state action keys to be more correct
+  - update transition keys to be more correct
   - update the class association model
   - create model error mechanism
   - update database to use just the model

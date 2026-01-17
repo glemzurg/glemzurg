@@ -20,12 +20,12 @@ type Class struct {
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Children
-	Attributes  []Attribute // The attributes of a class.
-	States      []model_state.State
-	Events      []model_state.Event
-	Guards      []model_state.Guard
-	Actions     []model_state.Action
-	Transitions []model_state.Transition
+	Attributes  map[identity.Key]Attribute // The attributes of a class.
+	States      map[identity.Key]model_state.State
+	Events      map[identity.Key]model_state.Event
+	Guards      map[identity.Key]model_state.Guard
+	Actions     map[identity.Key]model_state.Action
+	Transitions map[identity.Key]model_state.Transition
 }
 
 func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (class Class, err error) {
@@ -64,10 +64,19 @@ func (c *Class) Validate() error {
 	)
 }
 
+func (c *Class) SetAttributes(attributes map[identity.Key]Attribute) {
+	c.Attributes = attributes
+}
+
 // Sort attributes by indexes first.
 const _SUPER_HIGH_INDEX_NUM_FOR_SORT = 100000
 
-func (c *Class) SetAttributes(attributes []Attribute) {
+// GetAttributesSorted returns the attributes as a sorted slice.
+func (c *Class) GetAttributesSorted() []Attribute {
+	attributes := make([]Attribute, 0, len(c.Attributes))
+	for _, attr := range c.Attributes {
+		attributes = append(attributes, attr)
+	}
 
 	sort.Slice(attributes, func(i, j int) bool {
 
@@ -98,51 +107,26 @@ func (c *Class) SetAttributes(attributes []Attribute) {
 		return attributes[i].Name < attributes[j].Name
 	})
 
-	c.Attributes = attributes
+	return attributes
 }
 
-func (c *Class) SetStates(states []model_state.State) {
-
-	sort.Slice(states, func(i, j int) bool {
-		return states[i].Key.String() < states[j].Key.String()
-	})
-
+func (c *Class) SetStates(states map[identity.Key]model_state.State) {
 	c.States = states
 }
 
-func (c *Class) SetEvents(events []model_state.Event) {
-
-	sort.Slice(events, func(i, j int) bool {
-		return events[i].Key.String() < events[j].Key.String()
-	})
-
+func (c *Class) SetEvents(events map[identity.Key]model_state.Event) {
 	c.Events = events
 }
 
-func (c *Class) SetGuards(guards []model_state.Guard) {
-
-	sort.Slice(guards, func(i, j int) bool {
-		return guards[i].Key.String() < guards[j].Key.String()
-	})
-
+func (c *Class) SetGuards(guards map[identity.Key]model_state.Guard) {
 	c.Guards = guards
 }
 
-func (c *Class) SetActions(actions []model_state.Action) {
-
-	sort.Slice(actions, func(i, j int) bool {
-		return actions[i].Key.String() < actions[j].Key.String()
-	})
-
+func (c *Class) SetActions(actions map[identity.Key]model_state.Action) {
 	c.Actions = actions
 }
 
-func (c *Class) SetTransitions(transitions []model_state.Transition) {
-
-	sort.Slice(transitions, func(i, j int) bool {
-		return transitions[i].Key.String() < transitions[j].Key.String()
-	})
-
+func (c *Class) SetTransitions(transitions map[identity.Key]model_state.Transition) {
 	c.Transitions = transitions
 }
 
@@ -158,33 +142,33 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 		return err
 	}
 	// Validate all children.
-	for i := range c.Attributes {
-		if err := c.Attributes[i].ValidateWithParent(&c.Key); err != nil {
+	for _, attr := range c.Attributes {
+		if err := attr.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}
-	for i := range c.States {
-		if err := c.States[i].ValidateWithParent(&c.Key); err != nil {
+	for _, state := range c.States {
+		if err := state.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}
-	for i := range c.Events {
-		if err := c.Events[i].ValidateWithParent(&c.Key); err != nil {
+	for _, event := range c.Events {
+		if err := event.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}
-	for i := range c.Guards {
-		if err := c.Guards[i].ValidateWithParent(&c.Key); err != nil {
+	for _, guard := range c.Guards {
+		if err := guard.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}
-	for i := range c.Actions {
-		if err := c.Actions[i].ValidateWithParent(&c.Key); err != nil {
+	for _, action := range c.Actions {
+		if err := action.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}
-	for i := range c.Transitions {
-		if err := c.Transitions[i].ValidateWithParent(&c.Key); err != nil {
+	for _, transition := range c.Transitions {
+		if err := transition.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}
