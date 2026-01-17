@@ -314,6 +314,12 @@ func (k *Key) determineClassAssociationParentType() (string, error) {
 	}
 }
 
+// IsParent returns true if the parentKey's string representation is a prefix of this key's string.
+// This indicates that parentKey is an ancestor of this key in the hierarchy.
+func (k *Key) IsParent(parentKey Key) bool {
+	return strings.HasPrefix(k.String(), parentKey.String()+"/")
+}
+
 func ParseKey(s string) (key Key, err error) {
 	if s == "" {
 		return Key{}, errors.New("invalid key format")

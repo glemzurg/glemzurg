@@ -503,3 +503,101 @@ func (suite *KeySuite) TestValidateParent() {
 		}
 	}
 }
+
+func (suite *KeySuite) TestIsParent() {
+	// Create hierarchy of keys.
+	domainKey, _ := NewDomainKey("testdomain")
+	domainKey2, _ := NewDomainKey("otherdomain")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "testsubdomain")
+	classKey, _ := NewClassKey(subdomainKey, "testclass")
+	stateKey, _ := NewStateKey(classKey, "teststate")
+	actorKey, _ := NewActorKey("testactor")
+
+	tests := []struct {
+		testName  string
+		key       Key
+		parentKey Key
+		expected  bool
+	}{
+		// Direct parent relationships.
+		{
+			testName:  "subdomain has domain as parent",
+			key:       subdomainKey,
+			parentKey: domainKey,
+			expected:  true,
+		},
+		{
+			testName:  "class has subdomain as parent",
+			key:       classKey,
+			parentKey: subdomainKey,
+			expected:  true,
+		},
+		{
+			testName:  "state has class as parent",
+			key:       stateKey,
+			parentKey: classKey,
+			expected:  true,
+		},
+
+		// Ancestor relationships (grandparent, etc.).
+		{
+			testName:  "class has domain as ancestor",
+			key:       classKey,
+			parentKey: domainKey,
+			expected:  true,
+		},
+		{
+			testName:  "state has subdomain as ancestor",
+			key:       stateKey,
+			parentKey: subdomainKey,
+			expected:  true,
+		},
+		{
+			testName:  "state has domain as ancestor",
+			key:       stateKey,
+			parentKey: domainKey,
+			expected:  true,
+		},
+
+		// Not parent relationships.
+		{
+			testName:  "domain is not parent of itself",
+			key:       domainKey,
+			parentKey: domainKey,
+			expected:  false,
+		},
+		{
+			testName:  "different domain is not parent",
+			key:       subdomainKey,
+			parentKey: domainKey2,
+			expected:  false,
+		},
+		{
+			testName:  "child is not parent of parent",
+			key:       domainKey,
+			parentKey: subdomainKey,
+			expected:  false,
+		},
+		{
+			testName:  "unrelated keys are not parent-child",
+			key:       actorKey,
+			parentKey: domainKey,
+			expected:  false,
+		},
+		{
+			testName:  "sibling classes not parent-child",
+			key:       classKey,
+			parentKey: classKey,
+			expected:  false,
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			result := tt.key.IsParent(tt.parentKey)
+			assert.Equal(t, tt.expected, result)
+		})
+		if !pass {
+			break
+		}
+	}
+}
