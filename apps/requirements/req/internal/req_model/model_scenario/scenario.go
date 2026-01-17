@@ -1,8 +1,6 @@
 package model_scenario
 
 import (
-	"sort"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
@@ -18,7 +16,7 @@ type Scenario struct {
 	Details string // Markdown.
 	// Children
 	Steps   *Node // The "abstract syntax tree" of the scenario.
-	Objects []Object
+	Objects map[identity.Key]Object
 }
 
 func NewScenario(key identity.Key, name, details string) (scenario Scenario, err error) {
@@ -53,10 +51,7 @@ func (s *Scenario) Validate() error {
 	)
 }
 
-func (sc *Scenario) SetObjects(objects []Object) {
-	sort.Slice(objects, func(i, j int) bool {
-		return objects[i].ObjectNumber < objects[j].ObjectNumber
-	})
+func (sc *Scenario) SetObjects(objects map[identity.Key]Object) {
 	sc.Objects = objects
 }
 
@@ -91,8 +86,8 @@ func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
 		return err
 	}
 	// Validate all children.
-	for i := range s.Objects {
-		if err := s.Objects[i].ValidateWithParent(&s.Key); err != nil {
+	for _, obj := range s.Objects {
+		if err := obj.ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
 	}
