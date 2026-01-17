@@ -185,3 +185,50 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	})
 	assert.ErrorContains(suite.T(), err, "parent does not match subdomain")
 }
+
+// TestGetClassAssociations tests that GetClassAssociations returns a copy of the associations.
+func (suite *SubdomainSuite) TestGetClassAssociations() {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
+	classKey1 := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	classKey2 := helper.Must(identity.NewClassKey(subdomainKey, "class2"))
+
+	// Create a subdomain with associations.
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2))
+	assoc := model_class.Association{
+		Key:              assocKey,
+		Name:             "Association",
+		FromClassKey:     classKey1,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       classKey2,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+	subdomain := Subdomain{
+		Key:  subdomainKey,
+		Name: "Subdomain",
+		ClassAssociations: map[identity.Key]model_class.Association{
+			assocKey: assoc,
+		},
+	}
+
+	// Test: GetClassAssociations returns the association.
+	result := subdomain.GetClassAssociations()
+	assert.Equal(suite.T(), 1, len(result))
+	assert.Contains(suite.T(), result, assocKey)
+	assert.Equal(suite.T(), assoc, result[assocKey])
+
+	// Test: returned map is a copy, not the original.
+	classKey3 := helper.Must(identity.NewClassKey(subdomainKey, "class3"))
+	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey3))
+	result[newAssocKey] = model_class.Association{Key: newAssocKey, Name: "New"}
+	assert.Equal(suite.T(), 1, len(subdomain.ClassAssociations), "Original should not be modified")
+	assert.Equal(suite.T(), 2, len(result), "Copy should have new entry")
+
+	// Test: empty associations returns empty map.
+	emptySubdomain := Subdomain{
+		Key:  subdomainKey,
+		Name: "Empty Subdomain",
+	}
+	emptyResult := emptySubdomain.GetClassAssociations()
+	assert.NotNil(suite.T(), emptyResult)
+	assert.Equal(suite.T(), 0, len(emptyResult))
+}

@@ -121,3 +121,12 @@ func (s *Subdomain) SetClassAssociations(associations map[identity.Key]model_cla
 	s.ClassAssociations = associations
 	return nil
 }
+
+// GetClassAssociations returns a copy of the subdomain's class associations.
+func (s *Subdomain) GetClassAssociations() map[identity.Key]model_class.Association {
+	result := make(map[identity.Key]model_class.Association)
+	for k, v := range s.ClassAssociations {
+		result[k] = v
+	}
+	return result
+}

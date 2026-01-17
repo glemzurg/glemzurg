@@ -228,3 +228,93 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	})
 	assert.ErrorContains(suite.T(), err, "parent does not match domain")
 }
+
+// TestGetClassAssociations tests that GetClassAssociations returns associations from domain and subdomains.
+func (suite *DomainSuite) TestGetClassAssociations() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	subdomain2Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain2"))
+	class1InSub1 := helper.Must(identity.NewClassKey(subdomain1Key, "class1"))
+	class2InSub1 := helper.Must(identity.NewClassKey(subdomain1Key, "class2"))
+	class1InSub2 := helper.Must(identity.NewClassKey(subdomain2Key, "class1"))
+	class2InSub2 := helper.Must(identity.NewClassKey(subdomain2Key, "class2"))
+
+	// Create associations at different levels.
+	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2))
+	domainAssoc := model_class.Association{
+		Key:              domainAssocKey,
+		Name:             "Domain Association",
+		FromClassKey:     class1InSub1,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       class1InSub2,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+
+	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1))
+	sub1Assoc := model_class.Association{
+		Key:              sub1AssocKey,
+		Name:             "Subdomain1 Association",
+		FromClassKey:     class1InSub1,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       class2InSub1,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+
+	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2))
+	sub2Assoc := model_class.Association{
+		Key:              sub2AssocKey,
+		Name:             "Subdomain2 Association",
+		FromClassKey:     class1InSub2,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       class2InSub2,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+
+	// Create domain with associations at all levels.
+	domain := Domain{
+		Key:  domainKey,
+		Name: "Domain",
+		ClassAssociations: map[identity.Key]model_class.Association{
+			domainAssocKey: domainAssoc,
+		},
+		Subdomains: map[identity.Key]Subdomain{
+			subdomain1Key: {
+				Key:  subdomain1Key,
+				Name: "Subdomain1",
+				ClassAssociations: map[identity.Key]model_class.Association{
+					sub1AssocKey: sub1Assoc,
+				},
+			},
+			subdomain2Key: {
+				Key:  subdomain2Key,
+				Name: "Subdomain2",
+				ClassAssociations: map[identity.Key]model_class.Association{
+					sub2AssocKey: sub2Assoc,
+				},
+			},
+		},
+	}
+
+	// Test: GetClassAssociations returns all associations.
+	result := domain.GetClassAssociations()
+	assert.Equal(suite.T(), 3, len(result))
+	assert.Contains(suite.T(), result, domainAssocKey)
+	assert.Contains(suite.T(), result, sub1AssocKey)
+	assert.Contains(suite.T(), result, sub2AssocKey)
+
+	// Test: returned map is a copy.
+	class3InSub1 := helper.Must(identity.NewClassKey(subdomain1Key, "class3"))
+	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class3InSub1))
+	result[newAssocKey] = model_class.Association{Key: newAssocKey, Name: "New"}
+	assert.Equal(suite.T(), 1, len(domain.ClassAssociations), "Domain associations should not be modified")
+	assert.Equal(suite.T(), 1, len(domain.Subdomains[subdomain1Key].ClassAssociations), "Subdomain associations should not be modified")
+
+	// Test: empty domain returns empty map.
+	emptyDomain := Domain{
+		Key:  domainKey,
+		Name: "Empty Domain",
+	}
+	emptyResult := emptyDomain.GetClassAssociations()
+	assert.NotNil(suite.T(), emptyResult)
+	assert.Equal(suite.T(), 0, len(emptyResult))
+}

@@ -136,3 +136,19 @@ func (m *Model) SetClassAssociations(associations map[identity.Key]model_class.A
 
 	return nil
 }
+
+// GetClassAssociations returns a copy of all class associations from this model and its domains.
+func (m *Model) GetClassAssociations() map[identity.Key]model_class.Association {
+	result := make(map[identity.Key]model_class.Association)
+	// Add model-level associations.
+	for k, v := range m.ClassAssociations {
+		result[k] = v
+	}
+	// Add associations from all domains.
+	for _, domain := range m.Domains {
+		for k, v := range domain.GetClassAssociations() {
+			result[k] = v
+		}
+	}
+	return result
+}
