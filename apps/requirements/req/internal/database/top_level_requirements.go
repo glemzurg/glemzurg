@@ -5,8 +5,12 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
@@ -39,24 +43,36 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			}
 		}
 
-		// Domains and their nested content.
+		// First pass: Add all domains.
 		for _, domain := range model.Domains {
-			domainKey := domain.Key.String()
-
 			if err = AddDomain(tx, modelKey, domain); err != nil {
 				return err
 			}
+		}
 
-			// Domain associations (at domain level).
-			for _, association := range domain.Associations {
+		// Second pass: Add domain associations (after all domains exist).
+		for _, domain := range model.Domains {
+			for _, association := range domain.DomainAssociations {
 				if err = AddDomainAssociation(tx, modelKey, association); err != nil {
 					return err
 				}
 			}
+		}
+
+		// Model-level domain associations.
+		for _, association := range model.DomainAssociations {
+			if err = AddDomainAssociation(tx, modelKey, association); err != nil {
+				return err
+			}
+		}
+
+		// Third pass: Add subdomains, classes, and other nested content.
+		for _, domain := range model.Domains {
+			domainKey := domain.Key
 
 			// Subdomains.
 			for _, subdomain := range domain.Subdomains {
-				subdomainKey := subdomain.Key.String()
+				subdomainKey := subdomain.Key
 
 				if err = AddSubdomain(tx, modelKey, domainKey, subdomain); err != nil {
 					return err
@@ -69,16 +85,9 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 					}
 				}
 
-				// Subdomain-level associations.
-				for _, association := range subdomain.Associations {
-					if err = AddAssociation(tx, modelKey, association); err != nil {
-						return err
-					}
-				}
-
 				// Classes.
 				for _, class := range subdomain.Classes {
-					classKey := class.Key.String()
+					classKey := class.Key
 
 					if err = AddClass(tx, modelKey, subdomainKey, class); err != nil {
 						return err
@@ -91,30 +100,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 						}
 						// Add any indexes.
 						for _, indexNum := range attribute.IndexNums {
-							if err = AddClassIndex(tx, modelKey, classKey, attribute.Key.String(), indexNum); err != nil {
-								return err
-							}
-						}
-					}
-
-					// Class associations.
-					for _, association := range class.Associations {
-						if err = AddAssociation(tx, modelKey, association); err != nil {
-							return err
-						}
-					}
-
-					// States.
-					for _, state := range class.States {
-						stateKey := state.Key.String()
-
-						if err = AddState(tx, modelKey, classKey, state); err != nil {
-							return err
-						}
-
-						// State actions.
-						for _, stateAction := range state.Actions {
-							if err = AddStateAction(tx, modelKey, stateKey, stateAction); err != nil {
+							if err = AddClassIndex(tx, modelKey, classKey, attribute.Key, indexNum); err != nil {
 								return err
 							}
 						}
@@ -134,10 +120,26 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 						}
 					}
 
-					// Actions.
+					// Actions (must be added before States with StateActions).
 					for _, action := range class.Actions {
 						if err = AddAction(tx, modelKey, classKey, action); err != nil {
 							return err
+						}
+					}
+
+					// States (after Actions since StateActions reference Actions).
+					for _, state := range class.States {
+						stateKey := state.Key
+
+						if err = AddState(tx, modelKey, classKey, state); err != nil {
+							return err
+						}
+
+						// State actions.
+						for _, stateAction := range state.Actions {
+							if err = AddStateAction(tx, modelKey, stateKey, stateAction); err != nil {
+								return err
+							}
 						}
 					}
 
@@ -151,7 +153,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 				// Use cases.
 				for _, useCase := range subdomain.UseCases {
-					useCaseKey := useCase.Key.String()
+					useCaseKey := useCase.Key
 
 					if err = AddUseCase(tx, modelKey, subdomainKey, useCase); err != nil {
 						return err
@@ -159,14 +161,14 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 					// Use case actors.
 					for actorKey, actor := range useCase.Actors {
-						if err = AddUseCaseActor(tx, modelKey, useCaseKey, actorKey.String(), actor); err != nil {
+						if err = AddUseCaseActor(tx, modelKey, useCaseKey, actorKey, actor); err != nil {
 							return err
 						}
 					}
 
 					// Scenarios.
 					for _, scenario := range useCase.Scenarios {
-						scenarioKey := scenario.Key.String()
+						scenarioKey := scenario.Key
 
 						if err = AddScenario(tx, modelKey, useCaseKey, scenario); err != nil {
 							return err
@@ -180,18 +182,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 						}
 					}
 				}
+
+				// UseCaseShares.
+				for seaLevelKey, mudLevelShares := range subdomain.UseCaseShares {
+					for mudLevelKey, shared := range mudLevelShares {
+						if err = AddUseCaseShared(tx, modelKey, seaLevelKey, mudLevelKey, shared); err != nil {
+							return err
+						}
+					}
+				}
 			}
 		}
 
-		// Model-level domain associations.
-		for _, association := range model.DomainAssociations {
-			if err = AddDomainAssociation(tx, modelKey, association); err != nil {
-				return err
-			}
-		}
-
-		// Model-level class associations (spanning domains).
-		for _, association := range model.Associations {
+		// Class associations - use GetClassAssociations to get all associations from all levels.
+		classAssociations := model.GetClassAssociations()
+		for _, association := range classAssociations {
 			if err = AddAssociation(tx, modelKey, association); err != nil {
 				return err
 			}
@@ -236,14 +241,18 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Actors.
-		model.Actors, err = QueryActors(tx, modelKey)
+		// Actors - returns slice, convert to map.
+		actorsSlice, err := QueryActors(tx, modelKey)
 		if err != nil {
 			return err
 		}
+		model.Actors = make(map[identity.Key]model_actor.Actor)
+		for _, actor := range actorsSlice {
+			model.Actors[actor.Key] = actor
+		}
 
-		// Domains.
-		domains, err := QueryDomains(tx, modelKey)
+		// Domains - returns slice.
+		domainsSlice, err := QueryDomains(tx, modelKey)
 		if err != nil {
 			return err
 		}
@@ -254,10 +263,20 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Domain associations.
-		model.DomainAssociations, err = QueryDomainAssociations(tx, modelKey)
+		// Domain associations - returns slice, group by parent domain key.
+		domainAssociationsSlice, err := QueryDomainAssociations(tx, modelKey)
 		if err != nil {
 			return err
+		}
+		// Group domain associations by their parent (problem domain) key.
+		domainAssociationsMap := make(map[identity.Key][]model_domain.Association)
+		for _, assoc := range domainAssociationsSlice {
+			// The parent key is the problem domain key.
+			parentKeyStr := assoc.Key.ParentKey()
+			parentKey, parseErr := identity.ParseKey(parentKeyStr)
+			if parseErr == nil {
+				domainAssociationsMap[parentKey] = append(domainAssociationsMap[parentKey], assoc)
+			}
 		}
 
 		// Generalizations - returned as slice, need to group by subdomain (parent) key.
@@ -265,11 +284,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		if err != nil {
 			return err
 		}
-		generalizationsMap := make(map[string][]model_class.Generalization)
+		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
 		for _, gen := range generalizationsSlice {
 			// Extract parent (subdomain) key from the generalization key.
-			parentKey := gen.Key.ParentKey()
-			generalizationsMap[parentKey] = append(generalizationsMap[parentKey], gen)
+			parentKeyStr := gen.Key.ParentKey()
+			parentKey, parseErr := identity.ParseKey(parentKeyStr)
+			if parseErr == nil {
+				generalizationsMap[parentKey] = append(generalizationsMap[parentKey], gen)
+			}
 		}
 
 		// Classes grouped by subdomain key.
@@ -284,7 +306,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Class associations.
+		// Class associations - all associations from DB as a flat slice.
 		associationsSlice, err := QueryAssociations(tx, modelKey)
 		if err != nil {
 			return err
@@ -337,9 +359,9 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		if err != nil {
 			return err
 		}
-		useCasesMap := make(map[string][]model_use_case.UseCase)
+		useCasesMap := make(map[identity.Key][]model_use_case.UseCase)
 		for _, uc := range useCasesSlice {
-			subdomainKey := subdomainKeysForUseCases[uc.Key.String()]
+			subdomainKey := subdomainKeysForUseCases[uc.Key]
 			useCasesMap[subdomainKey] = append(useCasesMap[subdomainKey], uc)
 		}
 
@@ -361,111 +383,168 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// UseCaseShareds grouped by subdomain key (outer key is sea-level use case, inner is mud-level).
+		useCaseSharedsMap, err := QueryUseCaseShareds(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
 		// Now assemble the tree structure.
-		for i := range domains {
-			domainKey := domains[i].Key.String()
+		model.Domains = make(map[identity.Key]model_domain.Domain)
+		for _, domain := range domainsSlice {
+			domainKey := domain.Key
+
+			// Attach domain associations to domain.
+			domain.DomainAssociations = make(map[identity.Key]model_domain.Association)
+			if domainAssocs, ok := domainAssociationsMap[domainKey]; ok {
+				for _, assoc := range domainAssocs {
+					domain.DomainAssociations[assoc.Key] = assoc
+				}
+			}
 
 			// Attach subdomains to domain.
+			domain.Subdomains = make(map[identity.Key]model_domain.Subdomain)
 			if subdomains, ok := subdomainsMap[domainKey]; ok {
-				for j := range subdomains {
-					subdomainKey := subdomains[j].Key.String()
+				for _, subdomain := range subdomains {
+					subdomainKey := subdomain.Key
 
 					// Attach generalizations to subdomain.
+					subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
 					if generalizations, ok := generalizationsMap[subdomainKey]; ok {
-						subdomains[j].Generalizations = generalizations
+						for _, gen := range generalizations {
+							subdomain.Generalizations[gen.Key] = gen
+						}
 					}
 
 					// Attach classes to subdomain.
+					subdomain.Classes = make(map[identity.Key]model_class.Class)
 					if classes, ok := classesMap[subdomainKey]; ok {
-						for k := range classes {
-							classKey := classes[k].Key.String()
+						for _, class := range classes {
+							classKey := class.Key
 
 							// Attach attributes to class.
+							class.Attributes = make(map[identity.Key]model_class.Attribute)
 							if attributes, ok := attributesMap[classKey]; ok {
 								// Attach data types to attributes.
-								for l := range attributes {
-									if dt, ok := dataTypes[attributes[l].Key.String()]; ok {
-										attributes[l].DataType = &dt
+								for _, attr := range attributes {
+									if dt, ok := dataTypes[attr.Key.String()]; ok {
+										attr.DataType = &dt
 									}
+									class.Attributes[attr.Key] = attr
 								}
-								classes[k].Attributes = attributes
 							}
 
 							// Attach states to class.
+							class.States = make(map[identity.Key]model_state.State)
 							if states, ok := statesMap[classKey]; ok {
-								for m := range states {
-									stateKey := states[m].Key.String()
-									// Attach state actions to state.
+								for _, state := range states {
+									stateKey := state.Key
+									// Attach state actions to state (remains as slice).
 									if stateActions, ok := stateActionsMap[stateKey]; ok {
-										states[m].Actions = stateActions
+										state.Actions = stateActions
 									}
+									class.States[state.Key] = state
 								}
-								classes[k].States = states
 							}
 
 							// Attach events to class.
+							class.Events = make(map[identity.Key]model_state.Event)
 							if events, ok := eventsMap[classKey]; ok {
-								classes[k].Events = events
+								for _, event := range events {
+									class.Events[event.Key] = event
+								}
 							}
 
 							// Attach guards to class.
+							class.Guards = make(map[identity.Key]model_state.Guard)
 							if guards, ok := guardsMap[classKey]; ok {
-								classes[k].Guards = guards
+								for _, guard := range guards {
+									class.Guards[guard.Key] = guard
+								}
 							}
 
 							// Attach actions to class.
+							class.Actions = make(map[identity.Key]model_state.Action)
 							if actions, ok := actionsMap[classKey]; ok {
-								classes[k].Actions = actions
+								for _, action := range actions {
+									class.Actions[action.Key] = action
+								}
 							}
 
 							// Attach transitions to class.
+							class.Transitions = make(map[identity.Key]model_state.Transition)
 							if transitions, ok := transitionsMap[classKey]; ok {
-								classes[k].Transitions = transitions
+								for _, transition := range transitions {
+									class.Transitions[transition.Key] = transition
+								}
 							}
+
+							subdomain.Classes[class.Key] = class
 						}
-						subdomains[j].Classes = classes
 					}
 
 					// Attach use cases to subdomain.
+					subdomain.UseCases = make(map[identity.Key]model_use_case.UseCase)
 					if useCases, ok := useCasesMap[subdomainKey]; ok {
-						for k := range useCases {
-							useCaseKey := useCases[k].Key.String()
+						for _, useCase := range useCases {
+							useCaseKey := useCase.Key
 
-							// Attach use case actors - convert string keys to identity.Key.
-							if actorsStringMap, ok := useCaseActorsMap[useCaseKey]; ok {
-								actorsKeyMap := make(map[identity.Key]model_use_case.Actor)
-								for actorKeyStr, actor := range actorsStringMap {
-									actorKey, parseErr := identity.ParseKey(actorKeyStr)
-									if parseErr == nil {
-										actorsKeyMap[actorKey] = actor
-									}
+							// Attach use case actors.
+							useCase.Actors = make(map[identity.Key]model_use_case.Actor)
+							if actorsMap, ok := useCaseActorsMap[useCaseKey]; ok {
+								for actorKey, actor := range actorsMap {
+									useCase.Actors[actorKey] = actor
 								}
-								useCases[k].Actors = actorsKeyMap
 							}
 
 							// Attach scenarios to use case.
+							useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
 							if scenarios, ok := scenariosMap[useCaseKey]; ok {
-								for m := range scenarios {
-									scenarioKey := scenarios[m].Key.String()
+								for _, scenario := range scenarios {
+									scenarioKey := scenario.Key
 									// Attach objects to scenario.
+									scenario.Objects = make(map[identity.Key]model_scenario.Object)
 									if objects, ok := objectsMap[scenarioKey]; ok {
-										scenarios[m].Objects = objects
+										for _, obj := range objects {
+											scenario.Objects[obj.Key] = obj
+										}
 									}
+									useCase.Scenarios[scenario.Key] = scenario
 								}
-								useCases[k].Scenarios = scenarios
 							}
+
+							subdomain.UseCases[useCase.Key] = useCase
 						}
-						subdomains[j].UseCases = useCases
 					}
+
+					// Attach UseCaseShares to subdomain.
+					subdomain.UseCaseShares = make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
+					// UseCaseShareds are keyed by sea-level use case key.
+					// We need to filter to those belonging to this subdomain.
+					for seaLevelKey, mudLevelShares := range useCaseSharedsMap {
+						// Check if the sea-level use case belongs to this subdomain.
+						if _, exists := subdomain.UseCases[seaLevelKey]; exists {
+							subdomain.UseCaseShares[seaLevelKey] = mudLevelShares
+						}
+					}
+
+					domain.Subdomains[subdomain.Key] = subdomain
 				}
-				domains[i].Subdomains = subdomains
 			}
+
+			model.Domains[domain.Key] = domain
 		}
 
-		model.Domains = domains
-
-		// Model-level associations - these are associations that span domains.
-		model.Associations = associationsSlice
+		// Class associations - use SetClassAssociations to route them to the correct level.
+		allAssociations := make(map[identity.Key]model_class.Association)
+		for _, assoc := range associationsSlice {
+			allAssociations[assoc.Key] = assoc
+		}
+		if len(allAssociations) > 0 {
+			if err = model.SetClassAssociations(allAssociations); err != nil {
+				return err
+			}
+		}
 
 		return nil
 	})
