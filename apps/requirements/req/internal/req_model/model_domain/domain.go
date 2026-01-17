@@ -17,11 +17,11 @@ type Domain struct {
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment string
 	// Children
-	DomainAssociations []Association
-	Classes            []model_class.Class
-	UseCases           []model_use_case.UseCase
-	Subdomains         []Subdomain
-	ClassAssociations  []model_class.Association // Associations between classes that bridge subdomains in this domain.
+	DomainAssociations map[identity.Key]Association
+	Classes            map[identity.Key]model_class.Class
+	UseCases           map[identity.Key]model_use_case.UseCase
+	Subdomains         map[identity.Key]Subdomain
+	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
 func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
@@ -70,28 +70,28 @@ func (d *Domain) ValidateWithParent(parent *identity.Key) error {
 		return err
 	}
 	// Validate all children.
-	for i := range d.DomainAssociations {
-		if err := d.DomainAssociations[i].ValidateWithParent(&d.Key); err != nil {
+	for _, assoc := range d.DomainAssociations {
+		if err := assoc.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}
-	for i := range d.Classes {
-		if err := d.Classes[i].ValidateWithParent(&d.Key); err != nil {
+	for _, class := range d.Classes {
+		if err := class.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}
-	for i := range d.UseCases {
-		if err := d.UseCases[i].ValidateWithParent(&d.Key); err != nil {
+	for _, useCase := range d.UseCases {
+		if err := useCase.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}
-	for i := range d.Subdomains {
-		if err := d.Subdomains[i].ValidateWithParent(&d.Key); err != nil {
+	for _, subdomain := range d.Subdomains {
+		if err := subdomain.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}
-	for i := range d.ClassAssociations {
-		if err := d.ClassAssociations[i].ValidateWithParent(&d.Key); err != nil {
+	for _, classAssoc := range d.ClassAssociations {
+		if err := classAssoc.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}

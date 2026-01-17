@@ -121,8 +121,8 @@ func (suite *ModelSuite) TestValidateWithParent() {
 				Key:     domainKey,
 				Name:    "Domain Name",
 				Details: "Details",
-				Subdomains: []model_domain.Subdomain{
-					{
+				Subdomains: map[identity.Key]model_domain.Subdomain{
+					wrongParentSubdomainKey: {
 						Key:     wrongParentSubdomainKey, // Parent is domain1, but attached to other_domain
 						Name:    "Subdomain Name",
 						Details: "Details",
@@ -155,8 +155,8 @@ func (suite *ModelSuite) TestValidateWithParent() {
 				Key:     domainKey,
 				Name:    "Domain Name",
 				Details: "Details",
-				Subdomains: []model_domain.Subdomain{
-					{
+				Subdomains: map[identity.Key]model_domain.Subdomain{
+					validSubdomainKey: {
 						Key:     validSubdomainKey,
 						Name:    "Subdomain Name",
 						Details: "Details",
