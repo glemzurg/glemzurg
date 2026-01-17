@@ -97,8 +97,8 @@ func (suite *ModelSuite) TestValidateWithParent() {
 		Key:     "model1",
 		Name:    "Model Name",
 		Details: "Details",
-		Actors: []model_actor.Actor{
-			{
+		Actors: map[identity.Key]model_actor.Actor{
+			actorKey: {
 				Key:  actorKey,
 				Name: "", // Invalid - will fail Validate()
 				Type: "person",
@@ -116,9 +116,9 @@ func (suite *ModelSuite) TestValidateWithParent() {
 		Key:     "model1",
 		Name:    "Model Name",
 		Details: "Details",
-		Domains: []model_domain.Domain{
-			{
-				Key:     domainKey,
+		Domains: map[identity.Key]model_domain.Domain{
+			otherDomainKey: {
+				Key:     otherDomainKey, // Domain key is other_domain
 				Name:    "Domain Name",
 				Details: "Details",
 				Subdomains: map[identity.Key]model_domain.Subdomain{
@@ -131,8 +131,6 @@ func (suite *ModelSuite) TestValidateWithParent() {
 			},
 		},
 	}
-	// Manually set the wrong parent to test ValidateParent is called.
-	model.Domains[0].Key = otherDomainKey
 	err = model.ValidateWithParent()
 	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
@@ -142,16 +140,16 @@ func (suite *ModelSuite) TestValidateWithParent() {
 		Key:     "model1",
 		Name:    "Model Name",
 		Details: "Details",
-		Actors: []model_actor.Actor{
-			{
+		Actors: map[identity.Key]model_actor.Actor{
+			actorKey: {
 				Key:     actorKey,
 				Name:    "Actor Name",
 				Type:    "person",
 				Details: "Details",
 			},
 		},
-		Domains: []model_domain.Domain{
-			{
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKey: {
 				Key:     domainKey,
 				Name:    "Domain Name",
 				Details: "Details",

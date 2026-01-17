@@ -5,6 +5,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
@@ -16,10 +17,10 @@ type Model struct {
 	Name    string
 	Details string // Markdown.
 	// Children
-	Actors             []model_actor.Actor
-	Domains            []model_domain.Domain
-	DomainAssociations []model_domain.Association
-	ClassAssociations  []model_class.Association // Associations between classes that span domains.
+	Actors             map[identity.Key]model_actor.Actor
+	Domains            map[identity.Key]model_domain.Domain
+	DomainAssociations map[identity.Key]model_domain.Association
+	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
 func NewModel(key, name, details string) (model Model, err error) {
@@ -55,25 +56,25 @@ func (m *Model) ValidateWithParent() error {
 	}
 	// Validate all children - they all have nil as their parent since Model
 	// doesn't have an identity.Key.
-	for i := range m.Actors {
-		if err := m.Actors[i].ValidateWithParent(nil); err != nil {
+	for _, actor := range m.Actors {
+		if err := actor.ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}
-	for i := range m.Domains {
-		if err := m.Domains[i].ValidateWithParent(nil); err != nil {
+	for _, domain := range m.Domains {
+		if err := domain.ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}
 	// DomainAssociations need to be validated.
-	for i := range m.DomainAssociations {
-		if err := m.DomainAssociations[i].ValidateWithParent(nil); err != nil {
+	for _, domainAssoc := range m.DomainAssociations {
+		if err := domainAssoc.ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}
 	// Model-level Associations (spanning domains) have nil parent.
-	for i := range m.ClassAssociations {
-		if err := m.ClassAssociations[i].ValidateWithParent(nil); err != nil {
+	for _, classAssoc := range m.ClassAssociations {
+		if err := classAssoc.ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}
