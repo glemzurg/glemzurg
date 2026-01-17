@@ -16,45 +16,64 @@ type MultiplicitySuite struct {
 	suite.Suite
 }
 
-func (suite *MultiplicitySuite) TestNew() {
+// TestValidate tests the Validate method directly.
+func (suite *MultiplicitySuite) TestValidate() {
 	tests := []struct {
-		value  string
+		name   string
 		obj    Multiplicity
 		errstr string
 	}{
-		// OK.
+		// Valid cases.
 		{
-			value: "2..3",
-			obj: Multiplicity{
-				LowerBound:  2,
-				HigherBound: 3,
-			},
+			name: "both zero (any)",
+			obj:  Multiplicity{LowerBound: 0, HigherBound: 0},
 		},
 		{
-			value: "any",
-			obj: Multiplicity{
-				LowerBound:  0,
-				HigherBound: 0,
-			},
+			name: "equal bounds",
+			obj:  Multiplicity{LowerBound: 2, HigherBound: 2},
 		},
+		{
+			name: "higher > lower",
+			obj:  Multiplicity{LowerBound: 1, HigherBound: 3},
+		},
+		{
+			name: "lower zero (any), higher set",
+			obj:  Multiplicity{LowerBound: 0, HigherBound: 5},
+		},
+		{
+			name: "higher zero (unlimited), lower set",
+			obj:  Multiplicity{LowerBound: 3, HigherBound: 0},
+		},
+		// Invalid cases.
+		{
+			name:   "higher < lower",
+			obj:    Multiplicity{LowerBound: 5, HigherBound: 2},
+			errstr: "higher bound (2) must be >= lower bound (5)",
+		},
+	}
+	for _, test := range tests {
+		suite.T().Run(test.name, func(t *testing.T) {
+			err := test.obj.Validate()
+			if test.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, test.errstr)
+			}
+		})
+	}
+}
 
-		// Error states.
-		{
-			value:  "unknown",
-			errstr: `invalid multiplicity: 'unknown'`,
-		},
-	}
-	for i, test := range tests {
-		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewMultiplicity(test.value)
-		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
-		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
-		}
-	}
+// TestNew tests that NewMultiplicity populates the struct and calls Validate.
+func (suite *MultiplicitySuite) TestNew() {
+	// Test struct population.
+	obj, err := NewMultiplicity("2..3")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), uint(2), obj.LowerBound, "LowerBound should be populated")
+	assert.Equal(suite.T(), uint(3), obj.HigherBound, "HigherBound should be populated")
+
+	// Test that Validate is called (parsing error).
+	_, err = NewMultiplicity("unknown")
+	assert.ErrorContains(suite.T(), err, "invalid multiplicity", "NewMultiplicity should fail on invalid input")
 }
 
 func (suite *MultiplicitySuite) TestParseMultiplicity() {

@@ -42,7 +42,7 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 
 // Validate validates the Association struct.
 func (a *Association) Validate() error {
-	return validation.ValidateStruct(a,
+	if err := validation.ValidateStruct(a,
 		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
@@ -74,7 +74,17 @@ func (a *Association) Validate() error {
 			}
 			return nil
 		})),
-	)
+	); err != nil {
+		return err
+	}
+	// Validate multiplicities as properties.
+	if err := a.FromMultiplicity.Validate(); err != nil {
+		return err
+	}
+	if err := a.ToMultiplicity.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *Association) Includes(classKey identity.Key) (included bool) {
