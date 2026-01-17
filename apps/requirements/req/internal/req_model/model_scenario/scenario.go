@@ -17,7 +17,7 @@ type Scenario struct {
 	Name    string
 	Details string // Markdown.
 	// Children
-	Steps   Node // The "abstract syntax tree" of the scenario.
+	Steps   *Node // The "abstract syntax tree" of the scenario.
 	Objects []Object
 }
 
@@ -68,11 +68,13 @@ func PopulateScenarioStepReferences(
 ) (err error) {
 	for key := range scenarios {
 		scenario := scenarios[key]
-		err = scenario.Steps.PopulateReferences(objects, events, attributes, scenarios)
-		if err != nil {
-			return err
+		if scenario.Steps != nil {
+			err = scenario.Steps.PopulateReferences(objects, events, attributes, scenarios)
+			if err != nil {
+				return err
+			}
+			scenarios[key] = scenario
 		}
-		scenarios[key] = scenario
 	}
 	return nil
 }
@@ -91,6 +93,12 @@ func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
 	// Validate all children.
 	for i := range s.Objects {
 		if err := s.Objects[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	// Validate Steps if there is content.
+	if s.Steps != nil {
+		if err := s.Steps.ValidateWithParent(); err != nil {
 			return err
 		}
 	}

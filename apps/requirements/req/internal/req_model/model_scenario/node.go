@@ -155,6 +155,12 @@ func (n *Node) Validate() error {
 	return nil
 }
 
+// ValidateWithParent validates the Node.
+// Node has no key, so parent validation is not applicable.
+func (n *Node) ValidateWithParent() error {
+	return n.Validate()
+}
+
 // FromJSON parses the JSON string into the Node.
 func (n *Node) FromJSON(jsonStr string) error {
 	return json.Unmarshal([]byte(jsonStr), n)
