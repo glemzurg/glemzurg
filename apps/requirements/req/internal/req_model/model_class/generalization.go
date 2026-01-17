@@ -14,9 +14,6 @@ type Generalization struct {
 	IsComplete bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
 	IsStatic   bool   // Are the specializations static and unchanging or can they change during runtime.
 	UmlComment string
-	// Children
-	SuperclassKey identity.Key   // If this generalization is classes, the superclass for it.
-	SubclassKeys  []identity.Key // If this generalization is classes, the subclasses for it.
 }
 
 func NewGeneralization(key identity.Key, name, details string, isComplete, isStatic bool, umlComment string) (generalization Generalization, err error) {
@@ -52,11 +49,6 @@ func (g *Generalization) Validate() error {
 		})),
 		validation.Field(&g.Name, validation.Required),
 	)
-}
-
-func (g *Generalization) SetSuperSubclassKeys(superclassKey identity.Key, subclassKeys []identity.Key) {
-	g.SuperclassKey = superclassKey
-	g.SubclassKeys = subclassKeys
 }
 
 // ValidateWithParent validates the Generalization, its key's parent relationship, and all children.

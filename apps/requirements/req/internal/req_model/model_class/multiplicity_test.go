@@ -68,8 +68,7 @@ func (suite *MultiplicitySuite) TestNew() {
 	// Test struct population.
 	obj, err := NewMultiplicity("2..3")
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), uint(2), obj.LowerBound, "LowerBound should be populated")
-	assert.Equal(suite.T(), uint(3), obj.HigherBound, "HigherBound should be populated")
+	assert.Equal(suite.T(), Multiplicity{LowerBound: 2, HigherBound: 3}, obj, "struct should be populated")
 
 	// Test that Validate is called (parsing error).
 	_, err = NewMultiplicity("unknown")
