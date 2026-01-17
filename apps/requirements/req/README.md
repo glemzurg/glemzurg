@@ -2,17 +2,16 @@
 
 next:
   - update database to use just the model
-  - build the ravelling/unravelling tests on requirements
   - parse yaml into just a model without requirements object
-  - update json package to just work with a model
-    - update the objects to not have unique database keys on them
+  - build the ravelling/unravelling tests on requirements
   - move the requirements object to generation package
     - moving all the generation efficient work there
   - update json model to have levels of class associations model/domain/subdomain
+  - update json package to just work with a model
+    - update the objects to not have unique database keys on them
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md
-  - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
 jan (in parallel):
   - use ai to summarize the current system into 
@@ -37,6 +36,8 @@ april (in parallel)
   - update simulators to run models together
 
 ---------------------------
+
+  - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
 - cleanup regex must compile code
 - import examples models from steve's examples
