@@ -133,6 +133,34 @@ func (suite *KeySuite) TestParseKey() {
 			expected: Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: &cassocModelSubKey2},
 		},
 
+		// State action key with composite subKey (when/subKey).
+		{
+			testName: "ok state action key",
+			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/entry/key",
+			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "entry/key"},
+		},
+		{
+			testName: "ok state action key with exit",
+			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/exit/key_b",
+			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "exit/key_b"},
+		},
+		{
+			testName: "ok state action key with do",
+			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/do/action_name",
+			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "do/action_name"},
+		},
+		// Transition key with composite subKey (from/event/guard/action/to).
+		{
+			testName: "ok transition key",
+			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/transition/state_a/event_key/guard_key/action_key/state_b",
+			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key", keyType: "transition", subKey: "state_a/event_key/guard_key/action_key/state_b"},
+		},
+		{
+			testName: "ok transition key with different states",
+			input:    "domain/d1/subdomain/s1/class/c1/transition/from_state/my_event/my_guard/my_action/to_state",
+			expected: Key{parentKey: "domain/d1/subdomain/s1/class/c1", keyType: "transition", subKey: "from_state/my_event/my_guard/my_action/to_state"},
+		},
+
 		// Error cases: invalid format.
 		{
 			testName: "error empty",
@@ -209,6 +237,23 @@ func (suite *KeySuite) TestString() {
 			testName: "class association with model parent",
 			key:      Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: &cassocModelSubKey2},
 			expected: "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b",
+		},
+		// State action key with composite subKey.
+		{
+			testName: "state action key",
+			key:      Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "entry/key"},
+			expected: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/entry/key",
+		},
+		{
+			testName: "state action key with exit",
+			key:      Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "exit/key_b"},
+			expected: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/exit/key_b",
+		},
+		// Transition key with composite subKey.
+		{
+			testName: "transition key",
+			key:      Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key", keyType: "transition", subKey: "state_a/event_key/guard_key/action_key/state_b"},
+			expected: "domain/domain_key/subdomain/subdomain_key/class/class_key/transition/state_a/event_key/guard_key/action_key/state_b",
 		},
 	}
 	for _, tt := range tests {
@@ -648,6 +693,82 @@ func (suite *KeySuite) TestIsParent() {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			result := tt.key.IsParent(tt.parentKey)
 			assert.Equal(t, tt.expected, result)
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestParseKeyRoundTrip tests that keys created with New* functions
+// can be converted to string and parsed back successfully.
+func (suite *KeySuite) TestParseKeyRoundTrip() {
+	// Create hierarchy of keys.
+	domainKey, _ := NewDomainKey("domain_key")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
+	classKey, _ := NewClassKey(subdomainKey, "class_key")
+	stateKey, _ := NewStateKey(classKey, "state_key")
+
+	tests := []struct {
+		testName    string
+		createKey   func() (Key, error)
+		description string
+	}{
+		{
+			testName: "state action key round trip",
+			createKey: func() (Key, error) {
+				return NewStateActionKey(stateKey, "entry", "key")
+			},
+			description: "StateAction key with entry/key subKey",
+		},
+		{
+			testName: "state action key with exit round trip",
+			createKey: func() (Key, error) {
+				return NewStateActionKey(stateKey, "exit", "key_b")
+			},
+			description: "StateAction key with exit/key_b subKey",
+		},
+		{
+			testName: "state action key with do round trip",
+			createKey: func() (Key, error) {
+				return NewStateActionKey(stateKey, "do", "action_name")
+			},
+			description: "StateAction key with do/action_name subKey",
+		},
+		{
+			testName: "transition key round trip",
+			createKey: func() (Key, error) {
+				return NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b")
+			},
+			description: "Transition key with from/event/guard/action/to subKey",
+		},
+		{
+			testName: "transition key with different parts round trip",
+			createKey: func() (Key, error) {
+				return NewTransitionKey(classKey, "from_state", "my_event", "my_guard", "my_action", "to_state")
+			},
+			description: "Transition key with various state/event/guard/action names",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			// Create the key.
+			originalKey, err := tt.createKey()
+			assert.NoError(t, err, "Failed to create key for: %s", tt.description)
+
+			// Convert to string.
+			keyStr := originalKey.String()
+			assert.NotEmpty(t, keyStr, "Key string should not be empty for: %s", tt.description)
+
+			// Parse the string back.
+			parsedKey, err := ParseKey(keyStr)
+			assert.NoError(t, err, "Failed to parse key string '%s' for: %s", keyStr, tt.description)
+
+			// Verify the parsed key matches the original.
+			assert.Equal(t, originalKey.parentKey, parsedKey.parentKey, "ParentKey mismatch for: %s", tt.description)
+			assert.Equal(t, originalKey.keyType, parsedKey.keyType, "KeyType mismatch for: %s", tt.description)
+			assert.Equal(t, originalKey.subKey, parsedKey.subKey, "SubKey mismatch for: %s", tt.description)
+			assert.Equal(t, originalKey.String(), parsedKey.String(), "String() mismatch for: %s", tt.description)
 		})
 		if !pass {
 			break
