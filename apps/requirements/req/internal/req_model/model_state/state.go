@@ -15,7 +15,7 @@ type State struct {
 	Name       string
 	Details    string // Markdown.
 	UmlComment string
-	// Part of the data in a parsed file.
+	// Children
 	Actions []StateAction
 }
 

@@ -14,9 +14,6 @@ type Action struct {
 	Details    string
 	Requires   []string // To enter this action.
 	Guarantees []string
-	// Derived values for template display.
-	FromTransitions []Transition  // Where this action is called from events.
-	FromStates      []StateAction // Where this action is called from a state.
 }
 
 func NewAction(key identity.Key, name, details string, requires, guarantees []string) (action Action, err error) {

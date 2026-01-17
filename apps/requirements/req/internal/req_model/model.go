@@ -15,11 +15,11 @@ type Model struct {
 	Key     string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
 	Name    string
 	Details string // Markdown.
-	// Data in a parsed file.
+	// Children
 	Actors             []model_actor.Actor
 	Domains            []model_domain.Domain
 	DomainAssociations []model_domain.Association
-	Associations       []model_class.Association // Associations between classes that span domains.
+	ClassAssociations  []model_class.Association // Associations between classes that span domains.
 }
 
 func NewModel(key, name, details string) (model Model, err error) {
@@ -72,8 +72,8 @@ func (m *Model) ValidateWithParent() error {
 		}
 	}
 	// Model-level Associations (spanning domains) have nil parent.
-	for i := range m.Associations {
-		if err := m.Associations[i].ValidateWithParent(nil); err != nil {
+	for i := range m.ClassAssociations {
+		if err := m.ClassAssociations[i].ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}

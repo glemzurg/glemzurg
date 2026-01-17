@@ -19,7 +19,7 @@ type Class struct {
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
-	// Part of the data in a parsed file.
+	// Children
 	Attributes   []Attribute   // The attributes of a class.
 	Associations []Association // How this class links to other classes.
 	States       []model_state.State
@@ -27,8 +27,6 @@ type Class struct {
 	Guards       []model_state.Guard
 	Actions      []model_state.Action
 	Transitions  []model_state.Transition
-	// Helpful data.
-	DomainKey string
 }
 
 func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (class Class, err error) {

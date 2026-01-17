@@ -16,12 +16,12 @@ type Domain struct {
 	Details    string // Markdown.
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment string
-	// Part of the data in a parsed file.
-	Associations      []Association
-	Classes           []model_class.Class
-	UseCases          []model_use_case.UseCase
-	Subdomains        []Subdomain
-	ClassAssociations []model_class.Association // Associations between classes that bridge subdomains in this domain.
+	// Children
+	DomainAssociations []Association
+	Classes            []model_class.Class
+	UseCases           []model_use_case.UseCase
+	Subdomains         []Subdomain
+	ClassAssociations  []model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
 func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {

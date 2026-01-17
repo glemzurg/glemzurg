@@ -22,11 +22,9 @@ type UseCase struct {
 	Level      string // How high cocept or tightly focused the user case is.
 	ReadOnly   bool   // This is a user story that does not change the state of the system.
 	UmlComment string
-	// Part of the data in a parsed file.
+	// Children
 	Actors    map[identity.Key]Actor
 	Scenarios []model_scenario.Scenario
-	// Helpful data.
-	DomainKey identity.Key
 }
 
 func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {

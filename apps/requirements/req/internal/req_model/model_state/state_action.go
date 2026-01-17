@@ -24,8 +24,6 @@ type StateAction struct {
 	Key       identity.Key
 	ActionKey identity.Key
 	When      string
-	// Derived data for templates.
-	StateKey identity.Key
 }
 
 func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {

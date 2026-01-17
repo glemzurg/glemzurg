@@ -16,7 +16,7 @@ type Attribute struct {
 	DerivationPolicy string // If this is a derived attribute, how is it derived.
 	Nullable         bool   // Is this attribute optional.
 	UmlComment       string
-	// Part of the data in a parsed file.
+	// Children
 	IndexNums []uint                    // The indexes this attribute is part of.
 	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }

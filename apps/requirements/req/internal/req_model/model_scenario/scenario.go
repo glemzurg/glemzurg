@@ -16,10 +16,9 @@ type Scenario struct {
 	Key     identity.Key
 	Name    string
 	Details string // Markdown.
-	Steps   Node   // The "abstract syntax tree" of the scenario.
-	// Part of the data in a parsed file.
+	// Children
+	Steps   Node // The "abstract syntax tree" of the scenario.
 	Objects []Object
-	// Steps represent the structured program steps of the scenario.
 }
 
 func NewScenario(key identity.Key, name, details string) (scenario Scenario, err error) {

@@ -14,7 +14,7 @@ type Generalization struct {
 	IsComplete bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
 	IsStatic   bool   // Are the specializations static and unchanging or can they change during runtime.
 	UmlComment string
-	// Part of the data in a parsed file.
+	// Children
 	SuperclassKey identity.Key   // If this generalization is classes, the superclass for it.
 	SubclassKeys  []identity.Key // If this generalization is classes, the subclasses for it.
 }

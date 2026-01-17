@@ -19,8 +19,6 @@ type Actor struct {
 	Details    string // Markdown.
 	Type       string // "person" or "system"
 	UmlComment string
-	// Helpful data.
-	ClassKeys []identity.Key // Classes that implement this actor.
 }
 
 func NewActor(key identity.Key, name, details, userType, umlComment string) (actor Actor, err error) {

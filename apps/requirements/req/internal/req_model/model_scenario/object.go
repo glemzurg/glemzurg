@@ -17,14 +17,12 @@ const (
 // Object is an object that participates in a scenario.
 type Object struct {
 	Key          identity.Key
-	ObjectNumber uint   // Order in the scenario diagram.
-	Name         string // The name or id of the object.
-	NameStyle    string // Used to format the name in the diagram.
+	ObjectNumber uint         // Order in the scenario diagram.
+	Name         string       // The name or id of the object.
+	NameStyle    string       // Used to format the name in the diagram.
 	ClassKey     identity.Key // The class key this object is an instance of.
 	Multi        bool
 	UmlComment   string
-	// Helpful data.
-	Class model_class.Class `json:"-"`
 }
 
 func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) (object Object, err error) {

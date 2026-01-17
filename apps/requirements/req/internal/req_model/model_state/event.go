@@ -9,9 +9,10 @@ import (
 
 // Event is what triggers a transition between states.
 type Event struct {
-	Key        identity.Key
-	Name       string
-	Details    string
+	Key     identity.Key
+	Name    string
+	Details string
+	// Children
 	Parameters []EventParameter
 }
 
