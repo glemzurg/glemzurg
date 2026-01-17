@@ -20,13 +20,12 @@ type Class struct {
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Children
-	Attributes   []Attribute   // The attributes of a class.
-	Associations []Association // How this class links to other classes.
-	States       []model_state.State
-	Events       []model_state.Event
-	Guards       []model_state.Guard
-	Actions      []model_state.Action
-	Transitions  []model_state.Transition
+	Attributes  []Attribute // The attributes of a class.
+	States      []model_state.State
+	Events      []model_state.Event
+	Guards      []model_state.Guard
+	Actions     []model_state.Action
+	Transitions []model_state.Transition
 }
 
 func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (class Class, err error) {
@@ -189,7 +188,5 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 			return err
 		}
 	}
-	// Note: Associations on Class are validated by the parent (Subdomain) since they
-	// might reference classes in other subdomains.
 	return nil
 }
