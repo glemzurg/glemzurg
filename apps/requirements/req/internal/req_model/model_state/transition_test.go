@@ -27,7 +27,7 @@ func (suite *TransitionSuite) TestValidate() {
 	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
 	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
-	validKey := helper.Must(identity.NewTransitionKey(classKey, "transition1"))
+	validKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "guard1", "action1", "state2"))
 
 	tests := []struct {
 		testName   string
@@ -178,7 +178,7 @@ func (suite *TransitionSuite) TestNew() {
 	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
 	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
-	key := helper.Must(identity.NewTransitionKey(classKey, "transition1"))
+	key := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "guard1", "action1", "state2"))
 
 	// Test parameters are mapped correctly.
 	transition, err := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
@@ -206,7 +206,7 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 	fromStateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
 	toStateKey := helper.Must(identity.NewStateKey(classKey, "state2"))
 	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
-	validKey := helper.Must(identity.NewTransitionKey(classKey, "transition1"))
+	validKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state2"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
 	// Test that Validate is called.

@@ -145,11 +145,29 @@ func NewActionKey(classKey Key, subKey string) (key Key, err error) {
 	return newKey(classKey.String(), KEY_TYPE_ACTION, subKey)
 }
 
-func NewTransitionKey(classKey Key, subKey string) (key Key, err error) {
+func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key Key, err error) {
 	// The parent must be a class.
 	if classKey.KeyType() != KEY_TYPE_CLASS {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'transition' key", classKey.KeyType())
 	}
+	// Event cannot be blank.
+	if event == "" {
+		return Key{}, errors.New("event cannot be empty for transition key")
+	}
+	// Default from to "initial" when blank.
+	if from == "" {
+		from = "initial"
+	}
+	// Default to to "final" when blank.
+	if to == "" {
+		to = "final"
+	}
+	// Cannot transition directly from initial to final.
+	if from == "initial" && to == "final" {
+		return Key{}, errors.New("cannot transition directly from initial to final")
+	}
+	// SubKey format: from/event/guard/action/to
+	subKey := from + "/" + event + "/" + guard + "/" + action + "/" + to
 	return newKey(classKey.String(), KEY_TYPE_TRANSITION, subKey)
 }
 
