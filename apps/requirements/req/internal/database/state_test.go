@@ -2,10 +2,11 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
@@ -28,6 +29,8 @@ type StateSuite struct {
 	domain    model_domain.Domain
 	subdomain model_domain.Subdomain
 	class     model_class.Class
+	stateKey  identity.Key
+	stateKeyB identity.Key
 }
 
 func (suite *StateSuite) SetupTest() {
@@ -37,15 +40,19 @@ func (suite *StateSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key)
-	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "class_key")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key")))
+
+	// Create the state keys for reuse.
+	suite.stateKey = helper.Must(identity.NewStateKey(suite.class.Key, "key"))
+	suite.stateKeyB = helper.Must(identity.NewStateKey(suite.class.Key, "key_b"))
 }
 
 func (suite *StateSuite) TestLoad() {
 
 	// Nothing in database yet.
-	classKey, state, err := LoadState(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), state)
@@ -63,8 +70,8 @@ func (suite *StateSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'class_key',
-				'key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/state/key',
 				'Name',
 				'Details',
 				'UmlComment'
@@ -72,11 +79,11 @@ func (suite *StateSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	classKey, state, err = LoadState(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	classKey, state, err = LoadState(suite.db, suite.model.Key, suite.stateKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.State{
-		Key:        "key", // Test case-insensitive.
+		Key:        suite.stateKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
@@ -85,19 +92,19 @@ func (suite *StateSuite) TestLoad() {
 
 func (suite *StateSuite) TestAdd() {
 
-	err := AddState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.State{
-		Key:        "KeY", // Test case-insensitive.
+	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
+		Key:        suite.stateKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	classKey, state, err := LoadState(suite.db, suite.model.Key, "key")
+	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.State{
-		Key:        "key",
+		Key:        suite.stateKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
@@ -107,26 +114,26 @@ func (suite *StateSuite) TestAdd() {
 func (suite *StateSuite) TestUpdate() {
 
 	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
-		Key:        "key",
+		Key:        suite.stateKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.State{
-		Key:        "KeY", // Test case-insensitive.
+	err = UpdateState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
+		Key:        suite.stateKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
-	classKey, state, err := LoadState(suite.db, suite.model.Key, "key")
+	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.State{
-		Key:        "key",
+		Key:        suite.stateKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
@@ -136,17 +143,17 @@ func (suite *StateSuite) TestUpdate() {
 func (suite *StateSuite) TestRemove() {
 
 	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
-		Key:        "key",
+		Key:        suite.stateKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveState(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper("key")) // Test case-insensitive.
+	err = RemoveState(suite.db, suite.model.Key, suite.class.Key, suite.stateKey)
 	assert.Nil(suite.T(), err)
 
-	classKey, state, err := LoadState(suite.db, suite.model.Key, "key")
+	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), state)
@@ -155,7 +162,7 @@ func (suite *StateSuite) TestRemove() {
 func (suite *StateSuite) TestQuery() {
 
 	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
-		Key:        "keyx",
+		Key:        suite.stateKeyB,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
@@ -163,25 +170,25 @@ func (suite *StateSuite) TestQuery() {
 	assert.Nil(suite.T(), err)
 
 	err = AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
-		Key:        "key",
+		Key:        suite.stateKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	states, err := QueryStates(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	states, err := QueryStates(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_state.State{
-		"class_key": []model_state.State{
+	assert.Equal(suite.T(), map[identity.Key][]model_state.State{
+		suite.class.Key: {
 			{
-				Key:        "key",
+				Key:        suite.stateKey,
 				Name:       "Name",
 				Details:    "Details",
 				UmlComment: "UmlComment",
 			},
 			{
-				Key:        "keyx",
+				Key:        suite.stateKeyB,
 				Name:       "NameX",
 				Details:    "DetailsX",
 				UmlComment: "UmlCommentX",
@@ -194,11 +201,11 @@ func (suite *StateSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddState(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, stateKey string) (state model_state.State) {
+func t_AddState(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey identity.Key) (state model_state.State) {
 
 	err := AddState(dbOrTx, modelKey, classKey, model_state.State{
 		Key:        stateKey,
-		Name:       "Name",
+		Name:       stateKey.String(),
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})

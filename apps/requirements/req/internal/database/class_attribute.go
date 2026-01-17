@@ -8,10 +8,13 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *model_class.Attribute) (err error) {
+func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_class.Attribute) (err error) {
+	var classKeyStr string
+	var attributeKeyStr string
+
 	if err = scanner.Scan(
-		classKeyPtr,
-		&attribute.Key,
+		&classKeyStr,
+		&attributeKeyStr,
 		&attribute.Name,
 		&attribute.Details,
 		&attribute.DataTypeRules,
@@ -25,21 +28,23 @@ func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *model_class.
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the attribute key string into an identity.Key.
+	attribute.Key, err = identity.ParseKey(attributeKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadAttribute loads a attribute from the database
-func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey string, attribute model_class.Attribute, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return "", model_class.Attribute{}, err
-	}
-	attributeKey, err = identity.PreenKey(attributeKey)
-	if err != nil {
-		return "", model_class.Attribute{}, err
-	}
+func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (classKey identity.Key, attribute model_class.Attribute, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -66,30 +71,16 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey strin
 		AND
 			model_key = $1`,
 		modelKey,
-		attributeKey)
+		attributeKey.String())
 	if err != nil {
-		return "", model_class.Attribute{}, errors.WithStack(err)
+		return identity.Key{}, model_class.Attribute{}, errors.WithStack(err)
 	}
 
 	return classKey, attribute, nil
 }
 
 // AddAttribute adds a attribute to the database.
-func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_class.Attribute) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err := identity.PreenKey(attribute.Key)
-	if err != nil {
-		return err
-	}
+func AddAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribute model_class.Attribute) (err error) {
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -118,8 +109,8 @@ func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_clas
 					$9
 				)`,
 		modelKey,
-		classKey,
-		attributeKey,
+		classKey.String(),
+		attribute.Key.String(),
 		attribute.Name,
 		attribute.Details,
 		attribute.DataTypeRules,
@@ -134,21 +125,7 @@ func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_clas
 }
 
 // UpdateAttribute updates a attribute in the database.
-func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_class.Attribute) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err := identity.PreenKey(attribute.Key)
-	if err != nil {
-		return err
-	}
+func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribute model_class.Attribute) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -160,7 +137,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_c
 			data_type_rules       = $6 ,
 			derivation_policy     = $7 ,
 			nullable              = $8 ,
-			uml_comment           = $9 
+			uml_comment           = $9
 		WHERE
 			class_key = $2
 		AND
@@ -168,8 +145,8 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_c
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		attributeKey,
+		classKey.String(),
+		attribute.Key.String(),
 		attribute.Name,
 		attribute.Details,
 		attribute.DataTypeRules,
@@ -184,21 +161,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute model_c
 }
 
 // RemoveAttribute deletes a attribute from the database.
-func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err = identity.PreenKey(attributeKey)
-	if err != nil {
-		return err
-	}
+func RemoveAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -211,8 +174,8 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (er
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		attributeKey)
+		classKey.String(),
+		attributeKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -221,25 +184,19 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (er
 }
 
 // QueryAttributes loads all attribute from the database
-func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]model_class.Attribute, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Key][]model_class.Attribute, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
+			var classKey identity.Key
 			var attribute model_class.Attribute
 			if err = scanAttribute(scanner, &classKey, &attribute); err != nil {
 				return errors.WithStack(err)
 			}
 			if attributes == nil {
-				attributes = map[string][]model_class.Attribute{}
+				attributes = map[identity.Key][]model_class.Attribute{}
 			}
 			classAttributes := attributes[classKey]
 			classAttributes = append(classAttributes, attribute)

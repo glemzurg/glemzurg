@@ -9,12 +9,14 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanEvent(scanner Scanner, classKeyPtr *string, event *model_state.Event) (err error) {
+func scanEvent(scanner Scanner, classKeyPtr *identity.Key, event *model_state.Event) (err error) {
+	var classKeyStr string
+	var eventKeyStr string
 	var parametersAsList []string
 
 	if err = scanner.Scan(
-		classKeyPtr,
-		&event.Key,
+		&classKeyStr,
+		&eventKeyStr,
 		&event.Name,
 		&event.Details,
 		pq.Array(&parametersAsList),
@@ -23,6 +25,18 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *model_state.Event) (
 			err = ErrNotFound
 		}
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
+	}
+
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the event key string into an identity.Key.
+	event.Key, err = identity.ParseKey(eventKeyStr)
+	if err != nil {
+		return err
 	}
 
 	// Construct parameters.
@@ -37,17 +51,7 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *model_state.Event) (
 }
 
 // LoadEvent loads a event from the database
-func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event model_state.Event, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return "", model_state.Event{}, err
-	}
-	eventKey, err = identity.PreenKey(eventKey)
-	if err != nil {
-		return "", model_state.Event{}, err
-	}
+func LoadEvent(dbOrTx DbOrTx, modelKey string, eventKey identity.Key) (classKey identity.Key, event model_state.Event, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -71,30 +75,16 @@ func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event
 		AND
 			model_key = $1`,
 		modelKey,
-		eventKey)
+		eventKey.String())
 	if err != nil {
-		return "", model_state.Event{}, errors.WithStack(err)
+		return identity.Key{}, model_state.Event{}, errors.WithStack(err)
 	}
 
 	return classKey, event, nil
 }
 
 // AddEvent adds a event to the database.
-func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	eventKey, err := identity.PreenKey(event.Key)
-	if err != nil {
-		return err
-	}
+func AddEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
 
 	// Flatten parameters.
 	var parametersAsList []string
@@ -124,8 +114,8 @@ func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event)
 					$6
 				)`,
 		modelKey,
-		classKey,
-		eventKey,
+		classKey.String(),
+		event.Key.String(),
 		event.Name,
 		event.Details,
 		pq.Array(parametersAsList))
@@ -137,21 +127,7 @@ func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event)
 }
 
 // UpdateEvent updates a event in the database.
-func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Event) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	eventKey, err := identity.PreenKey(event.Key)
-	if err != nil {
-		return err
-	}
+func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
 
 	// Flatten parameters.
 	var parametersAsList []string
@@ -175,8 +151,8 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Eve
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		eventKey,
+		classKey.String(),
+		event.Key.String(),
 		event.Name,
 		event.Details,
 		pq.Array(parametersAsList))
@@ -188,21 +164,7 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event model_state.Eve
 }
 
 // RemoveEvent deletes a event from the database.
-func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	eventKey, err = identity.PreenKey(eventKey)
-	if err != nil {
-		return err
-	}
+func RemoveEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -215,8 +177,8 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error)
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		eventKey)
+		classKey.String(),
+		eventKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -225,25 +187,19 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error)
 }
 
 // QueryEvents loads all event from the database
-func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]model_state.Event, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[identity.Key][]model_state.Event, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
+			var classKey identity.Key
 			var event model_state.Event
 			if err = scanEvent(scanner, &classKey, &event); err != nil {
 				return errors.WithStack(err)
 			}
 			if events == nil {
-				events = map[string][]model_state.Event{}
+				events = map[identity.Key][]model_state.Event{}
 			}
 			classEvents := events[classKey]
 			classEvents = append(classEvents, event)

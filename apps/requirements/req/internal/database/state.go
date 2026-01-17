@@ -8,10 +8,13 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanState(scanner Scanner, classKeyPtr *string, state *model_state.State) (err error) {
+func scanState(scanner Scanner, classKeyPtr *identity.Key, state *model_state.State) (err error) {
+	var classKeyStr string
+	var stateKeyStr string
+
 	if err = scanner.Scan(
-		classKeyPtr,
-		&state.Key,
+		&classKeyStr,
+		&stateKeyStr,
 		&state.Name,
 		&state.Details,
 		&state.UmlComment,
@@ -22,21 +25,23 @@ func scanState(scanner Scanner, classKeyPtr *string, state *model_state.State) (
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the state key string into an identity.Key.
+	state.Key, err = identity.ParseKey(stateKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadState loads a state from the database
-func LoadState(dbOrTx DbOrTx, modelKey, stateKey string) (classKey string, state model_state.State, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return "", model_state.State{}, err
-	}
-	stateKey, err = identity.PreenKey(stateKey)
-	if err != nil {
-		return "", model_state.State{}, err
-	}
+func LoadState(dbOrTx DbOrTx, modelKey string, stateKey identity.Key) (classKey identity.Key, state model_state.State, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -60,30 +65,16 @@ func LoadState(dbOrTx DbOrTx, modelKey, stateKey string) (classKey string, state
 		AND
 			model_key = $1`,
 		modelKey,
-		stateKey)
+		stateKey.String())
 	if err != nil {
-		return "", model_state.State{}, errors.WithStack(err)
+		return identity.Key{}, model_state.State{}, errors.WithStack(err)
 	}
 
 	return classKey, state, nil
 }
 
 // AddState adds a state to the database.
-func AddState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	stateKey, err := identity.PreenKey(state.Key)
-	if err != nil {
-		return err
-	}
+func AddState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -106,8 +97,8 @@ func AddState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State)
 					$6
 				)`,
 		modelKey,
-		classKey,
-		stateKey,
+		classKey.String(),
+		state.Key.String(),
 		state.Name,
 		state.Details,
 		state.UmlComment)
@@ -119,21 +110,7 @@ func AddState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State)
 }
 
 // UpdateState updates a state in the database.
-func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.State) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	stateKey, err := identity.PreenKey(state.Key)
-	if err != nil {
-		return err
-	}
+func UpdateState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -150,8 +127,8 @@ func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.Sta
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		stateKey,
+		classKey.String(),
+		state.Key.String(),
 		state.Name,
 		state.Details,
 		state.UmlComment)
@@ -163,21 +140,7 @@ func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state model_state.Sta
 }
 
 // RemoveState deletes a state from the database.
-func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	stateKey, err = identity.PreenKey(stateKey)
-	if err != nil {
-		return err
-	}
+func RemoveState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -190,8 +153,8 @@ func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error)
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		stateKey)
+		classKey.String(),
+		stateKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -200,25 +163,19 @@ func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error)
 }
 
 // QueryStates loads all state from the database
-func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[string][]model_state.State, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[identity.Key][]model_state.State, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
+			var classKey identity.Key
 			var state model_state.State
 			if err = scanState(scanner, &classKey, &state); err != nil {
 				return errors.WithStack(err)
 			}
 			if states == nil {
-				states = map[string][]model_state.State{}
+				states = map[identity.Key][]model_state.State{}
 			}
 			classStates := states[classKey]
 			classStates = append(classStates, state)

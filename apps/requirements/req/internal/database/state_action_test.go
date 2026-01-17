@@ -2,10 +2,11 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
@@ -23,11 +24,13 @@ func TestActionSuite(t *testing.T) {
 
 type ActionSuite struct {
 	suite.Suite
-	db        *sql.DB
-	model     req_model.Model
-	domain    model_domain.Domain
-	subdomain model_domain.Subdomain
-	class     model_class.Class
+	db         *sql.DB
+	model      req_model.Model
+	domain     model_domain.Domain
+	subdomain  model_domain.Subdomain
+	class      model_class.Class
+	actionKey  identity.Key
+	actionKeyB identity.Key
 }
 
 func (suite *ActionSuite) SetupTest() {
@@ -37,15 +40,19 @@ func (suite *ActionSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key)
-	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "class_key")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key")))
+
+	// Create the action keys for reuse.
+	suite.actionKey = helper.Must(identity.NewActionKey(suite.class.Key, "key"))
+	suite.actionKeyB = helper.Must(identity.NewActionKey(suite.class.Key, "key_b"))
 }
 
 func (suite *ActionSuite) TestLoad() {
 
 	// Nothing in database yet.
-	classKey, action, err := LoadAction(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), action)
@@ -64,8 +71,8 @@ func (suite *ActionSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'class_key',
-				'key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/key',
 				'Name',
 				'Details',
 				'{"RequiresA","RequiresB"}',
@@ -74,11 +81,11 @@ func (suite *ActionSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	classKey, action, err = LoadAction(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	classKey, action, err = LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Action{
-		Key:        "key", // Test case-insensitive.
+		Key:        suite.actionKey,
 		Name:       "Name",
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
@@ -88,8 +95,8 @@ func (suite *ActionSuite) TestLoad() {
 
 func (suite *ActionSuite) TestAdd() {
 
-	err := AddAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.Action{
-		Key:        "KeY", // Test case-insensitive.
+	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
+		Key:        suite.actionKey,
 		Name:       "Name",
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
@@ -97,11 +104,11 @@ func (suite *ActionSuite) TestAdd() {
 	})
 	assert.Nil(suite.T(), err)
 
-	classKey, action, err := LoadAction(suite.db, suite.model.Key, "key")
+	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Action{
-		Key:        "key",
+		Key:        suite.actionKey,
 		Name:       "Name",
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
@@ -112,7 +119,7 @@ func (suite *ActionSuite) TestAdd() {
 func (suite *ActionSuite) TestUpdate() {
 
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        "key",
+		Key:        suite.actionKey,
 		Name:       "Name",
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
@@ -120,8 +127,8 @@ func (suite *ActionSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), model_state.Action{
-		Key:        "KeY", // Test case-insensitive.
+	err = UpdateAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
+		Key:        suite.actionKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Requires:   []string{"RequiresAX", "RequiresBX"},
@@ -129,11 +136,11 @@ func (suite *ActionSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	classKey, action, err := LoadAction(suite.db, suite.model.Key, "key")
+	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Action{
-		Key:        "key",
+		Key:        suite.actionKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Requires:   []string{"RequiresAX", "RequiresBX"},
@@ -144,7 +151,7 @@ func (suite *ActionSuite) TestUpdate() {
 func (suite *ActionSuite) TestRemove() {
 
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        "key",
+		Key:        suite.actionKey,
 		Name:       "Name",
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
@@ -152,10 +159,10 @@ func (suite *ActionSuite) TestRemove() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveAction(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper("key")) // Test case-insensitive.
+	err = RemoveAction(suite.db, suite.model.Key, suite.class.Key, suite.actionKey)
 	assert.Nil(suite.T(), err)
 
-	classKey, action, err := LoadAction(suite.db, suite.model.Key, "key")
+	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), action)
@@ -164,7 +171,7 @@ func (suite *ActionSuite) TestRemove() {
 func (suite *ActionSuite) TestQuery() {
 
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        "keyx",
+		Key:        suite.actionKeyB,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Requires:   []string{"RequiresAX", "RequiresBX"},
@@ -173,7 +180,7 @@ func (suite *ActionSuite) TestQuery() {
 	assert.Nil(suite.T(), err)
 
 	err = AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        "key",
+		Key:        suite.actionKey,
 		Name:       "Name",
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
@@ -181,19 +188,19 @@ func (suite *ActionSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	actions, err := QueryActions(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	actions, err := QueryActions(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_state.Action{
-		"class_key": []model_state.Action{
+	assert.Equal(suite.T(), map[identity.Key][]model_state.Action{
+		suite.class.Key: {
 			{
-				Key:        "key",
+				Key:        suite.actionKey,
 				Name:       "Name",
 				Details:    "Details",
 				Requires:   []string{"RequiresA", "RequiresB"},
 				Guarantees: []string{"GuaranteesA", "GuaranteesB"},
 			},
 			{
-				Key:        "keyx",
+				Key:        suite.actionKeyB,
 				Name:       "NameX",
 				Details:    "DetailsX",
 				Requires:   []string{"RequiresAX", "RequiresBX"},
@@ -207,11 +214,11 @@ func (suite *ActionSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, actionKey string) (action model_state.Action) {
+func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionKey identity.Key) (action model_state.Action) {
 
 	err := AddAction(dbOrTx, modelKey, classKey, model_state.Action{
 		Key:        actionKey,
-		Name:       "Name",
+		Name:       actionKey.String(),
 		Details:    "Details",
 		Requires:   []string{"RequiresA", "RequiresB"},
 		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
