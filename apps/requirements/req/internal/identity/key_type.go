@@ -27,15 +27,17 @@ const (
 	// Keys with model, domain, subdomain parents.
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 
+	// Keys with class parents.
+	KEY_TYPE_ATTRIBUTE  = "attribute"
+	KEY_TYPE_STATE      = "state"
+	KEY_TYPE_EVENT      = "event"
+	KEY_TYPE_GUARD      = "guard"
+	KEY_TYPE_ACTION     = "action"
+	KEY_TYPE_TRANSITION = "transition"
+
 	// remaining
-	KEY_TYPE_STATE           = "state"
-	KEY_TYPE_EVENT           = "event"
-	KEY_TYPE_GUARD           = "guard"
-	KEY_TYPE_ACTION          = "action"
-	KEY_TYPE_TRANSITION      = "transition"
 	KEY_TYPE_SCENARIO        = "scenario"
 	KEY_TYPE_SCENARIO_OBJECT = "sobject"
-	KEY_TYPE_ATTRIBUTE       = "attribute"
 	KEY_TYPE_STATE_ACTION    = "saction"
 )
 
