@@ -8,10 +8,13 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *string, actor *model_use_case.Actor) (err error) {
+func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *identity.Key, actor *model_use_case.Actor) (err error) {
+	var useCaseKeyStr string
+	var actorKeyStr string
+
 	if err = scanner.Scan(
-		useCaseKeyPtr,
-		actorKeyPtr,
+		&useCaseKeyStr,
+		&actorKeyStr,
 		&actor.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -20,31 +23,29 @@ func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *string, actor
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the use case key string into an identity.Key.
+	*useCaseKeyPtr, err = identity.ParseKey(useCaseKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the actor key string into an identity.Key.
+	*actorKeyPtr, err = identity.ParseKey(actorKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadUseCaseActor loads a use case actor from the database
-func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (actor model_use_case.Actor, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return model_use_case.Actor{}, err
-	}
-	useCaseKey, err = identity.PreenKey(useCaseKey)
-	if err != nil {
-		return model_use_case.Actor{}, err
-	}
-	actorKey, err = identity.PreenKey(actorKey)
-	if err != nil {
-		return model_use_case.Actor{}, err
-	}
+func LoadUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key) (actor model_use_case.Actor, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var unusedUseCaseKey, unusedActorKey string
+			var unusedUseCaseKey, unusedActorKey identity.Key
 			if err = scanUseCaseActor(scanner, &unusedUseCaseKey, &unusedActorKey, &actor); err != nil {
 				return err
 			}
@@ -65,8 +66,8 @@ func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (act
 		AND
 			model_key = $1`,
 		modelKey,
-		useCaseKey,
-		actorKey)
+		useCaseKey.String(),
+		actorKey.String())
 	if err != nil {
 		return model_use_case.Actor{}, errors.WithStack(err)
 	}
@@ -75,21 +76,7 @@ func LoadUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (act
 }
 
 // AddUseCaseActor adds a use case actor to the database.
-func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor model_use_case.Actor) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err = identity.PreenKey(useCaseKey)
-	if err != nil {
-		return err
-	}
-	actorKey, err = identity.PreenKey(actorKey)
-	if err != nil {
-		return err
-	}
+func AddUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key, actor model_use_case.Actor) (err error) {
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -108,8 +95,8 @@ func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor
 					$4
 				)`,
 		modelKey,
-		useCaseKey,
-		actorKey,
+		useCaseKey.String(),
+		actorKey.String(),
 		actor.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
@@ -119,21 +106,7 @@ func AddUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor
 }
 
 // UpdateUseCaseActor updates a use case actor in the database.
-func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, actor model_use_case.Actor) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err = identity.PreenKey(useCaseKey)
-	if err != nil {
-		return err
-	}
-	actorKey, err = identity.PreenKey(actorKey)
-	if err != nil {
-		return err
-	}
+func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key, actor model_use_case.Actor) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -148,8 +121,8 @@ func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, ac
 		AND
 			model_key = $1`,
 		modelKey,
-		useCaseKey,
-		actorKey,
+		useCaseKey.String(),
+		actorKey.String(),
 		actor.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
@@ -159,21 +132,7 @@ func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string, ac
 }
 
 // RemoveUseCaseActor deletes a use case actor from the database.
-func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err = identity.PreenKey(useCaseKey)
-	if err != nil {
-		return err
-	}
-	actorKey, err = identity.PreenKey(actorKey)
-	if err != nil {
-		return err
-	}
+func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -186,8 +145,8 @@ func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (e
 		AND
 			model_key = $1`,
 		modelKey,
-		useCaseKey,
-		actorKey)
+		useCaseKey.String(),
+		actorKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -196,29 +155,22 @@ func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey, useCaseKey, actorKey string) (e
 }
 
 // QueryUseCaseActors loads all use case actors from the database
-func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (actors map[string]map[string]model_use_case.Actor, err error) {
+func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (actors map[identity.Key]map[identity.Key]model_use_case.Actor, err error) {
 
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+	actors = make(map[identity.Key]map[identity.Key]model_use_case.Actor)
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var useCaseKey, actorKey string
+			var useCaseKey, actorKey identity.Key
 			var actor model_use_case.Actor
 			if err = scanUseCaseActor(scanner, &useCaseKey, &actorKey, &actor); err != nil {
 				return errors.WithStack(err)
 			}
-			if actors == nil {
-				actors = map[string]map[string]model_use_case.Actor{}
-			}
 			oneActors := actors[useCaseKey]
 			if oneActors == nil {
-				oneActors = map[string]model_use_case.Actor{}
+				oneActors = map[identity.Key]model_use_case.Actor{}
 			}
 			oneActors[actorKey] = actor
 			actors[useCaseKey] = oneActors

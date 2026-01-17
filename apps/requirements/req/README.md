@@ -2,6 +2,8 @@
 
 next:
   - update database to use just the model
+  - update state action keys to be more correct
+  - use case shared validation must be sea to mud cases
   - parse yaml into just a model without requirements object
   - build the ravelling/unravelling tests on requirements
   - move the requirements object to generation package
