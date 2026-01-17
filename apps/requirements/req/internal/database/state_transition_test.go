@@ -61,8 +61,9 @@ func (suite *TransitionSuite) SetupTest() {
 	suite.actionB = t_AddAction(suite.T(), suite.db, suite.model.Key, suite.class.Key, helper.Must(identity.NewActionKey(suite.class.Key, "action_key_b")))
 
 	// Create the transition keys for reuse.
-	suite.transitionKey = helper.Must(identity.NewTransitionKey(suite.class.Key, "key"))
-	suite.transitionKeyB = helper.Must(identity.NewTransitionKey(suite.class.Key, "key_b"))
+	// NewTransitionKey(classKey, from, event, guard, action, to)
+	suite.transitionKey = helper.Must(identity.NewTransitionKey(suite.class.Key, "state_key_a", "event_key", "guard_key", "action_key", "state_key_b"))
+	suite.transitionKeyB = helper.Must(identity.NewTransitionKey(suite.class.Key, "state_key_b", "event_key", "guard_key", "action_key", "state_key_a"))
 }
 
 func (suite *TransitionSuite) TestLoad() {
@@ -90,7 +91,7 @@ func (suite *TransitionSuite) TestLoad() {
 			(
 				'model_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key',
-				'domain/domain_key/subdomain/subdomain_key/class/class_key/transition/key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/transition/state_key_a/event_key/guard_key/action_key/state_key_b',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key_a',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/event/event_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/guard/guard_key',

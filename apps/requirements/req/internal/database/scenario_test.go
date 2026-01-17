@@ -57,7 +57,7 @@ func (suite *ScenarioSuite) TestLoad() {
 	assert.Empty(suite.T(), scenario)
 
 	// Create expected steps
-	expectedSteps := model_scenario.Node{
+	expectedSteps := &model_scenario.Node{
 		Statements: []model_scenario.Node{
 			{
 				Description:   "test step",
@@ -107,7 +107,7 @@ func (suite *ScenarioSuite) TestAdd() {
 		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
-		Steps: model_scenario.Node{
+		Steps: &model_scenario.Node{
 			Statements: []model_scenario.Node{
 				{
 					Description:   "add test step",
@@ -135,7 +135,7 @@ func (suite *ScenarioSuite) TestAdd() {
 
 func (suite *ScenarioSuite) TestUpdate() {
 
-	originalSteps := model_scenario.Node{
+	originalSteps := &model_scenario.Node{
 		Statements: []model_scenario.Node{
 			{
 				Description:   "original step",
@@ -154,7 +154,7 @@ func (suite *ScenarioSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	updatedSteps := model_scenario.Node{
+	updatedSteps := &model_scenario.Node{
 		Statements: []model_scenario.Node{
 			{
 				Description:   "updated step",
@@ -204,7 +204,7 @@ func (suite *ScenarioSuite) TestRemove() {
 
 func (suite *ScenarioSuite) TestQueryScenarios() {
 
-	stepsX := model_scenario.Node{
+	stepsX := &model_scenario.Node{
 		Statements: []model_scenario.Node{
 			{
 				Description:   "step X",
@@ -223,7 +223,7 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 	})
 	assert.Nil(suite.T(), err)
 
-	steps := model_scenario.Node{
+	steps := &model_scenario.Node{
 		Statements: []model_scenario.Node{
 			{
 				Description:   "step",
@@ -272,7 +272,7 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ide
 		Key:     scenarioKey,
 		Name:    scenarioKey.String(),
 		Details: "",
-		Steps: model_scenario.Node{
+		Steps: &model_scenario.Node{
 			Statements: []model_scenario.Node{
 				{
 					Description:   "helper step",

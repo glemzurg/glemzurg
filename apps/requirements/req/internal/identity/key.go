@@ -392,6 +392,34 @@ func ParseKey(s string) (key Key, err error) {
 		}
 	}
 
+	// Handle state action key type with format: parentKey/saction/when/subKey
+	for i, part := range parts {
+		if part == KEY_TYPE_STATE_ACTION && i+2 < len(parts) {
+			// Found saction. The subKey is when/subKey (the remaining parts).
+			remainingParts := parts[i+1:]
+			if len(remainingParts) >= 2 {
+				subKey := strings.Join(remainingParts, "/")
+				parentParts := parts[:i]
+				parentKey := strings.Join(parentParts, "/")
+				return newKey(parentKey, KEY_TYPE_STATE_ACTION, subKey)
+			}
+		}
+	}
+
+	// Handle transition key type with format: parentKey/transition/from/event/guard/action/to
+	for i, part := range parts {
+		if part == KEY_TYPE_TRANSITION && i+5 < len(parts) {
+			// Found transition. The subKey is from/event/guard/action/to (the remaining parts).
+			remainingParts := parts[i+1:]
+			if len(remainingParts) >= 5 {
+				subKey := strings.Join(remainingParts, "/")
+				parentParts := parts[:i]
+				parentKey := strings.Join(parentParts, "/")
+				return newKey(parentKey, KEY_TYPE_TRANSITION, subKey)
+			}
+		}
+	}
+
 	subKey := parts[len(parts)-1]
 	parentParts := parts[:len(parts)-2]
 	parentKey := strings.Join(parentParts, "/")

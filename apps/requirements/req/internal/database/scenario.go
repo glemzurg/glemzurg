@@ -39,6 +39,7 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *identity.Key, scenario *model_
 
 	// Unmarshal the steps JSON if present
 	if len(stepsJSON) > 0 {
+		scenario.Steps = &model_scenario.Node{}
 		if err = scenario.Steps.FromJSON(string(stepsJSON)); err != nil {
 			return err
 		}
@@ -84,9 +85,12 @@ func LoadScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (use
 func AddScenario(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, scenario model_scenario.Scenario) (err error) {
 
 	// Serialize the steps to JSON
-	stepsJSON, err := scenario.Steps.ToJSON()
-	if err != nil {
-		return err
+	var stepsJSON interface{}
+	if scenario.Steps != nil {
+		stepsJSON, err = scenario.Steps.ToJSON()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Insert the record.
@@ -119,9 +123,12 @@ func AddScenario(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, scenar
 func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scenario) (err error) {
 
 	// Serialize the steps to JSON
-	stepsJSON, err := scenario.Steps.ToJSON()
-	if err != nil {
-		return err
+	var stepsJSON interface{}
+	if scenario.Steps != nil {
+		stepsJSON, err = scenario.Steps.ToJSON()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Update the data.

@@ -51,8 +51,8 @@ func (suite *StateActionSuite) SetupTest() {
 	suite.actionB = t_AddAction(suite.T(), suite.db, suite.model.Key, suite.class.Key, helper.Must(identity.NewActionKey(suite.class.Key, "action_key_b")))
 
 	// Create the state action keys for reuse.
-	suite.stateActionKey = helper.Must(identity.NewStateActionKey(suite.state.Key, "key"))
-	suite.stateActionKeyB = helper.Must(identity.NewStateActionKey(suite.state.Key, "key_b"))
+	suite.stateActionKey = helper.Must(identity.NewStateActionKey(suite.state.Key, "entry", "key"))
+	suite.stateActionKeyB = helper.Must(identity.NewStateActionKey(suite.state.Key, "exit", "key_b"))
 }
 
 func (suite *StateActionSuite) TestLoad() {
@@ -76,7 +76,7 @@ func (suite *StateActionSuite) TestLoad() {
 			(
 				'model_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key',
-				'domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/entry/key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key',
 				'entry'
 			)
