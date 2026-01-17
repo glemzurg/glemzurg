@@ -104,3 +104,20 @@ func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
 	}
 	return nil
 }
+
+// SetClassAssociations sets the class associations for the subdomain.
+// All associations must have the subdomain as their parent.
+func (s *Subdomain) SetClassAssociations(associations map[identity.Key]model_class.Association) error {
+	for key, assoc := range associations {
+		// Check if the association has no parent.
+		if assoc.Key.HasNoParent() {
+			return errors.Errorf("association '%s' has no parent, cannot add to subdomain", key.String())
+		}
+		// Check if the parent is this subdomain.
+		if !assoc.Key.IsParent(s.Key) {
+			return errors.Errorf("association '%s' parent does not match subdomain '%s'", key.String(), s.Key.String())
+		}
+	}
+	s.ClassAssociations = associations
+	return nil
+}

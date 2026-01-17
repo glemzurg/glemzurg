@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -118,4 +119,69 @@ func (suite *SubdomainSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = subdomain.ValidateWithParent(&suite.domainKey)
 	assert.NoError(suite.T(), err)
+}
+
+// TestSetClassAssociations tests that SetClassAssociations validates parent relationships.
+func (suite *SubdomainSuite) TestSetClassAssociations() {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
+	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "other_subdomain"))
+	classKey1 := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	classKey2 := helper.Must(identity.NewClassKey(subdomainKey, "class2"))
+	otherClassKey1 := helper.Must(identity.NewClassKey(otherSubdomainKey, "class1"))
+	otherClassKey2 := helper.Must(identity.NewClassKey(otherSubdomainKey, "class2"))
+
+	// Create a subdomain.
+	subdomain := Subdomain{
+		Key:  subdomainKey,
+		Name: "Subdomain",
+	}
+
+	// Test: valid association with subdomain as parent.
+	validAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2))
+	validAssoc := model_class.Association{
+		Key:              validAssocKey,
+		Name:             "Association",
+		FromClassKey:     classKey1,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       classKey2,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+	err := subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
+		validAssocKey: validAssoc,
+	})
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 1, len(subdomain.ClassAssociations))
+
+	// Test: error when association has no parent (model-level association).
+	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
+	otherDomainSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
+	crossDomainClassKey := helper.Must(identity.NewClassKey(otherDomainSubdomainKey, "class1"))
+	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKey1, crossDomainClassKey))
+	modelLevelAssoc := model_class.Association{
+		Key:              modelLevelAssocKey,
+		Name:             "Model Level Association",
+		FromClassKey:     classKey1,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       crossDomainClassKey,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
+		modelLevelAssocKey: modelLevelAssoc,
+	})
+	assert.ErrorContains(suite.T(), err, "has no parent")
+
+	// Test: error when association parent is different subdomain.
+	wrongParentAssocKey := helper.Must(identity.NewClassAssociationKey(otherSubdomainKey, otherClassKey1, otherClassKey2))
+	wrongParentAssoc := model_class.Association{
+		Key:              wrongParentAssocKey,
+		Name:             "Wrong Parent Association",
+		FromClassKey:     otherClassKey1,
+		FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+		ToClassKey:       otherClassKey2,
+		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+	}
+	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
+		wrongParentAssocKey: wrongParentAssoc,
+	})
+	assert.ErrorContains(suite.T(), err, "parent does not match subdomain")
 }

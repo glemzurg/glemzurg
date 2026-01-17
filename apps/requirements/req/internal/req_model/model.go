@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
@@ -78,5 +79,60 @@ func (m *Model) ValidateWithParent() error {
 			return err
 		}
 	}
+	return nil
+}
+
+// SetClassAssociations sets the class associations for the model and routes them to domains.
+// Associations with a domain (or subdomain within a domain) as parent are routed to that domain.
+// Associations with no parent are kept at the model level.
+// Associations with no parent that don't span domains return an error.
+func (m *Model) SetClassAssociations(associations map[identity.Key]model_class.Association) error {
+	// Initialize model-level associations map.
+	modelAssociations := make(map[identity.Key]model_class.Association)
+
+	// Group associations by their parent domain.
+	domainAssociations := make(map[identity.Key]map[identity.Key]model_class.Association)
+	for domainKey := range m.Domains {
+		domainAssociations[domainKey] = make(map[identity.Key]model_class.Association)
+	}
+
+	for key, assoc := range associations {
+		// Check if the association belongs to a domain (either directly or via subdomain).
+		routedToDomain := false
+		for domainKey := range m.Domains {
+			if assoc.Key.IsParent(domainKey) {
+				domainAssociations[domainKey][key] = assoc
+				routedToDomain = true
+				break
+			}
+		}
+
+		if routedToDomain {
+			continue
+		}
+
+		// Association doesn't belong to any domain - must be model-level (no parent).
+		if !assoc.Key.HasNoParent() {
+			return errors.Errorf("association '%s' has a parent that does not match any domain in the model", key.String())
+		}
+
+		// Model-level association - keep at model level.
+		modelAssociations[key] = assoc
+	}
+
+	// Set model-level associations.
+	m.ClassAssociations = modelAssociations
+
+	// Route associations to domains.
+	for domainKey, assocs := range domainAssociations {
+		if len(assocs) > 0 {
+			domain := m.Domains[domainKey]
+			if err := domain.SetClassAssociations(assocs); err != nil {
+				return err
+			}
+			m.Domains[domainKey] = domain
+		}
+	}
+
 	return nil
 }

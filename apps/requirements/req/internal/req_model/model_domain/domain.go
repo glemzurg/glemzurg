@@ -97,3 +97,64 @@ func (d *Domain) ValidateWithParent(parent *identity.Key) error {
 	}
 	return nil
 }
+
+// SetClassAssociations sets the class associations for the domain and its subdomains.
+// Associations with a subdomain parent are routed to that subdomain.
+// Associations with this domain as parent are kept at the domain level.
+// Associations with no parent or a different parent return an error.
+func (d *Domain) SetClassAssociations(associations map[identity.Key]model_class.Association) error {
+	// Initialize domain-level associations map.
+	domainAssociations := make(map[identity.Key]model_class.Association)
+
+	// Group associations by their parent subdomain.
+	subdomainAssociations := make(map[identity.Key]map[identity.Key]model_class.Association)
+	for subdomainKey := range d.Subdomains {
+		subdomainAssociations[subdomainKey] = make(map[identity.Key]model_class.Association)
+	}
+
+	for key, assoc := range associations {
+		// Check if association has no parent.
+		if assoc.Key.HasNoParent() {
+			return errors.Errorf("association '%s' has no parent, cannot add to domain", key.String())
+		}
+
+		// Check if the association belongs to a subdomain.
+		routedToSubdomain := false
+		for subdomainKey := range d.Subdomains {
+			if assoc.Key.IsParent(subdomainKey) {
+				subdomainAssociations[subdomainKey][key] = assoc
+				routedToSubdomain = true
+				break
+			}
+		}
+
+		if routedToSubdomain {
+			continue
+		}
+
+		// Check if the parent is this domain.
+		if assoc.Key.IsParent(d.Key) {
+			domainAssociations[key] = assoc
+			continue
+		}
+
+		// Parent is neither a subdomain nor this domain.
+		return errors.Errorf("association '%s' parent does not match domain '%s' or any of its subdomains", key.String(), d.Key.String())
+	}
+
+	// Set domain-level associations.
+	d.ClassAssociations = domainAssociations
+
+	// Route associations to subdomains.
+	for subdomainKey, assocs := range subdomainAssociations {
+		if len(assocs) > 0 {
+			subdomain := d.Subdomains[subdomainKey]
+			if err := subdomain.SetClassAssociations(assocs); err != nil {
+				return err
+			}
+			d.Subdomains[subdomainKey] = subdomain
+		}
+	}
+
+	return nil
+}
