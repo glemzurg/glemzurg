@@ -129,13 +129,15 @@ func (suite *UseCaseActorSuite) TestRemove() {
 
 func (suite *UseCaseActorSuite) TestQuery() {
 
-	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actor.Key, model_use_case.Actor{
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.actorB.Key, model_use_case.Actor{
-		UmlComment: "UmlCommentB",
+	err := AddUseCaseActors(suite.db, suite.model.Key, map[identity.Key]map[identity.Key]model_use_case.Actor{
+		suite.useCase.Key: {
+			suite.actor.Key: {
+				UmlComment: "UmlComment",
+			},
+			suite.actorB.Key: {
+				UmlComment: "UmlCommentB",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

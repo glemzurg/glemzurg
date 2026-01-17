@@ -155,21 +155,21 @@ func (suite *DomainSuite) TestRemove() {
 
 func (suite *DomainSuite) TestQuery() {
 
-	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        suite.domainKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Realized:   false,
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddDomain(suite.db, suite.model.Key, model_domain.Domain{
-		Key:        suite.domainKey,
-		Name:       "Name",
-		Details:    "Details",
-		Realized:   true,
-		UmlComment: "UmlComment",
+	err := AddDomains(suite.db, suite.model.Key, []model_domain.Domain{
+		{
+			Key:        suite.domainKeyB,
+			Name:       "NameX",
+			Details:    "DetailsX",
+			Realized:   false,
+			UmlComment: "UmlCommentX",
+		},
+		{
+			Key:        suite.domainKey,
+			Name:       "Name",
+			Details:    "Details",
+			Realized:   true,
+			UmlComment: "UmlComment",
+		},
 	})
 	assert.Nil(suite.T(), err)
 

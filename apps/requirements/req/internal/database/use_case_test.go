@@ -176,23 +176,26 @@ func (suite *UseCaseSuite) TestRemove() {
 
 func (suite *UseCaseSuite) TestQuery() {
 
-	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
-		Key:        suite.useCaseKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Level:      "sea",
-		ReadOnly:   true,
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "Name",
-		Details:    "Details",
-		Level:      "sea",
-		ReadOnly:   true,
-		UmlComment: "UmlComment",
+	err := AddUseCases(suite.db, suite.model.Key, map[identity.Key]identity.Key{
+		suite.useCaseKeyB: suite.subdomain.Key,
+		suite.useCaseKey:  suite.subdomain.Key,
+	}, []model_use_case.UseCase{
+		{
+			Key:        suite.useCaseKeyB,
+			Name:       "NameX",
+			Details:    "DetailsX",
+			Level:      "sea",
+			ReadOnly:   true,
+			UmlComment: "UmlCommentX",
+		},
+		{
+			Key:        suite.useCaseKey,
+			Name:       "Name",
+			Details:    "Details",
+			Level:      "sea",
+			ReadOnly:   true,
+			UmlComment: "UmlComment",
+		},
 	})
 	assert.Nil(suite.T(), err)
 

@@ -182,19 +182,21 @@ func (suite *EventSuite) TestRemove() {
 
 func (suite *EventSuite) TestQuery() {
 
-	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+	err := AddEvents(suite.db, suite.model.Key, map[identity.Key][]model_state.Event{
+		suite.class.Key: {
+			{
+				Key:        suite.eventKeyB,
+				Name:       "NameX",
+				Details:    "DetailsX",
+				Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+			},
+			{
+				Key:        suite.eventKey,
+				Name:       "Name",
+				Details:    "Details",
+				Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

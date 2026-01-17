@@ -161,19 +161,21 @@ func (suite *StateSuite) TestRemove() {
 
 func (suite *StateSuite) TestQuery() {
 
-	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
-		Key:        suite.stateKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
-		Key:        suite.stateKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+	err := AddStates(suite.db, suite.model.Key, map[identity.Key][]model_state.State{
+		suite.class.Key: {
+			{
+				Key:        suite.stateKeyB,
+				Name:       "NameX",
+				Details:    "DetailsX",
+				UmlComment: "UmlCommentX",
+			},
+			{
+				Key:        suite.stateKey,
+				Name:       "Name",
+				Details:    "Details",
+				UmlComment: "UmlComment",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

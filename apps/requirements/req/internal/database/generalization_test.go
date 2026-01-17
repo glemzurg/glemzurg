@@ -169,23 +169,23 @@ func (suite *GeneralizationSuite) TestRemove() {
 
 func (suite *GeneralizationSuite) TestQuery() {
 
-	err := AddGeneralization(suite.db, suite.model.Key, model_class.Generalization{
-		Key:        suite.generalizationKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		IsComplete: false,
-		IsStatic:   true,
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddGeneralization(suite.db, suite.model.Key, model_class.Generalization{
-		Key:        suite.generalizationKey,
-		Name:       "Name",
-		Details:    "Details",
-		IsComplete: true,
-		IsStatic:   false,
-		UmlComment: "UmlComment",
+	err := AddGeneralizations(suite.db, suite.model.Key, []model_class.Generalization{
+		{
+			Key:        suite.generalizationKeyB,
+			Name:       "NameX",
+			Details:    "DetailsX",
+			IsComplete: false,
+			IsStatic:   true,
+			UmlComment: "UmlCommentX",
+		},
+		{
+			Key:        suite.generalizationKey,
+			Name:       "Name",
+			Details:    "Details",
+			IsComplete: true,
+			IsStatic:   false,
+			UmlComment: "UmlComment",
+		},
 	})
 	assert.Nil(suite.T(), err)
 

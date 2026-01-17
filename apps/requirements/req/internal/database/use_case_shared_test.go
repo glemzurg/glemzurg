@@ -137,15 +137,17 @@ func (suite *UseCaseSharedSuite) TestRemove() {
 
 func (suite *UseCaseSharedSuite) TestQuery() {
 
-	err := AddUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key, model_use_case.UseCaseShared{
-		ShareType:  "include",
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCaseB.Key, model_use_case.UseCaseShared{
-		ShareType:  "extend",
-		UmlComment: "UmlCommentB",
+	err := AddUseCaseShareds(suite.db, suite.model.Key, map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
+		suite.seaUseCase.Key: {
+			suite.mudUseCase.Key: {
+				ShareType:  "include",
+				UmlComment: "UmlComment",
+			},
+			suite.mudUseCaseB.Key: {
+				ShareType:  "extend",
+				UmlComment: "UmlCommentB",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

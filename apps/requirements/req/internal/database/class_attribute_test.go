@@ -187,25 +187,27 @@ func (suite *AttributeSuite) TestRemove() {
 
 func (suite *AttributeSuite) TestQuery() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
-		Key:              suite.attributeKeyB,
-		Name:             "NameX",
-		Details:          "DetailsX",
-		DataTypeRules:    "DataTypeRulesX",
-		DerivationPolicy: "DerivationPolicyX",
-		Nullable:         true,
-		UmlComment:       "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
-		Key:              suite.attributeKey,
-		Name:             "Name",
-		Details:          "Details",
-		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
-		Nullable:         true,
-		UmlComment:       "UmlComment",
+	err := AddAttributes(suite.db, suite.model.Key, map[identity.Key][]model_class.Attribute{
+		suite.class.Key: {
+			{
+				Key:              suite.attributeKeyB,
+				Name:             "NameX",
+				Details:          "DetailsX",
+				DataTypeRules:    "DataTypeRulesX",
+				DerivationPolicy: "DerivationPolicyX",
+				Nullable:         true,
+				UmlComment:       "UmlCommentX",
+			},
+			{
+				Key:              suite.attributeKey,
+				Name:             "Name",
+				Details:          "Details",
+				DataTypeRules:    "DataTypeRules",
+				DerivationPolicy: "DerivationPolicy",
+				Nullable:         true,
+				UmlComment:       "UmlComment",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

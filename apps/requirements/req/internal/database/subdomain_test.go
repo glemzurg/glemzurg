@@ -155,19 +155,21 @@ func (suite *SubdomainSuite) TestRemove() {
 
 func (suite *SubdomainSuite) TestQuery() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
-		Key:        suite.subdomainKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
-		Key:        suite.subdomainKey,
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
+	err := AddSubdomains(suite.db, suite.model.Key, map[identity.Key][]model_domain.Subdomain{
+		suite.domain.Key: {
+			{
+				Key:        suite.subdomainKeyB,
+				Name:       "NameX",
+				Details:    "DetailsX",
+				UmlComment: "UmlCommentX",
+			},
+			{
+				Key:        suite.subdomainKey,
+				Name:       "Name",
+				Details:    "Details",
+				UmlComment: "UmlComment",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

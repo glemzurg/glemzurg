@@ -195,25 +195,27 @@ func (suite *ObjectSuite) TestRemove() {
 
 func (suite *ObjectSuite) TestQuery() {
 
-	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
-		Key:          suite.objectKeyB,
-		ObjectNumber: 2,
-		Name:         "NameX",
-		NameStyle:    "id",
-		ClassKey:     suite.classB.Key,
-		Multi:        true,
-		UmlComment:   "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
-		Key:          suite.objectKey,
-		ObjectNumber: 1,
-		Name:         "Name",
-		NameStyle:    "name",
-		ClassKey:     suite.class.Key,
-		Multi:        false,
-		UmlComment:   "UmlComment",
+	err := AddObjects(suite.db, suite.model.Key, map[identity.Key][]model_scenario.Object{
+		suite.scenario.Key: {
+			{
+				Key:          suite.objectKeyB,
+				ObjectNumber: 2,
+				Name:         "NameX",
+				NameStyle:    "id",
+				ClassKey:     suite.classB.Key,
+				Multi:        true,
+				UmlComment:   "UmlCommentX",
+			},
+			{
+				Key:          suite.objectKey,
+				ObjectNumber: 1,
+				Name:         "Name",
+				NameStyle:    "name",
+				ClassKey:     suite.class.Key,
+				Multi:        false,
+				UmlComment:   "UmlComment",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

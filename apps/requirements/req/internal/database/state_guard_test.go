@@ -152,17 +152,19 @@ func (suite *GuardSuite) TestRemove() {
 
 func (suite *GuardSuite) TestQuery() {
 
-	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
-		Key:     suite.guardKeyB,
-		Name:    "NameX",
-		Details: "DetailsX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "Name",
-		Details: "Details",
+	err := AddGuards(suite.db, suite.model.Key, map[identity.Key][]model_state.Guard{
+		suite.class.Key: {
+			{
+				Key:     suite.guardKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
+			},
+			{
+				Key:     suite.guardKey,
+				Name:    "Name",
+				Details: "Details",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

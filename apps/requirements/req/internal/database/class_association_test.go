@@ -278,29 +278,29 @@ func (suite *AssociationSuite) TestQuery() {
 	// Create a second association key
 	associationKeyX := helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.classB.Key, suite.classC.Key))
 
-	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
-		Key:                 associationKeyX, // This key comes after suite.associationKey alphabetically
-		Name:                "NameX",
-		Details:             "DetailsX",
-		FromClassKey:        suite.classB.Key,
-		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		ToClassKey:          suite.classC.Key,
-		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: &suite.class.Key,
-		UmlComment:          "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddAssociation(suite.db, suite.model.Key, model_class.Association{
-		Key:                 suite.associationKey,
-		Name:                "Name",
-		Details:             "Details",
-		FromClassKey:        suite.class.Key,
-		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		ToClassKey:          suite.classB.Key,
-		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: &suite.classC.Key,
-		UmlComment:          "UmlComment",
+	err := AddAssociations(suite.db, suite.model.Key, []model_class.Association{
+		{
+			Key:                 associationKeyX, // This key comes after suite.associationKey alphabetically
+			Name:                "NameX",
+			Details:             "DetailsX",
+			FromClassKey:        suite.classB.Key,
+			FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+			ToClassKey:          suite.classC.Key,
+			ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
+			AssociationClassKey: &suite.class.Key,
+			UmlComment:          "UmlCommentX",
+		},
+		{
+			Key:                 suite.associationKey,
+			Name:                "Name",
+			Details:             "Details",
+			FromClassKey:        suite.class.Key,
+			FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+			ToClassKey:          suite.classB.Key,
+			ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
+			AssociationClassKey: &suite.classC.Key,
+			UmlComment:          "UmlComment",
+		},
 	})
 	assert.Nil(suite.T(), err)
 

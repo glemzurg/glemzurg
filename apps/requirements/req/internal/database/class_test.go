@@ -257,25 +257,27 @@ func (suite *ClassSuite) TestRemove() {
 
 func (suite *ClassSuite) TestQuery() {
 
-	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:             suite.classKeyB,
-		Name:            "NameX",
-		Details:         "DetailsX",
-		ActorKey:        &suite.actorB.Key,
-		SuperclassOfKey: &suite.generalizationB.Key,
-		SubclassOfKey:   &suite.generalization.Key,
-		UmlComment:      "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:             suite.classKey,
-		Name:            "Name",
-		Details:         "Details",
-		ActorKey:        &suite.actor.Key,
-		SuperclassOfKey: &suite.generalization.Key,
-		SubclassOfKey:   &suite.generalizationB.Key,
-		UmlComment:      "UmlComment",
+	err := AddClasses(suite.db, suite.model.Key, map[identity.Key][]model_class.Class{
+		suite.subdomain.Key: {
+			{
+				Key:             suite.classKeyB,
+				Name:            "NameX",
+				Details:         "DetailsX",
+				ActorKey:        &suite.actorB.Key,
+				SuperclassOfKey: &suite.generalizationB.Key,
+				SubclassOfKey:   &suite.generalization.Key,
+				UmlComment:      "UmlCommentX",
+			},
+			{
+				Key:             suite.classKey,
+				Name:            "Name",
+				Details:         "Details",
+				ActorKey:        &suite.actor.Key,
+				SuperclassOfKey: &suite.generalization.Key,
+				SubclassOfKey:   &suite.generalizationB.Key,
+				UmlComment:      "UmlComment",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

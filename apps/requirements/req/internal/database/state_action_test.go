@@ -170,21 +170,23 @@ func (suite *ActionSuite) TestRemove() {
 
 func (suite *ActionSuite) TestQuery() {
 
-	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        suite.actionKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Requires:   []string{"RequiresAX", "RequiresBX"},
-		Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+	err := AddActions(suite.db, suite.model.Key, map[identity.Key][]model_state.Action{
+		suite.class.Key: {
+			{
+				Key:        suite.actionKeyB,
+				Name:       "NameX",
+				Details:    "DetailsX",
+				Requires:   []string{"RequiresAX", "RequiresBX"},
+				Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+			},
+			{
+				Key:        suite.actionKey,
+				Name:       "Name",
+				Details:    "Details",
+				Requires:   []string{"RequiresA", "RequiresB"},
+				Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

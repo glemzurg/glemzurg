@@ -1,8 +1,7 @@
 
 
 next:
-  - update database to use just the model
-
+  - add query to database, model, database layer
   - parse yaml into just a model without requirements object
   - build the ravelling/unravelling tests on requirements
   - move the requirements object to generation package

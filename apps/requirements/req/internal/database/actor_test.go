@@ -155,21 +155,21 @@ func (suite *ActorSuite) TestRemove() {
 
 func (suite *ActorSuite) TestQuery() {
 
-	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
-		Key:        suite.actorKeyB,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Type:       "system",
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddActor(suite.db, suite.model.Key, model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
+	err := AddActors(suite.db, suite.model.Key, []model_actor.Actor{
+		{
+			Key:        suite.actorKeyB,
+			Name:       "NameX",
+			Details:    "DetailsX",
+			Type:       "system",
+			UmlComment: "UmlCommentX",
+		},
+		{
+			Key:        suite.actorKey,
+			Name:       "Name",
+			Details:    "Details",
+			Type:       "person",
+			UmlComment: "UmlComment",
+		},
 	})
 	assert.Nil(suite.T(), err)
 

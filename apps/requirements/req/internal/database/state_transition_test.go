@@ -270,25 +270,27 @@ func (suite *TransitionSuite) TestRemove() {
 
 func (suite *TransitionSuite) TestQuery() {
 
-	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
-		Key:          suite.transitionKeyB,
-		FromStateKey: &suite.stateB.Key,
-		EventKey:     suite.event.Key,
-		GuardKey:     &suite.guard.Key,
-		ActionKey:    &suite.action.Key,
-		ToStateKey:   &suite.stateA.Key,
-		UmlComment:   "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
-		Key:          suite.transitionKey,
-		FromStateKey: &suite.stateA.Key,
-		EventKey:     suite.event.Key,
-		GuardKey:     &suite.guard.Key,
-		ActionKey:    &suite.action.Key,
-		ToStateKey:   &suite.stateB.Key,
-		UmlComment:   "UmlComment",
+	err := AddTransitions(suite.db, suite.model.Key, map[identity.Key][]model_state.Transition{
+		suite.class.Key: {
+			{
+				Key:          suite.transitionKeyB,
+				FromStateKey: &suite.stateB.Key,
+				EventKey:     suite.event.Key,
+				GuardKey:     &suite.guard.Key,
+				ActionKey:    &suite.action.Key,
+				ToStateKey:   &suite.stateA.Key,
+				UmlComment:   "UmlCommentX",
+			},
+			{
+				Key:          suite.transitionKey,
+				FromStateKey: &suite.stateA.Key,
+				EventKey:     suite.event.Key,
+				GuardKey:     &suite.guard.Key,
+				ActionKey:    &suite.action.Key,
+				ToStateKey:   &suite.stateB.Key,
+				UmlComment:   "UmlComment",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

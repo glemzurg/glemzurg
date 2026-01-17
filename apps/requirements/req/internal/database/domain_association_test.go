@@ -151,19 +151,19 @@ func (suite *DomainAssociationSuite) TestRemove() {
 
 func (suite *DomainAssociationSuite) TestQuery() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
-		Key:               suite.associationKeyB,
-		ProblemDomainKey:  suite.domainB.Key,
-		SolutionDomainKey: suite.domain.Key,
-		UmlComment:        "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
-		Key:               suite.associationKey,
-		ProblemDomainKey:  suite.domain.Key,
-		SolutionDomainKey: suite.domainB.Key,
-		UmlComment:        "UmlComment",
+	err := AddDomainAssociations(suite.db, suite.model.Key, []model_domain.Association{
+		{
+			Key:               suite.associationKeyB,
+			ProblemDomainKey:  suite.domainB.Key,
+			SolutionDomainKey: suite.domain.Key,
+			UmlComment:        "UmlCommentX",
+		},
+		{
+			Key:               suite.associationKey,
+			ProblemDomainKey:  suite.domain.Key,
+			SolutionDomainKey: suite.domainB.Key,
+			UmlComment:        "UmlComment",
+		},
 	})
 	assert.Nil(suite.T(), err)
 

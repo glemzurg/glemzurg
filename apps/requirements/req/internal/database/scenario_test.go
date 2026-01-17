@@ -215,14 +215,6 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 		},
 	}
 
-	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, model_scenario.Scenario{
-		Key:     suite.scenarioKeyB,
-		Name:    "NameX",
-		Details: "DetailsX",
-		Steps:   stepsX,
-	})
-	assert.Nil(suite.T(), err)
-
 	steps := &model_scenario.Node{
 		Statements: []model_scenario.Node{
 			{
@@ -234,11 +226,21 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 		},
 	}
 
-	err = AddScenario(suite.db, suite.model.Key, suite.useCase.Key, model_scenario.Scenario{
-		Key:     suite.scenarioKey,
-		Name:    "Name",
-		Details: "Details",
-		Steps:   steps,
+	err := AddScenarios(suite.db, suite.model.Key, map[identity.Key][]model_scenario.Scenario{
+		suite.useCase.Key: {
+			{
+				Key:     suite.scenarioKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
+				Steps:   stepsX,
+			},
+			{
+				Key:     suite.scenarioKey,
+				Name:    "Name",
+				Details: "Details",
+				Steps:   steps,
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 

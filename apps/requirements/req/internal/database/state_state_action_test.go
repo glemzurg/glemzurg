@@ -158,17 +158,19 @@ func (suite *StateActionSuite) TestRemove() {
 
 func (suite *StateActionSuite) TestQuery() {
 
-	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
-		Key:       suite.stateActionKeyB,
-		ActionKey: suite.action.Key,
-		When:      "exit",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
-		Key:       suite.stateActionKey,
-		ActionKey: suite.action.Key,
-		When:      "entry",
+	err := AddStateActions(suite.db, suite.model.Key, map[identity.Key][]model_state.StateAction{
+		suite.state.Key: {
+			{
+				Key:       suite.stateActionKeyB,
+				ActionKey: suite.action.Key,
+				When:      "exit",
+			},
+			{
+				Key:       suite.stateActionKey,
+				ActionKey: suite.action.Key,
+				When:      "entry",
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 
