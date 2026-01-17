@@ -147,10 +147,6 @@ func (c *Class) SetTransitions(transitions []model_state.Transition) {
 	c.Transitions = transitions
 }
 
-func (c *Class) SetDomainKey(domainKey string) {
-	c.DomainKey = domainKey
-}
-
 // ValidateWithParent validates the Class, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (c *Class) ValidateWithParent(parent *identity.Key) error {

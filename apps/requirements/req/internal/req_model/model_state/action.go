@@ -50,11 +50,6 @@ func (a *Action) Validate() error {
 	)
 }
 
-func (a *Action) SetTriggers(transitions []Transition, stateActions []StateAction) {
-	a.FromTransitions = transitions
-	a.FromStates = stateActions
-}
-
 // ValidateWithParent validates the Action, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (a *Action) ValidateWithParent(parent *identity.Key) error {

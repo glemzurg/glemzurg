@@ -82,8 +82,8 @@ func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
 			return err
 		}
 	}
-	for i := range s.Associations {
-		if err := s.Associations[i].ValidateWithParent(&s.Key); err != nil {
+	for i := range s.ClassAssociations {
+		if err := s.ClassAssociations[i].ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
 	}

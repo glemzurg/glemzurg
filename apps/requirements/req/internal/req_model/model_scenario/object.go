@@ -84,27 +84,6 @@ func (o *Object) Validate() error {
 	)
 }
 
-func (so *Object) SetClass(class model_class.Class) {
-	so.Class = class
-}
-
-func (so *Object) GetName() (name string) {
-	switch so.NameStyle {
-	case _NAME_STYLE_NAME:
-		name = so.Name + ":" + so.Class.Name
-	case _NAME_STYLE_ID:
-		name = so.Class.Name + " " + so.Name
-	case _NAME_STYLE_UNNAMED:
-		name = ":" + so.Class.Name
-	default:
-		panic("unknown name style: " + so.NameStyle)
-	}
-	if so.Multi {
-		name = "*" + name
-	}
-	return name
-}
-
 // ValidateWithParent validates the Object, its key's parent relationship, and all children.
 // The parent must be a Scenario.
 func (o *Object) ValidateWithParent(parent *identity.Key) error {
@@ -118,4 +97,21 @@ func (o *Object) ValidateWithParent(parent *identity.Key) error {
 	}
 	// Object has no children with keys that need validation.
 	return nil
+}
+
+func (so *Object) GetName(class model_class.Class) (name string) {
+	switch so.NameStyle {
+	case _NAME_STYLE_NAME:
+		name = so.Name + ":" + class.Name
+	case _NAME_STYLE_ID:
+		name = class.Name + " " + so.Name
+	case _NAME_STYLE_UNNAMED:
+		name = ":" + class.Name
+	default:
+		panic("unknown name style: " + so.NameStyle)
+	}
+	if so.Multi {
+		name = "*" + name
+	}
+	return name
 }

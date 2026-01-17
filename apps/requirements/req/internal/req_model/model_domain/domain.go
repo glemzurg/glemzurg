@@ -78,8 +78,8 @@ func (d *Domain) ValidateWithParent(parent *identity.Key) error {
 	// Domain-level classes (if any) - these would have the domain as implicit parent
 	// but since Class expects a subdomain parent, we validate domain-level associations
 	// which span subdomains within this domain.
-	for i := range d.Associations {
-		if err := d.Associations[i].ValidateWithParent(&d.Key); err != nil {
+	for i := range d.ClassAssociations {
+		if err := d.ClassAssociations[i].ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}

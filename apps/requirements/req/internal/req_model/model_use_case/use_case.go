@@ -63,10 +63,6 @@ func (uc *UseCase) Validate() error {
 	)
 }
 
-func (uc *UseCase) SetDomainKey(domainKey identity.Key) {
-	uc.DomainKey = domainKey
-}
-
 func (uc *UseCase) SetActors(actors map[identity.Key]Actor) {
 	uc.Actors = actors
 }
