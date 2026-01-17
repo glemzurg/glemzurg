@@ -20,21 +20,23 @@ const (
 	KEY_TYPE_DOMAIN_ASSOCIATION = "dassociation"
 
 	// Keys with subdomain parents.
-	KEY_TYPE_USE_CASE = "usecase"
-	KEY_TYPE_CLASS    = "class"
+	KEY_TYPE_USE_CASE       = "usecase"
+	KEY_TYPE_CLASS          = "class"
+	KEY_TYPE_GENERALIZATION = "generalization"
+
+	// Keys with model, domain, subdomain parents.
+	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 
 	// remaining
-	KEY_TYPE_STATE             = "state"
-	KEY_TYPE_EVENT             = "event"
-	KEY_TYPE_GUARD             = "guard"
-	KEY_TYPE_ACTION            = "action"
-	KEY_TYPE_TRANSITION        = "transition"
-	KEY_TYPE_GENERALIZATION    = "generalization"
-	KEY_TYPE_SCENARIO          = "scenario"
-	KEY_TYPE_SCENARIO_OBJECT   = "sobject"
-	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
-	KEY_TYPE_ATTRIBUTE         = "attribute"
-	KEY_TYPE_STATE_ACTION      = "saction"
+	KEY_TYPE_STATE           = "state"
+	KEY_TYPE_EVENT           = "event"
+	KEY_TYPE_GUARD           = "guard"
+	KEY_TYPE_ACTION          = "action"
+	KEY_TYPE_TRANSITION      = "transition"
+	KEY_TYPE_SCENARIO        = "scenario"
+	KEY_TYPE_SCENARIO_OBJECT = "sobject"
+	KEY_TYPE_ATTRIBUTE       = "attribute"
+	KEY_TYPE_STATE_ACTION    = "saction"
 )
 
 func NewActorKey(subKey string) (key Key, err error) {
