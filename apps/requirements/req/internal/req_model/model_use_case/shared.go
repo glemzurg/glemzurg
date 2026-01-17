@@ -2,7 +2,6 @@ package model_use_case
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -23,12 +22,22 @@ func NewUseCaseShared(shareType, umlComment string) (useCaseShared UseCaseShared
 		UmlComment: umlComment,
 	}
 
-	err = validation.ValidateStruct(&useCaseShared,
-		validation.Field(&useCaseShared.ShareType, validation.Required, validation.In(_USE_CASE_SHARE_TYPE_INCLUDE, _USE_CASE_SHARE_TYPE_EXTEND)),
-	)
-	if err != nil {
-		return UseCaseShared{}, errors.WithStack(err)
+	if err = useCaseShared.Validate(); err != nil {
+		return UseCaseShared{}, err
 	}
 
 	return useCaseShared, nil
+}
+
+// Validate validates the UseCaseShared struct.
+func (u *UseCaseShared) Validate() error {
+	return validation.ValidateStruct(u,
+		validation.Field(&u.ShareType, validation.Required, validation.In(_USE_CASE_SHARE_TYPE_INCLUDE, _USE_CASE_SHARE_TYPE_EXTEND)),
+	)
+}
+
+// ValidateWithParent validates the UseCaseShared.
+// UseCaseShared does not have a key, so it does not validate parent relationships.
+func (u *UseCaseShared) ValidateWithParent() error {
+	return u.Validate()
 }

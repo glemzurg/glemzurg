@@ -16,10 +16,11 @@ type Subdomain struct {
 	Details    string // Markdown.
 	UmlComment string
 	// Children
-	Generalizations   map[identity.Key]model_class.Generalization // Generalizations for the classes and use cases in this subdomain.
-	Classes           map[identity.Key]model_class.Class          // Classes in this subdomain.
-	UseCases          map[identity.Key]model_use_case.UseCase     // Use cases in this subdomain.
-	ClassAssociations map[identity.Key]model_class.Association    // Associations between classes in this subdomain.
+	Generalizations   map[identity.Key]model_class.Generalization                            // Generalizations for the classes and use cases in this subdomain.
+	Classes           map[identity.Key]model_class.Class                                     // Classes in this subdomain.
+	UseCases          map[identity.Key]model_use_case.UseCase                                // Use cases in this subdomain.
+	ClassAssociations map[identity.Key]model_class.Association                               // Associations between classes in this subdomain.
+	UseCaseShares     map[identity.Key]map[identity.Key]model_use_case.UseCaseShared         // Outer key is sea-level use case, inner key is mud-level use case.
 }
 
 func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain Subdomain, err error) {
@@ -85,6 +86,20 @@ func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
 	for _, classAssoc := range s.ClassAssociations {
 		if err := classAssoc.ValidateWithParent(&s.Key); err != nil {
 			return err
+		}
+	}
+	// Validate UseCaseShares - both keys must be use cases in this subdomain.
+	for seaLevelKey, mudLevelShares := range s.UseCaseShares {
+		if _, exists := s.UseCases[seaLevelKey]; !exists {
+			return errors.Errorf("UseCaseShares sea-level key '%s' is not a use case in this subdomain", seaLevelKey.String())
+		}
+		for mudLevelKey, shared := range mudLevelShares {
+			if _, exists := s.UseCases[mudLevelKey]; !exists {
+				return errors.Errorf("UseCaseShares mud-level key '%s' is not a use case in this subdomain", mudLevelKey.String())
+			}
+			if err := shared.ValidateWithParent(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
