@@ -95,6 +95,15 @@ func (suite *AssociationSuite) TestValidate() {
 			},
 			errstr: "SolutionDomainKey: invalid key type 'actor' for domain.",
 		},
+		{
+			testName: "error ProblemDomainKey and SolutionDomainKey are the same",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: suite.problemDomainKey,
+			},
+			errstr: "ProblemDomainKey and SolutionDomainKey cannot be the same",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {

@@ -32,7 +32,7 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 
 // Validate validates the domain Association struct.
 func (a *Association) Validate() error {
-	return validation.ValidateStruct(a,
+	if err := validation.ValidateStruct(a,
 		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
@@ -63,7 +63,14 @@ func (a *Association) Validate() error {
 			}
 			return nil
 		})),
-	)
+	); err != nil {
+		return err
+	}
+	// ProblemDomainKey and SolutionDomainKey cannot be the same.
+	if a.ProblemDomainKey == a.SolutionDomainKey {
+		return errors.New("ProblemDomainKey and SolutionDomainKey cannot be the same")
+	}
+	return nil
 }
 
 // ValidateWithParent validates the domain Association, its key's parent relationship, and all children.
