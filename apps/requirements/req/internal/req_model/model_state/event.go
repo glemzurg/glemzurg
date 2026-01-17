@@ -60,6 +60,11 @@ func (e *Event) ValidateWithParent(parent *identity.Key) error {
 	if err := e.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Event has no children with keys that need validation.
+	// Validate all children.
+	for i := range e.Parameters {
+		if err := e.Parameters[i].ValidateWithParent(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
