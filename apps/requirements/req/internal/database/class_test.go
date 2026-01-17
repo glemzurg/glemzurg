@@ -2,10 +2,11 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
@@ -23,14 +24,16 @@ func TestClassSuite(t *testing.T) {
 
 type ClassSuite struct {
 	suite.Suite
-	db              *sql.DB
-	model           req_model.Model
-	domain          model_domain.Domain
-	subdomain       model_domain.Subdomain
-	generalization  model_class.Generalization
-	generalizationB model_class.Generalization
-	actor           model_actor.Actor
-	actorB          model_actor.Actor
+	db                 *sql.DB
+	model              req_model.Model
+	domain             model_domain.Domain
+	subdomain          model_domain.Subdomain
+	generalization     model_class.Generalization
+	generalizationB    model_class.Generalization
+	actor              model_actor.Actor
+	actorB             model_actor.Actor
+	classKey           identity.Key
+	classKeyB          identity.Key
 }
 
 func (suite *ClassSuite) SetupTest() {
@@ -40,18 +43,22 @@ func (suite *ClassSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key)
-	suite.generalization = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, "generalization_key")
-	suite.generalizationB = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, "generalization_key_b")
-	suite.actor = t_AddActor(suite.T(), suite.db, suite.model.Key, "actor_key")
-	suite.actorB = t_AddActor(suite.T(), suite.db, suite.model.Key, "actor_key_b")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.generalization = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGeneralizationKey(suite.subdomain.Key, "generalization_key")))
+	suite.generalizationB = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGeneralizationKey(suite.subdomain.Key, "generalization_key_b")))
+	suite.actor = t_AddActor(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewActorKey("actor_key")))
+	suite.actorB = t_AddActor(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewActorKey("actor_key_b")))
+
+	// Create the class keys for reuse.
+	suite.classKey = helper.Must(identity.NewClassKey(suite.subdomain.Key, "key"))
+	suite.classKeyB = helper.Must(identity.NewClassKey(suite.subdomain.Key, "key_b"))
 }
 
 func (suite *ClassSuite) TestLoad() {
 
 	// Nothing in database yet.
-	subdomainKey, class, err := LoadClass(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), subdomainKey)
 	assert.Empty(suite.T(), class)
@@ -72,82 +79,82 @@ func (suite *ClassSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'subdomain_key',
-				'key',
+				'domain/domain_key/subdomain/subdomain_key',
+				'domain/domain_key/subdomain/subdomain_key/class/key',
 				'Name',
 				'Details',
-				'actor_key',
-				'generalization_key',
-				'generalization_key_b',
+				'actor/actor_key',
+				'domain/domain_key/subdomain/subdomain_key/generalization/generalization_key',
+				'domain/domain_key/subdomain/subdomain_key/generalization/generalization_key_b',
 				'UmlComment'
 			)
 	`)
 	assert.Nil(suite.T(), err)
 
-	subdomainKey, class, err = LoadClass(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	subdomainKey, class, err = LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_class.Class{
-		Key:             "key", // Test case-insensitive.
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "actor_key",
-		SuperclassOfKey: "generalization_key",
-		SubclassOfKey:   "generalization_key_b",
+		ActorKey:        &suite.actor.Key,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	}, class)
 }
 
 func (suite *ClassSuite) TestAdd() {
 
-	err := AddClass(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), model_class.Class{
-		Key:             "KeY", // Test case-insensitive.
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "acTor_Key",            // Test case-insensitive.
-		SuperclassOfKey: "generalization_KEY",   // Test case-insensitive.
-		SubclassOfKey:   "generalization_KEY_b", // Test case-insensitive.
+		ActorKey:        &suite.actor.Key,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
+	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "actor_key",
-		SuperclassOfKey: "generalization_key",
-		SubclassOfKey:   "generalization_key_b",
+		ActorKey:        &suite.actor.Key,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	}, class)
 }
 
 func (suite *ClassSuite) TestAddNulls() {
 
-	err := AddClass(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.subdomain.Key), model_class.Class{
-		Key:             "KeY", // Test case-insensitive.
+	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "", // No foreign key.
-		SuperclassOfKey: "", // No foreign key.
-		SubclassOfKey:   "", // No foreign key.
+		ActorKey:        nil, // No foreign key.
+		SuperclassOfKey: nil, // No foreign key.
+		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
+	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "", // No foreign key.
-		SuperclassOfKey: "", // No foreign key.
-		SubclassOfKey:   "", // No foreign key.
+		ActorKey:        nil, // No foreign key.
+		SuperclassOfKey: nil, // No foreign key.
+		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlComment",
 	}, class)
 }
@@ -155,37 +162,37 @@ func (suite *ClassSuite) TestAddNulls() {
 func (suite *ClassSuite) TestUpdate() {
 
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "actor_key",
-		SuperclassOfKey: "generalization_key",
-		SubclassOfKey:   "generalization_key_b",
+		ActorKey:        &suite.actor.Key,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateClass(suite.db, strings.ToUpper(suite.model.Key), model_class.Class{
-		Key:             "kEy", // Test case-insensitive.
+	err = UpdateClass(suite.db, suite.model.Key, model_class.Class{
+		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
-		ActorKey:        "actor_Key_B",          // Test case-insensitive.
-		SuperclassOfKey: "generalization_KEY_b", // Test case-insensitive.
-		SubclassOfKey:   "generalization_KEY",   // Test case-insensitive.
+		ActorKey:        &suite.actorB.Key,
+		SuperclassOfKey: &suite.generalizationB.Key,
+		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
-	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
+	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
-		ActorKey:        "actor_key_b",
-		SuperclassOfKey: "generalization_key_b",
-		SubclassOfKey:   "generalization_key",
+		ActorKey:        &suite.actorB.Key,
+		SuperclassOfKey: &suite.generalizationB.Key,
+		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
 	}, class)
 }
@@ -193,37 +200,37 @@ func (suite *ClassSuite) TestUpdate() {
 func (suite *ClassSuite) TestUpdateNulls() {
 
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "actor_key",
-		SuperclassOfKey: "generalization_key",
-		SubclassOfKey:   "generalization_key_b",
+		ActorKey:        &suite.actor.Key,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateClass(suite.db, strings.ToUpper(suite.model.Key), model_class.Class{
-		Key:             "kEy", // Test case-insensitive.
+	err = UpdateClass(suite.db, suite.model.Key, model_class.Class{
+		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
-		ActorKey:        "", // No foreign key.
-		SuperclassOfKey: "", // No foreign key.
-		SubclassOfKey:   "", // No foreign key.
+		ActorKey:        nil, // No foreign key.
+		SuperclassOfKey: nil, // No foreign key.
+		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
-	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
+	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `subdomain_key`, subdomainKey)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
-		ActorKey:        "", // No foreign key.
-		SuperclassOfKey: "", // No foreign key.
-		SubclassOfKey:   "", // No foreign key.
+		ActorKey:        nil, // No foreign key.
+		SuperclassOfKey: nil, // No foreign key.
+		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlCommentX",
 	}, class)
 }
@@ -231,18 +238,18 @@ func (suite *ClassSuite) TestUpdateNulls() {
 func (suite *ClassSuite) TestRemove() {
 
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:        "key",
+		Key:        suite.classKey,
 		Name:       "Name",
 		Details:    "Details",
-		ActorKey:   "actor_key",
+		ActorKey:   &suite.actor.Key,
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveClass(suite.db, strings.ToUpper(suite.model.Key), "kEy") // Test case-insensitive.
+	err = RemoveClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
 
-	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, "key")
+	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), subdomainKey)
 	assert.Empty(suite.T(), class)
@@ -251,48 +258,47 @@ func (suite *ClassSuite) TestRemove() {
 func (suite *ClassSuite) TestQuery() {
 
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:             "keyx",
+		Key:             suite.classKeyB,
 		Name:            "NameX",
 		Details:         "DetailsX",
-		ActorKey:        "actor_key_b",
-		SuperclassOfKey: "generalization_key_b",
-		SubclassOfKey:   "generalization_key",
+		ActorKey:        &suite.actorB.Key,
+		SuperclassOfKey: &suite.generalizationB.Key,
+		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
-		Key:             "key",
+		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
-		ActorKey:        "actor_key",
-		SuperclassOfKey: "generalization_key",
-		SubclassOfKey:   "generalization_key_b",
+		ActorKey:        &suite.actor.Key,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	classes, err := QueryClasses(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	classes, err := QueryClasses(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_class.Class{
+	assert.Equal(suite.T(), map[identity.Key][]model_class.Class{
 		suite.subdomain.Key: {
 			{
-				Key:             "key",
+				Key:             suite.classKey,
 				Name:            "Name",
 				Details:         "Details",
-				ActorKey:        "actor_key",
-				SuperclassOfKey: "generalization_key",
-				SubclassOfKey:   "generalization_key_b",
+				ActorKey:        &suite.actor.Key,
+				SuperclassOfKey: &suite.generalization.Key,
+				SubclassOfKey:   &suite.generalizationB.Key,
 				UmlComment:      "UmlComment",
 			},
 			{
-
-				Key:             "keyx",
+				Key:             suite.classKeyB,
 				Name:            "NameX",
 				Details:         "DetailsX",
-				ActorKey:        "actor_key_b",
-				SuperclassOfKey: "generalization_key_b",
-				SubclassOfKey:   "generalization_key",
+				ActorKey:        &suite.actorB.Key,
+				SuperclassOfKey: &suite.generalizationB.Key,
+				SubclassOfKey:   &suite.generalization.Key,
 				UmlComment:      "UmlCommentX",
 			},
 		},
@@ -303,13 +309,13 @@ func (suite *ClassSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, classKey string) (class model_class.Class) {
+func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, classKey identity.Key) (class model_class.Class) {
 
 	err := AddClass(dbOrTx, modelKey, subdomainKey, model_class.Class{
 		Key:        classKey,
-		Name:       "Name",
+		Name:       classKey.String(),
 		Details:    "Details",
-		ActorKey:   "", // No actor.
+		ActorKey:   nil, // No actor.
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(t, err)
@@ -322,13 +328,12 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey, subdomainKey, classKey st
 
 func (suite *ClassSuite) TestVerifyTestObjects() {
 
-	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "class_key")
+	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, suite.classKey)
 	assert.Equal(suite.T(), model_class.Class{
-		Key:        "class_key",
-		Name:       "Name",
+		Key:        suite.classKey,
+		Name:       suite.classKey.String(),
 		Details:    "Details",
-		ActorKey:   "", // No actor.
+		ActorKey:   nil, // No actor.
 		UmlComment: "UmlComment",
 	}, class)
-
 }

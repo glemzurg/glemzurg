@@ -8,17 +8,19 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanClass(scanner Scanner, subdomainKeyPtr *string, class *model_class.Class) (err error) {
-	var actorKeyPtr, superclassOfKey, subclassOfKey *string
+func scanClass(scanner Scanner, subdomainKeyPtr *identity.Key, class *model_class.Class) (err error) {
+	var subdomainKeyStr string
+	var classKeyStr string
+	var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr *string
 
 	if err = scanner.Scan(
-		subdomainKeyPtr,
-		&class.Key,
+		&subdomainKeyStr,
+		&classKeyStr,
 		&class.Name,
 		&class.Details,
 		&actorKeyPtr,
-		&superclassOfKey,
-		&subclassOfKey,
+		&superclassOfKeyPtr,
+		&subclassOfKeyPtr,
 		&class.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -27,31 +29,46 @@ func scanClass(scanner Scanner, subdomainKeyPtr *string, class *model_class.Clas
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the subdomain key string into an identity.Key.
+	*subdomainKeyPtr, err = identity.ParseKey(subdomainKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the class key string into an identity.Key.
+	class.Key, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse optional key pointers.
 	if actorKeyPtr != nil {
-		class.ActorKey = *actorKeyPtr
+		actorKey, err := identity.ParseKey(*actorKeyPtr)
+		if err != nil {
+			return err
+		}
+		class.ActorKey = &actorKey
 	}
-	if superclassOfKey != nil {
-		class.SuperclassOfKey = *superclassOfKey
+	if superclassOfKeyPtr != nil {
+		superclassOfKey, err := identity.ParseKey(*superclassOfKeyPtr)
+		if err != nil {
+			return err
+		}
+		class.SuperclassOfKey = &superclassOfKey
 	}
-	if subclassOfKey != nil {
-		class.SubclassOfKey = *subclassOfKey
+	if subclassOfKeyPtr != nil {
+		subclassOfKey, err := identity.ParseKey(*subclassOfKeyPtr)
+		if err != nil {
+			return err
+		}
+		class.SubclassOfKey = &subclassOfKey
 	}
 
 	return nil
 }
 
 // LoadClass loads a class from the database
-func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, class model_class.Class, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return "", model_class.Class{}, err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return "", model_class.Class{}, err
-	}
+func LoadClass(dbOrTx DbOrTx, modelKey string, classKey identity.Key) (subdomainKey identity.Key, class model_class.Class, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -78,57 +95,32 @@ func LoadClass(dbOrTx DbOrTx, modelKey, classKey string) (subdomainKey string, c
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey)
+		classKey.String())
 	if err != nil {
-		return "", model_class.Class{}, errors.WithStack(err)
+		return identity.Key{}, model_class.Class{}, errors.WithStack(err)
 	}
 
 	return subdomainKey, class, nil
 }
 
 // AddClass adds a class to the database.
-func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Class) (err error) {
+func AddClass(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, class model_class.Class) (err error) {
 
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	subdomainKey, err = identity.PreenKey(subdomainKey)
-	if err != nil {
-		return err
-	}
-	classKey, err := identity.PreenKey(class.Key)
-	if err != nil {
-		return err
-	}
-
-	// We may or may not be an actor.
+	// We may or may not have optional key pointers.
 	var actorKeyPtr *string
-	if class.ActorKey != "" {
-		actorKey, err := identity.PreenKey(class.ActorKey)
-		if err != nil {
-			return err
-		}
-		actorKeyPtr = &actorKey
+	if class.ActorKey != nil {
+		actorKeyStr := class.ActorKey.String()
+		actorKeyPtr = &actorKeyStr
 	}
-	// We may or may not be a superclass.
 	var superclassOfKeyPtr *string
-	if class.SuperclassOfKey != "" {
-		superclassOfKey, err := identity.PreenKey(class.SuperclassOfKey)
-		if err != nil {
-			return err
-		}
-		superclassOfKeyPtr = &superclassOfKey
+	if class.SuperclassOfKey != nil {
+		superclassOfKeyStr := class.SuperclassOfKey.String()
+		superclassOfKeyPtr = &superclassOfKeyStr
 	}
-	// We may or may not be a subclass.
 	var subclassOfKeyPtr *string
-	if class.SubclassOfKey != "" {
-		subclassOfKey, err := identity.PreenKey(class.SubclassOfKey)
-		if err != nil {
-			return err
-		}
-		subclassOfKeyPtr = &subclassOfKey
+	if class.SubclassOfKey != nil {
+		subclassOfKeyStr := class.SubclassOfKey.String()
+		subclassOfKeyPtr = &subclassOfKeyStr
 	}
 
 	// Add the data.
@@ -158,8 +150,8 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Cl
 				$9
 			)`,
 		modelKey,
-		subdomainKey,
-		classKey,
+		subdomainKey.String(),
+		class.Key.String(),
 		class.Name,
 		class.Details,
 		actorKeyPtr,
@@ -176,42 +168,23 @@ func AddClass(dbOrTx DbOrTx, modelKey, subdomainKey string, class model_class.Cl
 // UpdateClass updates a class in the database.
 func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err error) {
 
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err := identity.PreenKey(class.Key)
-	if err != nil {
-		return err
-	}
-	// We may or may not be an actor.
+	// We may or may not have optional key pointers.
 	var actorKeyPtr *string
-	if class.ActorKey != "" {
-		actorKey, err := identity.PreenKey(class.ActorKey)
-		if err != nil {
-			return err
-		}
-		actorKeyPtr = &actorKey
+	if class.ActorKey != nil {
+		actorKeyStr := class.ActorKey.String()
+		actorKeyPtr = &actorKeyStr
 	}
-	// We may or may not be a superclass.
 	var superclassOfKeyPtr *string
-	if class.SuperclassOfKey != "" {
-		superclassOfKey, err := identity.PreenKey(class.SuperclassOfKey)
-		if err != nil {
-			return err
-		}
-		superclassOfKeyPtr = &superclassOfKey
+	if class.SuperclassOfKey != nil {
+		superclassOfKeyStr := class.SuperclassOfKey.String()
+		superclassOfKeyPtr = &superclassOfKeyStr
 	}
-	// We may or may not be a subclass.
 	var subclassOfKeyPtr *string
-	if class.SubclassOfKey != "" {
-		subclassOfKey, err := identity.PreenKey(class.SubclassOfKey)
-		if err != nil {
-			return err
-		}
-		subclassOfKeyPtr = &subclassOfKey
+	if class.SubclassOfKey != nil {
+		subclassOfKeyStr := class.SubclassOfKey.String()
+		subclassOfKeyPtr = &subclassOfKeyStr
 	}
+
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
@@ -228,7 +201,7 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 		AND
 			class_key = $2`,
 		modelKey,
-		classKey,
+		class.Key.String(),
 		class.Name,
 		class.Details,
 		actorKeyPtr,
@@ -243,17 +216,7 @@ func UpdateClass(dbOrTx DbOrTx, modelKey string, class model_class.Class) (err e
 }
 
 // RemoveClass deletes a class from the database.
-func RemoveClass(dbOrTx DbOrTx, modelKey, classKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = identity.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
+func RemoveClass(dbOrTx DbOrTx, modelKey string, classKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -264,7 +227,7 @@ func RemoveClass(dbOrTx DbOrTx, modelKey, classKey string) (err error) {
 		AND
 			class_key = $2`,
 		modelKey,
-		classKey)
+		classKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -273,25 +236,19 @@ func RemoveClass(dbOrTx DbOrTx, modelKey, classKey string) (err error) {
 }
 
 // QueryClasses loads all classes from the database
-func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[string][]model_class.Class, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[identity.Key][]model_class.Class, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var subdomainKey string
+			var subdomainKey identity.Key
 			var class model_class.Class
 			if err = scanClass(scanner, &subdomainKey, &class); err != nil {
 				return errors.WithStack(err)
 			}
 			if classes == nil {
-				classes = map[string][]model_class.Class{}
+				classes = map[identity.Key][]model_class.Class{}
 			}
 			subdomainClasses := classes[subdomainKey]
 			subdomainClasses = append(subdomainClasses, class)

@@ -9,8 +9,10 @@ import (
 
 // Populate a golang struct from a database row.
 func scanGeneralization(scanner Scanner, generalization *model_class.Generalization) (err error) {
+	var keyStr string
+
 	if err = scanner.Scan(
-		&generalization.Key,
+		&keyStr,
 		&generalization.Name,
 		&generalization.Details,
 		&generalization.IsComplete,
@@ -23,21 +25,17 @@ func scanGeneralization(scanner Scanner, generalization *model_class.Generalizat
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the key string into an identity.Key.
+	generalization.Key, err = identity.ParseKey(keyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadGeneralization loads a generalization from the database
-func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (generalization model_class.Generalization, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return model_class.Generalization{}, err
-	}
-	generalizationKey, err = identity.PreenKey(generalizationKey)
-	if err != nil {
-		return model_class.Generalization{}, err
-	}
+func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_class.Generalization, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -62,7 +60,7 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (gene
 		AND
 			model_key = $1`,
 		modelKey,
-		generalizationKey)
+		generalizationKey.String())
 	if err != nil {
 		return model_class.Generalization{}, errors.WithStack(err)
 	}
@@ -72,16 +70,6 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (gene
 
 // AddGeneralization adds a generalization to the database.
 func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	generalizationKey, err := identity.PreenKey(generalization.Key)
-	if err != nil {
-		return err
-	}
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -106,7 +94,7 @@ func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_clas
 					$7
 				)`,
 		modelKey,
-		generalizationKey,
+		generalization.Key.String(),
 		generalization.Name,
 		generalization.Details,
 		generalization.IsComplete,
@@ -121,16 +109,6 @@ func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_clas
 
 // UpdateGeneralization updates a generalization in the database.
 func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	generalizationKey, err := identity.PreenKey(generalization.Key)
-	if err != nil {
-		return err
-	}
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -147,7 +125,7 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_c
 		AND
 			generalization_key = $2`,
 		modelKey,
-		generalizationKey,
+		generalization.Key.String(),
 		generalization.Name,
 		generalization.Details,
 		generalization.IsComplete,
@@ -161,17 +139,7 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_c
 }
 
 // RemoveGeneralization deletes a generalization from the database.
-func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	generalizationKey, err = identity.PreenKey(generalizationKey)
-	if err != nil {
-		return err
-	}
+func RemoveGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -182,7 +150,7 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (er
 			AND
 				generalization_key = $2`,
 		modelKey,
-		generalizationKey)
+		generalizationKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -192,12 +160,6 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (er
 
 // QueryGeneralizations loads all generalizations from the database
 func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []model_class.Generalization, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
 
 	// Query the database.
 	err = dbQuery(

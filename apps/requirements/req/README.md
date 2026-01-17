@@ -1,10 +1,8 @@
 
 
 next:
-  - build out tests in the requirements package
-    - add integrity check to keys in the validation of objects
-  - build the ravelling/unravelling tests on requirements
   - update database to use just the model
+  - build the ravelling/unravelling tests on requirements
   - parse yaml into just a model without requirements object
   - update json package to just work with a model
     - update the objects to not have unique database keys on them
@@ -14,6 +12,7 @@ next:
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md
+  - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
 jan (in parallel):
   - use ai to summarize the current system into 
