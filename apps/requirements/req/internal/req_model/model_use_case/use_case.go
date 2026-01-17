@@ -83,6 +83,11 @@ func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
 		return err
 	}
 	// Validate all children.
+	for _, actor := range uc.Actors {
+		if err := actor.ValidateWithParent(); err != nil {
+			return err
+		}
+	}
 	for _, scenario := range uc.Scenarios {
 		if err := scenario.ValidateWithParent(&uc.Key); err != nil {
 			return err

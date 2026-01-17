@@ -16,6 +16,39 @@ type ActorSuite struct {
 	suite.Suite
 }
 
+// TestValidate tests all validation rules for Actor.
+func (suite *ActorSuite) TestValidate() {
+	tests := []struct {
+		testName string
+		obj      Actor
+		errstr   string
+	}{
+		{
+			testName: "valid actor with comment",
+			obj: Actor{
+				UmlComment: "UmlComment",
+			},
+		},
+		{
+			testName: "valid actor without comment",
+			obj: Actor{
+				UmlComment: "",
+			},
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.obj.Validate()
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}
+
+// TestNew tests that NewActor maps parameters correctly and calls Validate.
 func (suite *ActorSuite) TestNew() {
 	tests := []struct {
 		umlComment string
@@ -47,4 +80,14 @@ func (suite *ActorSuite) TestNew() {
 			assert.Empty(suite.T(), obj, testName)
 		}
 	}
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate.
+func (suite *ActorSuite) TestValidateWithParent() {
+	// Test valid case - Actor.Validate() always returns nil.
+	obj := Actor{
+		UmlComment: "UmlComment",
+	}
+	err := obj.ValidateWithParent()
+	assert.NoError(suite.T(), err)
 }
