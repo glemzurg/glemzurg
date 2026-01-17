@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/stretchr/testify/assert"
