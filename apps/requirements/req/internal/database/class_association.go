@@ -56,10 +56,11 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 	association.ToMultiplicity = model_class.Multiplicity{LowerBound: toLowerBound, HigherBound: toHigherBound}
 
 	if associationClassKeyPtr != nil {
-		association.AssociationClassKey, err = identity.ParseKey(*associationClassKeyPtr)
+		associationClassKey, err := identity.ParseKey(*associationClassKeyPtr)
 		if err != nil {
 			return err
 		}
+		association.AssociationClassKey = &associationClassKey
 	}
 
 	return nil
@@ -110,7 +111,7 @@ func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Asso
 
 	// We may or may not have an association class.
 	var associationClassKeyPtr *string
-	if association.AssociationClassKey != (identity.Key{}) {
+	if association.AssociationClassKey != nil {
 		s := association.AssociationClassKey.String()
 		associationClassKeyPtr = &s
 	}
@@ -171,7 +172,7 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 
 	// We may or may not have an association class.
 	var associationClassKeyPtr *string
-	if association.AssociationClassKey != (identity.Key{}) {
+	if association.AssociationClassKey != nil {
 		s := association.AssociationClassKey.String()
 		associationClassKeyPtr = &s
 	}

@@ -10,16 +10,16 @@ import (
 type Association struct {
 	Key                 identity.Key
 	Name                string
-	Details             string       // Markdown.
-	FromClassKey        identity.Key // The class on one end of the association.
-	FromMultiplicity    Multiplicity // The multiplicity from one end of the association.
-	ToClassKey          identity.Key // The class on the other end of the association.
-	ToMultiplicity      Multiplicity // The multiplicity on the other end of the association.
-	AssociationClassKey identity.Key // Any class that points to this association.
+	Details             string        // Markdown.
+	FromClassKey        identity.Key  // The class on one end of the association.
+	FromMultiplicity    Multiplicity  // The multiplicity from one end of the association.
+	ToClassKey          identity.Key  // The class on the other end of the association.
+	ToMultiplicity      Multiplicity  // The multiplicity on the other end of the association.
+	AssociationClassKey *identity.Key // Any class that points to this association.
 	UmlComment          string
 }
 
-func NewAssociation(key identity.Key, name, details string, fromClassKey identity.Key, fromMultiplicity Multiplicity, toClassKey identity.Key, toMultiplicity Multiplicity, associationClassKey identity.Key, umlComment string) (association Association, err error) {
+func NewAssociation(key identity.Key, name, details string, fromClassKey identity.Key, fromMultiplicity Multiplicity, toClassKey identity.Key, toMultiplicity Multiplicity, associationClassKey *identity.Key, umlComment string) (association Association, err error) {
 
 	association = Association{
 		Key:                 key,
@@ -78,7 +78,13 @@ func (a *Association) Validate() error {
 }
 
 func (a *Association) Includes(classKey identity.Key) (included bool) {
-	return a.FromClassKey == classKey || a.ToClassKey == classKey || a.AssociationClassKey == classKey
+	if a.FromClassKey == classKey || a.ToClassKey == classKey {
+		return true
+	}
+	if a.AssociationClassKey != nil && *a.AssociationClassKey == classKey {
+		return true
+	}
+	return false
 }
 
 func (a *Association) Other(classKey identity.Key) (otherKey identity.Key, err error) {

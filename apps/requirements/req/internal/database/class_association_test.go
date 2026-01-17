@@ -99,7 +99,7 @@ func (suite *AssociationSuite) TestLoad() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	}, association)
 }
@@ -114,7 +114,7 @@ func (suite *AssociationSuite) TestAdd() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
@@ -129,7 +129,7 @@ func (suite *AssociationSuite) TestAdd() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	}, association)
 }
@@ -137,30 +137,30 @@ func (suite *AssociationSuite) TestAdd() {
 func (suite *AssociationSuite) TestAddNulls() {
 
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
-		Key:              suite.associationKey,
-		Name:             "Name",
-		Details:          "",
-		FromClassKey:     suite.class.Key,
-		FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		ToClassKey:       suite.classB.Key,
-		ToMultiplicity:   model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		// AssociationClassKey is zero value (empty)
-		UmlComment: "",
+		Key:                 suite.associationKey,
+		Name:                "Name",
+		Details:             "",
+		FromClassKey:        suite.class.Key,
+		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+		ToClassKey:          suite.classB.Key,
+		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
+		AssociationClassKey: nil, // No association class
+		UmlComment:          "",
 	})
 	assert.Nil(suite.T(), err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_class.Association{
-		Key:              suite.associationKey,
-		Name:             "Name",
-		Details:          "",
-		FromClassKey:     suite.class.Key,
-		FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		ToClassKey:       suite.classB.Key,
-		ToMultiplicity:   model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		// AssociationClassKey is zero value (empty)
-		UmlComment: "",
+		Key:                 suite.associationKey,
+		Name:                "Name",
+		Details:             "",
+		FromClassKey:        suite.class.Key,
+		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+		ToClassKey:          suite.classB.Key,
+		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
+		AssociationClassKey: nil, // No association class
+		UmlComment:          "",
 	}, association)
 }
 
@@ -174,7 +174,7 @@ func (suite *AssociationSuite) TestUpdate() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
@@ -187,7 +187,7 @@ func (suite *AssociationSuite) TestUpdate() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
 		ToClassKey:          suite.classC.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		AssociationClassKey: suite.class.Key,
+		AssociationClassKey: &suite.class.Key,
 		UmlComment:          "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
@@ -202,7 +202,7 @@ func (suite *AssociationSuite) TestUpdate() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
 		ToClassKey:          suite.classC.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		AssociationClassKey: suite.class.Key,
+		AssociationClassKey: &suite.class.Key,
 		UmlComment:          "UmlCommentX",
 	}, association)
 }
@@ -217,36 +217,36 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateAssociation(suite.db, suite.model.Key, model_class.Association{
-		Key:              suite.associationKey,
-		Name:             "NameX",
-		Details:          "",
-		FromClassKey:     suite.classB.Key,
-		FromMultiplicity: model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		ToClassKey:       suite.classC.Key,
-		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		// AssociationClassKey is zero value (empty)
-		UmlComment: "",
+		Key:                 suite.associationKey,
+		Name:                "NameX",
+		Details:             "",
+		FromClassKey:        suite.classB.Key,
+		FromMultiplicity:    model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
+		ToClassKey:          suite.classC.Key,
+		ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+		AssociationClassKey: nil, // No association class
+		UmlComment:          "",
 	})
 	assert.Nil(suite.T(), err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_class.Association{
-		Key:              suite.associationKey,
-		Name:             "NameX",
-		Details:          "",
-		FromClassKey:     suite.classB.Key,
-		FromMultiplicity: model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		ToClassKey:       suite.classC.Key,
-		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-		// AssociationClassKey is zero value (empty)
-		UmlComment: "",
+		Key:                 suite.associationKey,
+		Name:                "NameX",
+		Details:             "",
+		FromClassKey:        suite.classB.Key,
+		FromMultiplicity:    model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
+		ToClassKey:          suite.classC.Key,
+		ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+		AssociationClassKey: nil, // No association class
+		UmlComment:          "",
 	}, association)
 }
 
@@ -260,7 +260,7 @@ func (suite *AssociationSuite) TestRemove() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
@@ -286,7 +286,7 @@ func (suite *AssociationSuite) TestQuery() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classC.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.class.Key,
+		AssociationClassKey: &suite.class.Key,
 		UmlComment:          "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
@@ -299,7 +299,7 @@ func (suite *AssociationSuite) TestQuery() {
 		FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 		ToClassKey:          suite.classB.Key,
 		ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-		AssociationClassKey: suite.classC.Key,
+		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
@@ -315,7 +315,7 @@ func (suite *AssociationSuite) TestQuery() {
 			FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 			ToClassKey:          suite.classB.Key,
 			ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-			AssociationClassKey: suite.classC.Key,
+			AssociationClassKey: &suite.classC.Key,
 			UmlComment:          "UmlComment",
 		},
 		{
@@ -326,7 +326,7 @@ func (suite *AssociationSuite) TestQuery() {
 			FromMultiplicity:    model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
 			ToClassKey:          suite.classC.Key,
 			ToMultiplicity:      model_class.Multiplicity{LowerBound: 2, HigherBound: 3},
-			AssociationClassKey: suite.class.Key,
+			AssociationClassKey: &suite.class.Key,
 			UmlComment:          "UmlCommentX",
 		},
 	}, associations)
