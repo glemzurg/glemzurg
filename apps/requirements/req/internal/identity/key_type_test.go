@@ -100,7 +100,6 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 	solutionDomainKey, err := NewDomainKey("solution1")
 	assert.NoError(suite.T(), err)
 
-	solution1SubKey := "solution1"
 	tests := []struct {
 		testName          string
 		problemDomainKey  Key
@@ -116,8 +115,8 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 			expected: Key{
 				parentKey: problemDomainKey.String(),
 				keyType:   KEY_TYPE_DOMAIN_ASSOCIATION,
-				subKey:    solution1SubKey,
-				subKey2:   nil,
+				subKey:    "solution1",
+				subKey2:   "",
 			},
 		},
 
@@ -298,9 +297,6 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 	// Classes in subdomain3 (different domain).
 	class4Key := helper.Must(NewClassKey(subdomain3Key, "class4"))
 
-	// Helper for creating string pointers.
-	strPtr := func(s string) *string { return &s }
-
 	tests := []struct {
 		testName     string
 		parentKey    Key
@@ -319,7 +315,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 				parentKey: subdomain1Key.String(),
 				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
 				subKey:    "class/class1",
-				subKey2:   strPtr("class/class2"),
+				subKey2:   "class/class2",
 			},
 		},
 
@@ -333,7 +329,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 				parentKey: domain1Key.String(),
 				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
 				subKey:    "subdomain/subdomain1/class/class1",
-				subKey2:   strPtr("subdomain/subdomain2/class/class3"),
+				subKey2:   "subdomain/subdomain2/class/class3",
 			},
 		},
 
@@ -347,7 +343,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 				parentKey: "",
 				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
 				subKey:    "domain/domain1/subdomain/subdomain1/class/class1",
-				subKey2:   strPtr("domain/domain2/subdomain/subdomain3/class/class4"),
+				subKey2:   "domain/domain2/subdomain/subdomain3/class/class4",
 			},
 		},
 

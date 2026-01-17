@@ -274,7 +274,7 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key) (key Key, e
 		parentKeyStr = parentKey.String()
 	}
 
-	return newKeyWithSubKey2(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, &subKey2)
+	return newKeyWithSubKey2(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2)
 }
 
 func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {

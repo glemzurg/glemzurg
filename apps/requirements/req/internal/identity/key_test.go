@@ -74,11 +74,6 @@ func (suite *KeySuite) TestNewKey() {
 }
 
 func (suite *KeySuite) TestParseKey() {
-	solution1SubKey := "solution1"
-	// Class association subKey2 values for different parent levels.
-	cassocSubdomainSubKey2 := "class/class_b"
-	cassocDomainSubKey2 := "subdomain/subdomain_b/class/class_b"
-	cassocModelSubKey2 := "domain/domain_b/subdomain/subdomain_b/class/class_b"
 	tests := []struct {
 		testName string
 		input    string
@@ -109,28 +104,28 @@ func (suite *KeySuite) TestParseKey() {
 		{
 			testName: "ok domain association with subKey2",
 			input:    "domain/problem1/dassociation/problem1/solution1",
-			expected: Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: &solution1SubKey},
+			expected: Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
 		},
 		// Class association with subdomain parent.
 		// Format: domain/d/subdomain/s/cassociation/class/class_a/class/class_b
 		{
 			testName: "ok class association with subdomain parent",
 			input:    "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b",
-			expected: Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: &cassocSubdomainSubKey2},
+			expected: Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b"},
 		},
 		// Class association with domain parent.
 		// Format: domain/d/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b
 		{
 			testName: "ok class association with domain parent",
 			input:    "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b",
-			expected: Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: &cassocDomainSubKey2},
+			expected: Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b"},
 		},
 		// Class association with model parent (no parent).
 		// Format: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b
 		{
 			testName: "ok class association with model parent",
 			input:    "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b",
-			expected: Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: &cassocModelSubKey2},
+			expected: Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b"},
 		},
 
 		// State action key with composite subKey (when/subKey).
@@ -196,10 +191,6 @@ func (suite *KeySuite) TestParseKey() {
 }
 
 func (suite *KeySuite) TestString() {
-	subKey2 := "solution1"
-	cassocSubdomainSubKey2 := "class/class_b"
-	cassocDomainSubKey2 := "subdomain/subdomain_b/class/class_b"
-	cassocModelSubKey2 := "domain/domain_b/subdomain/subdomain_b/class/class_b"
 	tests := []struct {
 		testName string
 		key      Key
@@ -217,25 +208,25 @@ func (suite *KeySuite) TestString() {
 		},
 		{
 			testName: "with subKey2",
-			key:      Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: &subKey2},
+			key:      Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
 			expected: "domain/problem1/dassociation/problem1/solution1",
 		},
 		// Class association with subdomain parent.
 		{
 			testName: "class association with subdomain parent",
-			key:      Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: &cassocSubdomainSubKey2},
+			key:      Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b"},
 			expected: "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b",
 		},
 		// Class association with domain parent.
 		{
 			testName: "class association with domain parent",
-			key:      Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: &cassocDomainSubKey2},
+			key:      Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b"},
 			expected: "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b",
 		},
 		// Class association with model parent (no parent).
 		{
 			testName: "class association with model parent",
-			key:      Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: &cassocModelSubKey2},
+			key:      Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b"},
 			expected: "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b",
 		},
 		// State action key with composite subKey.

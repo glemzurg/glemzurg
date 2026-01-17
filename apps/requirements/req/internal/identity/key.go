@@ -9,32 +9,27 @@ import (
 
 // Key uniquely identifies an entity in the model.
 type Key struct {
-	parentKey string  // The parent entity's key.
-	keyType   string  // The type of the key, e.g., "class", "association".
-	subKey    string  // The unique key of the child entity within its parent and type.
-	subKey2   *string // Optional secondary key (e.g., for associations between two domains).
+	parentKey string // The parent entity's key.
+	keyType   string // The type of the key, e.g., "class", "association".
+	subKey    string // The unique key of the child entity within its parent and type.
+	subKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
 }
 
 func newKey(parentKey, keyType, subKey string) (key Key, err error) {
-	return newKeyWithSubKey2(parentKey, keyType, subKey, nil)
+	return newKeyWithSubKey2(parentKey, keyType, subKey, "")
 }
 
-func newKeyWithSubKey2(parentKey, keyType, subKey string, subKey2 *string) (key Key, err error) {
+func newKeyWithSubKey2(parentKey, keyType, subKey string, subKey2 string) (key Key, err error) {
 	parentKey = strings.ToLower(strings.TrimSpace(parentKey))
 	keyType = strings.ToLower(strings.TrimSpace(keyType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
-
-	var subKey2Ptr *string
-	if subKey2 != nil {
-		trimmed := strings.ToLower(strings.TrimSpace(*subKey2))
-		subKey2Ptr = &trimmed
-	}
+	subKey2 = strings.ToLower(strings.TrimSpace(subKey2))
 
 	key = Key{
 		parentKey: parentKey,
 		keyType:   keyType,
 		subKey:    subKey,
-		subKey2:   subKey2Ptr,
+		subKey2:   subKey2,
 	}
 
 	err = key.Validate()
@@ -101,8 +96,8 @@ func (k *Key) String() string {
 	} else {
 		result = k.keyType + "/" + k.subKey
 	}
-	if k.subKey2 != nil {
-		result = result + "/" + *k.subKey2
+	if k.subKey2 != "" {
+		result = result + "/" + k.subKey2
 	}
 	return result
 }
@@ -113,7 +108,8 @@ func (k *Key) SubKey() string {
 }
 
 // SubKey2 returns the optional subKey2 of the Key.
-func (k *Key) SubKey2() *string {
+// Returns empty string if not set.
+func (k *Key) SubKey2() string {
 	return k.subKey2
 }
 
@@ -284,7 +280,7 @@ func (k *Key) determineClassAssociationParentType() (string, error) {
 		return "", errors.Errorf("determineClassAssociationParentType called on non-class-association key of type '%s'", k.keyType)
 	}
 
-	if k.subKey2 == nil {
+	if k.subKey2 == "" {
 		return "", errors.New("class association key missing subKey2")
 	}
 
@@ -341,7 +337,6 @@ func ParseKey(s string) (key Key, err error) {
 	// Check if this is a key type that uses subKey2 (domain association).
 	// Format: parentKey/keyType/subKey/subKey2
 	// For domain association: domain/problemdomain/dassociation/problemsubkey/solutionsubkey
-	var subKey2 *string
 	keyType := parts[len(parts)-2]
 
 	// If this looks like a domain association with subKey2, handle specially
@@ -349,10 +344,9 @@ func ParseKey(s string) (key Key, err error) {
 		keyType = parts[len(parts)-3]
 		subKey := parts[len(parts)-2]
 		subKey2Val := parts[len(parts)-1]
-		subKey2 = &subKey2Val
 		parentParts := parts[:len(parts)-3]
 		parentKey := strings.Join(parentParts, "/")
-		return newKeyWithSubKey2(parentKey, keyType, subKey, subKey2)
+		return newKeyWithSubKey2(parentKey, keyType, subKey, subKey2Val)
 	}
 
 	// Check if this is a class association with subKey2.
@@ -384,7 +378,7 @@ func ParseKey(s string) (key Key, err error) {
 						subKey2Val := strings.Join(remainingParts[splitIdx:], "/")
 						parentParts := parts[:i]
 						parentKey := strings.Join(parentParts, "/")
-						return newKeyWithSubKey2(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, &subKey2Val)
+						return newKeyWithSubKey2(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2Val)
 					}
 				}
 			}
