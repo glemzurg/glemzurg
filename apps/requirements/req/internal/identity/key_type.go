@@ -35,10 +35,14 @@ const (
 	KEY_TYPE_ACTION     = "action"
 	KEY_TYPE_TRANSITION = "transition"
 
-	// remaining
-	KEY_TYPE_SCENARIO        = "scenario"
+	// Keys with state parents.
+	KEY_TYPE_STATE_ACTION = "saction"
+
+	// Keys with use case parents.
+	KEY_TYPE_SCENARIO = "scenario"
+
+	// Keys with scenario parents.
 	KEY_TYPE_SCENARIO_OBJECT = "sobject"
-	KEY_TYPE_STATE_ACTION    = "saction"
 )
 
 func NewActorKey(subKey string) (key Key, err error) {
