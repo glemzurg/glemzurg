@@ -343,6 +343,43 @@ func ParseKey(s string) (key Key, err error) {
 		return newKeyWithSubKey2(parentKey, keyType, subKey, subKey2)
 	}
 
+	// Check if this is a class association with subKey2.
+	// Format: parentKey/cassociation/subKey/subKey2
+	// where subKey and subKey2 are class paths that end with "class/name".
+	// For subdomain parent: parent/cassociation/class/class_a/class/class_b
+	// For domain parent: parent/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b
+	// For model parent: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b
+	// We need to find where "cassociation" is in the parts and then find the second "class" to split.
+	for i, part := range parts {
+		if part == KEY_TYPE_CLASS_ASSOCIATION {
+			// Found cassociation. The subKey and subKey2 are the remaining parts.
+			remainingParts := parts[i+1:]
+			if len(remainingParts) >= 4 {
+				// Find all occurrences of "class" in remainingParts
+				classIndices := []int{}
+				for j, p := range remainingParts {
+					if p == KEY_TYPE_CLASS {
+						classIndices = append(classIndices, j)
+					}
+				}
+				// We need at least 2 "class" occurrences (one for each endpoint)
+				if len(classIndices) >= 2 {
+					// The first class path ends after the first "class/name" pair.
+					// The split point is the element AFTER the first class key (i.e., classIndices[0] + 2)
+					splitIdx := classIndices[0] + 2
+					if splitIdx < len(remainingParts) {
+						subKey := strings.Join(remainingParts[:splitIdx], "/")
+						subKey2Val := strings.Join(remainingParts[splitIdx:], "/")
+						parentParts := parts[:i]
+						parentKey := strings.Join(parentParts, "/")
+						return newKeyWithSubKey2(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, &subKey2Val)
+					}
+				}
+			}
+			break
+		}
+	}
+
 	subKey := parts[len(parts)-1]
 	parentParts := parts[:len(parts)-2]
 	parentKey := strings.Join(parentParts, "/")
