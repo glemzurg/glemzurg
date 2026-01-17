@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
@@ -185,4 +187,30 @@ func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []mod
 	}
 
 	return associations, nil
+}
+
+// AddDomainAssociations adds multiple domain associations to the database in a single insert.
+func AddDomainAssociations(dbOrTx DbOrTx, modelKey string, associations []model_domain.Association) (err error) {
+	if len(associations) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO domain_association (model_key, association_key, problem_domain_key, solution_domain_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(associations)*5)
+	for i, assoc := range associations {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 5
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+		args = append(args, modelKey, assoc.Key.String(), assoc.ProblemDomainKey.String(), assoc.SolutionDomainKey.String(), assoc.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

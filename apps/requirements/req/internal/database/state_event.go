@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
@@ -223,4 +225,47 @@ func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[identity.Key][]mode
 	}
 
 	return events, nil
+}
+
+// AddEvents adds multiple events to the database in a single insert.
+func AddEvents(dbOrTx DbOrTx, modelKey string, events map[identity.Key][]model_state.Event) (err error) {
+	// Count total events.
+	count := 0
+	for _, evts := range events {
+		count += len(evts)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO event (model_key, class_key, event_key, name, details, parameters) VALUES `
+	args := make([]interface{}, 0, count*6)
+	i := 0
+	for classKey, eventList := range events {
+		for _, event := range eventList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 6
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+
+			// Flatten parameters.
+			var parametersAsList []string
+			for _, param := range event.Parameters {
+				parametersAsList = append(parametersAsList, param.Name)
+				parametersAsList = append(parametersAsList, param.Source)
+			}
+
+			args = append(args, modelKey, classKey.String(), event.Key.String(), event.Name, event.Details, pq.Array(parametersAsList))
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

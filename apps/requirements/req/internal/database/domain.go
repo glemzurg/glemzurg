@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
@@ -182,4 +184,30 @@ func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []model_domain.Domain
 	}
 
 	return domains, nil
+}
+
+// AddDomains adds multiple domains to the database in a single insert.
+func AddDomains(dbOrTx DbOrTx, modelKey string, domains []model_domain.Domain) (err error) {
+	if len(domains) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO domain (model_key, domain_key, name, details, realized, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(domains)*6)
+	for i, domain := range domains {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 6
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+		args = append(args, modelKey, domain.Key.String(), domain.Name, domain.Details, domain.Realized, domain.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

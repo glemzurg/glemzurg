@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
@@ -195,4 +197,39 @@ func QueryStateActions(dbOrTx DbOrTx, modelKey string) (stateActions map[identit
 	}
 
 	return stateActions, nil
+}
+
+// AddStateActions adds multiple state actions to the database in a single insert.
+func AddStateActions(dbOrTx DbOrTx, modelKey string, stateActions map[identity.Key][]model_state.StateAction) (err error) {
+	// Count total state actions.
+	count := 0
+	for _, sas := range stateActions {
+		count += len(sas)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO state_action (model_key, state_key, state_action_key, action_key, action_when) VALUES `
+	args := make([]interface{}, 0, count*5)
+	i := 0
+	for stateKey, saList := range stateActions {
+		for _, sa := range saList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, stateKey.String(), sa.Key.String(), sa.ActionKey.String(), sa.When)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

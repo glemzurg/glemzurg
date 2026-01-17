@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 
@@ -211,4 +213,49 @@ func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[identity.Key]
 	}
 
 	return scenarios, nil
+}
+
+// AddScenarios adds multiple scenarios to the database in a single insert.
+func AddScenarios(dbOrTx DbOrTx, modelKey string, scenarios map[identity.Key][]model_scenario.Scenario) (err error) {
+	// Count total scenarios.
+	count := 0
+	for _, scens := range scenarios {
+		count += len(scens)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details, steps) VALUES `
+	args := make([]interface{}, 0, count*6)
+	i := 0
+	for useCaseKey, scenList := range scenarios {
+		for _, scenario := range scenList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 6
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+
+			// Serialize the steps to JSON.
+			var stepsJSON interface{}
+			if scenario.Steps != nil {
+				stepsJSON, err = scenario.Steps.ToJSON()
+				if err != nil {
+					return err
+				}
+			}
+
+			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details, stepsJSON)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 
@@ -221,4 +223,39 @@ func QueryObjects(dbOrTx DbOrTx, modelKey string) (objects map[identity.Key][]mo
 	}
 
 	return objects, nil
+}
+
+// AddObjects adds multiple scenario objects to the database in a single insert.
+func AddObjects(dbOrTx DbOrTx, modelKey string, objects map[identity.Key][]model_scenario.Object) (err error) {
+	// Count total objects.
+	count := 0
+	for _, objs := range objects {
+		count += len(objs)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO scenario_object (model_key, scenario_object_key, scenario_key, object_number, name, name_style, class_key, multi, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*9)
+	i := 0
+	for scenarioKey, objList := range objects {
+		for _, obj := range objList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 9
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			args = append(args, modelKey, obj.Key.String(), scenarioKey.String(), obj.ObjectNumber, obj.Name, obj.NameStyle, obj.ClassKey.String(), obj.Multi, obj.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

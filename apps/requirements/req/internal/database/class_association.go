@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
@@ -272,4 +274,38 @@ func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_cla
 	}
 
 	return associations, nil
+}
+
+// AddAssociations adds multiple associations to the database in a single insert.
+func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.Association) (err error) {
+	if len(associations) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO association (model_key, association_key, name, details, from_class_key, from_multiplicity_lower, from_multiplicity_higher, to_class_key, to_multiplicity_lower, to_multiplicity_higher, association_class_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(associations)*12)
+	for i, assoc := range associations {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 12
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12)
+
+		// Handle optional association class key.
+		var associationClassKeyPtr *string
+		if assoc.AssociationClassKey != nil {
+			s := assoc.AssociationClassKey.String()
+			associationClassKeyPtr = &s
+		}
+
+		args = append(args, modelKey, assoc.Key.String(), assoc.Name, assoc.Details, assoc.FromClassKey.String(), assoc.FromMultiplicity.LowerBound, assoc.FromMultiplicity.HigherBound, assoc.ToClassKey.String(), assoc.ToMultiplicity.LowerBound, assoc.ToMultiplicity.HigherBound, associationClassKeyPtr, assoc.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

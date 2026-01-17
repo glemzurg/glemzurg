@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
@@ -311,4 +313,59 @@ func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[identity.
 	}
 
 	return transitions, nil
+}
+
+// AddTransitions adds multiple transitions to the database in a single insert.
+func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key][]model_state.Transition) (err error) {
+	// Count total transitions.
+	count := 0
+	for _, trans := range transitions {
+		count += len(trans)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO transition (model_key, class_key, transition_key, from_state_key, event_key, guard_key, action_key, to_state_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*9)
+	i := 0
+	for classKey, transList := range transitions {
+		for _, transition := range transList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 9
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+
+			// Handle optional key pointers.
+			var fromStateKeyPtr, guardKeyPtr, actionKeyPtr, toStateKeyPtr *string
+			if transition.FromStateKey != nil {
+				s := transition.FromStateKey.String()
+				fromStateKeyPtr = &s
+			}
+			if transition.GuardKey != nil {
+				s := transition.GuardKey.String()
+				guardKeyPtr = &s
+			}
+			if transition.ActionKey != nil {
+				s := transition.ActionKey.String()
+				actionKeyPtr = &s
+			}
+			if transition.ToStateKey != nil {
+				s := transition.ToStateKey.String()
+				toStateKeyPtr = &s
+			}
+
+			args = append(args, modelKey, classKey.String(), transition.Key.String(), fromStateKeyPtr, transition.EventKey.String(), guardKeyPtr, actionKeyPtr, toStateKeyPtr, transition.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
@@ -191,4 +193,39 @@ func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[identity.Key][]mode
 	}
 
 	return guards, nil
+}
+
+// AddGuards adds multiple guards to the database in a single insert.
+func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_state.Guard) (err error) {
+	// Count total guards.
+	count := 0
+	for _, gds := range guards {
+		count += len(gds)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO guard (model_key, class_key, guard_key, name, details) VALUES `
+	args := make([]interface{}, 0, count*5)
+	i := 0
+	for classKey, guardList := range guards {
+		for _, guard := range guardList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name, guard.Details)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

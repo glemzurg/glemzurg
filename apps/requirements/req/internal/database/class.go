@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
@@ -276,4 +278,55 @@ func QueryClasses(dbOrTx DbOrTx, modelKey string) (classes map[identity.Key][]mo
 	}
 
 	return classes, nil
+}
+
+// AddClasses adds multiple classes to the database in a single insert.
+func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model_class.Class) (err error) {
+	// Count total classes.
+	count := 0
+	for _, cls := range classes {
+		count += len(cls)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO class (model_key, subdomain_key, class_key, name, details, actor_key, superclass_of_key, subclass_of_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*9)
+	i := 0
+	for subdomainKey, classList := range classes {
+		for _, class := range classList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 9
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+
+			// Handle optional key pointers.
+			var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr *string
+			if class.ActorKey != nil {
+				s := class.ActorKey.String()
+				actorKeyPtr = &s
+			}
+			if class.SuperclassOfKey != nil {
+				s := class.SuperclassOfKey.String()
+				superclassOfKeyPtr = &s
+			}
+			if class.SubclassOfKey != nil {
+				s := class.SubclassOfKey.String()
+				subclassOfKeyPtr = &s
+			}
+
+			args = append(args, modelKey, subdomainKey.String(), class.Key.String(), class.Name, class.Details, actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr, class.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

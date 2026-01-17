@@ -36,187 +36,254 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Actors.
+		// Collect actors into a slice.
+		actorsSlice := make([]model_actor.Actor, 0, len(model.Actors))
 		for _, actor := range model.Actors {
-			if err = AddActor(tx, modelKey, actor); err != nil {
-				return err
-			}
+			actorsSlice = append(actorsSlice, actor)
+		}
+		if err = AddActors(tx, modelKey, actorsSlice); err != nil {
+			return err
 		}
 
-		// First pass: Add all domains.
+		// Collect domains into a slice.
+		domainsSlice := make([]model_domain.Domain, 0, len(model.Domains))
 		for _, domain := range model.Domains {
-			if err = AddDomain(tx, modelKey, domain); err != nil {
-				return err
-			}
+			domainsSlice = append(domainsSlice, domain)
+		}
+		if err = AddDomains(tx, modelKey, domainsSlice); err != nil {
+			return err
 		}
 
-		// Second pass: Add domain associations (after all domains exist).
+		// Collect domain associations (after all domains exist).
+		domainAssociationsSlice := make([]model_domain.Association, 0)
 		for _, domain := range model.Domains {
 			for _, association := range domain.DomainAssociations {
-				if err = AddDomainAssociation(tx, modelKey, association); err != nil {
-					return err
-				}
+				domainAssociationsSlice = append(domainAssociationsSlice, association)
 			}
 		}
-
 		// Model-level domain associations.
 		for _, association := range model.DomainAssociations {
-			if err = AddDomainAssociation(tx, modelKey, association); err != nil {
-				return err
-			}
+			domainAssociationsSlice = append(domainAssociationsSlice, association)
+		}
+		if err = AddDomainAssociations(tx, modelKey, domainAssociationsSlice); err != nil {
+			return err
 		}
 
-		// Third pass: Add subdomains, classes, and other nested content.
+		// Collect subdomains, classes, and other nested content into bulk structures.
+		subdomainsMap := make(map[identity.Key][]model_domain.Subdomain)
+		generalizationsSlice := make([]model_class.Generalization, 0)
+		classesMap := make(map[identity.Key][]model_class.Class)
+		attributesMap := make(map[identity.Key][]model_class.Attribute)
+		eventsMap := make(map[identity.Key][]model_state.Event)
+		guardsMap := make(map[identity.Key][]model_state.Guard)
+		actionsMap := make(map[identity.Key][]model_state.Action)
+		statesMap := make(map[identity.Key][]model_state.State)
+		stateActionsMap := make(map[identity.Key][]model_state.StateAction)
+		transitionsMap := make(map[identity.Key][]model_state.Transition)
+		useCaseSubdomainKeys := make(map[identity.Key]identity.Key) // useCaseKey -> subdomainKey
+		useCasesSlice := make([]model_use_case.UseCase, 0)
+		useCaseActorsMap := make(map[identity.Key]map[identity.Key]model_use_case.Actor)
+		scenariosMap := make(map[identity.Key][]model_scenario.Scenario)
+		objectsMap := make(map[identity.Key][]model_scenario.Object)
+		useCaseSharedsMap := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
+		dataTypes := make(map[string]model_data_type.DataType)
+
 		for _, domain := range model.Domains {
 			domainKey := domain.Key
 
-			// Subdomains.
+			// Collect subdomains.
 			for _, subdomain := range domain.Subdomains {
 				subdomainKey := subdomain.Key
+				subdomainsMap[domainKey] = append(subdomainsMap[domainKey], subdomain)
 
-				if err = AddSubdomain(tx, modelKey, domainKey, subdomain); err != nil {
-					return err
-				}
-
-				// Generalizations.
+				// Collect generalizations.
 				for _, generalization := range subdomain.Generalizations {
-					if err = AddGeneralization(tx, modelKey, generalization); err != nil {
-						return err
-					}
+					generalizationsSlice = append(generalizationsSlice, generalization)
 				}
 
-				// Classes.
+				// Collect classes.
 				for _, class := range subdomain.Classes {
 					classKey := class.Key
+					classesMap[subdomainKey] = append(classesMap[subdomainKey], class)
 
-					if err = AddClass(tx, modelKey, subdomainKey, class); err != nil {
-						return err
+					// Collect attributes.
+					for _, attribute := range class.Attributes {
+						attributesMap[classKey] = append(attributesMap[classKey], attribute)
+						// Collect data types.
+						if attribute.DataType != nil {
+							dataTypes[attribute.DataType.Key] = *attribute.DataType
+						}
 					}
 
-					// Attributes.
-					for _, attribute := range class.Attributes {
-						if err = AddAttribute(tx, modelKey, classKey, attribute); err != nil {
-							return err
+					// Collect events.
+					for _, event := range class.Events {
+						eventsMap[classKey] = append(eventsMap[classKey], event)
+					}
+
+					// Collect guards.
+					for _, guard := range class.Guards {
+						guardsMap[classKey] = append(guardsMap[classKey], guard)
+					}
+
+					// Collect actions.
+					for _, action := range class.Actions {
+						actionsMap[classKey] = append(actionsMap[classKey], action)
+					}
+
+					// Collect states and state actions.
+					for _, state := range class.States {
+						stateKey := state.Key
+						statesMap[classKey] = append(statesMap[classKey], state)
+
+						// Collect state actions.
+						for _, stateAction := range state.Actions {
+							stateActionsMap[stateKey] = append(stateActionsMap[stateKey], stateAction)
 						}
-						// Add any indexes.
+					}
+
+					// Collect transitions.
+					for _, transition := range class.Transitions {
+						transitionsMap[classKey] = append(transitionsMap[classKey], transition)
+					}
+				}
+
+				// Collect use cases.
+				for _, useCase := range subdomain.UseCases {
+					useCaseKey := useCase.Key
+					useCaseSubdomainKeys[useCaseKey] = subdomainKey
+					useCasesSlice = append(useCasesSlice, useCase)
+
+					// Collect use case actors.
+					if len(useCase.Actors) > 0 {
+						useCaseActorsMap[useCaseKey] = useCase.Actors
+					}
+
+					// Collect scenarios.
+					for _, scenario := range useCase.Scenarios {
+						scenarioKey := scenario.Key
+						scenariosMap[useCaseKey] = append(scenariosMap[useCaseKey], scenario)
+
+						// Collect objects.
+						for _, object := range scenario.Objects {
+							objectsMap[scenarioKey] = append(objectsMap[scenarioKey], object)
+						}
+					}
+				}
+
+				// Collect UseCaseShares.
+				for seaLevelKey, mudLevelShares := range subdomain.UseCaseShares {
+					if useCaseSharedsMap[seaLevelKey] == nil {
+						useCaseSharedsMap[seaLevelKey] = make(map[identity.Key]model_use_case.UseCaseShared)
+					}
+					for mudLevelKey, shared := range mudLevelShares {
+						useCaseSharedsMap[seaLevelKey][mudLevelKey] = shared
+					}
+				}
+			}
+		}
+
+		// Bulk insert subdomains.
+		if err = AddSubdomains(tx, modelKey, subdomainsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert generalizations.
+		if err = AddGeneralizations(tx, modelKey, generalizationsSlice); err != nil {
+			return err
+		}
+
+		// Bulk insert classes.
+		if err = AddClasses(tx, modelKey, classesMap); err != nil {
+			return err
+		}
+
+		// Bulk insert attributes.
+		if err = AddAttributes(tx, modelKey, attributesMap); err != nil {
+			return err
+		}
+
+		// Bulk insert class indexes (must be done individually since we need attribute.IndexNums).
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					classKey := class.Key
+					for _, attribute := range class.Attributes {
 						for _, indexNum := range attribute.IndexNums {
 							if err = AddClassIndex(tx, modelKey, classKey, attribute.Key, indexNum); err != nil {
 								return err
 							}
 						}
 					}
-
-					// Events.
-					for _, event := range class.Events {
-						if err = AddEvent(tx, modelKey, classKey, event); err != nil {
-							return err
-						}
-					}
-
-					// Guards.
-					for _, guard := range class.Guards {
-						if err = AddGuard(tx, modelKey, classKey, guard); err != nil {
-							return err
-						}
-					}
-
-					// Actions (must be added before States with StateActions).
-					for _, action := range class.Actions {
-						if err = AddAction(tx, modelKey, classKey, action); err != nil {
-							return err
-						}
-					}
-
-					// States (after Actions since StateActions reference Actions).
-					for _, state := range class.States {
-						stateKey := state.Key
-
-						if err = AddState(tx, modelKey, classKey, state); err != nil {
-							return err
-						}
-
-						// State actions.
-						for _, stateAction := range state.Actions {
-							if err = AddStateAction(tx, modelKey, stateKey, stateAction); err != nil {
-								return err
-							}
-						}
-					}
-
-					// Transitions.
-					for _, transition := range class.Transitions {
-						if err = AddTransition(tx, modelKey, classKey, transition); err != nil {
-							return err
-						}
-					}
-				}
-
-				// Use cases.
-				for _, useCase := range subdomain.UseCases {
-					useCaseKey := useCase.Key
-
-					if err = AddUseCase(tx, modelKey, subdomainKey, useCase); err != nil {
-						return err
-					}
-
-					// Use case actors.
-					for actorKey, actor := range useCase.Actors {
-						if err = AddUseCaseActor(tx, modelKey, useCaseKey, actorKey, actor); err != nil {
-							return err
-						}
-					}
-
-					// Scenarios.
-					for _, scenario := range useCase.Scenarios {
-						scenarioKey := scenario.Key
-
-						if err = AddScenario(tx, modelKey, useCaseKey, scenario); err != nil {
-							return err
-						}
-
-						// Objects.
-						for _, object := range scenario.Objects {
-							if err = AddObject(tx, modelKey, scenarioKey, object); err != nil {
-								return err
-							}
-						}
-					}
-				}
-
-				// UseCaseShares.
-				for seaLevelKey, mudLevelShares := range subdomain.UseCaseShares {
-					for mudLevelKey, shared := range mudLevelShares {
-						if err = AddUseCaseShared(tx, modelKey, seaLevelKey, mudLevelKey, shared); err != nil {
-							return err
-						}
-					}
 				}
 			}
 		}
 
-		// Class associations - use GetClassAssociations to get all associations from all levels.
+		// Bulk insert events.
+		if err = AddEvents(tx, modelKey, eventsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert guards.
+		if err = AddGuards(tx, modelKey, guardsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert actions (must be added before states with state actions).
+		if err = AddActions(tx, modelKey, actionsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert states.
+		if err = AddStates(tx, modelKey, statesMap); err != nil {
+			return err
+		}
+
+		// Bulk insert state actions.
+		if err = AddStateActions(tx, modelKey, stateActionsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert transitions.
+		if err = AddTransitions(tx, modelKey, transitionsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert use cases.
+		if err = AddUseCases(tx, modelKey, useCaseSubdomainKeys, useCasesSlice); err != nil {
+			return err
+		}
+
+		// Bulk insert use case actors.
+		if err = AddUseCaseActors(tx, modelKey, useCaseActorsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert scenarios.
+		if err = AddScenarios(tx, modelKey, scenariosMap); err != nil {
+			return err
+		}
+
+		// Bulk insert objects.
+		if err = AddObjects(tx, modelKey, objectsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert use case shareds.
+		if err = AddUseCaseShareds(tx, modelKey, useCaseSharedsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert class associations.
 		classAssociations := model.GetClassAssociations()
+		associationsSlice := make([]model_class.Association, 0, len(classAssociations))
 		for _, association := range classAssociations {
-			if err = AddAssociation(tx, modelKey, association); err != nil {
-				return err
-			}
+			associationsSlice = append(associationsSlice, association)
+		}
+		if err = AddAssociations(tx, modelKey, associationsSlice); err != nil {
+			return err
 		}
 
-		// Collect all data types from attributes and add them.
-		dataTypes := make(map[string]model_data_type.DataType)
-		for _, domain := range model.Domains {
-			for _, subdomain := range domain.Subdomains {
-				for _, class := range subdomain.Classes {
-					for _, attribute := range class.Attributes {
-						if attribute.DataType != nil {
-							dataTypes[attribute.DataType.Key] = *attribute.DataType
-						}
-					}
-				}
-			}
-		}
-
-		// Add data types.
+		// Bulk insert data types.
 		if err = AddTopLevelDataTypes(tx, modelKey, dataTypes); err != nil {
 			return err
 		}

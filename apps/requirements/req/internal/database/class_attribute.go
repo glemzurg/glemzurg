@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
@@ -223,4 +225,39 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Ke
 	}
 
 	return attributes, nil
+}
+
+// AddAttributes adds multiple attributes to the database in a single insert.
+func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][]model_class.Attribute) (err error) {
+	// Count total attributes.
+	count := 0
+	for _, attrs := range attributes {
+		count += len(attrs)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, derivation_policy, nullable, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*9)
+	i := 0
+	for classKey, attrList := range attributes {
+		for _, attr := range attrList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 9
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, attr.DerivationPolicy, attr.Nullable, attr.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

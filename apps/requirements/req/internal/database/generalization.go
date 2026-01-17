@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
@@ -190,4 +192,30 @@ func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []mod
 	}
 
 	return generalizations, nil
+}
+
+// AddGeneralizations adds multiple generalizations to the database in a single insert.
+func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []model_class.Generalization) (err error) {
+	if len(generalizations) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(generalizations)*7)
+	for i, gen := range generalizations {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 7
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

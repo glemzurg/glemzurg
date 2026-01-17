@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
@@ -206,4 +208,32 @@ func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.K
 	}
 
 	return subdomainKeys, useCases, nil
+}
+
+// AddUseCases adds multiple use cases to the database in a single insert.
+// Takes the same format as QueryUseCases returns: a map of useCaseKey -> subdomainKey and a slice of use cases.
+func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]identity.Key, useCases []model_use_case.UseCase) (err error) {
+	if len(useCases) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(useCases)*8)
+	for i, uc := range useCases {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 8
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		subdomainKey := subdomainKeys[uc.Key]
+		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, uc.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

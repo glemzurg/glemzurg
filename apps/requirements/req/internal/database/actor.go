@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 
@@ -182,4 +184,30 @@ func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, er
 	}
 
 	return actors, nil
+}
+
+// AddActors adds multiple actors to the database in a single insert.
+func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err error) {
+	if len(actors) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO actor (model_key, actor_key, name, details, actor_type, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(actors)*6)
+	for i, actor := range actors {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 6
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, actor.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

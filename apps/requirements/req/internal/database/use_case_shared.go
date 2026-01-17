@@ -1,6 +1,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
@@ -199,4 +201,39 @@ func QueryUseCaseShareds(dbOrTx DbOrTx, modelKey string) (useCaseShareds map[ide
 	}
 
 	return useCaseShareds, nil
+}
+
+// AddUseCaseShareds adds multiple use case shared entries to the database in a single insert.
+func AddUseCaseShareds(dbOrTx DbOrTx, modelKey string, useCaseShareds map[identity.Key]map[identity.Key]model_use_case.UseCaseShared) (err error) {
+	// Count total entries.
+	count := 0
+	for _, sharedMap := range useCaseShareds {
+		count += len(sharedMap)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO use_case_shared (model_key, sea_use_case_key, mud_use_case_key, share_type, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*5)
+	i := 0
+	for seaLevelKey, sharedMap := range useCaseShareds {
+		for mudLevelKey, shared := range sharedMap {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, seaLevelKey.String(), mudLevelKey.String(), shared.ShareType, shared.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
