@@ -121,72 +121,9 @@ func LoadTransition(dbOrTx DbOrTx, modelKey string, transitionKey identity.Key) 
 
 // AddTransition adds a transition to the database.
 func AddTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transition model_state.Transition) (err error) {
-
-	// We may or may not have a from state.
-	var fromStateKeyPtr *string
-	if transition.FromStateKey != nil {
-		s := transition.FromStateKey.String()
-		fromStateKeyPtr = &s
-	}
-	// We may or may not have a guard.
-	var guardKeyPtr *string
-	if transition.GuardKey != nil {
-		s := transition.GuardKey.String()
-		guardKeyPtr = &s
-	}
-	// We may or may not have an action.
-	var actionKeyPtr *string
-	if transition.ActionKey != nil {
-		s := transition.ActionKey.String()
-		actionKeyPtr = &s
-	}
-	// We may or may not have a to state.
-	var toStateKeyPtr *string
-	if transition.ToStateKey != nil {
-		s := transition.ToStateKey.String()
-		toStateKeyPtr = &s
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO transition
-				(
-					model_key      ,
-					class_key      ,
-					transition_key ,
-					from_state_key ,
-					event_key      ,
-					guard_key      ,
-					action_key     ,
-					to_state_key   ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9
-				)`,
-		modelKey,
-		classKey.String(),
-		transition.Key.String(),
-		fromStateKeyPtr,
-		transition.EventKey.String(),
-		guardKeyPtr,
-		actionKeyPtr,
-		toStateKeyPtr,
-		transition.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddTransitions(dbOrTx, modelKey, map[identity.Key][]model_state.Transition{
+		classKey: {transition},
+	})
 }
 
 // UpdateTransition updates a transition in the database.

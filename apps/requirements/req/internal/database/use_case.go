@@ -79,44 +79,9 @@ func LoadUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (subdo
 
 // AddUseCase adds a use case to the database.
 func AddUseCase(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, useCase model_use_case.UseCase) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-		INSERT INTO use_case
-			(
-				model_key     ,
-				subdomain_key ,
-				use_case_key  ,
-				name          ,
-				details       ,
-				level         ,
-				read_only     ,
-				uml_comment
-			)
-		VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5,
-				$6,
-				$7,
-				$8
-			)`,
-		modelKey,
-		subdomainKey.String(),
-		useCase.Key.String(),
-		useCase.Name,
-		useCase.Details,
-		useCase.Level,
-		useCase.ReadOnly,
-		useCase.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddUseCases(dbOrTx, modelKey, map[identity.Key]identity.Key{
+		useCase.Key: subdomainKey,
+	}, []model_use_case.UseCase{useCase})
 }
 
 // UpdateUseCase updates a use case in the database.

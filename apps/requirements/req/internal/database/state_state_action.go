@@ -82,35 +82,9 @@ func LoadStateAction(dbOrTx DbOrTx, modelKey string, stateActionKey identity.Key
 
 // AddStateAction adds a stateAction to the database.
 func AddStateAction(dbOrTx DbOrTx, modelKey string, stateKey identity.Key, stateAction model_state.StateAction) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-		INSERT INTO state_action
-			(
-				model_key        ,
-				state_key        ,
-				state_action_key ,
-				action_key       ,
-				action_when
-			)
-		VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5
-			)`,
-		modelKey,
-		stateKey.String(),
-		stateAction.Key.String(),
-		stateAction.ActionKey.String(),
-		stateAction.When)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddStateActions(dbOrTx, modelKey, map[identity.Key][]model_state.StateAction{
+		stateKey: {stateAction},
+	})
 }
 
 // UpdateStateAction updates a stateAction in the database.

@@ -87,45 +87,9 @@ func LoadEvent(dbOrTx DbOrTx, modelKey string, eventKey identity.Key) (classKey 
 
 // AddEvent adds a event to the database.
 func AddEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
-
-	// Flatten parameters.
-	var parametersAsList []string
-	for _, param := range event.Parameters {
-		parametersAsList = append(parametersAsList, param.Name)
-		parametersAsList = append(parametersAsList, param.Source)
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO event
-				(
-					model_key  ,
-					class_key  ,
-					event_key  ,
-					name       ,
-					details    ,
-					parameters
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		classKey.String(),
-		event.Key.String(),
-		event.Name,
-		event.Details,
-		pq.Array(parametersAsList))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddEvents(dbOrTx, modelKey, map[identity.Key][]model_state.Event{
+		classKey: {event},
+	})
 }
 
 // UpdateEvent updates a event in the database.

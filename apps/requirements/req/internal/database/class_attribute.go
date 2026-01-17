@@ -83,47 +83,9 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (c
 
 // AddAttribute adds a attribute to the database.
 func AddAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribute model_class.Attribute) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO attribute
-				(
-					model_key    ,
-					class_key,
-					attribute_key,
-					name,
-					details,
-					data_type_rules,
-					derivation_policy,
-					nullable,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9
-				)`,
-		modelKey,
-		classKey.String(),
-		attribute.Key.String(),
-		attribute.Name,
-		attribute.Details,
-		attribute.DataTypeRules,
-		attribute.DerivationPolicy,
-		attribute.Nullable,
-		attribute.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddAttributes(dbOrTx, modelKey, map[identity.Key][]model_class.Attribute{
+		classKey: {attribute},
+	})
 }
 
 // UpdateAttribute updates a attribute in the database.

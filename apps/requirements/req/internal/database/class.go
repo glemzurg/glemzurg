@@ -107,64 +107,9 @@ func LoadClass(dbOrTx DbOrTx, modelKey string, classKey identity.Key) (subdomain
 
 // AddClass adds a class to the database.
 func AddClass(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, class model_class.Class) (err error) {
-
-	// We may or may not have optional key pointers.
-	var actorKeyPtr *string
-	if class.ActorKey != nil {
-		actorKeyStr := class.ActorKey.String()
-		actorKeyPtr = &actorKeyStr
-	}
-	var superclassOfKeyPtr *string
-	if class.SuperclassOfKey != nil {
-		superclassOfKeyStr := class.SuperclassOfKey.String()
-		superclassOfKeyPtr = &superclassOfKeyStr
-	}
-	var subclassOfKeyPtr *string
-	if class.SubclassOfKey != nil {
-		subclassOfKeyStr := class.SubclassOfKey.String()
-		subclassOfKeyPtr = &subclassOfKeyStr
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-		INSERT INTO class
-			(
-				model_key         ,
-				subdomain_key     ,
-				class_key         ,
-				name              ,
-				details           ,
-				actor_key         ,
-				superclass_of_key ,
-				subclass_of_key   ,
-				uml_comment
-			)
-		VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5,
-				$6,
-				$7,
-				$8,
-				$9
-			)`,
-		modelKey,
-		subdomainKey.String(),
-		class.Key.String(),
-		class.Name,
-		class.Details,
-		actorKeyPtr,
-		superclassOfKeyPtr,
-		subclassOfKeyPtr,
-		class.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddClasses(dbOrTx, modelKey, map[identity.Key][]model_class.Class{
+		subdomainKey: {class},
+	})
 }
 
 // UpdateClass updates a class in the database.

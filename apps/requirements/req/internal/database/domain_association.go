@@ -79,35 +79,7 @@ func LoadDomainAssociation(dbOrTx DbOrTx, modelKey string, associationKey identi
 
 // AddDomainAssociation adds a association to the database.
 func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.Association) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO domain_association
-				(
-					model_key,
-					association_key,
-					problem_domain_key,
-					solution_domain_key,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5
-				)`,
-		modelKey,
-		association.Key.String(),
-		association.ProblemDomainKey.String(),
-		association.SolutionDomainKey.String(),
-		association.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddDomainAssociations(dbOrTx, modelKey, []model_domain.Association{association})
 }
 
 // UpdateDomainAssociation updates a association in the database.

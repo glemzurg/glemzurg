@@ -79,32 +79,9 @@ func LoadUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, a
 
 // AddUseCaseActor adds a use case actor to the database.
 func AddUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key, actor model_use_case.Actor) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO use_case_actor
-				(
-					model_key    ,
-					use_case_key ,
-					actor_key    ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4
-				)`,
-		modelKey,
-		useCaseKey.String(),
-		actorKey.String(),
-		actor.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddUseCaseActors(dbOrTx, modelKey, map[identity.Key]map[identity.Key]model_use_case.Actor{
+		useCaseKey: {actorKey: actor},
+	})
 }
 
 // UpdateUseCaseActor updates a use case actor in the database.

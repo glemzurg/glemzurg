@@ -81,35 +81,9 @@ func LoadUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key,
 
 // AddUseCaseShared adds a use case to the database.
 func AddUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key, useCaseShared model_use_case.UseCaseShared) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-		INSERT INTO use_case_shared
-			(
-				model_key        ,
-				sea_use_case_key ,
-				mud_use_case_key ,
-				share_type       ,
-				uml_comment
-			)
-		VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5
-			)`,
-		modelKey,
-		seaLevelKey.String(),
-		mudLevelKey.String(),
-		useCaseShared.ShareType,
-		useCaseShared.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddUseCaseShareds(dbOrTx, modelKey, map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
+		seaLevelKey: {mudLevelKey: useCaseShared},
+	})
 }
 
 // UpdateUseCaseShared updates a use case in the database.

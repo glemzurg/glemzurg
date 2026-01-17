@@ -70,38 +70,7 @@ func LoadDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain 
 
 // AddDomain adds a domain to the database.
 func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO domain
-				(
-					model_key   ,
-					domain_key  ,
-					name        ,
-					details     ,
-					realized    ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		domain.Key.String(),
-		domain.Name,
-		domain.Details,
-		domain.Realized,
-		domain.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddDomains(dbOrTx, modelKey, []model_domain.Domain{domain})
 }
 
 // UpdateDomain updates a domain in the database.

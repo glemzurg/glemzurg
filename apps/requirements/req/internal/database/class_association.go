@@ -110,63 +110,7 @@ func LoadAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key
 
 // AddAssociation adds a association to the database.
 func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
-
-	// We may or may not have an association class.
-	var associationClassKeyPtr *string
-	if association.AssociationClassKey != nil {
-		s := association.AssociationClassKey.String()
-		associationClassKeyPtr = &s
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO association
-				(
-					model_key,
-					association_key,
-					name,
-					details,
-					from_class_key,
-					from_multiplicity_lower,
-					from_multiplicity_higher,
-					to_class_key,
-					to_multiplicity_lower,
-					to_multiplicity_higher,
-					association_class_key,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9,
-					$10,
-					$11,
-					$12
-				)`,
-		modelKey,
-		association.Key.String(),
-		association.Name,
-		association.Details,
-		association.FromClassKey.String(),
-		association.FromMultiplicity.LowerBound,
-		association.FromMultiplicity.HigherBound,
-		association.ToClassKey.String(),
-		association.ToMultiplicity.LowerBound,
-		association.ToMultiplicity.HigherBound,
-		associationClassKeyPtr,
-		association.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddAssociations(dbOrTx, modelKey, []model_class.Association{association})
 }
 
 // UpdateAssociation updates a association in the database.

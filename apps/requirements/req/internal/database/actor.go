@@ -70,38 +70,7 @@ func LoadActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor mod
 
 // AddActor adds a actor to the database.
 func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO actor
-				(
-					model_key   ,
-					actor_key   ,
-					name        ,
-					details     ,
-					actor_type  ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		actor.Key.String(),
-		actor.Name,
-		actor.Details,
-		actor.Type,
-		actor.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddActors(dbOrTx, modelKey, []model_actor.Actor{actor})
 }
 
 // UpdateActor updates a actor in the database.

@@ -75,35 +75,9 @@ func LoadGuard(dbOrTx DbOrTx, modelKey string, guardKey identity.Key) (classKey 
 
 // AddGuard adds a guard to the database.
 func AddGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard model_state.Guard) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO guard
-				(
-					model_key   ,
-					class_key   ,
-					guard_key   ,
-					name        ,
-					details
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5
-				)`,
-		modelKey,
-		classKey.String(),
-		guard.Key.String(),
-		guard.Name,
-		guard.Details)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddGuards(dbOrTx, modelKey, map[identity.Key][]model_state.Guard{
+		classKey: {guard},
+	})
 }
 
 // UpdateGuard updates a guard in the database.

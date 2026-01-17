@@ -72,41 +72,7 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identi
 
 // AddGeneralization adds a generalization to the database.
 func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO generalization
-				(
-					model_key          ,
-					generalization_key ,
-					name               ,
-					details            ,
-					is_complete        ,
-					is_static          ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7
-				)`,
-		modelKey,
-		generalization.Key.String(),
-		generalization.Name,
-		generalization.Details,
-		generalization.IsComplete,
-		generalization.IsStatic,
-		generalization.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddGeneralizations(dbOrTx, modelKey, []model_class.Generalization{generalization})
 }
 
 // UpdateGeneralization updates a generalization in the database.

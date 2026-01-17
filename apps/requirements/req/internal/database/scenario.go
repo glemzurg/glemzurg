@@ -85,40 +85,9 @@ func LoadScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (use
 
 // AddScenario adds a scenario to the database.
 func AddScenario(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, scenario model_scenario.Scenario) (err error) {
-
-	// Serialize the steps to JSON
-	var stepsJSON interface{}
-	if scenario.Steps != nil {
-		stepsJSON, err = scenario.Steps.ToJSON()
-		if err != nil {
-			return err
-		}
-	}
-
-	// Insert the record.
-	_, err = dbExec(
-		dbOrTx,
-		`INSERT INTO scenario (
-			model_key,
-			scenario_key,
-			name,
-			use_case_key,
-			details,
-			steps
-		) VALUES (
-			$1, $2, $3, $4, $5, $6
-		)`,
-		modelKey,
-		scenario.Key.String(),
-		scenario.Name,
-		useCaseKey.String(),
-		scenario.Details,
-		stepsJSON)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddScenarios(dbOrTx, modelKey, map[identity.Key][]model_scenario.Scenario{
+		useCaseKey: {scenario},
+	})
 }
 
 // UpdateScenario updates a scenario in the database.

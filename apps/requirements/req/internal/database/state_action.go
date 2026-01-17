@@ -80,41 +80,9 @@ func LoadAction(dbOrTx DbOrTx, modelKey string, actionKey identity.Key) (classKe
 
 // AddAction adds a action to the database.
 func AddAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action model_state.Action) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO action
-				(
-					model_key  ,
-					class_key  ,
-					action_key ,
-					name       ,
-					details    ,
-			        requires   ,
-			        guarantees
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7
-				)`,
-		modelKey,
-		classKey.String(),
-		action.Key.String(),
-		action.Name,
-		action.Details,
-		pq.Array(action.Requires),
-		pq.Array(action.Guarantees))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddActions(dbOrTx, modelKey, map[identity.Key][]model_state.Action{
+		classKey: {action},
+	})
 }
 
 // UpdateAction updates a action in the database.

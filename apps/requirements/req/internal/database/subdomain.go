@@ -77,38 +77,9 @@ func LoadSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (d
 
 // AddSubdomain adds a subdomain to the database.
 func AddSubdomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdomain model_domain.Subdomain) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO subdomain
-				(
-					model_key     ,
-					domain_key    ,
-					subdomain_key ,
-					name          ,
-					details       ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		domainKey.String(),
-		subdomain.Key.String(),
-		subdomain.Name,
-		subdomain.Details,
-		subdomain.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddSubdomains(dbOrTx, modelKey, map[identity.Key][]model_domain.Subdomain{
+		domainKey: {subdomain},
+	})
 }
 
 // UpdateSubdomain updates a subdomain in the database.

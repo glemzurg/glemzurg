@@ -90,47 +90,9 @@ func LoadObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (scenari
 
 // AddObject adds a scenario object to the database.
 func AddObject(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, object model_scenario.Object) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO scenario_object
-				(
-					model_key,
-					scenario_object_key,
-					scenario_key,
-					object_number,
-					name,
-					name_style,
-					class_key,
-					multi,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9
-				)`,
-		modelKey,
-		object.Key.String(),
-		scenarioKey.String(),
-		object.ObjectNumber,
-		object.Name,
-		object.NameStyle,
-		object.ClassKey.String(),
-		object.Multi,
-		object.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddObjects(dbOrTx, modelKey, map[identity.Key][]model_scenario.Object{
+		scenarioKey: {object},
+	})
 }
 
 // UpdateObject updates a scenario object in the database.

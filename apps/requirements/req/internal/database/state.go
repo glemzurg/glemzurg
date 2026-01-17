@@ -77,38 +77,9 @@ func LoadState(dbOrTx DbOrTx, modelKey string, stateKey identity.Key) (classKey 
 
 // AddState adds a state to the database.
 func AddState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO state
-				(
-					model_key   ,
-					class_key   ,
-					state_key   ,
-					name        ,
-					details     ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		classKey.String(),
-		state.Key.String(),
-		state.Name,
-		state.Details,
-		state.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	return AddStates(dbOrTx, modelKey, map[identity.Key][]model_state.State{
+		classKey: {state},
+	})
 }
 
 // UpdateState updates a state in the database.
