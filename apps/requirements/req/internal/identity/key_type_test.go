@@ -439,3 +439,193 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 		})
 	}
 }
+
+func (suite *KeyTypeSuite) TestNewStateActionKey() {
+
+	domainKey := helper.Must(NewDomainKey("domain1"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
+	stateKey := helper.Must(NewStateKey(classKey, "state1"))
+
+	tests := []struct {
+		testName string
+		stateKey Key
+		when     string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok entry",
+			stateKey: stateKey,
+			when:     "entry",
+			subKey:   "action1",
+			expected: helper.Must(newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, "entry/action1")),
+		},
+		{
+			testName: "ok exit",
+			stateKey: stateKey,
+			when:     "exit",
+			subKey:   "action2",
+			expected: helper.Must(newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, "exit/action2")),
+		},
+		{
+			testName: "ok do",
+			stateKey: stateKey,
+			when:     "do",
+			subKey:   "action3",
+			expected: helper.Must(newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, "do/action3")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			stateKey: Key{},
+			when:     "entry",
+			subKey:   "action1",
+			errstr:   "parent key cannot be of type '' for 'saction' key",
+		},
+		{
+			testName: "error wrong parent type",
+			stateKey: helper.Must(NewActorKey("actor1")),
+			when:     "entry",
+			subKey:   "action1",
+			errstr:   "parent key cannot be of type 'actor' for 'saction' key",
+		},
+		{
+			testName: "error empty when",
+			stateKey: stateKey,
+			when:     "",
+			subKey:   "action1",
+			errstr:   "when cannot be empty for state action key",
+		},
+	}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewStateActionKey(tt.stateKey, tt.when, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewTransitionKey() {
+
+	domainKey := helper.Must(NewDomainKey("domain1"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
+
+	tests := []struct {
+		testName string
+		classKey Key
+		from     string
+		event    string
+		guard    string
+		action   string
+		to       string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok all fields",
+			classKey: classKey,
+			from:     "state1",
+			event:    "event1",
+			guard:    "guard1",
+			action:   "action1",
+			to:       "state2",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_TRANSITION, "state1/event1/guard1/action1/state2")),
+		},
+		{
+			testName: "ok from blank defaults to initial",
+			classKey: classKey,
+			from:     "",
+			event:    "event1",
+			guard:    "guard1",
+			action:   "action1",
+			to:       "state2",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_TRANSITION, "initial/event1/guard1/action1/state2")),
+		},
+		{
+			testName: "ok to blank defaults to final",
+			classKey: classKey,
+			from:     "state1",
+			event:    "event1",
+			guard:    "guard1",
+			action:   "action1",
+			to:       "",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_TRANSITION, "state1/event1/guard1/action1/final")),
+		},
+		{
+			testName: "ok empty guard and action",
+			classKey: classKey,
+			from:     "state1",
+			event:    "event1",
+			guard:    "",
+			action:   "",
+			to:       "state2",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_TRANSITION, "state1/event1///state2")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			from:     "state1",
+			event:    "event1",
+			guard:    "",
+			action:   "",
+			to:       "state2",
+			errstr:   "parent key cannot be of type '' for 'transition' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			from:     "state1",
+			event:    "event1",
+			guard:    "",
+			action:   "",
+			to:       "state2",
+			errstr:   "parent key cannot be of type 'actor' for 'transition' key",
+		},
+		{
+			testName: "error empty event",
+			classKey: classKey,
+			from:     "state1",
+			event:    "",
+			guard:    "",
+			action:   "",
+			to:       "state2",
+			errstr:   "event cannot be empty for transition key",
+		},
+		{
+			testName: "error both from and to blank (initial to final)",
+			classKey: classKey,
+			from:     "",
+			event:    "event1",
+			guard:    "",
+			action:   "",
+			to:       "",
+			errstr:   "cannot transition directly from initial to final",
+		},
+	}
+	for _, tt := range tests {
+		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewTransitionKey(tt.classKey, tt.from, tt.event, tt.guard, tt.action, tt.to)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+	}
+}
