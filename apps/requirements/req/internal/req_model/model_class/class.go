@@ -49,7 +49,7 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 
 // Validate validates the Class struct.
 func (c *Class) Validate() error {
-	return validation.ValidateStruct(c,
+	if err := validation.ValidateStruct(c,
 		validation.Field(&c.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
@@ -61,7 +61,14 @@ func (c *Class) Validate() error {
 			return nil
 		})),
 		validation.Field(&c.Name, validation.Required),
-	)
+	); err != nil {
+		return err
+	}
+	// SuperclassOfKey and SubclassOfKey cannot be the same.
+	if c.SuperclassOfKey != nil && c.SubclassOfKey != nil && *c.SuperclassOfKey == *c.SubclassOfKey {
+		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+	}
+	return nil
 }
 
 func (c *Class) SetAttributes(attributes map[identity.Key]Attribute) {

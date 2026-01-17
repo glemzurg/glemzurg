@@ -59,6 +59,19 @@ func (suite *ClassSuite) TestValidate() {
 			},
 			errstr: "Name: cannot be blank",
 		},
+		{
+			testName: "error SuperclassOfKey and SubclassOfKey are the same",
+			class: func() Class {
+				genKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+				return Class{
+					Key:             validKey,
+					Name:            "Name",
+					SuperclassOfKey: &genKey,
+					SubclassOfKey:   &genKey,
+				}
+			}(),
+			errstr: "SuperclassOfKey and SubclassOfKey cannot be the same",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
@@ -78,18 +91,19 @@ func (suite *ClassSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	key := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	actorKey := helper.Must(identity.NewActorKey("actor1"))
-	generalizationKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	superclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	subclassOfKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen2"))
 
 	// Test parameters are mapped correctly.
-	class, err := NewClass(key, "Name", "Details", &actorKey, &generalizationKey, &generalizationKey, "UmlComment")
+	class, err := NewClass(key, "Name", "Details", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Class{
 		Key:             key,
 		Name:            "Name",
 		Details:         "Details",
 		ActorKey:        &actorKey,
-		SuperclassOfKey: &generalizationKey,
-		SubclassOfKey:   &generalizationKey,
+		SuperclassOfKey: &superclassOfKey,
+		SubclassOfKey:   &subclassOfKey,
 		UmlComment:      "UmlComment",
 	}, class)
 

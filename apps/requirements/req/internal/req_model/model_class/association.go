@@ -84,6 +84,15 @@ func (a *Association) Validate() error {
 	if err := a.ToMultiplicity.Validate(); err != nil {
 		return err
 	}
+	// AssociationClassKey cannot match FromClassKey or ToClassKey.
+	if a.AssociationClassKey != nil {
+		if *a.AssociationClassKey == a.FromClassKey {
+			return errors.New("AssociationClassKey cannot be the same as FromClassKey")
+		}
+		if *a.AssociationClassKey == a.ToClassKey {
+			return errors.New("AssociationClassKey cannot be the same as ToClassKey")
+		}
+	}
 	return nil
 }
 
