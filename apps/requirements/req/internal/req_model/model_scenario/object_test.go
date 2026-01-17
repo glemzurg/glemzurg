@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -191,4 +192,59 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = obj.ValidateWithParent(&scenarioKey)
 	assert.NoError(suite.T(), err)
+}
+
+// TestGetName tests that GetName formats the object name correctly based on NameStyle and Multi.
+func (suite *ObjectSuite) TestGetName() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+
+	class := model_class.Class{
+		Key:  classKey,
+		Name: "ClassName",
+	}
+
+	tests := []struct {
+		testName string
+		object   Object
+		expected string
+	}{
+		{
+			testName: "name style",
+			object:   Object{Name: "objName", NameStyle: _NAME_STYLE_NAME},
+			expected: "objName:ClassName",
+		},
+		{
+			testName: "name style with multi",
+			object:   Object{Name: "objName", NameStyle: _NAME_STYLE_NAME, Multi: true},
+			expected: "*objName:ClassName",
+		},
+		{
+			testName: "id style",
+			object:   Object{Name: "123", NameStyle: _NAME_STYLE_ID},
+			expected: "ClassName 123",
+		},
+		{
+			testName: "id style with multi",
+			object:   Object{Name: "123", NameStyle: _NAME_STYLE_ID, Multi: true},
+			expected: "*ClassName 123",
+		},
+		{
+			testName: "unnamed style",
+			object:   Object{Name: "", NameStyle: _NAME_STYLE_UNNAMED},
+			expected: ":ClassName",
+		},
+		{
+			testName: "unnamed style with multi",
+			object:   Object{Name: "", NameStyle: _NAME_STYLE_UNNAMED, Multi: true},
+			expected: "*:ClassName",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			result := tt.object.GetName(class)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
