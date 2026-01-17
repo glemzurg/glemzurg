@@ -24,7 +24,7 @@ func (suite *StateActionSuite) TestValidate() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
-	validKey := helper.Must(identity.NewStateActionKey(stateKey, "stateaction1"))
+	validKey := helper.Must(identity.NewStateActionKey(stateKey, "entry", "stateaction1"))
 
 	tests := []struct {
 		testName    string
@@ -129,7 +129,7 @@ func (suite *StateActionSuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
-	key := helper.Must(identity.NewStateActionKey(stateKey, "stateaction1"))
+	key := helper.Must(identity.NewStateActionKey(stateKey, "entry", "stateaction1"))
 
 	// Test parameters are mapped correctly.
 	stateAction, err := NewStateAction(key, actionKey, "entry")
@@ -152,7 +152,7 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
-	validKey := helper.Must(identity.NewStateActionKey(stateKey, "stateaction1"))
+	validKey := helper.Must(identity.NewStateActionKey(stateKey, "entry", "stateaction1"))
 	otherStateKey := helper.Must(identity.NewStateKey(classKey, "other_state"))
 
 	// Test that Validate is called.

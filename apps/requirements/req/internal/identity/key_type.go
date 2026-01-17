@@ -267,10 +267,14 @@ func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {
 	return newKey(classKey.String(), KEY_TYPE_ATTRIBUTE, subKey)
 }
 
-func NewStateActionKey(stateKey Key, subKey string) (key Key, err error) {
+func NewStateActionKey(stateKey Key, when, subKey string) (key Key, err error) {
 	// The parent must be a state.
 	if stateKey.KeyType() != KEY_TYPE_STATE {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'saction' key", stateKey.KeyType())
 	}
-	return newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, subKey)
+	// When cannot be empty.
+	if when == "" {
+		return Key{}, errors.New("when cannot be empty for state action key")
+	}
+	return newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, when+"/"+subKey)
 }
