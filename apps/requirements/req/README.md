@@ -1,7 +1,6 @@
 
 
 next:
-  - update the class association model
   - update database to use just the model
 
   - parse yaml into just a model without requirements object
