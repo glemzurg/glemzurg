@@ -11,11 +11,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func parseDomain(domainSubKey, filename, contents string) (domain model_domain.Domain, err error) {
+func parseDomain(domainSubKey, filename, contents string) (domain model_domain.Domain, associations []model_domain.Association, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return model_domain.Domain{}, err
+		return model_domain.Domain{}, nil, err
 	}
 
 	// There is no data for a "domain" entity. Just add to the markdown
@@ -25,7 +25,7 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 	// Unmarshal into a format that can be easily checked for informative error messages.
 	yamlData := map[string]any{}
 	if err := yaml.Unmarshal([]byte(parsedFile.Data), yamlData); err != nil {
-		return model_domain.Domain{}, errors.WithStack(err)
+		return model_domain.Domain{}, nil, errors.WithStack(err)
 	}
 
 	realized := false
@@ -37,32 +37,30 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 	// Construct the identity key for this domain.
 	domainKey, err := identity.NewDomainKey(domainSubKey)
 	if err != nil {
-		return model_domain.Domain{}, errors.WithStack(err)
+		return model_domain.Domain{}, nil, errors.WithStack(err)
 	}
 
 	domain, err = model_domain.NewDomain(domainKey, parsedFile.Title, markdown, realized, parsedFile.UmlComment)
 	if err != nil {
-		return model_domain.Domain{}, err
+		return model_domain.Domain{}, nil, err
 	}
 
-	// Add any associations we found.
+	// Add any associations we found (returned separately, stored at model level).
 	var associationsData []any
 	associationsAny, found := yamlData["associations"]
 	if found {
 		associationsData = associationsAny.([]any)
 	}
 
-	var associations []model_domain.Association
 	for i, associationAny := range associationsData {
 		association, err := domainAssociationFromYamlData(domainKey, i, associationAny)
 		if err != nil {
-			return model_domain.Domain{}, err
+			return model_domain.Domain{}, nil, err
 		}
 		associations = append(associations, association)
 	}
-	domain.Associations = associations
 
-	return domain, nil
+	return domain, associations, nil
 }
 
 func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, associationAny any) (association model_domain.Association, err error) {
@@ -111,12 +109,12 @@ func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, ass
 	return association, nil
 }
 
-func generateDomainContent(domain model_domain.Domain) string {
+func generateDomainContent(domain model_domain.Domain, associations []model_domain.Association) string {
 	yaml := "realized: " + strconv.FormatBool(domain.Realized)
 
-	if len(domain.Associations) > 0 {
+	if len(associations) > 0 {
 		yaml += "\n\nassociations:\n"
-		for _, assoc := range domain.Associations {
+		for _, assoc := range associations {
 			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey()
 			if assoc.UmlComment != "" {
 				yaml += "\n      uml_comment: " + assoc.UmlComment

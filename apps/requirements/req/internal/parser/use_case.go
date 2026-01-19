@@ -13,6 +13,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Note: sort is still used in generateUseCaseContent for actor keys
+
 func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents string) (useCase model_use_case.UseCase, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
@@ -72,7 +74,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 	// Parse scenarios.
 	scenariosAny, found := yamlData["scenarios"]
 	if found {
-		useCase.Scenarios = []model_scenario.Scenario{}
+		useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
 		scenariosMap := scenariosAny.(map[string]any)
 		for scenarioSubKey, scenarioData := range scenariosMap {
 			// Construct the scenario key.
@@ -103,17 +105,18 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 			// Parse objects for this scenario.
 			objectsAny, found := scenarioData["objects"]
 			if found {
+				scenario.Objects = make(map[identity.Key]model_scenario.Object)
 				objectsSlice := objectsAny.([]any)
 				for i, objAny := range objectsSlice {
 					object, err := objectFromYamlData(scenarioKey, i, objAny)
 					if err != nil {
 						return model_use_case.UseCase{}, err
 					}
-					scenario.Objects = append(scenario.Objects, object)
+					scenario.Objects[object.Key] = object
 				}
 			}
 
-			// Parse stpes for this scenario.
+			// Parse steps for this scenario.
 			stepsAny, found := scenarioData["steps"]
 			if found {
 				stepsData := stepsAny.([]any)
@@ -139,18 +142,13 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 					return model_use_case.UseCase{}, err
 				}
 
-				scenario.Steps = node
+				scenario.Steps = &node
 			}
 
 			// Add scenario to use case.
-			useCase.Scenarios = append(useCase.Scenarios, scenario)
+			useCase.Scenarios[scenario.Key] = scenario
 		}
 	}
-
-	// Sort the scenarios.
-	sort.Slice(useCase.Scenarios, func(i, j int) bool {
-		return useCase.Scenarios[i].Key.String() < useCase.Scenarios[j].Key.String()
-	})
 
 	return useCase, nil
 }
@@ -291,7 +289,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 					}
 				}
 			}
-			if len(scenario.Steps.Statements) > 0 {
+			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
 				yaml += "        steps:\n"
 				yaml += generateSteps(scenario.Steps.Statements, "            ")
 			}
