@@ -20,6 +20,7 @@ jan (in parallel):
     - add TLA+ parsing to create complete model
     - model an AST with an Adjacency Listf and CTE query
     - move parameters to actions and parsed into database
+  - make object members private
 
   
 feb (in parallel)
