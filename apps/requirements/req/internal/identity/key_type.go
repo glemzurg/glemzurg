@@ -33,6 +33,7 @@ const (
 	KEY_TYPE_EVENT      = "event"
 	KEY_TYPE_GUARD      = "guard"
 	KEY_TYPE_ACTION     = "action"
+	KEY_TYPE_QUERY      = "query"
 	KEY_TYPE_TRANSITION = "transition"
 
 	// Keys with state parents.
@@ -143,6 +144,14 @@ func NewActionKey(classKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'action' key", classKey.KeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_ACTION, subKey)
+}
+
+func NewQueryKey(classKey Key, subKey string) (key Key, err error) {
+	// The parent must be a class.
+	if classKey.KeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'query' key", classKey.KeyType())
+	}
+	return newKey(classKey.String(), KEY_TYPE_QUERY, subKey)
 }
 
 func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key Key, err error) {

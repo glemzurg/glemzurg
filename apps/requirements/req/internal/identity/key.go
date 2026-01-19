@@ -57,6 +57,7 @@ func (k *Key) Validate() error {
 			KEY_TYPE_EVENT,
 			KEY_TYPE_GUARD,
 			KEY_TYPE_ACTION,
+			KEY_TYPE_QUERY,
 			KEY_TYPE_TRANSITION,
 			KEY_TYPE_GENERALIZATION,
 			KEY_TYPE_SCENARIO,
@@ -203,7 +204,7 @@ func (k *Key) ValidateParent(parent *Key) error {
 			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
 		}
 
-	case KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_ACTION, KEY_TYPE_TRANSITION, KEY_TYPE_ATTRIBUTE:
+	case KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_TRANSITION, KEY_TYPE_ATTRIBUTE:
 		// Parent must be a class.
 		if parent == nil {
 			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_CLASS)

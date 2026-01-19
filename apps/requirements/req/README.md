@@ -1,7 +1,6 @@
 
 
 next:
-  - add query to database, model, database layer
   - parse yaml into just a model without requirements object
   - build the ravelling/unravelling tests on requirements
   - move the requirements object to generation package
@@ -20,6 +19,7 @@ jan (in parallel):
   - create complete model
     - add TLA+ parsing to create complete model
     - model an AST with an Adjacency Listf and CTE query
+    - move parameters to actions and parsed into database
 
   
 feb (in parallel)
