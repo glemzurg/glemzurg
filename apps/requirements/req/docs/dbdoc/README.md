@@ -22,13 +22,15 @@
 | [public.attribute](public.attribute.md) | 10 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be mulitple attributes together for the identity. | BASE TABLE |
 | [public.association](public.association.md) | 12 | A semantic relationship between typed instances. | BASE TABLE |
+| [public.query](public.query.md) | 7 | An business logic query of a class that does not change the state of a class. | BASE TABLE |
+| [public.query_parameter](public.query_parameter.md) | 8 | A parameter of a query. | BASE TABLE |
 | [public.state](public.state.md) | 6 | A situation where invariant conditions on a class instance hold. | BASE TABLE |
 | [public.event](public.event.md) | 6 | Some occurence that can potentially trigger a change in and instance. | BASE TABLE |
 | [public.guard](public.guard.md) | 5 | An extra condition on when the transition can take place. | BASE TABLE |
 | [public.action](public.action.md) | 7 | An action of a class that can be attached to transitions. | BASE TABLE |
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |
 | [public.state_action](public.state_action.md) | 5 | An action triggered on entry, exit, or continual do from a state. | BASE TABLE |
-| [public.parameter](public.parameter.md) | 8 | A parameter of an action. | BASE TABLE |
+| [public.action_parameter](public.action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
 | [public.scenario](public.scenario.md) | 6 | A documented scenario, such as a sequence diagram or activity diagram, for a use case. | BASE TABLE |
 | [public.scenario_object](public.scenario_object.md) | 9 | An object that participates in a scenario. | BASE TABLE |
 

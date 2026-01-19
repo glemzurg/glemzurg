@@ -2589,6 +2589,283 @@
       ]
     },
     {
+      "name": "public.query",
+      "type": "BASE TABLE",
+      "comment": "An business logic query of a class that does not change the state of a class.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this state machine is part of."
+        },
+        {
+          "name": "class_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The class this query is part of."
+        },
+        {
+          "name": "query_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the query within the class."
+        },
+        {
+          "name": "details",
+          "type": "text",
+          "nullable": true,
+          "comment": "A summary description."
+        },
+        {
+          "name": "requires",
+          "type": "text[]",
+          "nullable": true,
+          "comment": "The requires half of the query contract in TLA+ notation."
+        },
+        {
+          "name": "guarantees",
+          "type": "text[]",
+          "nullable": true,
+          "comment": "The guarantees half of the query contract in TLA+ notation."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "query_pkey",
+          "def": "CREATE UNIQUE INDEX query_pkey ON public.query USING btree (model_key, query_key)",
+          "table": "public.query",
+          "columns": [
+            "model_key",
+            "query_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "query_class_key_not_null",
+          "type": "n",
+          "def": "NOT NULL class_key",
+          "table": "public.query",
+          "referenced_table": "",
+          "columns": [
+            "class_key"
+          ]
+        },
+        {
+          "name": "query_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.query",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "query_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.query",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "query_query_key_not_null",
+          "type": "n",
+          "def": "NOT NULL query_key",
+          "table": "public.query",
+          "referenced_table": "",
+          "columns": [
+            "query_key"
+          ]
+        },
+        {
+          "name": "fk_query_class",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE",
+          "table": "public.query",
+          "referenced_table": "class",
+          "columns": [
+            "model_key",
+            "class_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "class_key"
+          ]
+        },
+        {
+          "name": "query_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, query_key)",
+          "table": "public.query",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "query_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.query_parameter",
+      "type": "BASE TABLE",
+      "comment": "A parameter of a query.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this query is part of."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID."
+        },
+        {
+          "name": "query_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The query this parameter is part of."
+        },
+        {
+          "name": "data_type_rules",
+          "type": "text",
+          "nullable": true,
+          "comment": "The rules for a well-formed value."
+        },
+        {
+          "name": "data_type_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "If the rules are parsable, the data type they parse into."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the parameter within the attribute."
+        },
+        {
+          "name": "details",
+          "type": "text",
+          "nullable": true,
+          "comment": "A summary description."
+        },
+        {
+          "name": "uml_comment",
+          "type": "text",
+          "nullable": true,
+          "comment": "A comment that appears in the diagrams."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "query_parameter_pkey",
+          "def": "CREATE UNIQUE INDEX query_parameter_pkey ON public.query_parameter USING btree (model_key, parameter_key)",
+          "table": "public.query_parameter",
+          "columns": [
+            "model_key",
+            "parameter_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "query_parameter_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "query_parameter_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "query_parameter_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "query_parameter_query_key_not_null",
+          "type": "n",
+          "def": "NOT NULL query_key",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "query_key"
+          ]
+        },
+        {
+          "name": "fk_parameter_data_type",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
+          "table": "public.query_parameter",
+          "referenced_table": "data_type",
+          "columns": [
+            "model_key",
+            "data_type_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "data_type_key"
+          ]
+        },
+        {
+          "name": "fk_parameter_query",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
+          "table": "public.query_parameter",
+          "referenced_table": "query",
+          "columns": [
+            "model_key",
+            "query_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "query_key"
+          ]
+        },
+        {
+          "name": "query_parameter_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, parameter_key)",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "parameter_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.state",
       "type": "BASE TABLE",
       "comment": "A situation where invariant conditions on a class instance hold.",
@@ -2749,7 +3026,7 @@
           "name": "parameters",
           "type": "text[]",
           "nullable": true,
-          "comment": "The parameters for the action, alternating parameter name, with how its satified."
+          "comment": "The parameters for the query, alternating parameter name, with how its satified."
         }
       ],
       "indexes": [
@@ -3417,7 +3694,7 @@
       ]
     },
     {
-      "name": "public.parameter",
+      "name": "public.action_parameter",
       "type": "BASE TABLE",
       "comment": "A parameter of an action.",
       "columns": [
@@ -3472,9 +3749,9 @@
       ],
       "indexes": [
         {
-          "name": "parameter_pkey",
-          "def": "CREATE UNIQUE INDEX parameter_pkey ON public.parameter USING btree (model_key, parameter_key)",
-          "table": "public.parameter",
+          "name": "action_parameter_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_pkey ON public.action_parameter USING btree (model_key, parameter_key)",
+          "table": "public.action_parameter",
           "columns": [
             "model_key",
             "parameter_key"
@@ -3483,40 +3760,40 @@
       ],
       "constraints": [
         {
-          "name": "parameter_action_key_not_null",
+          "name": "action_parameter_action_key_not_null",
           "type": "n",
           "def": "NOT NULL action_key",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "",
           "columns": [
             "action_key"
           ]
         },
         {
-          "name": "parameter_model_key_not_null",
+          "name": "action_parameter_model_key_not_null",
           "type": "n",
           "def": "NOT NULL model_key",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "",
           "columns": [
             "model_key"
           ]
         },
         {
-          "name": "parameter_name_not_null",
+          "name": "action_parameter_name_not_null",
           "type": "n",
           "def": "NOT NULL name",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "",
           "columns": [
             "name"
           ]
         },
         {
-          "name": "parameter_parameter_key_not_null",
+          "name": "action_parameter_parameter_key_not_null",
           "type": "n",
           "def": "NOT NULL parameter_key",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "",
           "columns": [
             "parameter_key"
@@ -3526,7 +3803,7 @@
           "name": "fk_parameter_data_type",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "data_type",
           "columns": [
             "model_key",
@@ -3541,7 +3818,7 @@
           "name": "fk_parameter_action",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "action",
           "columns": [
             "model_key",
@@ -3553,10 +3830,10 @@
           ]
         },
         {
-          "name": "parameter_pkey",
+          "name": "action_parameter_pkey",
           "type": "PRIMARY KEY",
           "def": "PRIMARY KEY (model_key, parameter_key)",
-          "table": "public.parameter",
+          "table": "public.action_parameter",
           "referenced_table": "",
           "columns": [
             "model_key",
@@ -4457,6 +4734,51 @@
       "def": "FOREIGN KEY (model_key, to_class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.query",
+      "columns": [
+        "model_key",
+        "class_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.class",
+      "parent_columns": [
+        "model_key",
+        "class_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_parameter",
+      "columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.data_type",
+      "parent_columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_parameter",
+      "columns": [
+        "model_key",
+        "query_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.query",
+      "parent_columns": [
+        "model_key",
+        "query_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.state",
       "columns": [
         "model_key",
@@ -4622,7 +4944,7 @@
       "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
     },
     {
-      "table": "public.parameter",
+      "table": "public.action_parameter",
       "columns": [
         "model_key",
         "data_type_key"
@@ -4637,7 +4959,7 @@
       "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
     },
     {
-      "table": "public.parameter",
+      "table": "public.action_parameter",
       "columns": [
         "model_key",
         "action_key"
