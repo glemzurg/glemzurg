@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"encoding/json"
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -420,4 +421,33 @@ func ParseKey(s string) (key Key, err error) {
 	parentKey := strings.Join(parentParts, "/")
 
 	return newKey(parentKey, keyType, subKey)
+}
+
+// MarshalJSON implements json.Marshaler for Key.
+// It marshals the key as its string representation.
+func (k Key) MarshalJSON() ([]byte, error) {
+	return json.Marshal(k.String())
+}
+
+// UnmarshalJSON implements json.Unmarshaler for Key.
+// It unmarshals a JSON string into a Key by parsing it.
+func (k *Key) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	// Handle empty string case - return zero-value Key.
+	if s == "" {
+		*k = Key{}
+		return nil
+	}
+
+	parsed, err := ParseKey(s)
+	if err != nil {
+		return err
+	}
+
+	*k = parsed
+	return nil
 }
