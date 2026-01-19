@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -760,6 +761,114 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 			assert.Equal(t, originalKey.keyType, parsedKey.keyType, "KeyType mismatch for: %s", tt.description)
 			assert.Equal(t, originalKey.subKey, parsedKey.subKey, "SubKey mismatch for: %s", tt.description)
 			assert.Equal(t, originalKey.String(), parsedKey.String(), "String() mismatch for: %s", tt.description)
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestJSONRoundTrip tests that keys can be marshalled to JSON and unmarshalled back.
+func (suite *KeySuite) TestJSONRoundTrip() {
+	// Create hierarchy of keys.
+	domainKey, _ := NewDomainKey("domain_key")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
+	classKey, _ := NewClassKey(subdomainKey, "class_key")
+	classKey2, _ := NewClassKey(subdomainKey, "class_key2")
+	stateKey, _ := NewStateKey(classKey, "state_key")
+	useCaseKey, _ := NewUseCaseKey(subdomainKey, "use_case_key")
+	scenarioKey, _ := NewScenarioKey(useCaseKey, "scenario_key")
+	actorKey, _ := NewActorKey("actor_key")
+
+	// State action and transition keys.
+	stateActionKey, _ := NewStateActionKey(stateKey, "entry", "action_key")
+	transitionKey, _ := NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b")
+
+	// Domain association key.
+	domainKey2, _ := NewDomainKey("domain_key2")
+	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
+
+	// Class association key.
+	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2)
+
+	tests := []struct {
+		testName string
+		key      Key
+	}{
+		{testName: "domain key", key: domainKey},
+		{testName: "subdomain key", key: subdomainKey},
+		{testName: "class key", key: classKey},
+		{testName: "state key", key: stateKey},
+		{testName: "actor key", key: actorKey},
+		{testName: "use case key", key: useCaseKey},
+		{testName: "scenario key", key: scenarioKey},
+		{testName: "state action key", key: stateActionKey},
+		{testName: "transition key", key: transitionKey},
+		{testName: "domain association key", key: domainAssocKey},
+		{testName: "class association key", key: classAssocKey},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			// Marshal to JSON.
+			jsonBytes, err := json.Marshal(tt.key)
+			assert.NoError(t, err, "Failed to marshal key to JSON")
+
+			// Verify the JSON is a string (quoted).
+			jsonStr := string(jsonBytes)
+			assert.True(t, len(jsonStr) >= 2 && jsonStr[0] == '"' && jsonStr[len(jsonStr)-1] == '"',
+				"JSON should be a quoted string, got: %s", jsonStr)
+
+			// Unmarshal back.
+			var parsedKey Key
+			err = json.Unmarshal(jsonBytes, &parsedKey)
+			assert.NoError(t, err, "Failed to unmarshal key from JSON")
+
+			// Verify the parsed key matches the original.
+			assert.Equal(t, tt.key, parsedKey, "Round-trip key mismatch")
+			assert.Equal(t, tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestJSONUnmarshalEmpty tests that unmarshalling an empty string results in a zero-value Key.
+func (suite *KeySuite) TestJSONUnmarshalEmpty() {
+	var key Key
+	err := json.Unmarshal([]byte(`""`), &key)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Key{}, key)
+}
+
+// TestJSONUnmarshalInvalid tests that unmarshalling invalid JSON or key strings returns errors.
+func (suite *KeySuite) TestJSONUnmarshalInvalid() {
+	tests := []struct {
+		testName string
+		jsonStr  string
+		errstr   string
+	}{
+		{
+			testName: "invalid json",
+			jsonStr:  `not json`,
+			errstr:   "invalid character",
+		},
+		{
+			testName: "invalid key format",
+			jsonStr:  `"invalid"`,
+			errstr:   "invalid key format",
+		},
+		{
+			testName: "unknown key type",
+			jsonStr:  `"unknown/something"`,
+			errstr:   "must be a valid value",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			var key Key
+			err := json.Unmarshal([]byte(tt.jsonStr), &key)
+			assert.ErrorContains(t, err, tt.errstr)
 		})
 		if !pass {
 			break
