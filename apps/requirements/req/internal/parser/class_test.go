@@ -41,7 +41,7 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 		pass := suite.T().Run(testName, func(t *testing.T) {
 			var expected, actual model_class.Class
 
-			actual, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
+			actual, _, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)

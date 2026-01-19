@@ -33,7 +33,7 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 		testName := testData.Filename
 		var expected, actual model_domain.Domain
 
-		actual, err := parseDomain(key, testData.Filename, testData.Contents)
+		actual, associations, err := parseDomain(key, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
@@ -42,7 +42,7 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 		assert.Equal(suite.T(), expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
-		generated := generateDomainContent(actual)
+		generated := generateDomainContent(actual, associations)
 		assert.Equal(suite.T(), testData.Contents, generated, testName)
 	}
 }
