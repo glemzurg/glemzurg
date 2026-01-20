@@ -41,6 +41,14 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 
 		assert.Equal(suite.T(), expected, actual, testName)
 
+		// Test associations if expected data exists (via _children.json file).
+		if testData.JsonChildren != "" {
+			var expectedAssociations []model_domain.Association
+			err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
+			assert.Nil(suite.T(), err, testName+" associations json")
+			assert.Equal(suite.T(), expectedAssociations, associations, testName+" associations")
+		}
+
 		// Test round-trip: generate content from parsed object and compare to original.
 		generated := generateDomainContent(actual, associations)
 		assert.Equal(suite.T(), testData.Contents, generated, testName)
