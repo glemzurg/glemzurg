@@ -3,13 +3,13 @@ package generate
 import (
 	"path/filepath"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
 	"github.com/pkg/errors"
 )
 
-func generateClassFiles(debug bool, outputPath string, reqs requirements.Requirements) (err error) {
+func generateClassFiles(debug bool, outputPath string, reqs *req_flat.Requirements) (err error) {
 
 	// The data we're interested in.
 	classLookup, _ := reqs.ClassLookup()
@@ -18,7 +18,7 @@ func generateClassFiles(debug bool, outputPath string, reqs requirements.Require
 	for _, class := range classLookup {
 
 		// Generate class summary.
-		classFilename := convertKeyToFilename("class", class.Key, "", ".md")
+		classFilename := convertKeyToFilename("class", class.Key.String(), "", ".md")
 		classFilenameAbs := filepath.Join(outputPath, classFilename)
 		classMdContents, err := generateClassMdContents(reqs, class)
 		if err != nil {
@@ -32,7 +32,7 @@ func generateClassFiles(debug bool, outputPath string, reqs requirements.Require
 		generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
 
 		// Generate classes diagram.
-		classesSvgFilename := convertKeyToFilename("class", class.Key, "", ".svg")
+		classesSvgFilename := convertKeyToFilename("class", class.Key.String(), "", ".svg")
 		classesSvgFilenameAbs := filepath.Join(outputPath, classesSvgFilename)
 		classesSvgContents, classesDotContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
 		if err != nil {
@@ -48,7 +48,7 @@ func generateClassFiles(debug bool, outputPath string, reqs requirements.Require
 		// State Machine diagram.
 		if len(class.States) > 0 {
 
-			statesSvgFilename := convertKeyToFilename("class", class.Key, "states", ".svg")
+			statesSvgFilename := convertKeyToFilename("class", class.Key.String(), "states", ".svg")
 			statesSvgFilenameAbs := filepath.Join(outputPath, statesSvgFilename)
 			statesSvgContents, statesDotContents, err := generateClassStateSvgContents(reqs, class)
 			if err != nil {
@@ -66,12 +66,12 @@ func generateClassFiles(debug bool, outputPath string, reqs requirements.Require
 	return nil
 }
 
-func generateClassMdContents(reqs requirements.Requirements, class model_class.Class) (contents string, err error) {
+func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Class) (contents string, err error) {
 
 	// Create the lookups of keys to meaningful values.
 
 	contents, err = generateFromTemplate(_classMdTemplate, struct {
-		Reqs  requirements.Requirements
+		Reqs  *req_flat.Requirements
 		Class model_class.Class
 	}{
 		Reqs:  reqs,
@@ -84,24 +84,24 @@ func generateClassMdContents(reqs requirements.Requirements, class model_class.C
 	return contents, nil
 }
 
-func generateClassStateSvgContents(reqs requirements.Requirements, class model_class.Class) (svgContents string, dotContents string, err error) {
+func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_class.Class) (svgContents string, dotContents string, err error) {
 
 	// Create the lookups of keys to meaningful values.
 	eventNameLookup := map[string]string{}
 	for _, event := range class.Events {
-		eventNameLookup[event.Key] = event.Name
+		eventNameLookup[event.Key.String()] = event.Name
 	}
 	guardDetailsLookup := map[string]string{}
 	for _, guard := range class.Guards {
-		guardDetailsLookup[guard.Key] = guard.Details
+		guardDetailsLookup[guard.Key.String()] = guard.Details
 	}
 	actionNameLookup := map[string]string{}
 	for _, action := range class.Actions {
-		actionNameLookup[action.Key] = action.Name
+		actionNameLookup[action.Key.String()] = action.Name
 	}
 
 	dotContents, err = generateFromTemplate(_classStateDotTemplate, struct {
-		Reqs               requirements.Requirements
+		Reqs               *req_flat.Requirements
 		Class              model_class.Class
 		EventNameLookup    map[string]string
 		GuardDetailsLookup map[string]string
@@ -126,10 +126,10 @@ func generateClassStateSvgContents(reqs requirements.Requirements, class model_c
 }
 
 // This is the class graph on a domain and class pages.
-func generateClassesSvgContents(reqs requirements.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (svgContents string, dotContents string, err error) {
+func generateClassesSvgContents(reqs *req_flat.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_classesDotTemplate, struct {
-		Reqs            requirements.Requirements
+		Reqs            *req_flat.Requirements
 		Generalizations []model_class.Generalization
 		Classes         []model_class.Class
 		Associations    []model_class.Association

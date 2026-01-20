@@ -9,7 +9,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 
 	"github.com/pkg/errors"
 )
@@ -24,26 +24,29 @@ func GenerateMd(debug bool, db *sql.DB, rootSourcePath, rootOutputPath, model st
 		return err
 	}
 
-	// Create the new requirements.
-	reqs, err := parser.Parse(sourcePath)
+	// Parse the model files.
+	parsedModel, err := parser.Parse(sourcePath)
 	if err != nil {
 		return err
 	}
 
-	// We may not want to exercice through a database.
+	// We may not want to exercise through a database.
 	if db != nil {
 		log.Println("Exercising data model through database.")
 		// Write the requirements to the database to ensure the data is well-formed.
-		err = database.WriteRequirements(db, reqs)
+		err = database.WriteModel(db, parsedModel)
 		if err != nil {
 			return err
 		}
 		// Read the model from the database to ensure we can get it back out correctly.
-		reqs, err = database.ReadRequirements(db, reqs.Model.Key)
+		parsedModel, err = database.ReadModel(db, parsedModel.Key)
 		if err != nil {
 			return err
 		}
 	}
+
+	// Create the flattened requirements from the model.
+	reqs := req_flat.NewRequirements(parsedModel)
 
 	// Prepare the convenience structures inside.
 	reqs.PrepLookups()
@@ -57,7 +60,7 @@ func GenerateMd(debug bool, db *sql.DB, rootSourcePath, rootOutputPath, model st
 	return nil
 }
 
-func generateFiles(debug bool, outputPath string, reqs requirements.Requirements) (err error) {
+func generateFiles(debug bool, outputPath string, reqs *req_flat.Requirements) (err error) {
 
 	fmt.Println()
 
