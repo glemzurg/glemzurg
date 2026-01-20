@@ -41,7 +41,7 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 		pass := suite.T().Run(testName, func(t *testing.T) {
 			var expected, actual model_class.Class
 
-			actual, _, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
+			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)
@@ -49,8 +49,16 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 
 			assert.Equal(t, expected, actual, testName)
 
+			// Test associations if expected data exists (via _children.json file).
+			if testData.JsonChildren != "" {
+				var expectedAssociations []model_class.Association
+				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
+				assert.Nil(t, err, testName+" associations json")
+				assert.Equal(t, expectedAssociations, associations, testName+" associations")
+			}
+
 			// Test round-trip: generate content from parsed object and compare to original.
-			generated := generateClassContent(actual)
+			generated := generateClassContent(actual, associations)
 			assert.Equal(t, testData.Contents, generated, testName)
 		})
 		if !pass {

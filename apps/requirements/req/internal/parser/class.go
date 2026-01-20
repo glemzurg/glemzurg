@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 
@@ -44,7 +45,13 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	if found {
 		superclassOfStr := superclassOfAny.(string)
 		if superclassOfStr != "" {
-			key, err := identity.ParseKey(superclassOfStr)
+			// If it's a simple key (no slashes), construct a class key in the same subdomain.
+			var key identity.Key
+			if !strings.Contains(superclassOfStr, "/") {
+				key, err = identity.NewClassKey(subdomainKey, superclassOfStr)
+			} else {
+				key, err = identity.ParseKey(superclassOfStr)
+			}
 			if err != nil {
 				return model_class.Class{}, nil, errors.WithStack(err)
 			}
@@ -57,7 +64,13 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	if found {
 		subclassOfStr := subclassOfAny.(string)
 		if subclassOfStr != "" {
-			key, err := identity.ParseKey(subclassOfStr)
+			// If it's a simple key (no slashes), construct a class key in the same subdomain.
+			var key identity.Key
+			if !strings.Contains(subclassOfStr, "/") {
+				key, err = identity.NewClassKey(subdomainKey, subclassOfStr)
+			} else {
+				key, err = identity.ParseKey(subclassOfStr)
+			}
 			if err != nil {
 				return model_class.Class{}, nil, errors.WithStack(err)
 			}
@@ -723,21 +736,21 @@ func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, acti
 	return transition, nil
 }
 
-func generateClassContent(class model_class.Class) string {
+func generateClassContent(class model_class.Class, associations []model_class.Association) string {
 	yaml := ""
 	if class.ActorKey != nil {
 		yaml += "actor_key: " + class.ActorKey.SubKey() + "\n"
 	}
 	if class.SuperclassOfKey != nil {
-		yaml += "superclass_of_key: " + class.SuperclassOfKey.String() + "\n"
+		yaml += "superclass_of_key: " + class.SuperclassOfKey.SubKey() + "\n"
 	}
 	if class.SubclassOfKey != nil {
-		yaml += "subclass_of_key: " + class.SubclassOfKey.String() + "\n"
+		yaml += "subclass_of_key: " + class.SubclassOfKey.SubKey() + "\n"
 	}
 	if len(class.Attributes) > 0 {
 		yaml += "\n"
 		yaml += "attributes:\n"
-		for _, attr := range class.Attributes {
+		for _, attr := range class.GetAttributesSorted() {
 			yaml += "\n"
 			name := attr.Key.SubKey()
 			yaml += "    " + name + ":\n"
@@ -769,8 +782,25 @@ func generateClassContent(class model_class.Class) string {
 			}
 		}
 	}
-	// Note: Associations are now stored at the subdomain level, not on the class.
-	// Use generateAssociationsContent() to generate associations separately.
+	// Generate associations if present.
+	if len(associations) > 0 {
+		yaml += "\nassociations:\n"
+		for _, assoc := range associations {
+			yaml += "\n    - name: " + assoc.Name + "\n"
+			if assoc.Details != "" {
+				yaml += "      details: " + assoc.Details + "\n"
+			}
+			yaml += "      from_multiplicity: " + formatMultiplicity(assoc.FromMultiplicity) + "\n"
+			yaml += "      to_class_key: " + assoc.ToClassKey.SubKey() + "\n"
+			yaml += "      to_multiplicity: " + formatMultiplicity(assoc.ToMultiplicity) + "\n"
+			if assoc.AssociationClassKey != nil {
+				yaml += "      association_class_key: " + assoc.AssociationClassKey.SubKey() + "\n"
+			}
+			if assoc.UmlComment != "" {
+				yaml += "      uml_comment: " + assoc.UmlComment + "\n"
+			}
+		}
+	}
 
 	// We need a lookup of actions to display names where they need to be.
 	stateKeyLookups := map[string]model_state.State{}
@@ -793,7 +823,15 @@ func generateClassContent(class model_class.Class) string {
 	if len(class.States) > 0 {
 		yaml += "\n"
 		yaml += "states:\n"
-		for _, state := range class.States {
+		// Sort state keys for deterministic output.
+		stateKeys := make([]string, 0, len(class.States))
+		for k := range class.States {
+			stateKeys = append(stateKeys, k.String())
+		}
+		sort.Strings(stateKeys)
+		for _, keyStr := range stateKeys {
+			key, _ := identity.ParseKey(keyStr)
+			state := class.States[key]
 			yaml += "\n"
 			yaml += "  " + state.Name + ":\n"
 			if state.Details != "" {
@@ -814,7 +852,15 @@ func generateClassContent(class model_class.Class) string {
 	if len(class.Events) > 0 {
 		yaml += "\n"
 		yaml += "events:\n"
-		for _, event := range class.Events {
+		// Sort event keys for deterministic output.
+		eventKeys := make([]string, 0, len(class.Events))
+		for k := range class.Events {
+			eventKeys = append(eventKeys, k.String())
+		}
+		sort.Strings(eventKeys)
+		for _, keyStr := range eventKeys {
+			key, _ := identity.ParseKey(keyStr)
+			event := class.Events[key]
 			yaml += "\n"
 			yaml += "    " + event.Name + ":\n"
 			if event.Details != "" {
@@ -834,7 +880,15 @@ func generateClassContent(class model_class.Class) string {
 	if len(class.Guards) > 0 {
 		yaml += "\n"
 		yaml += "guards:\n"
-		for _, guard := range class.Guards {
+		// Sort guard keys for deterministic output.
+		guardKeys := make([]string, 0, len(class.Guards))
+		for k := range class.Guards {
+			guardKeys = append(guardKeys, k.String())
+		}
+		sort.Strings(guardKeys)
+		for _, keyStr := range guardKeys {
+			key, _ := identity.ParseKey(keyStr)
+			guard := class.Guards[key]
 			yaml += "\n"
 			yaml += "    " + guard.Name + ":\n"
 			if guard.Details != "" {
@@ -845,7 +899,15 @@ func generateClassContent(class model_class.Class) string {
 	if len(class.Actions) > 0 {
 		yaml += "\n"
 		yaml += "actions:\n"
-		for _, action := range class.Actions {
+		// Sort action keys for deterministic output.
+		actionKeys := make([]string, 0, len(class.Actions))
+		for k := range class.Actions {
+			actionKeys = append(actionKeys, k.String())
+		}
+		sort.Strings(actionKeys)
+		for _, keyStr := range actionKeys {
+			key, _ := identity.ParseKey(keyStr)
+			action := class.Actions[key]
 			yaml += "\n"
 			yaml += "    " + action.Name + ":\n"
 			if action.Details != "" {
@@ -869,7 +931,15 @@ func generateClassContent(class model_class.Class) string {
 		yaml += "\n"
 		yaml += "transitions:\n"
 		yaml += "\n"
-		for _, trans := range class.Transitions {
+		// Sort transition keys for deterministic output.
+		transitionKeys := make([]string, 0, len(class.Transitions))
+		for k := range class.Transitions {
+			transitionKeys = append(transitionKeys, k.String())
+		}
+		sort.Strings(transitionKeys)
+		for _, keyStr := range transitionKeys {
+			key, _ := identity.ParseKey(keyStr)
+			trans := class.Transitions[key]
 			from := ""
 			if trans.FromStateKey != nil {
 				from = stateKeyLookups[trans.FromStateKey.String()].Name
@@ -903,4 +973,14 @@ func generateClassContent(class model_class.Class) string {
 	}
 	yamlStr := strings.TrimSpace(yaml)
 	return generateFileContent(class.Details, class.UmlComment, yamlStr)
+}
+
+// formatMultiplicity formats a multiplicity for YAML output.
+// Numeric multiplicities are quoted, "any" is not quoted.
+func formatMultiplicity(m model_class.Multiplicity) string {
+	s := m.ParsedString()
+	if s == "any" {
+		return s
+	}
+	return "\"" + s + "\""
 }
