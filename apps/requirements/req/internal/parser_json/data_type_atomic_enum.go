@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 // atomicEnumInOut represents an allowed value in an enumeration.
 type atomicEnumInOut struct {

@@ -3,38 +3,61 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestScenarioInOutConversionRoundTrip(t *testing.T) {
+	domainKey, err := identity.NewDomainKey("domain1")
+	require.NoError(t, err)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "sub1")
+	require.NoError(t, err)
+	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, "usecase1")
+	require.NoError(t, err)
+	scenarioKey, err := identity.NewScenarioKey(useCaseKey, "scenario1")
+	require.NoError(t, err)
+	userObjKey, err := identity.NewScenarioObjectKey(scenarioKey, "user")
+	require.NoError(t, err)
+	systemObjKey, err := identity.NewScenarioObjectKey(scenarioKey, "system")
+	require.NoError(t, err)
+	userClassKey, err := identity.NewClassKey(subdomainKey, "user_class")
+	require.NoError(t, err)
+	systemClassKey, err := identity.NewClassKey(subdomainKey, "system_class")
+	require.NoError(t, err)
+
+	steps := model_scenario.Node{
+		Description: "User enters credentials",
+		EventKey:    "login",
+	}
 	original := model_scenario.Scenario{
-		Key:     "scenario1",
+		Key:     scenarioKey,
 		Name:    "Login Scenario",
 		Details: "User logs into the system",
-		Steps: model_scenario.Node{
-			Description: "User enters credentials",
-			EventKey:    "login",
-		},
-		Objects: []model_scenario.Object{
-			{
-				Key:          "user",
+		Steps:   &steps,
+		Objects: map[identity.Key]model_scenario.Object{
+			userObjKey: {
+				Key:          userObjKey,
 				ObjectNumber: 1,
 				Name:         "User",
-				ClassKey:     "user_class",
+				NameStyle:    "name",
+				ClassKey:     userClassKey,
 				Multi:        false,
 			},
-			{
-				Key:          "system",
+			systemObjKey: {
+				Key:          systemObjKey,
 				ObjectNumber: 2,
 				Name:         "System",
-				ClassKey:     "system_class",
+				NameStyle:    "name",
+				ClassKey:     systemClassKey,
 				Multi:        false,
 			},
 		},
 	}
 
 	inOut := FromRequirementsScenario(original)
-	back := inOut.ToRequirements()
+	back, err := inOut.ToRequirements()
+	require.NoError(t, err)
 	assert.Equal(t, original, back)
 }

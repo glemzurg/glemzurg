@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 // eventParameterInOut is a parameter for events.
 type eventParameterInOut struct {

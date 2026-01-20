@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 
 // nodeInOut represents a node in the scenario steps tree.
 type nodeInOut struct {
@@ -14,6 +14,20 @@ type nodeInOut struct {
 	ScenarioKey   string      `json:"scenario_key" yaml:"scenario_key"`
 	AttributeKey  string      `json:"attribute_key" yaml:"attribute_key"`
 	IsDelete      bool        `json:"is_delete" yaml:"is_delete"`
+}
+
+// isEmpty returns true if the nodeInOut is a zero value (empty).
+func (n nodeInOut) isEmpty() bool {
+	return len(n.Statements) == 0 &&
+		len(n.Cases) == 0 &&
+		n.Loop == "" &&
+		n.Description == "" &&
+		n.FromObjectKey == "" &&
+		n.ToObjectKey == "" &&
+		n.EventKey == "" &&
+		n.ScenarioKey == "" &&
+		n.AttributeKey == "" &&
+		!n.IsDelete
 }
 
 // ToRequirements converts the nodeInOut to model_scenario.Node.

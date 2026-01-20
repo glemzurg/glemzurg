@@ -1,6 +1,9 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+)
 
 // generalizationInOut is how two or more things in the system build on each other (like a super type and sub type).
 type generalizationInOut struct {
@@ -13,21 +16,26 @@ type generalizationInOut struct {
 }
 
 // ToRequirements converts the generalizationInOut to model_class.Generalization.
-func (g generalizationInOut) ToRequirements() model_class.Generalization {
+func (g generalizationInOut) ToRequirements() (model_class.Generalization, error) {
+	key, err := identity.ParseKey(g.Key)
+	if err != nil {
+		return model_class.Generalization{}, err
+	}
+
 	return model_class.Generalization{
-		Key:        g.Key,
+		Key:        key,
 		Name:       g.Name,
 		Details:    g.Details,
 		IsComplete: g.IsComplete,
 		IsStatic:   g.IsStatic,
 		UmlComment: g.UmlComment,
-	}
+	}, nil
 }
 
 // FromRequirements creates a generalizationInOut from model_class.Generalization.
 func FromRequirementsGeneralization(g model_class.Generalization) generalizationInOut {
 	return generalizationInOut{
-		Key:        g.Key,
+		Key:        g.Key.String(),
 		Name:       g.Name,
 		Details:    g.Details,
 		IsComplete: g.IsComplete,

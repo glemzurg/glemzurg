@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
 // multiplicityInOut is how two classes relate to each other.
 type multiplicityInOut struct {

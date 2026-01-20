@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 
 // caseInOut represents a case in a switch node.
 type caseInOut struct {

@@ -1,6 +1,11 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+)
 
 // subdomainInOut is a nested category of the model.
 type subdomainInOut struct {
@@ -16,44 +21,69 @@ type subdomainInOut struct {
 }
 
 // ToRequirements converts the subdomainInOut to model_domain.Subdomain.
-func (s subdomainInOut) ToRequirements() model_domain.Subdomain {
+func (s subdomainInOut) ToRequirements() (model_domain.Subdomain, error) {
+	key, err := identity.ParseKey(s.Key)
+	if err != nil {
+		return model_domain.Subdomain{}, err
+	}
+
 	subdomain := model_domain.Subdomain{
-		Key:             s.Key,
-		Name:            s.Name,
-		Details:         s.Details,
-		UmlComment:      s.UmlComment,
-		Generalizations: nil, // Not handled here
-		Classes:         nil,
-		UseCases:        nil,
-		Associations:    nil,
+		Key:        key,
+		Name:       s.Name,
+		Details:    s.Details,
+		UmlComment: s.UmlComment,
 	}
 
 	for _, g := range s.Generalizations {
-		subdomain.Generalizations = append(subdomain.Generalizations, g.ToRequirements())
+		gen, err := g.ToRequirements()
+		if err != nil {
+			return model_domain.Subdomain{}, err
+		}
+		if subdomain.Generalizations == nil {
+			subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
+		}
+		subdomain.Generalizations[gen.Key] = gen
 	}
 	for _, c := range s.Classes {
-		subdomain.Classes = append(subdomain.Classes, c.ToRequirements())
+		class, err := c.ToRequirements()
+		if err != nil {
+			return model_domain.Subdomain{}, err
+		}
+		if subdomain.Classes == nil {
+			subdomain.Classes = make(map[identity.Key]model_class.Class)
+		}
+		subdomain.Classes[class.Key] = class
 	}
 	for _, u := range s.UseCases {
-		subdomain.UseCases = append(subdomain.UseCases, u.ToRequirements())
+		useCase, err := u.ToRequirements()
+		if err != nil {
+			return model_domain.Subdomain{}, err
+		}
+		if subdomain.UseCases == nil {
+			subdomain.UseCases = make(map[identity.Key]model_use_case.UseCase)
+		}
+		subdomain.UseCases[useCase.Key] = useCase
 	}
 	for _, a := range s.Associations {
-		subdomain.Associations = append(subdomain.Associations, a.ToRequirements())
+		assoc, err := a.ToRequirements()
+		if err != nil {
+			return model_domain.Subdomain{}, err
+		}
+		if subdomain.ClassAssociations == nil {
+			subdomain.ClassAssociations = make(map[identity.Key]model_class.Association)
+		}
+		subdomain.ClassAssociations[assoc.Key] = assoc
 	}
-	return subdomain
+	return subdomain, nil
 }
 
 // FromRequirements creates a subdomainInOut from model_domain.Subdomain.
 func FromRequirementsSubdomain(s model_domain.Subdomain) subdomainInOut {
 	subdomain := subdomainInOut{
-		Key:             s.Key,
-		Name:            s.Name,
-		Details:         s.Details,
-		UmlComment:      s.UmlComment,
-		Generalizations: nil, // Not handled here
-		Classes:         nil,
-		UseCases:        nil,
-		Associations:    nil,
+		Key:        s.Key.String(),
+		Name:       s.Name,
+		Details:    s.Details,
+		UmlComment: s.UmlComment,
 	}
 	for _, g := range s.Generalizations {
 		subdomain.Generalizations = append(subdomain.Generalizations, FromRequirementsGeneralization(g))
@@ -64,7 +94,7 @@ func FromRequirementsSubdomain(s model_domain.Subdomain) subdomainInOut {
 	for _, u := range s.UseCases {
 		subdomain.UseCases = append(subdomain.UseCases, FromRequirementsUseCase(u))
 	}
-	for _, a := range s.Associations {
+	for _, a := range s.ClassAssociations {
 		subdomain.Associations = append(subdomain.Associations, FromRequirementsAssociation(a))
 	}
 	return subdomain

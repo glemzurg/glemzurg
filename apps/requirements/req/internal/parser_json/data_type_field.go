@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 // fieldInOut represents a single field of a record datatype.
 type fieldInOut struct {

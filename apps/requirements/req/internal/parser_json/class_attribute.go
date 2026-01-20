@@ -1,6 +1,9 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_class"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+)
 
 // attributeInOut is a member of a class.
 type attributeInOut struct {
@@ -17,9 +20,14 @@ type attributeInOut struct {
 }
 
 // ToRequirements converts the attributeInOut to model_class.Attribute.
-func (a attributeInOut) ToRequirements() model_class.Attribute {
+func (a attributeInOut) ToRequirements() (model_class.Attribute, error) {
+	key, err := identity.ParseKey(a.Key)
+	if err != nil {
+		return model_class.Attribute{}, err
+	}
+
 	attr := model_class.Attribute{
-		Key:              a.Key,
+		Key:              key,
 		Name:             a.Name,
 		Details:          a.Details,
 		DataTypeRules:    a.DataTypeRules,
@@ -35,13 +43,13 @@ func (a attributeInOut) ToRequirements() model_class.Attribute {
 		attr.DataType = &dt
 	}
 
-	return attr
+	return attr, nil
 }
 
 // FromRequirements creates a attributeInOut from model_class.Attribute.
 func FromRequirementsAttribute(a model_class.Attribute) attributeInOut {
 	attr := attributeInOut{
-		Key:              a.Key,
+		Key:              a.Key.String(),
 		Name:             a.Name,
 		Details:          a.Details,
 		DataTypeRules:    a.DataTypeRules,

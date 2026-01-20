@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_use_case"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 // useCaseActorInOut is an actor who acts in a user story.
 type useCaseActorInOut struct {

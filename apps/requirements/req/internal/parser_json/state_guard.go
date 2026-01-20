@@ -1,6 +1,9 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_state"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+)
 
 // guardInOut is a constraint on an event in a state machine.
 type guardInOut struct {
@@ -10,18 +13,23 @@ type guardInOut struct {
 }
 
 // ToRequirements converts the guardInOut to model_state.Guard.
-func (g guardInOut) ToRequirements() model_state.Guard {
+func (g guardInOut) ToRequirements() (model_state.Guard, error) {
+	key, err := identity.ParseKey(g.Key)
+	if err != nil {
+		return model_state.Guard{}, err
+	}
+
 	return model_state.Guard{
-		Key:     g.Key,
+		Key:     key,
 		Name:    g.Name,
 		Details: g.Details,
-	}
+	}, nil
 }
 
 // FromRequirements creates a guardInOut from model_state.Guard.
 func FromRequirementsGuard(g model_state.Guard) guardInOut {
 	return guardInOut{
-		Key:     g.Key,
+		Key:     g.Key.String(),
 		Name:    g.Name,
 		Details: g.Details,
 	}

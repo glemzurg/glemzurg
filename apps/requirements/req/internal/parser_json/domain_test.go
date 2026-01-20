@@ -3,13 +3,18 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDomainInOutRoundTrip(t *testing.T) {
+	key, err := identity.NewDomainKey("domain1")
+	require.NoError(t, err)
+
 	original := model_domain.Domain{
-		Key:        "domain1",
+		Key:        key,
 		Name:       "Domain1",
 		Details:    "Details",
 		Realized:   true,
@@ -17,6 +22,7 @@ func TestDomainInOutRoundTrip(t *testing.T) {
 	}
 
 	inOut := FromRequirementsDomain(original)
-	back := inOut.ToRequirements()
+	back, err := inOut.ToRequirements()
+	require.NoError(t, err)
 	assert.Equal(t, original, back)
 }

@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_data_type"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 // atomicInOut represents the atomic data type (as opposed to a collection).
 type atomicInOut struct {

@@ -3,7 +3,7 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,5 +38,4 @@ func TestNodeInOutConversionRoundTrip(t *testing.T) {
 	inOut := FromRequirementsNode(original)
 	back := inOut.ToRequirements()
 	assert.Equal(t, original, back)
-
 }
