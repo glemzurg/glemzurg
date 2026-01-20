@@ -451,3 +451,29 @@ func (k *Key) UnmarshalJSON(data []byte) error {
 	*k = parsed
 	return nil
 }
+
+// MarshalText implements encoding.TextMarshaler for Key.
+// This is required for Key to be used as a map key in JSON marshalling.
+func (k Key) MarshalText() ([]byte, error) {
+	return []byte(k.String()), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler for Key.
+// This is required for Key to be used as a map key in JSON unmarshalling.
+func (k *Key) UnmarshalText(data []byte) error {
+	s := string(data)
+
+	// Handle empty string case - return zero-value Key.
+	if s == "" {
+		*k = Key{}
+		return nil
+	}
+
+	parsed, err := ParseKey(s)
+	if err != nil {
+		return err
+	}
+
+	*k = parsed
+	return nil
+}

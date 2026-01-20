@@ -875,3 +875,140 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 		}
 	}
 }
+
+// TestTextMarshalRoundTrip tests that keys can be marshalled to text and unmarshalled back.
+// This is required for Key to be used as a map key in JSON marshalling/unmarshalling.
+func (suite *KeySuite) TestTextMarshalRoundTrip() {
+	// Create hierarchy of keys.
+	domainKey, _ := NewDomainKey("domain_key")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
+	classKey, _ := NewClassKey(subdomainKey, "class_key")
+	classKey2, _ := NewClassKey(subdomainKey, "class_key2")
+	stateKey, _ := NewStateKey(classKey, "state_key")
+	useCaseKey, _ := NewUseCaseKey(subdomainKey, "use_case_key")
+	scenarioKey, _ := NewScenarioKey(useCaseKey, "scenario_key")
+	actorKey, _ := NewActorKey("actor_key")
+
+	// State action and transition keys.
+	stateActionKey, _ := NewStateActionKey(stateKey, "entry", "action_key")
+	transitionKey, _ := NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b")
+
+	// Domain association key.
+	domainKey2, _ := NewDomainKey("domain_key2")
+	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
+
+	// Class association key.
+	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2)
+
+	tests := []struct {
+		testName string
+		key      Key
+	}{
+		{testName: "domain key", key: domainKey},
+		{testName: "subdomain key", key: subdomainKey},
+		{testName: "class key", key: classKey},
+		{testName: "state key", key: stateKey},
+		{testName: "actor key", key: actorKey},
+		{testName: "use case key", key: useCaseKey},
+		{testName: "scenario key", key: scenarioKey},
+		{testName: "state action key", key: stateActionKey},
+		{testName: "transition key", key: transitionKey},
+		{testName: "domain association key", key: domainAssocKey},
+		{testName: "class association key", key: classAssocKey},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			// Marshal to text.
+			textBytes, err := tt.key.MarshalText()
+			assert.NoError(t, err, "Failed to marshal key to text")
+
+			// Verify the text matches the String() output.
+			assert.Equal(t, tt.key.String(), string(textBytes), "MarshalText should return String()")
+
+			// Unmarshal back.
+			var parsedKey Key
+			err = parsedKey.UnmarshalText(textBytes)
+			assert.NoError(t, err, "Failed to unmarshal key from text")
+
+			// Verify the parsed key matches the original.
+			assert.Equal(t, tt.key, parsedKey, "Round-trip key mismatch")
+			assert.Equal(t, tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestTextUnmarshalEmpty tests that unmarshalling an empty string results in a zero-value Key.
+func (suite *KeySuite) TestTextUnmarshalEmpty() {
+	var key Key
+	err := key.UnmarshalText([]byte(""))
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Key{}, key)
+}
+
+// TestTextUnmarshalInvalid tests that unmarshalling invalid key strings returns errors.
+func (suite *KeySuite) TestTextUnmarshalInvalid() {
+	tests := []struct {
+		testName string
+		text     string
+		errstr   string
+	}{
+		{
+			testName: "invalid key format",
+			text:     "invalid",
+			errstr:   "invalid key format",
+		},
+		{
+			testName: "unknown key type",
+			text:     "unknown/something",
+			errstr:   "must be a valid value",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			var key Key
+			err := key.UnmarshalText([]byte(tt.text))
+			assert.ErrorContains(t, err, tt.errstr)
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestJSONMapKeyRoundTrip tests that Key can be used as a map key in JSON marshalling/unmarshalling.
+// This verifies that MarshalText and UnmarshalText work correctly for map keys.
+func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
+	// Create test keys.
+	domainKey, _ := NewDomainKey("domain_key")
+	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
+	classKey, _ := NewClassKey(subdomainKey, "class_key")
+	stateKey, _ := NewStateKey(classKey, "state_key")
+
+	// Create a map with Key as the key type.
+	originalMap := map[Key]string{
+		domainKey:    "domain value",
+		subdomainKey: "subdomain value",
+		classKey:     "class value",
+		stateKey:     "state value",
+	}
+
+	// Marshal the map to JSON.
+	jsonBytes, err := json.Marshal(originalMap)
+	assert.NoError(suite.T(), err, "Failed to marshal map to JSON")
+
+	// Unmarshal back.
+	var parsedMap map[Key]string
+	err = json.Unmarshal(jsonBytes, &parsedMap)
+	assert.NoError(suite.T(), err, "Failed to unmarshal map from JSON")
+
+	// Verify the parsed map matches the original.
+	assert.Equal(suite.T(), len(originalMap), len(parsedMap), "Map length mismatch")
+	for key, value := range originalMap {
+		parsedValue, ok := parsedMap[key]
+		assert.True(suite.T(), ok, "Key not found in parsed map: %s", key.String())
+		assert.Equal(suite.T(), value, parsedValue, "Value mismatch for key: %s", key.String())
+	}
+}
