@@ -212,9 +212,31 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 	}
 
 	// Parse the class key from the string.
-	classKey, err := identity.ParseKey(classKeyStr)
-	if err != nil {
-		return model_scenario.Object{}, errors.WithStack(err)
+	// If it's a simple key (no slashes), construct it as a class key in the same subdomain.
+	// Otherwise, parse it as a full key.
+	var classKey identity.Key
+	if !strings.Contains(classKeyStr, "/") {
+		// Simple key - construct full class key using the scenario's subdomain.
+		// Extract subdomain key from scenario key (scenario key has format: domain/.../subdomain/.../usecase/.../scenario/...)
+		scenarioKeyStr := scenarioKey.String()
+		parts := strings.Split(scenarioKeyStr, "/usecase/")
+		if len(parts) < 2 {
+			return model_scenario.Object{}, errors.Errorf("invalid scenario key format: %s", scenarioKeyStr)
+		}
+		subdomainKeyStr := parts[0]
+		subdomainKey, err := identity.ParseKey(subdomainKeyStr)
+		if err != nil {
+			return model_scenario.Object{}, errors.WithStack(err)
+		}
+		classKey, err = identity.NewClassKey(subdomainKey, classKeyStr)
+		if err != nil {
+			return model_scenario.Object{}, errors.WithStack(err)
+		}
+	} else {
+		classKey, err = identity.ParseKey(classKeyStr)
+		if err != nil {
+			return model_scenario.Object{}, errors.WithStack(err)
+		}
 	}
 
 	object, err = model_scenario.NewObject(
@@ -279,7 +301,8 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 						yaml += "              style: " + obj.NameStyle + "\n"
 					}
 					if obj.ClassKey.String() != "" {
-						yaml += "              class_key: " + obj.ClassKey.String() + "\n"
+						// Output only the subkey for backwards compatibility with the md format.
+						yaml += "              class_key: " + obj.ClassKey.SubKey() + "\n"
 					}
 					if obj.Multi {
 						yaml += "              multi: true\n"
