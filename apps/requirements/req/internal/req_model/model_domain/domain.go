@@ -104,11 +104,8 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 		if err := classAssoc.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
-		// Validate class references if classes map is provided.
-		if classes != nil {
-			if err := classAssoc.ValidateReferences(classes); err != nil {
-				return err
-			}
+		if err := classAssoc.ValidateReferences(classes); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -99,11 +99,8 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 		if err := class.ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
-		// Validate cross-references if actors are provided.
-		if actors != nil {
-			if err := class.ValidateReferences(actors, generalizationKeys); err != nil {
-				return err
-			}
+		if err := class.ValidateReferences(actors, generalizationKeys); err != nil {
+			return err
 		}
 	}
 	for _, useCase := range s.UseCases {
@@ -115,11 +112,8 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 		if err := classAssoc.ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
-		// Validate class references if classes map is provided.
-		if classes != nil {
-			if err := classAssoc.ValidateReferences(classes); err != nil {
-				return err
-			}
+		if err := classAssoc.ValidateReferences(classes); err != nil {
+			return err
 		}
 	}
 	// Validate UseCaseShares - both keys must be use cases in this subdomain.
