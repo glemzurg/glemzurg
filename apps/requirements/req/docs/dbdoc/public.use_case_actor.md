@@ -8,9 +8,9 @@ Which actors participate in which use cases.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.actor](public.actor.md) [public.use_case](public.use_case.md) | The model this use case actor is part of. |
+| model_key | text |  | false |  | [public.class](public.class.md) [public.use_case](public.use_case.md) | The model this use case actor is part of. |
 | use_case_key | text |  | false |  | [public.use_case](public.use_case.md) | The use case. |
-| actor_key | text |  | false |  | [public.actor](public.actor.md) | The actor. |
+| actor_key | text |  | false |  | [public.class](public.class.md) | The actor class, so a requires a class that is an actor. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints
@@ -20,7 +20,7 @@ Which actors participate in which use cases.
 | use_case_actor_actor_key_not_null | n | NOT NULL actor_key |
 | use_case_actor_model_key_not_null | n | NOT NULL model_key |
 | use_case_actor_use_case_key_not_null | n | NOT NULL use_case_key |
-| fk_uca_actor | FOREIGN KEY | FOREIGN KEY (model_key, actor_key) REFERENCES actor(model_key, actor_key) ON DELETE CASCADE |
+| fk_uca_actor_class | FOREIGN KEY | FOREIGN KEY (model_key, actor_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | fk_uca_use_case | FOREIGN KEY | FOREIGN KEY (model_key, use_case_key) REFERENCES use_case(model_key, use_case_key) ON DELETE CASCADE |
 | use_case_actor_pkey | PRIMARY KEY | PRIMARY KEY (model_key, use_case_key, actor_key) |
 

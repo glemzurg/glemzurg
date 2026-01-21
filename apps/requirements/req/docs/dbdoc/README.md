@@ -10,9 +10,6 @@
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
 | [public.generalization](public.generalization.md) | 7 | A relationship between classes indicating super classes and subclasses. This is also for actors which would also be classes in this case. And for use cases. | BASE TABLE |
 | [public.actor](public.actor.md) | 8 | A role that a person or sytem can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
-| [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
-| [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |
-| [public.use_case_shared](public.use_case_shared.md) | 5 | Which use cases are used by with other use cases. | BASE TABLE |
 | [public.data_type](public.data_type.md) | 6 | An data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 4 | A value of an attribute that is an enum. | BASE TABLE |
@@ -31,6 +28,9 @@
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |
 | [public.state_action](public.state_action.md) | 5 | An action triggered on entry, exit, or continual do from a state. | BASE TABLE |
 | [public.action_parameter](public.action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
+| [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
+| [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |
+| [public.use_case_shared](public.use_case_shared.md) | 5 | Which use cases are used by with other use cases. | BASE TABLE |
 | [public.scenario](public.scenario.md) | 6 | A documented scenario, such as a sequence diagram or activity diagram, for a use case. | BASE TABLE |
 | [public.scenario_object](public.scenario_object.md) | 9 | An object that participates in a scenario. | BASE TABLE |
 

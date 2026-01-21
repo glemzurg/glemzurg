@@ -12,21 +12,21 @@
 <!-- public.model -->
 <g id="node1" class="node">
 <title>public.model</title>
-<polygon fill="#efefef" stroke="none" points="1856.41,-138.6 1856.41,-174.2 2089.38,-174.2 2089.38,-138.6 1856.41,-138.6"/>
-<polygon fill="none" stroke="black" points="1856.41,-138.6 1856.41,-174.2 2089.38,-174.2 2089.38,-138.6 1856.41,-138.6"/>
-<text text-anchor="start" x="1863.41" y="-152" font-family="Arial Bold" font-size="18.00">public.model</text>
-<text text-anchor="start" x="1957.89" y="-152" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="1989.01" y="-152" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="1856.41,-107.8 1856.41,-138.6 2089.38,-138.6 2089.38,-107.8 1856.41,-107.8"/>
-<text text-anchor="start" x="1863.41" y="-120" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="1935" y="-120" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1856.41,-77 1856.41,-107.8 2089.38,-107.8 2089.38,-77 1856.41,-77"/>
-<text text-anchor="start" x="1863.41" y="-89.2" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="1902.32" y="-89.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1856.41,-46.2 1856.41,-77 2089.38,-77 2089.38,-46.2 1856.41,-46.2"/>
-<text text-anchor="start" x="1863.41" y="-58.4" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="1907.77" y="-58.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" stroke-width="3" points="1854.91,-44.7 1854.91,-175.7 2090.88,-175.7 2090.88,-44.7 1854.91,-44.7"/>
+<polygon fill="#efefef" stroke="none" points="1852.41,-138.6 1852.41,-174.2 2085.38,-174.2 2085.38,-138.6 1852.41,-138.6"/>
+<polygon fill="none" stroke="black" points="1852.41,-138.6 1852.41,-174.2 2085.38,-174.2 2085.38,-138.6 1852.41,-138.6"/>
+<text text-anchor="start" x="1859.41" y="-152" font-family="Arial Bold" font-size="18.00">public.model</text>
+<text text-anchor="start" x="1953.89" y="-152" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="1985.01" y="-152" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="1852.41,-107.8 1852.41,-138.6 2085.38,-138.6 2085.38,-107.8 1852.41,-107.8"/>
+<text text-anchor="start" x="1859.41" y="-120" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="1931" y="-120" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="1852.41,-77 1852.41,-107.8 2085.38,-107.8 2085.38,-77 1852.41,-77"/>
+<text text-anchor="start" x="1859.41" y="-89.2" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="1898.32" y="-89.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="1852.41,-46.2 1852.41,-77 2085.38,-77 2085.38,-46.2 1852.41,-46.2"/>
+<text text-anchor="start" x="1859.41" y="-58.4" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="1903.77" y="-58.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" stroke-width="3" points="1850.91,-44.7 1850.91,-175.7 2086.88,-175.7 2086.88,-44.7 1850.91,-44.7"/>
 </g>
 <!-- public.domain -->
 <g id="node2" class="node">
@@ -58,7 +58,7 @@
 <!-- public.domain&#45;&gt;public.model -->
 <g id="edge1" class="edge">
 <title>public.domain:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M417.05,-530.12C521.43,-519.53 369.11,-337.62 457.9,-256.4 572.98,-151.11 1699.43,-123.2 1855.41,-123.2"/>
+<path fill="none" stroke="black" d="M417.05,-530.12C521.43,-519.53 369.13,-337.63 457.9,-256.4 572.64,-151.4 1695.87,-123.2 1851.41,-123.2"/>
 <polygon fill="black" stroke="black" points="417.2,-530.11 407,-526.09 411.88,-530.36 407.55,-530.57 407.55,-530.57 407.55,-530.57 411.88,-530.36 407.43,-535.08 417.2,-530.11"/>
 <text text-anchor="start" x="7" y="-540.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
@@ -89,7 +89,7 @@
 <!-- public.domain_association&#45;&gt;public.model -->
 <g id="edge2" class="edge">
 <title>public.domain_association:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M852.76,-545.53C963.5,-534.82 802.36,-344.48 893.9,-256.4 971.61,-181.61 1747.55,-123.2 1855.41,-123.2"/>
+<path fill="none" stroke="black" d="M852.76,-545.53C963.5,-534.82 802.39,-344.51 893.9,-256.4 971.27,-181.9 1743.99,-123.2 1851.41,-123.2"/>
 <polygon fill="black" stroke="black" points="852.69,-545.53 842.5,-541.49 847.37,-545.77 843.04,-545.97 843.04,-545.97 843.04,-545.97 847.37,-545.77 842.91,-550.48 852.69,-545.53"/>
 <text text-anchor="start" x="645.93" y="-530" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
@@ -126,7 +126,7 @@
 <!-- public.generalization&#45;&gt;public.model -->
 <g id="edge3" class="edge">
 <title>public.generalization:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M1246.77,-574.79C1302.14,-550.18 1241.29,-306.52 1287.9,-256.4 1376.11,-161.54 1725.87,-123.2 1855.41,-123.2"/>
+<path fill="none" stroke="black" d="M1246.78,-574.79C1302.14,-550.18 1241.33,-306.55 1287.9,-256.4 1375.45,-162.1 1722.73,-123.2 1851.41,-123.2"/>
 <polygon fill="black" stroke="black" points="1246.99,-574.75 1236.29,-572.32 1241.76,-575.81 1237.51,-576.67 1237.51,-576.67 1237.51,-576.67 1241.76,-575.81 1238.08,-581.14 1246.99,-574.75"/>
 <text text-anchor="start" x="1243.86" y="-586.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
@@ -166,184 +166,184 @@
 <!-- public.actor&#45;&gt;public.model -->
 <g id="edge4" class="edge">
 <title>public.actor:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M1574.94,-590.3C1634.02,-565.97 1574.94,-315.37 1615.9,-256.4 1685.38,-156.36 1733.6,-123.2 1855.41,-123.2"/>
+<path fill="none" stroke="black" d="M1574.94,-590.3C1634.04,-565.98 1575.15,-315.51 1615.9,-256.4 1684.14,-157.38 1731.15,-123.2 1851.41,-123.2"/>
 <polygon fill="black" stroke="black" points="1575.03,-590.28 1564.37,-587.72 1569.79,-591.27 1565.53,-592.08 1565.53,-592.08 1565.53,-592.08 1569.79,-591.27 1566.04,-596.56 1575.03,-590.28"/>
 <text text-anchor="start" x="1368.43" y="-576.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
-<!-- public.use_case -->
-<g id="node6" class="node">
-<title>public.use_case</title>
-<polygon fill="#efefef" stroke="none" points="1667.92,-638.4 1667.92,-674 1919.87,-674 1919.87,-638.4 1667.92,-638.4"/>
-<polygon fill="none" stroke="black" points="1667.92,-638.4 1667.92,-674 1919.87,-674 1919.87,-638.4 1667.92,-638.4"/>
-<text text-anchor="start" x="1674.92" y="-651.8" font-family="Arial Bold" font-size="18.00">public.use_case</text>
-<text text-anchor="start" x="1788.38" y="-651.8" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="1819.5" y="-651.8" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="1667.92,-607.6 1667.92,-638.4 1919.87,-638.4 1919.87,-607.6 1667.92,-607.6"/>
-<text text-anchor="start" x="1674.92" y="-619.8" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="1746.51" y="-619.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-576.8 1667.92,-607.6 1919.87,-607.6 1919.87,-576.8 1667.92,-576.8"/>
-<text text-anchor="start" x="1674.92" y="-589" font-family="Arial" font-size="14.00">use_case_key </text>
-<text text-anchor="start" x="1768.31" y="-589" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-546 1667.92,-576.8 1919.87,-576.8 1919.87,-546 1667.92,-546"/>
-<text text-anchor="start" x="1674.92" y="-558.2" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="1713.83" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-515.2 1667.92,-546 1919.87,-546 1919.87,-515.2 1667.92,-515.2"/>
-<text text-anchor="start" x="1674.92" y="-527.4" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="1719.28" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-484.4 1667.92,-515.2 1919.87,-515.2 1919.87,-484.4 1667.92,-484.4"/>
-<text text-anchor="start" x="1674.92" y="-496.6" font-family="Arial" font-size="14.00">level </text>
-<text text-anchor="start" x="1707.6" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[use_case_level]</text>
-<polygon fill="none" stroke="black" points="1667.92,-453.6 1667.92,-484.4 1919.87,-484.4 1919.87,-453.6 1667.92,-453.6"/>
-<text text-anchor="start" x="1674.92" y="-465.8" font-family="Arial" font-size="14.00">read_only </text>
-<text text-anchor="start" x="1740.3" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
-<polygon fill="none" stroke="black" points="1667.92,-422.8 1667.92,-453.6 1919.87,-453.6 1919.87,-422.8 1667.92,-422.8"/>
-<text text-anchor="start" x="1674.92" y="-435" font-family="Arial" font-size="14.00">subdomain_key </text>
-<text text-anchor="start" x="1776.87" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-392 1667.92,-422.8 1919.87,-422.8 1919.87,-392 1667.92,-392"/>
-<text text-anchor="start" x="1674.92" y="-404.2" font-family="Arial" font-size="14.00">superclass_of_key </text>
-<text text-anchor="start" x="1794.76" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-361.2 1667.92,-392 1919.87,-392 1919.87,-361.2 1667.92,-361.2"/>
-<text text-anchor="start" x="1674.92" y="-373.4" font-family="Arial" font-size="14.00">subclass_of_key </text>
-<text text-anchor="start" x="1782.31" y="-373.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="1667.92,-330.4 1667.92,-361.2 1919.87,-361.2 1919.87,-330.4 1667.92,-330.4"/>
-<text text-anchor="start" x="1674.92" y="-342.6" font-family="Arial" font-size="14.00">uml_comment </text>
-<text text-anchor="start" x="1766.73" y="-342.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-</g>
-<!-- public.use_case&#45;&gt;public.model -->
-<g id="edge5" class="edge">
-<title>public.use_case:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M1930.94,-621.15C1990.87,-597.44 1946.29,-353.08 1919.87,-287.2 1904.63,-249.19 1871.79,-258.35 1856.41,-220.4 1840.18,-180.36 1812.21,-123.2 1855.41,-123.2"/>
-<polygon fill="black" stroke="black" points="1931.03,-621.13 1920.38,-618.51 1925.79,-622.1 1921.53,-622.88 1921.53,-622.88 1921.53,-622.88 1925.79,-622.1 1922.01,-627.37 1931.03,-621.13"/>
-<text text-anchor="start" x="1927.87" y="-633" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
-</g>
 <!-- public.data_type -->
-<g id="node7" class="node">
+<g id="node6" class="node">
 <title>public.data_type</title>
-<polygon fill="#efefef" stroke="none" points="2023.92,-576.8 2023.92,-612.4 2281.87,-612.4 2281.87,-576.8 2023.92,-576.8"/>
-<polygon fill="none" stroke="black" points="2023.92,-576.8 2023.92,-612.4 2281.87,-612.4 2281.87,-576.8 2023.92,-576.8"/>
-<text text-anchor="start" x="2030.92" y="-590.2" font-family="Arial Bold" font-size="18.00">public.data_type</text>
-<text text-anchor="start" x="2150.38" y="-590.2" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="2181.5" y="-590.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="2023.92,-546 2023.92,-576.8 2281.87,-576.8 2281.87,-546 2023.92,-546"/>
-<text text-anchor="start" x="2030.92" y="-558.2" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="2102.51" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2023.92,-515.2 2023.92,-546 2281.87,-546 2281.87,-515.2 2023.92,-515.2"/>
-<text text-anchor="start" x="2030.92" y="-527.4" font-family="Arial" font-size="14.00">data_type_key </text>
-<text text-anchor="start" x="2125.88" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2023.92,-484.4 2023.92,-515.2 2281.87,-515.2 2281.87,-484.4 2023.92,-484.4"/>
-<text text-anchor="start" x="2030.92" y="-496.6" font-family="Arial" font-size="14.00">collection_type </text>
-<text text-anchor="start" x="2127.42" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[collection_type]</text>
-<polygon fill="none" stroke="black" points="2023.92,-453.6 2023.92,-484.4 2281.87,-484.4 2281.87,-453.6 2023.92,-453.6"/>
-<text text-anchor="start" x="2030.92" y="-465.8" font-family="Arial" font-size="14.00">collection_unique </text>
-<text text-anchor="start" x="2143" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
-<polygon fill="none" stroke="black" points="2023.92,-422.8 2023.92,-453.6 2281.87,-453.6 2281.87,-422.8 2023.92,-422.8"/>
-<text text-anchor="start" x="2030.92" y="-435" font-family="Arial" font-size="14.00">collection_min </text>
-<text text-anchor="start" x="2123.52" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
-<polygon fill="none" stroke="black" points="2023.92,-392 2023.92,-422.8 2281.87,-422.8 2281.87,-392 2023.92,-392"/>
-<text text-anchor="start" x="2030.92" y="-404.2" font-family="Arial" font-size="14.00">collection_max </text>
-<text text-anchor="start" x="2127.41" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
+<polygon fill="#efefef" stroke="none" points="1667.92,-576.8 1667.92,-612.4 1925.87,-612.4 1925.87,-576.8 1667.92,-576.8"/>
+<polygon fill="none" stroke="black" points="1667.92,-576.8 1667.92,-612.4 1925.87,-612.4 1925.87,-576.8 1667.92,-576.8"/>
+<text text-anchor="start" x="1674.92" y="-590.2" font-family="Arial Bold" font-size="18.00">public.data_type</text>
+<text text-anchor="start" x="1794.38" y="-590.2" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="1825.5" y="-590.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="1667.92,-546 1667.92,-576.8 1925.87,-576.8 1925.87,-546 1667.92,-546"/>
+<text text-anchor="start" x="1674.92" y="-558.2" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="1746.51" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="1667.92,-515.2 1667.92,-546 1925.87,-546 1925.87,-515.2 1667.92,-515.2"/>
+<text text-anchor="start" x="1674.92" y="-527.4" font-family="Arial" font-size="14.00">data_type_key </text>
+<text text-anchor="start" x="1769.88" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="1667.92,-484.4 1667.92,-515.2 1925.87,-515.2 1925.87,-484.4 1667.92,-484.4"/>
+<text text-anchor="start" x="1674.92" y="-496.6" font-family="Arial" font-size="14.00">collection_type </text>
+<text text-anchor="start" x="1771.42" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[collection_type]</text>
+<polygon fill="none" stroke="black" points="1667.92,-453.6 1667.92,-484.4 1925.87,-484.4 1925.87,-453.6 1667.92,-453.6"/>
+<text text-anchor="start" x="1674.92" y="-465.8" font-family="Arial" font-size="14.00">collection_unique </text>
+<text text-anchor="start" x="1787" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
+<polygon fill="none" stroke="black" points="1667.92,-422.8 1667.92,-453.6 1925.87,-453.6 1925.87,-422.8 1667.92,-422.8"/>
+<text text-anchor="start" x="1674.92" y="-435" font-family="Arial" font-size="14.00">collection_min </text>
+<text text-anchor="start" x="1767.52" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
+<polygon fill="none" stroke="black" points="1667.92,-392 1667.92,-422.8 1925.87,-422.8 1925.87,-392 1667.92,-392"/>
+<text text-anchor="start" x="1674.92" y="-404.2" font-family="Arial" font-size="14.00">collection_max </text>
+<text text-anchor="start" x="1771.41" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[bigint]</text>
 </g>
 <!-- public.data_type&#45;&gt;public.model -->
-<g id="edge6" class="edge">
+<g id="edge5" class="edge">
 <title>public.data_type:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M2012.6,-560.86C1934.07,-552.01 2002.51,-437.04 2023.92,-348.8 2039.03,-286.55 2074.1,-282.61 2089.38,-220.4 2099.69,-178.45 2133.58,-123.2 2090.38,-123.2"/>
-<polygon fill="black" stroke="black" points="2012.6,-560.86 2022.35,-565.88 2017.93,-561.14 2022.25,-561.36 2022.25,-561.36 2022.25,-561.36 2017.93,-561.14 2022.82,-556.89 2012.6,-560.86"/>
-<text text-anchor="start" x="2029.92" y="-571.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M1937.2,-560.85C2015.88,-551.97 1949.4,-436.5 1925.87,-348.8 1908.83,-285.3 1869.63,-283.85 1852.41,-220.4 1841.09,-178.71 1808.21,-123.2 1851.41,-123.2"/>
+<polygon fill="black" stroke="black" points="1937.19,-560.85 1926.97,-556.89 1931.86,-561.14 1927.54,-561.36 1927.54,-561.36 1927.54,-561.36 1931.86,-561.14 1927.44,-565.88 1937.19,-560.85"/>
+<text text-anchor="start" x="1933.87" y="-571.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class -->
-<g id="node8" class="node">
+<g id="node7" class="node">
 <title>public.class</title>
-<polygon fill="#efefef" stroke="none" points="2386.41,-623 2386.41,-658.6 2609.38,-658.6 2609.38,-623 2386.41,-623"/>
-<polygon fill="none" stroke="black" points="2386.41,-623 2386.41,-658.6 2609.38,-658.6 2609.38,-623 2386.41,-623"/>
-<text text-anchor="start" x="2393.41" y="-636.4" font-family="Arial Bold" font-size="18.00">public.class</text>
-<text text-anchor="start" x="2477.89" y="-636.4" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="2509.01" y="-636.4" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="2386.41,-592.2 2386.41,-623 2609.38,-623 2609.38,-592.2 2386.41,-592.2"/>
-<text text-anchor="start" x="2393.41" y="-604.4" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="2465" y="-604.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-561.4 2386.41,-592.2 2609.38,-592.2 2609.38,-561.4 2386.41,-561.4"/>
-<text text-anchor="start" x="2393.41" y="-573.6" font-family="Arial" font-size="14.00">class_key </text>
-<text text-anchor="start" x="2458.77" y="-573.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-530.6 2386.41,-561.4 2609.38,-561.4 2609.38,-530.6 2386.41,-530.6"/>
-<text text-anchor="start" x="2393.41" y="-542.8" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="2432.32" y="-542.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-499.8 2386.41,-530.6 2609.38,-530.6 2609.38,-499.8 2386.41,-499.8"/>
-<text text-anchor="start" x="2393.41" y="-512" font-family="Arial" font-size="14.00">subdomain_key </text>
-<text text-anchor="start" x="2495.36" y="-512" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-469 2386.41,-499.8 2609.38,-499.8 2609.38,-469 2386.41,-469"/>
-<text text-anchor="start" x="2393.41" y="-481.2" font-family="Arial" font-size="14.00">actor_key </text>
-<text text-anchor="start" x="2458" y="-481.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-438.2 2386.41,-469 2609.38,-469 2609.38,-438.2 2386.41,-438.2"/>
-<text text-anchor="start" x="2393.41" y="-450.4" font-family="Arial" font-size="14.00">superclass_of_key </text>
-<text text-anchor="start" x="2513.25" y="-450.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-407.4 2386.41,-438.2 2609.38,-438.2 2609.38,-407.4 2386.41,-407.4"/>
-<text text-anchor="start" x="2393.41" y="-419.6" font-family="Arial" font-size="14.00">subclass_of_key </text>
-<text text-anchor="start" x="2500.8" y="-419.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-376.6 2386.41,-407.4 2609.38,-407.4 2609.38,-376.6 2386.41,-376.6"/>
-<text text-anchor="start" x="2393.41" y="-388.8" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="2437.77" y="-388.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2386.41,-345.8 2386.41,-376.6 2609.38,-376.6 2609.38,-345.8 2386.41,-345.8"/>
-<text text-anchor="start" x="2393.41" y="-358" font-family="Arial" font-size="14.00">uml_comment </text>
-<text text-anchor="start" x="2485.22" y="-358" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="2030.41,-623 2030.41,-658.6 2253.38,-658.6 2253.38,-623 2030.41,-623"/>
+<polygon fill="none" stroke="black" points="2030.41,-623 2030.41,-658.6 2253.38,-658.6 2253.38,-623 2030.41,-623"/>
+<text text-anchor="start" x="2037.41" y="-636.4" font-family="Arial Bold" font-size="18.00">public.class</text>
+<text text-anchor="start" x="2121.89" y="-636.4" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="2153.01" y="-636.4" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="2030.41,-592.2 2030.41,-623 2253.38,-623 2253.38,-592.2 2030.41,-592.2"/>
+<text text-anchor="start" x="2037.41" y="-604.4" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="2109" y="-604.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-561.4 2030.41,-592.2 2253.38,-592.2 2253.38,-561.4 2030.41,-561.4"/>
+<text text-anchor="start" x="2037.41" y="-573.6" font-family="Arial" font-size="14.00">class_key </text>
+<text text-anchor="start" x="2102.77" y="-573.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-530.6 2030.41,-561.4 2253.38,-561.4 2253.38,-530.6 2030.41,-530.6"/>
+<text text-anchor="start" x="2037.41" y="-542.8" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="2076.32" y="-542.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-499.8 2030.41,-530.6 2253.38,-530.6 2253.38,-499.8 2030.41,-499.8"/>
+<text text-anchor="start" x="2037.41" y="-512" font-family="Arial" font-size="14.00">subdomain_key </text>
+<text text-anchor="start" x="2139.36" y="-512" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-469 2030.41,-499.8 2253.38,-499.8 2253.38,-469 2030.41,-469"/>
+<text text-anchor="start" x="2037.41" y="-481.2" font-family="Arial" font-size="14.00">actor_key </text>
+<text text-anchor="start" x="2102" y="-481.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-438.2 2030.41,-469 2253.38,-469 2253.38,-438.2 2030.41,-438.2"/>
+<text text-anchor="start" x="2037.41" y="-450.4" font-family="Arial" font-size="14.00">superclass_of_key </text>
+<text text-anchor="start" x="2157.25" y="-450.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-407.4 2030.41,-438.2 2253.38,-438.2 2253.38,-407.4 2030.41,-407.4"/>
+<text text-anchor="start" x="2037.41" y="-419.6" font-family="Arial" font-size="14.00">subclass_of_key </text>
+<text text-anchor="start" x="2144.8" y="-419.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-376.6 2030.41,-407.4 2253.38,-407.4 2253.38,-376.6 2030.41,-376.6"/>
+<text text-anchor="start" x="2037.41" y="-388.8" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="2081.77" y="-388.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2030.41,-345.8 2030.41,-376.6 2253.38,-376.6 2253.38,-345.8 2030.41,-345.8"/>
+<text text-anchor="start" x="2037.41" y="-358" font-family="Arial" font-size="14.00">uml_comment </text>
+<text text-anchor="start" x="2129.22" y="-358" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.class&#45;&gt;public.model -->
-<g id="edge7" class="edge">
+<g id="edge6" class="edge">
 <title>public.class:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M2375.29,-605.76C2313.06,-581.23 2376.84,-318.11 2333.9,-256.4 2263.43,-155.14 2213.74,-123.2 2090.38,-123.2"/>
-<polygon fill="black" stroke="black" points="2375.24,-605.76 2384.28,-611.97 2380.49,-606.71 2384.75,-607.48 2384.75,-607.48 2384.75,-607.48 2380.49,-606.71 2385.88,-603.11 2375.24,-605.76"/>
-<text text-anchor="start" x="2087.25" y="-591.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M2019.31,-605.51C1966.9,-581.86 2011.7,-363.88 2030.41,-302.6 2043.25,-260.57 2072.4,-262.39 2085.38,-220.4 2098.14,-179.13 2129.58,-123.2 2086.38,-123.2"/>
+<polygon fill="black" stroke="black" points="2019.29,-605.51 2028.17,-611.94 2024.51,-606.59 2028.76,-607.46 2028.76,-607.46 2028.76,-607.46 2024.51,-606.59 2029.99,-603.13 2019.29,-605.51"/>
+<text text-anchor="start" x="2036.41" y="-617.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.association -->
-<g id="node9" class="node">
+<g id="node8" class="node">
 <title>public.association</title>
-<polygon fill="#efefef" stroke="none" points="2713.91,-669.2 2713.91,-704.8 2981.88,-704.8 2981.88,-669.2 2713.91,-669.2"/>
-<polygon fill="none" stroke="black" points="2713.91,-669.2 2713.91,-704.8 2981.88,-704.8 2981.88,-669.2 2713.91,-669.2"/>
-<text text-anchor="start" x="2720.91" y="-682.6" font-family="Arial Bold" font-size="18.00">public.association</text>
-<text text-anchor="start" x="2850.39" y="-682.6" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="2881.5" y="-682.6" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="2713.91,-638.4 2713.91,-669.2 2981.88,-669.2 2981.88,-638.4 2713.91,-638.4"/>
-<text text-anchor="start" x="2720.91" y="-650.6" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="2792.51" y="-650.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-607.6 2713.91,-638.4 2981.88,-638.4 2981.88,-607.6 2713.91,-607.6"/>
-<text text-anchor="start" x="2720.91" y="-619.8" font-family="Arial" font-size="14.00">association_key </text>
-<text text-anchor="start" x="2824.42" y="-619.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-576.8 2713.91,-607.6 2981.88,-607.6 2981.88,-576.8 2713.91,-576.8"/>
-<text text-anchor="start" x="2720.91" y="-589" font-family="Arial" font-size="14.00">from_class_key </text>
-<text text-anchor="start" x="2822.06" y="-589" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-546 2713.91,-576.8 2981.88,-576.8 2981.88,-546 2713.91,-546"/>
-<text text-anchor="start" x="2720.91" y="-558.2" font-family="Arial" font-size="14.00">from_multiplicity_lower </text>
-<text text-anchor="start" x="2866.4" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
-<polygon fill="none" stroke="black" points="2713.91,-515.2 2713.91,-546 2981.88,-546 2981.88,-515.2 2713.91,-515.2"/>
-<text text-anchor="start" x="2720.91" y="-527.4" font-family="Arial" font-size="14.00">from_multiplicity_higher </text>
-<text text-anchor="start" x="2871.86" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
-<polygon fill="none" stroke="black" points="2713.91,-484.4 2713.91,-515.2 2981.88,-515.2 2981.88,-484.4 2713.91,-484.4"/>
-<text text-anchor="start" x="2720.91" y="-496.6" font-family="Arial" font-size="14.00">to_class_key </text>
-<text text-anchor="start" x="2805.73" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-453.6 2713.91,-484.4 2981.88,-484.4 2981.88,-453.6 2713.91,-453.6"/>
-<text text-anchor="start" x="2720.91" y="-465.8" font-family="Arial" font-size="14.00">to_multiplicity_lower </text>
-<text text-anchor="start" x="2850.07" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
-<polygon fill="none" stroke="black" points="2713.91,-422.8 2713.91,-453.6 2981.88,-453.6 2981.88,-422.8 2713.91,-422.8"/>
-<text text-anchor="start" x="2720.91" y="-435" font-family="Arial" font-size="14.00">to_multiplicity_higher </text>
-<text text-anchor="start" x="2855.53" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
-<polygon fill="none" stroke="black" points="2713.91,-392 2713.91,-422.8 2981.88,-422.8 2981.88,-392 2713.91,-392"/>
-<text text-anchor="start" x="2720.91" y="-404.2" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="2759.82" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-361.2 2713.91,-392 2981.88,-392 2981.88,-361.2 2713.91,-361.2"/>
-<text text-anchor="start" x="2720.91" y="-373.4" font-family="Arial" font-size="14.00">association_class_key </text>
-<text text-anchor="start" x="2864.1" y="-373.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-330.4 2713.91,-361.2 2981.88,-361.2 2981.88,-330.4 2713.91,-330.4"/>
-<text text-anchor="start" x="2720.91" y="-342.6" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="2765.27" y="-342.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="2713.91,-299.6 2713.91,-330.4 2981.88,-330.4 2981.88,-299.6 2713.91,-299.6"/>
-<text text-anchor="start" x="2720.91" y="-311.8" font-family="Arial" font-size="14.00">uml_comment </text>
-<text text-anchor="start" x="2812.72" y="-311.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="2357.91,-669.2 2357.91,-704.8 2625.88,-704.8 2625.88,-669.2 2357.91,-669.2"/>
+<polygon fill="none" stroke="black" points="2357.91,-669.2 2357.91,-704.8 2625.88,-704.8 2625.88,-669.2 2357.91,-669.2"/>
+<text text-anchor="start" x="2364.91" y="-682.6" font-family="Arial Bold" font-size="18.00">public.association</text>
+<text text-anchor="start" x="2494.39" y="-682.6" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="2525.5" y="-682.6" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="2357.91,-638.4 2357.91,-669.2 2625.88,-669.2 2625.88,-638.4 2357.91,-638.4"/>
+<text text-anchor="start" x="2364.91" y="-650.6" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="2436.51" y="-650.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-607.6 2357.91,-638.4 2625.88,-638.4 2625.88,-607.6 2357.91,-607.6"/>
+<text text-anchor="start" x="2364.91" y="-619.8" font-family="Arial" font-size="14.00">association_key </text>
+<text text-anchor="start" x="2468.42" y="-619.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-576.8 2357.91,-607.6 2625.88,-607.6 2625.88,-576.8 2357.91,-576.8"/>
+<text text-anchor="start" x="2364.91" y="-589" font-family="Arial" font-size="14.00">from_class_key </text>
+<text text-anchor="start" x="2466.06" y="-589" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-546 2357.91,-576.8 2625.88,-576.8 2625.88,-546 2357.91,-546"/>
+<text text-anchor="start" x="2364.91" y="-558.2" font-family="Arial" font-size="14.00">from_multiplicity_lower </text>
+<text text-anchor="start" x="2510.4" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="2357.91,-515.2 2357.91,-546 2625.88,-546 2625.88,-515.2 2357.91,-515.2"/>
+<text text-anchor="start" x="2364.91" y="-527.4" font-family="Arial" font-size="14.00">from_multiplicity_higher </text>
+<text text-anchor="start" x="2515.86" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="2357.91,-484.4 2357.91,-515.2 2625.88,-515.2 2625.88,-484.4 2357.91,-484.4"/>
+<text text-anchor="start" x="2364.91" y="-496.6" font-family="Arial" font-size="14.00">to_class_key </text>
+<text text-anchor="start" x="2449.73" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-453.6 2357.91,-484.4 2625.88,-484.4 2625.88,-453.6 2357.91,-453.6"/>
+<text text-anchor="start" x="2364.91" y="-465.8" font-family="Arial" font-size="14.00">to_multiplicity_lower </text>
+<text text-anchor="start" x="2494.07" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="2357.91,-422.8 2357.91,-453.6 2625.88,-453.6 2625.88,-422.8 2357.91,-422.8"/>
+<text text-anchor="start" x="2364.91" y="-435" font-family="Arial" font-size="14.00">to_multiplicity_higher </text>
+<text text-anchor="start" x="2499.53" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="2357.91,-392 2357.91,-422.8 2625.88,-422.8 2625.88,-392 2357.91,-392"/>
+<text text-anchor="start" x="2364.91" y="-404.2" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="2403.82" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-361.2 2357.91,-392 2625.88,-392 2625.88,-361.2 2357.91,-361.2"/>
+<text text-anchor="start" x="2364.91" y="-373.4" font-family="Arial" font-size="14.00">association_class_key </text>
+<text text-anchor="start" x="2508.1" y="-373.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-330.4 2357.91,-361.2 2625.88,-361.2 2625.88,-330.4 2357.91,-330.4"/>
+<text text-anchor="start" x="2364.91" y="-342.6" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="2409.27" y="-342.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2357.91,-299.6 2357.91,-330.4 2625.88,-330.4 2625.88,-299.6 2357.91,-299.6"/>
+<text text-anchor="start" x="2364.91" y="-311.8" font-family="Arial" font-size="14.00">uml_comment </text>
+<text text-anchor="start" x="2456.72" y="-311.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.association&#45;&gt;public.model -->
-<g id="edge8" class="edge">
+<g id="edge7" class="edge">
 <title>public.association:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M2702.88,-652.17C2631.63,-627.07 2719.14,-319.75 2661.9,-256.4 2574.47,-159.64 2220.79,-123.2 2090.38,-123.2"/>
-<polygon fill="black" stroke="black" points="2702.71,-652.14 2711.86,-658.19 2707.98,-653 2712.25,-653.69 2712.25,-653.69 2712.25,-653.69 2707.98,-653 2713.31,-649.3 2702.71,-652.14"/>
-<text text-anchor="start" x="2719.91" y="-663.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M2346.82,-652.21C2274.75,-627.74 2352.44,-327.98 2305.9,-256.4 2243.69,-160.73 2200.5,-123.2 2086.38,-123.2"/>
+<polygon fill="black" stroke="black" points="2346.71,-652.19 2355.88,-658.19 2351.98,-653.02 2356.25,-653.7 2356.25,-653.7 2356.25,-653.7 2351.98,-653.02 2357.28,-649.3 2346.71,-652.19"/>
+<text text-anchor="start" x="1957.03" y="-663.8" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+</g>
+<!-- public.use_case -->
+<g id="node9" class="node">
+<title>public.use_case</title>
+<polygon fill="#efefef" stroke="none" points="2729.92,-638.4 2729.92,-674 2981.87,-674 2981.87,-638.4 2729.92,-638.4"/>
+<polygon fill="none" stroke="black" points="2729.92,-638.4 2729.92,-674 2981.87,-674 2981.87,-638.4 2729.92,-638.4"/>
+<text text-anchor="start" x="2736.92" y="-651.8" font-family="Arial Bold" font-size="18.00">public.use_case</text>
+<text text-anchor="start" x="2850.38" y="-651.8" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="2881.5" y="-651.8" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="2729.92,-607.6 2729.92,-638.4 2981.87,-638.4 2981.87,-607.6 2729.92,-607.6"/>
+<text text-anchor="start" x="2736.92" y="-619.8" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="2808.51" y="-619.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-576.8 2729.92,-607.6 2981.87,-607.6 2981.87,-576.8 2729.92,-576.8"/>
+<text text-anchor="start" x="2736.92" y="-589" font-family="Arial" font-size="14.00">use_case_key </text>
+<text text-anchor="start" x="2830.31" y="-589" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-546 2729.92,-576.8 2981.87,-576.8 2981.87,-546 2729.92,-546"/>
+<text text-anchor="start" x="2736.92" y="-558.2" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="2775.83" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-515.2 2729.92,-546 2981.87,-546 2981.87,-515.2 2729.92,-515.2"/>
+<text text-anchor="start" x="2736.92" y="-527.4" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="2781.28" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-484.4 2729.92,-515.2 2981.87,-515.2 2981.87,-484.4 2729.92,-484.4"/>
+<text text-anchor="start" x="2736.92" y="-496.6" font-family="Arial" font-size="14.00">level </text>
+<text text-anchor="start" x="2769.6" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[use_case_level]</text>
+<polygon fill="none" stroke="black" points="2729.92,-453.6 2729.92,-484.4 2981.87,-484.4 2981.87,-453.6 2729.92,-453.6"/>
+<text text-anchor="start" x="2736.92" y="-465.8" font-family="Arial" font-size="14.00">read_only </text>
+<text text-anchor="start" x="2802.3" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>
+<polygon fill="none" stroke="black" points="2729.92,-422.8 2729.92,-453.6 2981.87,-453.6 2981.87,-422.8 2729.92,-422.8"/>
+<text text-anchor="start" x="2736.92" y="-435" font-family="Arial" font-size="14.00">subdomain_key </text>
+<text text-anchor="start" x="2838.87" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-392 2729.92,-422.8 2981.87,-422.8 2981.87,-392 2729.92,-392"/>
+<text text-anchor="start" x="2736.92" y="-404.2" font-family="Arial" font-size="14.00">superclass_of_key </text>
+<text text-anchor="start" x="2856.76" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-361.2 2729.92,-392 2981.87,-392 2981.87,-361.2 2729.92,-361.2"/>
+<text text-anchor="start" x="2736.92" y="-373.4" font-family="Arial" font-size="14.00">subclass_of_key </text>
+<text text-anchor="start" x="2844.31" y="-373.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="2729.92,-330.4 2729.92,-361.2 2981.87,-361.2 2981.87,-330.4 2729.92,-330.4"/>
+<text text-anchor="start" x="2736.92" y="-342.6" font-family="Arial" font-size="14.00">uml_comment </text>
+<text text-anchor="start" x="2828.73" y="-342.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+</g>
+<!-- public.use_case&#45;&gt;public.model -->
+<g id="edge8" class="edge">
+<title>public.use_case:model_key&#45;&gt;public.model:model_key</title>
+<path fill="none" stroke="black" d="M2718.83,-621.2C2654.19,-596 2731.09,-314.21 2677.9,-256.4 2586.66,-157.25 2221.12,-123.2 2086.38,-123.2"/>
+<polygon fill="black" stroke="black" points="2718.75,-621.18 2727.8,-627.37 2724,-622.12 2728.26,-622.88 2728.26,-622.88 2728.26,-622.88 2724,-622.12 2729.38,-618.51 2718.75,-621.18"/>
+<text text-anchor="start" x="2735.92" y="-633" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.scenario -->
 <g id="node10" class="node">
@@ -375,9 +375,9 @@
 <!-- public.scenario&#45;&gt;public.model -->
 <g id="edge9" class="edge">
 <title>public.scenario:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M3074.82,-559.17C3023.17,-533.91 3080.41,-301.75 3033.9,-256.4 2958.08,-182.5 2196.26,-123.2 2090.38,-123.2"/>
+<path fill="none" stroke="black" d="M3074.82,-559.17C3023.17,-533.91 3080.43,-301.73 3033.9,-256.4 2957.74,-182.21 2192.7,-123.2 2086.38,-123.2"/>
 <polygon fill="black" stroke="black" points="3074.83,-559.17 3083.62,-565.72 3080.04,-560.32 3084.27,-561.26 3084.27,-561.26 3084.27,-561.26 3080.04,-560.32 3085.56,-556.93 3074.83,-559.17"/>
-<text text-anchor="start" x="3091.92" y="-571.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<text text-anchor="start" x="2685.04" y="-571.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.scenario_object -->
 <g id="node11" class="node">
@@ -418,7 +418,7 @@
 <!-- public.scenario_object&#45;&gt;public.model -->
 <g id="edge10" class="edge">
 <title>public.scenario_object:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M3427.38,-605.7C3366.14,-580.32 3440.19,-308.4 3385.9,-256.4 3281.38,-156.31 2235.09,-123.2 2090.38,-123.2"/>
+<path fill="none" stroke="black" d="M3427.38,-605.7C3366.15,-580.32 3440.2,-308.39 3385.9,-256.4 3281.05,-156.03 2231.53,-123.2 2086.38,-123.2"/>
 <polygon fill="black" stroke="black" points="3427.28,-605.68 3436.27,-611.96 3432.52,-606.67 3436.77,-607.48 3436.77,-607.48 3436.77,-607.48 3432.52,-606.67 3437.94,-603.12 3427.28,-605.68"/>
 <text text-anchor="start" x="3444.43" y="-617.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>

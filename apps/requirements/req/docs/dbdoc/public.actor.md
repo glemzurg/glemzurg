@@ -8,8 +8,8 @@ A role that a person or sytem can take who uses the system. Actors are outside o
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.use_case_actor](public.use_case_actor.md) [public.class](public.class.md) | [public.model](public.model.md) [public.generalization](public.generalization.md) | The model this actor is part of. |
-| actor_key | text |  | false | [public.use_case_actor](public.use_case_actor.md) [public.class](public.class.md) |  | The internal ID. |
+| model_key | text |  | false | [public.class](public.class.md) | [public.model](public.model.md) [public.generalization](public.generalization.md) | The model this actor is part of. |
+| actor_key | text |  | false | [public.class](public.class.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the actor. |
 | details | text |  | true |  |  | A summary description. |
 | actor_type | actor_type |  | false |  |  | Whether this actor is a person or a system. |

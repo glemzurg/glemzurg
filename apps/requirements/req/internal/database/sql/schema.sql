@@ -130,91 +130,6 @@ COMMENT ON COLUMN actor.uml_comment IS 'A comment that appears in the diagrams.'
 
 --------------------------------------------------------------
 
-CREATE TYPE use_case_level AS ENUM ('sky', 'sea', 'mud');
-COMMENT ON TYPE use_case_level IS 'How high- or low-level the use case is.
-
-- Sky. A collection of related transactions.
-- Sea. A coherent and independent unit of work.
-- Mud. A re-useable fragment of a sea-level use case. 
-';
-
-CREATE TABLE use_case (
-  model_key text NOT NULL,
-  use_case_key text NOT NULL,
-  name text NOT NULL,
-  details text DEFAULT NULL,
-  level use_case_level NOT NULL,
-  read_only boolean NOT NULL,
-  subdomain_key text NOT NULL,
-  superclass_of_key text DEFAULT NULL,
-  subclass_of_key text DEFAULT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (model_key, use_case_key),
-  CONSTRAINT fk_use_case_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
-  CONSTRAINT fk_use_case_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
-  CONSTRAINT fk_use_case_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE,
-  CONSTRAINT fk_use_case_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE use_case IS 'A sequence of steps in the business rules.';
-COMMENT ON COLUMN use_case.model_key IS 'The model this use case is part of.';
-COMMENT ON COLUMN use_case.use_case_key IS 'The internal ID.';
-COMMENT ON COLUMN use_case.name IS 'The unique name of the use case.';
-COMMENT ON COLUMN use_case.level IS 'How big is the scope of this use case.';
-COMMENT ON COLUMN use_case.read_only IS 'When true, this use case changes no state.';
-COMMENT ON COLUMN use_case.subdomain_key IS 'The subdomain this use case is part of.';
-COMMENT ON COLUMN use_case.superclass_of_key IS 'The generalization this use case is a superclass of, if it is one.';
-COMMENT ON COLUMN use_case.subclass_of_key IS 'The generalization this use case is a subclass of, if it is one.';
-COMMENT ON COLUMN use_case.details IS 'A summary description.';
-COMMENT ON COLUMN use_case.uml_comment IS 'A comment that appears in the diagrams.';
-
---------------------------------------------------------------
-
-CREATE TABLE use_case_actor (
-  model_key text NOT NULL,
-  use_case_key text NOT NULL,
-  actor_key text NOT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (model_key, use_case_key, actor_key),
-  CONSTRAINT fk_uca_use_case FOREIGN KEY (model_key, use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE,
-  CONSTRAINT fk_uca_actor FOREIGN KEY (model_key, actor_key) REFERENCES actor (model_key, actor_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE use_case_actor IS 'Which actors participate in which use cases.';
-COMMENT ON COLUMN use_case_actor.model_key IS 'The model this use case actor is part of.';
-COMMENT ON COLUMN use_case_actor.use_case_key IS 'The use case.';
-COMMENT ON COLUMN use_case_actor.actor_key IS 'The actor.';
-COMMENT ON COLUMN use_case_actor.uml_comment IS 'A comment that appears in the diagrams.';
-
---------------------------------------------------------------
-
-CREATE TYPE share_type AS ENUM ('include', 'extend');
-COMMENT ON TYPE use_case_level IS 'Mud-level use cases can have two releationships to sea level use cases.
-
-- Include. This is a shared bit of sequence in multiple sea-level use cases.
-- Extend. This is a optional continuation of a sea-level use case into a common sequence.
-';
-
-CREATE TABLE use_case_shared (
-  model_key text NOT NULL,
-  sea_use_case_key text NOT NULL,
-  mud_use_case_key text NOT NULL,
-  share_type share_type NOT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (model_key, sea_use_case_key, mud_use_case_key),
-  CONSTRAINT fk_shared_sea FOREIGN KEY (model_key, sea_use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE,
-  CONSTRAINT fk_shared_mud FOREIGN KEY (model_key, mud_use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE use_case_shared IS 'Which use cases are used by with other use cases.';
-COMMENT ON COLUMN use_case_shared.model_key IS 'The model this relationship is part of.';
-COMMENT ON COLUMN use_case_shared.sea_use_case_key IS 'The higher-level use case.';
-COMMENT ON COLUMN use_case_shared.mud_use_case_key IS 'The lower-level use case.';
-COMMENT ON COLUMN use_case_shared.share_type IS 'The type of relationship these use cases have.';
-COMMENT ON COLUMN use_case_shared.uml_comment IS 'A comment that appears in the diagrams.';
-
---------------------------------------------------------------
-
 CREATE TYPE collection_type AS ENUM ('atomic', 'record',  'unordered', 'ordered', 'queue', 'stack');
 COMMENT ON TYPE collection_type IS 'The kind of collection a data type is (or whether it is).
 
@@ -688,6 +603,91 @@ COMMENT ON COLUMN action_parameter.data_type_key IS 'If the rules are parsable, 
 COMMENT ON COLUMN action_parameter.name IS 'The unique name of the parameter within the attribute.';
 COMMENT ON COLUMN action_parameter.details IS 'A summary description.';
 COMMENT ON COLUMN action_parameter.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
+CREATE TYPE use_case_level AS ENUM ('sky', 'sea', 'mud');
+COMMENT ON TYPE use_case_level IS 'How high- or low-level the use case is.
+
+- Sky. A collection of related transactions.
+- Sea. A coherent and independent unit of work.
+- Mud. A re-useable fragment of a sea-level use case. 
+';
+
+CREATE TABLE use_case (
+  model_key text NOT NULL,
+  use_case_key text NOT NULL,
+  name text NOT NULL,
+  details text DEFAULT NULL,
+  level use_case_level NOT NULL,
+  read_only boolean NOT NULL,
+  subdomain_key text NOT NULL,
+  superclass_of_key text DEFAULT NULL,
+  subclass_of_key text DEFAULT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (model_key, use_case_key),
+  CONSTRAINT fk_use_case_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_use_case_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
+  CONSTRAINT fk_use_case_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE,
+  CONSTRAINT fk_use_case_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE use_case IS 'A sequence of steps in the business rules.';
+COMMENT ON COLUMN use_case.model_key IS 'The model this use case is part of.';
+COMMENT ON COLUMN use_case.use_case_key IS 'The internal ID.';
+COMMENT ON COLUMN use_case.name IS 'The unique name of the use case.';
+COMMENT ON COLUMN use_case.level IS 'How big is the scope of this use case.';
+COMMENT ON COLUMN use_case.read_only IS 'When true, this use case changes no state.';
+COMMENT ON COLUMN use_case.subdomain_key IS 'The subdomain this use case is part of.';
+COMMENT ON COLUMN use_case.superclass_of_key IS 'The generalization this use case is a superclass of, if it is one.';
+COMMENT ON COLUMN use_case.subclass_of_key IS 'The generalization this use case is a subclass of, if it is one.';
+COMMENT ON COLUMN use_case.details IS 'A summary description.';
+COMMENT ON COLUMN use_case.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
+CREATE TABLE use_case_actor (
+  model_key text NOT NULL,
+  use_case_key text NOT NULL,
+  actor_key text NOT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (model_key, use_case_key, actor_key),
+  CONSTRAINT fk_uca_use_case FOREIGN KEY (model_key, use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE,
+  CONSTRAINT fk_uca_actor_class FOREIGN KEY (model_key, actor_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE use_case_actor IS 'Which actors participate in which use cases.';
+COMMENT ON COLUMN use_case_actor.model_key IS 'The model this use case actor is part of.';
+COMMENT ON COLUMN use_case_actor.use_case_key IS 'The use case.';
+COMMENT ON COLUMN use_case_actor.actor_key IS 'The actor class, so a requires a class that is an actor.';
+COMMENT ON COLUMN use_case_actor.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
+CREATE TYPE share_type AS ENUM ('include', 'extend');
+COMMENT ON TYPE use_case_level IS 'Mud-level use cases can have two releationships to sea level use cases.
+
+- Include. This is a shared bit of sequence in multiple sea-level use cases.
+- Extend. This is a optional continuation of a sea-level use case into a common sequence.
+';
+
+CREATE TABLE use_case_shared (
+  model_key text NOT NULL,
+  sea_use_case_key text NOT NULL,
+  mud_use_case_key text NOT NULL,
+  share_type share_type NOT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (model_key, sea_use_case_key, mud_use_case_key),
+  CONSTRAINT fk_shared_sea FOREIGN KEY (model_key, sea_use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE,
+  CONSTRAINT fk_shared_mud FOREIGN KEY (model_key, mud_use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE use_case_shared IS 'Which use cases are used by with other use cases.';
+COMMENT ON COLUMN use_case_shared.model_key IS 'The model this relationship is part of.';
+COMMENT ON COLUMN use_case_shared.sea_use_case_key IS 'The higher-level use case.';
+COMMENT ON COLUMN use_case_shared.mud_use_case_key IS 'The lower-level use case.';
+COMMENT ON COLUMN use_case_shared.share_type IS 'The type of relationship these use cases have.';
+COMMENT ON COLUMN use_case_shared.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
 
