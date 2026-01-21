@@ -46,10 +46,10 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	if found {
 		superclassOfStr := superclassOfAny.(string)
 		if superclassOfStr != "" {
-			// If it's a simple key (no slashes), construct a class key in the same subdomain.
+			// If it's a simple key (no slashes), construct a generalization key in the same subdomain.
 			var key identity.Key
 			if !strings.Contains(superclassOfStr, "/") {
-				key, err = identity.NewClassKey(subdomainKey, superclassOfStr)
+				key, err = identity.NewGeneralizationKey(subdomainKey, superclassOfStr)
 			} else {
 				key, err = identity.ParseKey(superclassOfStr)
 			}
@@ -65,10 +65,10 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	if found {
 		subclassOfStr := subclassOfAny.(string)
 		if subclassOfStr != "" {
-			// If it's a simple key (no slashes), construct a class key in the same subdomain.
+			// If it's a simple key (no slashes), construct a generalization key in the same subdomain.
 			var key identity.Key
 			if !strings.Contains(subclassOfStr, "/") {
-				key, err = identity.NewClassKey(subdomainKey, subclassOfStr)
+				key, err = identity.NewGeneralizationKey(subdomainKey, subclassOfStr)
 			} else {
 				key, err = identity.ParseKey(subclassOfStr)
 			}
