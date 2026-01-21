@@ -136,6 +136,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								Key:        classKeyAA1,
 								Name:       "ClassAA1",
 								Details:    "Class AA1 details",
+								ActorKey:   &actorKeyA,
 								UmlComment: "Class AA1 UML comment",
 								Attributes: map[identity.Key]model_class.Attribute{
 									attributeKeyAA1A: {
@@ -237,7 +238,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								ReadOnly:   false,
 								UmlComment: "Use case UML comment",
 								Actors: map[identity.Key]model_use_case.Actor{
-									actorKeyA: {
+									classKeyAA1: {
 										UmlComment: "Use case actor UML comment",
 									},
 								},

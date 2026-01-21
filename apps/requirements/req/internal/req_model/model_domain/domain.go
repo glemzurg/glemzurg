@@ -85,8 +85,9 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 	}
 
 	// Validate all children.
+	// Domain associations are root-level entities with no parent (they reference two domains).
 	for _, assoc := range d.DomainAssociations {
-		if err := assoc.ValidateWithParent(&d.Key); err != nil {
+		if err := assoc.ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}

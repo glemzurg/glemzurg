@@ -330,20 +330,16 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Domain associations - returns slice, group by parent domain key.
+		// Domain associations - returns slice, group by problem domain key.
 		domainAssociationsSlice, err := QueryDomainAssociations(tx, modelKey)
 		if err != nil {
 			return err
 		}
-		// Group domain associations by their parent (problem domain) key.
+		// Group domain associations by their problem domain key.
+		// Domain associations are now root-level keys with no parent, so we use ProblemDomainKey.
 		domainAssociationsMap := make(map[identity.Key][]model_domain.Association)
 		for _, assoc := range domainAssociationsSlice {
-			// The parent key is the problem domain key.
-			parentKeyStr := assoc.Key.ParentKey()
-			parentKey, parseErr := identity.ParseKey(parentKeyStr)
-			if parseErr == nil {
-				domainAssociationsMap[parentKey] = append(domainAssociationsMap[parentKey], assoc)
-			}
+			domainAssociationsMap[assoc.ProblemDomainKey] = append(domainAssociationsMap[assoc.ProblemDomainKey], assoc)
 		}
 
 		// Generalizations - returned as slice, need to group by subdomain (parent) key.
