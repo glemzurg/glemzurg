@@ -79,20 +79,19 @@ func (suite *ModelSuite) TestNew() {
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 
-// TestValidateWithParent tests that ValidateWithParent calls both Validate() and ValidateParent().
-// Individual Validate() and ValidateParent() methods are tested elsewhere.
-// These tests just confirm both methods are invoked by ValidateWithParent.
-func (suite *ModelSuite) TestValidateWithParent() {
-	// Test 1: ValidateWithParent calls Model.Validate() - empty name should fail.
+// TestValidateTree tests that Validate validates the entire model tree.
+// This tests that Validate validates children and their parent relationships.
+func (suite *ModelSuite) TestValidateTree() {
+	// Test 1: Validate validates Model fields - empty name should fail.
 	model := Model{
 		Key:     "model1",
 		Name:    "", // Invalid - will fail Validate()
 		Details: "Details",
 	}
-	err := model.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	err := model.Validate()
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "Validate should validate Model fields")
 
-	// Test 2: ValidateWithParent calls Actor.Validate() through the tree.
+	// Test 2: Validate validates child Actor fields through the tree.
 	actorKey := helper.Must(identity.NewActorKey("actor1"))
 	model = Model{
 		Key:     "model1",
@@ -106,10 +105,10 @@ func (suite *ModelSuite) TestValidateWithParent() {
 			},
 		},
 	}
-	err = model.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call child Validate()")
+	err = model.Validate()
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "Validate should validate child fields")
 
-	// Test 3: ValidateWithParent calls ValidateParent() - wrong parent key should fail.
+	// Test 3: Validate validates parent relationships - wrong parent key should fail.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	wrongParentSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
@@ -132,8 +131,8 @@ func (suite *ModelSuite) TestValidateWithParent() {
 			},
 		},
 	}
-	err = model.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	err = model.Validate()
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "Validate should validate parent relationships")
 
 	// Test 4: Valid model should pass.
 	validSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
@@ -164,8 +163,8 @@ func (suite *ModelSuite) TestValidateWithParent() {
 			},
 		},
 	}
-	err = model.ValidateWithParent()
-	assert.NoError(suite.T(), err, "Valid model should pass ValidateWithParent()")
+	err = model.Validate()
+	assert.NoError(suite.T(), err, "Valid model should pass Validate()")
 }
 
 // TestSetClassAssociations tests that SetClassAssociations validates and routes associations.

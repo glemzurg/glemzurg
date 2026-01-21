@@ -39,20 +39,14 @@ func NewModel(key, name, details string) (model Model, err error) {
 	return model, nil
 }
 
-// Validate validates the Model struct.
+// Validate validates the Model struct and all its children.
+// This is the entry point for validating the entire model tree.
 func (m *Model) Validate() error {
-	return validation.ValidateStruct(m,
+	// Validate the model's own fields.
+	if err := validation.ValidateStruct(m,
 		validation.Field(&m.Key, validation.Required),
 		validation.Field(&m.Name, validation.Required),
-	)
-}
-
-// ValidateWithParent validates the Model and all its children.
-// This is the entry point for validating the entire model tree.
-// For Model, parent should always be nil.
-func (m *Model) ValidateWithParent() error {
-	// Validate the model itself.
-	if err := m.Validate(); err != nil {
+	); err != nil {
 		return err
 	}
 

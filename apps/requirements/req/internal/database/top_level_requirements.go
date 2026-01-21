@@ -17,7 +17,7 @@ import (
 func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 	// Validate the model tree before writing to database.
-	if err = model.ValidateWithParent(); err != nil {
+	if err = model.Validate(); err != nil {
 		return err
 	}
 

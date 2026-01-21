@@ -363,7 +363,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	}
 
 	// Validate the model tree before testing.
-	err := input.ValidateWithParent()
+	err := input.Validate()
 	assert.Nil(suite.T(), err, "input model should be valid")
 
 	// Nothing in database yet.
