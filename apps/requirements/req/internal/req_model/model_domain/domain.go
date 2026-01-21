@@ -18,7 +18,6 @@ type Domain struct {
 	UmlComment string
 	// Children
 	DomainAssociations map[identity.Key]Association
-	Classes            map[identity.Key]model_class.Class
 	UseCases           map[identity.Key]model_use_case.UseCase
 	Subdomains         map[identity.Key]Subdomain
 	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
@@ -61,13 +60,21 @@ func (d *Domain) Validate() error {
 // ValidateWithParent validates the Domain, its key's parent relationship, and all children.
 // The parent must be nil (domains are root-level entities).
 func (d *Domain) ValidateWithParent(parent *identity.Key) error {
-	return d.ValidateWithParentAndActors(parent, nil)
+	return d.ValidateWithParentAndActorsAndClasses(parent, nil, nil)
 }
 
 // ValidateWithParentAndActors validates the Domain with access to actors for cross-reference validation.
 // The parent must be nil (domains are root-level entities).
 // The actors map is used to validate that class ActorKey references exist.
 func (d *Domain) ValidateWithParentAndActors(parent *identity.Key, actors map[identity.Key]bool) error {
+	return d.ValidateWithParentAndActorsAndClasses(parent, actors, nil)
+}
+
+// ValidateWithParentAndActorsAndClasses validates the Domain with access to actors and classes for cross-reference validation.
+// The parent must be nil (domains are root-level entities).
+// The actors map is used to validate that class ActorKey references exist.
+// The classes map is used to validate that association class references exist.
+func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := d.Validate(); err != nil {
 		return err
@@ -83,33 +90,25 @@ func (d *Domain) ValidateWithParentAndActors(parent *identity.Key, actors map[id
 			return err
 		}
 	}
-	// Domain-level classes don't have generalizations (those are only in subdomains).
-	// Pass an empty map for generalizations.
-	emptyGeneralizations := make(map[identity.Key]bool)
-	for _, class := range d.Classes {
-		if err := class.ValidateWithParent(&d.Key); err != nil {
-			return err
-		}
-		// Validate cross-references if actors are provided.
-		if actors != nil {
-			if err := class.ValidateReferences(actors, emptyGeneralizations); err != nil {
-				return err
-			}
-		}
-	}
 	for _, useCase := range d.UseCases {
 		if err := useCase.ValidateWithParent(&d.Key); err != nil {
 			return err
 		}
 	}
 	for _, subdomain := range d.Subdomains {
-		if err := subdomain.ValidateWithParentAndActors(&d.Key, actors); err != nil {
+		if err := subdomain.ValidateWithParentAndActorsAndClasses(&d.Key, actors, classes); err != nil {
 			return err
 		}
 	}
 	for _, classAssoc := range d.ClassAssociations {
 		if err := classAssoc.ValidateWithParent(&d.Key); err != nil {
 			return err
+		}
+		// Validate class references if classes map is provided.
+		if classes != nil {
+			if err := classAssoc.ValidateReferences(classes); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -62,6 +62,17 @@ func (m *Model) ValidateWithParent() error {
 		actorKeys[actorKey] = true
 	}
 
+	// Build a set of all class keys in the model for association reference validation.
+	// Classes only exist in subdomains.
+	classKeys := make(map[identity.Key]bool)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey := range subdomain.Classes {
+				classKeys[classKey] = true
+			}
+		}
+	}
+
 	// Validate all children - they all have nil as their parent since Model
 	// doesn't have an identity.Key.
 	for _, actor := range m.Actors {
@@ -70,7 +81,7 @@ func (m *Model) ValidateWithParent() error {
 		}
 	}
 	for _, domain := range m.Domains {
-		if err := domain.ValidateWithParentAndActors(nil, actorKeys); err != nil {
+		if err := domain.ValidateWithParentAndActorsAndClasses(nil, actorKeys, classKeys); err != nil {
 			return err
 		}
 	}
@@ -83,6 +94,9 @@ func (m *Model) ValidateWithParent() error {
 	// Model-level Associations (spanning domains) have nil parent.
 	for _, classAssoc := range m.ClassAssociations {
 		if err := classAssoc.ValidateWithParent(nil); err != nil {
+			return err
+		}
+		if err := classAssoc.ValidateReferences(classKeys); err != nil {
 			return err
 		}
 	}

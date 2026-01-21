@@ -59,13 +59,21 @@ func (s *Subdomain) Validate() error {
 // ValidateWithParent validates the Subdomain, its key's parent relationship, and all children.
 // The parent must be a Domain.
 func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
-	return s.ValidateWithParentAndActors(parent, nil)
+	return s.ValidateWithParentAndActorsAndClasses(parent, nil, nil)
 }
 
 // ValidateWithParentAndActors validates the Subdomain with access to actors for cross-reference validation.
 // The parent must be a Domain.
 // The actors map is used to validate that class ActorKey references exist.
 func (s *Subdomain) ValidateWithParentAndActors(parent *identity.Key, actors map[identity.Key]bool) error {
+	return s.ValidateWithParentAndActorsAndClasses(parent, actors, nil)
+}
+
+// ValidateWithParentAndActorsAndClasses validates the Subdomain with access to actors and classes for cross-reference validation.
+// The parent must be a Domain.
+// The actors map is used to validate that class ActorKey references exist.
+// The classes map is used to validate that association class references exist.
+func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := s.Validate(); err != nil {
 		return err
@@ -106,6 +114,12 @@ func (s *Subdomain) ValidateWithParentAndActors(parent *identity.Key, actors map
 	for _, classAssoc := range s.ClassAssociations {
 		if err := classAssoc.ValidateWithParent(&s.Key); err != nil {
 			return err
+		}
+		// Validate class references if classes map is provided.
+		if classes != nil {
+			if err := classAssoc.ValidateReferences(classes); err != nil {
+				return err
+			}
 		}
 	}
 	// Validate UseCaseShares - both keys must be use cases in this subdomain.

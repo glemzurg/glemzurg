@@ -209,6 +209,97 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 	assert.NoError(suite.T(), err)
 }
 
+// TestValidateReferences tests that ValidateReferences validates class references correctly.
+func (suite *AssociationSuite) TestValidateReferences() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
+	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
+	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
+	nonExistentClassKey := helper.Must(identity.NewClassKey(subdomainKey, "nonexistent"))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+
+	// Build lookup map with all valid classes.
+	classes := map[identity.Key]bool{
+		fromClassKey:  true,
+		toClassKey:    true,
+		assocClassKey: true,
+	}
+
+	tests := []struct {
+		testName    string
+		association Association
+		classes     map[identity.Key]bool
+		errstr      string
+	}{
+		{
+			testName: "valid association with all classes existing",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   toClassKey,
+			},
+			classes: classes,
+		},
+		{
+			testName: "valid association with AssociationClassKey",
+			association: Association{
+				Key:                 validKey,
+				Name:                "Name",
+				FromClassKey:        fromClassKey,
+				ToClassKey:          toClassKey,
+				AssociationClassKey: &assocClassKey,
+			},
+			classes: classes,
+		},
+		{
+			testName: "error FromClassKey references non-existent class",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: nonExistentClassKey,
+				ToClassKey:   toClassKey,
+			},
+			classes: classes,
+			errstr:  "references non-existent from class",
+		},
+		{
+			testName: "error ToClassKey references non-existent class",
+			association: Association{
+				Key:          validKey,
+				Name:         "Name",
+				FromClassKey: fromClassKey,
+				ToClassKey:   nonExistentClassKey,
+			},
+			classes: classes,
+			errstr:  "references non-existent to class",
+		},
+		{
+			testName: "error AssociationClassKey references non-existent class",
+			association: Association{
+				Key:                 validKey,
+				Name:                "Name",
+				FromClassKey:        fromClassKey,
+				ToClassKey:          toClassKey,
+				AssociationClassKey: &nonExistentClassKey,
+			},
+			classes: classes,
+			errstr:  "references non-existent association class",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.association.ValidateReferences(tt.classes)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}
+
 func (suite *AssociationSuite) TestOther() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))

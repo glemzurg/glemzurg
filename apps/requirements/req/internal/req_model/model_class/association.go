@@ -130,3 +130,22 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 	// Association has no children with keys that need validation.
 	return nil
 }
+
+// ValidateReferences validates that the association's class keys reference real classes.
+// - FromClassKey must exist in the classes map
+// - ToClassKey must exist in the classes map
+// - AssociationClassKey (if set) must exist in the classes map
+func (a *Association) ValidateReferences(classes map[identity.Key]bool) error {
+	if !classes[a.FromClassKey] {
+		return errors.Errorf("association '%s' references non-existent from class '%s'", a.Key.String(), a.FromClassKey.String())
+	}
+	if !classes[a.ToClassKey] {
+		return errors.Errorf("association '%s' references non-existent to class '%s'", a.Key.String(), a.ToClassKey.String())
+	}
+	if a.AssociationClassKey != nil {
+		if !classes[*a.AssociationClassKey] {
+			return errors.Errorf("association '%s' references non-existent association class '%s'", a.Key.String(), a.AssociationClassKey.String())
+		}
+	}
+	return nil
+}
