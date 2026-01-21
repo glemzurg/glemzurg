@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
@@ -750,7 +751,9 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	if len(class.Attributes) > 0 {
 		yaml += "\n"
 		yaml += "attributes:\n"
-		for _, attr := range class.GetAttributesSorted() {
+		// Sort attributes for deterministic output.
+		sortedAttrs := req_flat.GetAttributesSorted(class.Attributes)
+		for _, attr := range sortedAttrs {
 			yaml += "\n"
 			name := attr.Key.SubKey()
 			yaml += "    " + name + ":\n"
