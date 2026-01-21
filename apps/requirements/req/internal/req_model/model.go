@@ -55,6 +55,13 @@ func (m *Model) ValidateWithParent() error {
 	if err := m.Validate(); err != nil {
 		return err
 	}
+
+	// Build a set of actor keys for reference validation.
+	actorKeys := make(map[identity.Key]bool)
+	for actorKey := range m.Actors {
+		actorKeys[actorKey] = true
+	}
+
 	// Validate all children - they all have nil as their parent since Model
 	// doesn't have an identity.Key.
 	for _, actor := range m.Actors {
@@ -63,7 +70,7 @@ func (m *Model) ValidateWithParent() error {
 		}
 	}
 	for _, domain := range m.Domains {
-		if err := domain.ValidateWithParent(nil); err != nil {
+		if err := domain.ValidateWithParentAndActors(nil, actorKeys); err != nil {
 			return err
 		}
 	}

@@ -62,10 +62,52 @@ func (c *Class) Validate() error {
 	); err != nil {
 		return err
 	}
-	// SuperclassOfKey and SubclassOfKey cannot be the same.
+	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if c.SuperclassOfKey != nil && c.SubclassOfKey != nil && *c.SuperclassOfKey == *c.SubclassOfKey {
 		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
 	}
+	return nil
+}
+
+// ValidateReferences validates that the class's reference keys point to valid entities.
+// - ActorKey must exist in the actors map
+// - SuperclassOfKey must exist in the generalizations map and be in the same subdomain
+// - SubclassOfKey must exist in the generalizations map and be in the same subdomain
+func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations map[identity.Key]bool) error {
+	// Validate ActorKey references a real actor.
+	if c.ActorKey != nil {
+		if !actors[*c.ActorKey] {
+			return errors.Errorf("class '%s' references non-existent actor '%s'", c.Key.String(), c.ActorKey.String())
+		}
+	}
+
+	// Get this class's subdomain from its parent key.
+	classSubdomainKey := c.Key.ParentKey()
+
+	// Validate SuperclassOfKey references a real generalization in the same subdomain.
+	if c.SuperclassOfKey != nil {
+		if !generalizations[*c.SuperclassOfKey] {
+			return errors.Errorf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SuperclassOfKey.String())
+		}
+		// Check same subdomain.
+		generalizationSubdomainKey := c.SuperclassOfKey.ParentKey()
+		if classSubdomainKey != generalizationSubdomainKey {
+			return errors.Errorf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SuperclassOfKey.String())
+		}
+	}
+
+	// Validate SubclassOfKey references a real generalization in the same subdomain.
+	if c.SubclassOfKey != nil {
+		if !generalizations[*c.SubclassOfKey] {
+			return errors.Errorf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SubclassOfKey.String())
+		}
+		// Check same subdomain.
+		generalizationSubdomainKey := c.SubclassOfKey.ParentKey()
+		if classSubdomainKey != generalizationSubdomainKey {
+			return errors.Errorf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SubclassOfKey.String())
+		}
+	}
+
 	return nil
 }
 

@@ -59,6 +59,13 @@ func (s *Subdomain) Validate() error {
 // ValidateWithParent validates the Subdomain, its key's parent relationship, and all children.
 // The parent must be a Domain.
 func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
+	return s.ValidateWithParentAndActors(parent, nil)
+}
+
+// ValidateWithParentAndActors validates the Subdomain with access to actors for cross-reference validation.
+// The parent must be a Domain.
+// The actors map is used to validate that class ActorKey references exist.
+func (s *Subdomain) ValidateWithParentAndActors(parent *identity.Key, actors map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := s.Validate(); err != nil {
 		return err
@@ -67,6 +74,13 @@ func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
 	if err := s.Key.ValidateParent(parent); err != nil {
 		return err
 	}
+
+	// Build a set of generalization keys for reference validation.
+	generalizationKeys := make(map[identity.Key]bool)
+	for genKey := range s.Generalizations {
+		generalizationKeys[genKey] = true
+	}
+
 	// Validate all children.
 	for _, gen := range s.Generalizations {
 		if err := gen.ValidateWithParent(&s.Key); err != nil {
@@ -76,6 +90,12 @@ func (s *Subdomain) ValidateWithParent(parent *identity.Key) error {
 	for _, class := range s.Classes {
 		if err := class.ValidateWithParent(&s.Key); err != nil {
 			return err
+		}
+		// Validate cross-references if actors are provided.
+		if actors != nil {
+			if err := class.ValidateReferences(actors, generalizationKeys); err != nil {
+				return err
+			}
 		}
 	}
 	for _, useCase := range s.UseCases {
