@@ -74,6 +74,13 @@ func (uc *UseCase) SetScenarios(scenarios map[identity.Key]model_scenario.Scenar
 // ValidateWithParent validates the UseCase, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
+	return uc.ValidateWithParentAndClasses(parent, nil)
+}
+
+// ValidateWithParentAndClasses validates the UseCase with access to classes for cross-reference validation.
+// The parent must be a Subdomain.
+// The classes map is used to validate that scenario object ClassKey references exist.
+func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := uc.Validate(); err != nil {
 		return err
@@ -89,7 +96,7 @@ func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
 		}
 	}
 	for _, scenario := range uc.Scenarios {
-		if err := scenario.ValidateWithParent(&uc.Key); err != nil {
+		if err := scenario.ValidateWithParentAndClasses(&uc.Key, classes); err != nil {
 			return err
 		}
 	}

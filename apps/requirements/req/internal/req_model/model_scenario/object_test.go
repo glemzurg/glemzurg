@@ -194,6 +194,61 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 	assert.NoError(suite.T(), err)
 }
 
+// TestValidateReferences tests that ValidateReferences validates class references correctly.
+func (suite *ObjectSuite) TestValidateReferences() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	nonExistentClassKey := helper.Must(identity.NewClassKey(subdomainKey, "nonexistent"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+	validKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1"))
+
+	// Build lookup map with valid classes.
+	classes := map[identity.Key]bool{
+		classKey: true,
+	}
+
+	tests := []struct {
+		testName string
+		object   Object
+		classes  map[identity.Key]bool
+		errstr   string
+	}{
+		{
+			testName: "valid object with existing class",
+			object: Object{
+				Key:       validKey,
+				Name:      "Name",
+				NameStyle: _NAME_STYLE_NAME,
+				ClassKey:  classKey,
+			},
+			classes: classes,
+		},
+		{
+			testName: "error ClassKey references non-existent class",
+			object: Object{
+				Key:       validKey,
+				Name:      "Name",
+				NameStyle: _NAME_STYLE_NAME,
+				ClassKey:  nonExistentClassKey,
+			},
+			classes: classes,
+			errstr:  "references non-existent class",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.object.ValidateReferences(tt.classes)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}
+
 // TestGetName tests that GetName formats the object name correctly based on NameStyle and Multi.
 func (suite *ObjectSuite) TestGetName() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

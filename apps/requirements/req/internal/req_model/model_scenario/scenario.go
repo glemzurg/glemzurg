@@ -77,6 +77,13 @@ func PopulateScenarioStepReferences(
 // ValidateWithParent validates the Scenario, its key's parent relationship, and all children.
 // The parent must be a UseCase.
 func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
+	return s.ValidateWithParentAndClasses(parent, nil)
+}
+
+// ValidateWithParentAndClasses validates the Scenario with access to classes for cross-reference validation.
+// The parent must be a UseCase.
+// The classes map is used to validate that Object ClassKey references exist.
+func (s *Scenario) ValidateWithParentAndClasses(parent *identity.Key, classes map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := s.Validate(); err != nil {
 		return err
@@ -88,6 +95,9 @@ func (s *Scenario) ValidateWithParent(parent *identity.Key) error {
 	// Validate all children.
 	for _, obj := range s.Objects {
 		if err := obj.ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+		if err := obj.ValidateReferences(classes); err != nil {
 			return err
 		}
 	}

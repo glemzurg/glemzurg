@@ -99,6 +99,15 @@ func (o *Object) ValidateWithParent(parent *identity.Key) error {
 	return nil
 }
 
+// ValidateReferences validates that the object's ClassKey references a real class.
+// The class must exist in the classes map (classes from the same subdomain as the use case).
+func (o *Object) ValidateReferences(classes map[identity.Key]bool) error {
+	if !classes[o.ClassKey] {
+		return errors.Errorf("scenario object '%s' references non-existent class '%s'", o.Key.String(), o.ClassKey.String())
+	}
+	return nil
+}
+
 func (so *Object) GetName(class model_class.Class) (name string) {
 	switch so.NameStyle {
 	case _NAME_STYLE_NAME:
