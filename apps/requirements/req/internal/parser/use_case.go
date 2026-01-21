@@ -389,10 +389,10 @@ func generateNode(node model_scenario.Node, indent string) string {
 			addField("description", node.Description)
 		}
 		if node.FromObjectKey != "" {
-			addField("from_object_key", strings.Split(node.FromObjectKey, "/object/")[1])
+			addField("from_object_key", strings.Split(node.FromObjectKey, "/sobject/")[1])
 		}
 		if node.ToObjectKey != "" {
-			addField("to_object_key", strings.Split(node.ToObjectKey, "/object/")[1])
+			addField("to_object_key", strings.Split(node.ToObjectKey, "/sobject/")[1])
 		}
 		if node.EventKey != "" {
 			addField("event_key", node.EventKey)

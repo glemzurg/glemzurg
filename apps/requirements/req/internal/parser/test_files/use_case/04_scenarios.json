@@ -44,8 +44,8 @@
                 "statements": [
                     {
                         "description": "first step",
-                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/bob",
-                        "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/book",
+                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
+                        "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                         "event_key": "class_key/event/processlog"
                     },
                     {
@@ -53,8 +53,8 @@
                         "statements": [
                             {
                                 "description": "loop step",
-                                "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/book",
-                                "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/bob",
+                                "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
+                                "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
                                 "scenario_key": "use_case_key/scenario/scenario_b_key"
                             }
                         ]
@@ -66,8 +66,8 @@
                                 "statements": [
                                     {
                                         "description": "case1 step",
-                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/bob",
-                                        "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/book",
+                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
+                                        "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                                         "event_key": "class_key/event/processlog"
                                     }
                                 ]
@@ -76,7 +76,7 @@
                                 "condition": "case2",
                                 "statements": [
                                     {
-                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/object/book",
+                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                                         "is_delete": true
                                     }
                                 ]

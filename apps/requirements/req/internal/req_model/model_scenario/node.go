@@ -187,10 +187,10 @@ func (n Node) ToYAML() (string, error) {
 func (n *Node) ScopeObjects(scenarioKey string) error {
 	// Populate this node's references
 	if n.FromObjectKey != "" {
-		n.FromObjectKey = scenarioKey + "/object/" + n.FromObjectKey
+		n.FromObjectKey = scenarioKey + "/sobject/" + n.FromObjectKey
 	}
 	if n.ToObjectKey != "" {
-		n.ToObjectKey = scenarioKey + "/object/" + n.ToObjectKey
+		n.ToObjectKey = scenarioKey + "/sobject/" + n.ToObjectKey
 	}
 
 	// Recursively populate references in statements
