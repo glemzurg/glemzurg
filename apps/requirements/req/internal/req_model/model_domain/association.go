@@ -74,7 +74,7 @@ func (a *Association) Validate() error {
 }
 
 // ValidateWithParent validates the domain Association, its key's parent relationship, and all children.
-// The parent must be nil (domain associations are root-level entities).
+// The parent must be nil since domain associations are root-level entities with no parent.
 func (a *Association) ValidateWithParent(parent *identity.Key) error {
 	// Validate the object itself.
 	if err := a.Validate(); err != nil {

@@ -64,7 +64,7 @@ func (suite *DomainAssociationSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'domain/domain_key/dassociation/domain_key_b',
+				'dassociation/domain_key/domain_key_b',
 				'domain/domain_key',
 				'domain/domain_key_b',
 				'UmlComment'

@@ -150,17 +150,17 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 	err := assoc.ValidateWithParent(nil)
 	assert.ErrorContains(suite.T(), err, "keyType: cannot be blank", "ValidateWithParent should call Validate()")
 
-	// Test that ValidateParent is called - association key has problem domain as parent, but we pass other_domain.
+	// Test that ValidateParent is called - domain association is a root key, so it should not have a parent.
 	assoc = Association{
 		Key:               validKey,
 		ProblemDomainKey:  suite.problemDomainKey,
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
 	err = assoc.ValidateWithParent(&otherDomainKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	assert.ErrorContains(suite.T(), err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
-	// Test valid case - domain association key's parent is problem domain.
-	err = assoc.ValidateWithParent(&suite.problemDomainKey)
+	// Test valid case - domain association key has no parent (root-level entity).
+	err = assoc.ValidateWithParent(nil)
 	assert.NoError(suite.T(), err)
 }
 

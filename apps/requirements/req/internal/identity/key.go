@@ -72,7 +72,7 @@ func (k *Key) Validate() error {
 		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
 			parent := value.(string)
 			switch k.keyType {
-			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR:
+			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN_ASSOCIATION:
 				// These key types must have blank parentKey.
 				if parent != "" {
 					return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.keyType, parent)
@@ -136,7 +136,7 @@ func (k *Key) ValidateParent(parent *Key) error {
 	}
 
 	switch k.keyType {
-	case KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN:
+	case KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION:
 		// These are root keys - parent must be nil.
 		if parent != nil {
 			return errors.Errorf("key type '%s' should not have a parent, but got parent of type '%s'", k.keyType, parent.keyType)
@@ -147,18 +147,6 @@ func (k *Key) ValidateParent(parent *Key) error {
 
 	case KEY_TYPE_SUBDOMAIN:
 		// Parent must be a domain.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_DOMAIN)
-		}
-		if parent.keyType != KEY_TYPE_DOMAIN {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.keyType, KEY_TYPE_DOMAIN, parent.keyType)
-		}
-		if k.parentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.parentKey, parent.String())
-		}
-
-	case KEY_TYPE_DOMAIN_ASSOCIATION:
-		// Parent must be a domain (the problem domain).
 		if parent == nil {
 			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.keyType, KEY_TYPE_DOMAIN)
 		}
@@ -336,19 +324,16 @@ func ParseKey(s string) (key Key, err error) {
 		return Key{}, errors.New("invalid key format2")
 	}
 
-	// Check if this is a key type that uses subKey2 (domain association).
-	// Format: parentKey/keyType/subKey/subKey2
-	// For domain association: domain/problemdomain/dassociation/problemsubkey/solutionsubkey
+	// Check if this is a domain association key (root-level with subKey2).
+	// Format: dassociation/problemSubKey/solutionSubKey
+	// For domain association: dassociation/problem1/solution1
 	keyType := parts[len(parts)-2]
 
 	// If this looks like a domain association with subKey2, handle specially
-	if len(parts) >= 5 && parts[len(parts)-3] == KEY_TYPE_DOMAIN_ASSOCIATION {
-		keyType = parts[len(parts)-3]
-		subKey := parts[len(parts)-2]
-		subKey2Val := parts[len(parts)-1]
-		parentParts := parts[:len(parts)-3]
-		parentKey := strings.Join(parentParts, "/")
-		return newKeyWithSubKey2(parentKey, keyType, subKey, subKey2Val)
+	if len(parts) == 3 && parts[0] == KEY_TYPE_DOMAIN_ASSOCIATION {
+		subKey := parts[1]
+		subKey2Val := parts[2]
+		return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, subKey, subKey2Val)
 	}
 
 	// Check if this is a class association with subKey2.

@@ -1,12 +1,12 @@
 [
     {
-        "Key": "domain/domain_key/dassociation/solution_key_a",
+        "Key": "dassociation/domain_key/solution_key_a",
         "ProblemDomainKey": "domain/domain_key",
         "SolutionDomainKey": "domain/solution_key_a",
         "UmlComment": "very import to users"
     },
     {
-        "Key": "domain/domain_key/dassociation/solution_key_b",
+        "Key": "dassociation/domain_key/solution_key_b",
         "ProblemDomainKey": "domain/domain_key",
         "SolutionDomainKey": "domain/solution_key_b",
         "UmlComment": ""

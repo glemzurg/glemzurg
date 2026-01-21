@@ -104,8 +104,8 @@ func (suite *KeySuite) TestParseKey() {
 		},
 		{
 			testName: "ok domain association with subKey2",
-			input:    "domain/problem1/dassociation/problem1/solution1",
-			expected: Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
+			input:    "dassociation/problem1/solution1",
+			expected: Key{parentKey: "", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
 		},
 		// Class association with subdomain parent.
 		// Format: domain/d/subdomain/s/cassociation/class/class_a/class/class_b
@@ -209,8 +209,8 @@ func (suite *KeySuite) TestString() {
 		},
 		{
 			testName: "with subKey2",
-			key:      Key{parentKey: "domain/problem1", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
-			expected: "domain/problem1/dassociation/problem1/solution1",
+			key:      Key{parentKey: "", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
+			expected: "dassociation/problem1/solution1",
 		},
 		// Class association with subdomain parent.
 		{
@@ -275,7 +275,7 @@ func (suite *KeySuite) TestValidate() {
 		},
 		{
 			testName: "ok domain association",
-			key:      Key{parentKey: "domain/domain1", keyType: "dassociation", subKey: "1"},
+			key:      Key{parentKey: "", keyType: "dassociation", subKey: "1", subKey2: "2"},
 		},
 		{
 			testName: "ok subdomain",
@@ -320,9 +320,9 @@ func (suite *KeySuite) TestValidate() {
 			errstr:   "parentKey: parentKey must be blank for 'domain' keys, cannot be 'notallowed'.",
 		},
 		{
-			testName: "error missing parentKey for domain association",
-			key:      Key{parentKey: "", keyType: "dassociation", subKey: "1"},
-			errstr:   "parentKey: parentKey must be non-blank for 'dassociation' keys.",
+			testName: "error domain association with parentKey",
+			key:      Key{parentKey: "notallowed", keyType: "dassociation", subKey: "1", subKey2: "2"},
+			errstr:   "parentKey: parentKey must be blank for 'dassociation' keys, cannot be 'notallowed'.",
 		},
 		{
 			testName: "error missing parentKey for subdomain",
@@ -364,6 +364,7 @@ func (suite *KeySuite) TestValidateParent() {
 	scenarioKey, _ := NewScenarioKey(useCaseKey, "testscenario")
 	stateKey, _ := NewStateKey(classKey, "teststate")
 	actorKey, _ := NewActorKey("testactor")
+	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
 
 	// Class associations at different levels.
 	subdomainCassocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey)
@@ -402,6 +403,17 @@ func (suite *KeySuite) TestValidateParent() {
 			testName: "error domain with parent",
 			key:      domainKey,
 			parent:   &domainKey2,
+			errstr:   "should not have a parent",
+		},
+		{
+			testName: "ok domain association nil parent",
+			key:      domainAssocKey,
+			parent:   nil,
+		},
+		{
+			testName: "error domain association with parent",
+			key:      domainAssocKey,
+			parent:   &domainKey,
 			errstr:   "should not have a parent",
 		},
 
