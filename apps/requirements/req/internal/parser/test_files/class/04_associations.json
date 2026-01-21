@@ -2,7 +2,7 @@
     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key",
     "Name": "A Basic Class",
     "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
-    "ActorKey": "actor/actor_key",
+    "ActorKey": "domain/test_domain/subdomain/test_subdomain/class/actor_key",
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
     "Attributes": {},
     "States": {},

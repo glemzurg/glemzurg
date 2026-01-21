@@ -63,7 +63,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 				return model_use_case.UseCase{}, err
 			}
 			// Construct the actor key from the string.
-			actorKey, err := identity.NewActorKey(actorKeyStr)
+			actorKey, err := identity.NewClassKey(subdomainKey, actorKeyStr)
 			if err != nil {
 				return model_use_case.UseCase{}, errors.WithStack(err)
 			}

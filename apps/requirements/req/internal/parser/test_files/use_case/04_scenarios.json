@@ -7,10 +7,10 @@
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
 
     "Actors": {
-        "actor/actor_key": {
+        "domain/test_domain/subdomain/test_subdomain/class/actor_key": {
             "UmlComment": "Actor stuff"
         },
-        "actor/actor_b_key": {
+        "domain/test_domain/subdomain/test_subdomain/class/actor_b_key": {
             "UmlComment": "Actor B stuff"
         }
     },

@@ -33,7 +33,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	if found {
 		actorKeyStr := actorAny.(string)
 		if actorKeyStr != "" {
-			key, err := identity.NewActorKey(actorKeyStr)
+			key, err := identity.NewClassKey(subdomainKey, actorKeyStr)
 			if err != nil {
 				return model_class.Class{}, nil, errors.WithStack(err)
 			}
