@@ -34,6 +34,11 @@ func Parse(modelPath string) (model req_model.Model, err error) {
 		return req_model.Model{}, errors.WithStack(err)
 	}
 
+	// Verify the model is well-formed after the parse.
+	if err = model.Validate(); err != nil {
+		return req_model.Model{}, errors.WithStack(err)
+	}
+
 	return model, nil
 }
 
