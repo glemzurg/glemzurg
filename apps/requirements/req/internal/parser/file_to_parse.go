@@ -24,9 +24,9 @@ const (
 
 var _extSortValue = map[string]int{
 	_EXT_MODEL:          10, // Higher values sort first.
-	_EXT_GENERALIZATION: 9,
-	_EXT_ACTOR:          8,
-	_EXT_DOMAIN:         7,
+	_EXT_ACTOR:          9,
+	_EXT_DOMAIN:         8,
+	_EXT_GENERALIZATION: 7,
 	_EXT_CLASS:          5,
 	_EXT_USE_CASE:       3,
 }
