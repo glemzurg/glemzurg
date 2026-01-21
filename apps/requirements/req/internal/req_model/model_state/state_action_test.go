@@ -177,3 +177,56 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 	err = stateAction.ValidateWithParent(&stateKey)
 	assert.NoError(suite.T(), err)
 }
+
+// TestValidateReferences tests that ValidateReferences validates action references correctly.
+func (suite *StateActionSuite) TestValidateReferences() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	nonExistentActionKey := helper.Must(identity.NewActionKey(classKey, "nonexistent"))
+	validKey := helper.Must(identity.NewStateActionKey(stateKey, "entry", "stateaction1"))
+
+	// Build lookup map with valid actions.
+	actions := map[identity.Key]bool{
+		actionKey: true,
+	}
+
+	tests := []struct {
+		testName    string
+		stateAction StateAction
+		actions     map[identity.Key]bool
+		errstr      string
+	}{
+		{
+			testName: "valid state action with existing action",
+			stateAction: StateAction{
+				Key:       validKey,
+				ActionKey: actionKey,
+				When:      "entry",
+			},
+			actions: actions,
+		},
+		{
+			testName: "error ActionKey references non-existent action",
+			stateAction: StateAction{
+				Key:       validKey,
+				ActionKey: nonExistentActionKey,
+				When:      "entry",
+			},
+			actions: actions,
+			errstr:  "references non-existent action",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.stateAction.ValidateReferences(tt.actions)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}

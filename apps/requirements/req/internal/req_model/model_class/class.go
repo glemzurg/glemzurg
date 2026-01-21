@@ -146,6 +146,25 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 	if err := c.Key.ValidateParent(parent); err != nil {
 		return err
 	}
+
+	// Build lookup maps for cross-reference validation within this class.
+	stateKeys := make(map[identity.Key]bool)
+	for stateKey := range c.States {
+		stateKeys[stateKey] = true
+	}
+	eventKeys := make(map[identity.Key]bool)
+	for eventKey := range c.Events {
+		eventKeys[eventKey] = true
+	}
+	guardKeys := make(map[identity.Key]bool)
+	for guardKey := range c.Guards {
+		guardKeys[guardKey] = true
+	}
+	actionKeys := make(map[identity.Key]bool)
+	for actionKey := range c.Actions {
+		actionKeys[actionKey] = true
+	}
+
 	// Validate all children.
 	for _, attr := range c.Attributes {
 		if err := attr.ValidateWithParent(&c.Key); err != nil {
@@ -153,7 +172,7 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 		}
 	}
 	for _, state := range c.States {
-		if err := state.ValidateWithParent(&c.Key); err != nil {
+		if err := state.ValidateWithParentAndActions(&c.Key, actionKeys); err != nil {
 			return err
 		}
 	}
@@ -174,6 +193,9 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 	}
 	for _, transition := range c.Transitions {
 		if err := transition.ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+		if err := transition.ValidateReferences(stateKeys, eventKeys, guardKeys, actionKeys); err != nil {
 			return err
 		}
 	}

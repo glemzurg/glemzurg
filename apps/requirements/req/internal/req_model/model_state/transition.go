@@ -139,3 +139,36 @@ func (t *Transition) ValidateWithParent(parent *identity.Key) error {
 	// Transition has no children with keys that need validation.
 	return nil
 }
+
+// ValidateReferences validates that the transition's reference keys point to valid entities in the class.
+// - FromStateKey must exist in the states map (if not nil)
+// - ToStateKey must exist in the states map (if not nil)
+// - EventKey must exist in the events map
+// - GuardKey must exist in the guards map (if not nil)
+// - ActionKey must exist in the actions map (if not nil)
+func (t *Transition) ValidateReferences(states, events, guards, actions map[identity.Key]bool) error {
+	if t.FromStateKey != nil {
+		if !states[*t.FromStateKey] {
+			return errors.Errorf("transition '%s' references non-existent from state '%s'", t.Key.String(), t.FromStateKey.String())
+		}
+	}
+	if t.ToStateKey != nil {
+		if !states[*t.ToStateKey] {
+			return errors.Errorf("transition '%s' references non-existent to state '%s'", t.Key.String(), t.ToStateKey.String())
+		}
+	}
+	if !events[t.EventKey] {
+		return errors.Errorf("transition '%s' references non-existent event '%s'", t.Key.String(), t.EventKey.String())
+	}
+	if t.GuardKey != nil {
+		if !guards[*t.GuardKey] {
+			return errors.Errorf("transition '%s' references non-existent guard '%s'", t.Key.String(), t.GuardKey.String())
+		}
+	}
+	if t.ActionKey != nil {
+		if !actions[*t.ActionKey] {
+			return errors.Errorf("transition '%s' references non-existent action '%s'", t.Key.String(), t.ActionKey.String())
+		}
+	}
+	return nil
+}

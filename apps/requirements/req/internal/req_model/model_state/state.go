@@ -64,6 +64,13 @@ func (s *State) SetActions(actions []StateAction) {
 // ValidateWithParent validates the State, its key's parent relationship, and all children.
 // The parent must be a Class.
 func (s *State) ValidateWithParent(parent *identity.Key) error {
+	return s.ValidateWithParentAndActions(parent, nil)
+}
+
+// ValidateWithParentAndActions validates the State with access to actions for cross-reference validation.
+// The parent must be a Class.
+// The actions map is used to validate that StateAction ActionKey references exist.
+func (s *State) ValidateWithParentAndActions(parent *identity.Key, actions map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := s.Validate(); err != nil {
 		return err
@@ -75,6 +82,9 @@ func (s *State) ValidateWithParent(parent *identity.Key) error {
 	// Validate all children.
 	for i := range s.Actions {
 		if err := s.Actions[i].ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+		if err := s.Actions[i].ValidateReferences(actions); err != nil {
 			return err
 		}
 	}

@@ -83,6 +83,14 @@ func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
 	return nil
 }
 
+// ValidateReferences validates that the state action's ActionKey references a real action in the class.
+func (sa *StateAction) ValidateReferences(actions map[identity.Key]bool) error {
+	if !actions[sa.ActionKey] {
+		return errors.Errorf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String())
+	}
+	return nil
+}
+
 func lessThanStateAction(a, b StateAction) (less bool) {
 
 	// Sort by when first.
