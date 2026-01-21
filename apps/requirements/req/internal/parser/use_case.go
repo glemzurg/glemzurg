@@ -282,7 +282,15 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 
 	if len(useCase.Scenarios) > 0 {
 		yaml += "\nscenarios:\n"
+		// Sort scenarios by key for deterministic output.
+		scenarios := make([]model_scenario.Scenario, 0, len(useCase.Scenarios))
 		for _, scenario := range useCase.Scenarios {
+			scenarios = append(scenarios, scenario)
+		}
+		sort.Slice(scenarios, func(i, j int) bool {
+			return scenarios[i].Key.String() < scenarios[j].Key.String()
+		})
+		for _, scenario := range scenarios {
 			name := scenario.Key.SubKey()
 			yaml += "\n    " + name + ":\n"
 			yaml += "        name: " + scenario.Name + "\n"
@@ -291,7 +299,15 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 			}
 			if len(scenario.Objects) > 0 {
 				yaml += "        objects:\n"
+				// Sort objects by ObjectNumber for deterministic output.
+				objects := make([]model_scenario.Object, 0, len(scenario.Objects))
 				for _, obj := range scenario.Objects {
+					objects = append(objects, obj)
+				}
+				sort.Slice(objects, func(i, j int) bool {
+					return objects[i].ObjectNumber < objects[j].ObjectNumber
+				})
+				for _, obj := range objects {
 					objName := obj.Key.SubKey()
 					yaml += "            - key: " + objName + "\n"
 					if obj.Name != "" {
