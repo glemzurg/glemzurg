@@ -106,14 +106,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				Details:    "Domain A details",
 				Realized:   false,
 				UmlComment: "Domain A UML comment",
-				DomainAssociations: map[identity.Key]model_domain.Association{
-					domainAssociationKey: {
-						Key:               domainAssociationKey,
-						ProblemDomainKey:  domainKeyA,
-						SolutionDomainKey: domainKeyB,
-						UmlComment:        "Domain association comment",
-					},
-				},
 				ClassAssociations: map[identity.Key]model_class.Association{},
 				Subdomains: map[identity.Key]model_domain.Subdomain{
 					subdomainKeyAA: {
@@ -285,7 +277,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				Details:    "Domain B details",
 				Realized:   true,
 				UmlComment: "Domain B UML comment",
-				DomainAssociations: map[identity.Key]model_domain.Association{},
 				Subdomains: map[identity.Key]model_domain.Subdomain{
 					subdomainKeyBA: {
 						Key:             subdomainKeyBA,
@@ -345,6 +336,16 @@ func (suite *RequirementsSuite) TestWriteRead() {
 						UmlComment:       "Domain association UML comment",
 					},
 				},
+			},
+		},
+
+		// Model-level domain associations
+		DomainAssociations: map[identity.Key]model_domain.Association{
+			domainAssociationKey: {
+				Key:               domainAssociationKey,
+				ProblemDomainKey:  domainKeyA,
+				SolutionDomainKey: domainKeyB,
+				UmlComment:        "Domain association comment",
 			},
 		},
 

@@ -55,13 +55,8 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		}
 
 		// Collect domain associations (after all domains exist).
-		domainAssociationsSlice := make([]model_domain.Association, 0)
-		for _, domain := range model.Domains {
-			for _, association := range domain.DomainAssociations {
-				domainAssociationsSlice = append(domainAssociationsSlice, association)
-			}
-		}
-		// Model-level domain associations.
+		// Domain associations are only at the model level.
+		domainAssociationsSlice := make([]model_domain.Association, 0, len(model.DomainAssociations))
 		for _, association := range model.DomainAssociations {
 			domainAssociationsSlice = append(domainAssociationsSlice, association)
 		}
@@ -330,16 +325,10 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Domain associations - returns slice, group by problem domain key.
+		// Domain associations - returns slice (they are model-level, not domain-level).
 		domainAssociationsSlice, err := QueryDomainAssociations(tx, modelKey)
 		if err != nil {
 			return err
-		}
-		// Group domain associations by their problem domain key.
-		// Domain associations are now root-level keys with no parent, so we use ProblemDomainKey.
-		domainAssociationsMap := make(map[identity.Key][]model_domain.Association)
-		for _, assoc := range domainAssociationsSlice {
-			domainAssociationsMap[assoc.ProblemDomainKey] = append(domainAssociationsMap[assoc.ProblemDomainKey], assoc)
 		}
 
 		// Generalizations - returned as slice, need to group by subdomain (parent) key.
@@ -456,14 +445,6 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		model.Domains = make(map[identity.Key]model_domain.Domain)
 		for _, domain := range domainsSlice {
 			domainKey := domain.Key
-
-			// Attach domain associations to domain.
-			domain.DomainAssociations = make(map[identity.Key]model_domain.Association)
-			if domainAssocs, ok := domainAssociationsMap[domainKey]; ok {
-				for _, assoc := range domainAssocs {
-					domain.DomainAssociations[assoc.Key] = assoc
-				}
-			}
 
 			// Attach subdomains to domain.
 			domain.Subdomains = make(map[identity.Key]model_domain.Subdomain)
@@ -596,6 +577,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			}
 
 			model.Domains[domain.Key] = domain
+		}
+
+		// Attach domain associations to the model (they are model-level, not domain-level).
+		model.DomainAssociations = make(map[identity.Key]model_domain.Association)
+		for _, assoc := range domainAssociationsSlice {
+			model.DomainAssociations[assoc.Key] = assoc
 		}
 
 		// Class associations - use SetClassAssociations to route them to the correct level.

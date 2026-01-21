@@ -6,7 +6,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
 // Domain is a root category of the mode.
@@ -17,10 +16,8 @@ type Domain struct {
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment string
 	// Children
-	DomainAssociations map[identity.Key]Association
-	UseCases           map[identity.Key]model_use_case.UseCase
-	Subdomains         map[identity.Key]Subdomain
-	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
+	Subdomains        map[identity.Key]Subdomain
+	ClassAssociations map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
 func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
@@ -85,17 +82,6 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 	}
 
 	// Validate all children.
-	// Domain associations are root-level entities with no parent (they reference two domains).
-	for _, assoc := range d.DomainAssociations {
-		if err := assoc.ValidateWithParent(nil); err != nil {
-			return err
-		}
-	}
-	for _, useCase := range d.UseCases {
-		if err := useCase.ValidateWithParent(&d.Key); err != nil {
-			return err
-		}
-	}
 	for _, subdomain := range d.Subdomains {
 		if err := subdomain.ValidateWithParentAndActorsAndClasses(&d.Key, actors, classes); err != nil {
 			return err
