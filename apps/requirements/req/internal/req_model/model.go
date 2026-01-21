@@ -62,6 +62,12 @@ func (m *Model) ValidateWithParent() error {
 		actorKeys[actorKey] = true
 	}
 
+	// Build a set of domain keys for domain association reference validation.
+	domainKeys := make(map[identity.Key]bool)
+	for domainKey := range m.Domains {
+		domainKeys[domainKey] = true
+	}
+
 	// Build a set of all class keys in the model for association reference validation.
 	// Classes only exist in subdomains.
 	classKeys := make(map[identity.Key]bool)
@@ -88,6 +94,9 @@ func (m *Model) ValidateWithParent() error {
 	// DomainAssociations need to be validated.
 	for _, domainAssoc := range m.DomainAssociations {
 		if err := domainAssoc.ValidateWithParent(nil); err != nil {
+			return err
+		}
+		if err := domainAssoc.ValidateReferences(domainKeys); err != nil {
 			return err
 		}
 	}

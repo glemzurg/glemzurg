@@ -87,3 +87,16 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 	// Association has no children with keys that need validation.
 	return nil
 }
+
+// ValidateReferences validates that the association's domain keys reference real domains.
+// - ProblemDomainKey must exist in the domains map
+// - SolutionDomainKey must exist in the domains map
+func (a *Association) ValidateReferences(domains map[identity.Key]bool) error {
+	if !domains[a.ProblemDomainKey] {
+		return errors.Errorf("domain association '%s' references non-existent problem domain '%s'", a.Key.String(), a.ProblemDomainKey.String())
+	}
+	if !domains[a.SolutionDomainKey] {
+		return errors.Errorf("domain association '%s' references non-existent solution domain '%s'", a.Key.String(), a.SolutionDomainKey.String())
+	}
+	return nil
+}

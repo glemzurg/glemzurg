@@ -163,3 +163,62 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 	err = assoc.ValidateWithParent(&suite.problemDomainKey)
 	assert.NoError(suite.T(), err)
 }
+
+// TestValidateReferences tests that ValidateReferences validates domain references correctly.
+func (suite *AssociationSuite) TestValidateReferences() {
+	validKey := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
+	nonExistentDomainKey := helper.Must(identity.NewDomainKey("nonexistent"))
+
+	// Build lookup map with all valid domains.
+	domains := map[identity.Key]bool{
+		suite.problemDomainKey:  true,
+		suite.solutionDomainKey: true,
+	}
+
+	tests := []struct {
+		testName    string
+		association Association
+		domains     map[identity.Key]bool
+		errstr      string
+	}{
+		{
+			testName: "valid association with all domains existing",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: suite.solutionDomainKey,
+			},
+			domains: domains,
+		},
+		{
+			testName: "error ProblemDomainKey references non-existent domain",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  nonExistentDomainKey,
+				SolutionDomainKey: suite.solutionDomainKey,
+			},
+			domains: domains,
+			errstr:  "references non-existent problem domain",
+		},
+		{
+			testName: "error SolutionDomainKey references non-existent domain",
+			association: Association{
+				Key:               validKey,
+				ProblemDomainKey:  suite.problemDomainKey,
+				SolutionDomainKey: nonExistentDomainKey,
+			},
+			domains: domains,
+			errstr:  "references non-existent solution domain",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.association.ValidateReferences(tt.domains)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}
