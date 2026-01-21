@@ -74,13 +74,14 @@ func (uc *UseCase) SetScenarios(scenarios map[identity.Key]model_scenario.Scenar
 // ValidateWithParent validates the UseCase, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (uc *UseCase) ValidateWithParent(parent *identity.Key) error {
-	return uc.ValidateWithParentAndClasses(parent, nil)
+	return uc.ValidateWithParentAndClasses(parent, nil, nil)
 }
 
 // ValidateWithParentAndClasses validates the UseCase with access to classes for cross-reference validation.
 // The parent must be a Subdomain.
 // The classes map is used to validate that scenario object ClassKey references exist.
-func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes map[identity.Key]bool) error {
+// The actorClasses map contains class keys that have an ActorKey defined (i.e., classes that represent actors).
+func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes map[identity.Key]bool, actorClasses map[identity.Key]bool) error {
 	// Validate the object itself.
 	if err := uc.Validate(); err != nil {
 		return err
@@ -90,9 +91,13 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 		return err
 	}
 	// Validate all children.
-	for _, actor := range uc.Actors {
+	// Validate that each actor key references a class that has an ActorKey defined.
+	for actorClassKey, actor := range uc.Actors {
 		if err := actor.ValidateWithParent(); err != nil {
 			return err
+		}
+		if !actorClasses[actorClassKey] {
+			return errors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
 		}
 	}
 	for _, scenario := range uc.Scenarios {

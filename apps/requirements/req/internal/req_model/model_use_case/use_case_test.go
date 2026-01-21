@@ -162,3 +162,77 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 	err = useCase.ValidateWithParent(&subdomainKey)
 	assert.NoError(suite.T(), err)
 }
+
+// TestValidateWithParentAndClasses tests that ValidateWithParentAndClasses validates actor class references.
+func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	actorClassKey := helper.Must(identity.NewClassKey(subdomainKey, "actorclass"))
+	nonActorClassKey := helper.Must(identity.NewClassKey(subdomainKey, "nonactorclass"))
+
+	// Build lookup maps.
+	classes := map[identity.Key]bool{
+		actorClassKey:    true,
+		nonActorClassKey: true,
+	}
+	actorClasses := map[identity.Key]bool{
+		actorClassKey: true, // Only this class has an ActorKey defined.
+	}
+
+	tests := []struct {
+		testName     string
+		useCase      UseCase
+		classes      map[identity.Key]bool
+		actorClasses map[identity.Key]bool
+		errstr       string
+	}{
+		{
+			testName: "valid use case with no actors",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SEA,
+			},
+			classes:      classes,
+			actorClasses: actorClasses,
+		},
+		{
+			testName: "valid use case with actor referencing actor class",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SEA,
+				Actors: map[identity.Key]Actor{
+					actorClassKey: {UmlComment: "actor"},
+				},
+			},
+			classes:      classes,
+			actorClasses: actorClasses,
+		},
+		{
+			testName: "error actor references non-actor class",
+			useCase: UseCase{
+				Key:   validKey,
+				Name:  "Name",
+				Level: _USE_CASE_LEVEL_SEA,
+				Actors: map[identity.Key]Actor{
+					nonActorClassKey: {UmlComment: "actor"},
+				},
+			},
+			classes:      classes,
+			actorClasses: actorClasses,
+			errstr:       "which is not an actor class",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.useCase.ValidateWithParentAndClasses(&subdomainKey, tt.classes, tt.actorClasses)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}

@@ -90,9 +90,14 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 	}
 
 	// Build a set of this subdomain's class keys for use case scenario object validation.
+	// Also build a set of class keys that have an ActorKey defined (actor classes).
 	subdomainClassKeys := make(map[identity.Key]bool)
-	for classKey := range s.Classes {
+	actorClassKeys := make(map[identity.Key]bool)
+	for classKey, class := range s.Classes {
 		subdomainClassKeys[classKey] = true
+		if class.ActorKey != nil {
+			actorClassKeys[classKey] = true
+		}
 	}
 
 	// Validate all children.
@@ -110,7 +115,7 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 		}
 	}
 	for _, useCase := range s.UseCases {
-		if err := useCase.ValidateWithParentAndClasses(&s.Key, subdomainClassKeys); err != nil {
+		if err := useCase.ValidateWithParentAndClasses(&s.Key, subdomainClassKeys, actorClassKeys); err != nil {
 			return err
 		}
 	}
