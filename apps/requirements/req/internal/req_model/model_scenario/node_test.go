@@ -22,8 +22,8 @@ type ScenarioStepsSuite struct {
 	classKey     identity.Key
 	useCaseKey   identity.Key
 	scenarioKey  identity.Key
-	fromObjKey   identity.Key
-	toObjKey     identity.Key
+	fromObjKey   *identity.Key
+	toObjKey     *identity.Key
 	eventKey     *identity.Key
 	scenarioRef  *identity.Key
 	attrKey      *identity.Key
@@ -45,10 +45,12 @@ func (suite *ScenarioStepsSuite) SetupSuite() {
 	require.NoError(suite.T(), err)
 	suite.scenarioKey, err = identity.NewScenarioKey(suite.useCaseKey, "test_scenario")
 	require.NoError(suite.T(), err)
-	suite.fromObjKey, err = identity.NewScenarioObjectKey(suite.scenarioKey, "from_obj")
+	fromObjKey, err := identity.NewScenarioObjectKey(suite.scenarioKey, "from_obj")
 	require.NoError(suite.T(), err)
-	suite.toObjKey, err = identity.NewScenarioObjectKey(suite.scenarioKey, "to_obj")
+	suite.fromObjKey = &fromObjKey
+	toObjKey, err := identity.NewScenarioObjectKey(suite.scenarioKey, "to_obj")
 	require.NoError(suite.T(), err)
+	suite.toObjKey = &toObjKey
 	eventKey, err := identity.NewEventKey(suite.classKey, "test_event")
 	require.NoError(suite.T(), err)
 	suite.eventKey = &eventKey

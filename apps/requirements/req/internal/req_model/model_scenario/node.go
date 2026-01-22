@@ -22,17 +22,14 @@ const (
 	LEAF_TYPE_DELETE    = "delete"
 )
 
-// emptyKey is the zero value of identity.Key for comparisons.
-var emptyKey identity.Key
-
 // Node represents a node in the scenario steps tree.
 type Node struct {
 	Statements    []Node        `json:"statements,omitempty" yaml:"statements,omitempty"`
 	Cases         []Case        `json:"cases,omitempty" yaml:"cases,omitempty"`
 	Loop          string        `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
-	FromObjectKey identity.Key  `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
-	ToObjectKey   identity.Key  `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
+	FromObjectKey *identity.Key `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
+	ToObjectKey   *identity.Key `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
 	EventKey      *identity.Key `json:"event_key,omitempty" yaml:"event_key,omitempty"`
 	ScenarioKey   *identity.Key `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
 	AttributeKey  *identity.Key `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
@@ -116,20 +113,20 @@ func (n *Node) Validate() error {
 		}
 	case NODE_TYPE_LEAF:
 		if n.IsDelete {
-			if n.FromObjectKey == emptyKey {
+			if n.FromObjectKey == nil {
 				return errors.New("delete leaf must have a from_object_key")
 			}
-			if n.ToObjectKey != emptyKey {
+			if n.ToObjectKey != nil {
 				return errors.New("delete leaf cannot have a to_object_key")
 			}
 			if n.EventKey != nil || n.ScenarioKey != nil || n.AttributeKey != nil {
 				return errors.New("delete leaf cannot have event_key, scenario_key, or attribute_key")
 			}
 		} else {
-			if n.FromObjectKey == emptyKey {
+			if n.FromObjectKey == nil {
 				return errors.New("leaf must have a from_object_key")
 			}
-			if n.ToObjectKey == emptyKey {
+			if n.ToObjectKey == nil {
 				return errors.New("leaf must have a to_object_key")
 			}
 			nonEmptyKeys := 0
@@ -184,19 +181,19 @@ func (n Node) ToYAML() (string, error) {
 // ScopeObjects prepends the object keys with the full path of the scenario to make them unique in the requirements.
 func (n *Node) ScopeObjects(scenarioKey identity.Key) error {
 	// Populate this node's references
-	if n.FromObjectKey != emptyKey {
+	if n.FromObjectKey != nil {
 		newKey, err := identity.NewScenarioObjectKey(scenarioKey, n.FromObjectKey.SubKey())
 		if err != nil {
 			return err
 		}
-		n.FromObjectKey = newKey
+		n.FromObjectKey = &newKey
 	}
-	if n.ToObjectKey != emptyKey {
+	if n.ToObjectKey != nil {
 		newKey, err := identity.NewScenarioObjectKey(scenarioKey, n.ToObjectKey.SubKey())
 		if err != nil {
 			return err
 		}
-		n.ToObjectKey = newKey
+		n.ToObjectKey = &newKey
 	}
 
 	// Recursively populate references in statements
@@ -238,10 +235,10 @@ func (n Node) MarshalJSON() ([]byte, error) {
 	if n.Description != "" {
 		m["description"] = n.Description
 	}
-	if n.FromObjectKey != emptyKey {
+	if n.FromObjectKey != nil {
 		m["from_object_key"] = n.FromObjectKey
 	}
-	if n.ToObjectKey != emptyKey {
+	if n.ToObjectKey != nil {
 		m["to_object_key"] = n.ToObjectKey
 	}
 	if n.EventKey != nil {
@@ -275,10 +272,10 @@ func (n Node) MarshalYAML() (interface{}, error) {
 	if n.Description != "" {
 		m["description"] = n.Description
 	}
-	if n.FromObjectKey != emptyKey {
+	if n.FromObjectKey != nil {
 		m["from_object_key"] = n.FromObjectKey.String()
 	}
-	if n.ToObjectKey != emptyKey {
+	if n.ToObjectKey != nil {
 		m["to_object_key"] = n.ToObjectKey.String()
 	}
 	if n.EventKey != nil {
