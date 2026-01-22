@@ -188,6 +188,37 @@ func (r *Requirements) ActorLookup() map[string]model_actor.Actor {
 	return lookup
 }
 
+// ActorClassesLookup returns a map of actor key to the classes that implement that actor.
+// Classes reference actors via their ActorKey field.
+func (r *Requirements) ActorClassesLookup() map[string][]model_class.Class {
+	r.PrepLookups()
+	lookup := make(map[string][]model_class.Class)
+
+	// Initialize with empty slices for all actors.
+	for actorKey := range r.Actors {
+		lookup[actorKey.String()] = []model_class.Class{}
+	}
+
+	// Find all classes that reference an actor.
+	for _, class := range r.Classes {
+		if class.ActorKey != nil {
+			actorKeyStr := class.ActorKey.String()
+			lookup[actorKeyStr] = append(lookup[actorKeyStr], class)
+		}
+	}
+
+	// Sort classes by key for consistent output.
+	for actorKey := range lookup {
+		classes := lookup[actorKey]
+		sort.Slice(classes, func(i, j int) bool {
+			return classes[i].Key.String() < classes[j].Key.String()
+		})
+		lookup[actorKey] = classes
+	}
+
+	return lookup
+}
+
 // DomainLookup returns domains by key and domain associations.
 func (r *Requirements) DomainLookup() (map[string]model_domain.Domain, []model_domain.Association) {
 	r.PrepLookups()
