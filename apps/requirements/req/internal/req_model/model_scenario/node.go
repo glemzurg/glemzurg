@@ -178,47 +178,6 @@ func (n Node) ToYAML() (string, error) {
 	return string(data), err
 }
 
-// ScopeObjects prepends the object keys with the full path of the scenario to make them unique in the requirements.
-func (n *Node) ScopeObjects(scenarioKey identity.Key) error {
-	// Populate this node's references
-	if n.FromObjectKey != nil {
-		newKey, err := identity.NewScenarioObjectKey(scenarioKey, n.FromObjectKey.SubKey())
-		if err != nil {
-			return err
-		}
-		n.FromObjectKey = &newKey
-	}
-	if n.ToObjectKey != nil {
-		newKey, err := identity.NewScenarioObjectKey(scenarioKey, n.ToObjectKey.SubKey())
-		if err != nil {
-			return err
-		}
-		n.ToObjectKey = &newKey
-	}
-
-	// Recursively populate references in statements
-	if n.Statements != nil {
-		for i := range n.Statements {
-			if err := n.Statements[i].ScopeObjects(scenarioKey); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Recursively populate references in cases
-	if n.Cases != nil {
-		for i := range n.Cases {
-			for j := range n.Cases[i].Statements {
-				if err := n.Cases[i].Statements[j].ScopeObjects(scenarioKey); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 // MarshalJSON custom marshals the Node to include the inferred type.
 // Uses value receiver so it works with both value and pointer types.
 func (n Node) MarshalJSON() ([]byte, error) {
