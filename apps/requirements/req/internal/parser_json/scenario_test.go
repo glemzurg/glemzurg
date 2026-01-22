@@ -33,8 +33,8 @@ func TestScenarioInOutConversionRoundTrip(t *testing.T) {
 	steps := model_scenario.Node{
 		Description:   "User enters credentials",
 		EventKey:      &loginEventKey,
-		FromObjectKey: userObjKey,
-		ToObjectKey:   systemObjKey,
+		FromObjectKey: &userObjKey,
+		ToObjectKey:   &systemObjKey,
 	}
 	original := model_scenario.Scenario{
 		Key:     scenarioKey,

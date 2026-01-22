@@ -41,23 +41,21 @@ func (n nodeInOut) ToRequirements() (model_scenario.Node, error) {
 		IsDelete:    n.IsDelete,
 	}
 
-	// Parse value-type keys (FromObjectKey and ToObjectKey).
+	// Parse all key fields (all are now *identity.Key).
 	if n.FromObjectKey != "" {
 		key, err := identity.ParseKey(n.FromObjectKey)
 		if err != nil {
 			return model_scenario.Node{}, err
 		}
-		node.FromObjectKey = key
+		node.FromObjectKey = &key
 	}
 	if n.ToObjectKey != "" {
 		key, err := identity.ParseKey(n.ToObjectKey)
 		if err != nil {
 			return model_scenario.Node{}, err
 		}
-		node.ToObjectKey = key
+		node.ToObjectKey = &key
 	}
-
-	// Parse pointer-type keys (EventKey, ScenarioKey, AttributeKey).
 	if n.EventKey != "" {
 		key, err := identity.ParseKey(n.EventKey)
 		if err != nil {
@@ -99,9 +97,6 @@ func (n nodeInOut) ToRequirements() (model_scenario.Node, error) {
 	return node, nil
 }
 
-// emptyKey is the zero value of identity.Key for comparisons.
-var emptyKey identity.Key
-
 // FromRequirementsNode creates a nodeInOut from model_scenario.Node.
 func FromRequirementsNode(n model_scenario.Node) nodeInOut {
 	node := nodeInOut{
@@ -110,15 +105,13 @@ func FromRequirementsNode(n model_scenario.Node) nodeInOut {
 		IsDelete:    n.IsDelete,
 	}
 
-	// Convert value-type keys to strings.
-	if n.FromObjectKey != emptyKey {
+	// Convert all pointer-type keys to strings.
+	if n.FromObjectKey != nil {
 		node.FromObjectKey = n.FromObjectKey.String()
 	}
-	if n.ToObjectKey != emptyKey {
+	if n.ToObjectKey != nil {
 		node.ToObjectKey = n.ToObjectKey.String()
 	}
-
-	// Convert pointer-type keys to strings.
 	if n.EventKey != nil {
 		node.EventKey = n.EventKey.String()
 	}

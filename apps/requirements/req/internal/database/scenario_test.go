@@ -98,8 +98,8 @@ func (suite *ScenarioSuite) TestLoad() {
 		Statements: []model_scenario.Node{
 			{
 				Description:   "test step",
-				FromObjectKey: suite.obj1Key,
-				ToObjectKey:   suite.obj2Key,
+				FromObjectKey: &suite.obj1Key,
+				ToObjectKey:   &suite.obj2Key,
 				EventKey:      &suite.testEventKey,
 			},
 		},
@@ -151,8 +151,8 @@ func (suite *ScenarioSuite) TestAdd() {
 			Statements: []model_scenario.Node{
 				{
 					Description:   "add test step",
-					FromObjectKey: suite.obj1Key,
-					ToObjectKey:   suite.obj2Key,
+					FromObjectKey: &suite.obj1Key,
+					ToObjectKey:   &suite.obj2Key,
 					EventKey:      &suite.addEventKey,
 				},
 			},
@@ -179,8 +179,8 @@ func (suite *ScenarioSuite) TestUpdate() {
 		Statements: []model_scenario.Node{
 			{
 				Description:   "original step",
-				FromObjectKey: suite.obj1Key,
-				ToObjectKey:   suite.obj2Key,
+				FromObjectKey: &suite.obj1Key,
+				ToObjectKey:   &suite.obj2Key,
 				EventKey:      &suite.origEventKey,
 			},
 		},
@@ -198,8 +198,8 @@ func (suite *ScenarioSuite) TestUpdate() {
 		Statements: []model_scenario.Node{
 			{
 				Description:   "updated step",
-				FromObjectKey: suite.obj3Key,
-				ToObjectKey:   suite.obj4Key,
+				FromObjectKey: &suite.obj3Key,
+				ToObjectKey:   &suite.obj4Key,
 				EventKey:      &suite.updatedEventKey,
 			},
 		},
@@ -248,8 +248,8 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 		Statements: []model_scenario.Node{
 			{
 				Description:   "step X",
-				FromObjectKey: suite.obj1Key,
-				ToObjectKey:   suite.obj2Key,
+				FromObjectKey: &suite.obj1Key,
+				ToObjectKey:   &suite.obj2Key,
 				EventKey:      &suite.eventXKey,
 			},
 		},
@@ -259,8 +259,8 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 		Statements: []model_scenario.Node{
 			{
 				Description:   "step",
-				FromObjectKey: suite.obj3Key,
-				ToObjectKey:   suite.obj4Key,
+				FromObjectKey: &suite.obj3Key,
+				ToObjectKey:   &suite.obj4Key,
 				EventKey:      &suite.eventKey,
 			},
 		},
@@ -328,8 +328,8 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ide
 			Statements: []model_scenario.Node{
 				{
 					Description:   "helper step",
-					FromObjectKey: helperFromKey,
-					ToObjectKey:   helperToKey,
+					FromObjectKey: &helperFromKey,
+					ToObjectKey:   &helperToKey,
 					EventKey:      &helperEventKey,
 				},
 			},
