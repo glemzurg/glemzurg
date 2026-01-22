@@ -5,9 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
-
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
 const (
@@ -36,12 +33,6 @@ type Node struct {
 	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
 	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
 	IsDelete      bool   `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
-	// Helper fields can be added here as needed.
-	FromObject *Object                `json:"-" yaml:"-"`
-	ToObject   *Object                `json:"-" yaml:"-"`
-	Event      *model_state.Event     `json:"-" yaml:"-"`
-	Scenario   *Scenario              `json:"-" yaml:"-"`
-	Attribute  *model_class.Attribute `json:"-" yaml:"-"`
 }
 
 // Inferredtype returns the type of the node based on its fields.
@@ -207,69 +198,6 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 		for i := range n.Cases {
 			for j := range n.Cases[i].Statements {
 				if err := n.Cases[i].Statements[j].ScopeObjects(scenarioKey); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-// PopulateReferences populates the FromObject, ToObject, Event, and Scenario fields
-// from the provided lookup maps. It recursively populates references in sub-nodes.
-func (n *Node) PopulateReferences(objects map[string]Object, events map[string]model_state.Event, attributes map[string]model_class.Attribute, scenarios map[string]Scenario) error {
-	// Populate this node's references
-	if n.FromObjectKey != "" {
-		if obj, exists := objects[n.FromObjectKey]; exists {
-			n.FromObject = &obj
-		} else {
-			return errors.Errorf("from_object_key '%s' not found in objects", n.FromObjectKey)
-		}
-	}
-	if n.ToObjectKey != "" {
-		if obj, exists := objects[n.ToObjectKey]; exists {
-			n.ToObject = &obj
-		} else {
-			return errors.Errorf("to_object_key '%s' not found in objects", n.ToObjectKey)
-		}
-	}
-	if n.EventKey != "" {
-		if evt, exists := events[n.EventKey]; exists {
-			n.Event = &evt
-		} else {
-			return errors.Errorf("event_key '%s' not found in events", n.EventKey)
-		}
-	}
-	if n.AttributeKey != "" {
-		if attr, exists := attributes[n.AttributeKey]; exists {
-			n.Attribute = &attr
-		} else {
-			return errors.Errorf("attribute_key '%s' not found in attributes", n.AttributeKey)
-		}
-	}
-	if n.ScenarioKey != "" {
-		if scen, exists := scenarios[n.ScenarioKey]; exists {
-			n.Scenario = &scen
-		} else {
-			return errors.Errorf("scenario_key '%s' not found in scenarios", n.ScenarioKey)
-		}
-	}
-
-	// Recursively populate references in statements
-	if n.Statements != nil {
-		for i := range n.Statements {
-			if err := n.Statements[i].PopulateReferences(objects, events, attributes, scenarios); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Recursively populate references in cases
-	if n.Cases != nil {
-		for i := range n.Cases {
-			for j := range n.Cases[i].Statements {
-				if err := n.Cases[i].Statements[j].PopulateReferences(objects, events, attributes, scenarios); err != nil {
 					return err
 				}
 			}

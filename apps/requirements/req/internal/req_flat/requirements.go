@@ -176,32 +176,6 @@ func (r *Requirements) PrepLookups() {
 		return
 	}
 	r.prepared = true
-
-	// Populate scenario step references.
-	scenarioLookup := make(map[string]model_scenario.Scenario)
-	for key, scenario := range r.Scenarios {
-		scenarioLookup[key.String()] = scenario
-	}
-	objectLookup := make(map[string]model_scenario.Object)
-	for key, object := range r.Objects {
-		objectLookup[key.String()] = object
-	}
-	attributeLookup := make(map[string]model_class.Attribute)
-	for key, attr := range r.Attributes {
-		attributeLookup[key.String()] = attr
-	}
-	eventLookup := make(map[string]model_state.Event)
-	for key, event := range r.Events {
-		eventLookup[key.String()] = event
-	}
-	if err := model_scenario.PopulateScenarioStepReferences(scenarioLookup, objectLookup, attributeLookup, eventLookup); err != nil {
-		panic(errors.Errorf("error populating scenario step references: %+v", err))
-	}
-	// Copy back populated scenarios.
-	for keyStr, scenario := range scenarioLookup {
-		key, _ := identity.ParseKey(keyStr)
-		r.Scenarios[key] = scenario
-	}
 }
 
 // ActorLookup returns actors by key (as string for template use).

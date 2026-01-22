@@ -5,8 +5,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
 // Scenario is a documented scenario for a use case, such as a sequence diagram.
@@ -53,25 +51,6 @@ func (s *Scenario) Validate() error {
 
 func (sc *Scenario) SetObjects(objects map[identity.Key]Object) {
 	sc.Objects = objects
-}
-
-func PopulateScenarioStepReferences(
-	scenarios map[string]Scenario,
-	objects map[string]Object,
-	attributes map[string]model_class.Attribute,
-	events map[string]model_state.Event,
-) (err error) {
-	for key := range scenarios {
-		scenario := scenarios[key]
-		if scenario.Steps != nil {
-			err = scenario.Steps.PopulateReferences(objects, events, attributes, scenarios)
-			if err != nil {
-				return err
-			}
-			scenarios[key] = scenario
-		}
-	}
-	return nil
 }
 
 // ValidateWithParent validates the Scenario, its key's parent relationship, and all children.
