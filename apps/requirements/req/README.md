@@ -86,6 +86,11 @@ update to https://github.com/go-playground/validator
   - the tla itself would deifne the parameters for events, actions, etc. 
     - all data flow 
 
+- make a tla prover?
+  - https://proofs.tlapl.us/doc/web/content/Home.html
+  - isolate which tla grammar is really for the prover:
+    - https://lamport.azurewebsites.net/tla/tla2.html
+
 - reinvistion the data flow
   - correct the issue with outward flows being based on data types
 
