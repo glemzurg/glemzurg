@@ -126,9 +126,9 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 					"statements": stepsData,
 				}
 
-				// Scope object keys before parsing into Node objects.
+				// Scope object and attribute keys before parsing into Node objects.
 				// This ensures Node objects are always well-formed with complete keys.
-				if err = scopeObjectKeys(scenarioKey, nodeData); err != nil {
+				if err = scopeObjectKeys(scenarioKey, subdomainKey, nodeData); err != nil {
 					return model_use_case.UseCase{}, err
 				}
 
