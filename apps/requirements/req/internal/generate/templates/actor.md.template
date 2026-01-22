@@ -13,7 +13,7 @@ The domain classes that define this actor.
 
 {{ range $actorClasses -}}
 {{- $class := . }}
-{{- $domain := domain_lookup $reqs $class.DomainKey }}
+{{- $domain := class_domain $reqs $class.Key }}
 
 ### {{ $domain.Name }} : {{ $class.Name }}
 

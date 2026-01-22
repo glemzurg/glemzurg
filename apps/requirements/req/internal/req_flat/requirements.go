@@ -219,6 +219,24 @@ func (r *Requirements) ActorClassesLookup() map[string][]model_class.Class {
 	return lookup
 }
 
+// ClassDomainLookup returns a map of class key to the domain that contains it.
+// Classes are children of subdomains, which are children of domains.
+func (r *Requirements) ClassDomainLookup() map[string]model_domain.Domain {
+	r.PrepLookups()
+	lookup := make(map[string]model_domain.Domain)
+
+	// Walk the domain → subdomain → class hierarchy to build the mapping.
+	for _, domain := range r.Model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey := range subdomain.Classes {
+				lookup[classKey.String()] = domain
+			}
+		}
+	}
+
+	return lookup
+}
+
 // DomainLookup returns domains by key and domain associations.
 func (r *Requirements) DomainLookup() (map[string]model_domain.Domain, []model_domain.Association) {
 	r.PrepLookups()

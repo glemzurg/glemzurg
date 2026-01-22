@@ -262,6 +262,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.ActorClassesLookup()
 		return lookup[key.String()]
 	},
+	"class_domain": func(reqs *req_flat.Requirements, key identity.Key) (domain model_domain.Domain) {
+		lookup := reqs.ClassDomainLookup()
+		return lookup[key.String()]
+	},
 }
 
 // Split multi-line bullets into sub bullets.
