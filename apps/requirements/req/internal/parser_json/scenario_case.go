@@ -9,16 +9,20 @@ type caseInOut struct {
 }
 
 // ToRequirements converts the caseInOut to model_scenario.Case.
-func (c caseInOut) ToRequirements() model_scenario.Case {
+func (c caseInOut) ToRequirements() (model_scenario.Case, error) {
 	nodeCase := model_scenario.Case{
 		Condition:  c.Condition,
 		Statements: nil,
 	}
 	for _, s := range c.Statements {
-		nodeCase.Statements = append(nodeCase.Statements, s.ToRequirements())
+		stmt, err := s.ToRequirements()
+		if err != nil {
+			return model_scenario.Case{}, err
+		}
+		nodeCase.Statements = append(nodeCase.Statements, stmt)
 	}
 
-	return nodeCase
+	return nodeCase, nil
 }
 
 // FromRequirementsCase creates a caseInOut from model_scenario.Case.

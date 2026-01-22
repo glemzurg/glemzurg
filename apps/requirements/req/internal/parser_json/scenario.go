@@ -24,7 +24,10 @@ func (s scenarioInOut) ToRequirements() (model_scenario.Scenario, error) {
 
 	var stepsPtr *model_scenario.Node
 	if !s.Steps.isEmpty() {
-		steps := s.Steps.ToRequirements()
+		steps, err := s.Steps.ToRequirements()
+		if err != nil {
+			return model_scenario.Scenario{}, err
+		}
 		stepsPtr = &steps
 	}
 	scenario := model_scenario.Scenario{

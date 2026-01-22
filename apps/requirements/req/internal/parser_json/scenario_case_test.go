@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCaseInOutConversionRoundTrip(t *testing.T) {
@@ -21,6 +22,7 @@ func TestCaseInOutConversionRoundTrip(t *testing.T) {
 	}
 
 	inOut := FromRequirementsCase(original)
-	back := inOut.ToRequirements()
+	back, err := inOut.ToRequirements()
+	require.NoError(t, err)
 	assert.Equal(t, original, back)
 }

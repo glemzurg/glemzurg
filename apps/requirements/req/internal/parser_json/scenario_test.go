@@ -27,9 +27,14 @@ func TestScenarioInOutConversionRoundTrip(t *testing.T) {
 	systemClassKey, err := identity.NewClassKey(subdomainKey, "system_class")
 	require.NoError(t, err)
 
+	loginEventKey, err := identity.NewEventKey(userClassKey, "login")
+	require.NoError(t, err)
+
 	steps := model_scenario.Node{
-		Description: "User enters credentials",
-		EventKey:    "login",
+		Description:   "User enters credentials",
+		EventKey:      &loginEventKey,
+		FromObjectKey: userObjKey,
+		ToObjectKey:   systemObjKey,
 	}
 	original := model_scenario.Scenario{
 		Key:     scenarioKey,
