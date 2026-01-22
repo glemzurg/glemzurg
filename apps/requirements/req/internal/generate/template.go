@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
@@ -105,23 +106,25 @@ var _useCaseMdTemplate *template.Template
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{
-	"nodeid": func(idtype, key string) string {
+	"nodeid": func(idtype string, key identity.Key) string {
+		keyStr := key.String()
 		// Replace / with _
-		key = strings.ReplaceAll(key, "/", "_")
+		keyStr = strings.ReplaceAll(keyStr, "/", "_")
 		// Replace - with _
-		key = strings.ReplaceAll(key, "-", "_")
-		return idtype + "_" + key
+		keyStr = strings.ReplaceAll(keyStr, "-", "_")
+		return idtype + "_" + keyStr
 	},
-	"lookup": func(lookup map[string]string, key string) (value string) {
-		value, found := lookup[key]
-		fmt.Println(key, lookup)
+
+	"lookup": func(lookup map[string]string, key identity.Key) (value string) {
+		keyStr := key.String()
+		value, found := lookup[keyStr]
 		if !found {
-			panic(fmt.Sprintf("Unknown lookup key: '%s'", key))
+			panic(fmt.Sprintf("Unknown lookup key: '%s'", keyStr))
 		}
 		return value
 	},
-	"filename": func(objType, key, suffix, ext string) (filename string) {
-		return convertKeyToFilename(objType, key, suffix, ext)
+	"filename": func(objType string, key identity.Key, suffix, ext string) (filename string) {
+		return convertKeyToFilename(objType, key.String(), suffix, ext)
 	},
 	"data_type_rules": func(rules string, dataType *model_data_type.DataType) (value string) {
 		if dataType == nil {
@@ -223,37 +226,37 @@ var _funcMap = template.FuncMap{
 	},
 
 	// Lookup methods for objects.
-	"domain_lookup": func(reqs *req_flat.Requirements, key string) (value model_domain.Domain) {
+	"domain_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_domain.Domain) {
 		lookup, _ := reqs.DomainLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"class_lookup": func(reqs *req_flat.Requirements, key string) (value model_class.Class) {
+	"class_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_class.Class) {
 		lookup, _ := reqs.ClassLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"state_lookup": func(reqs *req_flat.Requirements, key string) (value model_state.State) {
+	"state_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.State) {
 		lookup := reqs.StateLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"event_lookup": func(reqs *req_flat.Requirements, key string) (value model_state.Event) {
+	"event_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Event) {
 		lookup := reqs.EventLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"guard_lookup": func(reqs *req_flat.Requirements, key string) (value model_state.Guard) {
+	"guard_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Guard) {
 		lookup := reqs.GuardLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"action_lookup": func(reqs *req_flat.Requirements, key string) (value model_state.Action) {
+	"action_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Action) {
 		lookup := reqs.ActionLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"use_case_lookup": func(reqs *req_flat.Requirements, key string) (value model_use_case.UseCase) {
+	"use_case_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_use_case.UseCase) {
 		lookup := reqs.UseCaseLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"scenario_lookup": func(reqs *req_flat.Requirements, key string) (value model_scenario.Scenario) {
+	"scenario_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_scenario.Scenario) {
 		lookup := reqs.ScenarioLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
 }
 
