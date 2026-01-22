@@ -126,6 +126,12 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 					"statements": stepsData,
 				}
 
+				// Scope object keys before parsing into Node objects.
+				// This ensures Node objects are always well-formed with complete keys.
+				if err = scopeObjectKeys(scenarioKey, nodeData); err != nil {
+					return model_use_case.UseCase{}, err
+				}
+
 				// Turn into yaml.
 				nodeYaml, err := yaml.Marshal(nodeData)
 				if err != nil {
@@ -134,11 +140,6 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 
 				var node model_scenario.Node
 				if err = node.FromYAML(string(nodeYaml)); err != nil {
-					return model_use_case.UseCase{}, err
-				}
-
-				// Scope object keys to model-wide uniqueness.
-				if err = node.ScopeObjects(scenarioKey.String()); err != nil {
 					return model_use_case.UseCase{}, err
 				}
 
@@ -388,17 +389,17 @@ func generateNode(node model_scenario.Node, indent string) string {
 		if node.Description != "" {
 			addField("description", node.Description)
 		}
-		if node.FromObjectKey != "" {
-			addField("from_object_key", strings.Split(node.FromObjectKey, "/sobject/")[1])
+		if node.FromObjectKey != nil {
+			addField("from_object_key", node.FromObjectKey.SubKey())
 		}
-		if node.ToObjectKey != "" {
-			addField("to_object_key", strings.Split(node.ToObjectKey, "/sobject/")[1])
+		if node.ToObjectKey != nil {
+			addField("to_object_key", node.ToObjectKey.SubKey())
 		}
-		if node.EventKey != "" {
-			addField("event_key", node.EventKey)
+		if node.EventKey != nil {
+			addField("event_key", node.EventKey.String())
 		}
-		if node.ScenarioKey != "" {
-			addField("scenario_key", node.ScenarioKey)
+		if node.ScenarioKey != nil {
+			addField("scenario_key", node.ScenarioKey.String())
 		}
 		if node.IsDelete {
 			addField("is_delete", "true        ")

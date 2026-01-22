@@ -92,15 +92,15 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 
 			switch {
 
-			case stmt.EventKey != "", stmt.AttributeKey != "":
+			case stmt.EventKey != nil, stmt.AttributeKey != nil:
 
-				fromObject, found := objectLookup[stmt.FromObjectKey]
+				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
 				if !found {
-					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
 				}
-				toObject, found := objectLookup[stmt.ToObjectKey]
+				toObject, found := objectLookup[stmt.ToObjectKey.String()]
 				if !found {
-					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey)
+					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey.String())
 				}
 
 				// Get the classes for the objects.
@@ -116,10 +116,10 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				text := stmt.Description
 
 				// Events can be fully described.
-				if stmt.EventKey != "" {
-					event, found := eventLookup[stmt.EventKey]
+				if stmt.EventKey != nil {
+					event, found := eventLookup[stmt.EventKey.String()]
 					if !found {
-						return errors.Errorf("unknown event key: '%s'", stmt.EventKey)
+						return errors.Errorf("unknown event key: '%s'", stmt.EventKey.String())
 					}
 					text += event.Name
 					if len(event.Parameters) > 0 {
@@ -140,15 +140,15 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 					Text:   text,
 				})
 
-			case stmt.ScenarioKey != "":
+			case stmt.ScenarioKey != nil:
 
-				fromObject, found := objectLookup[stmt.FromObjectKey]
+				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
 				if !found {
-					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
 				}
-				toObject, found := objectLookup[stmt.ToObjectKey]
+				toObject, found := objectLookup[stmt.ToObjectKey.String()]
 				if !found {
-					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey)
+					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey.String())
 				}
 
 				// Get the classes for the objects.
@@ -162,9 +162,9 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				}
 
 				// This is a call to another scenario.
-				calledScenario, found := scenarioLookup[stmt.ScenarioKey]
+				calledScenario, found := scenarioLookup[stmt.ScenarioKey.String()]
 				if !found {
-					return errors.Errorf("unknown called scenario object key: '%s'", stmt.ToObjectKey)
+					return errors.Errorf("unknown called scenario object key: '%s'", stmt.ToObjectKey.String())
 				}
 				s.AddStep(svgsequence.Step{
 					Source: fromObject.GetName(fromClass),
@@ -174,9 +174,9 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 
 			case stmt.IsDelete:
 				// This is a delete operation.
-				fromObject, found := objectLookup[stmt.FromObjectKey]
+				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
 				if !found {
-					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey)
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
 				}
 
 				// Get the class for the object.
