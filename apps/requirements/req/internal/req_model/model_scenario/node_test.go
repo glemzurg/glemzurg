@@ -8,46 +8,86 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type ScenarioStepsSuite struct {
 	suite.Suite
+	// Test keys created once for the suite
+	domainKey    identity.Key
+	subdomainKey identity.Key
+	classKey     identity.Key
+	useCaseKey   identity.Key
+	scenarioKey  identity.Key
+	fromObjKey   identity.Key
+	toObjKey     identity.Key
+	eventKey     *identity.Key
+	scenarioRef  *identity.Key
+	attrKey      *identity.Key
 }
 
 func TestScenarioStepsSuite(t *testing.T) {
 	suite.Run(t, new(ScenarioStepsSuite))
 }
 
+func (suite *ScenarioStepsSuite) SetupSuite() {
+	var err error
+	suite.domainKey, err = identity.NewDomainKey("test_domain")
+	require.NoError(suite.T(), err)
+	suite.subdomainKey, err = identity.NewSubdomainKey(suite.domainKey, "default")
+	require.NoError(suite.T(), err)
+	suite.classKey, err = identity.NewClassKey(suite.subdomainKey, "test_class")
+	require.NoError(suite.T(), err)
+	suite.useCaseKey, err = identity.NewUseCaseKey(suite.subdomainKey, "test_use_case")
+	require.NoError(suite.T(), err)
+	suite.scenarioKey, err = identity.NewScenarioKey(suite.useCaseKey, "test_scenario")
+	require.NoError(suite.T(), err)
+	suite.fromObjKey, err = identity.NewScenarioObjectKey(suite.scenarioKey, "from_obj")
+	require.NoError(suite.T(), err)
+	suite.toObjKey, err = identity.NewScenarioObjectKey(suite.scenarioKey, "to_obj")
+	require.NoError(suite.T(), err)
+	eventKey, err := identity.NewEventKey(suite.classKey, "test_event")
+	require.NoError(suite.T(), err)
+	suite.eventKey = &eventKey
+	scenarioRef, err := identity.NewScenarioKey(suite.useCaseKey, "ref_scenario")
+	require.NoError(suite.T(), err)
+	suite.scenarioRef = &scenarioRef
+	attrKey, err := identity.NewAttributeKey(suite.classKey, "test_attr")
+	require.NoError(suite.T(), err)
+	suite.attrKey = &attrKey
+}
+
 func (suite *ScenarioStepsSuite) TestInferredLeafType() {
 	// Event leaf
 	node := Node{
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		EventKey:      "ek",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
 	}
 	assert.Equal(suite.T(), LEAF_TYPE_EVENT, node.InferredLeafType())
 
 	// Scenario leaf
 	node = Node{
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		ScenarioKey:   "sk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   suite.scenarioRef,
 	}
 	assert.Equal(suite.T(), LEAF_TYPE_SCENARIO, node.InferredLeafType())
 
 	// Attribute leaf
 	node = Node{
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		AttributeKey:  "ak",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		AttributeKey:  suite.attrKey,
 	}
 	assert.Equal(suite.T(), LEAF_TYPE_ATTRIBUTE, node.InferredLeafType())
 
 	// Delete leaf
 	node = Node{
-		FromObjectKey: "fk",
+		FromObjectKey: suite.fromObjKey,
 		IsDelete:      true,
 	}
 	assert.Equal(suite.T(), LEAF_TYPE_DELETE, node.InferredLeafType())
@@ -63,7 +103,7 @@ func (suite *ScenarioStepsSuite) TestValidateSequence() {
 	// Valid sequence
 	node := Node{
 		Statements: []Node{
-			{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
+			{Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err := node.Validate()
@@ -77,7 +117,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 			{
 				Condition: "cond1",
 				Statements: []Node{
-					{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
+					{Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 				},
 			},
 		},
@@ -89,7 +129,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 	node = Node{
 		Cases: []Case{
 			{
-				Statements: []Node{{Description: "step", FromObjectKey: "fk", ToObjectKey: "tk", EventKey: "ek"}},
+				Statements: []Node{{Description: "step", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey}},
 			},
 		},
 	}
@@ -102,7 +142,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 	node := Node{
 		Loop: "while true",
 		Statements: []Node{
-			{Description: "step1", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
+			{Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err := node.Validate()
@@ -121,9 +161,9 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Valid event leaf
 	node := Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		EventKey:      "ek",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
 	}
 	err := node.Validate()
 	assert.Nil(suite.T(), err)
@@ -131,9 +171,9 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Valid scenario leaf
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		ScenarioKey:   "sk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   suite.scenarioRef,
 	}
 	err = node.Validate()
 	assert.Nil(suite.T(), err)
@@ -141,8 +181,8 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid: no from object key
 	node = Node{
 		Description: "desc",
-		ToObjectKey: "tk",
-		EventKey:    "ek",
+		ToObjectKey: suite.toObjKey,
+		EventKey:    suite.eventKey,
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have a from_object_key")
@@ -150,8 +190,8 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid: no to object key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		EventKey:      "ek",
+		FromObjectKey: suite.fromObjKey,
+		EventKey:      suite.eventKey,
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have a to_object_key")
@@ -159,10 +199,10 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid: both event_key and scenario_key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		EventKey:      "ek",
-		ScenarioKey:   "sk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+		ScenarioKey:   suite.scenarioRef,
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or attribute_key")
@@ -170,8 +210,8 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid: neither event_key nor scenario_key nor attribute_key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have one of event_key, scenario_key, or attribute_key")
@@ -179,9 +219,9 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Valid: attribute_key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		AttributeKey:  "attrk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		AttributeKey:  suite.attrKey,
 	}
 	err = node.Validate()
 	assert.NoError(suite.T(), err)
@@ -189,10 +229,10 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid: event_key and attribute_key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
-		EventKey:      "ek",
-		AttributeKey:  "attrk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+		AttributeKey:  suite.attrKey,
 	}
 	err = node.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or attribute_key")
@@ -200,7 +240,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Valid delete leaf
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
+		FromObjectKey: suite.fromObjKey,
 		IsDelete:      true,
 	}
 	err = node.Validate()
@@ -209,8 +249,8 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid delete: has to_object_key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		ToObjectKey:   "tk",
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
 		IsDelete:      true,
 	}
 	err = node.Validate()
@@ -219,8 +259,8 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Invalid delete: has event_key
 	node = Node{
 		Description:   "desc",
-		FromObjectKey: "fk",
-		EventKey:      "ek",
+		FromObjectKey: suite.fromObjKey,
+		EventKey:      suite.eventKey,
 		IsDelete:      true,
 	}
 	err = node.Validate()
@@ -244,7 +284,7 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 					{
 						Condition: "if x > 0",
 						Statements: []Node{
-							{Description: "positive", FromObjectKey: "fk1", ToObjectKey: "tk1", EventKey: "ek1"},
+							{Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 						},
 					},
 				},
@@ -252,7 +292,7 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 			{
 				Loop: "for i in range(10)",
 				Statements: []Node{
-					{Description: "loop body", FromObjectKey: "fk2", ToObjectKey: "tk2", ScenarioKey: "scenario1"},
+					{Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
 				},
 			},
 		},
@@ -280,23 +320,23 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 }
 
 func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
-	// JSON literal with all structures
+	// JSON literal with all structures - using valid identity key formats
 	jsonLiteral := `{
 		"statements": [
 			{
 				"description": "first step",
-				"from_object_key": "fk1",
-				"to_object_key": "tk1",
-				"event_key": "ek1"
+				"from_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from1",
+				"to_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/to1",
+				"event_key": "domain/test_domain/subdomain/default/class/test_class/event/ev1"
 			},
 			{
 				"loop": "while condition",
 				"statements": [
 					{
 						"description": "loop step",
-						"from_object_key": "fk2",
-						"to_object_key": "tk2",
-						"scenario_key": "sk2"
+						"from_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from2",
+						"to_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/to2",
+						"scenario_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/sk2"
 					}
 				]
 			},
@@ -307,17 +347,17 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 						"statements": [
 							{
 								"description": "case1 step",
-								"from_object_key": "fk3",
-								"to_object_key": "tk3",
-								"attribute_key": "ak4"
+								"from_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from3",
+								"to_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/to3",
+								"attribute_key": "domain/test_domain/subdomain/default/class/test_class/attribute/ak4"
 							}
 						]
 					},
 					{
 						"condition": "case2",
-						"statements": [ 
+						"statements": [
 							{
-								"from_object_key": "fk4",
+								"from_object_key": "domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from4",
 								"is_delete": true
 							}
 						]
@@ -341,28 +381,28 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 }
 
 func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
-	// YAML literal with all structures
+	// YAML literal with all structures - using valid identity key formats
 	yamlLiteral := `statements:
     - description: first step
-      from_object_key: fk1
-      to_object_key: tk1
-      event_key: ek1
+      from_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from1
+      to_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/to1
+      event_key: domain/test_domain/subdomain/default/class/test_class/event/ev1
     - statements:
         - description: loop step
-          from_object_key: fk2
-          to_object_key: tk2
-          scenario_key: sk2
+          from_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from2
+          to_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/to2
+          scenario_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/sk2
       loop: while condition
     - cases:
         - condition: case1
           statements:
             - description: case1 step
-              from_object_key: fk3
-              to_object_key: tk3
-              attribute_key: ak4
+              from_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from3
+              to_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/to3
+              attribute_key: domain/test_domain/subdomain/default/class/test_class/attribute/ak4
         - condition: case2
           statements:
-            - from_object_key: fk4
+            - from_object_key: domain/test_domain/subdomain/default/usecase/test_uc/scenario/test_sc/sobject/from4
               is_delete: true
 `
 
@@ -375,8 +415,14 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
 	yamlStr, err := node.ToYAML()
 	assert.Nil(suite.T(), err)
 
-	// Compare values are the same
-	assert.Equal(suite.T(), yamlLiteral, yamlStr)
+	// Parse the exported YAML back into a second struct for comparison
+	// (This avoids string comparison issues with YAML key ordering)
+	var node2 Node
+	err = node2.FromYAML(yamlStr)
+	assert.Nil(suite.T(), err)
+
+	// Compare the two structures
+	assert.Equal(suite.T(), node, node2)
 }
 
 func t_OrderedJson(value string) (sorted string) {

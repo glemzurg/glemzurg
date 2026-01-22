@@ -3,6 +3,7 @@ package model_scenario
 import (
 	"encoding/json"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
@@ -21,18 +22,21 @@ const (
 	LEAF_TYPE_DELETE    = "delete"
 )
 
+// emptyKey is the zero value of identity.Key for comparisons.
+var emptyKey identity.Key
+
 // Node represents a node in the scenario steps tree.
 type Node struct {
-	Statements    []Node `json:"statements,omitempty" yaml:"statements,omitempty"`
-	Cases         []Case `json:"cases,omitempty" yaml:"cases,omitempty"`
-	Loop          string `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
-	Description   string `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
-	FromObjectKey string `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
-	ToObjectKey   string `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
-	EventKey      string `json:"event_key,omitempty" yaml:"event_key,omitempty"`
-	ScenarioKey   string `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
-	AttributeKey  string `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
-	IsDelete      bool   `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
+	Statements    []Node        `json:"statements,omitempty" yaml:"statements,omitempty"`
+	Cases         []Case        `json:"cases,omitempty" yaml:"cases,omitempty"`
+	Loop          string        `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
+	Description   string        `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
+	FromObjectKey identity.Key  `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
+	ToObjectKey   identity.Key  `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
+	EventKey      *identity.Key `json:"event_key,omitempty" yaml:"event_key,omitempty"`
+	ScenarioKey   *identity.Key `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
+	AttributeKey  *identity.Key `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
+	IsDelete      bool          `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
 }
 
 // Inferredtype returns the type of the node based on its fields.
@@ -51,13 +55,13 @@ func (n *Node) Inferredtype() string {
 
 // InferredLeafType returns the leaf type of the node based on its fields.
 func (n *Node) InferredLeafType() string {
-	if n.EventKey != "" {
+	if n.EventKey != nil {
 		return LEAF_TYPE_EVENT
 	}
-	if n.ScenarioKey != "" {
+	if n.ScenarioKey != nil {
 		return LEAF_TYPE_SCENARIO
 	}
-	if n.AttributeKey != "" {
+	if n.AttributeKey != nil {
 		return LEAF_TYPE_ATTRIBUTE
 	}
 	if n.IsDelete {
@@ -112,28 +116,31 @@ func (n *Node) Validate() error {
 		}
 	case NODE_TYPE_LEAF:
 		if n.IsDelete {
-			if n.FromObjectKey == "" {
+			if n.FromObjectKey == emptyKey {
 				return errors.New("delete leaf must have a from_object_key")
 			}
-			if n.ToObjectKey != "" {
+			if n.ToObjectKey != emptyKey {
 				return errors.New("delete leaf cannot have a to_object_key")
 			}
-			if n.EventKey != "" || n.ScenarioKey != "" || n.AttributeKey != "" {
+			if n.EventKey != nil || n.ScenarioKey != nil || n.AttributeKey != nil {
 				return errors.New("delete leaf cannot have event_key, scenario_key, or attribute_key")
 			}
 		} else {
-			if n.FromObjectKey == "" {
+			if n.FromObjectKey == emptyKey {
 				return errors.New("leaf must have a from_object_key")
 			}
-			if n.ToObjectKey == "" {
+			if n.ToObjectKey == emptyKey {
 				return errors.New("leaf must have a to_object_key")
 			}
-			keys := []string{n.EventKey, n.ScenarioKey, n.AttributeKey}
 			nonEmptyKeys := 0
-			for _, key := range keys {
-				if key != "" {
-					nonEmptyKeys++
-				}
+			if n.EventKey != nil {
+				nonEmptyKeys++
+			}
+			if n.ScenarioKey != nil {
+				nonEmptyKeys++
+			}
+			if n.AttributeKey != nil {
+				nonEmptyKeys++
 			}
 			if nonEmptyKeys == 0 {
 				return errors.New("leaf must have one of event_key, scenario_key, or attribute_key")
@@ -175,13 +182,21 @@ func (n Node) ToYAML() (string, error) {
 }
 
 // ScopeObjects prepends the object keys with the full path of the scenario to make them unique in the requirements.
-func (n *Node) ScopeObjects(scenarioKey string) error {
+func (n *Node) ScopeObjects(scenarioKey identity.Key) error {
 	// Populate this node's references
-	if n.FromObjectKey != "" {
-		n.FromObjectKey = scenarioKey + "/sobject/" + n.FromObjectKey
+	if n.FromObjectKey != emptyKey {
+		newKey, err := identity.NewScenarioObjectKey(scenarioKey, n.FromObjectKey.SubKey())
+		if err != nil {
+			return err
+		}
+		n.FromObjectKey = newKey
 	}
-	if n.ToObjectKey != "" {
-		n.ToObjectKey = scenarioKey + "/sobject/" + n.ToObjectKey
+	if n.ToObjectKey != emptyKey {
+		newKey, err := identity.NewScenarioObjectKey(scenarioKey, n.ToObjectKey.SubKey())
+		if err != nil {
+			return err
+		}
+		n.ToObjectKey = newKey
 	}
 
 	// Recursively populate references in statements
@@ -208,7 +223,8 @@ func (n *Node) ScopeObjects(scenarioKey string) error {
 }
 
 // MarshalJSON custom marshals the Node to include the inferred type.
-func (n *Node) MarshalJSON() ([]byte, error) {
+// Uses value receiver so it works with both value and pointer types.
+func (n Node) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	if len(n.Statements) > 0 {
 		m["statements"] = n.Statements
@@ -222,19 +238,19 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 	if n.Description != "" {
 		m["description"] = n.Description
 	}
-	if n.FromObjectKey != "" {
+	if n.FromObjectKey != emptyKey {
 		m["from_object_key"] = n.FromObjectKey
 	}
-	if n.ToObjectKey != "" {
+	if n.ToObjectKey != emptyKey {
 		m["to_object_key"] = n.ToObjectKey
 	}
-	if n.EventKey != "" {
+	if n.EventKey != nil {
 		m["event_key"] = n.EventKey
 	}
-	if n.AttributeKey != "" {
+	if n.AttributeKey != nil {
 		m["attribute_key"] = n.AttributeKey
 	}
-	if n.ScenarioKey != "" {
+	if n.ScenarioKey != nil {
 		m["scenario_key"] = n.ScenarioKey
 	}
 	if n.IsDelete {
@@ -244,7 +260,8 @@ func (n *Node) MarshalJSON() ([]byte, error) {
 }
 
 // MarshalYAML custom marshals the Node to include the inferred type.
-func (n *Node) MarshalYAML() (interface{}, error) {
+// Uses value receiver so it works with both value and pointer types.
+func (n Node) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{})
 	if len(n.Statements) > 0 {
 		m["statements"] = n.Statements
@@ -258,20 +275,20 @@ func (n *Node) MarshalYAML() (interface{}, error) {
 	if n.Description != "" {
 		m["description"] = n.Description
 	}
-	if n.FromObjectKey != "" {
-		m["from_object_key"] = n.FromObjectKey
+	if n.FromObjectKey != emptyKey {
+		m["from_object_key"] = n.FromObjectKey.String()
 	}
-	if n.ToObjectKey != "" {
-		m["to_object_key"] = n.ToObjectKey
+	if n.ToObjectKey != emptyKey {
+		m["to_object_key"] = n.ToObjectKey.String()
 	}
-	if n.EventKey != "" {
-		m["event_key"] = n.EventKey
+	if n.EventKey != nil {
+		m["event_key"] = n.EventKey.String()
 	}
-	if n.AttributeKey != "" {
-		m["attribute_key"] = n.AttributeKey
+	if n.AttributeKey != nil {
+		m["attribute_key"] = n.AttributeKey.String()
 	}
-	if n.ScenarioKey != "" {
-		m["scenario_key"] = n.ScenarioKey
+	if n.ScenarioKey != nil {
+		m["scenario_key"] = n.ScenarioKey.String()
 	}
 	if n.IsDelete {
 		m["is_delete"] = n.IsDelete
