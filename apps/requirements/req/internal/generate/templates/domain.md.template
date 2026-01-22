@@ -1,4 +1,6 @@
 {{- $reqs := .Reqs -}}
+{{- $domainUseCases := domain_use_cases $reqs .Domain.Key -}}
+{{- $domainClasses := domain_classes $reqs .Domain.Key -}}
 
 [⇦ {{ .Model.Name }}](model.md)
 
@@ -8,7 +10,7 @@
 
 ![er]({{ filename "domain" .Domain.Key "use-cases" ".svg" }})
 
-{{ range .Domain.UseCases -}}
+{{ range $domainUseCases -}}
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 
@@ -18,7 +20,7 @@ The classes of this domain.
 
 ![er]({{ filename "domain" .Domain.Key "classes" ".svg" }})
 
-{{ range .Domain.Classes -}}
-- **[{{ if ne .ActorKey "" }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ range $domainClasses -}}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 

@@ -237,6 +237,52 @@ func (r *Requirements) ClassDomainLookup() map[string]model_domain.Domain {
 	return lookup
 }
 
+// DomainUseCasesLookup returns a map of domain key to all use cases in that domain's subdomains.
+func (r *Requirements) DomainUseCasesLookup() map[string][]model_use_case.UseCase {
+	r.PrepLookups()
+	lookup := make(map[string][]model_use_case.UseCase)
+
+	// Walk the domain → subdomain → use case hierarchy.
+	for domainKey, domain := range r.Model.Domains {
+		var useCases []model_use_case.UseCase
+		for _, subdomain := range domain.Subdomains {
+			for _, useCase := range subdomain.UseCases {
+				useCases = append(useCases, useCase)
+			}
+		}
+		// Sort for consistent output.
+		sort.Slice(useCases, func(i, j int) bool {
+			return useCases[i].Key.String() < useCases[j].Key.String()
+		})
+		lookup[domainKey.String()] = useCases
+	}
+
+	return lookup
+}
+
+// DomainClassesLookup returns a map of domain key to all classes in that domain's subdomains.
+func (r *Requirements) DomainClassesLookup() map[string][]model_class.Class {
+	r.PrepLookups()
+	lookup := make(map[string][]model_class.Class)
+
+	// Walk the domain → subdomain → class hierarchy.
+	for domainKey, domain := range r.Model.Domains {
+		var classes []model_class.Class
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				classes = append(classes, class)
+			}
+		}
+		// Sort for consistent output.
+		sort.Slice(classes, func(i, j int) bool {
+			return classes[i].Key.String() < classes[j].Key.String()
+		})
+		lookup[domainKey.String()] = classes
+	}
+
+	return lookup
+}
+
 // DomainLookup returns domains by key and domain associations.
 func (r *Requirements) DomainLookup() (map[string]model_domain.Domain, []model_domain.Association) {
 	r.PrepLookups()
@@ -406,6 +452,7 @@ func (r *Requirements) RegardingClasses(inClasses []model_class.Class) (generali
 func (r *Requirements) RegardingUseCases(inUseCases []model_use_case.UseCase) (useCases []model_use_case.UseCase, actors []model_actor.Actor, err error) {
 	actorLookup := r.ActorLookup()
 	useCaseLookup := r.UseCaseLookup()
+	classLookup, _ := r.ClassLookup()
 
 	// Get the use cases that are fully loaded with data.
 	for _, useCase := range inUseCases {
@@ -417,15 +464,26 @@ func (r *Requirements) RegardingUseCases(inUseCases []model_use_case.UseCase) (u
 	}
 
 	// Collect unique actors.
+	// UseCase.Actors is keyed by class key (the class that implements the actor).
+	// We need to look up the class to get its ActorKey, then look up the actual actor.
 	uniqueActors := map[string]model_actor.Actor{}
 	for _, useCase := range useCases {
-		for actorKey := range useCase.Actors {
-			actor, found := actorLookup[actorKey.String()]
+		for actorClassKey := range useCase.Actors {
+			// Look up the class that implements this actor.
+			class, found := classLookup[actorClassKey.String()]
 			if !found {
-				return nil, nil, errors.New("actor not found in lookup: " + actorKey.String())
+				return nil, nil, errors.New("actor class not found in lookup: " + actorClassKey.String())
 			}
-			uniqueActors[actorKey.String()] = actor
-
+			// The class should have an ActorKey pointing to the actual actor.
+			if class.ActorKey == nil {
+				return nil, nil, errors.New("class does not have an ActorKey: " + actorClassKey.String())
+			}
+			// Look up the actual actor.
+			actor, found := actorLookup[class.ActorKey.String()]
+			if !found {
+				return nil, nil, errors.New("actor not found in lookup: " + class.ActorKey.String())
+			}
+			uniqueActors[class.ActorKey.String()] = actor
 		}
 	}
 
