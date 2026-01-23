@@ -140,7 +140,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 
 	// Create associations:
 	// 1. Domain-level association (bridges subdomains).
-	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2))
+	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2, "domain association"))
 	domainAssoc := model_class.Association{
 		Key:              domainAssocKey,
 		Name:             "Domain Association",
@@ -151,7 +151,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	}
 
 	// 2. Subdomain1-level association.
-	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1))
+	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1, "subdomain1 association"))
 	sub1Assoc := model_class.Association{
 		Key:              sub1AssocKey,
 		Name:             "Subdomain1 Association",
@@ -162,7 +162,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	}
 
 	// 3. Subdomain2-level association.
-	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2))
+	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2, "subdomain2 association"))
 	sub2Assoc := model_class.Association{
 		Key:              sub2AssocKey,
 		Name:             "Subdomain2 Association",
@@ -196,7 +196,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
 	crossDomainClassKey := helper.Must(identity.NewClassKey(otherSubdomainKey, "class1"))
-	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, class1InSub1, crossDomainClassKey))
+	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, class1InSub1, crossDomainClassKey, "model level association"))
 	modelLevelAssoc := model_class.Association{
 		Key:              modelLevelAssocKey,
 		Name:             "Model Level Association",
@@ -214,7 +214,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	// For domain-level association, we need two classes in different subdomains of that domain.
 	otherSubdomain2Key := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain2"))
 	crossDomainClassKey2 := helper.Must(identity.NewClassKey(otherSubdomain2Key, "class2"))
-	wrongDomainAssocKey := helper.Must(identity.NewClassAssociationKey(otherDomainKey, crossDomainClassKey, crossDomainClassKey2))
+	wrongDomainAssocKey := helper.Must(identity.NewClassAssociationKey(otherDomainKey, crossDomainClassKey, crossDomainClassKey2, "wrong domain association"))
 	wrongDomainAssoc := model_class.Association{
 		Key:              wrongDomainAssocKey,
 		Name:             "Wrong Domain Association",
@@ -240,7 +240,7 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 	class2InSub2 := helper.Must(identity.NewClassKey(subdomain2Key, "class2"))
 
 	// Create associations at different levels.
-	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2))
+	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2, "domain association"))
 	domainAssoc := model_class.Association{
 		Key:              domainAssocKey,
 		Name:             "Domain Association",
@@ -250,7 +250,7 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
 	}
 
-	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1))
+	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1, "subdomain1 association"))
 	sub1Assoc := model_class.Association{
 		Key:              sub1AssocKey,
 		Name:             "Subdomain1 Association",
@@ -260,7 +260,7 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 		ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
 	}
 
-	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2))
+	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2, "subdomain2 association"))
 	sub2Assoc := model_class.Association{
 		Key:              sub2AssocKey,
 		Name:             "Subdomain2 Association",
@@ -304,7 +304,7 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 
 	// Test: returned map is a copy.
 	class3InSub1 := helper.Must(identity.NewClassKey(subdomain1Key, "class3"))
-	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class3InSub1))
+	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class3InSub1, "new association"))
 	result[newAssocKey] = model_class.Association{Key: newAssocKey, Name: "New"}
 	assert.Equal(suite.T(), 1, len(domain.ClassAssociations), "Domain associations should not be modified")
 	assert.Equal(suite.T(), 1, len(domain.Subdomains[subdomain1Key].ClassAssociations), "Subdomain associations should not be modified")

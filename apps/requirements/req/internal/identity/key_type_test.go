@@ -302,6 +302,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 		parentKey    Key
 		fromClassKey Key
 		toClassKey   Key
+		name         string
 		expected     Key
 		errstr       string
 	}{
@@ -311,11 +312,13 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    subdomain1Key,
 			fromClassKey: class1Key,
 			toClassKey:   class2Key,
+			name:         "My Association",
 			expected: Key{
 				parentKey: subdomain1Key.String(),
 				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
 				subKey:    "class/class1",
 				subKey2:   "class/class2",
+				subKey3:   "my_association",
 			},
 		},
 
@@ -325,11 +328,13 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    domain1Key,
 			fromClassKey: class1Key,
 			toClassKey:   class3Key,
+			name:         "Cross Subdomain Link",
 			expected: Key{
 				parentKey: domain1Key.String(),
 				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
 				subKey:    "subdomain/subdomain1/class/class1",
 				subKey2:   "subdomain/subdomain2/class/class3",
+				subKey3:   "cross_subdomain_link",
 			},
 		},
 
@@ -339,12 +344,66 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    Key{},
 			fromClassKey: class1Key,
 			toClassKey:   class4Key,
+			name:         "Cross Domain Link",
 			expected: Key{
 				parentKey: "",
 				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
 				subKey:    "domain/domain1/subdomain/subdomain1/class/class1",
 				subKey2:   "domain/domain2/subdomain/subdomain3/class/class4",
+				subKey3:   "cross_domain_link",
 			},
+		},
+
+		// OK: Name distillation - leading/trailing spaces.
+		{
+			testName:     "ok name with leading trailing spaces",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			name:         "  Spaced Name  ",
+			expected: Key{
+				parentKey: subdomain1Key.String(),
+				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				subKey:    "class/class1",
+				subKey2:   "class/class2",
+				subKey3:   "spaced_name",
+			},
+		},
+
+		// OK: Name distillation - multiple internal spaces.
+		{
+			testName:     "ok name with multiple internal spaces",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			name:         "Multiple   Spaces   Here",
+			expected: Key{
+				parentKey: subdomain1Key.String(),
+				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				subKey:    "class/class1",
+				subKey2:   "class/class2",
+				subKey3:   "multiple___spaces___here",
+			},
+		},
+
+		// Errors: Empty name.
+		{
+			testName:     "error empty name",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			name:         "",
+			errstr:       "name cannot be empty for class association key",
+		},
+
+		// Errors: Whitespace-only name.
+		{
+			testName:     "error whitespace only name",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			name:         "   ",
+			errstr:       "name cannot be empty for class association key",
 		},
 
 		// Errors: Wrong key types for classes.
@@ -353,6 +412,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    subdomain1Key,
 			fromClassKey: helper.Must(NewActorKey("actor1")),
 			toClassKey:   class2Key,
+			name:         "Test",
 			errstr:       "from class key cannot be of type 'actor' for 'cassociation' key",
 		},
 		{
@@ -360,6 +420,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    subdomain1Key,
 			fromClassKey: class1Key,
 			toClassKey:   helper.Must(NewActorKey("actor1")),
+			name:         "Test",
 			errstr:       "to class key cannot be of type 'actor' for 'cassociation' key",
 		},
 
@@ -369,6 +430,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    helper.Must(NewActorKey("actor1")),
 			fromClassKey: class1Key,
 			toClassKey:   class2Key,
+			name:         "Test",
 			errstr:       "parent key cannot be of type 'actor' for 'cassociation' key",
 		},
 
@@ -378,6 +440,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    subdomain1Key,
 			fromClassKey: class3Key, // class3 is in subdomain2, not subdomain1.
 			toClassKey:   class2Key,
+			name:         "Test",
 			errstr:       "from class key 'domain/domain1/subdomain/subdomain2/class/class3' is not in subdomain",
 		},
 		{
@@ -385,6 +448,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    subdomain1Key,
 			fromClassKey: class1Key,
 			toClassKey:   class3Key, // class3 is in subdomain2, not subdomain1.
+			name:         "Test",
 			errstr:       "to class key 'domain/domain1/subdomain/subdomain2/class/class3' is not in subdomain",
 		},
 
@@ -394,6 +458,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    domain1Key,
 			fromClassKey: class4Key, // class4 is in domain2, not domain1.
 			toClassKey:   class3Key,
+			name:         "Test",
 			errstr:       "from class key 'domain/domain2/subdomain/subdomain3/class/class4' is not in domain",
 		},
 		{
@@ -401,6 +466,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    domain1Key,
 			fromClassKey: class1Key,
 			toClassKey:   class4Key, // class4 is in domain2, not domain1.
+			name:         "Test",
 			errstr:       "to class key 'domain/domain2/subdomain/subdomain3/class/class4' is not in domain",
 		},
 
@@ -410,6 +476,7 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    domain1Key,
 			fromClassKey: class1Key,
 			toClassKey:   class2Key, // Both in subdomain1.
+			name:         "Test",
 			errstr:       "classes are in the same subdomain 'subdomain1', use subdomain as parent instead",
 		},
 
@@ -419,12 +486,13 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			parentKey:    Key{},
 			fromClassKey: class1Key,
 			toClassKey:   class3Key, // Both in domain1.
+			name:         "Test",
 			errstr:       "classes are in the same domain 'domain1', use domain as parent instead",
 		},
 	}
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			key, err := NewClassAssociationKey(tt.parentKey, tt.fromClassKey, tt.toClassKey)
+			key, err := NewClassAssociationKey(tt.parentKey, tt.fromClassKey, tt.toClassKey, tt.name)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, key)

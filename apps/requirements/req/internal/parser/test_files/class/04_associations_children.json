@@ -1,6 +1,6 @@
 [
     {
-        "Key": "domain/test_domain/subdomain/test_subdomain/cassociation/class/class_key/class/child_key",
+        "Key": "domain/test_domain/subdomain/test_subdomain/cassociation/class/class_key/class/child_key/contains",
         "Name": "Contains",
         "Details": "Appears in data dictionary.",
         "FromClassKey": "domain/test_domain/subdomain/test_subdomain/class/class_key",
@@ -11,7 +11,7 @@
         "UmlComment": "very import to users"
     },
     {
-        "Key": "domain/test_domain/subdomain/test_subdomain/cassociation/class/class_key/class/parent_key",
+        "Key": "domain/test_domain/subdomain/test_subdomain/cassociation/class/class_key/class/parent_key/belongs_to",
         "Name": "Belongs To",
         "Details": "",
         "FromClassKey": "domain/test_domain/subdomain/test_subdomain/class/class_key",

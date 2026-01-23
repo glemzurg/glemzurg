@@ -14,6 +14,7 @@ type Key struct {
 	keyType   string // The type of the key, e.g., "class", "association".
 	subKey    string // The unique key of the child entity within its parent and type.
 	subKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
+	subKey3   string // Optional tertiary key (e.g., for association names). Empty string means not set.
 }
 
 func newKey(parentKey, keyType, subKey string) (key Key, err error) {
@@ -21,16 +22,22 @@ func newKey(parentKey, keyType, subKey string) (key Key, err error) {
 }
 
 func newKeyWithSubKey2(parentKey, keyType, subKey string, subKey2 string) (key Key, err error) {
+	return newKeyWithSubKey3(parentKey, keyType, subKey, subKey2, "")
+}
+
+func newKeyWithSubKey3(parentKey, keyType, subKey, subKey2, subKey3 string) (key Key, err error) {
 	parentKey = strings.ToLower(strings.TrimSpace(parentKey))
 	keyType = strings.ToLower(strings.TrimSpace(keyType))
 	subKey = strings.ToLower(strings.TrimSpace(subKey))
 	subKey2 = strings.ToLower(strings.TrimSpace(subKey2))
+	subKey3 = strings.ToLower(strings.TrimSpace(subKey3))
 
 	key = Key{
 		parentKey: parentKey,
 		keyType:   keyType,
 		subKey:    subKey,
 		subKey2:   subKey2,
+		subKey3:   subKey3,
 	}
 
 	err = key.Validate()
@@ -101,6 +108,9 @@ func (k *Key) String() string {
 	if k.subKey2 != "" {
 		result = result + "/" + k.subKey2
 	}
+	if k.subKey3 != "" {
+		result = result + "/" + k.subKey3
+	}
 	return result
 }
 
@@ -113,6 +123,12 @@ func (k *Key) SubKey() string {
 // Returns empty string if not set.
 func (k *Key) SubKey2() string {
 	return k.subKey2
+}
+
+// SubKey3 returns the optional subKey3 of the Key.
+// Returns empty string if not set.
+func (k *Key) SubKey3() string {
+	return k.subKey3
 }
 
 // KeyType returns the keyType of the Key.
@@ -336,18 +352,18 @@ func ParseKey(s string) (key Key, err error) {
 		return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, subKey, subKey2Val)
 	}
 
-	// Check if this is a class association with subKey2.
-	// Format: parentKey/cassociation/subKey/subKey2
-	// where subKey and subKey2 are class paths that end with "class/name".
-	// For subdomain parent: parent/cassociation/class/class_a/class/class_b
-	// For domain parent: parent/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b
-	// For model parent: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b
-	// We need to find where "cassociation" is in the parts and then find the second "class" to split.
+	// Check if this is a class association with subKey2 and subKey3.
+	// Format: parentKey/cassociation/subKey/subKey2/subKey3
+	// where subKey and subKey2 are class paths that end with "class/name", and subKey3 is the distilled name.
+	// For subdomain parent: parent/cassociation/class/class_a/class/class_b/name
+	// For domain parent: parent/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b/name
+	// For model parent: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b/name
+	// We need to find where "cassociation" is in the parts, find the second "class" to split, and the last part is the name.
 	for i, part := range parts {
 		if part == KEY_TYPE_CLASS_ASSOCIATION {
-			// Found cassociation. The subKey and subKey2 are the remaining parts.
+			// Found cassociation. The subKey, subKey2, and subKey3 are the remaining parts.
 			remainingParts := parts[i+1:]
-			if len(remainingParts) >= 4 {
+			if len(remainingParts) >= 5 { // At least: class/name/class/name/distilled_name
 				// Find all occurrences of "class" in remainingParts
 				classIndices := []int{}
 				for j, p := range remainingParts {
@@ -360,12 +376,16 @@ func ParseKey(s string) (key Key, err error) {
 					// The first class path ends after the first "class/name" pair.
 					// The split point is the element AFTER the first class key (i.e., classIndices[0] + 2)
 					splitIdx := classIndices[0] + 2
-					if splitIdx < len(remainingParts) {
+					// The second class path ends after the second "class/name" pair.
+					// subKey3 is the last element.
+					secondClassEndIdx := classIndices[1] + 2
+					if splitIdx < len(remainingParts) && secondClassEndIdx < len(remainingParts) {
 						subKey := strings.Join(remainingParts[:splitIdx], "/")
-						subKey2Val := strings.Join(remainingParts[splitIdx:], "/")
+						subKey2Val := strings.Join(remainingParts[splitIdx:secondClassEndIdx], "/")
+						subKey3Val := strings.Join(remainingParts[secondClassEndIdx:], "/")
 						parentParts := parts[:i]
 						parentKey := strings.Join(parentParts, "/")
-						return newKeyWithSubKey2(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2Val)
+						return newKeyWithSubKey3(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2Val, subKey3Val)
 					}
 				}
 			}

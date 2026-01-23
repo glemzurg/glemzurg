@@ -370,7 +370,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 
 		// Construct the class association key using the subdomain as parent
 		// since both classes are in the same subdomain.
-		assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey)
+		assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, name)
 		if err != nil {
 			return model_class.Association{}, errors.WithStack(err)
 		}

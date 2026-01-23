@@ -45,7 +45,7 @@ func (suite *AssociationSuite) SetupTest() {
 	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key")))
 	suite.classB = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key_b")))
 	suite.classC = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key_c")))
-	suite.associationKey = helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.class.Key, suite.classB.Key))
+	suite.associationKey = helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.class.Key, suite.classB.Key, "test association"))
 }
 
 func (suite *AssociationSuite) TestLoad() {
@@ -276,7 +276,7 @@ func (suite *AssociationSuite) TestRemove() {
 func (suite *AssociationSuite) TestQuery() {
 
 	// Create a second association key
-	associationKeyX := helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.classB.Key, suite.classC.Key))
+	associationKeyX := helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.classB.Key, suite.classC.Key, "test association x"))
 
 	err := AddAssociations(suite.db, suite.model.Key, []model_class.Association{
 		{
