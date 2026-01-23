@@ -22,6 +22,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect

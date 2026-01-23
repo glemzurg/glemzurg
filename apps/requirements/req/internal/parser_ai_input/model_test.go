@@ -29,9 +29,9 @@ func (suite *ModelSuite) TestParseModelFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.T().Run(testName, func(t *testing.T) {
-			var expected InputModel
+			var expected inputModel
 
-			actual, err := ParseModel([]byte(testData.InputJSON))
+			actual, err := parseModel([]byte(testData.InputJSON))
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
@@ -60,7 +60,7 @@ func (suite *ModelSuite) TestParseModelErrors() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
-			_, err := ParseModel([]byte(testData.InputJSON))
+			_, err := parseModel([]byte(testData.InputJSON))
 			assert.NotNil(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected code.
