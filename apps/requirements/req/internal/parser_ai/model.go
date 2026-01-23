@@ -1,10 +1,10 @@
-package parser_ai_input
+package parser_ai
 
 import (
 	"encoding/json"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai_input/json_schemas"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/json_schemas"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 

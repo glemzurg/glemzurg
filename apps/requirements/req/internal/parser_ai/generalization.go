@@ -1,4 +1,4 @@
-package parser_ai_input
+package parser_ai
 
 // inputGeneralization represents a generalization JSON file.
 type inputGeneralization struct {

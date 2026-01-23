@@ -1,4 +1,4 @@
-package parser_ai_input
+package parser_ai
 
 // inputAssociation represents an association JSON file.
 type inputAssociation struct {

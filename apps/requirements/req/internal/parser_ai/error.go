@@ -1,11 +1,11 @@
-package parser_ai_input
+package parser_ai
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai_input/docs"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai_input/errors"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/docs"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/errors"
 )
 
 // InternalErrorPrefix is the prefix used in panic messages when error documentation

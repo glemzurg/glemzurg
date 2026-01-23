@@ -1,7 +1,7 @@
-package parser_ai_input
+package parser_ai
 
-// inputAction represents an action JSON file.
-type inputAction struct {
+// inputQuery represents a query JSON file.
+type inputQuery struct {
 	Name       string   `json:"name"`
 	Details    string   `json:"details,omitempty"`
 	Requires   []string `json:"requires,omitempty"`

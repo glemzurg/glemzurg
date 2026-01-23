@@ -1,4 +1,4 @@
-package parser_ai_input
+package parser_ai
 
 // inputActor represents an actor JSON file.
 type inputActor struct {

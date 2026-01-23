@@ -1,4 +1,4 @@
-package parser_ai_input
+package parser_ai
 
 // inputStateAction represents an action reference in a state.
 type inputStateAction struct {

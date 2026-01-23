@@ -1,4 +1,4 @@
-package parser_ai_input
+package parser_ai
 
 // Error codes for AI input validation errors.
 // Each error type has a unique identifier for programmatic handling.
