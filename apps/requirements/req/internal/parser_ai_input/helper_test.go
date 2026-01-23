@@ -1,6 +1,7 @@
 package parser_ai_input
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -90,18 +91,26 @@ func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
 	return allFiles, nil
 }
 
-// t_TestFileError represents a test file for error cases.
-type t_TestFileError struct {
-	Filename   string // The input JSON filename.
-	InputJSON  string // The contents of the input JSON file.
-	ErrorCode  int    // The expected error code.
-	ErrorField string // The expected error field (optional).
+// t_ExpectedError represents the expected error for an error test case.
+type t_ExpectedError struct {
+	Code          int    `json:"code"`           // The expected error code.
+	ErrorFile     string `json:"error_file"`     // The expected error markdown file name.
+	IncludeSchema bool   `json:"include_schema"` // Whether the schema should be included.
+	IncludeDocs   bool   `json:"include_docs"`   // Whether the docs should be included.
+	Field         string `json:"field"`          // The expected error field (optional).
 }
 
-// t_ContentsForAllErrorJSONFiles reads all JSON error test files from a directory.
+// t_TestFileError represents a test file pair for error cases.
+type t_TestFileError struct {
+	Filename      string          // The input JSON filename.
+	InputJSON     string          // The contents of the input JSON file.
+	ExpectedError t_ExpectedError // The expected error details.
+}
+
+// t_ContentsForAllErrorJSONFiles reads all JSON error test file pairs from a directory.
 // Files are expected to be named like:
 // - 01_missing_name.err.json (the input file that should cause an error)
-// The file should contain a special _expected_error field with the expected error code.
+// - 01_missing_name.expected.json (the expected error details)
 func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, err error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
@@ -112,6 +121,9 @@ func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, er
 		return nil, errors.WithStack(err)
 	}
 
+	// Keep track of the file and expected test results.
+	fileLookup := map[string]t_TestFileError{}
+
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -120,21 +132,49 @@ func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, er
 		filename := filepath.Join(path, file.Name())
 		name := file.Name()
 
-		// Check for .err.json suffix
-		if !strings.HasSuffix(name, ".err.json") {
-			return nil, errors.Errorf("unexpected file in error test folder: '%s' (expected .err.json)", filename)
+		// Check for .err.json suffix (input file)
+		if strings.HasSuffix(name, ".err.json") {
+			baseName := strings.TrimSuffix(name, ".err.json")
+			content, err := os.ReadFile(filename)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			testFile := fileLookup[baseName]
+			testFile.Filename = filename
+			testFile.InputJSON = strings.TrimSpace(string(content))
+			fileLookup[baseName] = testFile
+			continue
 		}
 
-		content, err := os.ReadFile(filename)
-		if err != nil {
-			return nil, errors.WithStack(err)
+		// Check for .expected.json suffix (expected error)
+		if strings.HasSuffix(name, ".expected.json") {
+			baseName := strings.TrimSuffix(name, ".expected.json")
+			content, err := os.ReadFile(filename)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+			var expected t_ExpectedError
+			if err := json.Unmarshal(content, &expected); err != nil {
+				return nil, errors.Wrapf(err, "failed to parse expected error JSON in '%s'", filename)
+			}
+			testFile := fileLookup[baseName]
+			testFile.ExpectedError = expected
+			fileLookup[baseName] = testFile
+			continue
 		}
 
-		testFile := t_TestFileError{
-			Filename:  filename,
-			InputJSON: strings.TrimSpace(string(content)),
-		}
+		// Unknown file type
+		return nil, errors.Errorf("unexpected file in error test folder: '%s' (expected .err.json or .expected.json)", filename)
+	}
 
+	// Verify all files have both input and expected
+	for baseName, testFile := range fileLookup {
+		if testFile.Filename == "" {
+			return nil, errors.Errorf("missing .err.json file for test '%s' in '%s'", baseName, path)
+		}
+		if testFile.ExpectedError.Code == 0 {
+			return nil, errors.Errorf("missing .expected.json file for test '%s' in '%s'", baseName, path)
+		}
 		allFiles = append(allFiles, testFile)
 	}
 

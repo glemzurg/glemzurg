@@ -1,0 +1,6 @@
+{
+    "code": 1003,
+    "error_file": "model_invalid_json.md",
+    "include_schema": false,
+    "include_docs": false
+}

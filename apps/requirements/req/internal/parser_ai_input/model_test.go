@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai_input/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -63,14 +62,20 @@ func (suite *ModelSuite) TestParseModelErrors() {
 			_, err := parseModel([]byte(testData.InputJSON))
 			assert.NotNil(t, err, testName+" should return an error")
 
-			// Verify it's a ParseError with the expected code.
-			parseErr, ok := err.(*errors.ParseError)
+			// Verify it's a ParseError with the expected values.
+			parseErr, ok := err.(*ParseError)
 			assert.True(t, ok, testName+" should return a ParseError")
-			if ok && testData.ErrorCode != 0 {
-				assert.Equal(t, testData.ErrorCode, parseErr.Code, testName+" error code")
+			if !ok {
+				return
 			}
-			if ok && testData.ErrorField != "" {
-				assert.Equal(t, testData.ErrorField, parseErr.Field, testName+" error field")
+
+			expected := testData.ExpectedError
+			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
+			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+			assert.Equal(t, expected.IncludeSchema, parseErr.IncludeSchema, testName+" include schema")
+			assert.Equal(t, expected.IncludeDocs, parseErr.IncludeDocs, testName+" include docs")
+			if expected.Field != "" {
+				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
 			}
 		})
 	}

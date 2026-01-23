@@ -1,10 +1,10 @@
-package errors
+package parser_ai_input
 
 import (
 	"fmt"
 )
 
-// Error numbers for AI input validation errors.
+// Error codes for AI input validation errors.
 // Each error type has a unique identifier for programmatic handling.
 const (
 	// Model errors (1xxx)
@@ -127,13 +127,15 @@ const (
 )
 
 // ParseError represents a validation error during AI input parsing.
-// It includes a unique error number and detailed advice for correction.
+// It includes a unique error number, detailed advice, and optional attachments.
 type ParseError struct {
-	Code    int    // Unique error number
-	Message string // Human-readable error message
-	Advice  string // Detailed advice on how to fix the error
-	File    string // File where the error occurred (optional)
-	Field   string // Field name that caused the error (optional)
+	Code          int    // Unique error number
+	Message       string // Human-readable error message
+	ErrorFile     string // Name of the markdown file in errors/ with detailed error info
+	IncludeSchema bool   // Whether to include the JSON schema in the error output
+	IncludeDocs   bool   // Whether to include JSON_AI_MODEL_FORMAT.md in the error output
+	File          string // File where the error occurred (optional)
+	Field         string // Field name that caused the error (optional)
 }
 
 // Error implements the error interface.
@@ -150,33 +152,63 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("[E%d] %s", e.Code, e.Message)
 }
 
-// NewParseError creates a new ParseError with the given code and message.
-func NewParseError(code int, message, advice string) *ParseError {
+// NewParseError creates a new ParseError with the given code, message, and error file.
+func NewParseError(code int, message, errorFile string) *ParseError {
 	return &ParseError{
-		Code:    code,
-		Message: message,
-		Advice:  advice,
+		Code:      code,
+		Message:   message,
+		ErrorFile: errorFile,
+	}
+}
+
+// WithSchema returns a copy of the error with IncludeSchema set to true.
+func (e *ParseError) WithSchema() *ParseError {
+	return &ParseError{
+		Code:          e.Code,
+		Message:       e.Message,
+		ErrorFile:     e.ErrorFile,
+		IncludeSchema: true,
+		IncludeDocs:   e.IncludeDocs,
+		File:          e.File,
+		Field:         e.Field,
+	}
+}
+
+// WithDocs returns a copy of the error with IncludeDocs set to true.
+func (e *ParseError) WithDocs() *ParseError {
+	return &ParseError{
+		Code:          e.Code,
+		Message:       e.Message,
+		ErrorFile:     e.ErrorFile,
+		IncludeSchema: e.IncludeSchema,
+		IncludeDocs:   true,
+		File:          e.File,
+		Field:         e.Field,
 	}
 }
 
 // WithFile returns a copy of the error with the file field set.
 func (e *ParseError) WithFile(file string) *ParseError {
 	return &ParseError{
-		Code:    e.Code,
-		Message: e.Message,
-		Advice:  e.Advice,
-		File:    file,
-		Field:   e.Field,
+		Code:          e.Code,
+		Message:       e.Message,
+		ErrorFile:     e.ErrorFile,
+		IncludeSchema: e.IncludeSchema,
+		IncludeDocs:   e.IncludeDocs,
+		File:          file,
+		Field:         e.Field,
 	}
 }
 
 // WithField returns a copy of the error with the field field set.
 func (e *ParseError) WithField(field string) *ParseError {
 	return &ParseError{
-		Code:    e.Code,
-		Message: e.Message,
-		Advice:  e.Advice,
-		File:    e.File,
-		Field:   field,
+		Code:          e.Code,
+		Message:       e.Message,
+		ErrorFile:     e.ErrorFile,
+		IncludeSchema: e.IncludeSchema,
+		IncludeDocs:   e.IncludeDocs,
+		File:          e.File,
+		Field:         field,
 	}
 }
