@@ -92,12 +92,8 @@ func (suite *ModelSuite) TestParseModelErrors() {
 				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
 			}
 
-			// Check docs content presence
-			if expected.HasDocs {
-				assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
-			} else {
-				assert.Empty(t, parseErr.Docs, testName+" should not have docs content")
-			}
+			// Docs are always attached to all errors
+			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
 
 			if expected.Field != "" {
 				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
