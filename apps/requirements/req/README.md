@@ -3,10 +3,6 @@
 
 
 next:
-  - fix class assocaition key collision
-  - update json model to have levels of class associations model/domain/subdomain
-  - update json package to just work with a model
-    - update the objects to not have unique database keys on them
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md

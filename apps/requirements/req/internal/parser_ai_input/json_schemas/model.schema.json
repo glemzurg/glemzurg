@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model.schema.json",
+  "title": "Model",
+  "description": "Schema for the model.json file that defines the top-level model information",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the model",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the model"
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}
