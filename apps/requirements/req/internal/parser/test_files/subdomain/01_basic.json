@@ -1,5 +1,5 @@
 {
-    "Key": "subdomain_key",
+    "Key": "domain/test_domain/subdomain/subdomain_key",
     "Name": "A Basic Subdomain",
     "Details": "# A Basic Subdomain\n\nHere we have markdown details.\n\nAnd even more.",
     "UmlComment": "Here we have a UML comment.\n\nAnd even more."

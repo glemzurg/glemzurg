@@ -3,21 +3,24 @@ package generate
 import (
 	"path/filepath"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
-func generateUseCaseFiles(outputPath string, reqs requirements.Requirements) (err error) {
+func generateUseCaseFiles(outputPath string, reqs *req_flat.Requirements) (err error) {
 
 	// Get all the data we want for these files.
 	useCaseLookup := reqs.UseCaseLookup()
 
-	// Generate file for each actor.
+	// Generate file for each use case.
 	for _, useCase := range useCaseLookup {
 
 		// Generate model summary.
-		modelFilename := convertKeyToFilename("use_case", useCase.Key, "", ".md")
+		modelFilename := convertKeyToFilename("use_case", useCase.Key.String(), "", ".md")
 		modelFilenameAbs := filepath.Join(outputPath, modelFilename)
 		mdContents, err := generateUseCaseMdContents(reqs, useCase)
 		if err != nil {
@@ -31,11 +34,11 @@ func generateUseCaseFiles(outputPath string, reqs requirements.Requirements) (er
 	return nil
 }
 
-func generateUseCaseMdContents(reqs requirements.Requirements, useCase requirements.UseCase) (contents string, err error) {
+func generateUseCaseMdContents(reqs *req_flat.Requirements, useCase model_use_case.UseCase) (contents string, err error) {
 
 	contents, err = generateFromTemplate(_useCaseMdTemplate, struct {
-		Reqs    requirements.Requirements
-		UseCase requirements.UseCase
+		Reqs    *req_flat.Requirements
+		UseCase model_use_case.UseCase
 	}{
 		Reqs:    reqs,
 		UseCase: useCase,
@@ -47,14 +50,14 @@ func generateUseCaseMdContents(reqs requirements.Requirements, useCase requireme
 	return contents, nil
 }
 
-// This is the class graph on a domain and class pages.
-func generateUseCasesSvgContents(reqs requirements.Requirements, domain requirements.Domain, useCases []requirements.UseCase, actors []requirements.Actor) (svgContents string, dotContents string, err error) {
+// This is the use case graph on a domain page.
+func generateUseCasesSvgContents(reqs *req_flat.Requirements, domain model_domain.Domain, useCases []model_use_case.UseCase, actors []model_actor.Actor) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_useCasesDotTemplate, struct {
-		Reqs     requirements.Requirements
-		Domain   requirements.Domain
-		UseCases []requirements.UseCase
-		Actors   []requirements.Actor
+		Reqs     *req_flat.Requirements
+		Domain   model_domain.Domain
+		UseCases []model_use_case.UseCase
+		Actors   []model_actor.Actor
 	}{
 		Reqs:     reqs,
 		Domain:   domain,

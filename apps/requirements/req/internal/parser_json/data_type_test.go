@@ -3,20 +3,20 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDataTypeInOutRoundTrip(t *testing.T) {
 
-	original := data_type.DataType{
+	original := model_data_type.DataType{
 		Key:              "dt1",
 		CollectionType:   "ordered",
 		CollectionUnique: t_BoolPtr(true),
 		CollectionMin:    t_IntPtr(1),
 		CollectionMax:    t_IntPtr(10),
-		Atomic:           &data_type.Atomic{ConstraintType: "span"},
-		RecordFields: []data_type.Field{
+		Atomic:           &model_data_type.Atomic{ConstraintType: "span"},
+		RecordFields: []model_data_type.Field{
 			{
 				Name: "field1",
 			},

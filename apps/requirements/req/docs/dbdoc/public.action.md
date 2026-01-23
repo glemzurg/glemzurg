@@ -8,9 +8,9 @@ An action of a class that can be attached to transitions.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.transition](public.transition.md) [public.state_action](public.state_action.md) [public.parameter](public.parameter.md) | [public.class](public.class.md) | The model this state machine is part of. |
+| model_key | text |  | false | [public.transition](public.transition.md) [public.state_action](public.state_action.md) [public.action_parameter](public.action_parameter.md) | [public.class](public.class.md) | The model this state machine is part of. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this action is part of. |
-| action_key | text |  | false | [public.transition](public.transition.md) [public.state_action](public.state_action.md) [public.parameter](public.parameter.md) |  | The internal ID. |
+| action_key | text |  | false | [public.transition](public.transition.md) [public.state_action](public.state_action.md) [public.action_parameter](public.action_parameter.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the action within the class. |
 | details | text |  | true |  |  | A summary description. |
 | requires | text[] |  | true |  |  | The requires half of the action contract in TLA+ notation. |

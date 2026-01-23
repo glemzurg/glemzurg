@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +31,7 @@ func (suite *ActorFileSuite) TestParseActorFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		var expected, actual requirements.Actor
+		var expected, actual model_actor.Actor
 
 		actual, err := parseActor(key, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)

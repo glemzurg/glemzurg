@@ -3,13 +3,24 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActionInOutRoundTrip(t *testing.T) {
-	original := requirements.Action{
-		Key:        "action1",
+	domainKey, err := identity.NewDomainKey("domain1")
+	require.NoError(t, err)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "sub1")
+	require.NoError(t, err)
+	classKey, err := identity.NewClassKey(subdomainKey, "class1")
+	require.NoError(t, err)
+	actionKey, err := identity.NewActionKey(classKey, "action1")
+	require.NoError(t, err)
+
+	original := model_state.Action{
+		Key:        actionKey,
 		Name:       "Login Action",
 		Details:    "User logs in",
 		Requires:   []string{"user_authenticated"},
@@ -17,6 +28,7 @@ func TestActionInOutRoundTrip(t *testing.T) {
 	}
 
 	inOut := FromRequirementsAction(original)
-	back := inOut.ToRequirements()
+	back, err := inOut.ToRequirements()
+	require.NoError(t, err)
 	assert.Equal(t, original, back)
 }

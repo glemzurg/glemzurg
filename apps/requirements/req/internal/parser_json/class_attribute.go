@@ -1,6 +1,9 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+)
 
 // attributeInOut is a member of a class.
 type attributeInOut struct {
@@ -16,10 +19,15 @@ type attributeInOut struct {
 	DataType  *dataTypeInOut `json:"data_type"`  // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
-// ToRequirements converts the attributeInOut to requirements.Attribute.
-func (a attributeInOut) ToRequirements() requirements.Attribute {
-	attr := requirements.Attribute{
-		Key:              a.Key,
+// ToRequirements converts the attributeInOut to model_class.Attribute.
+func (a attributeInOut) ToRequirements() (model_class.Attribute, error) {
+	key, err := identity.ParseKey(a.Key)
+	if err != nil {
+		return model_class.Attribute{}, err
+	}
+
+	attr := model_class.Attribute{
+		Key:              key,
 		Name:             a.Name,
 		Details:          a.Details,
 		DataTypeRules:    a.DataTypeRules,
@@ -35,13 +43,13 @@ func (a attributeInOut) ToRequirements() requirements.Attribute {
 		attr.DataType = &dt
 	}
 
-	return attr
+	return attr, nil
 }
 
-// FromRequirements creates a attributeInOut from requirements.Attribute.
-func FromRequirementsAttribute(a requirements.Attribute) attributeInOut {
+// FromRequirements creates a attributeInOut from model_class.Attribute.
+func FromRequirementsAttribute(a model_class.Attribute) attributeInOut {
 	attr := attributeInOut{
-		Key:              a.Key,
+		Key:              a.Key.String(),
 		Name:             a.Name,
 		Details:          a.Details,
 		DataTypeRules:    a.DataTypeRules,

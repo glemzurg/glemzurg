@@ -2,10 +2,12 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -20,9 +22,11 @@ func TestSubdomainSuite(t *testing.T) {
 
 type SubdomainSuite struct {
 	suite.Suite
-	db     *sql.DB
-	model  requirements.Model
-	domain requirements.Domain
+	db            *sql.DB
+	model         req_model.Model
+	domain        model_domain.Domain
+	subdomainKey  identity.Key
+	subdomainKeyB identity.Key
 }
 
 func (suite *SubdomainSuite) SetupTest() {
@@ -32,13 +36,17 @@ func (suite *SubdomainSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+
+	// Create the subdomain keys for reuse.
+	suite.subdomainKey = helper.Must(identity.NewSubdomainKey(suite.domain.Key, "key"))
+	suite.subdomainKeyB = helper.Must(identity.NewSubdomainKey(suite.domain.Key, "key_b"))
 }
 
 func (suite *SubdomainSuite) TestLoad() {
 
 	// Nothing in database yet.
-	domainKey, subdomain, err := LoadSubdomain(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), domainKey)
 	assert.Empty(suite.T(), subdomain)
@@ -56,8 +64,8 @@ func (suite *SubdomainSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'domain_key',
-				'key',
+				'domain/domain_key',
+				'domain/domain_key/subdomain/key',
 				'Name',
 				'Details',
 				'UmlComment'
@@ -65,11 +73,11 @@ func (suite *SubdomainSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	domainKey, subdomain, err = LoadSubdomain(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	domainKey, subdomain, err = LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `domain_key`, domainKey)
-	assert.Equal(suite.T(), requirements.Subdomain{
-		Key:        "key", // Test case-insensitive.
+	assert.Equal(suite.T(), suite.domain.Key, domainKey)
+	assert.Equal(suite.T(), model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
@@ -78,19 +86,19 @@ func (suite *SubdomainSuite) TestLoad() {
 
 func (suite *SubdomainSuite) TestAdd() {
 
-	err := AddSubdomain(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.domain.Key), requirements.Subdomain{
-		Key:        "KeY", // Test case-insensitive.
+	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, "key")
+	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `domain_key`, domainKey)
-	assert.Equal(suite.T(), requirements.Subdomain{
-		Key:        "key",
+	assert.Equal(suite.T(), suite.domain.Key, domainKey)
+	assert.Equal(suite.T(), model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
@@ -99,27 +107,27 @@ func (suite *SubdomainSuite) TestAdd() {
 
 func (suite *SubdomainSuite) TestUpdate() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
-		Key:        "key",
+	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateSubdomain(suite.db, strings.ToUpper(suite.model.Key), requirements.Subdomain{
-		Key:        "kEy", // Test case-insensitive.
+	err = UpdateSubdomain(suite.db, suite.model.Key, model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
-	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, "key")
+	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), `domain_key`, domainKey)
-	assert.Equal(suite.T(), requirements.Subdomain{
-		Key:        "key", // Test case-insensitive.
+	assert.Equal(suite.T(), suite.domain.Key, domainKey)
+	assert.Equal(suite.T(), model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
@@ -128,18 +136,18 @@ func (suite *SubdomainSuite) TestUpdate() {
 
 func (suite *SubdomainSuite) TestRemove() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
-		Key:        "key",
+	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
+		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveSubdomain(suite.db, strings.ToUpper(suite.model.Key), "kEy") // Test case-insensitive.
+	err = RemoveSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
 
-	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, "key")
+	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), domainKey)
 	assert.Empty(suite.T(), subdomain)
@@ -147,35 +155,36 @@ func (suite *SubdomainSuite) TestRemove() {
 
 func (suite *SubdomainSuite) TestQuery() {
 
-	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
-		Key:        "keyx",
-		Name:       "NameX",
-		Details:    "DetailsX",
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, requirements.Subdomain{
-		Key:        "key",
-		Name:       "Name",
-		Details:    "Details",
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(suite.T(), err)
-
-	subdomains, err := QuerySubdomains(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Subdomain{
+	err := AddSubdomains(suite.db, suite.model.Key, map[identity.Key][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{
-				Key:        "key",
+				Key:        suite.subdomainKeyB,
+				Name:       "NameX",
+				Details:    "DetailsX",
+				UmlComment: "UmlCommentX",
+			},
+			{
+				Key:        suite.subdomainKey,
+				Name:       "Name",
+				Details:    "Details",
+				UmlComment: "UmlComment",
+			},
+		},
+	})
+	assert.Nil(suite.T(), err)
+
+	subdomains, err := QuerySubdomains(suite.db, suite.model.Key)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), map[identity.Key][]model_domain.Subdomain{
+		suite.domain.Key: {
+			{
+				Key:        suite.subdomainKey,
 				Name:       "Name",
 				Details:    "Details",
 				UmlComment: "UmlComment",
 			},
 			{
-
-				Key:        "keyx",
+				Key:        suite.subdomainKeyB,
 				Name:       "NameX",
 				Details:    "DetailsX",
 				UmlComment: "UmlCommentX",
@@ -188,17 +197,17 @@ func (suite *SubdomainSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey, domainKey string) (subdomain requirements.Subdomain) {
+func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdomainKey identity.Key) (subdomain model_domain.Subdomain) {
 
-	err := AddSubdomain(dbOrTx, modelKey, domainKey, requirements.Subdomain{
-		Key:        "subdomain_key",
-		Name:       "Name",
+	err := AddSubdomain(dbOrTx, modelKey, domainKey, model_domain.Subdomain{
+		Key:        subdomainKey,
+		Name:       subdomainKey.String(),
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
 	assert.Nil(t, err)
 
-	_, subdomain, err = LoadSubdomain(dbOrTx, "model_key", "subdomain_key")
+	_, subdomain, err = LoadSubdomain(dbOrTx, modelKey, subdomainKey)
 	assert.Nil(t, err)
 
 	return subdomain

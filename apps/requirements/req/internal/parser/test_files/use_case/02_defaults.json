@@ -1,5 +1,5 @@
 {
-    "Key": "use_case_key",
+    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key",
     "Name": "A Basic Use Case",
     "Details": "# A Basic Use Case\n\nHere we have markdown details.\n\nAnd even more.",
     "Level": "sea",

@@ -11,8 +11,14 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
@@ -100,25 +106,27 @@ var _useCaseMdTemplate *template.Template
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{
-	"nodeid": func(idtype, key string) string {
+	"nodeid": func(idtype string, key identity.Key) string {
+		keyStr := key.String()
 		// Replace / with _
-		key = strings.ReplaceAll(key, "/", "_")
+		keyStr = strings.ReplaceAll(keyStr, "/", "_")
 		// Replace - with _
-		key = strings.ReplaceAll(key, "-", "_")
-		return idtype + "_" + key
+		keyStr = strings.ReplaceAll(keyStr, "-", "_")
+		return idtype + "_" + keyStr
 	},
-	"lookup": func(lookup map[string]string, key string) (value string) {
-		value, found := lookup[key]
-		fmt.Println(key, lookup)
+
+	"lookup": func(lookup map[string]string, key identity.Key) (value string) {
+		keyStr := key.String()
+		value, found := lookup[keyStr]
 		if !found {
-			panic(fmt.Sprintf("Unknown lookup key: '%s'", key))
+			panic(fmt.Sprintf("Unknown lookup key: '%s'", keyStr))
 		}
 		return value
 	},
-	"filename": func(objType, key, suffix, ext string) (filename string) {
-		return convertKeyToFilename(objType, key, suffix, ext)
+	"filename": func(objType string, key identity.Key, suffix, ext string) (filename string) {
+		return convertKeyToFilename(objType, key.String(), suffix, ext)
 	},
-	"data_type_rules": func(rules string, dataType *data_type.DataType) (value string) {
+	"data_type_rules": func(rules string, dataType *model_data_type.DataType) (value string) {
 		if dataType == nil {
 			return `_(unparsed)_ ` + rules
 		}
@@ -130,12 +138,12 @@ var _funcMap = template.FuncMap{
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
-	"multiplicity": func(multiplicity requirements.Multiplicity) (value string) {
+	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
-	"generalization_label": func(reqs requirements.Requirements, generalizationKey string) (value string) {
+	"generalization_label": func(reqs *req_flat.Requirements, generalizationKey identity.Key) (value string) {
 		generalizationLookup := reqs.GeneralizationLookup()
-		generalization := generalizationLookup[generalizationKey]
+		generalization := generalizationLookup[generalizationKey.String()]
 		complete := "«complete»"
 		if !generalization.IsComplete {
 			complete = "«incomplete»"
@@ -146,13 +154,13 @@ var _funcMap = template.FuncMap{
 		}
 		return complete + "\n" + static
 	},
-	"event_guard_signature": func(reqs requirements.Requirements, transition requirements.Transition) (eventCall string) {
+	"event_guard_signature": func(reqs *req_flat.Requirements, transition model_state.Transition) (eventCall string) {
 
 		eventLookup := reqs.EventLookup()
 		guardLookup := reqs.GuardLookup()
 
 		// The event.
-		event := eventLookup[transition.EventKey]
+		event := eventLookup[transition.EventKey.String()]
 
 		// Create a signature for the event.
 		var paramNames []string
@@ -165,14 +173,14 @@ var _funcMap = template.FuncMap{
 		eventCall = event.Name + "(" + signature + ")"
 
 		// Add a guard if there is one.
-		if transition.GuardKey != "" {
-			guard := guardLookup[transition.GuardKey]
+		if transition.GuardKey != nil {
+			guard := guardLookup[transition.GuardKey.String()]
 			eventCall += " [" + guard.Details + "]"
 		}
 
 		return eventCall
 	},
-	"action_signatures": func(reqs requirements.Requirements, transitions []requirements.Transition, stateActions []requirements.StateAction) (signatures []string) {
+	"action_signatures": func(reqs *req_flat.Requirements, transitions []model_state.Transition, stateActions []model_state.StateAction) (signatures []string) {
 
 		eventLookup := reqs.EventLookup()
 
@@ -186,7 +194,7 @@ var _funcMap = template.FuncMap{
 
 		// Create a signature for each event used.
 		for _, transition := range transitions {
-			event := eventLookup[transition.EventKey]
+			event := eventLookup[transition.EventKey.String()]
 
 			var paramNames []string
 			for _, param := range event.Parameters {
@@ -218,37 +226,85 @@ var _funcMap = template.FuncMap{
 	},
 
 	// Lookup methods for objects.
-	"domain_lookup": func(reqs requirements.Requirements, key string) (value requirements.Domain) {
+	"domain_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_domain.Domain) {
 		lookup, _ := reqs.DomainLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"class_lookup": func(reqs requirements.Requirements, key string) (value requirements.Class) {
+	"class_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_class.Class) {
 		lookup, _ := reqs.ClassLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"state_lookup": func(reqs requirements.Requirements, key string) (value requirements.State) {
+	"state_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.State) {
 		lookup := reqs.StateLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"event_lookup": func(reqs requirements.Requirements, key string) (value requirements.Event) {
+	"event_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Event) {
 		lookup := reqs.EventLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"guard_lookup": func(reqs requirements.Requirements, key string) (value requirements.Guard) {
+	"guard_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Guard) {
 		lookup := reqs.GuardLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"action_lookup": func(reqs requirements.Requirements, key string) (value requirements.Action) {
+	"action_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Action) {
 		lookup := reqs.ActionLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"use_case_lookup": func(reqs requirements.Requirements, key string) (value requirements.UseCase) {
+	"use_case_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_use_case.UseCase) {
 		lookup := reqs.UseCaseLookup()
-		return lookup[key]
+		return lookup[key.String()]
 	},
-	"scenario_lookup": func(reqs requirements.Requirements, key string) (value requirements.Scenario) {
+	"scenario_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_scenario.Scenario) {
 		lookup := reqs.ScenarioLookup()
-		return lookup[key]
+		return lookup[key.String()]
+	},
+	"actor_classes": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
+		lookup := reqs.ActorClassesLookup()
+		return lookup[key.String()]
+	},
+	"class_domain": func(reqs *req_flat.Requirements, key identity.Key) (domain model_domain.Domain) {
+		lookup := reqs.ClassDomainLookup()
+		return lookup[key.String()]
+	},
+	"use_case_domain": func(reqs *req_flat.Requirements, key identity.Key) (domain model_domain.Domain) {
+		lookup := reqs.UseCaseDomainLookup()
+		return lookup[key.String()]
+	},
+	"domain_use_cases": func(reqs *req_flat.Requirements, key identity.Key) (useCases []model_use_case.UseCase) {
+		lookup := reqs.DomainUseCasesLookup()
+		return lookup[key.String()]
+	},
+	"domain_classes": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
+		lookup := reqs.DomainClassesLookup()
+		return lookup[key.String()]
+	},
+	"generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (class model_class.Class) {
+		lookup := reqs.GeneralizationSuperclassLookup()
+		return lookup[key.String()]
+	},
+	"generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
+		lookup := reqs.GeneralizationSubclassesLookup()
+		return lookup[key.String()]
+	},
+	"action_transitions": func(reqs *req_flat.Requirements, key identity.Key) (transitions []model_state.Transition) {
+		lookup := reqs.ActionTransitionsLookup()
+		return lookup[key.String()]
+	},
+	"action_state_actions": func(reqs *req_flat.Requirements, key identity.Key) (stateActions []model_state.StateAction) {
+		lookup := reqs.ActionStateActionsLookup()
+		return lookup[key.String()]
+	},
+	"state_action_state": func(reqs *req_flat.Requirements, stateActionKey identity.Key) (state model_state.State) {
+		// StateAction's key's parent is the State key.
+		stateKeyStr := stateActionKey.ParentKey()
+		lookup := reqs.StateLookup()
+		return lookup[stateKeyStr]
+	},
+	// class_actor_key returns the ActorKey for a Class (used when mapping use case actors to diagram nodes).
+	"class_actor_key": func(reqs *req_flat.Requirements, classKey identity.Key) (actorKey *identity.Key) {
+		classLookup, _ := reqs.ClassLookup()
+		class := classLookup[classKey.String()]
+		return class.ActorKey
 	},
 }
 

@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 // dataTypeInOut represents the main data type structure.
 type dataTypeInOut struct {
@@ -13,9 +13,9 @@ type dataTypeInOut struct {
 	RecordFields     []fieldInOut `json:"record_fields"`
 }
 
-// ToRequirements converts the dataTypeInOut to data_type.DataType.
-func (d dataTypeInOut) ToRequirements() data_type.DataType {
-	dt := data_type.DataType{
+// ToRequirements converts the dataTypeInOut to model_data_type.DataType.
+func (d dataTypeInOut) ToRequirements() model_data_type.DataType {
+	dt := model_data_type.DataType{
 		Key:              d.Key,
 		CollectionType:   d.CollectionType,
 		CollectionUnique: d.CollectionUnique,
@@ -34,8 +34,8 @@ func (d dataTypeInOut) ToRequirements() data_type.DataType {
 	return dt
 }
 
-// FromRequirements creates a dataTypeInOut from data_type.DataType.
-func FromRequirementsDataType(d data_type.DataType) dataTypeInOut {
+// FromRequirements creates a dataTypeInOut from model_data_type.DataType.
+func FromRequirementsDataType(d model_data_type.DataType) dataTypeInOut {
 	dt := dataTypeInOut{
 		Key:              d.Key,
 		CollectionType:   d.CollectionType,

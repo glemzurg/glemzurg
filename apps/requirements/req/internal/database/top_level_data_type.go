@@ -1,24 +1,24 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // AddTopLevelDataTypes adds a map of DataType to the database, handling nested structures.
-func AddTopLevelDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes map[string]data_type.DataType) error {
+func AddTopLevelDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes map[string]model_data_type.DataType) error {
 	// Convert map to slice for flattening
-	var dataTypeSlice []data_type.DataType
+	var dataTypeSlice []model_data_type.DataType
 	for _, dt := range dataTypes {
 		dataTypeSlice = append(dataTypeSlice, dt)
 	}
 
 	// Flatten the data types
-	flatDataTypes := data_type.FlattenDataTypes(dataTypeSlice)
+	flatDataTypes := model_data_type.FlattenDataTypes(dataTypeSlice)
 
 	// Extract database objects
-	fieldMap, atomicMap, atomicSpanMap, atomicEnumMap := data_type.ExtractDatabaseObjects(flatDataTypes)
+	fieldMap, atomicMap, atomicSpanMap, atomicEnumMap := model_data_type.ExtractDatabaseObjects(flatDataTypes)
 
 	// Insert in order: data_type, data_type_atomic, data_type_atomic_enum_value, data_type_atomic_span, data_type_field
 
@@ -51,7 +51,7 @@ func AddTopLevelDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes map[string]d
 }
 
 // LoadTopLevelDataTypes loads all DataType for a model from the database, reconstructing nested structures.
-func LoadTopLevelDataTypes(dbOrTx DbOrTx, modelKey string) (map[string]data_type.DataType, error) {
+func LoadTopLevelDataTypes(dbOrTx DbOrTx, modelKey string) (map[string]model_data_type.DataType, error) {
 	// Load all data_type rows
 	baseDataTypes, err := QueryDataTypes(dbOrTx, modelKey)
 	if err != nil {
@@ -83,13 +83,13 @@ func LoadTopLevelDataTypes(dbOrTx DbOrTx, modelKey string) (map[string]data_type
 	}
 
 	// Reconstitute
-	reconstituted := data_type.ReconstituteDataTypes(baseDataTypes, fieldMap, atomicMap, atomicSpanMap, atomicEnumMap)
+	reconstituted := model_data_type.ReconstituteDataTypes(baseDataTypes, fieldMap, atomicMap, atomicSpanMap, atomicEnumMap)
 
 	// Reconstruct nested
-	reconstructedFlat := data_type.ReconstructNestedDataTypes(reconstituted)
+	reconstructedFlat := model_data_type.ReconstructNestedDataTypes(reconstituted)
 
 	// Convert to map
-	dataTypeMap := make(map[string]data_type.DataType)
+	dataTypeMap := make(map[string]model_data_type.DataType)
 	for _, dt := range reconstructedFlat {
 		dataTypeMap[dt.Key] = dt
 	}

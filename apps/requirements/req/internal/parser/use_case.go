@@ -5,23 +5,27 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseUseCase(key, filename, contents string) (useCase requirements.UseCase, err error) {
+// Note: sort is still used in generateUseCaseContent for actor keys
+
+func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents string) (useCase model_use_case.UseCase, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return requirements.UseCase{}, err
+		return model_use_case.UseCase{}, err
 	}
 
 	// Unmarshal into a format that can be easily checked for informative error messages.
 	yamlData := map[string]any{}
 	if err := yaml.Unmarshal([]byte(parsedFile.Data), yamlData); err != nil {
-		return requirements.UseCase{}, errors.WithStack(err)
+		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
 	level := "sea"
@@ -33,36 +37,51 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 	// If the title of the use case ends with "?" it is read-only.
 	readOnly := strings.HasSuffix(parsedFile.Title, "?")
 
-	useCase, err = requirements.NewUseCase(key, parsedFile.Title, parsedFile.Markdown, level, readOnly, parsedFile.UmlComment)
+	// Construct the identity key for this use case.
+	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, useCaseSubKey)
 	if err != nil {
-		return requirements.UseCase{}, err
+		return model_use_case.UseCase{}, errors.WithStack(err)
+	}
+
+	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, parsedFile.Markdown, level, readOnly, parsedFile.UmlComment)
+	if err != nil {
+		return model_use_case.UseCase{}, err
 	}
 
 	// Parse actors.
 	actorsAny, found := yamlData["actors"]
 	if found {
-		useCase.Actors = map[string]requirements.UseCaseActor{}
+		useCase.Actors = map[identity.Key]model_use_case.Actor{}
 		actorsMap := actorsAny.(map[string]any)
-		for actorKey, commentAny := range actorsMap {
+		for actorKeyStr, commentAny := range actorsMap {
 			comment := ""
 			if commentStr, ok := commentAny.(string); ok {
 				comment = commentStr
 			}
-			useCaseActor, err := requirements.NewUseCaseActor(comment)
+			actor, err := model_use_case.NewActor(comment)
 			if err != nil {
-				return requirements.UseCase{}, err
+				return model_use_case.UseCase{}, err
 			}
-			useCase.Actors[actorKey] = useCaseActor
+			// Construct the actor key from the string.
+			actorKey, err := identity.NewClassKey(subdomainKey, actorKeyStr)
+			if err != nil {
+				return model_use_case.UseCase{}, errors.WithStack(err)
+			}
+			useCase.Actors[actorKey] = actor
 		}
 	}
 
 	// Parse scenarios.
 	scenariosAny, found := yamlData["scenarios"]
 	if found {
-		useCase.Scenarios = []requirements.Scenario{}
+		useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
 		scenariosMap := scenariosAny.(map[string]any)
-		for scenarioKey, scenarioData := range scenariosMap {
-			scenarioKey = key + "/scenario/" + strings.ToLower(scenarioKey)
+		for scenarioSubKey, scenarioData := range scenariosMap {
+			// Construct the scenario key.
+			scenarioKey, err := identity.NewScenarioKey(useCaseKey, strings.ToLower(scenarioSubKey))
+			if err != nil {
+				return model_use_case.UseCase{}, errors.WithStack(err)
+			}
 			scenarioData := scenarioData.(map[string]any)
 
 			name := ""
@@ -78,25 +97,26 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 				details = detailsAny.(string)
 			}
 
-			scenario, err := requirements.NewScenario(scenarioKey, name, details)
+			scenario, err := model_scenario.NewScenario(scenarioKey, name, details)
 			if err != nil {
-				return requirements.UseCase{}, err
+				return model_use_case.UseCase{}, err
 			}
 
 			// Parse objects for this scenario.
 			objectsAny, found := scenarioData["objects"]
 			if found {
+				scenario.Objects = make(map[identity.Key]model_scenario.Object)
 				objectsSlice := objectsAny.([]any)
 				for i, objAny := range objectsSlice {
-					scenarioObject, err := objectFromYamlData(scenarioKey, i, objAny)
+					object, err := objectFromYamlData(scenarioKey, i, objAny)
 					if err != nil {
-						return requirements.UseCase{}, err
+						return model_use_case.UseCase{}, err
 					}
-					scenario.Objects = append(scenario.Objects, scenarioObject)
+					scenario.Objects[object.Key] = object
 				}
 			}
 
-			// Parse stpes for this scenario.
+			// Parse steps for this scenario.
 			stepsAny, found := scenarioData["steps"]
 			if found {
 				stepsData := stepsAny.([]any)
@@ -106,45 +126,41 @@ func parseUseCase(key, filename, contents string) (useCase requirements.UseCase,
 					"statements": stepsData,
 				}
 
+				// Scope object and attribute keys before parsing into Node objects.
+				// This ensures Node objects are always well-formed with complete keys.
+				if err = scopeObjectKeys(scenarioKey, subdomainKey, nodeData); err != nil {
+					return model_use_case.UseCase{}, err
+				}
+
 				// Turn into yaml.
 				nodeYaml, err := yaml.Marshal(nodeData)
 				if err != nil {
-					return requirements.UseCase{}, err
+					return model_use_case.UseCase{}, err
 				}
 
-				var node requirements.Node
+				var node model_scenario.Node
 				if err = node.FromYAML(string(nodeYaml)); err != nil {
-					return requirements.UseCase{}, err
+					return model_use_case.UseCase{}, err
 				}
 
-				// Scope object keys to model-wide uniqueness.
-				if err = node.ScopeObjects(scenarioKey); err != nil {
-					return requirements.UseCase{}, err
-				}
-
-				scenario.Steps = node
+				scenario.Steps = &node
 			}
 
 			// Add scenario to use case.
-			useCase.Scenarios = append(useCase.Scenarios, scenario)
+			useCase.Scenarios[scenario.Key] = scenario
 		}
 	}
-
-	// Sort the scenarios.
-	sort.Slice(useCase.Scenarios, func(i, j int) bool {
-		return useCase.Scenarios[i].Key < useCase.Scenarios[j].Key
-	})
 
 	return useCase, nil
 }
 
-func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object requirements.ScenarioObject, err error) {
+func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (object model_scenario.Object, err error) {
 	objectNum := uint(objectI + 1)
 
-	key := ""
+	objectSubKey := ""
 	name := ""
 	nameStyle := "unnamed"
-	classKey := ""
+	classKeyStr := ""
 	multi := false
 	umlComment := ""
 
@@ -155,9 +171,9 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 
 		keyAny, found := objectData["key"]
 		if found {
-			key = keyAny.(string)
+			objectSubKey = keyAny.(string)
 		}
-		key = scenarioKey + "/object/" + strings.ToLower(key)
+		objectSubKey = strings.ToLower(objectSubKey)
 
 		nameAny, found := objectData["name"]
 		if found {
@@ -176,7 +192,7 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 
 		classKeyAny, found := objectData["class_key"]
 		if found {
-			classKey = classKeyAny.(string)
+			classKeyStr = classKeyAny.(string)
 		}
 
 		multiAny, found := objectData["multi"]
@@ -190,8 +206,42 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 		}
 	}
 
-	object, err = requirements.NewScenarioObject(
-		key,
+	// Construct the object key.
+	objectKey, err := identity.NewScenarioObjectKey(scenarioKey, objectSubKey)
+	if err != nil {
+		return model_scenario.Object{}, errors.WithStack(err)
+	}
+
+	// Parse the class key from the string.
+	// If it's a simple key (no slashes), construct it as a class key in the same subdomain.
+	// Otherwise, parse it as a full key.
+	var classKey identity.Key
+	if !strings.Contains(classKeyStr, "/") {
+		// Simple key - construct full class key using the scenario's subdomain.
+		// Extract subdomain key from scenario key (scenario key has format: domain/.../subdomain/.../usecase/.../scenario/...)
+		scenarioKeyStr := scenarioKey.String()
+		parts := strings.Split(scenarioKeyStr, "/usecase/")
+		if len(parts) < 2 {
+			return model_scenario.Object{}, errors.Errorf("invalid scenario key format: %s", scenarioKeyStr)
+		}
+		subdomainKeyStr := parts[0]
+		subdomainKey, err := identity.ParseKey(subdomainKeyStr)
+		if err != nil {
+			return model_scenario.Object{}, errors.WithStack(err)
+		}
+		classKey, err = identity.NewClassKey(subdomainKey, classKeyStr)
+		if err != nil {
+			return model_scenario.Object{}, errors.WithStack(err)
+		}
+	} else {
+		classKey, err = identity.ParseKey(classKeyStr)
+		if err != nil {
+			return model_scenario.Object{}, errors.WithStack(err)
+		}
+	}
+
+	object, err = model_scenario.NewObject(
+		objectKey,
 		objectNum,
 		name,
 		nameStyle,
@@ -199,13 +249,13 @@ func objectFromYamlData(scenarioKey string, objectI int, objectAny any) (object 
 		multi,
 		umlComment)
 	if err != nil {
-		return requirements.ScenarioObject{}, err
+		return model_scenario.Object{}, err
 	}
 
 	return object, nil
 }
 
-func generateUseCaseContent(useCase requirements.UseCase) string {
+func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	yaml := ""
 	if useCase.Level != "sea" {
 		yaml += "level: " + useCase.Level + "\n"
@@ -215,7 +265,7 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 		actors := make(map[string]string)
 		for actorKey, actor := range useCase.Actors {
 			if actor.UmlComment != "" {
-				actors[actorKey] = actor.UmlComment
+				actors[actorKey.SubKey()] = actor.UmlComment
 			}
 		}
 		if len(actors) > 0 {
@@ -233,8 +283,16 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 
 	if len(useCase.Scenarios) > 0 {
 		yaml += "\nscenarios:\n"
+		// Sort scenarios by key for deterministic output.
+		scenarios := make([]model_scenario.Scenario, 0, len(useCase.Scenarios))
 		for _, scenario := range useCase.Scenarios {
-			name := strings.Split(scenario.Key, "/scenario/")[1]
+			scenarios = append(scenarios, scenario)
+		}
+		sort.Slice(scenarios, func(i, j int) bool {
+			return scenarios[i].Key.String() < scenarios[j].Key.String()
+		})
+		for _, scenario := range scenarios {
+			name := scenario.Key.SubKey()
 			yaml += "\n    " + name + ":\n"
 			yaml += "        name: " + scenario.Name + "\n"
 			if scenario.Details != "" {
@@ -242,8 +300,16 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 			}
 			if len(scenario.Objects) > 0 {
 				yaml += "        objects:\n"
+				// Sort objects by ObjectNumber for deterministic output.
+				objects := make([]model_scenario.Object, 0, len(scenario.Objects))
 				for _, obj := range scenario.Objects {
-					objName := strings.Split(obj.Key, "/object/")[1]
+					objects = append(objects, obj)
+				}
+				sort.Slice(objects, func(i, j int) bool {
+					return objects[i].ObjectNumber < objects[j].ObjectNumber
+				})
+				for _, obj := range objects {
+					objName := obj.Key.SubKey()
 					yaml += "            - key: " + objName + "\n"
 					if obj.Name != "" {
 						yaml += "              name: " + obj.Name + "\n"
@@ -251,8 +317,9 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 					if obj.NameStyle != "" && obj.NameStyle != "unnamed" {
 						yaml += "              style: " + obj.NameStyle + "\n"
 					}
-					if obj.ClassKey != "" {
-						yaml += "              class_key: " + obj.ClassKey + "\n"
+					if obj.ClassKey.String() != "" {
+						// Output only the subkey for backwards compatibility with the md format.
+						yaml += "              class_key: " + obj.ClassKey.SubKey() + "\n"
 					}
 					if obj.Multi {
 						yaml += "              multi: true\n"
@@ -262,7 +329,7 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 					}
 				}
 			}
-			if len(scenario.Steps.Statements) > 0 {
+			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
 				yaml += "        steps:\n"
 				yaml += generateSteps(scenario.Steps.Statements, "            ")
 			}
@@ -280,7 +347,7 @@ func generateUseCaseContent(useCase requirements.UseCase) string {
 	return strings.TrimSpace(content)
 }
 
-func generateSteps(nodes []requirements.Node, indent string) string {
+func generateSteps(nodes []model_scenario.Node, indent string) string {
 	s := ""
 	for _, node := range nodes {
 		s += generateNode(node, indent)
@@ -288,7 +355,49 @@ func generateSteps(nodes []requirements.Node, indent string) string {
 	return s
 }
 
-func generateNode(node requirements.Node, indent string) string {
+// shortEventKey converts a full event key to its short form for output.
+// Full: domain/test_domain/subdomain/test_subdomain/class/class_key/event/processlog
+// Short: class_key/event/processlog
+func shortEventKey(key *identity.Key) string {
+	if key == nil {
+		return ""
+	}
+	// Parse the key to extract class subkey and event subkey.
+	// Event key: parentKey="domain/.../subdomain/.../class/class_key", keyType="event", subKey="processlog"
+	// The parent of the event key is a class key.
+	parentKey, err := identity.ParseKey(key.ParentKey())
+	if err != nil {
+		// Fallback to full string if parsing fails.
+		return key.String()
+	}
+	// parentKey is the class key; its subKey is the class subkey.
+	classSubKey := parentKey.SubKey()
+	eventSubKey := key.SubKey()
+	return classSubKey + "/event/" + eventSubKey
+}
+
+// shortScenarioKey converts a full scenario key to its short form for output.
+// Full: domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key
+// Short: use_case_key/scenario/scenario_b_key
+func shortScenarioKey(key *identity.Key) string {
+	if key == nil {
+		return ""
+	}
+	// Parse the key to extract use case subkey and scenario subkey.
+	// Scenario key: parentKey="domain/.../subdomain/.../usecase/use_case_key", keyType="scenario", subKey="scenario_b_key"
+	// The parent of the scenario key is a use case key.
+	parentKey, err := identity.ParseKey(key.ParentKey())
+	if err != nil {
+		// Fallback to full string if parsing fails.
+		return key.String()
+	}
+	// parentKey is the use case key; its subKey is the use case subkey.
+	useCaseSubKey := parentKey.SubKey()
+	scenarioSubKey := key.SubKey()
+	return useCaseSubKey + "/scenario/" + scenarioSubKey
+}
+
+func generateNode(node model_scenario.Node, indent string) string {
 	s := indent + "- "
 	if node.Loop != "" {
 		s += "loop: " + node.Loop + "\n"
@@ -322,17 +431,17 @@ func generateNode(node requirements.Node, indent string) string {
 		if node.Description != "" {
 			addField("description", node.Description)
 		}
-		if node.FromObjectKey != "" {
-			addField("from_object_key", strings.Split(node.FromObjectKey, "/object/")[1])
+		if node.FromObjectKey != nil {
+			addField("from_object_key", node.FromObjectKey.SubKey())
 		}
-		if node.ToObjectKey != "" {
-			addField("to_object_key", strings.Split(node.ToObjectKey, "/object/")[1])
+		if node.ToObjectKey != nil {
+			addField("to_object_key", node.ToObjectKey.SubKey())
 		}
-		if node.EventKey != "" {
-			addField("event_key", node.EventKey)
+		if node.EventKey != nil {
+			addField("event_key", shortEventKey(node.EventKey))
 		}
-		if node.ScenarioKey != "" {
-			addField("scenario_key", node.ScenarioKey)
+		if node.ScenarioKey != nil {
+			addField("scenario_key", shortScenarioKey(node.ScenarioKey))
 		}
 		if node.IsDelete {
 			addField("is_delete", "true        ")

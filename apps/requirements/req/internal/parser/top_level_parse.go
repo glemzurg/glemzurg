@@ -5,31 +5,41 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
-func Parse(modelPath string) (reqs requirements.Requirements, err error) {
+func Parse(modelPath string) (model req_model.Model, err error) {
 	log.Printf("Parse files in '%s'", modelPath)
 
 	// First, gather every thing we expect we need to parse, and what kind of entity it is.
 
 	toParseFiles, err := findFilesToParse(modelPath)
 	if err != nil {
-		return requirements.Requirements{}, errors.WithStack(err)
+		return req_model.Model{}, errors.WithStack(err)
 	}
 
 	for _, toParseFile := range toParseFiles {
 		log.Println("   walk:", toParseFile.String())
 	}
 
-	reqs, err = parseForDatabase(modelPath, toParseFiles)
+	model, err = parseForDatabase(modelPath, toParseFiles)
 	if err != nil {
-		return requirements.Requirements{}, errors.WithStack(err)
+		return req_model.Model{}, errors.WithStack(err)
 	}
 
-	return reqs, nil
+	// Verify the model is well-formed after the parse.
+	if err = model.Validate(); err != nil {
+		return req_model.Model{}, errors.WithStack(err)
+	}
+
+	return model, nil
 }
 
 func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) {
@@ -75,52 +85,15 @@ func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) 
 	return toParseFiles, nil
 }
 
-func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs requirements.Requirements, err error) {
+func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_model.Model, err error) {
 
 	// Ensure are sorted in the order by which they may need information from prior objects.
 	// This is for foreign keys.
 	sortFilesToParse(filesToParse)
 
-	// Allocate memory for structures.
-	if reqs.Subdomains == nil {
-		reqs.Subdomains = map[string][]requirements.Subdomain{}
-	}
-	if reqs.Classes == nil {
-		reqs.Classes = map[string][]requirements.Class{}
-	}
-	if reqs.Attributes == nil {
-		reqs.Attributes = map[string][]requirements.Attribute{}
-	}
-	if reqs.States == nil {
-		reqs.States = map[string][]requirements.State{}
-	}
-	if reqs.Events == nil {
-		reqs.Events = map[string][]requirements.Event{}
-	}
-	if reqs.Guards == nil {
-		reqs.Guards = map[string][]requirements.Guard{}
-	}
-	if reqs.Actions == nil {
-		reqs.Actions = map[string][]requirements.Action{}
-	}
-	if reqs.Transitions == nil {
-		reqs.Transitions = map[string][]requirements.Transition{}
-	}
-	if reqs.StateActions == nil {
-		reqs.StateActions = map[string][]requirements.StateAction{}
-	}
-	if reqs.UseCases == nil {
-		reqs.UseCases = map[string][]requirements.UseCase{}
-	}
-	if reqs.UseCaseActors == nil {
-		reqs.UseCaseActors = map[string]map[string]requirements.UseCaseActor{}
-	}
-	if reqs.Scenarios == nil {
-		reqs.Scenarios = map[string][]requirements.Scenario{}
-	}
-	if reqs.ScenarioObjects == nil {
-		reqs.ScenarioObjects = map[string][]requirements.ScenarioObject{}
-	}
+	// Track domains by their key so we can look them up when parsing classes/use cases.
+	// We store them directly in the model map and track by string key for lookup.
+	domainKeysBySubKey := map[string]identity.Key{}
 
 	// Now, parse each file according to its type.
 
@@ -129,7 +102,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 		// Load the file data.
 		contentBytes, err := os.ReadFile(toParseFile.PathAbs)
 		if err != nil {
-			return requirements.Requirements{}, errors.WithStack(err)
+			return req_model.Model{}, errors.WithStack(err)
 		}
 
 		// Trim any space on it.
@@ -139,118 +112,165 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (reqs require
 		switch toParseFile.FileType {
 
 		case _EXT_MODEL:
-			model, err := parseModel(modelKey, toParseFile.PathRel, contents)
+			model, err = parseModel(modelKey, toParseFile.PathRel, contents)
 			if err != nil {
-				return requirements.Requirements{}, err
+				return req_model.Model{}, err
 			}
-			reqs.Model = model
+			// Initialize maps.
+			model.Actors = make(map[identity.Key]model_actor.Actor)
+			model.Domains = make(map[identity.Key]model_domain.Domain)
+			model.DomainAssociations = make(map[identity.Key]model_domain.Association)
+			model.ClassAssociations = make(map[identity.Key]model_class.Association)
 
 		case _EXT_ACTOR:
 			actor, err := parseActor(toParseFile.Actor, toParseFile.PathRel, contents)
 			if err != nil {
-				return requirements.Requirements{}, err
+				return req_model.Model{}, err
 			}
-			reqs.Actors = append(reqs.Actors, actor)
+			model.Actors[actor.Key] = actor
 
 		case _EXT_GENERALIZATION:
-			generalization, err := parseGeneralization(toParseFile.Generalization, toParseFile.PathRel, contents)
-			if err != nil {
-				return requirements.Requirements{}, err
+			// Need to find the domain for this generalization.
+			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
 			}
-			reqs.Generalizations = append(reqs.Generalizations, generalization)
+			domain := model.Domains[domainKey]
+
+			// Use the default subdomain.
+			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
+			if err != nil {
+				return req_model.Model{}, errors.WithStack(err)
+			}
+			subdomain, ok := domain.Subdomains[defaultSubdomainKey]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' has no default subdomain for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+			}
+
+			generalization, err := parseGeneralization(defaultSubdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+			if err != nil {
+				return req_model.Model{}, err
+			}
+			if subdomain.Generalizations == nil {
+				subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
+			}
+			subdomain.Generalizations[generalization.Key] = generalization
+			domain.Subdomains[defaultSubdomainKey] = subdomain
+			model.Domains[domainKey] = domain
 
 		case _EXT_DOMAIN:
-			domain, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)
+			domain, associations, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)
 			if err != nil {
-				return requirements.Requirements{}, err
+				return req_model.Model{}, err
 			}
-			reqs.Domains = append(reqs.Domains, domain)
 
-			// Migrate associations to greater structure.
-			reqs.DomainAssociations = append(reqs.DomainAssociations, domain.Associations...)
-			domain.Associations = nil
+			// Add associations to model level.
+			for _, assoc := range associations {
+				model.DomainAssociations[assoc.Key] = assoc
+			}
 
 			// Give each domain a default subdomain.
-			for _, domain := range reqs.Domains {
-				subdomain, err := requirements.NewSubdomain(defaultSubdomain(domain.Key), "Default", "", "")
-				if err != nil {
-					return requirements.Requirements{}, err
-				}
-				reqs.Subdomains[domain.Key] = []requirements.Subdomain{subdomain}
+			defaultSubdomainKey, err := identity.NewSubdomainKey(domain.Key, "default")
+			if err != nil {
+				return req_model.Model{}, errors.WithStack(err)
 			}
+			subdomain, err := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "", "")
+			if err != nil {
+				return req_model.Model{}, err
+			}
+			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+				defaultSubdomainKey: subdomain,
+			}
+
+			model.Domains[domain.Key] = domain
+			domainKeysBySubKey[toParseFile.Domain] = domain.Key
 
 		case _EXT_CLASS:
+			// Need to find the domain for this class.
+			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' not found for class '%s'", toParseFile.Domain, toParseFile.Class)
+			}
+			domain := model.Domains[domainKey]
 
-			class, err := parseClass(toParseFile.Class, toParseFile.PathRel, contents)
+			// Use the default subdomain.
+			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
 			if err != nil {
-				return requirements.Requirements{}, err
+				return req_model.Model{}, errors.WithStack(err)
+			}
+			subdomain, ok := domain.Subdomains[defaultSubdomainKey]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' has no default subdomain for class '%s'", toParseFile.Domain, toParseFile.Class)
 			}
 
-			// Migrate attributes to greater structure.
-			reqs.Attributes[toParseFile.Class] = class.Attributes
-			class.Attributes = nil
-
-			// Migrate associations to greater structure.
-			reqs.Associations = append(reqs.Associations, class.Associations...)
-			class.Associations = nil
-
-			// Migrate state actions to greate structure.
-			for _, state := range class.States {
-				reqs.StateActions[state.Key] = state.Actions
+			// Extract just the class subkey from the full class path (domain/classname -> classname).
+			classSubKey := toParseFile.Class
+			if idx := len(toParseFile.Domain) + 1; idx < len(toParseFile.Class) {
+				classSubKey = toParseFile.Class[idx:]
 			}
 
-			// Migrate states to greater structure.
-			reqs.States[toParseFile.Class] = class.States
-			class.States = nil
+			class, associations, err := parseClass(defaultSubdomainKey, classSubKey, toParseFile.PathRel, contents)
+			if err != nil {
+				return req_model.Model{}, err
+			}
 
-			// Migrate events to greater structure.
-			reqs.Events[toParseFile.Class] = class.Events
-			class.Events = nil
+			// Add associations to subdomain level.
+			if subdomain.ClassAssociations == nil {
+				subdomain.ClassAssociations = make(map[identity.Key]model_class.Association)
+			}
+			for _, assoc := range associations {
+				subdomain.ClassAssociations[assoc.Key] = assoc
+			}
 
-			// Migrate gaurds to greater structure.
-			reqs.Guards[toParseFile.Class] = class.Guards
-			class.Guards = nil
-
-			// Migrate actions to greater structure.
-			reqs.Actions[toParseFile.Class] = class.Actions
-			class.Actions = nil
-
-			// Migrate transitions to greater structure.
-			reqs.Transitions[toParseFile.Class] = class.Transitions
-			class.Transitions = nil
-
-			// Add the class itself.
-			classes := reqs.Classes[defaultSubdomain(toParseFile.Domain)]
-			classes = append(classes, class)
-			reqs.Classes[defaultSubdomain(toParseFile.Domain)] = classes
+			// Add the class to the subdomain.
+			if subdomain.Classes == nil {
+				subdomain.Classes = make(map[identity.Key]model_class.Class)
+			}
+			subdomain.Classes[class.Key] = class
+			domain.Subdomains[defaultSubdomainKey] = subdomain
+			model.Domains[domainKey] = domain
 
 		case _EXT_USE_CASE:
+			// Need to find the domain for this use case.
+			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' not found for use case '%s'", toParseFile.Domain, toParseFile.UseCase)
+			}
+			domain := model.Domains[domainKey]
 
-			useCase, err := parseUseCase(toParseFile.UseCase, toParseFile.PathRel, contents)
+			// Use the default subdomain.
+			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
 			if err != nil {
-				return requirements.Requirements{}, err
+				return req_model.Model{}, errors.WithStack(err)
+			}
+			subdomain, ok := domain.Subdomains[defaultSubdomainKey]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' has no default subdomain for use case '%s'", toParseFile.Domain, toParseFile.UseCase)
 			}
 
-			// Add the use case itself.
-			useCases := reqs.UseCases[defaultSubdomain(toParseFile.Domain)]
-			useCases = append(useCases, useCase)
-			reqs.UseCases[defaultSubdomain(toParseFile.Domain)] = useCases
-
-			// Put the parts on the greater structure.
-			reqs.UseCaseActors[useCase.Key] = useCase.Actors
-			reqs.Scenarios[useCase.Key] = useCase.Scenarios
-			for _, scenario := range useCase.Scenarios {
-				reqs.ScenarioObjects[scenario.Key] = scenario.Objects
+			// Extract just the use case subkey from the full use case path (domain/usecasename -> usecasename).
+			useCaseSubKey := toParseFile.UseCase
+			if idx := len(toParseFile.Domain) + 1; idx < len(toParseFile.UseCase) {
+				useCaseSubKey = toParseFile.UseCase[idx:]
 			}
+
+			useCase, err := parseUseCase(defaultSubdomainKey, useCaseSubKey, toParseFile.PathRel, contents)
+			if err != nil {
+				return req_model.Model{}, err
+			}
+
+			// Add the use case to the subdomain.
+			if subdomain.UseCases == nil {
+				subdomain.UseCases = make(map[identity.Key]model_use_case.UseCase)
+			}
+			subdomain.UseCases[useCase.Key] = useCase
+			domain.Subdomains[defaultSubdomainKey] = subdomain
+			model.Domains[domainKey] = domain
 
 		default:
-			return requirements.Requirements{}, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
+			return req_model.Model{}, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
 		}
 	}
 
-	return reqs, nil
-}
-
-func defaultSubdomain(domainKey string) (subdomainKey string) {
-	return domainKey
+	return model, nil
 }

@@ -2,10 +2,12 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -20,10 +22,12 @@ func TestDomainAssociationSuite(t *testing.T) {
 
 type DomainAssociationSuite struct {
 	suite.Suite
-	db      *sql.DB
-	model   requirements.Model
-	domain  requirements.Domain
-	domainB requirements.Domain
+	db              *sql.DB
+	model           req_model.Model
+	domain          model_domain.Domain
+	domainB         model_domain.Domain
+	associationKey  identity.Key
+	associationKeyB identity.Key
 }
 
 func (suite *DomainAssociationSuite) SetupTest() {
@@ -33,14 +37,18 @@ func (suite *DomainAssociationSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.domainB = t_AddDomain(suite.T(), suite.db, suite.model.Key, "domain_key_b")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.domainB = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key_b")))
+
+	// Create the association key for reuse.
+	suite.associationKey = helper.Must(identity.NewDomainAssociationKey(suite.domain.Key, suite.domainB.Key))
+	suite.associationKeyB = helper.Must(identity.NewDomainAssociationKey(suite.domainB.Key, suite.domain.Key))
 }
 
 func (suite *DomainAssociationSuite) TestLoad() {
 
 	// Nothing in database yet.
-	association, err := LoadDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), association)
 
@@ -56,121 +64,122 @@ func (suite *DomainAssociationSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'key',
-				'domain_key',
-				'domain_key_b',
+				'dassociation/domain_key/domain_key_b',
+				'domain/domain_key',
+				'domain/domain_key_b',
 				'UmlComment'
 			)
 	`)
 	assert.Nil(suite.T(), err)
 
-	association, err = LoadDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	association, err = LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.DomainAssociation{
-		Key:               "key", // Test case-insensitive.
-		ProblemDomainKey:  "domain_key",
-		SolutionDomainKey: "domain_key_b",
+	assert.Equal(suite.T(), model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domain.Key,
+		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	}, association)
 }
 
 func (suite *DomainAssociationSuite) TestAdd() {
 
-	err := AddDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), requirements.DomainAssociation{
-		Key:               "KeY", // Test case-insensitive.
-		ProblemDomainKey:  "domain_KEY",
-		SolutionDomainKey: "doMAIN_key_b",
+	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domain.Key,
+		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	association, err := LoadDomainAssociation(suite.db, suite.model.Key, "key")
+	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.DomainAssociation{
-		Key:               "key",
-		ProblemDomainKey:  "domain_key",
-		SolutionDomainKey: "domain_key_b",
+	assert.Equal(suite.T(), model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domain.Key,
+		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	}, association)
 }
 
 func (suite *DomainAssociationSuite) TestUpdate() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
-		Key:               "key",
-		ProblemDomainKey:  "domain_key",
-		SolutionDomainKey: "domain_key_b",
+	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domain.Key,
+		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), requirements.DomainAssociation{
-		Key:               "KeY",          // Test case-insensitive.
-		ProblemDomainKey:  "doMAIN_key_b", // Test case-insensitive.
-		SolutionDomainKey: "domain_KEY",   // Test case-insensitive.
+	// Update swaps problem and solution domains.
+	err = UpdateDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domainB.Key,
+		SolutionDomainKey: suite.domain.Key,
 		UmlComment:        "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
-	association, err := LoadDomainAssociation(suite.db, suite.model.Key, "key")
+	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.DomainAssociation{
-		Key:               "key",
-		ProblemDomainKey:  "domain_key_b",
-		SolutionDomainKey: "domain_key",
+	assert.Equal(suite.T(), model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domainB.Key,
+		SolutionDomainKey: suite.domain.Key,
 		UmlComment:        "UmlCommentX",
 	}, association)
 }
 
 func (suite *DomainAssociationSuite) TestRemove() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
-		Key:               "key",
-		ProblemDomainKey:  "domain_key",
-		SolutionDomainKey: "domain_key_b",
+	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
+		Key:               suite.associationKey,
+		ProblemDomainKey:  suite.domain.Key,
+		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveDomainAssociation(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper("key")) // Test case-insensitive.
+	err = RemoveDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
 
-	association, err := LoadDomainAssociation(suite.db, suite.model.Key, "key")
+	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), association)
 }
 
 func (suite *DomainAssociationSuite) TestQuery() {
 
-	err := AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
-		Key:               "keyx",
-		ProblemDomainKey:  "domain_key",
-		SolutionDomainKey: "domain_key_b",
-		UmlComment:        "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddDomainAssociation(suite.db, suite.model.Key, requirements.DomainAssociation{
-		Key:               "key",
-		ProblemDomainKey:  "domain_key",
-		SolutionDomainKey: "domain_key_b",
-		UmlComment:        "UmlComment",
-	})
-	assert.Nil(suite.T(), err)
-
-	associations, err := QueryDomainAssociations(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []requirements.DomainAssociation{
+	err := AddDomainAssociations(suite.db, suite.model.Key, []model_domain.Association{
 		{
-			Key:               "key",
-			ProblemDomainKey:  "domain_key",
-			SolutionDomainKey: "domain_key_b",
+			Key:               suite.associationKeyB,
+			ProblemDomainKey:  suite.domainB.Key,
+			SolutionDomainKey: suite.domain.Key,
+			UmlComment:        "UmlCommentX",
+		},
+		{
+			Key:               suite.associationKey,
+			ProblemDomainKey:  suite.domain.Key,
+			SolutionDomainKey: suite.domainB.Key,
+			UmlComment:        "UmlComment",
+		},
+	})
+	assert.Nil(suite.T(), err)
+
+	associations, err := QueryDomainAssociations(suite.db, suite.model.Key)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), []model_domain.Association{
+		{
+			Key:               suite.associationKey,
+			ProblemDomainKey:  suite.domain.Key,
+			SolutionDomainKey: suite.domainB.Key,
 			UmlComment:        "UmlComment",
 		},
 		{
-			Key:               "keyx",
-			ProblemDomainKey:  "domain_key",
-			SolutionDomainKey: "domain_key_b",
+			Key:               suite.associationKeyB,
+			ProblemDomainKey:  suite.domainB.Key,
+			SolutionDomainKey: suite.domain.Key,
 			UmlComment:        "UmlCommentX",
 		},
 	}, associations)

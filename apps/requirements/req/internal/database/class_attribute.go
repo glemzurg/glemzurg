@@ -1,16 +1,22 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *requirements.Attribute) (err error) {
+func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_class.Attribute) (err error) {
+	var classKeyStr string
+	var attributeKeyStr string
+
 	if err = scanner.Scan(
-		classKeyPtr,
-		&attribute.Key,
+		&classKeyStr,
+		&attributeKeyStr,
 		&attribute.Name,
 		&attribute.Details,
 		&attribute.DataTypeRules,
@@ -24,21 +30,23 @@ func scanAttribute(scanner Scanner, classKeyPtr *string, attribute *requirements
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the attribute key string into an identity.Key.
+	attribute.Key, err = identity.ParseKey(attributeKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadAttribute loads a attribute from the database
-func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey string, attribute requirements.Attribute, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.Attribute{}, err
-	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
-	if err != nil {
-		return "", requirements.Attribute{}, err
-	}
+func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (classKey identity.Key, attribute model_class.Attribute, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -65,89 +73,23 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey, attributeKey string) (classKey strin
 		AND
 			model_key = $1`,
 		modelKey,
-		attributeKey)
+		attributeKey.String())
 	if err != nil {
-		return "", requirements.Attribute{}, errors.WithStack(err)
+		return identity.Key{}, model_class.Attribute{}, errors.WithStack(err)
 	}
 
 	return classKey, attribute, nil
 }
 
 // AddAttribute adds a attribute to the database.
-func AddAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute requirements.Attribute) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err := requirements.PreenKey(attribute.Key)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO attribute
-				(
-					model_key    ,
-					class_key,
-					attribute_key,
-					name,
-					details,
-					data_type_rules,
-					derivation_policy,
-					nullable,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9
-				)`,
-		modelKey,
-		classKey,
-		attributeKey,
-		attribute.Name,
-		attribute.Details,
-		attribute.DataTypeRules,
-		attribute.DerivationPolicy,
-		attribute.Nullable,
-		attribute.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribute model_class.Attribute) (err error) {
+	return AddAttributes(dbOrTx, modelKey, map[identity.Key][]model_class.Attribute{
+		classKey: {attribute},
+	})
 }
 
 // UpdateAttribute updates a attribute in the database.
-func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute requirements.Attribute) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err := requirements.PreenKey(attribute.Key)
-	if err != nil {
-		return err
-	}
+func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribute model_class.Attribute) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -159,7 +101,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute require
 			data_type_rules       = $6 ,
 			derivation_policy     = $7 ,
 			nullable              = $8 ,
-			uml_comment           = $9 
+			uml_comment           = $9
 		WHERE
 			class_key = $2
 		AND
@@ -167,8 +109,8 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute require
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		attributeKey,
+		classKey.String(),
+		attribute.Key.String(),
 		attribute.Name,
 		attribute.Details,
 		attribute.DataTypeRules,
@@ -183,21 +125,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey, classKey string, attribute require
 }
 
 // RemoveAttribute deletes a attribute from the database.
-func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
-	if err != nil {
-		return err
-	}
+func RemoveAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -210,8 +138,8 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (er
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		attributeKey)
+		classKey.String(),
+		attributeKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -220,25 +148,19 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (er
 }
 
 // QueryAttributes loads all attribute from the database
-func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]requirements.Attribute, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Key][]model_class.Attribute, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
-			var attribute requirements.Attribute
+			var classKey identity.Key
+			var attribute model_class.Attribute
 			if err = scanAttribute(scanner, &classKey, &attribute); err != nil {
 				return errors.WithStack(err)
 			}
 			if attributes == nil {
-				attributes = map[string][]requirements.Attribute{}
+				attributes = map[identity.Key][]model_class.Attribute{}
 			}
 			classAttributes := attributes[classKey]
 			classAttributes = append(classAttributes, attribute)
@@ -265,4 +187,39 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[string][]re
 	}
 
 	return attributes, nil
+}
+
+// AddAttributes adds multiple attributes to the database in a single insert.
+func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][]model_class.Attribute) (err error) {
+	// Count total attributes.
+	count := 0
+	for _, attrs := range attributes {
+		count += len(attrs)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, derivation_policy, nullable, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*9)
+	i := 0
+	for classKey, attrList := range attributes {
+		for _, attr := range attrList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 9
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, attr.DerivationPolicy, attr.Nullable, attr.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

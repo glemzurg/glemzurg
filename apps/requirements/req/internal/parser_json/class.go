@@ -1,6 +1,10 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+)
 
 // classInOut is a thing in the system.
 type classInOut struct {
@@ -20,47 +24,134 @@ type classInOut struct {
 	Transitions []transitionInOut `json:"transitions"`
 }
 
-// ToRequirements converts the classInOut to requirements.Class.
-func (c classInOut) ToRequirements() requirements.Class {
-	class := requirements.Class{
-		Key:             c.Key,
+// ToRequirements converts the classInOut to model_class.Class.
+func (c classInOut) ToRequirements() (model_class.Class, error) {
+	key, err := identity.ParseKey(c.Key)
+	if err != nil {
+		return model_class.Class{}, err
+	}
+
+	// Handle optional pointer fields - empty string means nil
+	var actorKey *identity.Key
+	if c.ActorKey != "" {
+		k, err := identity.ParseKey(c.ActorKey)
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		actorKey = &k
+	}
+
+	var superclassOfKey *identity.Key
+	if c.SuperclassOfKey != "" {
+		k, err := identity.ParseKey(c.SuperclassOfKey)
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		superclassOfKey = &k
+	}
+
+	var subclassOfKey *identity.Key
+	if c.SubclassOfKey != "" {
+		k, err := identity.ParseKey(c.SubclassOfKey)
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		subclassOfKey = &k
+	}
+
+	class := model_class.Class{
+		Key:             key,
 		Name:            c.Name,
 		Details:         c.Details,
-		ActorKey:        c.ActorKey,
-		SuperclassOfKey: c.SuperclassOfKey,
-		SubclassOfKey:   c.SubclassOfKey,
+		ActorKey:        actorKey,
+		SuperclassOfKey: superclassOfKey,
+		SubclassOfKey:   subclassOfKey,
 		UmlComment:      c.UmlComment,
 	}
 	for _, a := range c.Attributes {
-		class.Attributes = append(class.Attributes, a.ToRequirements())
+		attr, err := a.ToRequirements()
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		if class.Attributes == nil {
+			class.Attributes = make(map[identity.Key]model_class.Attribute)
+		}
+		class.Attributes[attr.Key] = attr
 	}
 	for _, s := range c.States {
-		class.States = append(class.States, s.ToRequirements())
+		state, err := s.ToRequirements()
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		if class.States == nil {
+			class.States = make(map[identity.Key]model_state.State)
+		}
+		class.States[state.Key] = state
 	}
 	for _, e := range c.Events {
-		class.Events = append(class.Events, e.ToRequirements())
+		event, err := e.ToRequirements()
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		if class.Events == nil {
+			class.Events = make(map[identity.Key]model_state.Event)
+		}
+		class.Events[event.Key] = event
 	}
 	for _, g := range c.Guards {
-		class.Guards = append(class.Guards, g.ToRequirements())
+		guard, err := g.ToRequirements()
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		if class.Guards == nil {
+			class.Guards = make(map[identity.Key]model_state.Guard)
+		}
+		class.Guards[guard.Key] = guard
 	}
 	for _, ac := range c.Actions {
-		class.Actions = append(class.Actions, ac.ToRequirements())
+		action, err := ac.ToRequirements()
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		if class.Actions == nil {
+			class.Actions = make(map[identity.Key]model_state.Action)
+		}
+		class.Actions[action.Key] = action
 	}
 	for _, t := range c.Transitions {
-		class.Transitions = append(class.Transitions, t.ToRequirements())
+		transition, err := t.ToRequirements()
+		if err != nil {
+			return model_class.Class{}, err
+		}
+		if class.Transitions == nil {
+			class.Transitions = make(map[identity.Key]model_state.Transition)
+		}
+		class.Transitions[transition.Key] = transition
 	}
-	return class
+	return class, nil
 }
 
-// FromRequirements creates a classInOut from requirements.Class.
-func FromRequirementsClass(c requirements.Class) classInOut {
+// FromRequirements creates a classInOut from model_class.Class.
+func FromRequirementsClass(c model_class.Class) classInOut {
+	// Handle optional pointer fields - nil means empty string
+	var actorKey, superclassOfKey, subclassOfKey string
+	if c.ActorKey != nil {
+		actorKey = c.ActorKey.String()
+	}
+	if c.SuperclassOfKey != nil {
+		superclassOfKey = c.SuperclassOfKey.String()
+	}
+	if c.SubclassOfKey != nil {
+		subclassOfKey = c.SubclassOfKey.String()
+	}
+
 	class := classInOut{
-		Key:             c.Key,
+		Key:             c.Key.String(),
 		Name:            c.Name,
 		Details:         c.Details,
-		ActorKey:        c.ActorKey,
-		SuperclassOfKey: c.SuperclassOfKey,
-		SubclassOfKey:   c.SubclassOfKey,
+		ActorKey:        actorKey,
+		SuperclassOfKey: superclassOfKey,
+		SubclassOfKey:   subclassOfKey,
 		UmlComment:      c.UmlComment,
 	}
 	for _, a := range c.Attributes {

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -21,21 +21,7 @@ func scanClassIndex(scanner Scanner, indexNumPtr *uint) (err error) {
 }
 
 // LoadClassAttributeIndexes loads the indexes on a specific attribute from the database
-func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (indexNums []uint, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return nil, err
-	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
-	if err != nil {
-		return nil, err
-	}
+func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (indexNums []uint, err error) {
 
 	// Query the database.
 	err = dbQuery(
@@ -60,8 +46,8 @@ func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey, classKey, attributeKey s
 				attribute_key = $3
 			ORDER BY index_num`,
 		modelKey,
-		classKey,
-		attributeKey)
+		classKey.String(),
+		attributeKey.String())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -70,21 +56,7 @@ func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey, classKey, attributeKey s
 }
 
 // AddClassIndex adds a attribute to the database.
-func AddClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, indexNum uint) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
-	if err != nil {
-		return err
-	}
+func AddClassIndex(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key, indexNum uint) (err error) {
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -103,9 +75,9 @@ func AddClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, index
 					$4
 				)`,
 		modelKey,
-		classKey,
+		classKey.String(),
 		indexNum,
-		attributeKey)
+		attributeKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -114,21 +86,7 @@ func AddClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, index
 }
 
 // RemoveClassIndex deletes a attribute from the database.
-func RemoveClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, indexNum uint) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	attributeKey, err = requirements.PreenKey(attributeKey)
-	if err != nil {
-		return err
-	}
+func RemoveClassIndex(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key, indexNum uint) (err error) {
 
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
@@ -142,9 +100,9 @@ func RemoveClassIndex(dbOrTx DbOrTx, modelKey, classKey, attributeKey string, in
 			AND
 				attribute_key = $4`,
 		modelKey,
-		classKey,
+		classKey.String(),
 		indexNum,
-		attributeKey)
+		attributeKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}

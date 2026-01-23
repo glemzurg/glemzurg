@@ -1,18 +1,23 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *requirements.Scenario) (err error) {
+func scanScenario(scanner Scanner, useCaseKeyPtr *identity.Key, scenario *model_scenario.Scenario) (err error) {
+	var scenarioKeyStr string
+	var useCaseKeyStr string
 	var stepsJSON []byte
 	if err = scanner.Scan(
-		&scenario.Key,
+		&scenarioKeyStr,
 		&scenario.Name,
-		useCaseKeyPtr,
+		&useCaseKeyStr,
 		&scenario.Details,
 		&stepsJSON,
 	); err != nil {
@@ -22,8 +27,21 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *requirements
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the scenario key string into an identity.Key.
+	scenario.Key, err = identity.ParseKey(scenarioKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the use case key string into an identity.Key.
+	*useCaseKeyPtr, err = identity.ParseKey(useCaseKeyStr)
+	if err != nil {
+		return err
+	}
+
 	// Unmarshal the steps JSON if present
 	if len(stepsJSON) > 0 {
+		scenario.Steps = &model_scenario.Node{}
 		if err = scenario.Steps.FromJSON(string(stepsJSON)); err != nil {
 			return err
 		}
@@ -33,17 +51,7 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *string, scenario *requirements
 }
 
 // LoadScenario loads a scenario from the database
-func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey string, scenario requirements.Scenario, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.Scenario{}, err
-	}
-	scenarioKey, err = requirements.PreenKey(scenarioKey)
-	if err != nil {
-		return "", requirements.Scenario{}, err
-	}
+func LoadScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (useCaseKey identity.Key, scenario model_scenario.Scenario, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -67,80 +75,31 @@ func LoadScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (useCaseKey strin
 		AND
 			model_key = $1`,
 		modelKey,
-		scenarioKey)
+		scenarioKey.String())
 	if err != nil {
-		return "", requirements.Scenario{}, errors.WithStack(err)
+		return identity.Key{}, model_scenario.Scenario{}, errors.WithStack(err)
 	}
 
 	return useCaseKey, scenario, nil
 }
 
 // AddScenario adds a scenario to the database.
-func AddScenario(dbOrTx DbOrTx, modelKey, useCaseKey string, scenario requirements.Scenario) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
-	if err != nil {
-		return err
-	}
-	scenario.Key, err = requirements.PreenKey(scenario.Key)
-	if err != nil {
-		return err
-	}
-
-	// Serialize the steps to JSON
-	stepsJSON, err := scenario.Steps.ToJSON()
-	if err != nil {
-		return err
-	}
-
-	// Insert the record.
-	_, err = dbExec(
-		dbOrTx,
-		`INSERT INTO scenario (
-			model_key,
-			scenario_key,
-			name,
-			use_case_key,
-			details,
-			steps
-		) VALUES (
-			$1, $2, $3, $4, $5, $6
-		)`,
-		modelKey,
-		scenario.Key,
-		scenario.Name,
-		useCaseKey,
-		scenario.Details,
-		stepsJSON)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddScenario(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, scenario model_scenario.Scenario) (err error) {
+	return AddScenarios(dbOrTx, modelKey, map[identity.Key][]model_scenario.Scenario{
+		useCaseKey: {scenario},
+	})
 }
 
 // UpdateScenario updates a scenario in the database.
-func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario requirements.Scenario) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	scenarioKey, err := requirements.PreenKey(scenario.Key)
-	if err != nil {
-		return err
-	}
+func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scenario) (err error) {
 
 	// Serialize the steps to JSON
-	stepsJSON, err := scenario.Steps.ToJSON()
-	if err != nil {
-		return err
+	var stepsJSON interface{}
+	if scenario.Steps != nil {
+		stepsJSON, err = scenario.Steps.ToJSON()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Update the data.
@@ -156,7 +115,7 @@ func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario requirements.Scenar
 		AND
 			model_key = $1`,
 		modelKey,
-		scenarioKey,
+		scenario.Key.String(),
 		scenario.Name,
 		scenario.Details,
 		stepsJSON)
@@ -168,17 +127,7 @@ func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario requirements.Scenar
 }
 
 // RemoveScenario deletes a scenario from the database.
-func RemoveScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	scenarioKey, err = requirements.PreenKey(scenarioKey)
-	if err != nil {
-		return err
-	}
+func RemoveScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -189,7 +138,7 @@ func RemoveScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (err error) {
 		AND
 			model_key = $1`,
 		modelKey,
-		scenarioKey)
+		scenarioKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -198,25 +147,19 @@ func RemoveScenario(dbOrTx DbOrTx, modelKey, scenarioKey string) (err error) {
 }
 
 // QueryScenarios queries all scenarios for a model.
-func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[string][]requirements.Scenario, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[identity.Key][]model_scenario.Scenario, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var scenario requirements.Scenario
-			var useCaseKey string
+			var scenario model_scenario.Scenario
+			var useCaseKey identity.Key
 			if err = scanScenario(scanner, &useCaseKey, &scenario); err != nil {
 				return err
 			}
 			if scenarios == nil {
-				scenarios = map[string][]requirements.Scenario{}
+				scenarios = map[identity.Key][]model_scenario.Scenario{}
 			}
 			scenarios[useCaseKey] = append(scenarios[useCaseKey], scenario)
 			return nil
@@ -239,4 +182,49 @@ func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[string][]requ
 	}
 
 	return scenarios, nil
+}
+
+// AddScenarios adds multiple scenarios to the database in a single insert.
+func AddScenarios(dbOrTx DbOrTx, modelKey string, scenarios map[identity.Key][]model_scenario.Scenario) (err error) {
+	// Count total scenarios.
+	count := 0
+	for _, scens := range scenarios {
+		count += len(scens)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details, steps) VALUES `
+	args := make([]interface{}, 0, count*6)
+	i := 0
+	for useCaseKey, scenList := range scenarios {
+		for _, scenario := range scenList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 6
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+
+			// Serialize the steps to JSON.
+			var stepsJSON interface{}
+			if scenario.Steps != nil {
+				stepsJSON, err = scenario.Steps.ToJSON()
+				if err != nil {
+					return err
+				}
+			}
+
+			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details, stepsJSON)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

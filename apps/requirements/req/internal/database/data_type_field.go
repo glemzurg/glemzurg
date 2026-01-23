@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanField(scanner Scanner, dataTypeKeyPtr *string, field *data_type.Field) (err error) {
+func scanField(scanner Scanner, dataTypeKeyPtr *string, field *model_data_type.Field) (err error) {
 	var fieldDataTypeKey string
 	if err = scanner.Scan(
 		dataTypeKeyPtr,
@@ -25,20 +25,20 @@ func scanField(scanner Scanner, dataTypeKeyPtr *string, field *data_type.Field) 
 	}
 
 	// Set the FieldDataType to a partial DataType with just the key.
-	field.FieldDataType = &data_type.DataType{Key: fieldDataTypeKey}
+	field.FieldDataType = &model_data_type.DataType{Key: fieldDataTypeKey}
 
 	return nil
 }
 
 // LoadDataTypeFields loads all fields for a data type from the database
-func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map[string][]data_type.Field, err error) {
+func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map[string][]model_data_type.Field, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return nil, err
 	}
@@ -48,12 +48,12 @@ func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var parentDataTypeKey string
-			var field data_type.Field
+			var field model_data_type.Field
 			if err = scanField(scanner, &parentDataTypeKey, &field); err != nil {
 				return errors.WithStack(err)
 			}
 			if fields == nil {
-				fields = map[string][]data_type.Field{}
+				fields = map[string][]model_data_type.Field{}
 			}
 			fields[parentDataTypeKey] = append(fields[parentDataTypeKey], field)
 			return nil
@@ -84,21 +84,21 @@ func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map
 }
 
 // AddField adds a data type field to the database
-func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Field) (err error) {
+func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
 	if field.FieldDataType == nil {
 		return errors.New("FieldDataType cannot be nil")
 	}
-	fieldDataTypeKey, err := requirements.PreenKey(field.FieldDataType.Key)
+	fieldDataTypeKey, err := identity.PreenKey(field.FieldDataType.Key)
 	if err != nil {
 		return err
 	}
@@ -128,21 +128,21 @@ func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Field
 }
 
 // UpdateField updates a data type field in the database
-func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Field) (err error) {
+func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
 	if field.FieldDataType == nil {
 		return errors.New("FieldDataType cannot be nil")
 	}
-	fieldDataTypeKey, err := requirements.PreenKey(field.FieldDataType.Key)
+	fieldDataTypeKey, err := identity.PreenKey(field.FieldDataType.Key)
 	if err != nil {
 		return err
 	}
@@ -169,11 +169,11 @@ func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field data_type.Fi
 func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -195,10 +195,10 @@ func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) 
 }
 
 // QueryFields loads all data type fields for a model from the database
-func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]data_type.Field, err error) {
+func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]model_data_type.Field, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -208,12 +208,12 @@ func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]data_type.
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var parentDataTypeKey string
-			var field data_type.Field
+			var field model_data_type.Field
 			if err = scanField(scanner, &parentDataTypeKey, &field); err != nil {
 				return errors.WithStack(err)
 			}
 			if fields == nil {
-				fields = map[string][]data_type.Field{}
+				fields = map[string][]model_data_type.Field{}
 			}
 			fields[parentDataTypeKey] = append(fields[parentDataTypeKey], field)
 			return nil
@@ -236,7 +236,7 @@ func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]data_type.
 }
 
 // BulkInsertFields inserts multiple fields in a single SQL statement.
-func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]data_type.Field) (err error) {
+func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]model_data_type.Field) (err error) {
 	totalFields := 0
 	for _, fields := range fieldMap {
 		totalFields += len(fields)
@@ -246,7 +246,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]data
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]data
 	valueStrings := make([]string, 0, totalFields)
 	i := 0
 	for dataTypeKey, fields := range fieldMap {
-		dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+		dataTypeKey, err = identity.PreenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}
@@ -264,7 +264,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]data
 			if field.FieldDataType == nil {
 				return errors.New("FieldDataType cannot be nil")
 			}
-			fieldDataTypeKey, err := requirements.PreenKey(field.FieldDataType.Key)
+			fieldDataTypeKey, err := identity.PreenKey(field.FieldDataType.Key)
 			if err != nil {
 				return err
 			}

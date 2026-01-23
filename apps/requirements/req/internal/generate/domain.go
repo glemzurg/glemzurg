@@ -4,12 +4,16 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
-func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requirements) (err error) {
+func generateDomainFiles(debug bool, outputPath string, reqs *req_flat.Requirements) (err error) {
 
 	// Get all the data we want for these files.
 	domainLookup, _ := reqs.DomainLookup()
@@ -18,7 +22,7 @@ func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requir
 	for _, domain := range domainLookup {
 
 		// Generate model summary.
-		modelFilename := convertKeyToFilename("domain", domain.Key, "", ".md")
+		modelFilename := convertKeyToFilename("domain", domain.Key.String(), "", ".md")
 		modelFilenameAbs := filepath.Join(outputPath, modelFilename)
 		mdContents, err := generateDomainMdContents(reqs, reqs.Model, domain)
 		if err != nil {
@@ -28,10 +32,27 @@ func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requir
 			return err
 		}
 
+		// Gather all classes from all subdomains for this domain.
+		var domainClasses []model_class.Class
+		for _, subdomain := range domain.Subdomains {
+			for _, class := range subdomain.Classes {
+				domainClasses = append(domainClasses, class)
+			}
+		}
+
 		// Generate use cases diagram.
-		useCasesFilename := convertKeyToFilename("domain", domain.Key, "use-cases", ".svg")
+		useCasesFilename := convertKeyToFilename("domain", domain.Key.String(), "use-cases", ".svg")
 		useCasesFilenameAbs := filepath.Join(outputPath, useCasesFilename)
-		relevantUseCases, relevantActors, err := reqs.RegardingUseCases(domain.UseCases)
+
+		// Gather all use cases from all subdomains for this domain.
+		var domainUseCases []model_use_case.UseCase
+		for _, subdomain := range domain.Subdomains {
+			for _, useCase := range subdomain.UseCases {
+				domainUseCases = append(domainUseCases, useCase)
+			}
+		}
+
+		relevantUseCases, relevantActors, err := reqs.RegardingUseCases(domainUseCases)
 		if err != nil {
 			return err
 		}
@@ -47,10 +68,10 @@ func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requir
 		}
 
 		// Get the data that is important for this class diagram.
-		generalizations, classes, associations := reqs.RegardingClasses(domain.Classes)
+		generalizations, classes, associations := reqs.RegardingClasses(domainClasses)
 
 		// Generate classes diagram.
-		classesFilename := convertKeyToFilename("domain", domain.Key, "classes", ".svg")
+		classesFilename := convertKeyToFilename("domain", domain.Key.String(), "classes", ".svg")
 		classesFilenameAbs := filepath.Join(outputPath, classesFilename)
 		classesSvgContents, classesDotContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
 		if err != nil {
@@ -67,20 +88,30 @@ func generateDomainFiles(debug bool, outputPath string, reqs requirements.Requir
 	return nil
 }
 
-func generateDomainMdContents(reqs requirements.Requirements, model requirements.Model, domain requirements.Domain) (contents string, err error) {
+func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model, domain model_domain.Domain) (contents string, err error) {
 
-	sort.Slice(domain.Classes, func(i, j int) bool {
-		return domain.Classes[i].Name < domain.Classes[j].Name
+	// Gather all classes from all subdomains for sorting.
+	var allClasses []model_class.Class
+	for _, subdomain := range domain.Subdomains {
+		for _, class := range subdomain.Classes {
+			allClasses = append(allClasses, class)
+		}
+	}
+
+	sort.Slice(allClasses, func(i, j int) bool {
+		return allClasses[i].Name < allClasses[j].Name
 	})
 
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
-		Reqs   requirements.Requirements
-		Model  requirements.Model
-		Domain requirements.Domain
+		Reqs    *req_flat.Requirements
+		Model   req_model.Model
+		Domain  model_domain.Domain
+		Classes []model_class.Class
 	}{
-		Reqs:   reqs,
-		Model:  model,
-		Domain: domain,
+		Reqs:    reqs,
+		Model:   model,
+		Domain:  domain,
+		Classes: allClasses,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -90,12 +121,12 @@ func generateDomainMdContents(reqs requirements.Requirements, model requirements
 }
 
 // This is the domain graph on the model page.
-func generateDomainsSvgContents(reqs requirements.Requirements, domains []requirements.Domain, associations []requirements.DomainAssociation) (svgContents string, dotContents string, err error) {
+func generateDomainsSvgContents(reqs *req_flat.Requirements, domains []model_domain.Domain, associations []model_domain.Association) (svgContents string, dotContents string, err error) {
 
 	dotContents, err = generateFromTemplate(_domainsDotTemplate, struct {
-		Reqs         requirements.Requirements
-		Domains      []requirements.Domain
-		Associations []requirements.DomainAssociation
+		Reqs         *req_flat.Requirements
+		Domains      []model_domain.Domain
+		Associations []model_domain.Association
 	}{
 		Reqs:         reqs,
 		Domains:      domains,

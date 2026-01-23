@@ -1,17 +1,23 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAction(scanner Scanner, classKeyPtr *string, action *requirements.Action) (err error) {
+func scanAction(scanner Scanner, classKeyPtr *identity.Key, action *model_state.Action) (err error) {
+	var classKeyStr string
+	var actionKeyStr string
+
 	if err = scanner.Scan(
-		classKeyPtr,
-		&action.Key,
+		&classKeyStr,
+		&actionKeyStr,
 		&action.Name,
 		&action.Details,
 		pq.Array(&action.Requires),
@@ -23,21 +29,23 @@ func scanAction(scanner Scanner, classKeyPtr *string, action *requirements.Actio
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the action key string into an identity.Key.
+	action.Key, err = identity.ParseKey(actionKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadAction loads a action from the database
-func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, action requirements.Action, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.Action{}, err
-	}
-	actionKey, err = requirements.PreenKey(actionKey)
-	if err != nil {
-		return "", requirements.Action{}, err
-	}
+func LoadAction(dbOrTx DbOrTx, modelKey string, actionKey identity.Key) (classKey identity.Key, action model_state.Action, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -62,83 +70,23 @@ func LoadAction(dbOrTx DbOrTx, modelKey, actionKey string) (classKey string, act
 		AND
 			model_key = $1`,
 		modelKey,
-		actionKey)
+		actionKey.String())
 	if err != nil {
-		return "", requirements.Action{}, errors.WithStack(err)
+		return identity.Key{}, model_state.Action{}, errors.WithStack(err)
 	}
 
 	return classKey, action, nil
 }
 
 // AddAction adds a action to the database.
-func AddAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.Action) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	actionKey, err := requirements.PreenKey(action.Key)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO action
-				(
-					model_key  ,
-					class_key  ,
-					action_key ,
-					name       ,
-					details    ,
-			        requires   ,
-			        guarantees
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7
-				)`,
-		modelKey,
-		classKey,
-		actionKey,
-		action.Name,
-		action.Details,
-		pq.Array(action.Requires),
-		pq.Array(action.Guarantees))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action model_state.Action) (err error) {
+	return AddActions(dbOrTx, modelKey, map[identity.Key][]model_state.Action{
+		classKey: {action},
+	})
 }
 
 // UpdateAction updates a action in the database.
-func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.Action) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	actionKey, err := requirements.PreenKey(action.Key)
-	if err != nil {
-		return err
-	}
+func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action model_state.Action) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -156,8 +104,8 @@ func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		actionKey,
+		classKey.String(),
+		action.Key.String(),
 		action.Name,
 		action.Details,
 		pq.Array(action.Requires),
@@ -170,21 +118,7 @@ func UpdateAction(dbOrTx DbOrTx, modelKey, classKey string, action requirements.
 }
 
 // RemoveAction deletes a action from the database.
-func RemoveAction(dbOrTx DbOrTx, modelKey, classKey, actionKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	actionKey, err = requirements.PreenKey(actionKey)
-	if err != nil {
-		return err
-	}
+func RemoveAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -197,8 +131,8 @@ func RemoveAction(dbOrTx DbOrTx, modelKey, classKey, actionKey string) (err erro
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		actionKey)
+		classKey.String(),
+		actionKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -207,25 +141,19 @@ func RemoveAction(dbOrTx DbOrTx, modelKey, classKey, actionKey string) (err erro
 }
 
 // QueryActions loads all action from the database
-func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[string][]requirements.Action, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[identity.Key][]model_state.Action, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
-			var action requirements.Action
+			var classKey identity.Key
+			var action model_state.Action
 			if err = scanAction(scanner, &classKey, &action); err != nil {
 				return errors.WithStack(err)
 			}
 			if actions == nil {
-				actions = map[string][]requirements.Action{}
+				actions = map[identity.Key][]model_state.Action{}
 			}
 			classActions := actions[classKey]
 			classActions = append(classActions, action)
@@ -250,4 +178,39 @@ func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[string][]requirem
 	}
 
 	return actions, nil
+}
+
+// AddActions adds multiple actions to the database in a single insert.
+func AddActions(dbOrTx DbOrTx, modelKey string, actions map[identity.Key][]model_state.Action) (err error) {
+	// Count total actions.
+	count := 0
+	for _, acts := range actions {
+		count += len(acts)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO action (model_key, class_key, action_key, name, details, requires, guarantees) VALUES `
+	args := make([]interface{}, 0, count*7)
+	i := 0
+	for classKey, actionList := range actions {
+		for _, action := range actionList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 7
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+			args = append(args, modelKey, classKey.String(), action.Key.String(), action.Name, action.Details, pq.Array(action.Requires), pq.Array(action.Guarantees))
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

@@ -1,24 +1,30 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAssociation(scanner Scanner, association *requirements.Association) (err error) {
+func scanAssociation(scanner Scanner, association *model_class.Association) (err error) {
+	var associationKeyStr string
+	var fromClassKeyStr string
+	var toClassKeyStr string
 	var associationClassKeyPtr *string
 	var fromLowerBound, fromHigherBound, toLowerBound, toHigherBound uint
 
 	if err = scanner.Scan(
-		&association.Key,
+		&associationKeyStr,
 		&association.Name,
 		&association.Details,
-		&association.FromClassKey,
+		&fromClassKeyStr,
 		&fromLowerBound,
 		&fromHigherBound,
-		&association.ToClassKey,
+		&toClassKeyStr,
 		&toLowerBound,
 		&toHigherBound,
 		&associationClassKeyPtr,
@@ -30,28 +36,40 @@ func scanAssociation(scanner Scanner, association *requirements.Association) (er
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
-	association.FromMultiplicity = requirements.Multiplicity{LowerBound: fromLowerBound, HigherBound: fromHigherBound}
-	association.ToMultiplicity = requirements.Multiplicity{LowerBound: toLowerBound, HigherBound: toHigherBound}
+	// Parse the association key string into an identity.Key.
+	association.Key, err = identity.ParseKey(associationKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the from class key string into an identity.Key.
+	association.FromClassKey, err = identity.ParseKey(fromClassKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the to class key string into an identity.Key.
+	association.ToClassKey, err = identity.ParseKey(toClassKeyStr)
+	if err != nil {
+		return err
+	}
+
+	association.FromMultiplicity = model_class.Multiplicity{LowerBound: fromLowerBound, HigherBound: fromHigherBound}
+	association.ToMultiplicity = model_class.Multiplicity{LowerBound: toLowerBound, HigherBound: toHigherBound}
 
 	if associationClassKeyPtr != nil {
-		association.AssociationClassKey = *associationClassKeyPtr
+		associationClassKey, err := identity.ParseKey(*associationClassKeyPtr)
+		if err != nil {
+			return err
+		}
+		association.AssociationClassKey = &associationClassKey
 	}
 
 	return nil
 }
 
 // LoadAssociation loads a association from the database
-func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association requirements.Association, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return requirements.Association{}, err
-	}
-	associationKey, err = requirements.PreenKey(associationKey)
-	if err != nil {
-		return requirements.Association{}, err
-	}
+func LoadAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (association model_class.Association, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -82,125 +100,27 @@ func LoadAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (associatio
 			model_key = $1
 		ORDER BY association_key`,
 		modelKey,
-		associationKey)
+		associationKey.String())
 	if err != nil {
-		return requirements.Association{}, errors.WithStack(err)
+		return model_class.Association{}, errors.WithStack(err)
 	}
 
 	return association, nil
 }
 
 // AddAssociation adds a association to the database.
-func AddAssociation(dbOrTx DbOrTx, modelKey string, association requirements.Association) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	associationKey, err := requirements.PreenKey(association.Key)
-	if err != nil {
-		return err
-	}
-	toClassKey, err := requirements.PreenKey(association.ToClassKey)
-	if err != nil {
-		return err
-	}
-	fromClassKey, err := requirements.PreenKey(association.FromClassKey)
-	if err != nil {
-		return err
-	}
-
-	// We may or may not have an association class.
-	var associationClassKeyPtr *string
-	if association.AssociationClassKey != "" {
-		associationClassKey, err := requirements.PreenKey(association.AssociationClassKey)
-		if err != nil {
-			return err
-		}
-		associationClassKeyPtr = &associationClassKey
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO association
-				(
-					model_key,
-					association_key,
-					name,
-					details,
-					from_class_key,
-					from_multiplicity_lower,
-					from_multiplicity_higher,
-					to_class_key,
-					to_multiplicity_lower,
-					to_multiplicity_higher,
-					association_class_key,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9,
-					$10,
-					$11,
-					$12
-				)`,
-		modelKey,
-		associationKey,
-		association.Name,
-		association.Details,
-		fromClassKey,
-		association.FromMultiplicity.LowerBound,
-		association.FromMultiplicity.HigherBound,
-		toClassKey,
-		association.ToMultiplicity.LowerBound,
-		association.ToMultiplicity.HigherBound,
-		associationClassKeyPtr,
-		association.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
+	return AddAssociations(dbOrTx, modelKey, []model_class.Association{association})
 }
 
 // UpdateAssociation updates a association in the database.
-func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association requirements.Association) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	associationKey, err := requirements.PreenKey(association.Key)
-	if err != nil {
-		return err
-	}
-	toClassKey, err := requirements.PreenKey(association.ToClassKey)
-	if err != nil {
-		return err
-	}
-	fromClassKey, err := requirements.PreenKey(association.FromClassKey)
-	if err != nil {
-		return err
-	}
+func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
 
 	// We may or may not have an association class.
 	var associationClassKeyPtr *string
-	if association.AssociationClassKey != "" {
-		associationClassKey, err := requirements.PreenKey(association.AssociationClassKey)
-		if err != nil {
-			return err
-		}
-		associationClassKeyPtr = &associationClassKey
+	if association.AssociationClassKey != nil {
+		s := association.AssociationClassKey.String()
+		associationClassKeyPtr = &s
 	}
 
 	// Update the data.
@@ -223,13 +143,13 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association requirements.
 		AND
 			model_key = $1`,
 		modelKey,
-		associationKey,
+		association.Key.String(),
 		association.Name,
 		association.Details,
-		fromClassKey,
+		association.FromClassKey.String(),
 		association.FromMultiplicity.LowerBound,
 		association.FromMultiplicity.HigherBound,
-		toClassKey,
+		association.ToClassKey.String(),
 		association.ToMultiplicity.LowerBound,
 		association.ToMultiplicity.HigherBound,
 		associationClassKeyPtr,
@@ -242,17 +162,7 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association requirements.
 }
 
 // RemoveAssociation deletes a association from the database.
-func RemoveAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	associationKey, err = requirements.PreenKey(associationKey)
-	if err != nil {
-		return err
-	}
+func RemoveAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -263,7 +173,7 @@ func RemoveAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err erro
 		AND
 			model_key = $1`,
 		modelKey,
-		associationKey)
+		associationKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -272,19 +182,13 @@ func RemoveAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err erro
 }
 
 // QueryAssociations loads all association from the database
-func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []requirements.Association, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_class.Association, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var association requirements.Association
+			var association model_class.Association
 			if err = scanAssociation(scanner, &association); err != nil {
 				return errors.WithStack(err)
 			}
@@ -314,4 +218,38 @@ func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []requireme
 	}
 
 	return associations, nil
+}
+
+// AddAssociations adds multiple associations to the database in a single insert.
+func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.Association) (err error) {
+	if len(associations) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO association (model_key, association_key, name, details, from_class_key, from_multiplicity_lower, from_multiplicity_higher, to_class_key, to_multiplicity_lower, to_multiplicity_higher, association_class_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(associations)*12)
+	for i, assoc := range associations {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 12
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12)
+
+		// Handle optional association class key.
+		var associationClassKeyPtr *string
+		if assoc.AssociationClassKey != nil {
+			s := assoc.AssociationClassKey.String()
+			associationClassKeyPtr = &s
+		}
+
+		args = append(args, modelKey, assoc.Key.String(), assoc.Name, assoc.Details, assoc.FromClassKey.String(), assoc.FromMultiplicity.LowerBound, assoc.FromMultiplicity.HigherBound, assoc.ToClassKey.String(), assoc.ToMultiplicity.LowerBound, assoc.ToMultiplicity.HigherBound, associationClassKeyPtr, assoc.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

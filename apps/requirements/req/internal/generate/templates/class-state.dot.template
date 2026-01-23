@@ -11,7 +11,7 @@ in [shape=circle, label="", style=filled, fillcolor=black, fixedsize=true, width
 
 {{/* Only include an end state if we have a transition that goes there. */}}
 {{ $hasFinal := false }}
-{{range .Class.Transitions }}{{if eq .ToStateKey ""}}{{ $hasFinal = true }}{{ end }}{{ end }}
+{{range .Class.Transitions }}{{if eq .ToStateKey nil}}{{ $hasFinal = true }}{{ end }}{{ end }}
 {{ if $hasFinal }}
 fi [shape=circle, label="", peripheries=2, style=filled, fillcolor=black, fixedsize=true, width=0.3];
 {{ end }}
@@ -33,10 +33,10 @@ fi [shape=circle, label="", peripheries=2, style=filled, fillcolor=black, fixeds
 {{end}}
 
 {{range .Class.Transitions }}
-{{ $fromStateKey := "in"}}{{if ne .FromStateKey ""}}{{ $fromStateKey = nodeid "state" .FromStateKey }}{{end}}
-{{ $toStateKey := "fi"}}{{if ne .ToStateKey ""}}{{ $toStateKey = nodeid "state" .ToStateKey }}{{end}}
+{{ $fromStateKey := "in"}}{{if ne .FromStateKey nil}}{{ $fromStateKey = nodeid "state" .FromStateKey }}{{end}}
+{{ $toStateKey := "fi"}}{{if ne .ToStateKey nil}}{{ $toStateKey = nodeid "state" .ToStateKey }}{{end}}
 
-{{ $fromStateKey }} -> {{ $toStateKey }} [label="{{ lookup $eventNameLookup .EventKey }}{{if ne .GuardKey ""}} [{{ lookup $guardDetailsLookup .GuardKey }}]{{end}}{{if ne .ActionKey ""}} / {{ lookup $actionNameLookup .ActionKey }}{{end}}"];
+{{ $fromStateKey }} -> {{ $toStateKey }} [label="{{ lookup $eventNameLookup .EventKey }}{{if ne .GuardKey nil}} [{{ lookup $guardDetailsLookup .GuardKey }}]{{end}}{{if ne .ActionKey nil}} / {{ lookup $actionNameLookup .ActionKey }}{{end}}"];
 
 {{end}}}
 

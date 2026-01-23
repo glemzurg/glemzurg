@@ -2,10 +2,13 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,12 +24,12 @@ func TestClassIndexSuite(t *testing.T) {
 type ClassIndexSuite struct {
 	suite.Suite
 	db         *sql.DB
-	model      requirements.Model
-	domain     requirements.Domain
-	subdomain  requirements.Subdomain
-	class      requirements.Class
-	attribute  requirements.Attribute
-	attributeB requirements.Attribute
+	model      req_model.Model
+	domain     model_domain.Domain
+	subdomain  model_domain.Subdomain
+	class      model_class.Class
+	attribute  model_class.Attribute
+	attributeB model_class.Attribute
 }
 
 func (suite *ClassIndexSuite) SetupTest() {
@@ -36,17 +39,17 @@ func (suite *ClassIndexSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key)
-	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "class_key")
-	suite.attribute = t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, "attribute_key")
-	suite.attributeB = t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, "attribute_key_b")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key")))
+	suite.attribute = t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, helper.Must(identity.NewAttributeKey(suite.class.Key, "attribute_key")))
+	suite.attributeB = t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, helper.Must(identity.NewAttributeKey(suite.class.Key, "attribute_key_b")))
 }
 
 func (suite *ClassIndexSuite) TestLoad() {
 
 	// Nothing in database yet.
-	indexes, err := LoadClassAttributeIndexes(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key))
+	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
 	assert.Empty(suite.T(), indexes)
 
@@ -61,49 +64,49 @@ func (suite *ClassIndexSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
 				2,
-				'attribute_key'
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attribute_key'
 			),
 			(
 				'model_key',
-				'class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
 				1,
-				'attribute_key'
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attribute_key'
 			)
 	`)
 	assert.Nil(suite.T(), err)
 
-	indexes, err = LoadClassAttributeIndexes(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key)) // Test case-insensitive.
+	indexes, err = LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), []uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestAdd() {
 
-	err := AddClassIndex(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key), 1)
+	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
 	assert.Nil(suite.T(), err)
 
-	err = AddClassIndex(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key), 2)
+	err = AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 2)
 	assert.Nil(suite.T(), err)
 
-	indexes, err := LoadClassAttributeIndexes(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key)) // Test case-insensitive.
+	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), []uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestRemove() {
 
-	err := AddClassIndex(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key), 1)
+	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
 	assert.Nil(suite.T(), err)
 
-	err = AddClassIndex(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key), 2)
+	err = AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 2)
 	assert.Nil(suite.T(), err)
 
-	err = RemoveClassIndex(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key), 1)
+	err = RemoveClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
 	assert.Nil(suite.T(), err)
 
-	indexes, err := LoadClassAttributeIndexes(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper(suite.attribute.Key)) // Test case-insensitive.
+	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), []uint{2}, indexes)
 }

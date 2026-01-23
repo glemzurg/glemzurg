@@ -8,8 +8,8 @@ A relationship between classes indicating super classes and subclasses. This is 
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.actor](public.actor.md) [public.use_case](public.use_case.md) [public.class](public.class.md) | [public.model](public.model.md) | The model this generalization is part of. |
-| generalization_key | text |  | false | [public.actor](public.actor.md) [public.use_case](public.use_case.md) [public.class](public.class.md) |  | The internal ID. |
+| model_key | text |  | false | [public.actor](public.actor.md) [public.class](public.class.md) [public.use_case](public.use_case.md) | [public.model](public.model.md) | The model this generalization is part of. |
+| generalization_key | text |  | false | [public.actor](public.actor.md) [public.class](public.class.md) [public.use_case](public.use_case.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the generalization. |
 | is_complete | boolean |  | true |  |  | Are the specializations complete, or can an instantiation of this generalization exist without a specialization. |
 | is_static | boolean |  | true |  |  | Are the specializations static and unchanging or can they change during runtime. |

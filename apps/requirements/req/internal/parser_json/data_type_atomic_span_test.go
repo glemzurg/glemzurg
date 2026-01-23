@@ -3,13 +3,13 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAtomicSpanInOutRoundTrip(t *testing.T) {
 
-	original := data_type.AtomicSpan{
+	original := model_data_type.AtomicSpan{
 		LowerType:         "closed",
 		LowerValue:        t_IntPtr(1),
 		LowerDenominator:  t_IntPtr(2),

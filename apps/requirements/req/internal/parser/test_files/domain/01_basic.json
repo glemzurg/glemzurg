@@ -1,5 +1,5 @@
 {
-    "Key": "domain_key",
+    "Key": "domain/domain_key",
     "Name": "A Basic Domain",
     "Details": "# A Basic Domain\n\nHere we have markdown details.\n\nAnd even more.",
     "Realized": true,

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAtomicEnum(scanner Scanner, dataTypeKeyPtr *string, atomicEnum *data_type.AtomicEnum) (err error) {
+func scanAtomicEnum(scanner Scanner, dataTypeKeyPtr *string, atomicEnum *model_data_type.AtomicEnum) (err error) {
 	if err = scanner.Scan(
 		dataTypeKeyPtr,
 		&atomicEnum.Value,
@@ -27,14 +27,14 @@ func scanAtomicEnum(scanner Scanner, dataTypeKeyPtr *string, atomicEnum *data_ty
 }
 
 // LoadAtomicEnums loads all atomic enums for a data type from the database
-func LoadAtomicEnums(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomicEnums map[string][]data_type.AtomicEnum, err error) {
+func LoadAtomicEnums(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomicEnums map[string][]model_data_type.AtomicEnum, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return nil, err
 	}
@@ -44,12 +44,12 @@ func LoadAtomicEnums(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomicEnums m
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var parentDataTypeKey string
-			var atomicEnum data_type.AtomicEnum
+			var atomicEnum model_data_type.AtomicEnum
 			if err = scanAtomicEnum(scanner, &parentDataTypeKey, &atomicEnum); err != nil {
 				return errors.WithStack(err)
 			}
 			if atomicEnums == nil {
-				atomicEnums = map[string][]data_type.AtomicEnum{}
+				atomicEnums = map[string][]model_data_type.AtomicEnum{}
 			}
 			atomicEnums[parentDataTypeKey] = append(atomicEnums[parentDataTypeKey], atomicEnum)
 			return nil
@@ -80,14 +80,14 @@ func LoadAtomicEnums(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomicEnums m
 }
 
 // AddAtomicEnum adds an atomic enum to the database.
-func AddAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicEnum data_type.AtomicEnum) (err error) {
+func AddAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicEnum model_data_type.AtomicEnum) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -120,14 +120,14 @@ func AddAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicEnum data_
 }
 
 // UpdateAtomicEnum updates an atomic enum in the database.
-func UpdateAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, oldValue string, atomicEnum data_type.AtomicEnum) (err error) {
+func UpdateAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, oldValue string, atomicEnum model_data_type.AtomicEnum) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -161,11 +161,11 @@ func UpdateAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, oldValue string, ato
 func RemoveAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, value string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -191,10 +191,10 @@ func RemoveAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, value string) (err e
 }
 
 // QueryAtomicEnums loads all atomic enums from the database
-func QueryAtomicEnums(dbOrTx DbOrTx, modelKey string) (atomicEnums map[string][]data_type.AtomicEnum, err error) {
+func QueryAtomicEnums(dbOrTx DbOrTx, modelKey string) (atomicEnums map[string][]model_data_type.AtomicEnum, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func QueryAtomicEnums(dbOrTx DbOrTx, modelKey string) (atomicEnums map[string][]
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var dataTypeKey string
-			var atomicEnum data_type.AtomicEnum
+			var atomicEnum model_data_type.AtomicEnum
 			if err = scanner.Scan(
 				&dataTypeKey,
 				&atomicEnum.Value,
@@ -213,7 +213,7 @@ func QueryAtomicEnums(dbOrTx DbOrTx, modelKey string) (atomicEnums map[string][]
 				return errors.WithStack(err)
 			}
 			if atomicEnums == nil {
-				atomicEnums = map[string][]data_type.AtomicEnum{}
+				atomicEnums = map[string][]model_data_type.AtomicEnum{}
 			}
 			atomicEnums[dataTypeKey] = append(atomicEnums[dataTypeKey], atomicEnum)
 			return nil
@@ -236,7 +236,7 @@ func QueryAtomicEnums(dbOrTx DbOrTx, modelKey string) (atomicEnums map[string][]
 }
 
 // BulkInsertAtomicEnums inserts multiple atomic enums in a single SQL statement.
-func BulkInsertAtomicEnums(dbOrTx DbOrTx, modelKey string, atomicEnums map[string][]data_type.AtomicEnum) (err error) {
+func BulkInsertAtomicEnums(dbOrTx DbOrTx, modelKey string, atomicEnums map[string][]model_data_type.AtomicEnum) (err error) {
 	totalEnums := 0
 	for _, enums := range atomicEnums {
 		totalEnums += len(enums)
@@ -246,7 +246,7 @@ func BulkInsertAtomicEnums(dbOrTx DbOrTx, modelKey string, atomicEnums map[strin
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -256,7 +256,7 @@ func BulkInsertAtomicEnums(dbOrTx DbOrTx, modelKey string, atomicEnums map[strin
 	valueStrings := make([]string, 0, totalEnums)
 	i := 0
 	for dataTypeKey, enums := range atomicEnums {
-		dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+		dataTypeKey, err = identity.PreenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}

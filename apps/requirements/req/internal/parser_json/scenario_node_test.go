@@ -3,13 +3,37 @@ package parser_json
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNodeInOutConversionRoundTrip(t *testing.T) {
-	original := requirements.Node{
-		Statements: []requirements.Node{
+	// Create proper identity keys for testing.
+	domainKey, err := identity.NewDomainKey("domain1")
+	require.NoError(t, err)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "subdomain1")
+	require.NoError(t, err)
+	classKey, err := identity.NewClassKey(subdomainKey, "class1")
+	require.NoError(t, err)
+	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, "usecase1")
+	require.NoError(t, err)
+	scenarioKey, err := identity.NewScenarioKey(useCaseKey, "scenario1")
+	require.NoError(t, err)
+	clientObjKey, err := identity.NewScenarioObjectKey(scenarioKey, "client")
+	require.NoError(t, err)
+	serverObjKey, err := identity.NewScenarioObjectKey(scenarioKey, "server")
+	require.NoError(t, err)
+	eventKey, err := identity.NewEventKey(classKey, "request")
+	require.NoError(t, err)
+	nestedScenarioKey, err := identity.NewScenarioKey(useCaseKey, "nested_scenario")
+	require.NoError(t, err)
+	attributeKey, err := identity.NewAttributeKey(classKey, "status")
+	require.NoError(t, err)
+
+	original := model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description: "First step",
 			},
@@ -17,7 +41,7 @@ func TestNodeInOutConversionRoundTrip(t *testing.T) {
 				Description: "Second step",
 			},
 		},
-		Cases: []requirements.Case{
+		Cases: []model_scenario.Case{
 			{
 				Condition: "success",
 			},
@@ -27,16 +51,16 @@ func TestNodeInOutConversionRoundTrip(t *testing.T) {
 		},
 		Loop:          "while condition",
 		Description:   "Main scenario",
-		FromObjectKey: "client",
-		ToObjectKey:   "server",
-		EventKey:      "request",
-		ScenarioKey:   "scenario1",
-		AttributeKey:  "status",
+		FromObjectKey: &clientObjKey,
+		ToObjectKey:   &serverObjKey,
+		EventKey:      &eventKey,
+		ScenarioKey:   &nestedScenarioKey,
+		AttributeKey:  &attributeKey,
 		IsDelete:      true,
 	}
 
 	inOut := FromRequirementsNode(original)
-	back := inOut.ToRequirements()
+	back, err := inOut.ToRequirements()
+	require.NoError(t, err)
 	assert.Equal(t, original, back)
-
 }

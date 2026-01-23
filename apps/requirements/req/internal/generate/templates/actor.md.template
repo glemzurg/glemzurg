@@ -1,4 +1,5 @@
 {{- $reqs := .Reqs -}}
+{{- $actorClasses := actor_classes $reqs .Actor.Key -}}
 
 [⇦ {{ $reqs.Model.Name }}](model.md)
 
@@ -8,11 +9,11 @@
 
 The domain classes that define this actor.
 
-{{ if ne .Actor.ClassKeys nil -}}
+{{ if $actorClasses -}}
 
-{{ range .Actor.ClassKeys -}}
-{{- $class := class_lookup $reqs . }}
-{{- $domain := domain_lookup $reqs $class.DomainKey }}
+{{ range $actorClasses -}}
+{{- $class := . }}
+{{- $domain := class_domain $reqs $class.Key }}
 
 ### {{ $domain.Name }} : {{ $class.Name }}
 

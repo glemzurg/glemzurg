@@ -1,6 +1,6 @@
 {{- $reqs := .Reqs -}}
 
-{{- $domain := domain_lookup $reqs .UseCase.DomainKey -}}
+{{- $domain := use_case_domain $reqs .UseCase.Key -}}
 
 [⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
 

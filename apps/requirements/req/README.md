@@ -1,6 +1,13 @@
 
 
 next:
+  - parse yaml into just a model without requirements object
+  - build the ravelling/unravelling tests on requirements
+  - move the requirements object to generation package
+    - moving all the generation efficient work there
+  - update json model to have levels of class associations model/domain/subdomain
+  - update json package to just work with a model
+    - update the objects to not have unique database keys on them
   - json in and out of system
     - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md
@@ -11,6 +18,10 @@ jan (in parallel):
   - generate to the level of architecture diagrams
   - create complete model
     - add TLA+ parsing to create complete model
+    - model an AST with an Adjacency Listf and CTE query
+    - move parameters to actions and parsed into database
+  - make object members private
+
   
 feb (in parallel)
   - generate ui designs compilers
@@ -27,12 +38,16 @@ april (in parallel)
 
 ---------------------------
 
+  - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
+
 - cleanup regex must compile code
 - import examples models from steve's examples
 - fix the nested sequence diagram display issue (move to d2)
 - examine d2 diagramming:
   - https://github.com/terrastruct/d2?tab=readme-ov-file#d2-as-a-library
   - examine license of other libraries in use
+
+- make generalization a class object, and make a use case one too
 
 
 - tla plus peg parser
@@ -70,6 +85,11 @@ update to https://github.com/go-playground/validator
   - remvoe event parameters
   - the tla itself would deifne the parameters for events, actions, etc. 
     - all data flow 
+
+- make a tla prover?
+  - https://proofs.tlapl.us/doc/web/content/Home.html
+  - isolate which tla grammar is really for the prover:
+    - https://lamport.azurewebsites.net/tla/tla2.html
 
 - reinvistion the data flow
   - correct the issue with outward flows being based on data types

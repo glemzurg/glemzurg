@@ -1,6 +1,9 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+)
 
 // associationInOut is how two classes relate to each other.
 type associationInOut struct {
@@ -15,32 +18,63 @@ type associationInOut struct {
 	UmlComment          string            `json:"uml_comment"`
 }
 
-// ToRequirements converts the associationInOut to requirements.Association.
-func (a associationInOut) ToRequirements() requirements.Association {
-	return requirements.Association{
-		Key:                 a.Key,
+// ToRequirements converts the associationInOut to model_class.Association.
+func (a associationInOut) ToRequirements() (model_class.Association, error) {
+	key, err := identity.ParseKey(a.Key)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
+	fromClassKey, err := identity.ParseKey(a.FromClassKey)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
+	toClassKey, err := identity.ParseKey(a.ToClassKey)
+	if err != nil {
+		return model_class.Association{}, err
+	}
+
+	// Handle optional pointer field - empty string means nil
+	var associationClassKey *identity.Key
+	if a.AssociationClassKey != "" {
+		k, err := identity.ParseKey(a.AssociationClassKey)
+		if err != nil {
+			return model_class.Association{}, err
+		}
+		associationClassKey = &k
+	}
+
+	return model_class.Association{
+		Key:                 key,
 		Name:                a.Name,
 		Details:             a.Details,
-		FromClassKey:        a.FromClassKey,
+		FromClassKey:        fromClassKey,
 		FromMultiplicity:    a.FromMultiplicity.ToRequirements(),
-		ToClassKey:          a.ToClassKey,
+		ToClassKey:          toClassKey,
 		ToMultiplicity:      a.ToMultiplicity.ToRequirements(),
-		AssociationClassKey: a.AssociationClassKey,
+		AssociationClassKey: associationClassKey,
 		UmlComment:          a.UmlComment,
-	}
+	}, nil
 }
 
-// FromRequirements creates a associationInOut from requirements.Association.
-func FromRequirementsAssociation(a requirements.Association) associationInOut {
+// FromRequirements creates a associationInOut from model_class.Association.
+func FromRequirementsAssociation(a model_class.Association) associationInOut {
+	// Handle optional pointer field - nil means empty string
+	var associationClassKey string
+	if a.AssociationClassKey != nil {
+		associationClassKey = a.AssociationClassKey.String()
+	}
+
 	return associationInOut{
-		Key:                 a.Key,
+		Key:                 a.Key.String(),
 		Name:                a.Name,
 		Details:             a.Details,
-		FromClassKey:        a.FromClassKey,
+		FromClassKey:        a.FromClassKey.String(),
 		FromMultiplicity:    FromRequirementsMultiplicity(a.FromMultiplicity),
-		ToClassKey:          a.ToClassKey,
+		ToClassKey:          a.ToClassKey.String(),
 		ToMultiplicity:      FromRequirementsMultiplicity(a.ToMultiplicity),
-		AssociationClassKey: a.AssociationClassKey,
+		AssociationClassKey: associationClassKey,
 		UmlComment:          a.UmlComment,
 	}
 }

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,7 +25,13 @@ type ClassFileSuite struct {
 
 func (suite *ClassFileSuite) TestParseClassFiles() {
 
-	key := "class_key"
+	// Create a parent subdomain key for testing.
+	domainKey, err := identity.NewDomainKey("test_domain")
+	assert.Nil(suite.T(), err)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "test_subdomain")
+	assert.Nil(suite.T(), err)
+
+	classSubKey := "class_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_CLASS_PATH_OK)
 	assert.Nil(suite.T(), err)
@@ -33,9 +39,9 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.T().Run(testName, func(t *testing.T) {
-			var expected, actual requirements.Class
+			var expected, actual model_class.Class
 
-			actual, err := parseClass(key, testData.Filename, testData.Contents)
+			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)
@@ -43,8 +49,16 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 
 			assert.Equal(t, expected, actual, testName)
 
+			// Test associations if expected data exists (via _children.json file).
+			if testData.JsonChildren != "" {
+				var expectedAssociations []model_class.Association
+				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
+				assert.Nil(t, err, testName+" associations json")
+				assert.Equal(t, expectedAssociations, associations, testName+" associations")
+			}
+
 			// Test round-trip: generate content from parsed object and compare to original.
-			generated := generateClassContent(actual)
+			generated := generateClassContent(actual, associations)
 			assert.Equal(t, testData.Contents, generated, testName)
 		})
 		if !pass {

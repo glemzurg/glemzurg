@@ -1,6 +1,10 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+)
 
 // useCaseInOut is a user story for the system.
 type useCaseInOut struct {
@@ -15,51 +19,62 @@ type useCaseInOut struct {
 	Scenarios []scenarioInOut              `json:"scenarios"`
 }
 
-// ToRequirements converts the useCaseInOut to requirements.UseCase.
-func (u useCaseInOut) ToRequirements() requirements.UseCase {
+// ToRequirements converts the useCaseInOut to model_use_case.UseCase.
+func (u useCaseInOut) ToRequirements() (model_use_case.UseCase, error) {
+	key, err := identity.ParseKey(u.Key)
+	if err != nil {
+		return model_use_case.UseCase{}, err
+	}
 
-	useCase := requirements.UseCase{
-		Key:        u.Key,
+	useCase := model_use_case.UseCase{
+		Key:        key,
 		Name:       u.Name,
 		Details:    u.Details,
 		Level:      u.Level,
 		ReadOnly:   u.ReadOnly,
 		UmlComment: u.UmlComment,
-		Actors:     nil,
-		Scenarios:  nil,
 	}
 
 	for k, v := range u.Actors {
 		if useCase.Actors == nil {
-			useCase.Actors = make(map[string]requirements.UseCaseActor)
+			useCase.Actors = make(map[identity.Key]model_use_case.Actor)
 		}
-		useCase.Actors[k] = v.ToRequirements()
+		actorKey, err := identity.ParseKey(k)
+		if err != nil {
+			return model_use_case.UseCase{}, err
+		}
+		useCase.Actors[actorKey] = v.ToRequirements()
 	}
 	for _, s := range u.Scenarios {
-		useCase.Scenarios = append(useCase.Scenarios, s.ToRequirements())
+		scenario, err := s.ToRequirements()
+		if err != nil {
+			return model_use_case.UseCase{}, err
+		}
+		if useCase.Scenarios == nil {
+			useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
+		}
+		useCase.Scenarios[scenario.Key] = scenario
 	}
-	return useCase
+	return useCase, nil
 }
 
-// FromRequirementsUseCase creates a useCaseInOut from requirements.UseCase.
-func FromRequirementsUseCase(u requirements.UseCase) useCaseInOut {
+// FromRequirementsUseCase creates a useCaseInOut from model_use_case.UseCase.
+func FromRequirementsUseCase(u model_use_case.UseCase) useCaseInOut {
 
 	useCase := useCaseInOut{
-		Key:        u.Key,
+		Key:        u.Key.String(),
 		Name:       u.Name,
 		Details:    u.Details,
 		Level:      u.Level,
 		ReadOnly:   u.ReadOnly,
 		UmlComment: u.UmlComment,
-		Actors:     nil,
-		Scenarios:  nil,
 	}
 
 	for k, v := range u.Actors {
 		if useCase.Actors == nil {
 			useCase.Actors = make(map[string]useCaseActorInOut)
 		}
-		useCase.Actors[k] = FromRequirementsUseCaseActor(v)
+		useCase.Actors[k.String()] = FromRequirementsUseCaseActor(v)
 	}
 	for _, s := range u.Scenarios {
 		useCase.Scenarios = append(useCase.Scenarios, FromRequirementsScenario(s))

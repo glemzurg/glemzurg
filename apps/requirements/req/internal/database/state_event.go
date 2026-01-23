@@ -1,19 +1,24 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanEvent(scanner Scanner, classKeyPtr *string, event *requirements.Event) (err error) {
+func scanEvent(scanner Scanner, classKeyPtr *identity.Key, event *model_state.Event) (err error) {
+	var classKeyStr string
+	var eventKeyStr string
 	var parametersAsList []string
 
 	if err = scanner.Scan(
-		classKeyPtr,
-		&event.Key,
+		&classKeyStr,
+		&eventKeyStr,
 		&event.Name,
 		&event.Details,
 		pq.Array(&parametersAsList),
@@ -24,9 +29,21 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *requirements.Event) 
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the event key string into an identity.Key.
+	event.Key, err = identity.ParseKey(eventKeyStr)
+	if err != nil {
+		return err
+	}
+
 	// Construct parameters.
 	for i := 0; i < len(parametersAsList); i += 2 {
-		event.Parameters = append(event.Parameters, requirements.EventParameter{
+		event.Parameters = append(event.Parameters, model_state.EventParameter{
 			Name:   parametersAsList[i],
 			Source: parametersAsList[i+1],
 		})
@@ -36,17 +53,7 @@ func scanEvent(scanner Scanner, classKeyPtr *string, event *requirements.Event) 
 }
 
 // LoadEvent loads a event from the database
-func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event requirements.Event, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.Event{}, err
-	}
-	eventKey, err = requirements.PreenKey(eventKey)
-	if err != nil {
-		return "", requirements.Event{}, err
-	}
+func LoadEvent(dbOrTx DbOrTx, modelKey string, eventKey identity.Key) (classKey identity.Key, event model_state.Event, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -70,87 +77,23 @@ func LoadEvent(dbOrTx DbOrTx, modelKey, eventKey string) (classKey string, event
 		AND
 			model_key = $1`,
 		modelKey,
-		eventKey)
+		eventKey.String())
 	if err != nil {
-		return "", requirements.Event{}, errors.WithStack(err)
+		return identity.Key{}, model_state.Event{}, errors.WithStack(err)
 	}
 
 	return classKey, event, nil
 }
 
 // AddEvent adds a event to the database.
-func AddEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Event) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	eventKey, err := requirements.PreenKey(event.Key)
-	if err != nil {
-		return err
-	}
-
-	// Flatten parameters.
-	var parametersAsList []string
-	for _, param := range event.Parameters {
-		parametersAsList = append(parametersAsList, param.Name)
-		parametersAsList = append(parametersAsList, param.Source)
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO event
-				(
-					model_key  ,
-					class_key  ,
-					event_key  ,
-					name       ,
-					details    ,
-					parameters
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		classKey,
-		eventKey,
-		event.Name,
-		event.Details,
-		pq.Array(parametersAsList))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
+	return AddEvents(dbOrTx, modelKey, map[identity.Key][]model_state.Event{
+		classKey: {event},
+	})
 }
 
 // UpdateEvent updates a event in the database.
-func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Event) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	eventKey, err := requirements.PreenKey(event.Key)
-	if err != nil {
-		return err
-	}
+func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
 
 	// Flatten parameters.
 	var parametersAsList []string
@@ -174,8 +117,8 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Ev
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		eventKey,
+		classKey.String(),
+		event.Key.String(),
 		event.Name,
 		event.Details,
 		pq.Array(parametersAsList))
@@ -187,21 +130,7 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey, classKey string, event requirements.Ev
 }
 
 // RemoveEvent deletes a event from the database.
-func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	eventKey, err = requirements.PreenKey(eventKey)
-	if err != nil {
-		return err
-	}
+func RemoveEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -214,8 +143,8 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error)
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		eventKey)
+		classKey.String(),
+		eventKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -224,25 +153,19 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey, classKey, eventKey string) (err error)
 }
 
 // QueryEvents loads all event from the database
-func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]requirements.Event, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[identity.Key][]model_state.Event, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
-			var event requirements.Event
+			var classKey identity.Key
+			var event model_state.Event
 			if err = scanEvent(scanner, &classKey, &event); err != nil {
 				return errors.WithStack(err)
 			}
 			if events == nil {
-				events = map[string][]requirements.Event{}
+				events = map[identity.Key][]model_state.Event{}
 			}
 			classEvents := events[classKey]
 			classEvents = append(classEvents, event)
@@ -266,4 +189,47 @@ func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[string][]requiremen
 	}
 
 	return events, nil
+}
+
+// AddEvents adds multiple events to the database in a single insert.
+func AddEvents(dbOrTx DbOrTx, modelKey string, events map[identity.Key][]model_state.Event) (err error) {
+	// Count total events.
+	count := 0
+	for _, evts := range events {
+		count += len(evts)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO event (model_key, class_key, event_key, name, details, parameters) VALUES `
+	args := make([]interface{}, 0, count*6)
+	i := 0
+	for classKey, eventList := range events {
+		for _, event := range eventList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 6
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+
+			// Flatten parameters.
+			var parametersAsList []string
+			for _, param := range event.Parameters {
+				parametersAsList = append(parametersAsList, param.Name)
+				parametersAsList = append(parametersAsList, param.Source)
+			}
+
+			args = append(args, modelKey, classKey.String(), event.Key.String(), event.Name, event.Details, pq.Array(parametersAsList))
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

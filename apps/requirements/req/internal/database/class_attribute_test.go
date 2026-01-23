@@ -2,10 +2,13 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -20,11 +23,13 @@ func TestAttributeSuite(t *testing.T) {
 
 type AttributeSuite struct {
 	suite.Suite
-	db        *sql.DB
-	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	class     requirements.Class
+	db            *sql.DB
+	model         req_model.Model
+	domain        model_domain.Domain
+	subdomain     model_domain.Subdomain
+	class         model_class.Class
+	attributeKey  identity.Key
+	attributeKeyB identity.Key
 }
 
 func (suite *AttributeSuite) SetupTest() {
@@ -34,15 +39,19 @@ func (suite *AttributeSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key)
-	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "class_key")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.class = t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewClassKey(suite.subdomain.Key, "class_key")))
+
+	// Create the attribute keys for reuse.
+	suite.attributeKey = helper.Must(identity.NewAttributeKey(suite.class.Key, "key"))
+	suite.attributeKeyB = helper.Must(identity.NewAttributeKey(suite.class.Key, "key_b"))
 }
 
 func (suite *AttributeSuite) TestLoad() {
 
 	// Nothing in database yet.
-	classKey, attribute, err := LoadAttribute(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), attribute)
@@ -63,8 +72,8 @@ func (suite *AttributeSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'class_key',
-				'key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/key',
 				'Name',
 				'Details',
 				'DataTypeRules',
@@ -75,11 +84,11 @@ func (suite *AttributeSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	classKey, attribute, err = LoadAttribute(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	classKey, attribute, err = LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Attribute{
-		Key:              "key", // Test case-insensitive.
+	assert.Equal(suite.T(), suite.class.Key, classKey)
+	assert.Equal(suite.T(), model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
@@ -91,8 +100,8 @@ func (suite *AttributeSuite) TestLoad() {
 
 func (suite *AttributeSuite) TestAdd() {
 
-	err := AddAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Attribute{
-		Key:              "KeY", // Test case-insensitive.
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
@@ -102,11 +111,11 @@ func (suite *AttributeSuite) TestAdd() {
 	})
 	assert.Nil(suite.T(), err)
 
-	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, "key")
+	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Attribute{
-		Key:              "key",
+	assert.Equal(suite.T(), suite.class.Key, classKey)
+	assert.Equal(suite.T(), model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
@@ -118,8 +127,8 @@ func (suite *AttributeSuite) TestAdd() {
 
 func (suite *AttributeSuite) TestUpdate() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
-		Key:              "key",
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
@@ -129,8 +138,8 @@ func (suite *AttributeSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), requirements.Attribute{
-		Key:              "KeY", // Test case-insensitive.
+	err = UpdateAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "NameX",
 		Details:          "DetailsX",
 		DataTypeRules:    "DataTypeRulesX",
@@ -140,11 +149,11 @@ func (suite *AttributeSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, "key")
+	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "class_key", classKey)
-	assert.Equal(suite.T(), requirements.Attribute{
-		Key:              "key",
+	assert.Equal(suite.T(), suite.class.Key, classKey)
+	assert.Equal(suite.T(), model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "NameX",
 		Details:          "DetailsX",
 		DataTypeRules:    "DataTypeRulesX",
@@ -156,8 +165,8 @@ func (suite *AttributeSuite) TestUpdate() {
 
 func (suite *AttributeSuite) TestRemove() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
-		Key:              "key",
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
@@ -167,10 +176,10 @@ func (suite *AttributeSuite) TestRemove() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveAttribute(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.class.Key), strings.ToUpper("key")) // Test case-insensitive.
+	err = RemoveAttribute(suite.db, suite.model.Key, suite.class.Key, suite.attributeKey)
 	assert.Nil(suite.T(), err)
 
-	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, "key")
+	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), attribute)
@@ -178,34 +187,36 @@ func (suite *AttributeSuite) TestRemove() {
 
 func (suite *AttributeSuite) TestQuery() {
 
-	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
-		Key:              "keyx",
-		Name:             "NameX",
-		Details:          "DetailsX",
-		DataTypeRules:    "DataTypeRulesX",
-		DerivationPolicy: "DerivationPolicyX",
-		Nullable:         true,
-		UmlComment:       "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddAttribute(suite.db, suite.model.Key, suite.class.Key, requirements.Attribute{
-		Key:              "key",
-		Name:             "Name",
-		Details:          "Details",
-		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
-		Nullable:         true,
-		UmlComment:       "UmlComment",
-	})
-	assert.Nil(suite.T(), err)
-
-	attributes, err := QueryAttributes(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Attribute{
-		"class_key": []requirements.Attribute{
+	err := AddAttributes(suite.db, suite.model.Key, map[identity.Key][]model_class.Attribute{
+		suite.class.Key: {
 			{
-				Key:              "key",
+				Key:              suite.attributeKeyB,
+				Name:             "NameX",
+				Details:          "DetailsX",
+				DataTypeRules:    "DataTypeRulesX",
+				DerivationPolicy: "DerivationPolicyX",
+				Nullable:         true,
+				UmlComment:       "UmlCommentX",
+			},
+			{
+				Key:              suite.attributeKey,
+				Name:             "Name",
+				Details:          "Details",
+				DataTypeRules:    "DataTypeRules",
+				DerivationPolicy: "DerivationPolicy",
+				Nullable:         true,
+				UmlComment:       "UmlComment",
+			},
+		},
+	})
+	assert.Nil(suite.T(), err)
+
+	attributes, err := QueryAttributes(suite.db, suite.model.Key)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), map[identity.Key][]model_class.Attribute{
+		suite.class.Key: {
+			{
+				Key:              suite.attributeKey,
 				Name:             "Name",
 				Details:          "Details",
 				DataTypeRules:    "DataTypeRules",
@@ -214,7 +225,7 @@ func (suite *AttributeSuite) TestQuery() {
 				UmlComment:       "UmlComment",
 			},
 			{
-				Key:              "keyx",
+				Key:              suite.attributeKeyB,
 				Name:             "NameX",
 				Details:          "DetailsX",
 				DataTypeRules:    "DataTypeRulesX",
@@ -230,11 +241,11 @@ func (suite *AttributeSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey, classKey, attributeKey string) (attribute requirements.Attribute) {
+func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (attribute model_class.Attribute) {
 
-	err := AddAttribute(dbOrTx, modelKey, classKey, requirements.Attribute{
+	err := AddAttribute(dbOrTx, modelKey, classKey, model_class.Attribute{
 		Key:              attributeKey,
-		Name:             attributeKey,
+		Name:             attributeKey.String(),
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
 		DerivationPolicy: "DerivationPolicy",

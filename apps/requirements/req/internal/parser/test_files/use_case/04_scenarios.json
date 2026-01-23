@@ -1,5 +1,5 @@
 {
-    "Key": "use_case_key",
+    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key",
     "Name": "A Basic Use Case?",
     "Details": "# A Basic Use Case?\n\nHere we have markdown details.\n\nAnd even more.",
     "Level": "sky",
@@ -7,55 +7,55 @@
     "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
 
     "Actors": {
-        "actor_key": {
+        "domain/test_domain/subdomain/test_subdomain/class/actor_key": {
             "UmlComment": "Actor stuff"
         },
-        "actor_b_key": {
+        "domain/test_domain/subdomain/test_subdomain/class/actor_b_key": {
             "UmlComment": "Actor B stuff"
         }
     },
 
-    "Scenarios": [
-        {
-            "Key": "use_case_key/scenario/scenario_a_key",
+    "Scenarios": {
+        "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key": {
+            "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key",
             "Name": "Scenario A",
             "Details": "Scenario A stuff.",
-            "Objects": [
-                {
-                    "Key": "use_case_key/scenario/scenario_a_key/object/bob",
+            "Objects": {
+                "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob": {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
                     "ObjectNumber": 1,
                     "Name": "Bob",
                     "NameStyle": "name",
-                    "ClassKey": "person_key",
+                    "ClassKey": "domain/test_domain/subdomain/test_subdomain/class/person_key",
                     "Multi": false,
                     "UmlComment": ""
                 },
-                {
-                    "Key": "use_case_key/scenario/scenario_a_key/object/book",
+                "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book": {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                     "ObjectNumber": 2,
                     "Name": "1",
                     "NameStyle": "id",
-                    "ClassKey": "book_key",
+                    "ClassKey": "domain/test_domain/subdomain/test_subdomain/class/book_key",
                     "Multi": true,
                     "UmlComment": "the book of greatness"
                 }
-            ],
+            },
             "Steps": {
                 "statements": [
                     {
                         "description": "first step",
-                        "from_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
-                        "to_object_key": "use_case_key/scenario/scenario_a_key/object/book",
-                        "event_key": "class_key/event/processlog"
+                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
+                        "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
+                        "event_key": "domain/test_domain/subdomain/test_subdomain/class/class_key/event/processlog"
                     },
                     {
                         "loop": "while condition",
                         "statements": [
                             {
                                 "description": "loop step",
-                                "from_object_key": "use_case_key/scenario/scenario_a_key/object/book",
-                                "to_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
-                                "scenario_key": "use_case_key/scenario/scenario_b_key"
+                                "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
+                                "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
+                                "scenario_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key"
                             }
                         ]
                     },
@@ -66,17 +66,17 @@
                                 "statements": [
                                     {
                                         "description": "case1 step",
-                                        "from_object_key": "use_case_key/scenario/scenario_a_key/object/bob",
-                                        "to_object_key": "use_case_key/scenario/scenario_a_key/object/book",
-                                        "event_key": "class_key/event/processlog"
+                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
+                                        "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
+                                        "event_key": "domain/test_domain/subdomain/test_subdomain/class/class_key/event/processlog"
                                     }
                                 ]
                             },
                             {
                                 "condition": "case2",
-                                "statements": [ 
+                                "statements": [
                                     {
-                                        "from_object_key": "use_case_key/scenario/scenario_a_key/object/book",
+                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                                         "is_delete": true
                                     }
                                 ]
@@ -86,30 +86,30 @@
                 ]
             }
         },
-        {
-            "Key": "use_case_key/scenario/scenario_b_key",
+        "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key": {
+            "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key",
             "Name": "Scenario B",
             "Details": "Scenario B stuff.",
-            "Objects": [
-                {
-                    "Key": "use_case_key/scenario/scenario_b_key/object/bob",
+            "Objects": {
+                "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key/sobject/bob": {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key/sobject/bob",
                     "ObjectNumber": 1,
                     "Name": "Bob",
                     "NameStyle": "name",
-                    "ClassKey": "person_key",
+                    "ClassKey": "domain/test_domain/subdomain/test_subdomain/class/person_key",
                     "Multi": false,
                     "UmlComment": ""
                 },
-                {
-                    "Key": "use_case_key/scenario/scenario_b_key/object/book",
+                "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key/sobject/book": {
+                    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key/sobject/book",
                     "ObjectNumber": 2,
                     "Name": "",
                     "NameStyle": "unnamed",
-                    "ClassKey": "book_key",
+                    "ClassKey": "domain/test_domain/subdomain/test_subdomain/class/book_key",
                     "Multi": false,
                     "UmlComment": ""
                 }
-            ]
+            }
         }
-    ]
+    }
 }

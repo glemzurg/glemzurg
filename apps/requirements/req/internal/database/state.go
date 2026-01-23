@@ -1,16 +1,22 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanState(scanner Scanner, classKeyPtr *string, state *requirements.State) (err error) {
+func scanState(scanner Scanner, classKeyPtr *identity.Key, state *model_state.State) (err error) {
+	var classKeyStr string
+	var stateKeyStr string
+
 	if err = scanner.Scan(
-		classKeyPtr,
-		&state.Key,
+		&classKeyStr,
+		&stateKeyStr,
 		&state.Name,
 		&state.Details,
 		&state.UmlComment,
@@ -21,21 +27,23 @@ func scanState(scanner Scanner, classKeyPtr *string, state *requirements.State) 
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the state key string into an identity.Key.
+	state.Key, err = identity.ParseKey(stateKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadState loads a state from the database
-func LoadState(dbOrTx DbOrTx, modelKey, stateKey string) (classKey string, state requirements.State, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.State{}, err
-	}
-	stateKey, err = requirements.PreenKey(stateKey)
-	if err != nil {
-		return "", requirements.State{}, err
-	}
+func LoadState(dbOrTx DbOrTx, modelKey string, stateKey identity.Key) (classKey identity.Key, state model_state.State, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -59,80 +67,23 @@ func LoadState(dbOrTx DbOrTx, modelKey, stateKey string) (classKey string, state
 		AND
 			model_key = $1`,
 		modelKey,
-		stateKey)
+		stateKey.String())
 	if err != nil {
-		return "", requirements.State{}, errors.WithStack(err)
+		return identity.Key{}, model_state.State{}, errors.WithStack(err)
 	}
 
 	return classKey, state, nil
 }
 
 // AddState adds a state to the database.
-func AddState(dbOrTx DbOrTx, modelKey, classKey string, state requirements.State) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	stateKey, err := requirements.PreenKey(state.Key)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO state
-				(
-					model_key   ,
-					class_key   ,
-					state_key   ,
-					name        ,
-					details     ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		classKey,
-		stateKey,
-		state.Name,
-		state.Details,
-		state.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
+	return AddStates(dbOrTx, modelKey, map[identity.Key][]model_state.State{
+		classKey: {state},
+	})
 }
 
 // UpdateState updates a state in the database.
-func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state requirements.State) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	stateKey, err := requirements.PreenKey(state.Key)
-	if err != nil {
-		return err
-	}
+func UpdateState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -149,8 +100,8 @@ func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state requirements.St
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		stateKey,
+		classKey.String(),
+		state.Key.String(),
 		state.Name,
 		state.Details,
 		state.UmlComment)
@@ -162,21 +113,7 @@ func UpdateState(dbOrTx DbOrTx, modelKey, classKey string, state requirements.St
 }
 
 // RemoveState deletes a state from the database.
-func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	stateKey, err = requirements.PreenKey(stateKey)
-	if err != nil {
-		return err
-	}
+func RemoveState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -189,8 +126,8 @@ func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error)
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		stateKey)
+		classKey.String(),
+		stateKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -199,25 +136,19 @@ func RemoveState(dbOrTx DbOrTx, modelKey, classKey, stateKey string) (err error)
 }
 
 // QueryStates loads all state from the database
-func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[string][]requirements.State, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[identity.Key][]model_state.State, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
-			var state requirements.State
+			var classKey identity.Key
+			var state model_state.State
 			if err = scanState(scanner, &classKey, &state); err != nil {
 				return errors.WithStack(err)
 			}
 			if states == nil {
-				states = map[string][]requirements.State{}
+				states = map[identity.Key][]model_state.State{}
 			}
 			classStates := states[classKey]
 			classStates = append(classStates, state)
@@ -241,4 +172,39 @@ func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[string][]requiremen
 	}
 
 	return states, nil
+}
+
+// AddStates adds multiple states to the database in a single insert.
+func AddStates(dbOrTx DbOrTx, modelKey string, states map[identity.Key][]model_state.State) (err error) {
+	// Count total states.
+	count := 0
+	for _, sts := range states {
+		count += len(sts)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO state (model_key, class_key, state_key, name, details, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*6)
+	i := 0
+	for classKey, stateList := range states {
+		for _, state := range stateList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 6
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+			args = append(args, modelKey, classKey.String(), state.Key.String(), state.Name, state.Details, state.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

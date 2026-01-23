@@ -1,15 +1,20 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanGeneralization(scanner Scanner, generalization *requirements.Generalization) (err error) {
+func scanGeneralization(scanner Scanner, generalization *model_class.Generalization) (err error) {
+	var keyStr string
+
 	if err = scanner.Scan(
-		&generalization.Key,
+		&keyStr,
 		&generalization.Name,
 		&generalization.Details,
 		&generalization.IsComplete,
@@ -22,21 +27,17 @@ func scanGeneralization(scanner Scanner, generalization *requirements.Generaliza
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the key string into an identity.Key.
+	generalization.Key, err = identity.ParseKey(keyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadGeneralization loads a generalization from the database
-func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (generalization requirements.Generalization, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return requirements.Generalization{}, err
-	}
-	generalizationKey, err = requirements.PreenKey(generalizationKey)
-	if err != nil {
-		return requirements.Generalization{}, err
-	}
+func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_class.Generalization, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -61,75 +62,21 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (gene
 		AND
 			model_key = $1`,
 		modelKey,
-		generalizationKey)
+		generalizationKey.String())
 	if err != nil {
-		return requirements.Generalization{}, errors.WithStack(err)
+		return model_class.Generalization{}, errors.WithStack(err)
 	}
 
 	return generalization, nil
 }
 
 // AddGeneralization adds a generalization to the database.
-func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization requirements.Generalization) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	generalizationKey, err := requirements.PreenKey(generalization.Key)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO generalization
-				(
-					model_key          ,
-					generalization_key ,
-					name               ,
-					details            ,
-					is_complete        ,
-					is_static          ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7
-				)`,
-		modelKey,
-		generalizationKey,
-		generalization.Name,
-		generalization.Details,
-		generalization.IsComplete,
-		generalization.IsStatic,
-		generalization.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
+	return AddGeneralizations(dbOrTx, modelKey, []model_class.Generalization{generalization})
 }
 
 // UpdateGeneralization updates a generalization in the database.
-func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization requirements.Generalization) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	generalizationKey, err := requirements.PreenKey(generalization.Key)
-	if err != nil {
-		return err
-	}
+func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -146,7 +93,7 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization require
 		AND
 			generalization_key = $2`,
 		modelKey,
-		generalizationKey,
+		generalization.Key.String(),
 		generalization.Name,
 		generalization.Details,
 		generalization.IsComplete,
@@ -160,17 +107,7 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization require
 }
 
 // RemoveGeneralization deletes a generalization from the database.
-func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	generalizationKey, err = requirements.PreenKey(generalizationKey)
-	if err != nil {
-		return err
-	}
+func RemoveGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -181,7 +118,7 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (er
 			AND
 				generalization_key = $2`,
 		modelKey,
-		generalizationKey)
+		generalizationKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -190,19 +127,13 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey, generalizationKey string) (er
 }
 
 // QueryGeneralizations loads all generalizations from the database
-func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []requirements.Generalization, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []model_class.Generalization, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var generalization requirements.Generalization
+			var generalization model_class.Generalization
 			if err = scanGeneralization(scanner, &generalization); err != nil {
 				return errors.WithStack(err)
 			}
@@ -227,4 +158,30 @@ func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []req
 	}
 
 	return generalizations, nil
+}
+
+// AddGeneralizations adds multiple generalizations to the database in a single insert.
+func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []model_class.Generalization) (err error) {
+	if len(generalizations) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(generalizations)*7)
+	for i, gen := range generalizations {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 7
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

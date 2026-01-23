@@ -10,6 +10,11 @@
 		"ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {}
 	},
 
+	"runArgs": [
+		"--name=glemzurg-dev-container",  // Unique name for to avoid collision with other devcontainers.
+		"--label=glemzurg"  // Unique label for shelling into see: scripts/terminal.sh
+	], 
+
 	// The input and output files from the tools are on the host machine.
 	// The host environment variable GLEMZURG_DATA_PATH should point to the
 	// folder on the host machine that the tools can read from and write to.

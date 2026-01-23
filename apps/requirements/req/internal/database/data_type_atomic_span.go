@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAtomicSpan(scanner Scanner, dataTypeKeyPtr *string, atomicSpan *data_type.AtomicSpan) (err error) {
+func scanAtomicSpan(scanner Scanner, dataTypeKeyPtr *string, atomicSpan *model_data_type.AtomicSpan) (err error) {
 	if err = scanner.Scan(
 		dataTypeKeyPtr,
 		&atomicSpan.LowerType,
@@ -33,16 +33,16 @@ func scanAtomicSpan(scanner Scanner, dataTypeKeyPtr *string, atomicSpan *data_ty
 }
 
 // LoadAtomicSpan loads an atomic span from the database
-func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomicSpan data_type.AtomicSpan, err error) {
+func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomicSpan model_data_type.AtomicSpan, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return "", data_type.AtomicSpan{}, err
+		return "", model_data_type.AtomicSpan{}, err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
-		return "", data_type.AtomicSpan{}, err
+		return "", model_data_type.AtomicSpan{}, err
 	}
 
 	// Query the database.
@@ -73,21 +73,21 @@ func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataType
 		modelKey,
 		dataTypeKey)
 	if err != nil {
-		return "", data_type.AtomicSpan{}, errors.WithStack(err)
+		return "", model_data_type.AtomicSpan{}, errors.WithStack(err)
 	}
 
 	return parentDataTypePtr, atomicSpan, nil
 }
 
 // AddAtomicSpan adds an atomic span to the database
-func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan data_type.AtomicSpan) (err error) {
+func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan model_data_type.AtomicSpan) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -135,14 +135,14 @@ func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan data_
 }
 
 // UpdateAtomicSpan updates an atomic span in the database
-func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan data_type.AtomicSpan) (err error) {
+func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan model_data_type.AtomicSpan) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -180,11 +180,11 @@ func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan da
 func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -203,10 +203,10 @@ func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 }
 
 // QueryAtomicSpans loads all atomic spans for a model from the database
-func QueryAtomicSpans(dbOrTx DbOrTx, modelKey string) (atomicSpans map[string]data_type.AtomicSpan, err error) {
+func QueryAtomicSpans(dbOrTx DbOrTx, modelKey string) (atomicSpans map[string]model_data_type.AtomicSpan, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -216,12 +216,12 @@ func QueryAtomicSpans(dbOrTx DbOrTx, modelKey string) (atomicSpans map[string]da
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var parentDataTypeKey string
-			var atomicSpan data_type.AtomicSpan
+			var atomicSpan model_data_type.AtomicSpan
 			if err = scanAtomicSpan(scanner, &parentDataTypeKey, &atomicSpan); err != nil {
 				return errors.WithStack(err)
 			}
 			if atomicSpans == nil {
-				atomicSpans = map[string]data_type.AtomicSpan{}
+				atomicSpans = map[string]model_data_type.AtomicSpan{}
 			}
 			atomicSpans[parentDataTypeKey] = atomicSpan
 			return nil
@@ -249,13 +249,13 @@ func QueryAtomicSpans(dbOrTx DbOrTx, modelKey string) (atomicSpans map[string]da
 }
 
 // BulkInsertAtomicSpans inserts multiple atomic spans in a single SQL statement.
-func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[string]data_type.AtomicSpan) (err error) {
+func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[string]model_data_type.AtomicSpan) (err error) {
 	if len(atomicSpans) == 0 {
 		return nil
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[strin
 	valueStrings := make([]string, 0, len(atomicSpans))
 	i := 0
 	for dataTypeKey, span := range atomicSpans {
-		dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+		dataTypeKey, err = identity.PreenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}

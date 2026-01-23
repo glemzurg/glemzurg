@@ -1,6 +1,6 @@
 package parser_json
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 // atomicInOut represents the atomic data type (as opposed to a collection).
 type atomicInOut struct {
@@ -12,9 +12,9 @@ type atomicInOut struct {
 	ObjectClassKey *string           `json:"object_class_key"`
 }
 
-// ToRequirements converts the atomicInOut to data_type.Atomic.
-func (a atomicInOut) ToRequirements() data_type.Atomic {
-	atomic := data_type.Atomic{
+// ToRequirements converts the atomicInOut to model_data_type.Atomic.
+func (a atomicInOut) ToRequirements() model_data_type.Atomic {
+	atomic := model_data_type.Atomic{
 		ConstraintType: a.ConstraintType,
 		Span:           nil,
 		Reference:      a.Reference,
@@ -32,8 +32,8 @@ func (a atomicInOut) ToRequirements() data_type.Atomic {
 	return atomic
 }
 
-// FromRequirements creates a atomicInOut from data_type.Atomic.
-func FromRequirementsAtomic(a data_type.Atomic) atomicInOut {
+// FromRequirements creates a atomicInOut from model_data_type.Atomic.
+func FromRequirementsAtomic(a model_data_type.Atomic) atomicInOut {
 	atomic := atomicInOut{
 		ConstraintType: a.ConstraintType,
 		Span:           nil,

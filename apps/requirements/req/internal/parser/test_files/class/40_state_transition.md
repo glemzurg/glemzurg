@@ -58,5 +58,5 @@ actions:
 
 transitions:
 
-    - {from: "Started", event: "LogIn", to: "Stopped", guard: "FirstLogin", action: "ProcessLog", uml_comment: "work here."}
     - {from: "Started", event: "LogIn", to: "Stopped"}
+    - {from: "Started", event: "LogIn", to: "Stopped", guard: "FirstLogin", action: "ProcessLog", uml_comment: "work here."}

@@ -1,17 +1,24 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanDomainAssociation(scanner Scanner, association *requirements.DomainAssociation) (err error) {
+func scanDomainAssociation(scanner Scanner, association *model_domain.Association) (err error) {
+	var keyStr string
+	var problemDomainKeyStr string
+	var solutionDomainKeyStr string
+
 	if err = scanner.Scan(
-		&association.Key,
-		&association.ProblemDomainKey,
-		&association.SolutionDomainKey,
+		&keyStr,
+		&problemDomainKeyStr,
+		&solutionDomainKeyStr,
 		&association.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -20,21 +27,25 @@ func scanDomainAssociation(scanner Scanner, association *requirements.DomainAsso
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the key strings into identity.Key.
+	association.Key, err = identity.ParseKey(keyStr)
+	if err != nil {
+		return err
+	}
+	association.ProblemDomainKey, err = identity.ParseKey(problemDomainKeyStr)
+	if err != nil {
+		return err
+	}
+	association.SolutionDomainKey, err = identity.ParseKey(solutionDomainKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadDomainAssociation loads a association from the database
-func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (association requirements.DomainAssociation, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return requirements.DomainAssociation{}, err
-	}
-	associationKey, err = requirements.PreenKey(associationKey)
-	if err != nil {
-		return requirements.DomainAssociation{}, err
-	}
+func LoadDomainAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (association model_domain.Association, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -58,85 +69,21 @@ func LoadDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (asso
 			model_key = $1
 		ORDER BY association_key`,
 		modelKey,
-		associationKey)
+		associationKey.String())
 	if err != nil {
-		return requirements.DomainAssociation{}, errors.WithStack(err)
+		return model_domain.Association{}, errors.WithStack(err)
 	}
 
 	return association, nil
 }
 
 // AddDomainAssociation adds a association to the database.
-func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association requirements.DomainAssociation) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	associationKey, err := requirements.PreenKey(association.Key)
-	if err != nil {
-		return err
-	}
-	problemDomainKey, err := requirements.PreenKey(association.ProblemDomainKey)
-	if err != nil {
-		return err
-	}
-	solutionDomainKey, err := requirements.PreenKey(association.SolutionDomainKey)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO domain_association
-				(
-					model_key,
-					association_key,
-					problem_domain_key,
-					solution_domain_key,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5
-				)`,
-		modelKey,
-		associationKey,
-		problemDomainKey,
-		solutionDomainKey,
-		association.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.Association) (err error) {
+	return AddDomainAssociations(dbOrTx, modelKey, []model_domain.Association{association})
 }
 
 // UpdateDomainAssociation updates a association in the database.
-func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association requirements.DomainAssociation) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	associationKey, err := requirements.PreenKey(association.Key)
-	if err != nil {
-		return err
-	}
-	problemDomainKey, err := requirements.PreenKey(association.ProblemDomainKey)
-	if err != nil {
-		return err
-	}
-	solutionDomainKey, err := requirements.PreenKey(association.SolutionDomainKey)
-	if err != nil {
-		return err
-	}
+func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.Association) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -151,9 +98,9 @@ func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association require
 		AND
 			model_key = $1`,
 		modelKey,
-		associationKey,
-		problemDomainKey,
-		solutionDomainKey,
+		association.Key.String(),
+		association.ProblemDomainKey.String(),
+		association.SolutionDomainKey.String(),
 		association.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
@@ -163,17 +110,7 @@ func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association require
 }
 
 // RemoveDomainAssociation deletes a association from the database.
-func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	associationKey, err = requirements.PreenKey(associationKey)
-	if err != nil {
-		return err
-	}
+func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -184,7 +121,7 @@ func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (er
 		AND
 			model_key = $1`,
 		modelKey,
-		associationKey)
+		associationKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -193,19 +130,13 @@ func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey, associationKey string) (er
 }
 
 // QueryDomainAssociations loads all association from the database
-func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []requirements.DomainAssociation, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_domain.Association, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var association requirements.DomainAssociation
+			var association model_domain.Association
 			if err = scanDomainAssociation(scanner, &association); err != nil {
 				return errors.WithStack(err)
 			}
@@ -228,4 +159,30 @@ func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []req
 	}
 
 	return associations, nil
+}
+
+// AddDomainAssociations adds multiple domain associations to the database in a single insert.
+func AddDomainAssociations(dbOrTx DbOrTx, modelKey string, associations []model_domain.Association) (err error) {
+	if len(associations) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO domain_association (model_key, association_key, problem_domain_key, solution_domain_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(associations)*5)
+	for i, assoc := range associations {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 5
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+		args = append(args, modelKey, assoc.Key.String(), assoc.ProblemDomainKey.String(), assoc.SolutionDomainKey.String(), assoc.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

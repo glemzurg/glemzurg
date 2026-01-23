@@ -1,16 +1,22 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanSubdomain(scanner Scanner, domainKeyPtr *string, subdomain *requirements.Subdomain) (err error) {
+func scanSubdomain(scanner Scanner, domainKeyPtr *identity.Key, subdomain *model_domain.Subdomain) (err error) {
+	var domainKeyStr string
+	var subdomainKeyStr string
+
 	if err = scanner.Scan(
-		domainKeyPtr,
-		&subdomain.Key,
+		&domainKeyStr,
+		&subdomainKeyStr,
 		&subdomain.Name,
 		&subdomain.Details,
 		&subdomain.UmlComment,
@@ -21,21 +27,23 @@ func scanSubdomain(scanner Scanner, domainKeyPtr *string, subdomain *requirement
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the domain key string into an identity.Key.
+	*domainKeyPtr, err = identity.ParseKey(domainKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the subdomain key string into an identity.Key.
+	subdomain.Key, err = identity.ParseKey(subdomainKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadSubdomain loads a subdomain from the database
-func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey string, subdomain requirements.Subdomain, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.Subdomain{}, err
-	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
-	if err != nil {
-		return "", requirements.Subdomain{}, err
-	}
+func LoadSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (domainKey identity.Key, subdomain model_domain.Subdomain, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -59,76 +67,23 @@ func LoadSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (domainKey stri
 		AND
 			model_key = $1`,
 		modelKey,
-		subdomainKey)
+		subdomainKey.String())
 	if err != nil {
-		return "", requirements.Subdomain{}, errors.WithStack(err)
+		return identity.Key{}, model_domain.Subdomain{}, errors.WithStack(err)
 	}
 
 	return domainKey, subdomain, nil
 }
 
 // AddSubdomain adds a subdomain to the database.
-func AddSubdomain(dbOrTx DbOrTx, modelKey, domainKey string, subdomain requirements.Subdomain) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	domainKey, err = requirements.PreenKey(domainKey)
-	if err != nil {
-		return err
-	}
-	subdomainKey, err := requirements.PreenKey(subdomain.Key)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO subdomain
-				(
-					model_key     ,
-					domain_key    ,
-					subdomain_key ,
-					name          ,
-					details       ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6
-				)`,
-		modelKey,
-		domainKey,
-		subdomainKey,
-		subdomain.Name,
-		subdomain.Details,
-		subdomain.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddSubdomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdomain model_domain.Subdomain) (err error) {
+	return AddSubdomains(dbOrTx, modelKey, map[identity.Key][]model_domain.Subdomain{
+		domainKey: {subdomain},
+	})
 }
 
 // UpdateSubdomain updates a subdomain in the database.
-func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain requirements.Subdomain) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	subdomainKey, err := requirements.PreenKey(subdomain.Key)
-	if err != nil {
-		return err
-	}
+func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subdomain) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -143,7 +98,7 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain requirements.Subd
 		AND
 			subdomain_key = $2`,
 		modelKey,
-		subdomainKey,
+		subdomain.Key.String(),
 		subdomain.Name,
 		subdomain.Details,
 		subdomain.UmlComment)
@@ -155,17 +110,7 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain requirements.Subd
 }
 
 // RemoveSubdomain deletes a subdomain from the database.
-func RemoveSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
-	if err != nil {
-		return err
-	}
+func RemoveSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -176,7 +121,7 @@ func RemoveSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (err error) {
 			AND
 				subdomain_key = $2`,
 		modelKey,
-		subdomainKey)
+		subdomainKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -185,25 +130,19 @@ func RemoveSubdomain(dbOrTx DbOrTx, modelKey, subdomainKey string) (err error) {
 }
 
 // QuerySubdomains loads all subdomains from the database
-func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[string][]requirements.Subdomain, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[identity.Key][]model_domain.Subdomain, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var domainKey string
-			var subdomain requirements.Subdomain
+			var domainKey identity.Key
+			var subdomain model_domain.Subdomain
 			if err = scanSubdomain(scanner, &domainKey, &subdomain); err != nil {
 				return errors.WithStack(err)
 			}
 			if subdomains == nil {
-				subdomains = map[string][]requirements.Subdomain{}
+				subdomains = map[identity.Key][]model_domain.Subdomain{}
 			}
 			domainSubdomains := subdomains[domainKey]
 			domainSubdomains = append(domainSubdomains, subdomain)
@@ -227,4 +166,39 @@ func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[string][]re
 	}
 
 	return subdomains, nil
+}
+
+// AddSubdomains adds multiple subdomains to the database in a single insert.
+func AddSubdomains(dbOrTx DbOrTx, modelKey string, subdomains map[identity.Key][]model_domain.Subdomain) (err error) {
+	// Count total subdomains.
+	count := 0
+	for _, subs := range subdomains {
+		count += len(subs)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*6)
+	i := 0
+	for domainKey, subs := range subdomains {
+		for _, subdomain := range subs {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 6
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+			args = append(args, modelKey, domainKey.String(), subdomain.Key.String(), subdomain.Name, subdomain.Details, subdomain.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

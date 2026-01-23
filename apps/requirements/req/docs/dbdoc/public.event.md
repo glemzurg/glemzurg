@@ -13,7 +13,7 @@ Some occurence that can potentially trigger a change in and instance.
 | event_key | text |  | false | [public.transition](public.transition.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the event in the class. |
 | details | text |  | true |  |  | A summary description. |
-| parameters | text[] |  | true |  |  | The parameters for the action, alternating parameter name, with how its satified. |
+| parameters | text[] |  | true |  |  | The parameters for the query, alternating parameter name, with how its satified. |
 
 ## Constraints
 

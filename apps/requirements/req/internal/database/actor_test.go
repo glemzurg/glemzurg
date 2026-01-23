@@ -2,10 +2,12 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -20,8 +22,10 @@ func TestActorSuite(t *testing.T) {
 
 type ActorSuite struct {
 	suite.Suite
-	db    *sql.DB
-	model requirements.Model
+	db        *sql.DB
+	model     req_model.Model
+	actorKey  identity.Key
+	actorKeyB identity.Key
 }
 
 func (suite *ActorSuite) SetupTest() {
@@ -31,12 +35,16 @@ func (suite *ActorSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
+
+	// Create the actor keys for reuse.
+	suite.actorKey = helper.Must(identity.NewActorKey("key"))
+	suite.actorKeyB = helper.Must(identity.NewActorKey("key_b"))
 }
 
 func (suite *ActorSuite) TestLoad() {
 
 	// Nothing in database yet.
-	actor, err := LoadActor(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), actor)
 
@@ -53,7 +61,7 @@ func (suite *ActorSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'key',
+				'actor/key',
 				'Name',
 				'Details',
 				'person',
@@ -62,10 +70,10 @@ func (suite *ActorSuite) TestLoad() {
 	`)
 	assert.Nil(suite.T(), err)
 
-	actor, err = LoadActor(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	actor, err = LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Actor{
-		Key:        "key", // Test case-insensitive.
+	assert.Equal(suite.T(), model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "Name",
 		Details:    "Details",
 		Type:       "person",
@@ -75,8 +83,8 @@ func (suite *ActorSuite) TestLoad() {
 
 func (suite *ActorSuite) TestAdd() {
 
-	err := AddActor(suite.db, strings.ToUpper(suite.model.Key), requirements.Actor{
-		Key:        "KeY", // Test case-insensitive.
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "Name",
 		Details:    "Details",
 		Type:       "person",
@@ -84,10 +92,10 @@ func (suite *ActorSuite) TestAdd() {
 	})
 	assert.Nil(suite.T(), err)
 
-	actor, err := LoadActor(suite.db, suite.model.Key, "key")
+	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Actor{
-		Key:        "key",
+	assert.Equal(suite.T(), model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "Name",
 		Details:    "Details",
 		Type:       "person",
@@ -97,8 +105,8 @@ func (suite *ActorSuite) TestAdd() {
 
 func (suite *ActorSuite) TestUpdate() {
 
-	err := AddActor(suite.db, suite.model.Key, requirements.Actor{
-		Key:        "key",
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "Name",
 		Details:    "Details",
 		Type:       "person",
@@ -106,8 +114,8 @@ func (suite *ActorSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateActor(suite.db, strings.ToUpper(suite.model.Key), requirements.Actor{
-		Key:        "kEy", // Test case-insensitive.
+	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Type:       "system",
@@ -115,10 +123,10 @@ func (suite *ActorSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	actor, err := LoadActor(suite.db, suite.model.Key, "key")
+	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), requirements.Actor{
-		Key:        "key", // Test case-insensitive.
+	assert.Equal(suite.T(), model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
 		Type:       "system",
@@ -128,8 +136,8 @@ func (suite *ActorSuite) TestUpdate() {
 
 func (suite *ActorSuite) TestRemove() {
 
-	err := AddActor(suite.db, suite.model.Key, requirements.Actor{
-		Key:        "key",
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:        suite.actorKey,
 		Name:       "Name",
 		Details:    "Details",
 		Type:       "person",
@@ -137,47 +145,46 @@ func (suite *ActorSuite) TestRemove() {
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveActor(suite.db, strings.ToUpper(suite.model.Key), "kEy") // Test case-insensitive.
+	err = RemoveActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
 
-	actor, err := LoadActor(suite.db, suite.model.Key, "key")
+	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), actor)
 }
 
 func (suite *ActorSuite) TestQuery() {
 
-	err := AddActor(suite.db, suite.model.Key, requirements.Actor{
-		Key:        "keyx",
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Type:       "system",
-		UmlComment: "UmlCommentX",
-	})
-	assert.Nil(suite.T(), err)
-
-	err = AddActor(suite.db, suite.model.Key, requirements.Actor{
-		Key:        "key",
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(suite.T(), err)
-
-	actors, err := QueryActors(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []requirements.Actor{
+	err := AddActors(suite.db, suite.model.Key, []model_actor.Actor{
 		{
-			Key:        "key",
+			Key:        suite.actorKeyB,
+			Name:       "NameX",
+			Details:    "DetailsX",
+			Type:       "system",
+			UmlComment: "UmlCommentX",
+		},
+		{
+			Key:        suite.actorKey,
+			Name:       "Name",
+			Details:    "Details",
+			Type:       "person",
+			UmlComment: "UmlComment",
+		},
+	})
+	assert.Nil(suite.T(), err)
+
+	actors, err := QueryActors(suite.db, suite.model.Key)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), []model_actor.Actor{
+		{
+			Key:        suite.actorKey,
 			Name:       "Name",
 			Details:    "Details",
 			Type:       "person",
 			UmlComment: "UmlComment",
 		},
 		{
-
-			Key:        "keyx",
+			Key:        suite.actorKeyB,
 			Name:       "NameX",
 			Details:    "DetailsX",
 			Type:       "system",
@@ -190,11 +197,11 @@ func (suite *ActorSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey, actorKey string) (actor requirements.Actor) {
+func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor model_actor.Actor) {
 
-	err := AddActor(dbOrTx, modelKey, requirements.Actor{
+	err := AddActor(dbOrTx, modelKey, model_actor.Actor{
 		Key:        actorKey,
-		Name:       actorKey,
+		Name:       actorKey.String(),
 		Details:    "Details",
 		Type:       "person",
 		UmlComment: "UmlComment",

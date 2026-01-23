@@ -2,10 +2,14 @@ package database
 
 import (
 	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -20,11 +24,30 @@ func TestScenarioSuite(t *testing.T) {
 
 type ScenarioSuite struct {
 	suite.Suite
-	db        *sql.DB
-	model     requirements.Model
-	domain    requirements.Domain
-	subdomain requirements.Subdomain
-	useCase   requirements.UseCase
+	db           *sql.DB
+	model        req_model.Model
+	domain       model_domain.Domain
+	subdomain    model_domain.Subdomain
+	useCase      model_use_case.UseCase
+	scenarioKey  identity.Key
+	scenarioKeyB identity.Key
+	// Class key for event parents.
+	classKey identity.Key
+	// Object keys for test nodes.
+	obj1Key       identity.Key
+	obj2Key       identity.Key
+	obj3Key       identity.Key
+	obj4Key       identity.Key
+	helperFromKey identity.Key
+	helperToKey   identity.Key
+	// Event keys for test nodes.
+	testEventKey    identity.Key
+	addEventKey     identity.Key
+	origEventKey    identity.Key
+	updatedEventKey identity.Key
+	eventXKey       identity.Key
+	eventKey        identity.Key
+	helperEventKey  identity.Key
 }
 
 func (suite *ScenarioSuite) SetupTest() {
@@ -33,30 +56,57 @@ func (suite *ScenarioSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key)
-	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key)
-	suite.useCase = t_AddUseCase(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, "use_case_key")
+	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
+	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.useCase = t_AddUseCase(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewUseCaseKey(suite.subdomain.Key, "use_case_key")))
+
+	// Create the scenario keys for reuse.
+	suite.scenarioKey = helper.Must(identity.NewScenarioKey(suite.useCase.Key, "scenario_key"))
+	suite.scenarioKeyB = helper.Must(identity.NewScenarioKey(suite.useCase.Key, "scenario_key_b"))
+
+	// Create class key for event parents.
+	suite.classKey = helper.Must(identity.NewClassKey(suite.subdomain.Key, "test_class"))
+
+	// Create object keys for test nodes.
+	suite.obj1Key = helper.Must(identity.NewScenarioObjectKey(suite.scenarioKey, "obj1"))
+	suite.obj2Key = helper.Must(identity.NewScenarioObjectKey(suite.scenarioKey, "obj2"))
+	suite.obj3Key = helper.Must(identity.NewScenarioObjectKey(suite.scenarioKey, "obj3"))
+	suite.obj4Key = helper.Must(identity.NewScenarioObjectKey(suite.scenarioKey, "obj4"))
+	suite.helperFromKey = helper.Must(identity.NewScenarioObjectKey(suite.scenarioKey, "helper_from"))
+	suite.helperToKey = helper.Must(identity.NewScenarioObjectKey(suite.scenarioKey, "helper_to"))
+
+	// Create event keys for test nodes (events need a class parent).
+	suite.testEventKey = helper.Must(identity.NewEventKey(suite.classKey, "test_event"))
+	suite.addEventKey = helper.Must(identity.NewEventKey(suite.classKey, "add_event"))
+	suite.origEventKey = helper.Must(identity.NewEventKey(suite.classKey, "orig_event"))
+	suite.updatedEventKey = helper.Must(identity.NewEventKey(suite.classKey, "updated_event"))
+	suite.eventXKey = helper.Must(identity.NewEventKey(suite.classKey, "event_x"))
+	suite.eventKey = helper.Must(identity.NewEventKey(suite.classKey, "event"))
+	suite.helperEventKey = helper.Must(identity.NewEventKey(suite.classKey, "helper_event"))
 }
 
 func (suite *ScenarioSuite) TestLoad() {
 
 	// Nothing in database yet.
-	useCaseKey, scenario, err := LoadScenario(suite.db, strings.ToUpper(suite.model.Key), "Key")
+	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), useCaseKey)
 	assert.Empty(suite.T(), scenario)
 
 	// Create expected steps
-	expectedSteps := requirements.Node{
-		Statements: []requirements.Node{
+	expectedSteps := &model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description:   "test step",
-				FromObjectKey: "obj1",
-				ToObjectKey:   "obj2",
-				EventKey:      "test_event",
+				FromObjectKey: &suite.obj1Key,
+				ToObjectKey:   &suite.obj2Key,
+				EventKey:      &suite.testEventKey,
 			},
 		},
 	}
+
+	// Build JSON with full key strings.
+	stepsJSON := `{"statements":[{"description":"test step","from_object_key":"` + suite.obj1Key.String() + `","to_object_key":"` + suite.obj2Key.String() + `","event_key":"` + suite.testEventKey.String() + `"}]}`
 
 	_, err = dbExec(suite.db, `
 		INSERT INTO scenario
@@ -71,20 +121,20 @@ func (suite *ScenarioSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'key',
+				'domain/domain_key/subdomain/subdomain_key/usecase/use_case_key/scenario/scenario_key',
 				'Name',
-				'use_case_key',
+				'domain/domain_key/subdomain/subdomain_key/usecase/use_case_key',
 				'Details',
-				'{"type":"sequence","statements":[{"type":"leaf","description":"test step","from_object_key":"obj1","to_object_key":"obj2","event_key":"test_event"}]}'
+				'`+stepsJSON+`'
 			)
 	`)
 	assert.Nil(suite.T(), err)
 
-	useCaseKey, scenario, err = LoadScenario(suite.db, strings.ToUpper(suite.model.Key), "Key") // Test case-insensitive.
+	useCaseKey, scenario, err = LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "use_case_key", useCaseKey)
-	assert.Equal(suite.T(), requirements.Scenario{
-		Key:     "key", // Test case-insensitive.
+	assert.Equal(suite.T(), suite.useCase.Key, useCaseKey)
+	assert.Equal(suite.T(), model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
 		Steps:   expectedSteps,
@@ -93,30 +143,30 @@ func (suite *ScenarioSuite) TestLoad() {
 
 func (suite *ScenarioSuite) TestAdd() {
 
-	scenarioToAdd := requirements.Scenario{
-		Key:     "KeY", // Test case-insensitive.
+	scenarioToAdd := model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
-		Steps: requirements.Node{
-			Statements: []requirements.Node{
+		Steps: &model_scenario.Node{
+			Statements: []model_scenario.Node{
 				{
 					Description:   "add test step",
-					FromObjectKey: "obj1",
-					ToObjectKey:   "obj2",
-					EventKey:      "add_event",
+					FromObjectKey: &suite.obj1Key,
+					ToObjectKey:   &suite.obj2Key,
+					EventKey:      &suite.addEventKey,
 				},
 			},
 		},
 	}
 
-	err := AddScenario(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.useCase.Key), scenarioToAdd)
+	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, scenarioToAdd)
 	assert.Nil(suite.T(), err)
 
-	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, "key")
+	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "use_case_key", useCaseKey)
-	assert.Equal(suite.T(), requirements.Scenario{
-		Key:     "key",
+	assert.Equal(suite.T(), suite.useCase.Key, useCaseKey)
+	assert.Equal(suite.T(), model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
 		Steps:   scenarioToAdd.Steps,
@@ -125,49 +175,49 @@ func (suite *ScenarioSuite) TestAdd() {
 
 func (suite *ScenarioSuite) TestUpdate() {
 
-	originalSteps := requirements.Node{
-		Statements: []requirements.Node{
+	originalSteps := &model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description:   "original step",
-				FromObjectKey: "obj1",
-				ToObjectKey:   "obj2",
-				EventKey:      "orig_event",
+				FromObjectKey: &suite.obj1Key,
+				ToObjectKey:   &suite.obj2Key,
+				EventKey:      &suite.origEventKey,
 			},
 		},
 	}
 
-	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, requirements.Scenario{
-		Key:     "key",
+	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
 		Steps:   originalSteps,
 	})
 	assert.Nil(suite.T(), err)
 
-	updatedSteps := requirements.Node{
-		Statements: []requirements.Node{
+	updatedSteps := &model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description:   "updated step",
-				FromObjectKey: "obj3",
-				ToObjectKey:   "obj4",
-				EventKey:      "updated_event",
+				FromObjectKey: &suite.obj3Key,
+				ToObjectKey:   &suite.obj4Key,
+				EventKey:      &suite.updatedEventKey,
 			},
 		},
 	}
 
-	err = UpdateScenario(suite.db, strings.ToUpper(suite.model.Key), requirements.Scenario{
-		Key:     "KeY", // Test case-insensitive.
+	err = UpdateScenario(suite.db, suite.model.Key, model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 		Steps:   updatedSteps,
 	})
 	assert.Nil(suite.T(), err)
 
-	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, "key")
+	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "use_case_key", useCaseKey)
-	assert.Equal(suite.T(), requirements.Scenario{
-		Key:     "key",
+	assert.Equal(suite.T(), suite.useCase.Key, useCaseKey)
+	assert.Equal(suite.T(), model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 		Steps:   updatedSteps,
@@ -176,17 +226,17 @@ func (suite *ScenarioSuite) TestUpdate() {
 
 func (suite *ScenarioSuite) TestRemove() {
 
-	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, requirements.Scenario{
-		Key:     "key",
+	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, model_scenario.Scenario{
+		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = RemoveScenario(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper("key")) // Test case-insensitive.
+	err = RemoveScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
 
-	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, "key")
+	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), useCaseKey)
 	assert.Empty(suite.T(), scenario)
@@ -194,56 +244,58 @@ func (suite *ScenarioSuite) TestRemove() {
 
 func (suite *ScenarioSuite) TestQueryScenarios() {
 
-	stepsX := requirements.Node{
-		Statements: []requirements.Node{
+	stepsX := &model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description:   "step X",
-				FromObjectKey: "obj1",
-				ToObjectKey:   "obj2",
-				EventKey:      "event_x",
+				FromObjectKey: &suite.obj1Key,
+				ToObjectKey:   &suite.obj2Key,
+				EventKey:      &suite.eventXKey,
 			},
 		},
 	}
 
-	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, requirements.Scenario{
-		Key:     "scenario_key_x",
-		Name:    "NameX",
-		Details: "DetailsX",
-		Steps:   stepsX,
-	})
-	assert.Nil(suite.T(), err)
-
-	steps := requirements.Node{
-		Statements: []requirements.Node{
+	steps := &model_scenario.Node{
+		Statements: []model_scenario.Node{
 			{
 				Description:   "step",
-				FromObjectKey: "obj3",
-				ToObjectKey:   "obj4",
-				EventKey:      "event",
+				FromObjectKey: &suite.obj3Key,
+				ToObjectKey:   &suite.obj4Key,
+				EventKey:      &suite.eventKey,
 			},
 		},
 	}
 
-	err = AddScenario(suite.db, suite.model.Key, suite.useCase.Key, requirements.Scenario{
-		Key:     "scenario_key",
-		Name:    "Name",
-		Details: "Details",
-		Steps:   steps,
+	err := AddScenarios(suite.db, suite.model.Key, map[identity.Key][]model_scenario.Scenario{
+		suite.useCase.Key: {
+			{
+				Key:     suite.scenarioKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
+				Steps:   stepsX,
+			},
+			{
+				Key:     suite.scenarioKey,
+				Name:    "Name",
+				Details: "Details",
+				Steps:   steps,
+			},
+		},
 	})
 	assert.Nil(suite.T(), err)
 
-	scenarios, err := QueryScenarios(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
+	scenarios, err := QueryScenarios(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]requirements.Scenario{
+	assert.Equal(suite.T(), map[identity.Key][]model_scenario.Scenario{
 		suite.useCase.Key: {
 			{
-				Key:     "scenario_key",
+				Key:     suite.scenarioKey,
 				Name:    "Name",
 				Details: "Details",
 				Steps:   steps,
 			},
 			{
-				Key:     "scenario_key_x",
+				Key:     suite.scenarioKeyB,
 				Name:    "NameX",
 				Details: "DetailsX",
 				Steps:   stepsX,
@@ -256,19 +308,29 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey, scenarioKey, useCaseKey string) (scenario requirements.Scenario) {
+func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, useCaseKey identity.Key) (scenario model_scenario.Scenario) {
+	// Create object keys for helper nodes.
+	helperFromKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "helper_from"))
+	helperToKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "helper_to"))
 
-	err := AddScenario(dbOrTx, modelKey, useCaseKey, requirements.Scenario{
+	// Extract subdomain key from use case key to create class key, then event key.
+	useCaseKeyStr := useCaseKey.String()
+	// Parse the subdomain key portion (everything before /usecase/).
+	subdomainKey := helper.Must(identity.ParseKey(useCaseKeyStr[:len(useCaseKeyStr)-len("/usecase/"+useCaseKey.SubKey())]))
+	helperClassKey := helper.Must(identity.NewClassKey(subdomainKey, "helper_class"))
+	helperEventKey := helper.Must(identity.NewEventKey(helperClassKey, "helper_event"))
+
+	err := AddScenario(dbOrTx, modelKey, useCaseKey, model_scenario.Scenario{
 		Key:     scenarioKey,
-		Name:    scenarioKey,
+		Name:    scenarioKey.String(),
 		Details: "",
-		Steps: requirements.Node{
-			Statements: []requirements.Node{
+		Steps: &model_scenario.Node{
+			Statements: []model_scenario.Node{
 				{
 					Description:   "helper step",
-					FromObjectKey: "helper_from",
-					ToObjectKey:   "helper_to",
-					EventKey:      "helper_event",
+					FromObjectKey: &helperFromKey,
+					ToObjectKey:   &helperToKey,
+					EventKey:      &helperEventKey,
 				},
 			},
 		},

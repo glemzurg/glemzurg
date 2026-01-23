@@ -1,16 +1,22 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanUseCase(scanner Scanner, subdomainKeyPtr *string, useCase *requirements.UseCase) (err error) {
+func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_use_case.UseCase) (err error) {
+	var subdomainKeyStr string
+	var useCaseKeyStr string
+
 	if err = scanner.Scan(
-		subdomainKeyPtr,
-		&useCase.Key,
+		&subdomainKeyStr,
+		&useCaseKeyStr,
 		&useCase.Name,
 		&useCase.Details,
 		&useCase.Level,
@@ -23,21 +29,21 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *string, useCase *requirements
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the key strings into identity.Key.
+	*subdomainKeyPtr, err = identity.ParseKey(subdomainKeyStr)
+	if err != nil {
+		return err
+	}
+	useCase.Key, err = identity.ParseKey(useCaseKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadUseCase loads a use case from the database
-func LoadUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (subdomainKey string, useCase requirements.UseCase, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.UseCase{}, err
-	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
-	if err != nil {
-		return "", requirements.UseCase{}, err
-	}
+func LoadUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (subdomainKey identity.Key, useCase model_use_case.UseCase, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -63,82 +69,23 @@ func LoadUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (subdomainKey strin
 		AND
 			model_key = $1`,
 		modelKey,
-		useCaseKey)
+		useCaseKey.String())
 	if err != nil {
-		return "", requirements.UseCase{}, errors.WithStack(err)
+		return identity.Key{}, model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
 	return subdomainKey, useCase, nil
 }
 
 // AddUseCase adds a use case to the database.
-func AddUseCase(dbOrTx DbOrTx, modelKey, subdomainKey string, useCase requirements.UseCase) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	subdomainKey, err = requirements.PreenKey(subdomainKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err := requirements.PreenKey(useCase.Key)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-		INSERT INTO use_case
-			(
-				model_key     ,
-				subdomain_key ,
-				use_case_key  ,
-				name          ,
-				details       ,
-				level         ,
-				read_only     ,
-				uml_comment
-			)
-		VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5,
-				$6,
-				$7,
-				$8
-			)`,
-		modelKey,
-		subdomainKey,
-		useCaseKey,
-		useCase.Name,
-		useCase.Details,
-		useCase.Level,
-		useCase.ReadOnly,
-		useCase.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddUseCase(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, useCase model_use_case.UseCase) (err error) {
+	return AddUseCases(dbOrTx, modelKey, map[identity.Key]identity.Key{
+		useCase.Key: subdomainKey,
+	}, []model_use_case.UseCase{useCase})
 }
 
 // UpdateUseCase updates a use case in the database.
-func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase requirements.UseCase) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err := requirements.PreenKey(useCase.Key)
-	if err != nil {
-		return err
-	}
+func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCase) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -155,7 +102,7 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase requirements.UseCase)
 		AND
 			use_case_key = $2`,
 		modelKey,
-		useCaseKey,
+		useCase.Key.String(),
 		useCase.Name,
 		useCase.Details,
 		useCase.Level,
@@ -169,17 +116,7 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase requirements.UseCase)
 }
 
 // RemoveUseCase deletes a use case from the database.
-func RemoveUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	useCaseKey, err = requirements.PreenKey(useCaseKey)
-	if err != nil {
-		return err
-	}
+func RemoveUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -190,7 +127,7 @@ func RemoveUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (err error) {
 		AND
 			use_case_key = $2`,
 		modelKey,
-		useCaseKey)
+		useCaseKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -199,25 +136,19 @@ func RemoveUseCase(dbOrTx DbOrTx, modelKey, useCaseKey string) (err error) {
 }
 
 // QueryUseCases loads all use case from the database
-func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[string]string, useCases []requirements.UseCase, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, nil, err
-	}
+func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.Key]identity.Key, useCases []model_use_case.UseCase, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var subdomainKey string
-			var useCase requirements.UseCase
+			var subdomainKey identity.Key
+			var useCase model_use_case.UseCase
 			if err = scanUseCase(scanner, &subdomainKey, &useCase); err != nil {
 				return errors.WithStack(err)
 			}
 			if subdomainKeys == nil {
-				subdomainKeys = map[string]string{}
+				subdomainKeys = map[identity.Key]identity.Key{}
 			}
 			subdomainKeys[useCase.Key] = subdomainKey
 			useCases = append(useCases, useCase)
@@ -242,4 +173,32 @@ func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[string]str
 	}
 
 	return subdomainKeys, useCases, nil
+}
+
+// AddUseCases adds multiple use cases to the database in a single insert.
+// Takes the same format as QueryUseCases returns: a map of useCaseKey -> subdomainKey and a slice of use cases.
+func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]identity.Key, useCases []model_use_case.UseCase) (err error) {
+	if len(useCases) == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(useCases)*8)
+	for i, uc := range useCases {
+		if i > 0 {
+			query += ", "
+		}
+		base := i * 8
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		subdomainKey := subdomainKeys[uc.Key]
+		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, uc.UmlComment)
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

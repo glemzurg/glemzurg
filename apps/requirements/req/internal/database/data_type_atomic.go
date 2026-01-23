@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements/data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanAtomic(scanner Scanner, dataTypeKeyPtr *string, atomic *data_type.Atomic) (err error) {
+func scanAtomic(scanner Scanner, dataTypeKeyPtr *string, atomic *model_data_type.Atomic) (err error) {
 	if err = scanner.Scan(
 		dataTypeKeyPtr,
 		&atomic.ConstraintType,
@@ -29,16 +29,16 @@ func scanAtomic(scanner Scanner, dataTypeKeyPtr *string, atomic *data_type.Atomi
 }
 
 // LoadAtomic loads an atomic from the database
-func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomic data_type.Atomic, err error) {
+func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomic model_data_type.Atomic, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
-		return "", data_type.Atomic{}, err
+		return "", model_data_type.Atomic{}, err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
-		return "", data_type.Atomic{}, err
+		return "", model_data_type.Atomic{}, err
 	}
 
 	// Query the database.
@@ -65,21 +65,21 @@ func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr 
 		modelKey,
 		dataTypeKey)
 	if err != nil {
-		return "", data_type.Atomic{}, errors.WithStack(err)
+		return "", model_data_type.Atomic{}, errors.WithStack(err)
 	}
 
 	return parentDataTypePtr, atomic, nil
 }
 
 // AddAtomic adds an atomic to the database.
-func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic data_type.Atomic) (err error) {
+func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_type.Atomic) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -118,14 +118,14 @@ func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic data_type.Ato
 }
 
 // UpdateAtomic updates an atomic in the database.
-func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic data_type.Atomic) (err error) {
+func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_type.Atomic) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -160,11 +160,11 @@ func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic data_type.
 func RemoveAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+	dataTypeKey, err = identity.PreenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -187,10 +187,10 @@ func RemoveAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 }
 
 // QueryAtomics loads all atomics from the database
-func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]data_type.Atomic, err error) {
+func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]model_data_type.Atomic, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -200,12 +200,12 @@ func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]data_type.
 		dbOrTx,
 		func(scanner Scanner) (err error) {
 			var dataTypeKey string
-			var atomic data_type.Atomic
+			var atomic model_data_type.Atomic
 			if err = scanAtomic(scanner, &dataTypeKey, &atomic); err != nil {
 				return errors.WithStack(err)
 			}
 			if atomics == nil {
-				atomics = map[string]data_type.Atomic{}
+				atomics = map[string]model_data_type.Atomic{}
 			}
 			atomics[dataTypeKey] = atomic
 			return nil
@@ -230,13 +230,13 @@ func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]data_type.
 }
 
 // BulkInsertAtomics inserts multiple atomics in a single SQL statement.
-func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]data_type.Atomic) (err error) {
+func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]model_data_type.Atomic) (err error) {
 	if len(atomics) == 0 {
 		return nil
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
+	modelKey, err = identity.PreenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]data_t
 	valueStrings := make([]string, 0, len(atomics))
 	i := 0
 	for dataTypeKey, atomic := range atomics {
-		dataTypeKey, err = requirements.PreenKey(dataTypeKey)
+		dataTypeKey, err = identity.PreenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}

@@ -1,9 +1,15 @@
 {
-    "Key": "class_key",
+    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key",
     "Name": "A Basic Class",
     "Details": "# A Basic Class\n\nHere we have markdown details.\n\nAnd even more.",
-    "ActorKey": "actor_key",
-    "SuperclassOfKey": "superclass_key",
-    "SubclassOfKey": "subclass_key",
-    "UmlComment": "Here we have a UML comment.\n\nAnd even more."
+    "ActorKey": "actor/actor_key",
+    "SuperclassOfKey": "domain/test_domain/subdomain/test_subdomain/generalization/superclass_key",
+    "SubclassOfKey": "domain/test_domain/subdomain/test_subdomain/generalization/subclass_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+    "Attributes": {},
+    "States": {},
+    "Events": {},
+    "Guards": {},
+    "Actions": {},
+    "Transitions": {}
 }

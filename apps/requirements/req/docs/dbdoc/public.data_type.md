@@ -8,8 +8,8 @@ An data type for use in a class attribute or action parameter.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.parameter](public.parameter.md) | [public.model](public.model.md) | The model this data type is part of. |
-| data_type_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.parameter](public.parameter.md) |  | The internal ID. |
+| model_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.query_parameter](public.query_parameter.md) [public.action_parameter](public.action_parameter.md) | [public.model](public.model.md) | The model this data type is part of. |
+| data_type_key | text |  | false | [public.data_type_atomic](public.data_type_atomic.md) [public.data_type_field](public.data_type_field.md) [public.attribute](public.attribute.md) [public.query_parameter](public.query_parameter.md) [public.action_parameter](public.action_parameter.md) |  | The internal ID. |
 | collection_type | collection_type |  | false |  |  | Whether a collection or atomic value, and if a collection what kind. |
 | collection_unique | boolean |  | true |  |  | If a collection, is this collection unique. |
 | collection_min | bigint |  | true |  |  | If a collection and there is a minimum number of items, the minimum. Always set of maximum set. |

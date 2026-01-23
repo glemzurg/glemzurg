@@ -1,20 +1,26 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanTransition(scanner Scanner, classKeyPtr *string, transition *requirements.Transition) (err error) {
+func scanTransition(scanner Scanner, classKeyPtr *identity.Key, transition *model_state.Transition) (err error) {
+	var classKeyStr string
+	var transitionKeyStr string
 	var fromStateKeyPtr, guardKeyPtr, actionKeyPtr, toStateKeyPtr *string
+	var eventKeyStr string
 
 	if err = scanner.Scan(
-		classKeyPtr,
-		&transition.Key,
+		&classKeyStr,
+		&transitionKeyStr,
 		&fromStateKeyPtr,
-		&transition.EventKey,
+		&eventKeyStr,
 		&guardKeyPtr,
 		&actionKeyPtr,
 		&toStateKeyPtr,
@@ -26,34 +32,59 @@ func scanTransition(scanner Scanner, classKeyPtr *string, transition *requiremen
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the class key string into an identity.Key.
+	*classKeyPtr, err = identity.ParseKey(classKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the transition key string into an identity.Key.
+	transition.Key, err = identity.ParseKey(transitionKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the event key string into an identity.Key (required).
+	transition.EventKey, err = identity.ParseKey(eventKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse optional keys.
 	if fromStateKeyPtr != nil {
-		transition.FromStateKey = *fromStateKeyPtr
+		fromStateKey, err := identity.ParseKey(*fromStateKeyPtr)
+		if err != nil {
+			return err
+		}
+		transition.FromStateKey = &fromStateKey
 	}
 	if guardKeyPtr != nil {
-		transition.GuardKey = *guardKeyPtr
+		guardKey, err := identity.ParseKey(*guardKeyPtr)
+		if err != nil {
+			return err
+		}
+		transition.GuardKey = &guardKey
 	}
 	if actionKeyPtr != nil {
-		transition.ActionKey = *actionKeyPtr
+		actionKey, err := identity.ParseKey(*actionKeyPtr)
+		if err != nil {
+			return err
+		}
+		transition.ActionKey = &actionKey
 	}
 	if toStateKeyPtr != nil {
-		transition.ToStateKey = *toStateKeyPtr
+		toStateKey, err := identity.ParseKey(*toStateKeyPtr)
+		if err != nil {
+			return err
+		}
+		transition.ToStateKey = &toStateKey
 	}
 
 	return nil
 }
 
 // LoadTransition loads a transition from the database
-func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey string, transition requirements.Transition, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return "", requirements.Transition{}, err
-	}
-	transitionKey, err = requirements.PreenKey(transitionKey)
-	if err != nil {
-		return "", requirements.Transition{}, err
-	}
+func LoadTransition(dbOrTx DbOrTx, modelKey string, transitionKey identity.Key) (classKey identity.Key, transition model_state.Transition, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
@@ -80,168 +111,47 @@ func LoadTransition(dbOrTx DbOrTx, modelKey, transitionKey string) (classKey str
 		AND
 			model_key = $1`,
 		modelKey,
-		transitionKey)
+		transitionKey.String())
 	if err != nil {
-		return "", requirements.Transition{}, errors.WithStack(err)
+		return identity.Key{}, model_state.Transition{}, errors.WithStack(err)
 	}
 
 	return classKey, transition, nil
 }
 
 // AddTransition adds a transition to the database.
-func AddTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requirements.Transition) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	transitionKey, err := requirements.PreenKey(transition.Key)
-	if err != nil {
-		return err
-	}
-	// We may or may not have a from state.
-	var fromStateKeyPtr *string
-	if transition.FromStateKey != "" {
-		fromStateKey, err := requirements.PreenKey(transition.FromStateKey)
-		if err != nil {
-			return err
-		}
-		fromStateKeyPtr = &fromStateKey
-	}
-	eventKey, err := requirements.PreenKey(transition.EventKey)
-	if err != nil {
-		return err
-	}
-	// We may or may not have a guard.
-	var guardKeyPtr *string
-	if transition.GuardKey != "" {
-		guardKey, err := requirements.PreenKey(transition.GuardKey)
-		if err != nil {
-			return err
-		}
-		guardKeyPtr = &guardKey
-	}
-	// We may or may not have an action.
-	var actionKeyPtr *string
-	if transition.ActionKey != "" {
-		actionKey, err := requirements.PreenKey(transition.ActionKey)
-		if err != nil {
-			return err
-		}
-		actionKeyPtr = &actionKey
-	}
-	// We may or may not have a to state.
-	var toStateKeyPtr *string
-	if transition.ToStateKey != "" {
-		toStateKey, err := requirements.PreenKey(transition.ToStateKey)
-		if err != nil {
-			return err
-		}
-		toStateKeyPtr = &toStateKey
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-			INSERT INTO transition
-				(
-					model_key      ,
-					class_key      ,
-					transition_key ,
-					from_state_key ,
-					event_key      ,
-					guard_key      ,
-					action_key     ,
-					to_state_key   ,
-					uml_comment
-				)
-			VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9
-				)`,
-		modelKey,
-		classKey,
-		transitionKey,
-		fromStateKeyPtr,
-		eventKey,
-		guardKeyPtr,
-		actionKeyPtr,
-		toStateKeyPtr,
-		transition.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transition model_state.Transition) (err error) {
+	return AddTransitions(dbOrTx, modelKey, map[identity.Key][]model_state.Transition{
+		classKey: {transition},
+	})
 }
 
 // UpdateTransition updates a transition in the database.
-func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requirements.Transition) (err error) {
+func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transition model_state.Transition) (err error) {
 
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	transitionKey, err := requirements.PreenKey(transition.Key)
-	if err != nil {
-		return err
-	}
 	// We may or may not have a from state.
 	var fromStateKeyPtr *string
-	if transition.FromStateKey != "" {
-		fromStateKey, err := requirements.PreenKey(transition.FromStateKey)
-		if err != nil {
-			return err
-		}
-		fromStateKeyPtr = &fromStateKey
-	}
-	eventKey, err := requirements.PreenKey(transition.EventKey)
-	if err != nil {
-		return err
+	if transition.FromStateKey != nil {
+		s := transition.FromStateKey.String()
+		fromStateKeyPtr = &s
 	}
 	// We may or may not have a guard.
 	var guardKeyPtr *string
-	if transition.GuardKey != "" {
-		guardKey, err := requirements.PreenKey(transition.GuardKey)
-		if err != nil {
-			return err
-		}
-		guardKeyPtr = &guardKey
+	if transition.GuardKey != nil {
+		s := transition.GuardKey.String()
+		guardKeyPtr = &s
 	}
 	// We may or may not have an action.
 	var actionKeyPtr *string
-	if transition.ActionKey != "" {
-		actionKey, err := requirements.PreenKey(transition.ActionKey)
-		if err != nil {
-			return err
-		}
-		actionKeyPtr = &actionKey
+	if transition.ActionKey != nil {
+		s := transition.ActionKey.String()
+		actionKeyPtr = &s
 	}
 	// We may or may not have a to state.
 	var toStateKeyPtr *string
-	if transition.ToStateKey != "" {
-		toStateKey, err := requirements.PreenKey(transition.ToStateKey)
-		if err != nil {
-			return err
-		}
-		toStateKeyPtr = &toStateKey
+	if transition.ToStateKey != nil {
+		s := transition.ToStateKey.String()
+		toStateKeyPtr = &s
 	}
 
 	// Update the data.
@@ -262,10 +172,10 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requi
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		transitionKey,
+		classKey.String(),
+		transition.Key.String(),
 		fromStateKeyPtr,
-		eventKey,
+		transition.EventKey.String(),
 		guardKeyPtr,
 		actionKeyPtr,
 		toStateKeyPtr,
@@ -278,21 +188,7 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey, classKey string, transition requi
 }
 
 // RemoveTransition deletes a transition from the database.
-func RemoveTransition(dbOrTx DbOrTx, modelKey, classKey, transitionKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	classKey, err = requirements.PreenKey(classKey)
-	if err != nil {
-		return err
-	}
-	transitionKey, err = requirements.PreenKey(transitionKey)
-	if err != nil {
-		return err
-	}
+func RemoveTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transitionKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -305,8 +201,8 @@ func RemoveTransition(dbOrTx DbOrTx, modelKey, classKey, transitionKey string) (
 		AND
 			model_key = $1`,
 		modelKey,
-		classKey,
-		transitionKey)
+		classKey.String(),
+		transitionKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -315,25 +211,19 @@ func RemoveTransition(dbOrTx DbOrTx, modelKey, classKey, transitionKey string) (
 }
 
 // QueryTransitions loads all transition from the database
-func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[string][]requirements.Transition, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[identity.Key][]model_state.Transition, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var classKey string
-			var transition requirements.Transition
+			var classKey identity.Key
+			var transition model_state.Transition
 			if err = scanTransition(scanner, &classKey, &transition); err != nil {
 				return errors.WithStack(err)
 			}
 			if transitions == nil {
-				transitions = map[string][]requirements.Transition{}
+				transitions = map[identity.Key][]model_state.Transition{}
 			}
 			classTransitions := transitions[classKey]
 			classTransitions = append(classTransitions, transition)
@@ -360,4 +250,59 @@ func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[string][]
 	}
 
 	return transitions, nil
+}
+
+// AddTransitions adds multiple transitions to the database in a single insert.
+func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key][]model_state.Transition) (err error) {
+	// Count total transitions.
+	count := 0
+	for _, trans := range transitions {
+		count += len(trans)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO transition (model_key, class_key, transition_key, from_state_key, event_key, guard_key, action_key, to_state_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*9)
+	i := 0
+	for classKey, transList := range transitions {
+		for _, transition := range transList {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 9
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+
+			// Handle optional key pointers.
+			var fromStateKeyPtr, guardKeyPtr, actionKeyPtr, toStateKeyPtr *string
+			if transition.FromStateKey != nil {
+				s := transition.FromStateKey.String()
+				fromStateKeyPtr = &s
+			}
+			if transition.GuardKey != nil {
+				s := transition.GuardKey.String()
+				guardKeyPtr = &s
+			}
+			if transition.ActionKey != nil {
+				s := transition.ActionKey.String()
+				actionKeyPtr = &s
+			}
+			if transition.ToStateKey != nil {
+				s := transition.ToStateKey.String()
+				toStateKeyPtr = &s
+			}
+
+			args = append(args, modelKey, classKey.String(), transition.Key.String(), fromStateKeyPtr, transition.EventKey.String(), guardKeyPtr, actionKeyPtr, toStateKeyPtr, transition.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

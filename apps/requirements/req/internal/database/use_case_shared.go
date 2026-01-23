@@ -1,16 +1,22 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/requirements"
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanUseCaseShared(scanner Scanner, seaLevelKeyPtr, mudlevelKeyPtr *string, useCaseShared *requirements.UseCaseShared) (err error) {
+func scanUseCaseShared(scanner Scanner, seaLevelKeyPtr, mudlevelKeyPtr *identity.Key, useCaseShared *model_use_case.UseCaseShared) (err error) {
+	var seaLevelKeyStr string
+	var mudLevelKeyStr string
+
 	if err = scanner.Scan(
-		seaLevelKeyPtr,
-		mudlevelKeyPtr,
+		&seaLevelKeyStr,
+		&mudLevelKeyStr,
 		&useCaseShared.ShareType,
 		&useCaseShared.UmlComment,
 	); err != nil {
@@ -20,31 +26,29 @@ func scanUseCaseShared(scanner Scanner, seaLevelKeyPtr, mudlevelKeyPtr *string, 
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the sea level key string into an identity.Key.
+	*seaLevelKeyPtr, err = identity.ParseKey(seaLevelKeyStr)
+	if err != nil {
+		return err
+	}
+
+	// Parse the mud level key string into an identity.Key.
+	*mudlevelKeyPtr, err = identity.ParseKey(mudLevelKeyStr)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // LoadUseCaseShared loads a use case from the database
-func LoadUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string) (useCaseShared requirements.UseCaseShared, err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return requirements.UseCaseShared{}, err
-	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
-	if err != nil {
-		return requirements.UseCaseShared{}, err
-	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
-	if err != nil {
-		return requirements.UseCaseShared{}, err
-	}
+func LoadUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key) (useCaseShared model_use_case.UseCaseShared, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var unusedSeaLevelKey, unusedMudLevelKey string
+			var unusedSeaLevelKey, unusedMudLevelKey identity.Key
 			if err = scanUseCaseShared(scanner, &unusedSeaLevelKey, &unusedMudLevelKey, &useCaseShared); err != nil {
 				return err
 			}
@@ -66,78 +70,24 @@ func LoadUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string)
 		AND
 			model_key = $1`,
 		modelKey,
-		seaLevelKey,
-		mudLevelKey)
+		seaLevelKey.String(),
+		mudLevelKey.String())
 	if err != nil {
-		return requirements.UseCaseShared{}, errors.WithStack(err)
+		return model_use_case.UseCaseShared{}, errors.WithStack(err)
 	}
 
 	return useCaseShared, nil
 }
 
 // AddUseCaseShared adds a use case to the database.
-func AddUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string, useCaseShared requirements.UseCaseShared) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
-	if err != nil {
-		return err
-	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
-	if err != nil {
-		return err
-	}
-
-	// Add the data.
-	_, err = dbExec(dbOrTx, `
-		INSERT INTO use_case_shared
-			(
-				model_key        ,
-				sea_use_case_key ,
-				mud_use_case_key ,
-				share_type       ,
-				uml_comment
-			)
-		VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5
-			)`,
-		modelKey,
-		seaLevelKey,
-		mudLevelKey,
-		useCaseShared.ShareType,
-		useCaseShared.UmlComment)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+func AddUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key, useCaseShared model_use_case.UseCaseShared) (err error) {
+	return AddUseCaseShareds(dbOrTx, modelKey, map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
+		seaLevelKey: {mudLevelKey: useCaseShared},
+	})
 }
 
 // UpdateUseCaseShared updates a use case in the database.
-func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string, useCaseShared requirements.UseCaseShared) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
-	if err != nil {
-		return err
-	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
-	if err != nil {
-		return err
-	}
+func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key, useCaseShared model_use_case.UseCaseShared) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -153,8 +103,8 @@ func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey strin
 		AND
 			model_key = $1`,
 		modelKey,
-		seaLevelKey,
-		mudLevelKey,
+		seaLevelKey.String(),
+		mudLevelKey.String(),
 		useCaseShared.ShareType,
 		useCaseShared.UmlComment)
 	if err != nil {
@@ -165,21 +115,7 @@ func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey strin
 }
 
 // RemoveUseCaseShared deletes a use case from the database.
-func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey string) (err error) {
-
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return err
-	}
-	seaLevelKey, err = requirements.PreenKey(seaLevelKey)
-	if err != nil {
-		return err
-	}
-	mudLevelKey, err = requirements.PreenKey(mudLevelKey)
-	if err != nil {
-		return err
-	}
+func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key) (err error) {
 
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
@@ -192,8 +128,8 @@ func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey strin
 		AND
 			model_key = $1`,
 		modelKey,
-		seaLevelKey,
-		mudLevelKey)
+		seaLevelKey.String(),
+		mudLevelKey.String())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -202,29 +138,22 @@ func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey, seaLevelKey, mudLevelKey strin
 }
 
 // QueryUseCaseShareds loads all use case from the database
-func QueryUseCaseShareds(dbOrTx DbOrTx, modelKey string) (useCaseShareds map[string]map[string]requirements.UseCaseShared, err error) {
+func QueryUseCaseShareds(dbOrTx DbOrTx, modelKey string) (useCaseShareds map[identity.Key]map[identity.Key]model_use_case.UseCaseShared, err error) {
 
-	// Keys should be preened so they collide correctly.
-	modelKey, err = requirements.PreenKey(modelKey)
-	if err != nil {
-		return nil, err
-	}
+	useCaseShareds = make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var seaLevelKey, mudLevelKey string
-			var useCaseShared requirements.UseCaseShared
+			var seaLevelKey, mudLevelKey identity.Key
+			var useCaseShared model_use_case.UseCaseShared
 			if err = scanUseCaseShared(scanner, &seaLevelKey, &mudLevelKey, &useCaseShared); err != nil {
 				return errors.WithStack(err)
 			}
-			if useCaseShareds == nil {
-				useCaseShareds = map[string]map[string]requirements.UseCaseShared{}
-			}
 			oneUseCaseShareds := useCaseShareds[seaLevelKey]
 			if oneUseCaseShareds == nil {
-				oneUseCaseShareds = map[string]requirements.UseCaseShared{}
+				oneUseCaseShareds = map[identity.Key]model_use_case.UseCaseShared{}
 			}
 			oneUseCaseShareds[mudLevelKey] = useCaseShared
 			useCaseShareds[seaLevelKey] = oneUseCaseShareds
@@ -246,4 +175,39 @@ func QueryUseCaseShareds(dbOrTx DbOrTx, modelKey string) (useCaseShareds map[str
 	}
 
 	return useCaseShareds, nil
+}
+
+// AddUseCaseShareds adds multiple use case shared entries to the database in a single insert.
+func AddUseCaseShareds(dbOrTx DbOrTx, modelKey string, useCaseShareds map[identity.Key]map[identity.Key]model_use_case.UseCaseShared) (err error) {
+	// Count total entries.
+	count := 0
+	for _, sharedMap := range useCaseShareds {
+		count += len(sharedMap)
+	}
+	if count == 0 {
+		return nil
+	}
+
+	// Build the bulk insert query.
+	query := `INSERT INTO use_case_shared (model_key, sea_use_case_key, mud_use_case_key, share_type, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*5)
+	i := 0
+	for seaLevelKey, sharedMap := range useCaseShareds {
+		for mudLevelKey, shared := range sharedMap {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, seaLevelKey.String(), mudLevelKey.String(), shared.ShareType, shared.UmlComment)
+			i++
+		}
+	}
+
+	_, err = dbExec(dbOrTx, query, args...)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

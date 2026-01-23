@@ -1,21 +1,7 @@
 {
-    "Key": "domain_key",
+    "Key": "domain/domain_key",
     "Name": "A Basic Domain",
     "Details": "# A Basic Domain\n\nHere we have markdown details.\n\nAnd even more.",
     "Realized": true,
-    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
-
-    "Associations": [
-        {
-            "Key": "domain_key/association/1",
-            "ProblemDomainKey": "domain_key",
-            "SolutionDomainKey": "solution_key_a",
-            "UmlComment": "very import to users"
-        },
-        {
-            "Key": "domain_key/association/2",
-            "ProblemDomainKey": "domain_key",
-            "SolutionDomainKey": "solution_key_b"
-        }
-    ]    
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more."
 }
