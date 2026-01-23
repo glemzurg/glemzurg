@@ -1,5 +1,6 @@
 {
     "code": 1004,
+    "message_prefix": "model JSON does not match schema:",
     "error_file": "model_schema_violation.md",
     "has_schema": true,
     "has_docs": true

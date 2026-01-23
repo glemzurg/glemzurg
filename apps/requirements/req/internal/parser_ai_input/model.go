@@ -81,7 +81,7 @@ func validateModel(model *inputModel) error {
 	if model.Name == "" {
 		return NewParseError(
 			ErrModelNameRequired,
-			"model name is required",
+			"model name is required, got ''",
 			"model_name_required.md",
 		).WithField("name").WithDocs()
 	}
@@ -90,7 +90,7 @@ func validateModel(model *inputModel) error {
 	if strings.TrimSpace(model.Name) == "" {
 		return NewParseError(
 			ErrModelNameEmpty,
-			"model name cannot be empty or whitespace only",
+			"model name cannot be empty or whitespace only, got '"+model.Name+"'",
 			"model_name_empty.md",
 		).WithField("name")
 	}

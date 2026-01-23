@@ -1,5 +1,6 @@
 {
     "code": 1003,
+    "message_prefix": "failed to parse model JSON:",
     "error_file": "model_invalid_json.md",
     "has_schema": false,
     "has_docs": false

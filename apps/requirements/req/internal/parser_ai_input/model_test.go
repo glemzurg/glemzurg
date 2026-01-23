@@ -71,7 +71,19 @@ func (suite *ModelSuite) TestParseModelErrors() {
 
 			expected := testData.ExpectedError
 			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
+
+			// Test error file name separately from message content.
 			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+
+			// Test message string explicitly.
+			// For dynamic messages (like schema validation), use MessagePrefix to match the start.
+			if expected.Message != "" {
+				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+			} else if expected.MessagePrefix != "" {
+				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
+					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
+			}
 
 			// Check schema content presence
 			if expected.HasSchema {
