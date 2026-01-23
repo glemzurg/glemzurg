@@ -1,6 +1,6 @@
 {{- $reqs := .Reqs -}}
 
-{{- $domain := domain_lookup $reqs .Class.DomainKey -}}
+{{- $domain := class_domain $reqs .Class.Key -}}
 
 [⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
 
@@ -59,11 +59,13 @@ The actions for this class.
 {{ range .Class.Actions -}}
 
 {{- $action := action_lookup $reqs .Key -}}
+{{- $fromTransitions := action_transitions $reqs .Key -}}
+{{- $fromStateActions := action_state_actions $reqs .Key -}}
 
 
 {{- /* And action may have multiple signatures based on who calls it. */ -}}
 
-{{- $signatures := action_signatures $reqs $action.FromTransitions $action.FromStates -}}
+{{- $signatures := action_signatures $reqs $fromTransitions $fromStateActions -}}
 
 {{- $actionName := $action.Name -}}
 {{ if eq $signatures nil -}}
@@ -108,11 +110,11 @@ Guarantees:
 
 Triggered from:
 
-{{ range $action.FromTransitions -}}
+{{ range $fromTransitions -}}
 - {{ event_guard_signature $reqs . }}
 {{ end }}
-{{- range $action.FromStates -}}
-- {{ $state := state_lookup $reqs .StateKey }}{{ $state.Name }} /{{ .When }}
+{{- range $fromStateActions -}}
+- {{ $state := state_action_state $reqs .Key }}{{ $state.Name }} /{{ .When }}
 {{ end }}
 
 

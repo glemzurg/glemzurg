@@ -51,6 +51,28 @@ func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Ke
 		}
 	}
 
+	// Handle event_key (format: "subdomain/class/event/eventname" or "class/event/eventname")
+	if eventKey, ok := data["event_key"]; ok {
+		if eventKeyStr, ok := eventKey.(string); ok {
+			fullKey, err := expandEventKey(subdomainKey, eventKeyStr)
+			if err != nil {
+				return err
+			}
+			data["event_key"] = fullKey.String()
+		}
+	}
+
+	// Handle scenario_key (format: "domainFolder/useCase/scenario/scenarioName")
+	if scenarioKeyVal, ok := data["scenario_key"]; ok {
+		if scenarioKeyStr, ok := scenarioKeyVal.(string); ok {
+			fullKey, err := expandScenarioKey(subdomainKey, scenarioKeyStr)
+			if err != nil {
+				return err
+			}
+			data["scenario_key"] = fullKey.String()
+		}
+	}
+
 	// Recursively process statements
 	if statements, ok := data["statements"]; ok {
 		if stmtSlice, ok := statements.([]any); ok {
@@ -92,7 +114,7 @@ func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Ke
 // expandAttributeKey converts a short attribute key format to a full identity key.
 // Supported formats:
 // - "class/attribute" - uses the provided subdomain
-// - "subdomain/class/attribute" - constructs subdomain from domain + subdomain part
+// - "domainFolder/class/attribute" - the domainFolder is ignored, uses the current subdomain
 func expandAttributeKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -109,35 +131,99 @@ func expandAttributeKey(subdomainKey identity.Key, shortKey string) (identity.Ke
 		return identity.NewAttributeKey(classKey, attrSubKey)
 
 	case 3:
-		// Format: "subdomain/class/attribute"
-		// The subdomain part is relative to the domain of the current subdomain.
-		subdomainSubKey := parts[0]
+		// Format: "domainFolder/class/attribute"
+		// The domainFolder prefix is informational only - we use the current subdomain.
+		// This matches the yaml format used in web_books model (e.g., "01_order_fulfillment/title/title").
+		// domainFolder := parts[0] // Ignored
 		classSubKey := parts[1]
 		attrSubKey := parts[2]
 
-		// Get the domain key from the current subdomain key.
-		domainKeyStr := subdomainKey.ParentKey()
-		if domainKeyStr == "" {
-			return identity.Key{}, errors.Errorf("could not get domain key from subdomain for attribute: %s", shortKey)
-		}
-		domainKey, err := identity.ParseKey(domainKeyStr)
-		if err != nil {
-			return identity.Key{}, errors.Wrapf(err, "failed to parse domain key for attribute: %s", shortKey)
-		}
-
-		// Build the target subdomain key.
-		targetSubdomainKey, err := identity.NewSubdomainKey(domainKey, subdomainSubKey)
-		if err != nil {
-			return identity.Key{}, errors.Wrapf(err, "failed to create subdomain key for attribute: %s", shortKey)
-		}
-
-		classKey, err := identity.NewClassKey(targetSubdomainKey, classSubKey)
+		classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
 		if err != nil {
 			return identity.Key{}, errors.Wrapf(err, "failed to create class key for attribute: %s", shortKey)
 		}
 		return identity.NewAttributeKey(classKey, attrSubKey)
 
 	default:
-		return identity.Key{}, errors.Errorf("invalid attribute key format '%s': expected 'class/attribute' or 'subdomain/class/attribute'", shortKey)
+		return identity.Key{}, errors.Errorf("invalid attribute key format '%s': expected 'class/attribute' or 'domainFolder/class/attribute'", shortKey)
+	}
+}
+
+// expandScenarioKey converts a short scenario key format to a full identity key.
+// Supported formats:
+// - "useCase/scenario/scenarioName" - uses the provided subdomain
+// - "domainFolder/useCase/scenario/scenarioName" - the domainFolder is ignored, uses the current subdomain
+func expandScenarioKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
+	parts := strings.Split(shortKey, "/")
+
+	switch len(parts) {
+	case 3:
+		// Format: "useCase/scenario/scenarioName"
+		useCaseSubKey := parts[0]
+		// parts[1] should be "scenario"
+		scenarioSubKey := parts[2]
+
+		useCaseKey, err := identity.NewUseCaseKey(subdomainKey, useCaseSubKey)
+		if err != nil {
+			return identity.Key{}, errors.Wrapf(err, "failed to create use case key for scenario: %s", shortKey)
+		}
+		return identity.NewScenarioKey(useCaseKey, scenarioSubKey)
+
+	case 4:
+		// Format: "domainFolder/useCase/scenario/scenarioName"
+		// The domainFolder prefix is informational only - we use the current subdomain.
+		// domainFolder := parts[0] // Ignored
+		useCaseSubKey := parts[1]
+		// parts[2] should be "scenario"
+		scenarioSubKey := parts[3]
+
+		useCaseKey, err := identity.NewUseCaseKey(subdomainKey, useCaseSubKey)
+		if err != nil {
+			return identity.Key{}, errors.Wrapf(err, "failed to create use case key for scenario: %s", shortKey)
+		}
+		return identity.NewScenarioKey(useCaseKey, scenarioSubKey)
+
+	default:
+		return identity.Key{}, errors.Errorf("invalid scenario key format '%s': expected 'useCase/scenario/scenarioName' or 'domainFolder/useCase/scenario/scenarioName'", shortKey)
+	}
+}
+
+// expandEventKey converts a short event key format to a full identity key.
+// Supported formats:
+// - "class/event/eventname" - uses the provided subdomain
+// - "domainFolder/class/event/eventname" - the domainFolder is ignored, uses the current subdomain
+func expandEventKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
+	parts := strings.Split(shortKey, "/")
+
+	switch len(parts) {
+	case 3:
+		// Format: "class/event/eventname"
+		classSubKey := parts[0]
+		// parts[1] should be "event"
+		eventSubKey := parts[2]
+
+		classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
+		if err != nil {
+			return identity.Key{}, errors.Wrapf(err, "failed to create class key for event: %s", shortKey)
+		}
+		return identity.NewEventKey(classKey, eventSubKey)
+
+	case 4:
+		// Format: "domainFolder/class/event/eventname"
+		// The domainFolder prefix is informational only - we use the current subdomain.
+		// This matches the yaml format used in web_books model (e.g., "01_order_fulfillment/book_order/event/packed").
+		// domainFolder := parts[0] // Ignored
+		classSubKey := parts[1]
+		// parts[2] should be "event"
+		eventSubKey := parts[3]
+
+		classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
+		if err != nil {
+			return identity.Key{}, errors.Wrapf(err, "failed to create class key for event: %s", shortKey)
+		}
+		return identity.NewEventKey(classKey, eventSubKey)
+
+	default:
+		return identity.Key{}, errors.Errorf("invalid event key format '%s': expected 'class/event/eventname' or 'subdomain/class/event/eventname'", shortKey)
 	}
 }

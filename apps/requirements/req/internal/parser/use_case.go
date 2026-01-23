@@ -355,6 +355,48 @@ func generateSteps(nodes []model_scenario.Node, indent string) string {
 	return s
 }
 
+// shortEventKey converts a full event key to its short form for output.
+// Full: domain/test_domain/subdomain/test_subdomain/class/class_key/event/processlog
+// Short: class_key/event/processlog
+func shortEventKey(key *identity.Key) string {
+	if key == nil {
+		return ""
+	}
+	// Parse the key to extract class subkey and event subkey.
+	// Event key: parentKey="domain/.../subdomain/.../class/class_key", keyType="event", subKey="processlog"
+	// The parent of the event key is a class key.
+	parentKey, err := identity.ParseKey(key.ParentKey())
+	if err != nil {
+		// Fallback to full string if parsing fails.
+		return key.String()
+	}
+	// parentKey is the class key; its subKey is the class subkey.
+	classSubKey := parentKey.SubKey()
+	eventSubKey := key.SubKey()
+	return classSubKey + "/event/" + eventSubKey
+}
+
+// shortScenarioKey converts a full scenario key to its short form for output.
+// Full: domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key
+// Short: use_case_key/scenario/scenario_b_key
+func shortScenarioKey(key *identity.Key) string {
+	if key == nil {
+		return ""
+	}
+	// Parse the key to extract use case subkey and scenario subkey.
+	// Scenario key: parentKey="domain/.../subdomain/.../usecase/use_case_key", keyType="scenario", subKey="scenario_b_key"
+	// The parent of the scenario key is a use case key.
+	parentKey, err := identity.ParseKey(key.ParentKey())
+	if err != nil {
+		// Fallback to full string if parsing fails.
+		return key.String()
+	}
+	// parentKey is the use case key; its subKey is the use case subkey.
+	useCaseSubKey := parentKey.SubKey()
+	scenarioSubKey := key.SubKey()
+	return useCaseSubKey + "/scenario/" + scenarioSubKey
+}
+
 func generateNode(node model_scenario.Node, indent string) string {
 	s := indent + "- "
 	if node.Loop != "" {
@@ -396,10 +438,10 @@ func generateNode(node model_scenario.Node, indent string) string {
 			addField("to_object_key", node.ToObjectKey.SubKey())
 		}
 		if node.EventKey != nil {
-			addField("event_key", node.EventKey.String())
+			addField("event_key", shortEventKey(node.EventKey))
 		}
 		if node.ScenarioKey != nil {
-			addField("scenario_key", node.ScenarioKey.String())
+			addField("scenario_key", shortScenarioKey(node.ScenarioKey))
 		}
 		if node.IsDelete {
 			addField("is_delete", "true        ")

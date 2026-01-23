@@ -8,7 +8,7 @@
 	{{ $classKey }} [
 		shape=plain
 		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" width="200">
-			<tr> <td> {{- if ne .ActorKey "" }} «actor» <br />{{ end -}}<b>  {{ .Name }} </b> </td> </tr>
+			<tr> <td> {{- if ne .ActorKey nil }} «actor» <br />{{ end -}}<b>  {{ .Name }} </b> </td> </tr>
 			<tr> <td>
 				{{ if ne .Attributes nil -}}
 				<table align="left" border="0" cellborder="0" cellspacing="0"  width="200">
@@ -47,43 +47,42 @@ digraph Classes {
 
 {{/* Add generalizations used in this diagram. */}}
 {{ range .Generalizations -}}
-
+{{- $subclasses := generalization_subclasses $reqs .Key -}}
+{{- $superclass := generalization_superclass $reqs .Key -}}
 
 {{/* "cluster" as the first part of a subgraph name isolates the contents in their own box. */}}
 {{- $subgraphId := nodeid "cluster_subgraph" .Key }}
 subgraph {{ $subgraphId }} {
 	color = none;  // Turns off the box line
-	
+
 	edge [color=blue, penwidth=1.5];
 
 	{{/* Put all subclasses at the same rank, which should be below the generalization node. */}}
-	{rank=same;{{ range .SubclassKeys }} {{ nodeid "class" . }};{{ end -}} }
+	{rank=same;{{ range $subclasses }} {{ nodeid "class" .Key }};{{ end -}} }
 
 	{{- $generalizationLabel := generalization_label $reqs .Key -}}
 	{{- $generalizationNode := nodeid "generalization" .Key }}
 	{{ $generalizationNode }} [shape=point]
 
-	{rank=same; {{ $generalizationNode }}; {{ range .SubclassKeys }} {{ nodeid "subclassangle" . }};{{ end -}} }
+	{rank=same; {{ $generalizationNode }}; {{ range $subclasses }} {{ nodeid "subclassangle" .Key }};{{ end -}} }
 
 	{{/* Add all the class nodes that are part of this generalization */}}
 
-	{{- $superclass := class_lookup $reqs .SuperclassKey }}
  	{{ template "class_node" $superclass }}
 
-	{{- $superclassNode := nodeid "class" .SuperclassKey }}
+	{{- $superclassNode := nodeid "class" $superclass.Key }}
 	{{ $superclassNode }} -> {{ $generalizationNode }} [dir=back, arrowhead=normal, arrowsize=2, headlabel="{{ $generalizationLabel }}", weight=100]
 
 
-	{{ range .SubclassKeys }}
-		
-		{{- $subclass := class_lookup $reqs . }}
- 		{{ template "class_node" $subclass }}
+	{{ range $subclasses }}
 
-		{{- $subclassAngleNode := nodeid "subclassangle" . }}
+ 		{{ template "class_node" . }}
+
+		{{- $subclassAngleNode := nodeid "subclassangle" .Key }}
 		{{ $subclassAngleNode }} [shape=point]
 
 
-		{{- $subclassNode := nodeid "class" . }}
+		{{- $subclassNode := nodeid "class" .Key }}
 		{{ $subclassAngleNode }} -> {{ $subclassNode }} [dir=back, arrowhead=none, arrowtail=none, weight=100]
 		{{ $generalizationNode }} -> {{ $subclassAngleNode }} [dir=back, arrowhead=none, arrowtail=none]
 
@@ -109,7 +108,7 @@ subgraph {{ $subgraphId }} {
 {{ $toClassKey := nodeid "class" .ToClassKey }}
 {{ $toMultiplicity := multiplicity .ToMultiplicity }}
 
-{{ if eq .AssociationClassKey "" }}
+{{ if eq .AssociationClassKey nil }}
 {{- $fromClassKey }} -> {{ $toClassKey }} [xlabel="{{ .Name }}", headlabel="{{ $toMultiplicity }}", taillabel="{{ $fromMultiplicity }}"]
 {{- else -}}
 {{/* Draw a class associated with the association itself. */}}

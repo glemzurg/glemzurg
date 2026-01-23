@@ -141,9 +141,9 @@ var _funcMap = template.FuncMap{
 	"multiplicity": func(multiplicity model_class.Multiplicity) (value string) {
 		return multiplicity.String()
 	},
-	"generalization_label": func(reqs *req_flat.Requirements, generalizationKey string) (value string) {
+	"generalization_label": func(reqs *req_flat.Requirements, generalizationKey identity.Key) (value string) {
 		generalizationLookup := reqs.GeneralizationLookup()
-		generalization := generalizationLookup[generalizationKey]
+		generalization := generalizationLookup[generalizationKey.String()]
 		complete := "«complete»"
 		if !generalization.IsComplete {
 			complete = "«incomplete»"
@@ -266,6 +266,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.ClassDomainLookup()
 		return lookup[key.String()]
 	},
+	"use_case_domain": func(reqs *req_flat.Requirements, key identity.Key) (domain model_domain.Domain) {
+		lookup := reqs.UseCaseDomainLookup()
+		return lookup[key.String()]
+	},
 	"domain_use_cases": func(reqs *req_flat.Requirements, key identity.Key) (useCases []model_use_case.UseCase) {
 		lookup := reqs.DomainUseCasesLookup()
 		return lookup[key.String()]
@@ -273,6 +277,28 @@ var _funcMap = template.FuncMap{
 	"domain_classes": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
 		lookup := reqs.DomainClassesLookup()
 		return lookup[key.String()]
+	},
+	"generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (class model_class.Class) {
+		lookup := reqs.GeneralizationSuperclassLookup()
+		return lookup[key.String()]
+	},
+	"generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
+		lookup := reqs.GeneralizationSubclassesLookup()
+		return lookup[key.String()]
+	},
+	"action_transitions": func(reqs *req_flat.Requirements, key identity.Key) (transitions []model_state.Transition) {
+		lookup := reqs.ActionTransitionsLookup()
+		return lookup[key.String()]
+	},
+	"action_state_actions": func(reqs *req_flat.Requirements, key identity.Key) (stateActions []model_state.StateAction) {
+		lookup := reqs.ActionStateActionsLookup()
+		return lookup[key.String()]
+	},
+	"state_action_state": func(reqs *req_flat.Requirements, stateActionKey identity.Key) (state model_state.State) {
+		// StateAction's key's parent is the State key.
+		stateKeyStr := stateActionKey.ParentKey()
+		lookup := reqs.StateLookup()
+		return lookup[stateKeyStr]
 	},
 }
 

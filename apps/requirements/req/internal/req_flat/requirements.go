@@ -283,6 +283,24 @@ func (r *Requirements) DomainClassesLookup() map[string][]model_class.Class {
 	return lookup
 }
 
+// UseCaseDomainLookup returns a map of use case key to the domain that contains it.
+// Use cases are children of subdomains, which are children of domains.
+func (r *Requirements) UseCaseDomainLookup() map[string]model_domain.Domain {
+	r.PrepLookups()
+	lookup := make(map[string]model_domain.Domain)
+
+	// Walk the domain → subdomain → use case hierarchy.
+	for _, domain := range r.Model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for useCaseKey := range subdomain.UseCases {
+				lookup[useCaseKey.String()] = domain
+			}
+		}
+	}
+
+	return lookup
+}
+
 // DomainLookup returns domains by key and domain associations.
 func (r *Requirements) DomainLookup() (map[string]model_domain.Domain, []model_domain.Association) {
 	r.PrepLookups()
@@ -307,6 +325,52 @@ func (r *Requirements) GeneralizationLookup() map[string]model_class.Generalizat
 	for key, gen := range r.Generalizations {
 		lookup[key.String()] = gen
 	}
+	return lookup
+}
+
+// GeneralizationSuperclassLookup returns a map of generalization key to the superclass of that generalization.
+// The superclass is the class that has SuperclassOfKey pointing to the generalization.
+func (r *Requirements) GeneralizationSuperclassLookup() map[string]model_class.Class {
+	r.PrepLookups()
+	lookup := make(map[string]model_class.Class)
+
+	for _, class := range r.Classes {
+		if class.SuperclassOfKey != nil {
+			lookup[class.SuperclassOfKey.String()] = class
+		}
+	}
+
+	return lookup
+}
+
+// GeneralizationSubclassesLookup returns a map of generalization key to its subclasses.
+// Subclasses are classes that have SubclassOfKey pointing to the generalization.
+func (r *Requirements) GeneralizationSubclassesLookup() map[string][]model_class.Class {
+	r.PrepLookups()
+	lookup := make(map[string][]model_class.Class)
+
+	// Initialize with empty slices for all generalizations.
+	for genKey := range r.Generalizations {
+		lookup[genKey.String()] = []model_class.Class{}
+	}
+
+	// Find all classes that are subclasses of a generalization.
+	for _, class := range r.Classes {
+		if class.SubclassOfKey != nil {
+			genKeyStr := class.SubclassOfKey.String()
+			lookup[genKeyStr] = append(lookup[genKeyStr], class)
+		}
+	}
+
+	// Sort subclasses by key for consistent output.
+	for genKey := range lookup {
+		classes := lookup[genKey]
+		sort.Slice(classes, func(i, j int) bool {
+			return classes[i].Key.String() < classes[j].Key.String()
+		})
+		lookup[genKey] = classes
+	}
+
 	return lookup
 }
 
@@ -364,6 +428,64 @@ func (r *Requirements) ActionLookup() map[string]model_state.Action {
 	for key, action := range r.Actions {
 		lookup[key.String()] = action
 	}
+	return lookup
+}
+
+// ActionTransitionsLookup returns a map of action key to the transitions that call that action.
+func (r *Requirements) ActionTransitionsLookup() map[string][]model_state.Transition {
+	r.PrepLookups()
+	lookup := make(map[string][]model_state.Transition)
+
+	// Initialize with empty slices for all actions.
+	for actionKey := range r.Actions {
+		lookup[actionKey.String()] = []model_state.Transition{}
+	}
+
+	// Find all transitions that call each action.
+	for _, transition := range r.Transitions {
+		if transition.ActionKey != nil {
+			actionKeyStr := transition.ActionKey.String()
+			lookup[actionKeyStr] = append(lookup[actionKeyStr], transition)
+		}
+	}
+
+	// Sort transitions by key for consistent output.
+	for actionKey := range lookup {
+		transitions := lookup[actionKey]
+		sort.Slice(transitions, func(i, j int) bool {
+			return transitions[i].Key.String() < transitions[j].Key.String()
+		})
+		lookup[actionKey] = transitions
+	}
+
+	return lookup
+}
+
+// ActionStateActionsLookup returns a map of action key to the state actions that call that action.
+func (r *Requirements) ActionStateActionsLookup() map[string][]model_state.StateAction {
+	r.PrepLookups()
+	lookup := make(map[string][]model_state.StateAction)
+
+	// Initialize with empty slices for all actions.
+	for actionKey := range r.Actions {
+		lookup[actionKey.String()] = []model_state.StateAction{}
+	}
+
+	// Find all state actions that call each action.
+	for _, stateAction := range r.StateActions {
+		actionKeyStr := stateAction.ActionKey.String()
+		lookup[actionKeyStr] = append(lookup[actionKeyStr], stateAction)
+	}
+
+	// Sort state actions by key for consistent output.
+	for actionKey := range lookup {
+		stateActions := lookup[actionKey]
+		sort.Slice(stateActions, func(i, j int) bool {
+			return stateActions[i].Key.String() < stateActions[j].Key.String()
+		})
+		lookup[actionKey] = stateActions
+	}
+
 	return lookup
 }
 
