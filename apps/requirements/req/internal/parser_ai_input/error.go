@@ -33,7 +33,7 @@ type ParseError struct {
 	Schema      string // The JSON schema content (if applicable)
 	Docs        string // The JSON_AI_MODEL_FORMAT.md content (if applicable)
 	File        string // The JSON file being parsed where the error occurred
-	Field       string // Field name that caused the error (optional)
+	Field       string // JSON path to the field that caused the error (optional), e.g., "name", "attributes.myAttr.name"
 }
 
 // Error implements the error interface.
@@ -85,7 +85,11 @@ func (e *ParseError) WithSchema(schemaContent string) *ParseError {
 	}
 }
 
-// WithField returns a copy of the error with the field field set.
+// WithField returns a copy of the error with the field path set.
+// The field supports JSON path notation for nested fields:
+//   - Top-level: "name"
+//   - Nested object: "attributes.myAttr.name"
+//   - Array index: "indexes.0" or "items[0]"
 func (e *ParseError) WithField(field string) *ParseError {
 	return &ParseError{
 		Code:        e.Code,
