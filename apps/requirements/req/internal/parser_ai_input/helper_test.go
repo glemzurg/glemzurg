@@ -93,11 +93,11 @@ func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
 
 // t_ExpectedError represents the expected error for an error test case.
 type t_ExpectedError struct {
-	Code          int    `json:"code"`           // The expected error code.
-	ErrorFile     string `json:"error_file"`     // The expected error markdown file name.
-	IncludeSchema bool   `json:"include_schema"` // Whether the schema should be included.
-	IncludeDocs   bool   `json:"include_docs"`   // Whether the docs should be included.
-	Field         string `json:"field"`          // The expected error field (optional).
+	Code        int    `json:"code"`         // The expected error code.
+	ErrorFile   string `json:"error_file"`   // The expected error markdown file name.
+	HasSchema   bool   `json:"has_schema"`   // Whether the schema content should be attached.
+	HasDocs     bool   `json:"has_docs"`     // Whether the docs content should be attached.
+	Field       string `json:"field"`        // The expected error field (optional).
 }
 
 // t_TestFileError represents a test file pair for error cases.

@@ -72,8 +72,21 @@ func (suite *ModelSuite) TestParseModelErrors() {
 			expected := testData.ExpectedError
 			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
 			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
-			assert.Equal(t, expected.IncludeSchema, parseErr.IncludeSchema, testName+" include schema")
-			assert.Equal(t, expected.IncludeDocs, parseErr.IncludeDocs, testName+" include docs")
+
+			// Check schema content presence
+			if expected.HasSchema {
+				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+			} else {
+				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+			}
+
+			// Check docs content presence
+			if expected.HasDocs {
+				assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+			} else {
+				assert.Empty(t, parseErr.Docs, testName+" should not have docs content")
+			}
+
 			if expected.Field != "" {
 				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
 			}

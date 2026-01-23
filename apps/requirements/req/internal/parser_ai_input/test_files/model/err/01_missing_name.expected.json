@@ -1,6 +1,6 @@
 {
     "code": 1004,
     "error_file": "model_schema_violation.md",
-    "include_schema": true,
-    "include_docs": true
+    "has_schema": true,
+    "has_docs": true
 }

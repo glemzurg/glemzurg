@@ -17,13 +17,17 @@ type inputModel struct {
 // modelSchema is the compiled JSON schema for model.json.
 var modelSchema *jsonschema.Schema
 
+// modelSchemaContent is the raw JSON schema content for error reporting.
+var modelSchemaContent string
+
 func init() {
 	compiler := jsonschema.NewCompiler()
-	schemaContent, err := json_schemas.Schemas.ReadFile("model.schema.json")
+	schemaBytes, err := json_schemas.Schemas.ReadFile("model.schema.json")
 	if err != nil {
 		panic("failed to read model.schema.json: " + err.Error())
 	}
-	if err := compiler.AddResource("model.schema.json", strings.NewReader(string(schemaContent))); err != nil {
+	modelSchemaContent = string(schemaBytes)
+	if err := compiler.AddResource("model.schema.json", strings.NewReader(modelSchemaContent)); err != nil {
 		panic("failed to add model schema resource: " + err.Error())
 	}
 	modelSchema, err = compiler.Compile("model.schema.json")
@@ -60,7 +64,7 @@ func parseModel(content []byte) (*inputModel, error) {
 			ErrModelSchemaViolation,
 			"model JSON does not match schema: "+err.Error(),
 			"model_schema_violation.md",
-		).WithSchema().WithDocs()
+		).WithSchema(modelSchemaContent).WithDocs()
 	}
 
 	// Validate required fields
