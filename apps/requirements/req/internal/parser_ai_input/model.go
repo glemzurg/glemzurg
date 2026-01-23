@@ -46,7 +46,7 @@ func parseModel(content []byte) (*inputModel, error) {
 		return nil, NewParseError(
 			ErrModelInvalidJSON,
 			"failed to parse model JSON: "+err.Error(),
-			"model_invalid_json.md",
+			"1003_model_invalid_json.md",
 		)
 	}
 
@@ -56,14 +56,14 @@ func parseModel(content []byte) (*inputModel, error) {
 		return nil, NewParseError(
 			ErrModelInvalidJSON,
 			"failed to parse model JSON for schema validation: "+err.Error(),
-			"model_invalid_json.md",
+			"1003_model_invalid_json.md",
 		)
 	}
 	if err := modelSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrModelSchemaViolation,
 			"model JSON does not match schema: "+err.Error(),
-			"model_schema_violation.md",
+			"1004_model_schema_violation.md",
 		).WithSchema(modelSchemaContent).WithDocs()
 	}
 
@@ -82,7 +82,7 @@ func validateModel(model *inputModel) error {
 		return NewParseError(
 			ErrModelNameRequired,
 			"model name is required, got ''",
-			"model_name_required.md",
+			"1001_model_name_required.md",
 		).WithField("name").WithDocs()
 	}
 
@@ -91,7 +91,7 @@ func validateModel(model *inputModel) error {
 		return NewParseError(
 			ErrModelNameEmpty,
 			"model name cannot be empty or whitespace only, got '"+model.Name+"'",
-			"model_name_empty.md",
+			"1002_model_name_empty.md",
 		).WithField("name")
 	}
 

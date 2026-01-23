@@ -1,7 +1,7 @@
 {
     "code": 1002,
     "message": "model name cannot be empty or whitespace only, got '   '",
-    "error_file": "model_name_empty.md",
+    "error_file": "1002_model_name_empty.md",
     "has_schema": false,
     "has_docs": false,
     "field": "name"
