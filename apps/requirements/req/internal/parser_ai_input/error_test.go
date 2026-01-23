@@ -28,7 +28,7 @@ func TestNewParseErrorPanicsForMissingErrorDoc(t *testing.T) {
 	}()
 
 	// This should panic
-	NewParseError(invalidCode, "test message")
+	NewParseError(invalidCode, "test message", "test.json")
 
 	// Should not reach here
 	t.Fatal("NewParseError should have panicked")

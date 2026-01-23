@@ -32,7 +32,7 @@ type ParseError struct {
 	ErrorDetail string // Content of the error markdown file
 	Schema      string // The JSON schema content (if applicable)
 	Docs        string // The JSON_AI_MODEL_FORMAT.md content (if applicable)
-	File        string // File where the error occurred (optional)
+	File        string // The JSON file being parsed where the error occurred
 	Field       string // Field name that caused the error (optional)
 }
 
@@ -50,12 +50,13 @@ func (e *ParseError) Error() string {
 	return fmt.Sprintf("[E%d] %s", e.Code, e.Message)
 }
 
-// NewParseError creates a new ParseError with the given code and message.
+// NewParseError creates a new ParseError with the given code, message, and file.
+// The file parameter is the JSON file being parsed where the error occurred.
 // It automatically loads the error documentation file for the given error code
 // and attaches the format documentation (JSON_AI_MODEL_FORMAT.md) to all errors.
 // Panics if no error documentation exists for the code - this indicates an internal
 // error that cannot be resolved by altering input data.
-func NewParseError(code int, message string) *ParseError {
+func NewParseError(code int, message string, file string) *ParseError {
 	content, filename, err := errors.LoadErrorDoc(code)
 	if err != nil {
 		panic(fmt.Sprintf("%sno error documentation for error code %d. This is an internal failure that no alteration of input will resolve.", InternalErrorPrefix, code))
@@ -66,6 +67,7 @@ func NewParseError(code int, message string) *ParseError {
 		ErrorFile:   filename,
 		ErrorDetail: content,
 		Docs:        formatDocs,
+		File:        file,
 	}
 }
 
@@ -79,20 +81,6 @@ func (e *ParseError) WithSchema(schemaContent string) *ParseError {
 		Schema:      schemaContent,
 		Docs:        e.Docs,
 		File:        e.File,
-		Field:       e.Field,
-	}
-}
-
-// WithFile returns a copy of the error with the file field set.
-func (e *ParseError) WithFile(file string) *ParseError {
-	return &ParseError{
-		Code:        e.Code,
-		Message:     e.Message,
-		ErrorFile:   e.ErrorFile,
-		ErrorDetail: e.ErrorDetail,
-		Schema:      e.Schema,
-		Docs:        e.Docs,
-		File:        file,
 		Field:       e.Field,
 	}
 }

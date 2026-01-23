@@ -30,7 +30,7 @@ func (suite *ModelSuite) TestParseModelFiles() {
 		pass := suite.T().Run(testName, func(t *testing.T) {
 			var expected inputModel
 
-			actual, err := parseModel([]byte(testData.InputJSON))
+			actual, err := parseModel([]byte(testData.InputJSON), testData.Filename)
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
@@ -59,7 +59,7 @@ func (suite *ModelSuite) TestParseModelErrors() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
-			_, err := parseModel([]byte(testData.InputJSON))
+			_, err := parseModel([]byte(testData.InputJSON), testData.Filename)
 			assert.NotNil(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.
@@ -94,6 +94,9 @@ func (suite *ModelSuite) TestParseModelErrors() {
 
 			// Docs are always attached to all errors
 			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+
+			// File is always set to the input filename
+			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
 				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")

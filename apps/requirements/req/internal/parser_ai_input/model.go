@@ -37,8 +37,9 @@ func init() {
 }
 
 // parseModel parses a model.json file content into an inputModel struct.
+// The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the model schema and returns detailed errors if validation fails.
-func parseModel(content []byte) (*inputModel, error) {
+func parseModel(content []byte, filename string) (*inputModel, error) {
 	var model inputModel
 
 	// Parse JSON
@@ -46,6 +47,7 @@ func parseModel(content []byte) (*inputModel, error) {
 		return nil, NewParseError(
 			ErrModelInvalidJSON,
 			"failed to parse model JSON: "+err.Error(),
+			filename,
 		)
 	}
 
@@ -55,17 +57,19 @@ func parseModel(content []byte) (*inputModel, error) {
 		return nil, NewParseError(
 			ErrModelInvalidJSON,
 			"failed to parse model JSON for schema validation: "+err.Error(),
+			filename,
 		)
 	}
 	if err := modelSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrModelSchemaViolation,
 			"model JSON does not match schema: "+err.Error(),
+			filename,
 		).WithSchema(modelSchemaContent)
 	}
 
 	// Validate required fields
-	if err := validateModel(&model); err != nil {
+	if err := validateModel(&model, filename); err != nil {
 		return nil, err
 	}
 
@@ -73,12 +77,14 @@ func parseModel(content []byte) (*inputModel, error) {
 }
 
 // validateModel validates an inputModel struct.
-func validateModel(model *inputModel) error {
+// The filename parameter is the path to the JSON file being parsed.
+func validateModel(model *inputModel, filename string) error {
 	// Name is required
 	if model.Name == "" {
 		return NewParseError(
 			ErrModelNameRequired,
 			"model name is required, got ''",
+			filename,
 		).WithField("name")
 	}
 
@@ -87,6 +93,7 @@ func validateModel(model *inputModel) error {
 		return NewParseError(
 			ErrModelNameEmpty,
 			"model name cannot be empty or whitespace only, got '"+model.Name+"'",
+			filename,
 		).WithField("name")
 	}
 
