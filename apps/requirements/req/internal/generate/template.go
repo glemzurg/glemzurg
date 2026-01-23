@@ -300,6 +300,12 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.StateLookup()
 		return lookup[stateKeyStr]
 	},
+	// class_actor_key returns the ActorKey for a Class (used when mapping use case actors to diagram nodes).
+	"class_actor_key": func(reqs *req_flat.Requirements, classKey identity.Key) (actorKey *identity.Key) {
+		classLookup, _ := reqs.ClassLookup()
+		class := classLookup[classKey.String()]
+		return class.ActorKey
+	},
 }
 
 // Split multi-line bullets into sub bullets.

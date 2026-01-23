@@ -43,9 +43,12 @@ subgraph {{ $subgraphId }} {
 
 {{ range .UseCases -}}
     {{ $useCaseNode := nodeid "use_case" .Key -}}
-    {{ range $actorKey, $actor := .Actors -}}
-        {{ $actorNode := nodeid "actor" $actorKey -}}
+    {{ range $classKey, $actor := .Actors -}}
+        {{- $actorKey := class_actor_key $reqs $classKey -}}
+        {{- if $actorKey -}}
+        {{ $actorNode := nodeid "actor" $actorKey }}
         {{ $actorNode }} -> {{ $useCaseNode }}
+        {{- end -}}
     {{ end -}}
 {{ end }}
 
