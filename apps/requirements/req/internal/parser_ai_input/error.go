@@ -2,6 +2,7 @@ package parser_ai_input
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai_input/docs"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai_input/errors"
@@ -37,17 +38,46 @@ type ParseError struct {
 }
 
 // Error implements the error interface.
+// Returns a comprehensive error block with all available information.
 func (e *ParseError) Error() string {
-	if e.File != "" && e.Field != "" {
-		return fmt.Sprintf("[E%d] %s (file: %s, field: %s)", e.Code, e.Message, e.File, e.Field)
-	}
-	if e.File != "" {
-		return fmt.Sprintf("[E%d] %s (file: %s)", e.Code, e.Message, e.File)
-	}
+	var b strings.Builder
+
+	// Error number and message
+	fmt.Fprintf(&b, "=== ERROR E%d ===\n", e.Code)
+	fmt.Fprintf(&b, "Message: %s\n", e.Message)
+
+	// File
+	fmt.Fprintf(&b, "File: %s\n", e.File)
+
+	// Field (if set)
 	if e.Field != "" {
-		return fmt.Sprintf("[E%d] %s (field: %s)", e.Code, e.Message, e.Field)
+		fmt.Fprintf(&b, "Field: %s\n", e.Field)
 	}
-	return fmt.Sprintf("[E%d] %s", e.Code, e.Message)
+
+	// Error detail (from markdown file)
+	b.WriteString("\n--- Error Detail ---\n")
+	b.WriteString(e.ErrorDetail)
+	if !strings.HasSuffix(e.ErrorDetail, "\n") {
+		b.WriteString("\n")
+	}
+
+	// Schema (if set)
+	if e.Schema != "" {
+		b.WriteString("\n--- Schema ---\n")
+		b.WriteString(e.Schema)
+		if !strings.HasSuffix(e.Schema, "\n") {
+			b.WriteString("\n")
+		}
+	}
+
+	// Docs
+	b.WriteString("\n--- Format Documentation ---\n")
+	b.WriteString(e.Docs)
+	if !strings.HasSuffix(e.Docs, "\n") {
+		b.WriteString("\n")
+	}
+
+	return b.String()
 }
 
 // NewParseError creates a new ParseError with the given code, message, and file.
