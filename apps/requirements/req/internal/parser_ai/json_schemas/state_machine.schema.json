@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "state_machine.schema.json",
+  "title": "StateMachine",
+  "description": "Schema for state machine JSON files that define lifecycle behavior for classes. State machine files are located alongside their class file with '.state_machine.json' extension (e.g., 'order_management/order.state_machine.json' for class 'order_management/order.class.json'). A state machine defines states, events, guards, and transitions that model how instances of the class change over time. All internal references (state keys, event keys, guard keys, action keys) must reference elements defined within this same file or in the corresponding actions file.",
+  "type": "object",
+  "properties": {
+    "states": {
+      "type": "object",
+      "description": "Map of state keys to state definitions. Each key in this object becomes the state's identifier and is referenced by transitions. Keys should be lowercase with underscores (e.g., 'pending', 'in_progress', 'completed'). If validation fails: check that each state has a valid 'name' field and any action_key references exist.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The display name of the state (e.g., 'Pending', 'In Progress', 'Completed'). This is the human-readable name shown in state diagrams. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+            "minLength": 1
+          },
+          "details": {
+            "type": "string",
+            "description": "Optional detailed description of the state. Describe what it means for an instance to be in this state, any invariants that hold, and typical duration or conditions for leaving this state."
+          },
+          "uml_comment": {
+            "type": "string",
+            "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the state in generated state diagrams."
+          },
+          "actions": {
+            "type": "array",
+            "description": "Actions associated with this state. These are executed on entry, exit, or continuously while in the state. Each action references an action defined in the corresponding actions file for this class.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "action_key": {
+                  "type": "string",
+                  "description": "Key referencing an action. The action must be defined in the actions file for this class (e.g., 'order_management/order.actions.json'). The key should match an entry in that file's actions map. If validation fails: verify the action is defined in the corresponding actions file.",
+                  "minLength": 1
+                },
+                "when": {
+                  "type": "string",
+                  "description": "When the action is executed relative to state occupancy: 'entry' (executed once when entering the state), 'exit' (executed once when leaving the state), or 'do' (executed continuously or repeatedly while in the state). If validation fails: ensure the value is exactly one of: 'entry', 'exit', 'do'.",
+                  "enum": ["entry", "exit", "do"]
+                }
+              },
+              "required": ["action_key", "when"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "type": "object",
+      "description": "Map of event keys to event definitions. Each key in this object becomes the event's identifier and is referenced by transitions. Keys should be lowercase with underscores (e.g., 'submit', 'cancel', 'timeout'). Events trigger transitions between states. If validation fails: check that each event has a valid 'name' field.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The display name of the event (e.g., 'Submit', 'Cancel', 'Payment Received'). This is the human-readable name shown on transition arrows in state diagrams. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+            "minLength": 1
+          },
+          "details": {
+            "type": "string",
+            "description": "Optional detailed description of the event. Describe what triggers this event, who or what can raise it, and any data it carries. Helps readers understand the event's role in the lifecycle."
+          },
+          "parameters": {
+            "type": "array",
+            "description": "Parameters passed with the event when it is raised. These provide data that guards and actions can use during transition processing.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The name of the parameter (e.g., 'amount', 'reason', 'user_id'). This is used to reference the parameter in guards and actions. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+                  "minLength": 1
+                },
+                "source": {
+                  "type": "string",
+                  "description": "The source or type of the parameter value. Describe where the value comes from or its data type (e.g., 'User input', 'System timestamp', 'decimal currency amount'). Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+                  "minLength": 1
+                }
+              },
+              "required": ["name", "source"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    },
+    "guards": {
+      "type": "object",
+      "description": "Map of guard keys to guard definitions. Each key in this object becomes the guard's identifier and is referenced by transitions. Keys should be lowercase with underscores (e.g., 'is_paid', 'has_inventory'). Guards are boolean conditions that must be true for a transition to fire. If validation fails: check that each guard has valid 'name' and 'details' fields.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The display name of the guard (e.g., 'Is Paid', 'Has Inventory'). This is the human-readable name shown in brackets on transition arrows (e.g., [Is Paid]). Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+            "minLength": 1
+          },
+          "details": {
+            "type": "string",
+            "description": "Description of the guard condition. Explain the boolean expression or business rule that determines when this guard is true. Be specific enough for implementation. Must be non-empty. If validation fails: ensure this describes the condition clearly.",
+            "minLength": 1
+          }
+        },
+        "required": ["name", "details"],
+        "additionalProperties": false
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "description": "List of transitions in the state machine. Each transition defines movement from one state to another (or from/to initial/final pseudo-states) triggered by an event, optionally guarded by a condition, and optionally executing an action. If validation fails: verify all referenced keys (from_state_key, to_state_key, event_key, guard_key, action_key) exist in their respective maps in this file.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from_state_key": {
+            "type": ["string", "null"],
+            "description": "Key of the source state. Must match a key in the 'states' object above. Set to null for the initial transition (the transition that occurs when an instance is first created). If validation fails: verify the state key exists in 'states' or is null for the initial transition."
+          },
+          "to_state_key": {
+            "type": ["string", "null"],
+            "description": "Key of the target state. Must match a key in the 'states' object above. Set to null for a final transition (a transition that ends the instance's lifecycle). If validation fails: verify the state key exists in 'states' or is null for a final transition."
+          },
+          "event_key": {
+            "type": "string",
+            "description": "Key of the event that triggers this transition. Must match a key in the 'events' object above. Every transition must have an event. If validation fails: verify the event key exists in 'events' in this file.",
+            "minLength": 1
+          },
+          "guard_key": {
+            "type": ["string", "null"],
+            "description": "Optional key of the guard condition. Must match a key in the 'guards' object above if specified. The transition only fires if the guard evaluates to true. Set to null or omit if there is no guard. If validation fails: verify the guard key exists in 'guards' in this file."
+          },
+          "action_key": {
+            "type": ["string", "null"],
+            "description": "Optional key of the action to execute during the transition. The action must be defined in the actions file for this class. Set to null or omit if no action is executed during the transition. If validation fails: verify the action is defined in the corresponding actions file."
+          },
+          "uml_comment": {
+            "type": "string",
+            "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the transition arrow in generated state diagrams."
+          }
+        },
+        "required": ["event_key"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

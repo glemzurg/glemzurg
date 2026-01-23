@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "query.schema.json",
+  "title": "Query",
+  "description": "Schema for query JSON files that define queries for classes. Query files are located alongside their class file with '.queries.json' extension (e.g., 'order_management/order.queries.json' for class 'order_management/order.class.json'). Queries represent read-only operations that return information without modifying state. The file contains a map of query keys to query definitions. If validation fails, verify 'name' is present and non-empty for each query.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the query (e.g., 'Get Order Total', 'Find Pending Orders', 'Calculate Shipping Cost'). This is the human-readable name shown in documentation. Use verb phrases that describe what information the query returns. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the query. Describe what information the query returns, any parameters it requires, and performance considerations. This helps implementers understand the query's purpose and expected behavior."
+    },
+    "requires": {
+      "type": "array",
+      "description": "Preconditions that must be true before the query can execute. Each string describes a condition that the system assumes is satisfied when the query is invoked. Use natural language that can be verified (e.g., 'Order ID must be valid', 'User must have read access'). If validation fails: ensure each item is a non-empty string.",
+      "items": {
+        "type": "string",
+        "description": "A precondition statement. Describe what must be true for this query to execute correctly. Be specific enough for implementation and testing."
+      }
+    },
+    "guarantees": {
+      "type": "array",
+      "description": "Postconditions describing what the query returns. Each string describes an aspect of the query result. Use natural language that can be verified (e.g., 'Returns the sum of all line item prices', 'Returns an empty list if no orders match', 'Result is sorted by date descending'). If validation fails: ensure each item is a non-empty string.",
+      "items": {
+        "type": "string",
+        "description": "A postcondition statement describing the query result. Be specific about the format, ordering, and content of what is returned."
+      }
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

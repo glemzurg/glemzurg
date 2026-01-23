@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "actor.schema.json",
+  "title": "Actor",
+  "description": "Schema for actor JSON files that define actors in the system. Actor files are located in the 'actors/' directory at the model root. The filename (without extension) becomes the actor's key, which is referenced by classes via 'actor_key'. If validation fails, verify 'name' and 'type' are both present and non-empty strings.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the actor (e.g., 'Customer', 'Inventory System'). This is the human-readable name shown in diagrams and documentation. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "description": "The type of actor. Common values: 'human' (a person interacting with the system), 'system' (an external software system), 'device' (hardware that interacts with the system). Must be non-empty. If validation fails: ensure this is a non-empty string describing the actor category.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the actor. Describe the actor's role, responsibilities, and how they interact with the system. Useful for documentation and understanding system boundaries."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the actor in generated UML diagrams. Use for diagram-specific clarifications."
+    }
+  },
+  "required": ["name", "type"],
+  "additionalProperties": false
+}
