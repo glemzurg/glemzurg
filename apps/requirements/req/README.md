@@ -1,10 +1,9 @@
 
+---------------------------
+
 
 next:
-  - parse yaml into just a model without requirements object
-  - build the ravelling/unravelling tests on requirements
-  - move the requirements object to generation package
-    - moving all the generation efficient work there
+  - fix class assocaition key collision
   - update json model to have levels of class associations model/domain/subdomain
   - update json package to just work with a model
     - update the objects to not have unique database keys on them
