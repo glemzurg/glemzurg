@@ -667,3 +667,42 @@ Based on `model_class.Generalization`:
 1. **Default subdomain only**: For the initial implementation, only the `default` subdomain is supported. All classes must be in `subdomains/default/`.
 
 2. **Actions are independent**: Actions do not reference or call other actions.
+
+## Implementation Architecture
+
+### Separate Go Structs for JSON Import
+
+The JSON import package will use its own set of Go structs, separate from the `req_model` classes. This separation exists for several reasons:
+
+1. **Optimized input shapes**: The JSON format can use structures that are easier for input (e.g., superclass/subclass defined in generalization rather than spread across class files).
+
+2. **Distinct error handling**: Each validation error has two distinct components:
+   - **Unique error number**: Every error type has its own identifier for programmatic handling and documentation reference.
+   - **Detailed output with construction advice**: Error messages include specific guidance on how to correct the input, helping AI or human authors fix issues quickly.
+
+   These error types are specific to import validation and don't belong in the main model tree.
+
+3. **Clear separation of concerns**: Import structs handle parsing and validation of external input; `req_model` structs represent the canonical internal model.
+
+4. **Conversion layer**: After successful validation, import structs are converted to `req_model` structs for use in the rest of the system.
+
+### JSON Schema Validation
+
+Each JSON file type will have a corresponding JSON Schema for validation:
+
+- `model.schema.json`
+- `actor.schema.json`
+- `domain.schema.json`
+- `subdomain.schema.json`
+- `class.schema.json`
+- `association.schema.json`
+- `state_machine.schema.json`
+- `action.schema.json`
+- `query.schema.json`
+- `generalization.schema.json`
+
+These schemas provide:
+- Early validation before Go parsing
+- Clear documentation of expected structure
+- IDE support for editing JSON files
+- Consistent error messages for structural issues
