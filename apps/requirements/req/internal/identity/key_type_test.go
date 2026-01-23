@@ -386,6 +386,22 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			},
 		},
 
+		// OK: Name distillation - forward slashes converted to tildes.
+		{
+			testName:     "ok name with forward slashes",
+			parentKey:    subdomain1Key,
+			fromClassKey: class1Key,
+			toClassKey:   class2Key,
+			name:         "Parent/Child Relationship",
+			expected: Key{
+				parentKey: subdomain1Key.String(),
+				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				subKey:    "class/class1",
+				subKey2:   "class/class2",
+				subKey3:   "parent~child_relationship",
+			},
+		},
+
 		// Errors: Empty name.
 		{
 			testName:     "error empty name",

@@ -294,11 +294,13 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string
 	return newKeyWithSubKey3(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2, subKey3)
 }
 
-// distillName converts a name to distilled format: trim, lowercase, replace internal spaces with underscores.
+// distillName converts a name to distilled format: trim, lowercase, replace internal spaces with underscores,
+// and replace forward slashes with tildes (since slashes are used as key separators).
 func distillName(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ToLower(name)
 	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, "/", "~")
 	return name
 }
 
