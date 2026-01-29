@@ -1,0 +1,7 @@
+{
+    "name": "Reserve Inventory",
+    "requires": [
+        "Order must have at least one item",
+        "All items must be in stock"
+    ]
+}

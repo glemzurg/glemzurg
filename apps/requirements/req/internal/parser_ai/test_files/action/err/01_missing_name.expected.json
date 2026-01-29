@@ -1,0 +1,6 @@
+{
+    "code": 8004,
+    "message_prefix": "action JSON does not match schema:",
+    "error_file": "8004_action_schema_violation.md",
+    "has_schema": true
+}
