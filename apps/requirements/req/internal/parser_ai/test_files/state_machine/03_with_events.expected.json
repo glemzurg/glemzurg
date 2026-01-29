@@ -1,0 +1,19 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending"
+        },
+        "approved": {
+            "name": "Approved"
+        }
+    },
+    "events": {
+        "submit": {
+            "name": "Submit"
+        },
+        "approve": {
+            "name": "Approve",
+            "details": "Manager approves the request"
+        }
+    }
+}

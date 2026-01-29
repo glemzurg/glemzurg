@@ -1,0 +1,25 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending"
+        },
+        "approved": {
+            "name": "Approved"
+        }
+    },
+    "events": {
+        "approve": {
+            "name": "Approve"
+        }
+    },
+    "guards": {
+        "is_valid": {
+            "name": "Is Valid",
+            "details": "The request passes all validation rules"
+        },
+        "has_budget": {
+            "name": "Has Budget",
+            "details": "Sufficient budget is available for the request"
+        }
+    }
+}

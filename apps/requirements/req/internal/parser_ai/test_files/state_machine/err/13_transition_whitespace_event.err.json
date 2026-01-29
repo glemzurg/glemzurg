@@ -1,0 +1,14 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending"
+        }
+    },
+    "transitions": [
+        {
+            "from_state_key": null,
+            "to_state_key": "pending",
+            "event_key": "   "
+        }
+    ]
+}

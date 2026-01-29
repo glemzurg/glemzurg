@@ -1,0 +1,13 @@
+{
+    "events": {
+        "approve": {
+            "name": "Approve",
+            "parameters": [
+                {
+                    "name": "   ",
+                    "source": "User input"
+                }
+            ]
+        }
+    }
+}

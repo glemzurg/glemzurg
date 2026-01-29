@@ -1,0 +1,8 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending"
+        }
+    },
+    "unknown_field": "not allowed"
+}

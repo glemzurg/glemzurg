@@ -1,0 +1,7 @@
+{
+    "code": 7004,
+    "message_prefix": "state 'pending' name cannot be empty or whitespace only",
+    "error_file": "7004_state_name_empty.md",
+    "has_schema": false,
+    "field": "states.pending.name"
+}

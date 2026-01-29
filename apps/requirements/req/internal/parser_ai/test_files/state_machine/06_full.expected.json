@@ -1,0 +1,102 @@
+{
+    "states": {
+        "draft": {
+            "name": "Draft",
+            "details": "Order is being created",
+            "uml_comment": "Initial state"
+        },
+        "pending": {
+            "name": "Pending Approval",
+            "details": "Order submitted and awaiting approval",
+            "actions": [
+                {
+                    "action_key": "notify_manager",
+                    "when": "entry"
+                }
+            ]
+        },
+        "approved": {
+            "name": "Approved",
+            "details": "Order has been approved",
+            "actions": [
+                {
+                    "action_key": "send_confirmation",
+                    "when": "entry"
+                },
+                {
+                    "action_key": "cleanup",
+                    "when": "exit"
+                }
+            ]
+        },
+        "rejected": {
+            "name": "Rejected",
+            "details": "Order was rejected"
+        }
+    },
+    "events": {
+        "submit": {
+            "name": "Submit",
+            "details": "User submits the order for approval"
+        },
+        "approve": {
+            "name": "Approve",
+            "details": "Manager approves the order",
+            "parameters": [
+                {
+                    "name": "approver_id",
+                    "source": "User ID of the approving manager"
+                },
+                {
+                    "name": "notes",
+                    "source": "Optional approval notes"
+                }
+            ]
+        },
+        "reject": {
+            "name": "Reject",
+            "parameters": [
+                {
+                    "name": "reason",
+                    "source": "Rejection reason text"
+                }
+            ]
+        }
+    },
+    "guards": {
+        "is_valid": {
+            "name": "Is Valid",
+            "details": "Order passes all validation rules: total > 0, has items, valid addresses"
+        },
+        "under_limit": {
+            "name": "Under Limit",
+            "details": "Order total is under the auto-approval limit of $1000"
+        }
+    },
+    "transitions": [
+        {
+            "from_state_key": null,
+            "to_state_key": "draft",
+            "event_key": "submit",
+            "uml_comment": "Initial transition"
+        },
+        {
+            "from_state_key": "draft",
+            "to_state_key": "pending",
+            "event_key": "submit",
+            "guard_key": "is_valid"
+        },
+        {
+            "from_state_key": "pending",
+            "to_state_key": "approved",
+            "event_key": "approve",
+            "action_key": "log_approval"
+        },
+        {
+            "from_state_key": "pending",
+            "to_state_key": "rejected",
+            "event_key": "reject",
+            "action_key": "log_rejection"
+        }
+    ]
+}

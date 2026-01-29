@@ -1,0 +1,7 @@
+{
+    "code": 7015,
+    "message_prefix": "guard 'is_valid' name cannot be empty or whitespace only",
+    "error_file": "7015_guard_name_empty.md",
+    "has_schema": false,
+    "field": "guards.is_valid.name"
+}

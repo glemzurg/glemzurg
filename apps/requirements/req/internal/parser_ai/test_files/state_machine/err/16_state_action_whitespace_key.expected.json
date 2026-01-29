@@ -1,0 +1,7 @@
+{
+    "code": 7006,
+    "message_prefix": "state 'pending' action[0] action_key cannot be whitespace only",
+    "error_file": "7006_state_action_key_required.md",
+    "has_schema": false,
+    "field": "states.pending.actions[0].action_key"
+}

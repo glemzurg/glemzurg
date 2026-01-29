@@ -1,0 +1,13 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending",
+            "actions": [
+                {
+                    "action_key": "notify",
+                    "when": "invalid"
+                }
+            ]
+        }
+    }
+}

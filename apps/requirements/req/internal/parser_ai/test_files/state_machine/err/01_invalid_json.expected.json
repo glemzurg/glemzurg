@@ -1,0 +1,6 @@
+{
+    "code": 7001,
+    "message_prefix": "failed to parse state machine JSON:",
+    "error_file": "7001_state_machine_invalid_json.md",
+    "has_schema": false
+}

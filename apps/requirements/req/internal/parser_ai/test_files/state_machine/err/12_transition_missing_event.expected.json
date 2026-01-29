@@ -1,0 +1,6 @@
+{
+    "code": 7002,
+    "message_prefix": "state machine JSON does not match schema:",
+    "error_file": "7002_state_machine_schema_violation.md",
+    "has_schema": true
+}
