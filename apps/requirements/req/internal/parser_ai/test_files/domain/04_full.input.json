@@ -1,0 +1,6 @@
+{
+    "name": "Inventory Control",
+    "details": "Manages product inventory, stock levels, and warehouse operations.",
+    "realized": false,
+    "uml_comment": "Core business domain"
+}
