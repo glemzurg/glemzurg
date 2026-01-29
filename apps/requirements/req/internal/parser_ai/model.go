@@ -12,6 +12,11 @@ import (
 type inputModel struct {
 	Name    string `json:"name"`
 	Details string `json:"details,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	Actors       map[string]*inputActor       `json:"-"`
+	Domains      map[string]*inputDomain      `json:"-"`
+	Associations map[string]*inputAssociation `json:"-"`
 }
 
 // modelSchema is the compiled JSON schema for model.json.

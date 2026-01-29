@@ -27,6 +27,11 @@ type inputClass struct {
 	UMLComment string                     `json:"uml_comment,omitempty"`
 	Attributes map[string]*inputAttribute `json:"attributes,omitempty"`
 	Indexes    [][]string                 `json:"indexes,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	StateMachine *inputStateMachine    `json:"-"`
+	Actions      map[string]*inputAction `json:"-"`
+	Queries      map[string]*inputQuery  `json:"-"`
 }
 
 // classSchema is the compiled JSON schema for class files.

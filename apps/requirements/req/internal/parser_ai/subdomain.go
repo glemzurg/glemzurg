@@ -13,6 +13,11 @@ type inputSubdomain struct {
 	Name       string `json:"name"`
 	Details    string `json:"details,omitempty"`
 	UMLComment string `json:"uml_comment,omitempty"`
+
+	// Children (not from JSON, populated during directory traversal)
+	Classes         map[string]*inputClass          `json:"-"`
+	Generalizations map[string]*inputGeneralization `json:"-"`
+	Associations    map[string]*inputAssociation    `json:"-"`
 }
 
 // subdomainSchema is the compiled JSON schema for subdomain files.
