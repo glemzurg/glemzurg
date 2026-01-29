@@ -8,6 +8,46 @@ This document proposes a new JSON-based format for defining requirements models.
 2. **Human-reviewable** - Each file is small and focused, making corrections easy
 3. **Intuitive structure** - Directory layout mirrors the conceptual model hierarchy
 
+## What This Model Represents
+
+This model captures **requirements** — the distilled behavior of a system as understood by human readers. It describes *what* the system does, not *how* it is implemented.
+
+### Abstraction Over Implementation
+
+The model represents a **logical abstraction** that is independent of deployment architecture. It does not distinguish between client and server, frontend and backend, or any particular technical boundary. Instead, it describes behavior as a unified whole:
+
+- **Objects and State**: A class's attributes and state represent the complete logical state of that concept, regardless of where the data physically resides. An "Order" object might have some data stored in a client-side cache, some in a server database, and some computed on-the-fly — but in the requirements model, it is simply an "Order" with its attributes.
+
+- **State Machines**: When an object transitions between states, the model captures the business meaning of that transition. Whether the transition is triggered by a user action on a mobile app, a webhook from a payment processor, or a scheduled job on a server is an implementation detail not expressed here.
+
+- **Actions**: An action like "Send Confirmation Email" describes the business effect. The model does not specify whether this happens synchronously, asynchronously, on which server, or through which email provider.
+
+- **Queries**: A query like "Get Available Products" describes what information is returned and under what conditions. The query might involve filtering options that only exist in a client application's UI, database queries on a server, and aggregation across multiple microservices — but the requirements model presents it as a single coherent operation.
+
+### Why This Matters
+
+This abstraction serves several purposes:
+
+1. **Human Understanding**: Stakeholders can review and validate system behavior without needing to understand technical architecture. A product manager can verify that "an order can only be cancelled before it ships" without knowing which services enforce this rule.
+
+2. **Implementation Flexibility**: The same requirements model can be implemented in various architectures. A monolithic application, a microservices deployment, or a serverless architecture could all satisfy the same requirements.
+
+3. **Focus on Behavior**: By removing implementation concerns, the model keeps focus on what matters most during requirements gathering: what the system should do for its users.
+
+4. **Communication Bridge**: The model serves as a shared language between technical and non-technical team members, capturing business logic in a form both can understand and validate.
+
+### Example: Cross-Boundary Behavior
+
+Consider a "Shopping Cart" class with a "total" attribute and a "Calculate Total" action:
+
+- The cart items might be stored in browser local storage
+- The product prices might come from a server API
+- Tax calculations might involve a third-party tax service
+- Discount rules might be evaluated on the server
+- The final total might be displayed in the mobile app UI
+
+In the requirements model, none of this complexity appears. There is simply a Shopping Cart with items, and when you ask for the total, you get the correct value reflecting prices, taxes, and discounts. The model describes the *behavior* humans expect, not the *mechanism* that delivers it.
+
 ## Design Principles
 
 - **One concept per file** - Each actor, class, etc. is its own JSON file
