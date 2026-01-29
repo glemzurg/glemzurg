@@ -1,0 +1,9 @@
+{
+    "name": "Media Format",
+    "details": "Different formats a book can be published in. Once created, a product cannot change its format.",
+    "superclass_key": "catalog.media",
+    "subclass_keys": ["catalog.book", "catalog.ebook", "catalog.audiobook"],
+    "is_complete": true,
+    "is_static": true,
+    "uml_comment": "Discriminator: format_type"
+}

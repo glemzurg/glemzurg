@@ -1,0 +1,7 @@
+{
+    "code": 10002,
+    "message": "generalization name cannot be empty or whitespace only, got '   '",
+    "error_file": "10002_generalization_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

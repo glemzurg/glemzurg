@@ -1,0 +1,4 @@
+{
+    "name": "Payment Types",
+    "superclass_key": "billing.payment"
+}

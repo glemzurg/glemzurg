@@ -1,0 +1,7 @@
+{
+    "code": 10005,
+    "message": "generalization superclass_key cannot be empty or whitespace only, got '   '",
+    "error_file": "10005_generalization_superclass_required.md",
+    "has_schema": false,
+    "field": "superclass_key"
+}

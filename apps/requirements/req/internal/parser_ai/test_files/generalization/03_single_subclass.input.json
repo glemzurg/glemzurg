@@ -1,0 +1,5 @@
+{
+    "name": "Premium Product",
+    "superclass_key": "catalog.product",
+    "subclass_keys": ["catalog.premium_product"]
+}

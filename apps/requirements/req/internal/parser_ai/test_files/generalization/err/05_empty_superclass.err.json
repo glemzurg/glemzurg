@@ -1,0 +1,5 @@
+{
+    "name": "Payment Types",
+    "superclass_key": "",
+    "subclass_keys": ["billing.credit_card"]
+}
