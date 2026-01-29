@@ -1,0 +1,19 @@
+{
+    "name": "Order",
+    "attributes": {
+        "customer_id": {
+            "name": "Customer ID"
+        },
+        "order_date": {
+            "name": "Order Date"
+        },
+        "status": {
+            "name": "Status"
+        }
+    },
+    "indexes": [
+        ["customer_id"],
+        ["customer_id", "order_date"],
+        ["status"]
+    ]
+}

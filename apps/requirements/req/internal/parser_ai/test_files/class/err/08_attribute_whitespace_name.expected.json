@@ -1,0 +1,7 @@
+{
+    "code": 5008,
+    "message_prefix": "attribute 'order_date' name cannot be empty or whitespace only",
+    "error_file": "5008_class_attribute_name_empty.md",
+    "has_schema": false,
+    "field": "attributes.order_date.name"
+}

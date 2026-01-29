@@ -1,0 +1,11 @@
+{
+    "name": "Order",
+    "attributes": {
+        "order_date": {
+            "name": "Order Date"
+        }
+    },
+    "indexes": [
+        ["order_date", ""]
+    ]
+}

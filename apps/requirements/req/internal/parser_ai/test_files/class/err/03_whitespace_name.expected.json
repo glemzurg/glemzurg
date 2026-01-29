@@ -1,0 +1,7 @@
+{
+    "code": 5002,
+    "message_prefix": "class name cannot be empty or whitespace only",
+    "error_file": "5002_class_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

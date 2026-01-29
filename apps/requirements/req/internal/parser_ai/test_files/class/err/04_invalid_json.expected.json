@@ -1,0 +1,6 @@
+{
+    "code": 5003,
+    "message_prefix": "failed to parse class JSON:",
+    "error_file": "5003_class_invalid_json.md",
+    "has_schema": false
+}

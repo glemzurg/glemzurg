@@ -1,0 +1,6 @@
+{
+    "code": 5004,
+    "message_prefix": "class JSON does not match schema:",
+    "error_file": "5004_class_schema_violation.md",
+    "has_schema": true
+}

@@ -1,0 +1,35 @@
+{
+    "name": "Order",
+    "details": "Represents a customer's order with full lifecycle tracking",
+    "actor_key": "customer",
+    "uml_comment": "Core aggregate root",
+    "attributes": {
+        "order_number": {
+            "name": "Order Number",
+            "data_type_rules": "Unique alphanumeric string, format: ORD-YYYYMMDD-XXXXX",
+            "details": "Human-readable order identifier",
+            "nullable": false,
+            "uml_comment": "<<unique>>"
+        },
+        "order_date": {
+            "name": "Order Date",
+            "data_type_rules": "ISO 8601 datetime with timezone",
+            "nullable": false
+        },
+        "total_amount": {
+            "name": "Total Amount",
+            "data_type_rules": "Positive decimal with 2 decimal places",
+            "derivation_policy": "Sum of all order line item amounts plus taxes minus discounts",
+            "nullable": false
+        },
+        "status": {
+            "name": "Status",
+            "data_type_rules": "Enum: pending, confirmed, shipped, delivered, cancelled",
+            "nullable": false
+        }
+    },
+    "indexes": [
+        ["order_number"],
+        ["order_date", "status"]
+    ]
+}
