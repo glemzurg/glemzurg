@@ -1,0 +1,7 @@
+{
+    "code": 6002,
+    "message_prefix": "association name cannot be empty or whitespace only",
+    "error_file": "6002_assoc_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

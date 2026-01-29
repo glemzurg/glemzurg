@@ -1,0 +1,8 @@
+{
+    "name": "Customer Places Order",
+    "details": "Represents the relationship between a customer and their orders. A customer can place multiple orders over time.",
+    "from_class_key": "customer.customer",
+    "from_multiplicity": "1",
+    "to_class_key": "order_management.order",
+    "to_multiplicity": "*"
+}

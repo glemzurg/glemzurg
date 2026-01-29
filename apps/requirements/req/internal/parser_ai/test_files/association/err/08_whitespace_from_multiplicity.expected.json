@@ -1,0 +1,7 @@
+{
+    "code": 6007,
+    "message_prefix": "association from_multiplicity cannot be empty or whitespace only",
+    "error_file": "6007_assoc_from_mult_required.md",
+    "has_schema": false,
+    "field": "from_multiplicity"
+}

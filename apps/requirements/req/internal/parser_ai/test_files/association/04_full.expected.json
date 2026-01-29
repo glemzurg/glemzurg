@@ -1,0 +1,10 @@
+{
+    "name": "Employee Works In Department",
+    "details": "Represents the employment relationship between employees and departments. An employee can work in multiple departments and a department can have multiple employees.",
+    "from_class_key": "hr.employee",
+    "from_multiplicity": "1..*",
+    "to_class_key": "hr.department",
+    "to_multiplicity": "1..*",
+    "association_class_key": "hr.employment",
+    "uml_comment": "Many-to-many relationship with employment details"
+}

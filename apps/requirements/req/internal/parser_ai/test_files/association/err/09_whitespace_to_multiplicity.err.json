@@ -1,0 +1,7 @@
+{
+    "name": "Order Contains Items",
+    "from_class_key": "order_management.order",
+    "from_multiplicity": "1",
+    "to_class_key": "order_management.order_item",
+    "to_multiplicity": "   "
+}

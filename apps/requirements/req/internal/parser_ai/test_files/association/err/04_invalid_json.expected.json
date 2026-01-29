@@ -1,0 +1,6 @@
+{
+    "code": 6003,
+    "message_prefix": "failed to parse association JSON:",
+    "error_file": "6003_assoc_invalid_json.md",
+    "has_schema": false
+}
