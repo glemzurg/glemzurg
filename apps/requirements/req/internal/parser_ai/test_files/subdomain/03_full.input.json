@@ -1,0 +1,5 @@
+{
+    "name": "Shipping Calculation",
+    "details": "Calculates shipping costs based on weight, dimensions, destination, and carrier options.",
+    "uml_comment": "Integrates with external carrier APIs"
+}

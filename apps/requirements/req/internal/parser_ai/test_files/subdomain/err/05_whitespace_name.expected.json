@@ -1,0 +1,7 @@
+{
+    "code": 4002,
+    "message": "subdomain name cannot be empty or whitespace only, got '   '",
+    "error_file": "4002_subdomain_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}
