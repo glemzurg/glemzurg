@@ -1,0 +1,6 @@
+{
+    "code": 9003,
+    "message_prefix": "failed to parse query JSON:",
+    "error_file": "9003_query_invalid_json.md",
+    "has_schema": false
+}

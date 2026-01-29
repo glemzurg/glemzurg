@@ -1,0 +1,7 @@
+{
+    "code": 9002,
+    "message_prefix": "query name cannot be empty or whitespace only",
+    "error_file": "9002_query_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}
