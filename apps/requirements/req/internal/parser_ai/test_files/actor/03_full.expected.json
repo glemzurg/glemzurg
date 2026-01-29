@@ -1,0 +1,6 @@
+{
+    "name": "Payment Gateway",
+    "type": "system",
+    "details": "Third-party payment processing service that handles credit card transactions and fraud detection.",
+    "uml_comment": "Requires PCI DSS compliance"
+}

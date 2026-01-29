@@ -1,0 +1,5 @@
+{
+    "name": "Customer",
+    "type": "human",
+    "unknown_field": "should not be here"
+}

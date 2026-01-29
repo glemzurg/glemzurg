@@ -1,0 +1,5 @@
+{
+    "name": "Inventory System",
+    "type": "system",
+    "details": "External inventory management system that tracks product stock levels and triggers reorder notifications."
+}
