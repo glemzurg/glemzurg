@@ -1,0 +1,6 @@
+{
+    "code": 3004,
+    "message_prefix": "domain JSON does not match schema:",
+    "error_file": "3004_domain_schema_violation.md",
+    "has_schema": true
+}

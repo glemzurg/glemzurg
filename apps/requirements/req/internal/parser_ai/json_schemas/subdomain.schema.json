@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "subdomain.schema.json",
+  "title": "Subdomain",
+  "description": "Schema for subdomain JSON files that define subdomains within a domain. Subdomains provide finer-grained organization within a domain. Subdomain files are located within a domain directory. The subdomain's key is derived from its path relative to the domain. If validation fails, verify 'name' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the subdomain (e.g., 'Payment Processing', 'Order Validation'). This is the human-readable name shown in diagrams. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the subdomain. Describe the subdomain's purpose and how it relates to its parent domain. Helps readers understand the organizational hierarchy."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the subdomain package in generated UML diagrams."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

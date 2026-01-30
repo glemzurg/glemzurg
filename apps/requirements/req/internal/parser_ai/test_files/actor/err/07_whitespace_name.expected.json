@@ -1,0 +1,7 @@
+{
+    "code": 2002,
+    "message": "actor name cannot be empty or whitespace only, got '   '",
+    "error_file": "2002_actor_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

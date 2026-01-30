@@ -1,0 +1,4 @@
+{
+    "name": "Get Order Total",
+    "details": "Calculates the total price of all items in the order including taxes and shipping"
+}

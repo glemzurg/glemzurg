@@ -1,0 +1,11 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending"
+        },
+        "completed": {
+            "name": "Completed",
+            "details": "Order has been fulfilled"
+        }
+    }
+}

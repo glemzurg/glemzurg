@@ -1,0 +1,7 @@
+{
+    "code": 6006,
+    "message_prefix": "association to_class_key cannot be empty or whitespace only",
+    "error_file": "6006_assoc_to_class_required.md",
+    "has_schema": false,
+    "field": "to_class_key"
+}

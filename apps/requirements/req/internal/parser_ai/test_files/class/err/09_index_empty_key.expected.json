@@ -1,0 +1,7 @@
+{
+    "code": 5009,
+    "message_prefix": "index[0][1] attribute key cannot be empty",
+    "error_file": "5009_class_index_invalid.md",
+    "has_schema": false,
+    "field": "indexes[0][1]"
+}

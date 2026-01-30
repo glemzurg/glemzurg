@@ -1,16 +1,10 @@
 
+---------------------------
+
 
 next:
-  - parse yaml into just a model without requirements object
-  - build the ravelling/unravelling tests on requirements
-  - move the requirements object to generation package
-    - moving all the generation efficient work there
-  - update json model to have levels of class associations model/domain/subdomain
-  - update json package to just work with a model
-    - update the objects to not have unique database keys on them
-  - json in and out of system
-    - with validating schema and lots of comments as advice to ai
   - means to take in yaml/json and produce yaml/json/md
+  - stand alone method to vet the structure
 
 jan (in parallel):
   - use ai to summarize the current system into 

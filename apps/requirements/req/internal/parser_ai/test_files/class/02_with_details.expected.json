@@ -1,0 +1,6 @@
+{
+    "name": "Order",
+    "details": "Represents a customer's order in the system",
+    "actor_key": "customer",
+    "uml_comment": "Core domain entity"
+}

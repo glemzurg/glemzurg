@@ -75,11 +75,11 @@ func (suite *RequirementsSuite) TestWriteRead() {
 
 	// Class association keys at different levels:
 	// Model level - association between classes in different domains
-	classAssocKeyModel := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKeyAA1, classKeyBA1))
+	classAssocKeyModel := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKeyAA1, classKeyBA1, "Model Level Assoc"))
 	// Domain level - association between classes in different subdomains of same domain
-	classAssocKeyDomain := helper.Must(identity.NewClassAssociationKey(domainKeyB, classKeyBA1, classKeyBB1))
+	classAssocKeyDomain := helper.Must(identity.NewClassAssociationKey(domainKeyB, classKeyBA1, classKeyBB1, "Domain Level Assoc"))
 	// Subdomain level - association between classes in same subdomain
-	classAssocKeySubdomain := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2))
+	classAssocKeySubdomain := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "Subdomain Level Assoc"))
 
 	// Build the model tree.
 	input := req_model.Model{

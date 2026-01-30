@@ -22,7 +22,7 @@ func TestSubdomainInOutRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, "uc1")
 	require.NoError(t, err)
-	assocKey, err := identity.NewClassAssociationKey(subdomainKey, classKey, classKey)
+	assocKey, err := identity.NewClassAssociationKey(subdomainKey, classKey, classKey, "Subdomain Assoc")
 	require.NoError(t, err)
 
 	original := model_domain.Subdomain{

@@ -1,0 +1,6 @@
+{
+    "name": "Account Hierarchy",
+    "details": "Defines the different types of user accounts in the system, each with different permission levels.",
+    "superclass_key": "users.account",
+    "subclass_keys": ["users.admin_account", "users.standard_account", "users.guest_account"]
+}

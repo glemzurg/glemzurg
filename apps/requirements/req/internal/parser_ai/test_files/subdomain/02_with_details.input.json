@@ -1,0 +1,4 @@
+{
+    "name": "Payment Validation",
+    "details": "Handles validation of payment methods and fraud detection before processing transactions."
+}

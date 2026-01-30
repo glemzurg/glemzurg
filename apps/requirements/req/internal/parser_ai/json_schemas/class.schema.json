@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "class.schema.json",
+  "title": "Class",
+  "description": "Schema for class JSON files that define classes in the model. Class files are located within domain directories (e.g., 'order_management/order.class.json'). The class key is constructed from the domain key prefix plus the filename: for 'order_management/order.class.json', the key is 'order_management.order'. Classes represent entities with attributes and behavior. If validation fails, verify 'name' is present and non-empty, and check that any referenced keys (actor_key, attribute keys in indexes) exist.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the class (e.g., 'Order', 'Customer Account'). This is the human-readable name shown in diagrams. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the class. Describe what entity this class represents, its purpose in the domain, and any important business rules or constraints. Helps readers understand the class's role in the model."
+    },
+    "actor_key": {
+      "type": "string",
+      "description": "Optional key referencing the actor that owns or primarily interacts with this class. The actor_key must match a filename (without extension) in the 'actors/' directory at the model root. For example, if you have 'actors/customer.actor.json', use 'customer' as the actor_key. If validation fails: verify the actor file exists at 'actors/{actor_key}.actor.json' and the filename matches exactly (case-sensitive)."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the class in generated UML diagrams. Use for diagram-specific clarifications that don't belong in the main description."
+    },
+    "attributes": {
+      "type": "object",
+      "description": "Map of attribute keys to attribute definitions. Each key in this object becomes the attribute's identifier and must be unique within the class. Keys should be lowercase with underscores (e.g., 'order_date', 'total_amount'). These keys are referenced by indexes and other parts of the model. If validation fails: check that each attribute has a valid 'name' field.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The display name of the attribute (e.g., 'Order Date', 'Total Amount'). This is the human-readable name shown in diagrams and documentation. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+            "minLength": 1
+          },
+          "data_type_rules": {
+            "type": "string",
+            "description": "Rules defining the data type and constraints of the attribute. Describe the type (string, integer, date, etc.) and any validation rules (e.g., 'Positive integer representing quantity', 'ISO 8601 date string', 'Email address format'). Be specific about formats and constraints for implementation."
+          },
+          "details": {
+            "type": "string",
+            "description": "Optional detailed description of the attribute. Explain the attribute's purpose, business meaning, and any rules governing its values. Include examples if helpful."
+          },
+          "derivation_policy": {
+            "type": "string",
+            "description": "Policy for deriving the attribute value if it's computed rather than stored. Describe the formula or logic used to calculate this attribute from other attributes or associations. If not specified, the attribute is assumed to be stored directly."
+          },
+          "nullable": {
+            "type": "boolean",
+            "description": "Whether the attribute can be null/empty. Set to true if the attribute is optional and may have no value. Default behavior (when omitted) depends on implementation. If validation fails: ensure this is a boolean (true or false), not a string."
+          },
+          "uml_comment": {
+            "type": "string",
+            "description": "Optional UML comment for diagram annotations specific to this attribute. Appears as a note in generated UML diagrams."
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    },
+    "indexes": {
+      "type": "array",
+      "description": "List of indexes for the class. Each index is an array of attribute keys that together form a unique or lookup index. The attribute keys must match keys defined in the 'attributes' object above. For example, if you have attributes 'customer_id' and 'order_date', an index could be ['customer_id', 'order_date']. If validation fails: verify each string in the index arrays matches an attribute key defined in this class's 'attributes' object.",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "An attribute key that must exist in this class's 'attributes' object. If validation fails: check spelling and ensure the attribute is defined above."
+        },
+        "minItems": 1
+      }
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

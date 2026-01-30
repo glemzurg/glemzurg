@@ -1,0 +1,7 @@
+{
+    "code": 7012,
+    "message_prefix": "event 'approve' parameter[0] name cannot be whitespace only",
+    "error_file": "7012_event_param_name_required.md",
+    "has_schema": false,
+    "field": "events.approve.parameters[0].name"
+}

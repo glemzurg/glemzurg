@@ -1,0 +1,7 @@
+{
+    "code": 2004,
+    "message": "actor type cannot be empty or whitespace only, got '   '",
+    "error_file": "2004_actor_type_invalid.md",
+    "has_schema": false,
+    "field": "type"
+}

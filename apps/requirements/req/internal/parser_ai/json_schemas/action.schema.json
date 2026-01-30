@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action.schema.json",
+  "title": "Action",
+  "description": "Schema for action JSON files that define actions for classes. Action files are located alongside their class file with '.actions.json' extension (e.g., 'order_management/order.actions.json' for class 'order_management/order.class.json'). Actions represent operations that modify state and are referenced by state machines. The file contains a map of action keys to action definitions. If validation fails, verify 'name' is present and non-empty for each action.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the action (e.g., 'Send Confirmation Email', 'Reserve Inventory', 'Calculate Total'). This is the human-readable name shown in state diagrams and documentation. Use verb phrases that describe what the action does. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the action. Describe what the action does, what side effects it has, and any important implementation considerations. This helps implementers understand the full scope of the action."
+    },
+    "requires": {
+      "type": "array",
+      "description": "Preconditions that must be true before the action can execute. Each string describes a condition that the system assumes is satisfied when the action is invoked. Use natural language that can be verified (e.g., 'Order must have at least one item', 'Customer payment method must be valid'). If validation fails: ensure each item is a non-empty string.",
+      "items": {
+        "type": "string",
+        "description": "A precondition statement. Describe what must be true for this action to execute correctly. Be specific enough for implementation and testing."
+      }
+    },
+    "guarantees": {
+      "type": "array",
+      "description": "Postconditions that will be true after the action executes successfully. Each string describes an outcome the action ensures. Use natural language that can be verified (e.g., 'Confirmation email has been queued', 'Inventory has been decremented', 'Order total reflects current prices'). If validation fails: ensure each item is a non-empty string.",
+      "items": {
+        "type": "string",
+        "description": "A postcondition statement. Describe what will be true after the action completes. Be specific enough for implementation and testing."
+      }
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

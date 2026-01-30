@@ -23,7 +23,7 @@ func (suite *AssociationSuite) TestValidate() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
-	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 
 	tests := []struct {
 		testName    string
@@ -151,7 +151,7 @@ func (suite *AssociationSuite) TestNew() {
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
 	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
-	key := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	key := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 	multiplicity, err := NewMultiplicity("2..3")
 	assert.NoError(suite.T(), err)
 
@@ -181,7 +181,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
-	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
 
 	// Test that Validate is called.
@@ -217,7 +217,7 @@ func (suite *AssociationSuite) TestValidateReferences() {
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
 	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
 	nonExistentClassKey := helper.Must(identity.NewClassKey(subdomainKey, "nonexistent"))
-	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 
 	// Build lookup map with all valid classes.
 	classes := map[identity.Key]bool{
@@ -308,7 +308,7 @@ func (suite *AssociationSuite) TestOther() {
 
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
-	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 	unknownClassKey := helper.Must(identity.NewClassKey(subdomainKey, "unknown"))
 
 	tests := []struct {

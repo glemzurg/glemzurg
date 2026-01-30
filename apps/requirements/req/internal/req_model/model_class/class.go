@@ -23,6 +23,7 @@ type Class struct {
 	Events      map[identity.Key]model_state.Event
 	Guards      map[identity.Key]model_state.Guard
 	Actions     map[identity.Key]model_state.Action
+	Queries     map[identity.Key]model_state.Query
 	Transitions map[identity.Key]model_state.Transition
 }
 
@@ -131,6 +132,10 @@ func (c *Class) SetActions(actions map[identity.Key]model_state.Action) {
 	c.Actions = actions
 }
 
+func (c *Class) SetQueries(queries map[identity.Key]model_state.Query) {
+	c.Queries = queries
+}
+
 func (c *Class) SetTransitions(transitions map[identity.Key]model_state.Transition) {
 	c.Transitions = transitions
 }
@@ -188,6 +193,11 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 	}
 	for _, action := range c.Actions {
 		if err := action.ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	for _, query := range c.Queries {
+		if err := query.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
 	}

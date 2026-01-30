@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model.schema.json",
+  "title": "Model",
+  "description": "Schema for the model.json file that defines the top-level model information. This file must exist at the root of your model directory. If validation fails, check that 'name' is present and is a non-empty string.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the model. This should be a human-readable identifier for the entire model (e.g., 'Order Management System'). Must be non-empty. If validation fails: ensure the value is a string with at least one character, not null or an empty string.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the model. Use this to provide context about what the model represents, its scope, and any important assumptions. Can be multiple sentences or paragraphs."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

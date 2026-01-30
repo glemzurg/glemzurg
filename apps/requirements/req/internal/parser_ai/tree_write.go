@@ -1,0 +1,214 @@
+package parser_ai
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+)
+
+// WriteModelTree writes a complete model tree to the filesystem.
+// The modelDir is the root directory where the model will be written.
+func WriteModelTree(model *inputModel, modelDir string) error {
+	// Create model directory
+	if err := os.MkdirAll(modelDir, 0755); err != nil {
+		return err
+	}
+
+	// Write model.json
+	if err := writeJSON(filepath.Join(modelDir, "model.json"), model); err != nil {
+		return err
+	}
+
+	// Write actors
+	if len(model.Actors) > 0 {
+		actorsDir := filepath.Join(modelDir, "actors")
+		if err := os.MkdirAll(actorsDir, 0755); err != nil {
+			return err
+		}
+		for key, actor := range model.Actors {
+			if err := writeJSON(filepath.Join(actorsDir, key+".actor.json"), actor); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write model-level associations
+	if len(model.Associations) > 0 {
+		assocDir := filepath.Join(modelDir, "associations")
+		if err := os.MkdirAll(assocDir, 0755); err != nil {
+			return err
+		}
+		for key, assoc := range model.Associations {
+			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write domains
+	if len(model.Domains) > 0 {
+		domainsDir := filepath.Join(modelDir, "domains")
+		if err := os.MkdirAll(domainsDir, 0755); err != nil {
+			return err
+		}
+		for domainKey, domain := range model.Domains {
+			if err := writeDomainTree(domain, filepath.Join(domainsDir, domainKey)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// writeDomainTree writes a domain and its children to the filesystem.
+func writeDomainTree(domain *inputDomain, domainDir string) error {
+	// Create domain directory
+	if err := os.MkdirAll(domainDir, 0755); err != nil {
+		return err
+	}
+
+	// Write domain.json
+	if err := writeJSON(filepath.Join(domainDir, "domain.json"), domain); err != nil {
+		return err
+	}
+
+	// Write domain-level associations
+	if len(domain.Associations) > 0 {
+		assocDir := filepath.Join(domainDir, "associations")
+		if err := os.MkdirAll(assocDir, 0755); err != nil {
+			return err
+		}
+		for key, assoc := range domain.Associations {
+			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write subdomains
+	if len(domain.Subdomains) > 0 {
+		subdomainsDir := filepath.Join(domainDir, "subdomains")
+		if err := os.MkdirAll(subdomainsDir, 0755); err != nil {
+			return err
+		}
+		for subdomainKey, subdomain := range domain.Subdomains {
+			if err := writeSubdomainTree(subdomain, filepath.Join(subdomainsDir, subdomainKey)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// writeSubdomainTree writes a subdomain and its children to the filesystem.
+func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
+	// Create subdomain directory
+	if err := os.MkdirAll(subdomainDir, 0755); err != nil {
+		return err
+	}
+
+	// Write subdomain.json
+	if err := writeJSON(filepath.Join(subdomainDir, "subdomain.json"), subdomain); err != nil {
+		return err
+	}
+
+	// Write subdomain-level associations
+	if len(subdomain.Associations) > 0 {
+		assocDir := filepath.Join(subdomainDir, "associations")
+		if err := os.MkdirAll(assocDir, 0755); err != nil {
+			return err
+		}
+		for key, assoc := range subdomain.Associations {
+			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write generalizations
+	if len(subdomain.Generalizations) > 0 {
+		genDir := filepath.Join(subdomainDir, "generalizations")
+		if err := os.MkdirAll(genDir, 0755); err != nil {
+			return err
+		}
+		for key, gen := range subdomain.Generalizations {
+			if err := writeJSON(filepath.Join(genDir, key+".gen.json"), gen); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write classes
+	if len(subdomain.Classes) > 0 {
+		classesDir := filepath.Join(subdomainDir, "classes")
+		if err := os.MkdirAll(classesDir, 0755); err != nil {
+			return err
+		}
+		for classKey, class := range subdomain.Classes {
+			if err := writeClassTree(class, filepath.Join(classesDir, classKey)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// writeClassTree writes a class and its children to the filesystem.
+func writeClassTree(class *inputClass, classDir string) error {
+	// Create class directory
+	if err := os.MkdirAll(classDir, 0755); err != nil {
+		return err
+	}
+
+	// Write class.json
+	if err := writeJSON(filepath.Join(classDir, "class.json"), class); err != nil {
+		return err
+	}
+
+	// Write state_machine.json if present
+	if class.StateMachine != nil {
+		if err := writeJSON(filepath.Join(classDir, "state_machine.json"), class.StateMachine); err != nil {
+			return err
+		}
+	}
+
+	// Write actions
+	if len(class.Actions) > 0 {
+		actionsDir := filepath.Join(classDir, "actions")
+		if err := os.MkdirAll(actionsDir, 0755); err != nil {
+			return err
+		}
+		for key, action := range class.Actions {
+			if err := writeJSON(filepath.Join(actionsDir, key+".json"), action); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write queries
+	if len(class.Queries) > 0 {
+		queriesDir := filepath.Join(classDir, "queries")
+		if err := os.MkdirAll(queriesDir, 0755); err != nil {
+			return err
+		}
+		for key, query := range class.Queries {
+			if err := writeJSON(filepath.Join(queriesDir, key+".json"), query); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// writeJSON writes a struct as JSON to a file.
+func writeJSON(filename string, v any) error {
+	data, err := json.MarshalIndent(v, "", "    ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filename, data, 0644)
+}

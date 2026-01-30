@@ -1,0 +1,6 @@
+{
+    "code": 4003,
+    "message_prefix": "failed to parse subdomain JSON:",
+    "error_file": "4003_subdomain_invalid_json.md",
+    "has_schema": false
+}

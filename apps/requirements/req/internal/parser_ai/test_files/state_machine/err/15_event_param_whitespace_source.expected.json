@@ -1,0 +1,7 @@
+{
+    "code": 7013,
+    "message_prefix": "event 'approve' parameter[0] source cannot be whitespace only",
+    "error_file": "7013_event_param_source_required.md",
+    "has_schema": false,
+    "field": "events.approve.parameters[0].source"
+}

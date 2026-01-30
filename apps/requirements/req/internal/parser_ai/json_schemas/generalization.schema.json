@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "generalization.schema.json",
+  "title": "Generalization",
+  "description": "Schema for generalization JSON files that define inheritance relationships between classes. Generalization files are located in the 'generalizations/' directory at the model root (e.g., 'generalizations/payment_types.gen.json'). A generalization defines a superclass and its subclasses, modeling an 'is-a' relationship. If validation fails, verify 'name', 'superclass_key', and 'subclass_keys' are all present and that the class keys reference existing classes.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the generalization (e.g., 'Payment Types', 'Account Hierarchy', 'Product Categories'). This is the human-readable name shown in diagrams and documentation. Use a noun phrase that describes the classification. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the generalization. Describe the inheritance hierarchy, the discriminator criteria (what distinguishes subclasses), and any polymorphic behavior. Helps readers understand the classification system."
+    },
+    "superclass_key": {
+      "type": "string",
+      "description": "Key referencing the superclass (parent class) in the generalization. The class key is constructed from the domain path plus filename: for a class at 'billing/payment.class.json', the key is 'billing.payment'. For nested subdomains like 'billing/methods/card.class.json', the key is 'billing.methods.card'. The superclass is the general category that the subclasses specialize. If validation fails: verify the class file exists at the expected path and the key matches the domain.filename pattern exactly.",
+      "minLength": 1
+    },
+    "subclass_keys": {
+      "type": "array",
+      "description": "Keys referencing the subclasses (child classes) that inherit from the superclass. Each key follows the same domain.filename pattern as superclass_key. There must be at least one subclass. If validation fails: verify each class file exists and keys are correctly formatted.",
+      "items": {
+        "type": "string",
+        "description": "A class key referencing a subclass. Must match a class file using the domain.filename pattern (e.g., 'billing.credit_card_payment', 'billing.bank_transfer_payment'). If validation fails: verify the class file exists at '{domain_path}/{filename}.class.json'.",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "is_complete": {
+      "type": "boolean",
+      "description": "Whether the generalization is complete (all possible subclasses are listed). Set to true if no other subclasses can exist beyond those listed. Set to false or omit if additional subclasses may be added in the future. This affects code generation and validation. If validation fails: ensure this is a boolean (true or false), not a string."
+    },
+    "is_static": {
+      "type": "boolean",
+      "description": "Whether instances cannot change their subclass type at runtime. Set to true if once an object is created as a specific subclass, it cannot become a different subclass (e.g., a CreditCardPayment cannot become a BankTransfer). Set to false or omit if instances can change their classification over their lifetime. If validation fails: ensure this is a boolean (true or false), not a string."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the generalization triangle in generated UML diagrams. Use for diagram-specific clarifications about the inheritance relationship."
+    }
+  },
+  "required": ["name", "superclass_key", "subclass_keys"],
+  "additionalProperties": false
+}

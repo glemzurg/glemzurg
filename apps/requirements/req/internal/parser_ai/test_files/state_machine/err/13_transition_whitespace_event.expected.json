@@ -1,0 +1,7 @@
+{
+    "code": 7018,
+    "message_prefix": "transition[0] event_key cannot be whitespace only",
+    "error_file": "7018_transition_event_required.md",
+    "has_schema": false,
+    "field": "transitions[0].event_key"
+}

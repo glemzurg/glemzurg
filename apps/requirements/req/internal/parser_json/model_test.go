@@ -31,7 +31,7 @@ func TestModelInOutRoundTrip(t *testing.T) {
 	class2Key, err := identity.NewClassKey(subdomain2Key, "class2")
 	require.NoError(t, err)
 	// Model-level class associations span domains, so they have no parent
-	assocKey, err := identity.NewClassAssociationKey(identity.Key{}, class1Key, class2Key)
+	assocKey, err := identity.NewClassAssociationKey(identity.Key{}, class1Key, class2Key, "Cross Domain Assoc")
 	require.NoError(t, err)
 
 	original := req_model.Model{

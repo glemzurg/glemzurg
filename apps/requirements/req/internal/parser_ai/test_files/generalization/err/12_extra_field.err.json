@@ -1,0 +1,6 @@
+{
+    "name": "Payment Types",
+    "superclass_key": "billing.payment",
+    "subclass_keys": ["billing.credit_card"],
+    "unknown_field": "not allowed"
+}

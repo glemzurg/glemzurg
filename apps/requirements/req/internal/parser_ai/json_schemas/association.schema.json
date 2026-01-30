@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "association.schema.json",
+  "title": "Association",
+  "description": "Schema for association JSON files that define relationships between classes. Association files are located in the 'associations/' directory at the model root (e.g., 'associations/order_has_items.assoc.json'). Associations connect two classes and define the cardinality (multiplicity) of the relationship. If validation fails, verify all required fields are present (name, from_class_key, from_multiplicity, to_class_key, to_multiplicity) and that class keys reference existing classes.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the association (e.g., 'Order Contains Items', 'Customer Places Order'). This is the human-readable name shown in diagrams. Use verb phrases that describe the relationship. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the association. Describe the business meaning of this relationship, any constraints, and how the connected classes interact. Helps readers understand why these classes are related."
+    },
+    "from_class_key": {
+      "type": "string",
+      "description": "Key referencing the source (from) class in the association. The class key is constructed from the domain path plus filename: for a class at 'order_management/order.class.json', the key is 'order_management.order'. For nested subdomains like 'order_management/fulfillment/shipment.class.json', the key is 'order_management.fulfillment.shipment'. If validation fails: verify the class file exists at the expected path and the key matches the domain.filename pattern exactly.",
+      "minLength": 1
+    },
+    "from_multiplicity": {
+      "type": "string",
+      "description": "Multiplicity at the source (from) end of the association. Standard UML notation: '1' (exactly one), '0..1' (zero or one), '*' (zero or more), '1..*' (one or more), or specific ranges like '2..5'. This indicates how many instances of the from_class can be associated with one instance of the to_class. If validation fails: ensure this is a valid multiplicity string.",
+      "minLength": 1
+    },
+    "to_class_key": {
+      "type": "string",
+      "description": "Key referencing the target (to) class in the association. The class key is constructed from the domain path plus filename: for a class at 'inventory/product.class.json', the key is 'inventory.product'. For nested subdomains, include all path segments separated by dots. If validation fails: verify the class file exists at the expected path and the key matches the domain.filename pattern exactly.",
+      "minLength": 1
+    },
+    "to_multiplicity": {
+      "type": "string",
+      "description": "Multiplicity at the target (to) end of the association. Standard UML notation: '1' (exactly one), '0..1' (zero or one), '*' (zero or more), '1..*' (one or more), or specific ranges like '2..5'. This indicates how many instances of the to_class can be associated with one instance of the from_class. If validation fails: ensure this is a valid multiplicity string.",
+      "minLength": 1
+    },
+    "association_class_key": {
+      "type": ["string", "null"],
+      "description": "Optional key referencing an association class that holds attributes about the relationship itself. For example, an 'Enrollment' class between 'Student' and 'Course' might hold 'grade' and 'enrollment_date'. The key follows the same domain.filename pattern as other class keys. Set to null or omit if there is no association class. If validation fails: verify the association class file exists and the key is correctly formatted."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the association line in generated UML diagrams. Use for diagram-specific clarifications."
+    }
+  },
+  "required": ["name", "from_class_key", "from_multiplicity", "to_class_key", "to_multiplicity"],
+  "additionalProperties": false
+}

@@ -1,0 +1,6 @@
+{
+    "code": 2005,
+    "message_prefix": "failed to parse actor JSON:",
+    "error_file": "2005_actor_invalid_json.md",
+    "has_schema": false
+}

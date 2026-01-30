@@ -1,0 +1,7 @@
+{
+    "events": {
+        "submit": {
+            "details": "User submits"
+        }
+    }
+}

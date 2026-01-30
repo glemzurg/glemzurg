@@ -1,0 +1,7 @@
+{
+    "code": 3002,
+    "message": "domain name cannot be empty or whitespace only, got '   '",
+    "error_file": "3002_domain_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

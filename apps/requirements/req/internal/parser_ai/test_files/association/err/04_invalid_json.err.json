@@ -1,0 +1,4 @@
+{
+    "name": "Order Contains Items"
+    "from_class_key": "order_management.order"
+}

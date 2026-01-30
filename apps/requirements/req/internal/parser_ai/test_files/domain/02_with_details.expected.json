@@ -1,0 +1,4 @@
+{
+    "name": "User Authentication",
+    "details": "Handles user login, registration, password reset, and session management."
+}

@@ -1,0 +1,6 @@
+{
+    "code": 3003,
+    "message_prefix": "failed to parse domain JSON:",
+    "error_file": "3003_domain_invalid_json.md",
+    "has_schema": false
+}

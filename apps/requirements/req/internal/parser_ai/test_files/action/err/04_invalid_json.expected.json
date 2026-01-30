@@ -1,0 +1,6 @@
+{
+    "code": 8003,
+    "message_prefix": "failed to parse action JSON:",
+    "error_file": "8003_action_invalid_json.md",
+    "has_schema": false
+}

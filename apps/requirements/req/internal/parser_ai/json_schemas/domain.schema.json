@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "domain.schema.json",
+  "title": "Domain",
+  "description": "Schema for domain JSON files that define domains in the model. A domain represents a major functional area. Domain files are located in a directory named after the domain (e.g., 'order_management/domain.json' or 'order_management/this.domain'). The directory name becomes the domain's key, which is used as a prefix for classes and other elements within the domain. If validation fails, verify 'name' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the domain (e.g., 'Order Management', 'User Authentication'). This is the human-readable name shown in diagrams. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the domain. Describe the domain's purpose, scope, and the types of functionality it encompasses. Helps readers understand the domain's boundaries."
+    },
+    "realized": {
+      "type": "boolean",
+      "description": "Optional flag indicating whether this domain is realized (implemented) or abstract. Default is false (not realized). Set to true if this domain contains concrete implementations rather than abstract specifications."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the domain package in generated UML diagrams."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

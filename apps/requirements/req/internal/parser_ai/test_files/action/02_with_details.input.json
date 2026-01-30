@@ -1,0 +1,4 @@
+{
+    "name": "Send Confirmation Email",
+    "details": "Sends an email to the customer confirming their order has been received"
+}

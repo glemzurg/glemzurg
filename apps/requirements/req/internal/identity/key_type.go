@@ -180,7 +180,7 @@ func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key 
 	return newKey(classKey.String(), KEY_TYPE_TRANSITION, subKey)
 }
 
-func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key) (key Key, err error) {
+func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string) (key Key, err error) {
 	// Both must be classes.
 	if fromClassKey.KeyType() != KEY_TYPE_CLASS {
 		return Key{}, errors.Errorf("from class key cannot be of type '%s' for 'cassociation' key", fromClassKey.KeyType())
@@ -188,6 +188,14 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key) (key Key, e
 	if toClassKey.KeyType() != KEY_TYPE_CLASS {
 		return Key{}, errors.Errorf("to class key cannot be of type '%s' for 'cassociation' key", toClassKey.KeyType())
 	}
+
+	// Name is required.
+	if strings.TrimSpace(name) == "" {
+		return Key{}, errors.New("name cannot be empty for class association key")
+	}
+
+	// Convert name to distilled format: trim, lowercase, replace internal spaces with underscores.
+	subKey3 := distillName(name)
 
 	var subKey, subKey2 string
 
@@ -283,7 +291,17 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key) (key Key, e
 		parentKeyStr = parentKey.String()
 	}
 
-	return newKeyWithSubKey2(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2)
+	return newKeyWithSubKey3(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2, subKey3)
+}
+
+// distillName converts a name to distilled format: trim, lowercase, replace internal spaces with underscores,
+// and replace forward slashes with tildes (since slashes are used as key separators).
+func distillName(name string) string {
+	name = strings.TrimSpace(name)
+	name = strings.ToLower(name)
+	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, "/", "~")
+	return name
 }
 
 func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {

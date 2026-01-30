@@ -1,0 +1,7 @@
+{
+    "code": 7010,
+    "message_prefix": "event 'submit' name cannot be empty or whitespace only",
+    "error_file": "7010_event_name_empty.md",
+    "has_schema": false,
+    "field": "events.submit.name"
+}

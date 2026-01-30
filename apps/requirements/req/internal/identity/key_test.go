@@ -108,25 +108,25 @@ func (suite *KeySuite) TestParseKey() {
 			expected: Key{parentKey: "", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
 		},
 		// Class association with subdomain parent.
-		// Format: domain/d/subdomain/s/cassociation/class/class_a/class/class_b
+		// Format: domain/d/subdomain/s/cassociation/class/class_a/class/class_b/name
 		{
 			testName: "ok class association with subdomain parent",
-			input:    "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b",
-			expected: Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b"},
+			input:    "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b/assoc_name",
+			expected: Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b", subKey3: "assoc_name"},
 		},
 		// Class association with domain parent.
-		// Format: domain/d/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b
+		// Format: domain/d/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b/name
 		{
 			testName: "ok class association with domain parent",
-			input:    "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b",
-			expected: Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b"},
+			input:    "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b/assoc_name",
+			expected: Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
 		},
 		// Class association with model parent (no parent).
-		// Format: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b
+		// Format: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b/name
 		{
 			testName: "ok class association with model parent",
-			input:    "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b",
-			expected: Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b"},
+			input:    "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b/assoc_name",
+			expected: Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
 		},
 
 		// State action key with composite subKey (when/subKey).
@@ -215,20 +215,20 @@ func (suite *KeySuite) TestString() {
 		// Class association with subdomain parent.
 		{
 			testName: "class association with subdomain parent",
-			key:      Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b"},
-			expected: "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b",
+			key:      Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b", subKey3: "assoc_name"},
+			expected: "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b/assoc_name",
 		},
 		// Class association with domain parent.
 		{
 			testName: "class association with domain parent",
-			key:      Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b"},
-			expected: "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b",
+			key:      Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
+			expected: "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b/assoc_name",
 		},
 		// Class association with model parent (no parent).
 		{
 			testName: "class association with model parent",
-			key:      Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b"},
-			expected: "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b",
+			key:      Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
+			expected: "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b/assoc_name",
 		},
 		// State action key with composite subKey.
 		{
@@ -367,14 +367,14 @@ func (suite *KeySuite) TestValidateParent() {
 	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
 
 	// Class associations at different levels.
-	subdomainCassocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey)
-	domainCassocKey, _ := NewClassAssociationKey(domainKey, classKey, classKey2)
+	subdomainCassocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey, "subdomain assoc")
+	domainCassocKey, _ := NewClassAssociationKey(domainKey, classKey, classKey2, "domain assoc")
 
 	// For model-level class association, we need classes from different domains.
 	domainKey3, _ := NewDomainKey("testdomain3")
 	subdomainKey3, _ := NewSubdomainKey(domainKey3, "testsubdomain3")
 	classKey3, _ := NewClassKey(subdomainKey3, "testclass3")
-	modelCassocKey, _ := NewClassAssociationKey(Key{}, classKey, classKey3)
+	modelCassocKey, _ := NewClassAssociationKey(Key{}, classKey, classKey3, "model assoc")
 
 	tests := []struct {
 		testName string
@@ -801,7 +801,7 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
 
 	// Class association key.
-	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2)
+	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2, "json test assoc")
 
 	tests := []struct {
 		testName string
@@ -910,7 +910,7 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
 
 	// Class association key.
-	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2)
+	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2, "text test assoc")
 
 	tests := []struct {
 		testName string

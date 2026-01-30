@@ -1,0 +1,14 @@
+{
+    "name": "Process Payment",
+    "details": "Charges the customer's payment method and records the transaction",
+    "requires": [
+        "Order total must be greater than zero",
+        "Customer payment method must be valid and active",
+        "Order must not already be paid"
+    ],
+    "guarantees": [
+        "Payment has been charged to customer's payment method",
+        "Transaction record has been created",
+        "Order payment status is set to paid"
+    ]
+}

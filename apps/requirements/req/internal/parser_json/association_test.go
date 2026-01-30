@@ -20,7 +20,7 @@ func TestAssociationInOutRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	aclassKey, err := identity.NewClassKey(subdomainKey, "aclass")
 	require.NoError(t, err)
-	assocKey, err := identity.NewClassAssociationKey(subdomainKey, class1Key, class2Key)
+	assocKey, err := identity.NewClassAssociationKey(subdomainKey, class1Key, class2Key, "Assoc1")
 	require.NoError(t, err)
 
 	original := model_class.Association{

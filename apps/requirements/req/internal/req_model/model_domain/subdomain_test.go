@@ -137,7 +137,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	}
 
 	// Test: valid association with subdomain as parent.
-	validAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2))
+	validAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2, "valid association"))
 	validAssoc := model_class.Association{
 		Key:              validAssocKey,
 		Name:             "Association",
@@ -156,7 +156,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
 	otherDomainSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
 	crossDomainClassKey := helper.Must(identity.NewClassKey(otherDomainSubdomainKey, "class1"))
-	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKey1, crossDomainClassKey))
+	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKey1, crossDomainClassKey, "model level association"))
 	modelLevelAssoc := model_class.Association{
 		Key:              modelLevelAssocKey,
 		Name:             "Model Level Association",
@@ -171,7 +171,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	assert.ErrorContains(suite.T(), err, "has no parent")
 
 	// Test: error when association parent is different subdomain.
-	wrongParentAssocKey := helper.Must(identity.NewClassAssociationKey(otherSubdomainKey, otherClassKey1, otherClassKey2))
+	wrongParentAssocKey := helper.Must(identity.NewClassAssociationKey(otherSubdomainKey, otherClassKey1, otherClassKey2, "wrong parent association"))
 	wrongParentAssoc := model_class.Association{
 		Key:              wrongParentAssocKey,
 		Name:             "Wrong Parent Association",
@@ -193,7 +193,7 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 	classKey2 := helper.Must(identity.NewClassKey(subdomainKey, "class2"))
 
 	// Create a subdomain with associations.
-	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2))
+	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey2, "association"))
 	assoc := model_class.Association{
 		Key:              assocKey,
 		Name:             "Association",
@@ -218,7 +218,7 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 
 	// Test: returned map is a copy, not the original.
 	classKey3 := helper.Must(identity.NewClassKey(subdomainKey, "class3"))
-	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey3))
+	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey3, "new association"))
 	result[newAssocKey] = model_class.Association{Key: newAssocKey, Name: "New"}
 	assert.Equal(suite.T(), 1, len(subdomain.ClassAssociations), "Original should not be modified")
 	assert.Equal(suite.T(), 2, len(result), "Copy should have new entry")

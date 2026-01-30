@@ -1,0 +1,41 @@
+{
+    "states": {
+        "pending": {
+            "name": "Pending"
+        },
+        "approved": {
+            "name": "Approved"
+        },
+        "rejected": {
+            "name": "Rejected"
+        }
+    },
+    "events": {
+        "create": {
+            "name": "Create"
+        },
+        "approve": {
+            "name": "Approve"
+        },
+        "reject": {
+            "name": "Reject"
+        }
+    },
+    "transitions": [
+        {
+            "from_state_key": null,
+            "to_state_key": "pending",
+            "event_key": "create"
+        },
+        {
+            "from_state_key": "pending",
+            "to_state_key": "approved",
+            "event_key": "approve"
+        },
+        {
+            "from_state_key": "pending",
+            "to_state_key": "rejected",
+            "event_key": "reject"
+        }
+    ]
+}
