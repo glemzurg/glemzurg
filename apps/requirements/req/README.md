@@ -3,12 +3,8 @@
 
 
 next:
-  - json in and out of system
-    - validate the file structure
-    - errors hsould include values
-    - test nested field description when working on classes
-  - stand alone method to vet the structure
   - means to take in yaml/json and produce yaml/json/md
+  - stand alone method to vet the structure
 
 jan (in parallel):
   - use ai to summarize the current system into 
