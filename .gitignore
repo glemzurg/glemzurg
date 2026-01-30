@@ -33,3 +33,6 @@ go.work.sum
 
 # AI
 .claude
+
+# Binaries shared with other devcontainers.
+/bin/

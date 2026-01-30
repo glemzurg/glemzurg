@@ -82,7 +82,7 @@ rm -fr $OUTPUT_PATH/*/dot
 [ $? -ne 0 ] && exit 1
 
 # Run the command to generate from the example.
-echo -e "\n\$GOBIN/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL$OPTIONAL_FLAGS\n"
+echo -e "\n/go/bin/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL$OPTIONAL_FLAGS\n"
 /go/bin/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $OPTIONAL_FLAGS
 
 [ $? -ne 0 ] && exit 1
