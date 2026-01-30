@@ -6,63 +6,47 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
 
-// Supported input formats
-const (
-	InputFormatDataYAML = "data/yaml" // Parser format (YAML files)
-	InputFormatAIJSON   = "ai/json"   // AI format (JSON files)
-)
-
 func main() {
 
-	// Example calls:
-	//   $GOBIN/req_check -rootsource example/models -model model_a
-	//   $GOBIN/req_check -input ai/json -rootsource example/ai_models -model model_a
+	// Example call:
+	//   $GOBIN/req_check /path/to/ai_models/model_a
 
-	var rootSourcePath, model string
-	var inputFormat string
-	var debug bool
-	flag.StringVar(&rootSourcePath, "rootsource", "", "the path to the source models")
-	flag.StringVar(&model, "model", "", "the model to validate")
-	flag.StringVar(&inputFormat, "input", InputFormatDataYAML, "input format: data/yaml or ai/json")
-	flag.BoolVar(&debug, "debug", false, "enable the debug level of logging")
+	var modelPath string
+	flag.StringVar(&modelPath, "path", "", "the path to the model (last folder is model name)")
 	flag.Parse()
 
-	// Validate required arguments
-	if rootSourcePath == "" || model == "" {
-		fmt.Println("Error: rootsource and model are required")
-		flag.Usage()
+	// If no -path flag, check for positional argument
+	if modelPath == "" && flag.NArg() > 0 {
+		modelPath = flag.Arg(0)
+	}
+
+	// Validate required argument
+	if modelPath == "" {
+		fmt.Println("Error: model path is required")
+		fmt.Println("Usage: req_check <model_path>")
+		fmt.Println("       req_check -path <model_path>")
 		os.Exit(1)
 	}
 
-	// Validate input format
-	inputFormat = strings.ToLower(inputFormat)
-	if inputFormat != InputFormatDataYAML && inputFormat != InputFormatAIJSON {
-		fmt.Printf("Error: invalid input format '%s'. Valid options: data/yaml, ai/json\n", inputFormat)
-		os.Exit(1)
-	}
+	// Extract model name from path (last folder)
+	model := filepath.Base(modelPath)
 
-	// Set the appropriate logging level.
-	_ = slog.SetLogLoggerLevel(slog.LevelInfo)
-	if debug {
-		_ = slog.SetLogLoggerLevel(slog.LevelDebug)
-	}
+	// Always enable debug logging
+	_ = slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	// Show configuration
 	fmt.Printf("\nConfiguration:\n")
-	fmt.Printf("  root source path: %s\n", rootSourcePath)
+	fmt.Printf("  model path: %s\n", modelPath)
 	fmt.Printf("  model: %s\n", model)
-	fmt.Printf("  input format: %s\n", inputFormat)
 	fmt.Println()
 
 	// Validate the model
-	err := validateModel(rootSourcePath, model, inputFormat)
+	err := validateModel(modelPath, model)
 	if err != nil {
 		fmt.Printf("Validation failed: %+v\n\n", err)
 		os.Exit(1)
@@ -72,38 +56,25 @@ func main() {
 	os.Exit(0)
 }
 
-// validateModel reads and validates a model from the specified format.
-func validateModel(rootSourcePath, model, inputFormat string) error {
-
-	sourcePath := filepath.Join(rootSourcePath, model)
+// validateModel reads and validates a model from ai/json format.
+func validateModel(modelPath, model string) error {
 
 	// Read the input model into req_model.Model
 	var parsedModel *req_model.Model
 
-	switch inputFormat {
-	case InputFormatDataYAML:
-		fmt.Println("Reading model from data/yaml format...")
-		m, err := parser.Parse(sourcePath)
-		if err != nil {
-			return fmt.Errorf("failed to parse data/yaml model: %w", err)
-		}
-		parsedModel = &m
-
-	case InputFormatAIJSON:
-		fmt.Println("Reading and validating model from ai/json format...")
-		inputModel, err := parser_ai.ReadModelTree(sourcePath)
-		if err != nil {
-			return fmt.Errorf("failed to read/validate ai/json model: %w", err)
-		}
-
-		// Convert to req_model.Model
-		fmt.Println("Converting to req_model...")
-		converted, err := parser_ai.ConvertToModel(inputModel, model)
-		if err != nil {
-			return fmt.Errorf("failed to convert ai/json to req_model: %w", err)
-		}
-		parsedModel = converted
+	fmt.Println("Reading and validating model from ai/json format...")
+	inputModel, err := parser_ai.ReadModelTree(modelPath)
+	if err != nil {
+		return fmt.Errorf("failed to read/validate ai/json model: %w", err)
 	}
+
+	// Convert to req_model.Model
+	fmt.Println("Converting to req_model...")
+	converted, err := parser_ai.ConvertToModel(inputModel, model)
+	if err != nil {
+		return fmt.Errorf("failed to convert ai/json to req_model: %w", err)
+	}
+	parsedModel = converted
 
 	// Validate the req_model
 	fmt.Println("Validating req_model...")
