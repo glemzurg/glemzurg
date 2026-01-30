@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-// ValidateModelTree validates a complete model tree for cross-reference integrity.
-// This should be called after the tree has been successfully loaded from the filesystem.
+// validateModelTree validates a complete model tree for cross-reference integrity.
+// This is called automatically after the tree has been successfully loaded from the filesystem.
 // It checks that all keys referenced in the tree point to valid entities.
-func ValidateModelTree(model *inputModel) error {
+func validateModelTree(model *inputModel) error {
 	// Validate each domain
 	for domainKey, domain := range model.Domains {
 		if err := validateDomainTree(model, domainKey, domain); err != nil {
@@ -27,10 +27,10 @@ func ValidateModelTree(model *inputModel) error {
 	return nil
 }
 
-// ValidateModelCompleteness validates that a model is complete enough to be useful.
+// validateModelCompleteness validates that a model is complete enough to be useful.
 // This provides guidance to AI about what elements are still needed.
 // It checks that the model has all required structural components.
-func ValidateModelCompleteness(model *inputModel) error {
+func validateModelCompleteness(model *inputModel) error {
 	// Check model has at least one actor
 	if len(model.Actors) == 0 {
 		return NewParseError(

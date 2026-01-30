@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// TreeValidateSuite tests the ValidateModelTree function.
+// TreeValidateSuite tests the validateModelTree function.
 type TreeValidateSuite struct {
 	suite.Suite
 }
@@ -22,7 +22,7 @@ func (suite *TreeValidateSuite) TestValidTree() {
 	t := suite.T()
 
 	model := t_buildValidModelTree()
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	assert.NoError(t, err)
 }
 
@@ -34,7 +34,7 @@ func (suite *TreeValidateSuite) TestClassActorNotFound() {
 	// Add class with invalid actor reference
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].ActorKey = "nonexistent_actor"
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -51,7 +51,7 @@ func (suite *TreeValidateSuite) TestClassActorValid() {
 	model.Actors["customer"] = &inputActor{Name: "Customer", Type: "person"}
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].ActorKey = "customer"
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	assert.NoError(t, err)
 }
 
@@ -63,7 +63,7 @@ func (suite *TreeValidateSuite) TestClassIndexAttrNotFound() {
 	// Add index referencing non-existent attribute
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"missing_attr"}}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -83,7 +83,7 @@ func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	}
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"id", "id"}}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -113,7 +113,7 @@ func (suite *TreeValidateSuite) TestStateMachineStateActionNotFound() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -146,7 +146,7 @@ func (suite *TreeValidateSuite) TestTransitionNoStates() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -181,7 +181,7 @@ func (suite *TreeValidateSuite) TestTransitionFromStateNotFound() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -216,7 +216,7 @@ func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -248,7 +248,7 @@ func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -284,7 +284,7 @@ func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -320,7 +320,7 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 	}
 	class.Actions = map[string]*inputAction{}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -344,7 +344,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -368,7 +368,7 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -393,7 +393,7 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -418,7 +418,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -442,7 +442,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -467,7 +467,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -495,7 +495,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -523,7 +523,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -552,7 +552,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -579,7 +579,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -610,7 +610,7 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -634,7 +634,7 @@ func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -670,7 +670,7 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -706,7 +706,7 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -730,7 +730,7 @@ func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
 		},
 	}
 
-	err := ValidateModelTree(model)
+	err := validateModelTree(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -782,7 +782,7 @@ func (suite *TreeValidateSuite) TestCompletenessValidModel() {
 	t := suite.T()
 
 	model := t_buildCompleteModelTree()
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	assert.NoError(t, err)
 }
 
@@ -793,7 +793,7 @@ func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
 	model := t_buildCompleteModelTree()
 	model.Actors = map[string]*inputActor{} // Remove all actors
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -811,7 +811,7 @@ func (suite *TreeValidateSuite) TestCompletenessModelNoDomains() {
 	model := t_buildCompleteModelTree()
 	model.Domains = map[string]*inputDomain{} // Remove all domains
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -829,7 +829,7 @@ func (suite *TreeValidateSuite) TestCompletenessDomainNoSubdomains() {
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains = map[string]*inputSubdomain{} // Remove all subdomains
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -860,7 +860,7 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 		},
 	}
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -878,7 +878,7 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{} // Remove all associations
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -896,7 +896,7 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["core"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -914,7 +914,7 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoStateMachine() {
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine = nil // Remove state machine
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -932,7 +932,7 @@ func (suite *TreeValidateSuite) TestCompletenessStateMachineNoTransitions() {
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine.Transitions = []inputTransition{} // Remove all transitions
 
-	err := ValidateModelCompleteness(model)
+	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
 	parseErr, ok := err.(*ParseError)
@@ -1077,7 +1077,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := tt.buildModel()
-			err := ValidateModelCompleteness(model)
+			err := validateModelCompleteness(model)
 			require.Error(t, err)
 
 			parseErr, ok := err.(*ParseError)

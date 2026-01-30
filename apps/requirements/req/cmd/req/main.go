@@ -128,11 +128,6 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 			return fmt.Errorf("failed to read ai/json model: %w", err)
 		}
 
-		// Validate the tree structure
-		if err := parser_ai.ValidateModelTree(inputModel); err != nil {
-			return fmt.Errorf("ai/json model tree validation failed: %w", err)
-		}
-
 		// Convert to req_model.Model
 		converted, err := parser_ai.ConvertToModel(inputModel, model)
 		if err != nil {

@@ -13,14 +13,9 @@ import (
 )
 
 // ConvertToModel converts an inputModel to a req_model.Model.
-// It first validates the input model tree, then performs the conversion,
-// and finally validates the resulting req_model.Model.
+// The input model is assumed to have been validated by ReadModelTree.
+// This function performs the conversion and validates the resulting req_model.Model.
 func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error) {
-	// Validate the input tree
-	if err := ValidateModelTree(input); err != nil {
-		return nil, errors.Wrap(err, "input model tree validation failed")
-	}
-
 	result := &req_model.Model{
 		Key:                strings.TrimSpace(strings.ToLower(modelKey)),
 		Name:               input.Name,

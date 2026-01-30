@@ -989,7 +989,10 @@ func (suite *ConvertSuite) TestConvertFromModelValidationError() {
 	assert.Contains(t, err.Error(), "validation failed")
 }
 
-// TestConvertToModelValidationError tests that tree validation errors are returned.
+// TestConvertToModelValidationError tests that req_model validation catches errors
+// when there are issues not caught by tree validation (safety net).
+// Note: Since tree validation now runs in ReadModelTree before ConvertToModel is called,
+// the error here comes from req_model.Validate() as a safety net.
 func (suite *ConvertSuite) TestConvertToModelValidationError() {
 	t := suite.T()
 
@@ -1023,7 +1026,7 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 
 	_, err := ConvertToModel(input, "testmodel")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "tree validation failed")
+	assert.Contains(t, err.Error(), "validation failed")
 }
 
 // TestConvertFromModelWithDomainAssociation tests converting a domain-level association.

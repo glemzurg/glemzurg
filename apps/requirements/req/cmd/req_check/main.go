@@ -90,22 +90,10 @@ func validateModel(rootSourcePath, model, inputFormat string) error {
 		parsedModel = &m
 
 	case InputFormatAIJSON:
-		fmt.Println("Reading model from ai/json format...")
+		fmt.Println("Reading and validating model from ai/json format...")
 		inputModel, err := parser_ai.ReadModelTree(sourcePath)
 		if err != nil {
-			return fmt.Errorf("failed to read ai/json model: %w", err)
-		}
-
-		// Validate the tree structure
-		fmt.Println("Validating ai/json tree structure...")
-		if err := parser_ai.ValidateModelTree(inputModel); err != nil {
-			return fmt.Errorf("ai/json model tree validation failed: %w", err)
-		}
-
-		// Validate completeness
-		fmt.Println("Validating ai/json model completeness...")
-		if err := parser_ai.ValidateModelCompleteness(inputModel); err != nil {
-			return fmt.Errorf("ai/json model completeness validation failed: %w", err)
+			return fmt.Errorf("failed to read/validate ai/json model: %w", err)
 		}
 
 		// Convert to req_model.Model

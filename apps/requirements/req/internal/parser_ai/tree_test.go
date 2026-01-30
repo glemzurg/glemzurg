@@ -248,6 +248,120 @@ func t_buildTestModelTree() *inputModel {
 										DataTypeRules: "int",
 									},
 								},
+								StateMachine: &inputStateMachine{
+									States: map[string]*inputState{
+										"active": {
+											Name: "Active",
+										},
+									},
+									Events: map[string]*inputEvent{
+										"create": {
+											Name: "create",
+										},
+									},
+									Guards:      map[string]*inputGuard{},
+									Transitions: []inputTransition{
+										{
+											ToStateKey: strPtr("active"),
+											EventKey:   "create",
+										},
+									},
+								},
+								Actions: map[string]*inputAction{},
+								Queries: map[string]*inputQuery{},
+							},
+							"product": {
+								Name:    "Product",
+								Details: "A product available for sale.",
+								Attributes: map[string]*inputAttribute{
+									"name": {
+										Name:          "Name",
+										DataTypeRules: "string",
+									},
+								},
+								StateMachine: &inputStateMachine{
+									States: map[string]*inputState{
+										"active": {
+											Name: "Active",
+										},
+									},
+									Events: map[string]*inputEvent{
+										"create": {
+											Name: "create",
+										},
+									},
+									Guards:      map[string]*inputGuard{},
+									Transitions: []inputTransition{
+										{
+											ToStateKey: strPtr("active"),
+											EventKey:   "create",
+										},
+									},
+								},
+								Actions: map[string]*inputAction{},
+								Queries: map[string]*inputQuery{},
+							},
+							"book": {
+								Name:    "Book",
+								Details: "A physical book.",
+								Attributes: map[string]*inputAttribute{
+									"isbn": {
+										Name:          "ISBN",
+										DataTypeRules: "string",
+									},
+								},
+								StateMachine: &inputStateMachine{
+									States: map[string]*inputState{
+										"active": {
+											Name: "Active",
+										},
+									},
+									Events: map[string]*inputEvent{
+										"create": {
+											Name: "create",
+										},
+									},
+									Guards:      map[string]*inputGuard{},
+									Transitions: []inputTransition{
+										{
+											ToStateKey: strPtr("active"),
+											EventKey:   "create",
+										},
+									},
+								},
+								Actions: map[string]*inputAction{},
+								Queries: map[string]*inputQuery{},
+							},
+							"ebook": {
+								Name:    "EBook",
+								Details: "An electronic book.",
+								Attributes: map[string]*inputAttribute{
+									"file_format": {
+										Name:          "File Format",
+										DataTypeRules: "string",
+									},
+								},
+								StateMachine: &inputStateMachine{
+									States: map[string]*inputState{
+										"active": {
+											Name: "Active",
+										},
+									},
+									Events: map[string]*inputEvent{
+										"create": {
+											Name: "create",
+										},
+									},
+									Guards:      map[string]*inputGuard{},
+									Transitions: []inputTransition{
+										{
+											ToStateKey: strPtr("active"),
+											EventKey:   "create",
+										},
+									},
+								},
+								Actions: map[string]*inputAction{},
+								Queries: map[string]*inputQuery{},
 							},
 						},
 						Generalizations: map[string]*inputGeneralization{

@@ -88,6 +88,16 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 		}
 	}
 
+	// Validate model completeness
+	if err := validateModelCompleteness(model); err != nil {
+		return nil, err
+	}
+
+	// Validate cross-references in the tree
+	if err := validateModelTree(model); err != nil {
+		return nil, err
+	}
+
 	return model, nil
 }
 
