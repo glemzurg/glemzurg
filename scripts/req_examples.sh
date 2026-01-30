@@ -1,11 +1,31 @@
 #!/bin/bash
-# Example: ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books -debug
+# Example usage:
+#   Default (data/yaml to md):
+#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books
+#
+#   With debug:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books -debug
+#
+#   Convert data/yaml to ai/json:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/ai_output/ web_books "" "data/yaml" "ai/json"
+#
+#   Convert ai/json to md:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/output/ web_books "" "ai/json" "md"
+#
+#   Convert ai/json to data/yaml:
+#     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/models_output/ web_books "" "ai/json" "data/yaml"
+
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Output path.
+# Required parameters
 INPUT_PATH="$1"
 OUTPUT_PATH="$2"
 MODEL="$3"
+
+# Optional parameters
+DEBUG="$4"           # -debug or empty
+INPUT_FORMAT="$5"    # data/yaml (default) or ai/json
+OUTPUT_FORMAT="$6"   # md (default), data/yaml, or ai/json
 
 # Check required parameters
 if [ -z "$INPUT_PATH" ]; then
@@ -23,8 +43,20 @@ if [ -z "$MODEL" ]; then
     exit 1
 fi
 
-# We may have a test we want to run.
-DEBUG="$4"
+# Build the optional flags
+OPTIONAL_FLAGS=""
+
+if [ -n "$DEBUG" ]; then
+    OPTIONAL_FLAGS="$OPTIONAL_FLAGS $DEBUG"
+fi
+
+if [ -n "$INPUT_FORMAT" ]; then
+    OPTIONAL_FLAGS="$OPTIONAL_FLAGS -input $INPUT_FORMAT"
+fi
+
+if [ -n "$OUTPUT_FORMAT" ]; then
+    OPTIONAL_FLAGS="$OPTIONAL_FLAGS -output $OUTPUT_FORMAT"
+fi
 
 # We are in the script path directory.
 cd $SCRIPT_PATH
@@ -50,8 +82,8 @@ rm -fr $OUTPUT_PATH/*/dot
 [ $? -ne 0 ] && exit 1
 
 # Run the command to generate from the example.
-echo -e "\$GOBIN/reqmodel -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL -debug\n"
-/go/bin/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $DEBUG
+echo -e "\n\$GOBIN/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL$OPTIONAL_FLAGS\n"
+/go/bin/req -rootsource $INPUT_PATH -rootoutput $OUTPUT_PATH -model $MODEL $OPTIONAL_FLAGS
 
 [ $? -ne 0 ] && exit 1
 
