@@ -715,6 +715,326 @@ func (suite *TreeValidateSuite) TestMultiplicityValidation() {
 	}
 }
 
+// ======================================
+// Completeness Validation Tests
+// ======================================
+
+// TestCompletenessValidModel verifies that a complete valid model passes completeness validation.
+func (suite *TreeValidateSuite) TestCompletenessValidModel() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	err := ValidateModelCompleteness(model)
+	assert.NoError(t, err)
+}
+
+// TestCompletenessModelNoActors verifies error when model has no actors.
+func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Actors = map[string]*inputActor{} // Remove all actors
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeModelNoActors, parseErr.Code)
+	assert.Equal(t, "actors", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least one actor")
+	assert.Contains(t, parseErr.Message, "actors/") // Check for guidance about file location
+}
+
+// TestCompletenessModelNoDomains verifies error when model has no domains.
+func (suite *TreeValidateSuite) TestCompletenessModelNoDomains() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Domains = map[string]*inputDomain{} // Remove all domains
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeModelNoDomains, parseErr.Code)
+	assert.Equal(t, "domains", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least one domain")
+	assert.Contains(t, parseErr.Message, "domains/") // Check for guidance about file location
+}
+
+// TestCompletenessDomainNoSubdomains verifies error when domain has no subdomains.
+func (suite *TreeValidateSuite) TestCompletenessDomainNoSubdomains() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Domains["orders"].Subdomains = map[string]*inputSubdomain{} // Remove all subdomains
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeDomainNoSubdomains, parseErr.Code)
+	assert.Equal(t, "subdomains", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least one subdomain")
+	assert.Contains(t, parseErr.Message, "orders") // Check for specific domain name
+}
+
+// TestCompletenessSubdomainTooFewClasses verifies error when subdomain has less than 2 classes.
+func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	// Keep only one class
+	model.Domains["orders"].Subdomains["core"].Classes = map[string]*inputClass{
+		"order": t_buildCompleteClass(),
+	}
+	// Update association to use remaining classes
+	model.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{
+		"self_ref": {
+			Name:             "Self Ref",
+			FromClassKey:     "order",
+			FromMultiplicity: "1",
+			ToClassKey:       "order",
+			ToMultiplicity:   "*",
+		},
+	}
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeSubdomainTooFewClasses, parseErr.Code)
+	assert.Equal(t, "classes", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least 2 classes")
+	assert.Contains(t, parseErr.Message, "has 1")
+}
+
+// TestCompletenessSubdomainNoAssociations verifies error when subdomain has no associations.
+func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{} // Remove all associations
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeSubdomainNoAssociations, parseErr.Code)
+	assert.Equal(t, "associations", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least one association")
+	assert.Contains(t, parseErr.Message, "associations/") // Check for guidance about file location
+}
+
+// TestCompletenessClassNoAttributes verifies error when class has no attributes.
+func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Domains["orders"].Subdomains["core"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeClassNoAttributes, parseErr.Code)
+	assert.Equal(t, "attributes", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least one attribute")
+	assert.Contains(t, parseErr.Message, "order") // Check for specific class name
+}
+
+// TestCompletenessClassNoStateMachine verifies error when class has no state machine.
+func (suite *TreeValidateSuite) TestCompletenessClassNoStateMachine() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine = nil // Remove state machine
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeClassNoStateMachine, parseErr.Code)
+	assert.Equal(t, "state_machine", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "must have a state machine")
+	assert.Contains(t, parseErr.Message, "state_machine.json") // Check for guidance about file
+}
+
+// TestCompletenessStateMachineNoTransitions verifies error when state machine has no transitions.
+func (suite *TreeValidateSuite) TestCompletenessStateMachineNoTransitions() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	model.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine.Transitions = []inputTransition{} // Remove all transitions
+
+	err := ValidateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeStateMachineNoTransitions, parseErr.Code)
+	assert.Equal(t, "transitions", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "at least one transition")
+}
+
+// TestCompletenessAllErrorsProvideGuidance verifies all completeness errors provide helpful guidance.
+func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
+	t := suite.T()
+
+	// Test each error type and verify it contains actionable guidance
+	tests := []struct {
+		name            string
+		buildModel      func() *inputModel
+		expectedCode    int
+		shouldContain   []string
+	}{
+		{
+			name: "no_actors",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Actors = map[string]*inputActor{}
+				return m
+			},
+			expectedCode: ErrTreeModelNoActors,
+			shouldContain: []string{
+				"actors represent the users, systems, or external entities",
+				"actors/",
+				".actor.json",
+			},
+		},
+		{
+			name: "no_domains",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains = map[string]*inputDomain{}
+				return m
+			},
+			expectedCode: ErrTreeModelNoDomains,
+			shouldContain: []string{
+				"domains are high-level subject areas",
+				"domains/",
+				"domain.json",
+			},
+		},
+		{
+			name: "no_subdomains",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains["orders"].Subdomains = map[string]*inputSubdomain{}
+				return m
+			},
+			expectedCode: ErrTreeDomainNoSubdomains,
+			shouldContain: []string{
+				"subdomains organize classes",
+				"subdomain.json",
+			},
+		},
+		{
+			name: "too_few_classes",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains["orders"].Subdomains["core"].Classes = map[string]*inputClass{
+					"order": t_buildCompleteClass(),
+				}
+				m.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{
+					"self_ref": {
+						Name:             "Self Ref",
+						FromClassKey:     "order",
+						FromMultiplicity: "1",
+						ToClassKey:       "order",
+						ToMultiplicity:   "*",
+					},
+				}
+				return m
+			},
+			expectedCode: ErrTreeSubdomainTooFewClasses,
+			shouldContain: []string{
+				"needs multiple classes to represent meaningful relationships",
+				"classes/",
+				"class.json",
+			},
+		},
+		{
+			name: "no_associations",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{}
+				return m
+			},
+			expectedCode: ErrTreeSubdomainNoAssociations,
+			shouldContain: []string{
+				"associations describe how classes relate",
+				"associations/",
+				".assoc.json",
+			},
+		},
+		{
+			name: "no_attributes",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains["orders"].Subdomains["core"].Classes["order"].Attributes = map[string]*inputAttribute{}
+				return m
+			},
+			expectedCode: ErrTreeClassNoAttributes,
+			shouldContain: []string{
+				"attributes describe the data properties",
+				"attributes",
+			},
+		},
+		{
+			name: "no_state_machine",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine = nil
+				return m
+			},
+			expectedCode: ErrTreeClassNoStateMachine,
+			shouldContain: []string{
+				"state machines describe the lifecycle and behavior",
+				"state_machine.json",
+			},
+		},
+		{
+			name: "no_transitions",
+			buildModel: func() *inputModel {
+				m := t_buildCompleteModelTree()
+				m.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine.Transitions = []inputTransition{}
+				return m
+			},
+			expectedCode: ErrTreeStateMachineNoTransitions,
+			shouldContain: []string{
+				"transitions describe how the class moves between states",
+				"transitions",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := tt.buildModel()
+			err := ValidateModelCompleteness(model)
+			require.Error(t, err)
+
+			parseErr, ok := err.(*ParseError)
+			require.True(t, ok, "error should be a ParseError")
+			assert.Equal(t, tt.expectedCode, parseErr.Code, "error code should match")
+
+			// Verify all expected guidance strings are present
+			for _, s := range tt.shouldContain {
+				assert.Contains(t, parseErr.Message, s,
+					"error message should contain guidance: %s", s)
+			}
+		})
+	}
+}
+
 // t_buildMinimalModelTree creates a minimal valid model tree for testing.
 func t_buildMinimalModelTree() *inputModel {
 	return &inputModel{
@@ -831,5 +1151,71 @@ func t_buildValidModelTree() *inputModel {
 			},
 		},
 		Associations: map[string]*inputAssociation{},
+	}
+}
+
+// t_buildCompleteModelTree creates a complete model tree that passes all completeness validations.
+// This differs from t_buildValidModelTree in that every class has attributes, state machines, and transitions.
+func t_buildCompleteModelTree() *inputModel {
+	return &inputModel{
+		Name: "Complete Model",
+		Actors: map[string]*inputActor{
+			"customer": {Name: "Customer", Type: "person"},
+		},
+		Domains: map[string]*inputDomain{
+			"orders": {
+				Name: "Orders",
+				Subdomains: map[string]*inputSubdomain{
+					"core": {
+						Name: "Core",
+						Classes: map[string]*inputClass{
+							"order":     t_buildCompleteClass(),
+							"line_item": t_buildCompleteClass(),
+						},
+						Generalizations: map[string]*inputGeneralization{},
+						Associations: map[string]*inputAssociation{
+							"order_lines": {
+								Name:             "Order Lines",
+								FromClassKey:     "order",
+								FromMultiplicity: "1",
+								ToClassKey:       "line_item",
+								ToMultiplicity:   "1..*",
+							},
+						},
+					},
+				},
+				Associations: map[string]*inputAssociation{},
+			},
+		},
+		Associations: map[string]*inputAssociation{},
+	}
+}
+
+// t_buildCompleteClass creates a complete class with all required elements.
+func t_buildCompleteClass() *inputClass {
+	toState := "active"
+	return &inputClass{
+		Name: "Complete Class",
+		Attributes: map[string]*inputAttribute{
+			"id": {Name: "ID", DataTypeRules: "int"},
+		},
+		StateMachine: &inputStateMachine{
+			States: map[string]*inputState{
+				"active": {Name: "Active"},
+			},
+			Events: map[string]*inputEvent{
+				"create": {Name: "create"},
+			},
+			Guards:      map[string]*inputGuard{},
+			Transitions: []inputTransition{
+				{
+					FromStateKey: nil, // Initial transition
+					ToStateKey:   &toState,
+					EventKey:     "create",
+				},
+			},
+		},
+		Actions: map[string]*inputAction{},
+		Queries: map[string]*inputQuery{},
 	}
 }

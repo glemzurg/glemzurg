@@ -138,4 +138,14 @@ const (
 	ErrTreeGenSuperclassIsSubclass        = 11014 // Superclass cannot also be a subclass
 	ErrTreeGenSubclassDuplicate           = 11015 // Same class listed multiple times in subclass_keys
 	ErrTreeAssocMultiplicityInvalid       = 11016 // Invalid multiplicity format
+
+	// Tree completeness errors (11017+) - ensure model is complete enough for AI guidance
+	ErrTreeModelNoActors             = 11017 // Model must have at least one actor defined
+	ErrTreeModelNoDomains            = 11018 // Model must have at least one domain defined
+	ErrTreeDomainNoSubdomains        = 11019 // Domain must have at least one subdomain defined
+	ErrTreeSubdomainTooFewClasses    = 11020 // Subdomain must have at least 2 classes defined
+	ErrTreeSubdomainNoAssociations   = 11021 // Subdomain must have at least one association defined
+	ErrTreeClassNoAttributes         = 11022 // Class must have at least one attribute defined
+	ErrTreeClassNoStateMachine       = 11023 // Class must have a state machine defined
+	ErrTreeStateMachineNoTransitions = 11024 // State machine must have at least one transition defined
 )

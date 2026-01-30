@@ -27,6 +27,134 @@ func ValidateModelTree(model *inputModel) error {
 	return nil
 }
 
+// ValidateModelCompleteness validates that a model is complete enough to be useful.
+// This provides guidance to AI about what elements are still needed.
+// It checks that the model has all required structural components.
+func ValidateModelCompleteness(model *inputModel) error {
+	// Check model has at least one actor
+	if len(model.Actors) == 0 {
+		return NewParseError(
+			ErrTreeModelNoActors,
+			"model must have at least one actor defined - actors represent the users, systems, or external entities that interact with your system; define actors in the 'actors/' directory with files like 'actors/user.actor.json'",
+			"model.json",
+		).WithField("actors")
+	}
+
+	// Check model has at least one domain
+	if len(model.Domains) == 0 {
+		return NewParseError(
+			ErrTreeModelNoDomains,
+			"model must have at least one domain defined - domains are high-level subject areas that group related functionality; create a domain directory under 'domains/' with a 'domain.json' file",
+			"model.json",
+		).WithField("domains")
+	}
+
+	// Validate each domain's completeness
+	for domainKey, domain := range model.Domains {
+		if err := validateDomainCompleteness(domainKey, domain); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateDomainCompleteness validates that a domain is complete.
+func validateDomainCompleteness(domainKey string, domain *inputDomain) error {
+	domainPath := fmt.Sprintf("domains/%s/domain.json", domainKey)
+
+	// Check domain has at least one subdomain
+	if len(domain.Subdomains) == 0 {
+		return NewParseError(
+			ErrTreeDomainNoSubdomains,
+			fmt.Sprintf("domain '%s' must have at least one subdomain defined - subdomains organize classes within a domain; create a subdomain directory under 'domains/%s/' with a 'subdomain.json' file",
+				domainKey, domainKey),
+			domainPath,
+		).WithField("subdomains")
+	}
+
+	// Validate each subdomain's completeness
+	for subdomainKey, subdomain := range domain.Subdomains {
+		if err := validateSubdomainCompleteness(domainKey, subdomainKey, subdomain); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateSubdomainCompleteness validates that a subdomain is complete.
+func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *inputSubdomain) error {
+	subdomainPath := fmt.Sprintf("domains/%s/subdomains/%s/subdomain.json", domainKey, subdomainKey)
+
+	// Check subdomain has at least 2 classes
+	if len(subdomain.Classes) < 2 {
+		return NewParseError(
+			ErrTreeSubdomainTooFewClasses,
+			fmt.Sprintf("subdomain '%s' must have at least 2 classes defined (has %d) - a subdomain needs multiple classes to represent meaningful relationships; create class directories under 'domains/%s/subdomains/%s/classes/' with 'class.json' files",
+				subdomainKey, len(subdomain.Classes), domainKey, subdomainKey),
+			subdomainPath,
+		).WithField("classes")
+	}
+
+	// Check subdomain has at least one association
+	if len(subdomain.Associations) == 0 {
+		return NewParseError(
+			ErrTreeSubdomainNoAssociations,
+			fmt.Sprintf("subdomain '%s' must have at least one association defined - associations describe how classes relate to each other; create association files under 'domains/%s/subdomains/%s/associations/' with '.assoc.json' extension",
+				subdomainKey, domainKey, subdomainKey),
+			subdomainPath,
+		).WithField("associations")
+	}
+
+	// Validate each class's completeness
+	for classKey, class := range subdomain.Classes {
+		if err := validateClassCompleteness(domainKey, subdomainKey, classKey, class); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateClassCompleteness validates that a class is complete.
+func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *inputClass) error {
+	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
+
+	// Check class has at least one attribute
+	if len(class.Attributes) == 0 {
+		return NewParseError(
+			ErrTreeClassNoAttributes,
+			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' map in the class.json file with name, data type rules, and details",
+				classKey),
+			classPath,
+		).WithField("attributes")
+	}
+
+	// Check class has a state machine
+	if class.StateMachine == nil {
+		return NewParseError(
+			ErrTreeClassNoStateMachine,
+			fmt.Sprintf("class '%s' must have a state machine defined - state machines describe the lifecycle and behavior of a class; create a 'state_machine.json' file in the class directory with states, events, and transitions",
+				classKey),
+			classPath,
+		).WithField("state_machine")
+	}
+
+	// Check state machine has at least one transition
+	if len(class.StateMachine.Transitions) == 0 {
+		smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
+		return NewParseError(
+			ErrTreeStateMachineNoTransitions,
+			fmt.Sprintf("state machine for class '%s' must have at least one transition defined - transitions describe how the class moves between states in response to events; add transitions to the 'transitions' array with event_key and state references",
+				classKey),
+			smPath,
+		).WithField("transitions")
+	}
+
+	return nil
+}
+
 // validateDomainTree validates a domain and its children.
 func validateDomainTree(model *inputModel, domainKey string, domain *inputDomain) error {
 	// Validate each subdomain
