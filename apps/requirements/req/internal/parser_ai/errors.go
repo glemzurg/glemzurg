@@ -138,6 +138,7 @@ const (
 	ErrTreeGenSuperclassIsSubclass        = 11014 // Superclass cannot also be a subclass
 	ErrTreeGenSubclassDuplicate           = 11015 // Same class listed multiple times in subclass_keys
 	ErrTreeAssocMultiplicityInvalid       = 11016 // Invalid multiplicity format
+	ErrTreeAssocClassSameAsEndpoint       = 11025 // Association class cannot be the same as from or to class
 
 	// Tree completeness errors (11017+) - ensure model is complete enough for AI guidance
 	ErrTreeModelNoActors             = 11017 // Model must have at least one actor defined

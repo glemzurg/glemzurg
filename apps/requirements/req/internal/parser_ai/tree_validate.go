@@ -428,6 +428,23 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 				assocPath,
 			).WithField("association_class_key")
 		}
+		// Association class cannot be the same as from or to class
+		if *assoc.AssociationClassKey == assoc.FromClassKey {
+			return NewParseError(
+				ErrTreeAssocClassSameAsEndpoint,
+				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as from_class_key",
+					assocKey, *assoc.AssociationClassKey),
+				assocPath,
+			).WithField("association_class_key")
+		}
+		if *assoc.AssociationClassKey == assoc.ToClassKey {
+			return NewParseError(
+				ErrTreeAssocClassSameAsEndpoint,
+				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as to_class_key",
+					assocKey, *assoc.AssociationClassKey),
+				assocPath,
+			).WithField("association_class_key")
+		}
 	}
 
 	// Validate multiplicity formats
@@ -548,6 +565,23 @@ func validateDomainAssociation(model *inputModel, domainKey string, domain *inpu
 				ErrTreeAssocClassNotFound,
 				fmt.Sprintf("association '%s' association_class_key '%s' references class '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocClass),
+				assocPath,
+			).WithField("association_class_key")
+		}
+		// Association class cannot be the same as from or to class
+		if *assoc.AssociationClassKey == assoc.FromClassKey {
+			return NewParseError(
+				ErrTreeAssocClassSameAsEndpoint,
+				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as from_class_key",
+					assocKey, *assoc.AssociationClassKey),
+				assocPath,
+			).WithField("association_class_key")
+		}
+		if *assoc.AssociationClassKey == assoc.ToClassKey {
+			return NewParseError(
+				ErrTreeAssocClassSameAsEndpoint,
+				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as to_class_key",
+					assocKey, *assoc.AssociationClassKey),
 				assocPath,
 			).WithField("association_class_key")
 		}
@@ -703,6 +737,23 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputAs
 				ErrTreeAssocClassNotFound,
 				fmt.Sprintf("association '%s' association_class_key '%s' references class '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocClass),
+				assocPath,
+			).WithField("association_class_key")
+		}
+		// Association class cannot be the same as from or to class
+		if *assoc.AssociationClassKey == assoc.FromClassKey {
+			return NewParseError(
+				ErrTreeAssocClassSameAsEndpoint,
+				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as from_class_key",
+					assocKey, *assoc.AssociationClassKey),
+				assocPath,
+			).WithField("association_class_key")
+		}
+		if *assoc.AssociationClassKey == assoc.ToClassKey {
+			return NewParseError(
+				ErrTreeAssocClassSameAsEndpoint,
+				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as to_class_key",
+					assocKey, *assoc.AssociationClassKey),
 				assocPath,
 			).WithField("association_class_key")
 		}

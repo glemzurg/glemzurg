@@ -504,6 +504,64 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	assert.Equal(t, "association_class_key", parseErr.Field)
 }
 
+// TestSubdomainAssocClassSameAsFromClass verifies error when association_class_key equals from_class_key.
+func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
+	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
+	sameAsFrom := "class1"
+	subdomain.Associations = map[string]*inputAssociation{
+		"test_assoc": {
+			Name:                "Test Association",
+			FromClassKey:        "class1",
+			FromMultiplicity:    "1",
+			ToClassKey:          "class2",
+			ToMultiplicity:      "*",
+			AssociationClassKey: &sameAsFrom,
+		},
+	}
+
+	err := ValidateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
+	assert.Equal(t, "association_class_key", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "from_class_key")
+}
+
+// TestSubdomainAssocClassSameAsToClass verifies error when association_class_key equals to_class_key.
+func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
+	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
+	sameAsTo := "class2"
+	subdomain.Associations = map[string]*inputAssociation{
+		"test_assoc": {
+			Name:                "Test Association",
+			FromClassKey:        "class1",
+			FromMultiplicity:    "1",
+			ToClassKey:          "class2",
+			ToMultiplicity:      "*",
+			AssociationClassKey: &sameAsTo,
+		},
+	}
+
+	err := ValidateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
+	assert.Equal(t, "association_class_key", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "to_class_key")
+}
+
 // TestSubdomainAssocMultiplicityInvalid verifies error when multiplicity format is invalid.
 func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 	t := suite.T()
