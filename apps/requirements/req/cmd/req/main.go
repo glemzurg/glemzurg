@@ -23,7 +23,7 @@ const (
 
 // Supported output formats
 const (
-	OutputFormatDataYAML = "data/yaml" // Parser format (YAML files) - not yet implemented
+	OutputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	OutputFormatMD       = "md"        // Markdown documentation
 	OutputFormatAIJSON   = "ai/json"   // AI format (JSON files)
 )
@@ -40,7 +40,7 @@ func main() {
 	// Convert data/yaml to ai/json
 	//   $GOBIN/req -input data/yaml -output ai/json -rootsource example/models -rootoutput example/ai_models -model model_a
 	//
-	// Convert ai/json to data/yaml (not yet implemented)
+	// Convert ai/json to data/yaml
 	//   $GOBIN/req -input ai/json -output data/yaml -rootsource example/ai_models -rootoutput example/models -model model_a
 
 	var rootSourcePath, rootOutputPath, model string
@@ -76,11 +76,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Check for unsupported conversion
-	if outputFormat == OutputFormatDataYAML {
-		fmt.Println("Error: output format 'data/yaml' is not yet implemented")
-		os.Exit(1)
-	}
 
 	// Set the appropriate logging level.
 	_ = slog.SetLogLoggerLevel(slog.LevelInfo)
@@ -195,8 +190,11 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 		fmt.Printf("Model written to: %s\n", outputPath)
 
 	case OutputFormatDataYAML:
-		// This case is handled earlier with an error, but included for completeness
-		return fmt.Errorf("output format 'data/yaml' is not yet implemented")
+		fmt.Println("Converting to data/yaml format...")
+		if err := parser.Write(*parsedModel, outputPath); err != nil {
+			return fmt.Errorf("failed to write data/yaml model: %w", err)
+		}
+		fmt.Printf("Model written to: %s\n", outputPath)
 	}
 
 	fmt.Println("\nDone!")
