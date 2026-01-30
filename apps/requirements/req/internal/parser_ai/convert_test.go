@@ -430,6 +430,127 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 	assert.Len(t, class.Transitions, 1)
 }
 
+// TestConvertFromModelWithQueries tests converting queries.
+func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
+	t := suite.T()
+
+	domainKey := helper.Must(identity.NewDomainKey("orders"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "get_total"))
+
+	model := &req_model.Model{
+		Key:    "testmodel",
+		Name:   "Test Model",
+		Actors: make(map[identity.Key]model_actor.Actor),
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKey: {
+				Key:  domainKey,
+				Name: "Orders",
+				Subdomains: map[identity.Key]model_domain.Subdomain{
+					subdomainKey: {
+						Key:  subdomainKey,
+						Name: "Default",
+						Classes: map[identity.Key]model_class.Class{
+							classKey: {
+								Key:        classKey,
+								Name:       "Order",
+								Attributes: make(map[identity.Key]model_class.Attribute),
+								Queries: map[identity.Key]model_state.Query{
+									queryKey: {
+										Key:        queryKey,
+										Name:       "Get Total",
+										Details:    "Get order total",
+										Requires:   []string{"order must exist"},
+										Guarantees: []string{"returns total amount"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	input, err := ConvertFromModel(model)
+	require.NoError(t, err)
+
+	class := input.Domains["orders"].Subdomains["default"].Classes["order"]
+	require.Contains(t, class.Queries, "get_total")
+
+	query := class.Queries["get_total"]
+	assert.Equal(t, "Get Total", query.Name)
+	assert.Equal(t, "Get order total", query.Details)
+	assert.Equal(t, []string{"order must exist"}, query.Requires)
+	assert.Equal(t, []string{"returns total amount"}, query.Guarantees)
+}
+
+// TestConvertToModelWithQueries tests converting queries.
+func (suite *ConvertSuite) TestConvertToModelWithQueries() {
+	t := suite.T()
+
+	input := &inputModel{
+		Name:   "Test Model",
+		Actors: make(map[string]*inputActor),
+		Domains: map[string]*inputDomain{
+			"orders": {
+				Name: "Orders",
+				Subdomains: map[string]*inputSubdomain{
+					"default": {
+						Name: "Default",
+						Classes: map[string]*inputClass{
+							"order": {
+								Name:       "Order",
+								Attributes: make(map[string]*inputAttribute),
+								Queries: map[string]*inputQuery{
+									"get_total": {
+										Name:       "Get Total",
+										Details:    "Get order total",
+										Requires:   []string{"order must exist"},
+										Guarantees: []string{"returns total amount"},
+									},
+								},
+							},
+						},
+						Generalizations: make(map[string]*inputGeneralization),
+						Associations:    make(map[string]*inputAssociation),
+					},
+				},
+				Associations: make(map[string]*inputAssociation),
+			},
+		},
+		Associations: make(map[string]*inputAssociation),
+	}
+
+	model, err := ConvertToModel(input, "testmodel")
+	require.NoError(t, err)
+
+	// Navigate to the class
+	var class model_class.Class
+	for _, domain := range model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for key, c := range subdomain.Classes {
+				if key.SubKey() == "order" {
+					class = c
+					break
+				}
+			}
+		}
+	}
+	require.Len(t, class.Queries, 1)
+
+	var query model_state.Query
+	for _, q := range class.Queries {
+		query = q
+		break
+	}
+	assert.Equal(t, "Get Total", query.Name)
+	assert.Equal(t, "Get order total", query.Details)
+	assert.Equal(t, []string{"order must exist"}, query.Requires)
+	assert.Equal(t, []string{"returns total amount"}, query.Guarantees)
+}
+
 // TestConvertFromModelWithGeneralization tests converting a generalization.
 func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	t := suite.T()

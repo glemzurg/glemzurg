@@ -172,9 +172,11 @@ func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
 		result.Actions[key.SubKey()] = converted
 	}
 
-	// Convert queries - Note: queries are not in model_class.Class structure
-	// Looking at the req_model, queries don't seem to be stored in Class
-	// They would need to be retrieved from somewhere else if they exist
+	// Convert queries
+	for key, query := range class.Queries {
+		converted := convertQueryFromModel(&query)
+		result.Queries[key.SubKey()] = converted
+	}
 
 	return result, nil
 }
@@ -323,6 +325,16 @@ func convertActionFromModel(action *model_state.Action) *inputAction {
 		Details:    action.Details,
 		Requires:   action.Requires,
 		Guarantees: action.Guarantees,
+	}
+}
+
+// convertQueryFromModel converts a model_state.Query to an inputQuery.
+func convertQueryFromModel(query *model_state.Query) *inputQuery {
+	return &inputQuery{
+		Name:       query.Name,
+		Details:    query.Details,
+		Requires:   query.Requires,
+		Guarantees: query.Guarantees,
 	}
 }
 

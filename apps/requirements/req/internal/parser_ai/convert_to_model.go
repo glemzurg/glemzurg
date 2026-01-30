@@ -186,6 +186,7 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		Events:      make(map[identity.Key]model_state.Event),
 		Guards:      make(map[identity.Key]model_state.Guard),
 		Actions:     make(map[identity.Key]model_state.Action),
+		Queries:     make(map[identity.Key]model_state.Query),
 		Transitions: make(map[identity.Key]model_state.Transition),
 	}
 
@@ -237,9 +238,14 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		result.Actions[converted.Key] = converted
 	}
 
-	// Note: Queries are stored in a different way in req_model - they might be Actions or separate
-	// The req_model uses model_state.Query but Class doesn't seem to have a Queries map
-	// Skip query conversion for now
+	// Convert queries
+	for queryKeyStr, query := range class.Queries {
+		converted, err := convertQueryToModel(queryKeyStr, query, classKey)
+		if err != nil {
+			return model_class.Class{}, errors.Wrapf(err, "failed to convert query '%s'", queryKeyStr)
+		}
+		result.Queries[converted.Key] = converted
+	}
 
 	return result, nil
 }
@@ -444,6 +450,22 @@ func convertActionToModel(keyStr string, action *inputAction, classKey identity.
 		Details:    action.Details,
 		Requires:   action.Requires,
 		Guarantees: action.Guarantees,
+	}, nil
+}
+
+// convertQueryToModel converts an inputQuery to a model_state.Query.
+func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key) (model_state.Query, error) {
+	queryKey, err := identity.NewQueryKey(classKey, keyStr)
+	if err != nil {
+		return model_state.Query{}, errors.Wrap(err, "failed to create query key")
+	}
+
+	return model_state.Query{
+		Key:        queryKey,
+		Name:       query.Name,
+		Details:    query.Details,
+		Requires:   query.Requires,
+		Guarantees: query.Guarantees,
 	}, nil
 }
 
