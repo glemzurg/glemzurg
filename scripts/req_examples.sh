@@ -7,7 +7,7 @@
 #     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/output/ web_books -debug
 #
 #   Convert data/yaml to ai/json:
-#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/ai_output/ web_books "" "data/yaml" "ai/json"
+#     ./scripts/req_examples.sh /data/examples/requirements/req/models/ /data/examples/requirements/req/ai_output/ web_books -debug "data/yaml" "ai/json"
 #
 #   Convert ai/json to md:
 #     ./scripts/req_examples.sh /data/examples/requirements/req/ai_models/ /data/examples/requirements/req/output/ web_books "" "ai/json" "md"

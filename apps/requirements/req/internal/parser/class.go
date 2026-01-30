@@ -919,13 +919,13 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			if len(action.Requires) > 0 {
 				yaml += "        requires:\n"
 				for _, req := range action.Requires {
-					yaml += "            - " + req + "\n"
+					yaml += formatYamlListItem(req, 12)
 				}
 			}
 			if len(action.Guarantees) > 0 {
 				yaml += "        guarantees:\n"
 				for _, gua := range action.Guarantees {
-					yaml += "            - " + gua + "\n"
+					yaml += formatYamlListItem(gua, 12)
 				}
 			}
 		}
@@ -986,4 +986,24 @@ func formatMultiplicity(m model_class.Multiplicity) string {
 		return s
 	}
 	return "\"" + s + "\""
+}
+
+// formatYamlListItem formats a string as a YAML list item.
+// If the string contains newlines, it uses literal block scalar (|) notation.
+// The indent parameter specifies the number of spaces for the list item prefix.
+func formatYamlListItem(value string, indent int) string {
+	indentStr := strings.Repeat(" ", indent)
+	if strings.Contains(value, "\n") {
+		// Use literal block scalar for multi-line strings
+		result := indentStr + "- |\n"
+		// Each line of the value needs to be indented beyond the list item
+		contentIndent := strings.Repeat(" ", indent+4)
+		lines := strings.Split(value, "\n")
+		for _, line := range lines {
+			result += contentIndent + line + "\n"
+		}
+		return result
+	}
+	// Single line - simple format
+	return indentStr + "- " + value + "\n"
 }
