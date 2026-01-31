@@ -180,6 +180,48 @@ After refactoring, a transition was removed but its action file remained:
 actions/old_action.json  # Should be deleted
 ```
 
+## Deriving Actions from Existing Systems
+
+When creating a model from an existing system, actions come from **state-changing protocol calls** (REST POST/PUT/DELETE, RPC mutations, etc.). Each such call becomes:
+
+1. An **event** in the state machine
+2. A **transition** that uses the action
+3. An **action file** describing the business logic
+
+For classes without obvious lifecycle states, use a single `existing` state with transitions from `existing` to `existing`:
+
+```json
+{
+  "states": {
+    "existing": {
+      "name": "Existing",
+      "details": "The entity exists in the system"
+    }
+  },
+  "events": {
+    "update_settings": {
+      "name": "update_settings",
+      "details": "Update user settings"
+    }
+  },
+  "transitions": [
+    {
+      "from_state_key": null,
+      "to_state_key": "existing",
+      "event_key": "existing"
+    },
+    {
+      "from_state_key": "existing",
+      "to_state_key": "existing",
+      "event_key": "update_settings",
+      "action_key": "update_settings"
+    }
+  ]
+}
+```
+
+This ensures every action has a transition that references it.
+
 ## Related Errors
 
 - **E11011**: State machine action not found (the reverse - reference exists but action doesn't)

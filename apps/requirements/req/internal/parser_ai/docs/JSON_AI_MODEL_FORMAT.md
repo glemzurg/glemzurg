@@ -48,6 +48,123 @@ Consider a "Shopping Cart" class with a "total" attribute and a "Calculate Total
 
 In the requirements model, none of this complexity appears. There is simply a Shopping Cart with items, and when you ask for the total, you get the correct value reflecting prices, taxes, and discounts. The model describes the *behavior* humans expect, not the *mechanism* that delivers it.
 
+## Deriving a Model from an Existing System
+
+When examining another system to create a model, use these guidelines to identify model elements:
+
+### Classes from Persistent Storage
+
+Classes can be derived from the persistent storage in the existing system:
+- **Database tables** → Classes with attributes matching columns
+- **Cache structures** → Classes representing cached entities
+- **Message queue payloads** → Classes for message data types
+- **Configuration stores** → Classes for configurable entities
+
+Each persistent entity typically becomes a class. The columns, fields, or properties become attributes.
+
+### State Machines for Stateless Classes
+
+If a class has no obvious state attribute (no `status`, `state`, or lifecycle column), create a minimal state machine with a single state called `existing`:
+
+```json
+{
+  "states": {
+    "existing": {
+      "name": "Existing",
+      "details": "The entity exists in the system"
+    }
+  },
+  "events": {
+    "existing": {
+      "name": "existing",
+      "details": "Initial event that creates the entity"
+    }
+  },
+  "transitions": [
+    {
+      "from_state_key": null,
+      "to_state_key": "existing",
+      "event_key": "existing"
+    }
+  ]
+}
+```
+
+This provides a valid state machine even when the class doesn't have explicit lifecycle states.
+
+### Events and Queries from Server Protocols
+
+Examine the system's server protocols (REST APIs, GraphQL, RPC, etc.) to identify events and queries:
+
+| Protocol Call Type | Model Element | Criteria |
+|--------------------|---------------|----------|
+| **Query** | Query file | Call makes **no change** to system state (GET, read operations) |
+| **Event** | Event + Transition + Action | Call **does change** system state (POST, PUT, DELETE, write operations) |
+
+### Actions from State-Changing Calls
+
+For each protocol call that changes system state:
+
+1. **Create an event** in the state machine for the triggering call
+2. **Create a transition** from `existing` to `existing` (or between appropriate states if the class has lifecycle states)
+3. **Create an action file** that describes the business logic performed by that call
+
+Example: A REST endpoint `POST /orders/{id}/cancel` becomes:
+
+**Event in state_machine.json:**
+```json
+{
+  "events": {
+    "cancel": {
+      "name": "cancel",
+      "details": "Request to cancel the order"
+    }
+  }
+}
+```
+
+**Transition in state_machine.json:**
+```json
+{
+  "transitions": [
+    {
+      "from_state_key": "existing",
+      "to_state_key": "existing",
+      "event_key": "cancel",
+      "action_key": "cancel_order"
+    }
+  ]
+}
+```
+
+**Action file (actions/cancel_order.json):**
+```json
+{
+  "name": "Cancel Order",
+  "details": "Cancels the order and releases reserved inventory",
+  "requires": [
+    "Order has not been shipped"
+  ],
+  "guarantees": [
+    "Order status is set to cancelled",
+    "Reserved inventory is released",
+    "Customer is notified of cancellation"
+  ]
+}
+```
+
+### Summary: Mapping System Elements to Model
+
+| Existing System Element | Model Element |
+|------------------------|---------------|
+| Database table / Cache / Message type | Class |
+| Table columns / Fields | Attributes |
+| Status/state column values | States |
+| Read-only API endpoints | Queries |
+| State-changing API endpoints | Events + Transitions + Actions |
+| API preconditions | Action `requires` |
+| API effects/side effects | Action `guarantees` |
+
 ## Design Principles
 
 - **One concept per file** - Each actor, class, etc. is its own JSON file

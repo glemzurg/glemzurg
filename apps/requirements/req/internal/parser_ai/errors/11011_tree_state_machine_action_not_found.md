@@ -112,8 +112,24 @@ Set `action_key` to null (transitions) or remove the action entry (state actions
 }
 ```
 
+## Creating Actions from Existing Systems
+
+When modeling an existing system, actions come from **state-changing protocol calls**:
+
+| Source System Element | Model Element |
+|----------------------|---------------|
+| REST POST/PUT/DELETE endpoints | Actions |
+| GraphQL mutations | Actions |
+| RPC calls that modify state | Actions |
+| Message handlers that update data | Actions |
+
+Each state-changing call becomes an action file. The action's `requires` captures preconditions (validation, authentication), and `guarantees` captures what changes occur.
+
+**Read-only calls (GET, queries) become Query files, not Actions.**
+
 ## Related Errors
 
 - **E11008**: Transition state not found
 - **E11009**: Transition event not found
 - **E8001**: Action name is required
+- **E11029**: Action exists but is not referenced
