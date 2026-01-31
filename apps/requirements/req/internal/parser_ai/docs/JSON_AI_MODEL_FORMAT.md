@@ -631,6 +631,80 @@ Based on `model_class.Generalization`:
 - `is_static` (optional, default false): Are the specializations static and unchanging, or can they change at runtime
 - `uml_comment` (optional): Comment for UML diagrams
 
+## The "details" Field: Purpose and Proper Use
+
+**IMPORTANT**: The `details` field that appears on many entities is **emphatically NOT for describing logic**. It serves a specific, limited purpose.
+
+### What "details" Is For
+
+The `details` field provides a **human-readable summary** — a brief, plain-language description that helps readers understand what something is or does at a high level. Think of it as a caption or tooltip.
+
+Good examples:
+- `"details": "Represents a customer's order for books."`
+- `"details": "Handles the lifecycle of customer orders."`
+- `"details": "Links an order to the customer who placed it"`
+- `"details": "Check if order can still be cancelled"`
+
+### What "details" Is NOT For
+
+The `details` field should **never** contain:
+- Preconditions or prerequisites
+- Postconditions or guarantees
+- Logical rules or business logic
+- Implementation details
+- Conditional behavior ("if X then Y")
+- Formulas or calculations
+
+**Wrong** (logic in details):
+```json
+{
+  "name": "calculateTotal",
+  "details": "If order has items, sum their prices. Must have at least one item. Sets Order.total to computed value which must be non-negative."
+}
+```
+
+**Correct** (logic in structured fields):
+```json
+{
+  "name": "calculateTotal",
+  "details": "Sum up line item prices and apply taxes/discounts",
+  "requires": [
+    "Order has at least one line item",
+    "All line items have valid prices"
+  ],
+  "guarantees": [
+    "Order.total is set to the computed value",
+    "Total is non-negative"
+  ]
+}
+```
+
+### Where Logic Belongs
+
+Each entity type has appropriate structured fields for logic:
+
+| Entity | Summary Field | Logic Fields |
+|--------|---------------|--------------|
+| Action | `details` | `requires`, `guarantees` |
+| Query | `details` | `requires`, `guarantees` |
+| Guard | `details` (describes the condition being checked) | N/A (guards ARE the logic) |
+| State | `details` | `actions` (entry/exit/do behaviors) |
+| Event | `details` | `parameters` |
+| Class | `details` | `attributes`, `indexes` |
+| Association | `details` | `from_multiplicity`, `to_multiplicity` |
+
+### Why This Matters
+
+1. **AI Processing**: Structured fields (`requires`, `guarantees`) are machine-parseable. AI can extract preconditions and postconditions reliably.
+
+2. **Code Generation**: Generators can use `requires` for validation checks and `guarantees` for assertions. Free-form text in `details` cannot be reliably transformed.
+
+3. **Documentation**: The `details` field appears in documentation as a brief description. Stuffing logic into it makes documentation unreadable.
+
+4. **Validation**: Structured fields can be validated (e.g., "does the action guarantee something about attributes?"). Text in `details` cannot.
+
+5. **Consistency**: Keeping logic in structured fields ensures all actions/queries follow the same pattern.
+
 ## Key Design Decisions
 
 ### 1. Scoped Keys

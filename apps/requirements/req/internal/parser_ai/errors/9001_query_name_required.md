@@ -91,9 +91,45 @@ Query names should:
 | Field | Type | Required | Constraints |
 |-------|------|----------|-------------|
 | `name` | string | **Yes** | `minLength: 1` |
-| `details` | string | No | None |
-| `requires` | string[] | No | Preconditions |
-| `guarantees` | string[] | No | Postconditions |
+| `details` | string | No | Human-readable summary only |
+| `requires` | string[] | No | Preconditions (logic goes here) |
+| `guarantees` | string[] | No | Postconditions (logic goes here) |
+
+## Important: Where Logic Belongs
+
+**The `details` field is for human-readable summaries only — NOT for describing logic.**
+
+| DO put in `details` | DON'T put in `details` |
+|---------------------|------------------------|
+| Brief description | Preconditions |
+| What it returns | Postconditions |
+| High-level purpose | Filtering rules |
+| | Business logic |
+| | "If X then Y" statements |
+
+**Wrong** — logic stuffed into details:
+```json
+{
+    "name": "Find Pending Orders",
+    "details": "Returns orders where status='pending'. User must be authenticated. Results sorted by date descending. Only returns orders user has access to."
+}
+```
+
+**Correct** — logic in structured fields:
+```json
+{
+    "name": "Find Pending Orders",
+    "details": "Returns all orders that have not been processed",
+    "requires": [
+        "User must be authenticated",
+        "User must have read access to orders"
+    ],
+    "guarantees": [
+        "Returns a list of orders with status 'pending'",
+        "Results are sorted by creation date descending"
+    ]
+}
+```
 
 ## Related Errors
 

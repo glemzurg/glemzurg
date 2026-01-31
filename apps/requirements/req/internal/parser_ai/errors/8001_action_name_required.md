@@ -91,9 +91,45 @@ Action names should:
 | Field | Type | Required | Constraints |
 |-------|------|----------|-------------|
 | `name` | string | **Yes** | `minLength: 1` |
-| `details` | string | No | None |
-| `requires` | string[] | No | Preconditions |
-| `guarantees` | string[] | No | Postconditions |
+| `details` | string | No | Human-readable summary only |
+| `requires` | string[] | No | Preconditions (logic goes here) |
+| `guarantees` | string[] | No | Postconditions (logic goes here) |
+
+## Important: Where Logic Belongs
+
+**The `details` field is for human-readable summaries only — NOT for describing logic.**
+
+| DO put in `details` | DON'T put in `details` |
+|---------------------|------------------------|
+| Brief description | Preconditions |
+| What it accomplishes | Postconditions |
+| High-level purpose | Business rules |
+| | Validation logic |
+| | "If X then Y" statements |
+
+**Wrong** — logic stuffed into details:
+```json
+{
+    "name": "Process Payment",
+    "details": "If order has items and total > 0, charges the payment method. Must have valid payment method. Creates transaction record on success."
+}
+```
+
+**Correct** — logic in structured fields:
+```json
+{
+    "name": "Process Payment",
+    "details": "Charges the customer's payment method",
+    "requires": [
+        "Order total must be greater than zero",
+        "Payment method must be valid"
+    ],
+    "guarantees": [
+        "Payment has been charged",
+        "Transaction record has been created"
+    ]
+}
+```
 
 ## Related Errors
 

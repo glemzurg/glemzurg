@@ -35,9 +35,11 @@ your_model/
 
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| `details` | string | None | Extended description |
-| `requires` | string[] | None | Preconditions |
-| `guarantees` | string[] | None | Postconditions |
+| `details` | string | None | Human-readable summary (NOT for logic) |
+| `requires` | string[] | None | Preconditions (logic goes here) |
+| `guarantees` | string[] | None | Postconditions (logic goes here) |
+
+**Important**: The `details` field is for human-readable summaries only. Logic (preconditions, postconditions, business rules) must go in `requires` and `guarantees`.
 
 ## Common Schema Violations
 
