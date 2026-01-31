@@ -374,7 +374,7 @@ func t_buildTestModelTree() *inputModel {
 							},
 						},
 						Associations: map[string]*inputAssociation{
-							"order_has_lines": {
+							"book_order--book_order_line--order_has_lines": {
 								Name:             "Order Has Lines",
 								Details:          "An order contains line items.",
 								FromClassKey:     "book_order",

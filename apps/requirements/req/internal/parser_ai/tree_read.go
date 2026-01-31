@@ -36,11 +36,18 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".actor.json")
-			content, err := os.ReadFile(filepath.Join(actorsDir, name))
+			filePath := filepath.Join(actorsDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "actor_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			actor, err := parseActor(content, filepath.Join(actorsDir, name))
+			actor, err := parseActor(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -60,11 +67,18 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".assoc.json")
-			content, err := os.ReadFile(filepath.Join(assocDir, name))
+			filePath := filepath.Join(assocDir, name)
+
+			// Validate association filename format (model level: domain.subdomain.class--domain.subdomain.class--name)
+			if err := ValidateAssociationFilename(key, AssocLevelModel, filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			assoc, err := parseAssociation(content, filepath.Join(assocDir, name))
+			assoc, err := parseAssociation(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -80,7 +94,14 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 				continue
 			}
 			domainKey := entry.Name()
-			domain, err := readDomainTree(filepath.Join(domainsDir, domainKey))
+			domainDir := filepath.Join(domainsDir, domainKey)
+
+			// Validate key format
+			if err := ValidateKey(domainKey, "domain_key", filepath.Join(domainDir, "domain.json")); err != nil {
+				return nil, err
+			}
+
+			domain, err := readDomainTree(domainDir)
 			if err != nil {
 				return nil, err
 			}
@@ -129,11 +150,18 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".assoc.json")
-			content, err := os.ReadFile(filepath.Join(assocDir, name))
+			filePath := filepath.Join(assocDir, name)
+
+			// Validate association filename format (domain level: subdomain.class--subdomain.class--name)
+			if err := ValidateAssociationFilename(key, AssocLevelDomain, filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			assoc, err := parseAssociation(content, filepath.Join(assocDir, name))
+			assoc, err := parseAssociation(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -149,7 +177,14 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 				continue
 			}
 			subdomainKey := entry.Name()
-			subdomain, err := readSubdomainTree(filepath.Join(subdomainsDir, subdomainKey))
+			subdomainDir := filepath.Join(subdomainsDir, subdomainKey)
+
+			// Validate key format
+			if err := ValidateKey(subdomainKey, "subdomain_key", filepath.Join(subdomainDir, "subdomain.json")); err != nil {
+				return nil, err
+			}
+
+			subdomain, err := readSubdomainTree(subdomainDir)
 			if err != nil {
 				return nil, err
 			}
@@ -189,11 +224,18 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".assoc.json")
-			content, err := os.ReadFile(filepath.Join(assocDir, name))
+			filePath := filepath.Join(assocDir, name)
+
+			// Validate association filename format (subdomain level: class--class--name)
+			if err := ValidateAssociationFilename(key, AssocLevelSubdomain, filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			assoc, err := parseAssociation(content, filepath.Join(assocDir, name))
+			assoc, err := parseAssociation(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -213,11 +255,18 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".gen.json")
-			content, err := os.ReadFile(filepath.Join(genDir, name))
+			filePath := filepath.Join(genDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "generalization_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			gen, err := parseGeneralization(content, filepath.Join(genDir, name))
+			gen, err := parseGeneralization(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -233,7 +282,14 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 				continue
 			}
 			classKey := entry.Name()
-			class, err := readClassTree(filepath.Join(classesDir, classKey))
+			classDir := filepath.Join(classesDir, classKey)
+
+			// Validate key format
+			if err := ValidateKey(classKey, "class_key", filepath.Join(classDir, "class.json")); err != nil {
+				return nil, err
+			}
+
+			class, err := readClassTree(classDir)
 			if err != nil {
 				return nil, err
 			}
@@ -282,11 +338,18 @@ func readClassTree(classDir string) (*inputClass, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".json")
-			content, err := os.ReadFile(filepath.Join(actionsDir, name))
+			filePath := filepath.Join(actionsDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "action_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			action, err := parseAction(content, filepath.Join(actionsDir, name))
+			action, err := parseAction(content, filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -306,11 +369,18 @@ func readClassTree(classDir string) (*inputClass, error) {
 				continue
 			}
 			key := strings.TrimSuffix(name, ".json")
-			content, err := os.ReadFile(filepath.Join(queriesDir, name))
+			filePath := filepath.Join(queriesDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "query_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
 			if err != nil {
 				return nil, err
 			}
-			query, err := parseQuery(content, filepath.Join(queriesDir, name))
+			query, err := parseQuery(content, filePath)
 			if err != nil {
 				return nil, err
 			}

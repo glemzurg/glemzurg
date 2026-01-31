@@ -149,4 +149,9 @@ const (
 	ErrTreeClassNoAttributes         = 11022 // Class must have at least one attribute defined
 	ErrTreeClassNoStateMachine       = 11023 // Class must have a state machine defined
 	ErrTreeStateMachineNoTransitions = 11024 // State machine must have at least one transition defined
+
+	// Key format errors (11026+) - keys derived from filenames must be well-formed
+	ErrKeyInvalidFormat              = 11026 // Key has invalid format (must be lowercase snake_case)
+	ErrAssocFilenameInvalidFormat    = 11027 // Association filename has invalid format
+	ErrAssocFilenameInvalidComponent = 11028 // Association filename has invalid component (must be snake_case)
 )
