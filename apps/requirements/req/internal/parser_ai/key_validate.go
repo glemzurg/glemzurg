@@ -72,12 +72,11 @@ var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 // Returns nil if valid, or a ParseError if invalid.
 func ValidateKey(key, keyType, filePath string) error {
 	if key == "" {
-		return &ParseError{
-			Code:    ErrKeyInvalidFormat,
-			Message: fmt.Sprintf("%s key is empty - keys must be non-empty and follow snake_case format", keyType),
-			File:    filePath,
-			Field:   keyType,
-		}
+		return NewParseError(
+			ErrKeyInvalidFormat,
+			fmt.Sprintf("%s key is empty - keys must be non-empty and follow snake_case format", keyType),
+			filePath,
+		).WithField(keyType)
 	}
 
 	if keyPattern.MatchString(key) {
@@ -87,13 +86,12 @@ func ValidateKey(key, keyType, filePath string) error {
 	// Provide specific guidance based on what's wrong
 	suggestion := suggestKeyFix(key)
 
-	return &ParseError{
-		Code: ErrKeyInvalidFormat,
-		Message: fmt.Sprintf("%s key '%s' has invalid format - keys must be lowercase snake_case (e.g., 'order_line'); %s",
+	return NewParseError(
+		ErrKeyInvalidFormat,
+		fmt.Sprintf("%s key '%s' has invalid format - keys must be lowercase snake_case (e.g., 'order_line'); %s",
 			keyType, key, suggestion),
-		File:  filePath,
-		Field: keyType,
-	}
+		filePath,
+	).WithField(keyType)
 }
 
 // suggestKeyFix analyzes an invalid key and suggests how to fix it.
@@ -168,24 +166,22 @@ const (
 // Each component (class, subdomain, domain, name) must be valid snake_case.
 func ValidateAssociationFilename(filename string, level AssociationLevel, filePath string) error {
 	if filename == "" {
-		return &ParseError{
-			Code:    ErrAssocFilenameInvalidFormat,
-			Message: "association filename is empty",
-			File:    filePath,
-			Field:   "filename",
-		}
+		return NewParseError(
+			ErrAssocFilenameInvalidFormat,
+			"association filename is empty",
+			filePath,
+		).WithField("filename")
 	}
 
 	// Split by "--" to get the three main parts: from, to, name
 	parts := strings.Split(filename, "--")
 	if len(parts) != 3 {
-		return &ParseError{
-			Code: ErrAssocFilenameInvalidFormat,
-			Message: fmt.Sprintf("association filename '%s' must have exactly 3 parts separated by '--' "+
+		return NewParseError(
+			ErrAssocFilenameInvalidFormat,
+			fmt.Sprintf("association filename '%s' must have exactly 3 parts separated by '--' "+
 				"(from--to--name), found %d parts", filename, len(parts)),
-			File:  filePath,
-			Field: "filename",
-		}
+			filePath,
+		).WithField("filename")
 	}
 
 	fromPart := parts[0]
@@ -233,23 +229,21 @@ func ValidateAssociationFilename(filename string, level AssociationLevel, filePa
 // validateKeyComponent validates a single key component is valid snake_case.
 func validateKeyComponent(component, componentName, filePath string) error {
 	if component == "" {
-		return &ParseError{
-			Code:    ErrAssocFilenameInvalidComponent,
-			Message: fmt.Sprintf("association filename component '%s' is empty", componentName),
-			File:    filePath,
-			Field:   componentName,
-		}
+		return NewParseError(
+			ErrAssocFilenameInvalidComponent,
+			fmt.Sprintf("association filename component '%s' is empty", componentName),
+			filePath,
+		).WithField(componentName)
 	}
 
 	if !keyPattern.MatchString(component) {
 		suggestion := suggestKeyFix(component)
-		return &ParseError{
-			Code: ErrAssocFilenameInvalidComponent,
-			Message: fmt.Sprintf("association filename component '%s' value '%s' is invalid - "+
+		return NewParseError(
+			ErrAssocFilenameInvalidComponent,
+			fmt.Sprintf("association filename component '%s' value '%s' is invalid - "+
 				"must be lowercase snake_case; %s", componentName, component, suggestion),
-			File:  filePath,
-			Field: componentName,
-		}
+			filePath,
+		).WithField(componentName)
 	}
 
 	return nil
@@ -258,12 +252,11 @@ func validateKeyComponent(component, componentName, filePath string) error {
 // validatePathComponent validates a dot-separated path (e.g., "subdomain.class" or "domain.subdomain.class").
 func validatePathComponent(path, componentName string, expectedParts int, filePath string) error {
 	if path == "" {
-		return &ParseError{
-			Code:    ErrAssocFilenameInvalidComponent,
-			Message: fmt.Sprintf("association filename component '%s' is empty", componentName),
-			File:    filePath,
-			Field:   componentName,
-		}
+		return NewParseError(
+			ErrAssocFilenameInvalidComponent,
+			fmt.Sprintf("association filename component '%s' is empty", componentName),
+			filePath,
+		).WithField(componentName)
 	}
 
 	parts := strings.Split(path, ".")
@@ -277,13 +270,12 @@ func validatePathComponent(path, componentName string, expectedParts int, filePa
 		default:
 			expectedDesc = fmt.Sprintf("%d parts", expectedParts)
 		}
-		return &ParseError{
-			Code: ErrAssocFilenameInvalidFormat,
-			Message: fmt.Sprintf("association filename component '%s' has %d parts (expected %s format): '%s'",
+		return NewParseError(
+			ErrAssocFilenameInvalidFormat,
+			fmt.Sprintf("association filename component '%s' has %d parts (expected %s format): '%s'",
 				componentName, len(parts), expectedDesc, path),
-			File:  filePath,
-			Field: componentName,
-		}
+			filePath,
+		).WithField(componentName)
 	}
 
 	// Validate each part of the path
