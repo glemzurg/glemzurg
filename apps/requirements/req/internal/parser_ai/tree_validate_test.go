@@ -895,6 +895,28 @@ func (suite *TreeValidateSuite) TestCompletenessValidModel() {
 	assert.NoError(t, err)
 }
 
+// TestSubdomainNotDefault verifies error when subdomain is not named "default".
+func (suite *TreeValidateSuite) TestSubdomainNotDefault() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	// Rename "core" subdomain to something other than "default"
+	model.Domains["orders"].Subdomains["orders_subdomain"] = model.Domains["orders"].Subdomains["default"]
+	delete(model.Domains["orders"].Subdomains, "core")
+
+	err := validateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeSubdomainNotDefault, parseErr.Code)
+	assert.Equal(t, "subdomain_key", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "orders_subdomain")
+	assert.Contains(t, parseErr.Message, "must be renamed to 'default'")
+	assert.Contains(t, parseErr.Message, "merge all contents")
+	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/orders_subdomain")
+}
+
 // TestCompletenessModelNoActors verifies error when model has no actors.
 func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
 	t := suite.T()
@@ -955,11 +977,11 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 
 	model := t_buildCompleteModelTree()
 	// Keep only one class
-	model.Domains["orders"].Subdomains["core"].Classes = map[string]*inputClass{
+	model.Domains["orders"].Subdomains["default"].Classes = map[string]*inputClass{
 		"order": t_buildCompleteClass(),
 	}
 	// Update association to use remaining classes
-	model.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{
+	model.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{
 		"self_ref": {
 			Name:             "Self Ref",
 			FromClassKey:     "order",
@@ -985,7 +1007,7 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	t := suite.T()
 
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{} // Remove all associations
+	model.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{} // Remove all associations
 
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
@@ -1003,7 +1025,7 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	t := suite.T()
 
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["core"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
+	model.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
 
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
@@ -1021,7 +1043,7 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoStateMachine() {
 	t := suite.T()
 
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine = nil // Remove state machine
+	model.Domains["orders"].Subdomains["default"].Classes["order"].StateMachine = nil // Remove state machine
 
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
@@ -1039,7 +1061,7 @@ func (suite *TreeValidateSuite) TestCompletenessStateMachineNoTransitions() {
 	t := suite.T()
 
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine.Transitions = []inputTransition{} // Remove all transitions
+	model.Domains["orders"].Subdomains["default"].Classes["order"].StateMachine.Transitions = []inputTransition{} // Remove all transitions
 
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
@@ -1107,10 +1129,10 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "too_few_classes",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["core"].Classes = map[string]*inputClass{
+				m.Domains["orders"].Subdomains["default"].Classes = map[string]*inputClass{
 					"order": t_buildCompleteClass(),
 				}
-				m.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{
+				m.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{
 					"self_ref": {
 						Name:             "Self Ref",
 						FromClassKey:     "order",
@@ -1132,7 +1154,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_associations",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["core"].Associations = map[string]*inputAssociation{}
+				m.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{}
 				return m
 			},
 			expectedCode: ErrTreeSubdomainNoAssociations,
@@ -1146,7 +1168,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_attributes",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["core"].Classes["order"].Attributes = map[string]*inputAttribute{}
+				m.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{}
 				return m
 			},
 			expectedCode: ErrTreeClassNoAttributes,
@@ -1159,7 +1181,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_state_machine",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine = nil
+				m.Domains["orders"].Subdomains["default"].Classes["order"].StateMachine = nil
 				return m
 			},
 			expectedCode: ErrTreeClassNoStateMachine,
@@ -1172,7 +1194,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_transitions",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["core"].Classes["order"].StateMachine.Transitions = []inputTransition{}
+				m.Domains["orders"].Subdomains["default"].Classes["order"].StateMachine.Transitions = []inputTransition{}
 				return m
 			},
 			expectedCode: ErrTreeStateMachineNoTransitions,
@@ -1333,8 +1355,8 @@ func t_buildCompleteModelTree() *inputModel {
 			"orders": {
 				Name: "Orders",
 				Subdomains: map[string]*inputSubdomain{
-					"core": {
-						Name: "Core",
+					"default": {
+						Name: "Default",
 						Classes: map[string]*inputClass{
 							"order":     t_buildCompleteClass(),
 							"line_item": t_buildCompleteClass(),

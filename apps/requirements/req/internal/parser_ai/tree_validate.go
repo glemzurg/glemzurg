@@ -73,6 +73,20 @@ func validateDomainCompleteness(domainKey string, domain *inputDomain) error {
 		).WithField("subdomains")
 	}
 
+	// Check that all subdomains are named "default" (only default subdomain is currently supported)
+	for subdomainKey := range domain.Subdomains {
+		if subdomainKey != "default" {
+			subdomainPath := fmt.Sprintf("domains/%s/subdomains/%s", domainKey, subdomainKey)
+			return NewParseError(
+				ErrTreeSubdomainNotDefault,
+				fmt.Sprintf("subdomain '%s' in domain '%s' must be renamed to 'default' - only the 'default' subdomain is currently supported; "+
+					"merge all contents from 'domains/%s/subdomains/%s/' into 'domains/%s/subdomains/default/' and delete the '%s' subdomain directory",
+					subdomainKey, domainKey, domainKey, subdomainKey, domainKey, subdomainKey),
+				subdomainPath,
+			).WithField("subdomain_key")
+		}
+	}
+
 	// Validate each subdomain's completeness
 	for subdomainKey, subdomain := range domain.Subdomains {
 		if err := validateSubdomainCompleteness(domainKey, subdomainKey, subdomain); err != nil {

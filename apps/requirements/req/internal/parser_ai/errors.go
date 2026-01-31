@@ -157,4 +157,7 @@ const (
 
 	// Unreferenced entity errors (11029+) - entities must be used
 	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
+
+	// Subdomain naming errors (11030+)
+	ErrTreeSubdomainNotDefault = 11030 // Subdomain must be named "default" (only default subdomain is supported)
 )
