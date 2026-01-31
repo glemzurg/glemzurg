@@ -329,6 +329,115 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 	assert.Equal(t, "transitions[0].action_key", parseErr.Field)
 }
 
+// TestActionUnreferenced verifies error when an action exists but is not referenced.
+func (suite *TreeValidateSuite) TestActionUnreferenced() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	toState := "pending"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"create": {Name: "create"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: nil,
+				ToStateKey:   &toState,
+				EventKey:     "create",
+				// No action_key - the action is not referenced
+			},
+		},
+	}
+	// Add an action that is not referenced anywhere
+	class.Actions = map[string]*inputAction{
+		"unreferenced_action": {Name: "Unreferenced Action"},
+	}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeActionUnreferenced, parseErr.Code)
+	assert.Equal(t, "action_key", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "unreferenced_action")
+	assert.Contains(t, parseErr.Message, "not referenced")
+}
+
+// TestActionReferencedByStateAction verifies that action referenced by state action passes.
+func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	toState := "pending"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {
+				Name: "Pending",
+				Actions: []inputStateAction{
+					{ActionKey: "my_action", When: "entry"},
+				},
+			},
+		},
+		Events: map[string]*inputEvent{
+			"create": {Name: "create"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: nil,
+				ToStateKey:   &toState,
+				EventKey:     "create",
+			},
+		},
+	}
+	class.Actions = map[string]*inputAction{
+		"my_action": {Name: "My Action"},
+	}
+
+	err := validateModelTree(model)
+	assert.NoError(t, err)
+}
+
+// TestActionReferencedByTransition verifies that action referenced by transition passes.
+func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
+	toState := "pending"
+	actionKey := "my_action"
+	class.StateMachine = &inputStateMachine{
+		States: map[string]*inputState{
+			"pending": {Name: "Pending"},
+		},
+		Events: map[string]*inputEvent{
+			"create": {Name: "create"},
+		},
+		Guards:      map[string]*inputGuard{},
+		Transitions: []inputTransition{
+			{
+				FromStateKey: nil,
+				ToStateKey:   &toState,
+				EventKey:     "create",
+				ActionKey:    &actionKey,
+			},
+		},
+	}
+	class.Actions = map[string]*inputAction{
+		"my_action": {Name: "My Action"},
+	}
+
+	err := validateModelTree(model)
+	assert.NoError(t, err)
+}
+
 // TestGenSuperclassNotFound verifies error when generalization superclass doesn't exist.
 func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	t := suite.T()

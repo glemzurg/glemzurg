@@ -339,6 +339,57 @@ func validateStateMachineTree(class *inputClass, domainKey, subdomainKey, classK
 		}
 	}
 
+	// Validate that every action is referenced by at least one state action or transition
+	if err := validateActionsReferenced(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateActionsReferenced ensures every action in a class is referenced by at least one
+// state action (entry/exit/do) or transition action.
+func validateActionsReferenced(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	if len(class.Actions) == 0 {
+		return nil
+	}
+
+	sm := class.StateMachine
+	if sm == nil {
+		return nil
+	}
+
+	// Build a set of all referenced action keys
+	referencedActions := make(map[string]bool)
+
+	// Check state actions (entry, exit, do)
+	for _, state := range sm.States {
+		for _, stateAction := range state.Actions {
+			referencedActions[stateAction.ActionKey] = true
+		}
+	}
+
+	// Check transition actions
+	for _, transition := range sm.Transitions {
+		if transition.ActionKey != nil {
+			referencedActions[*transition.ActionKey] = true
+		}
+	}
+
+	// Check each action is referenced
+	for actionKey := range class.Actions {
+		if !referencedActions[actionKey] {
+			actionPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/actions/%s.json", domainKey, subdomainKey, classKey, actionKey)
+			return NewParseError(
+				ErrTreeActionUnreferenced,
+				fmt.Sprintf("action '%s' in class '%s' is defined but not referenced by any state action or transition - "+
+					"every action must be used in the state machine either as a state entry/exit/do action or as a transition action",
+					actionKey, classKey),
+				actionPath,
+			).WithField("action_key")
+		}
+	}
+
 	return nil
 }
 

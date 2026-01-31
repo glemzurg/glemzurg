@@ -217,6 +217,7 @@ func t_buildTestModelTree() *inputModel {
 											ToStateKey:   strPtr("confirmed"),
 											EventKey:     "confirm",
 											GuardKey:     strPtr("has_items"),
+											ActionKey:    strPtr("calculate_total"),
 										},
 									},
 								},

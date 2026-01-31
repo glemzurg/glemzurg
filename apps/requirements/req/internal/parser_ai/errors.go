@@ -154,4 +154,7 @@ const (
 	ErrKeyInvalidFormat              = 11026 // Key has invalid format (must be lowercase snake_case)
 	ErrAssocFilenameInvalidFormat    = 11027 // Association filename has invalid format
 	ErrAssocFilenameInvalidComponent = 11028 // Association filename has invalid component (must be snake_case)
+
+	// Unreferenced entity errors (11029+) - entities must be used
+	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
 )
