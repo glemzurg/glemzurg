@@ -1,48 +1,21 @@
 package generate
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
 	"os"
-	"path/filepath"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 
 	"github.com/pkg/errors"
 )
 
-func GenerateMd(debug bool, db *sql.DB, rootSourcePath, rootOutputPath, model string) (err error) {
-
-	sourcePath := filepath.Join(rootSourcePath, model)
-	outputPath := filepath.Join(rootOutputPath, model)
+// GenerateMdFromModel generates markdown documentation from an already-parsed model.
+func GenerateMdFromModel(debug bool, outputPath string, parsedModel req_model.Model) (err error) {
 
 	// Create necessary output paths if we don't have them.
 	if err = createMissingPaths([]string{outputPath}); err != nil {
 		return err
-	}
-
-	// Parse the model files.
-	parsedModel, err := parser.Parse(sourcePath)
-	if err != nil {
-		return err
-	}
-
-	// We may not want to exercise through a database.
-	if db != nil {
-		log.Println("Exercising data model through database.")
-		// Write the requirements to the database to ensure the data is well-formed.
-		err = database.WriteModel(db, parsedModel)
-		if err != nil {
-			return err
-		}
-		// Read the model from the database to ensure we can get it back out correctly.
-		parsedModel, err = database.ReadModel(db, parsedModel.Key)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Create the flattened requirements from the model.

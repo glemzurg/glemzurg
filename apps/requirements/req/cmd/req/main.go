@@ -158,11 +158,8 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 	switch outputFormat {
 	case OutputFormatMD:
 		fmt.Println("Generating markdown output...")
-		db, err := database.NewDb()
-		if err != nil && !skipDB {
-			return fmt.Errorf("failed to create database for md generation: %w", err)
-		}
-		err = generate.GenerateMd(debug, db, rootSourcePath, rootOutputPath, model)
+		// Use the already-parsed model to generate markdown
+		err := generate.GenerateMdFromModel(debug, outputPath, *parsedModel)
 		if err != nil {
 			return fmt.Errorf("failed to generate markdown: %w", err)
 		}
