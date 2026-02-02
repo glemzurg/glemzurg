@@ -1,39 +1,53 @@
 
 ---------------------------
 
-
-next:
-  - means to take in yaml/json and produce yaml/json/md
-  - stand alone method to vet the structure
-
-jan (in parallel):
-  - use ai to summarize the current system into 
-    - create command line tool that guides ai into corrective decisions
-  - generate to the level of architecture diagrams
-  - create complete model
-    - add TLA+ parsing to create complete model
-    - model an AST with an Adjacency Listf and CTE query
-    - move parameters to actions and parsed into database
-  - make object members private
-
   
 feb (in parallel)
-  - generate ui designs compilers
   - generate data models compilers
   - generate protocols compilers
+  - create complete model
+    - add TLA+ parsing to create complete model
+    - move parameters to actions and parsed into database
   - run simulations on basic model
 
+
+
 march (art workshops)
+
+when:
+  - generate ui designs compilers
+  - generate to the level of architecture diagrams
+    - model an AST with an Adjacency Listf and CTE query
+
+
 
 april (in parallel)
   - generate model compilers
   - manage design models
   - update simulators to run models together
 
+
+
+---------------------------
+
+simulator todo:
+
+- Bags in TLA
+- Simulator code
+- data type in simulators
+- unit test all the tla+ calls
+- remove the monkey stubs in ast/old_stubs.go
+- fix object float constructor to use the strings avlues from tla
+- migrate into main repo
+  - extend into database and input/outputs
+- implement stubbed simulator logic
+
+
 ---------------------------
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
+  - make object members private
 - cleanup regex must compile code
 - import examples models from steve's examples
 - fix the nested sequence diagram display issue (move to d2)
@@ -192,6 +206,9 @@ Long time targets:
 - support all known requirement methodologies
 - build out interaction diagrams from existing data and just have users constrain them
 - build a custom svg graphing library
+
+consider gremlins testing:
+- https://gremlins.dev/latest/
 
 ================================
 
