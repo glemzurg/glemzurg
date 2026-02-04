@@ -27,6 +27,18 @@ april (in parallel)
   - update simulators to run models together
 
 
+questions:
+  - targeted build of parts of the system:
+    - e.g. wallet before all others
+  - model compilers
+    - how to partition a model to different database (technical not domains)
+    - how to model compile performacne tuning
+    - how to hot fix with model compilers
+    - how to incrementally roll out schema changes
+    - complexity metrics
+  - simulator of TLA+
+  - importing model from AI
+    - describe the process: deep dive folder, refine, simulate, next dive
 
 ---------------------------
 
@@ -46,6 +58,8 @@ simulator todo:
 ---------------------------
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
+
+- restrict names so that tla+ do not have conflics (like _Stack:Pop, no state attribute)
 
   - make object members private
 - cleanup regex must compile code
@@ -82,6 +96,8 @@ update to https://github.com/go-playground/validator
 - make state class members innate and not specified
 
 - use godoc to review exported methods
+
+- add tla invariants
 
 - postgres more features:
   - constraints
@@ -206,6 +222,9 @@ Long time targets:
 - support all known requirement methodologies
 - build out interaction diagrams from existing data and just have users constrain them
 - build a custom svg graphing library
+
+- come up with solution for performance-optimized code generation
+  - different inputs
 
 consider gremlins testing:
 - https://gremlins.dev/latest/
