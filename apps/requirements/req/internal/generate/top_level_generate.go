@@ -69,6 +69,12 @@ func generateFiles(debug bool, outputPath string, reqs *req_flat.Requirements) (
 		return err
 	}
 
+	// Generate subdomain files (only for domains with multiple subdomains).
+	err = generateSubdomainFiles(debug, outputPath, reqs)
+	if err != nil {
+		return err
+	}
+
 	// Generate class files.
 	err = generateClassFiles(debug, outputPath, reqs)
 	if err != nil {
