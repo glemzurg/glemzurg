@@ -27,7 +27,7 @@ func generateDomainFiles(debug bool, outputPath string, reqs *req_flat.Requireme
 		// Generate domain markdown page.
 		modelFilename := convertKeyToFilename("domain", domain.Key.String(), "", ".md")
 		modelFilenameAbs := filepath.Join(outputPath, modelFilename)
-		mdContents, err := generateDomainMdContents(reqs, reqs.Model, domain, hasMultipleSubdomains)
+		mdContents, err := generateDomainMdContents(reqs, reqs.Model, domain)
 		if err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func generateDomainFiles(debug bool, outputPath string, reqs *req_flat.Requireme
 	return nil
 }
 
-func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model, domain model_domain.Domain, hasMultipleSubdomains bool) (contents string, err error) {
+func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model, domain model_domain.Domain) (contents string, err error) {
 
 	// Gather all classes from all subdomains for sorting.
 	var allClasses []model_class.Class
@@ -133,19 +133,17 @@ func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model
 	})
 
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
-		Reqs                  *req_flat.Requirements
-		Model                 req_model.Model
-		Domain                model_domain.Domain
-		Classes               []model_class.Class
-		HasMultipleSubdomains bool
-		Subdomains            []model_domain.Subdomain
+		Reqs       *req_flat.Requirements
+		Model      req_model.Model
+		Domain     model_domain.Domain
+		Classes    []model_class.Class
+		Subdomains []model_domain.Subdomain
 	}{
-		Reqs:                  reqs,
-		Model:                 model,
-		Domain:                domain,
-		Classes:               allClasses,
-		HasMultipleSubdomains: hasMultipleSubdomains,
-		Subdomains:            subdomains,
+		Reqs:       reqs,
+		Model:      model,
+		Domain:     domain,
+		Classes:    allClasses,
+		Subdomains: subdomains,
 	})
 	if err != nil {
 		return "", errors.WithStack(err)

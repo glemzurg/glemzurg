@@ -6,7 +6,7 @@
 
 {{ .Domain.Details }}
 
-{{ if .HasMultipleSubdomains }}
+{{ if gt (len .Domain.Subdomains) 1 }}
 ## Subdomains
 
 The subdomains of this domain.
