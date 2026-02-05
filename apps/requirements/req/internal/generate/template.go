@@ -82,6 +82,10 @@ func init() {
 			_classStateDotTemplate = tmpl
 		case "use_case.md.template":
 			_useCaseMdTemplate = tmpl
+		case "subdomain.md.template":
+			_subdomainMdTemplate = tmpl
+		case "subdomains.dot.template":
+			_subdomainsDotTemplate = tmpl
 		default:
 			return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
 		}
@@ -103,6 +107,8 @@ var _classesDotTemplate *template.Template  // DOT input to GraphViz for SVG UML
 var _classMdTemplate *template.Template
 var _classStateDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
 var _useCaseMdTemplate *template.Template
+var _subdomainMdTemplate *template.Template
+var _subdomainsDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{

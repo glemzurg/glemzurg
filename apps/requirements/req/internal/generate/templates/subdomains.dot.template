@@ -1,0 +1,14 @@
+{{- $reqs := .Reqs -}}
+
+digraph Subdomains {
+    graph [splines=false, nodesep=0.5, ranksep=1, outputorder="edgesfirst"];
+    node [shape=folder, style="filled", fillcolor="white", fontname="Sans-Serif", fontsize=11];
+    edge [style=dashed, arrowhead=vee];
+
+{{ range .Subdomains -}}
+{{ $subdomainKey := nodeid "subdomain" .Key }}
+{{ $subdomainKey }} [label="{{ .Name }}"]
+{{ end }}
+
+}
+
