@@ -276,6 +276,17 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.UseCaseDomainLookup()
 		return lookup[key.String()]
 	},
+	"class_subdomain": func(reqs *req_flat.Requirements, key identity.Key) (subdomain model_domain.Subdomain) {
+		lookup := reqs.ClassSubdomainLookup()
+		return lookup[key.String()]
+	},
+	"use_case_subdomain": func(reqs *req_flat.Requirements, key identity.Key) (subdomain model_domain.Subdomain) {
+		lookup := reqs.UseCaseSubdomainLookup()
+		return lookup[key.String()]
+	},
+	"domain_has_multiple_subdomains": func(reqs *req_flat.Requirements, domainKey identity.Key) bool {
+		return reqs.DomainHasMultipleSubdomains(domainKey)
+	},
 	"domain_use_cases": func(reqs *req_flat.Requirements, key identity.Key) (useCases []model_use_case.UseCase) {
 		lookup := reqs.DomainUseCasesLookup()
 		return lookup[key.String()]

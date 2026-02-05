@@ -1,8 +1,14 @@
 {{- $reqs := .Reqs -}}
 
 {{- $domain := use_case_domain $reqs .UseCase.Key -}}
+{{- $subdomain := use_case_subdomain $reqs .UseCase.Key -}}
+{{- $hasMultipleSubdomains := domain_has_multiple_subdomains $reqs $domain.Key -}}
 
+{{- if $hasMultipleSubdomains -}}
+[⇦ {{ $subdomain.Name }}]({{ filename "subdomain" $subdomain.Key "" ".md" }})
+{{- else -}}
 [⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
+{{- end }}
 
 {{ .UseCase.Details }}
 

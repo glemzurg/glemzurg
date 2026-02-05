@@ -301,6 +301,60 @@ func (r *Requirements) UseCaseDomainLookup() map[string]model_domain.Domain {
 	return lookup
 }
 
+// ClassSubdomainLookup returns a map of class key to the subdomain that contains it.
+func (r *Requirements) ClassSubdomainLookup() map[string]model_domain.Subdomain {
+	r.PrepLookups()
+	lookup := make(map[string]model_domain.Subdomain)
+
+	// Walk the domain → subdomain → class hierarchy to build the mapping.
+	for _, domain := range r.Model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey := range subdomain.Classes {
+				lookup[classKey.String()] = subdomain
+			}
+		}
+	}
+
+	return lookup
+}
+
+// UseCaseSubdomainLookup returns a map of use case key to the subdomain that contains it.
+func (r *Requirements) UseCaseSubdomainLookup() map[string]model_domain.Subdomain {
+	r.PrepLookups()
+	lookup := make(map[string]model_domain.Subdomain)
+
+	// Walk the domain → subdomain → use case hierarchy.
+	for _, domain := range r.Model.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for useCaseKey := range subdomain.UseCases {
+				lookup[useCaseKey.String()] = subdomain
+			}
+		}
+	}
+
+	return lookup
+}
+
+// DomainHasMultipleSubdomains returns true if the domain has more than just the default subdomain.
+func (r *Requirements) DomainHasMultipleSubdomains(domainKey identity.Key) bool {
+	r.PrepLookups()
+	domain, ok := r.Domains[domainKey]
+	if !ok {
+		return false
+	}
+	// Check if there's more than one subdomain, or if the only subdomain is not "default"
+	if len(domain.Subdomains) > 1 {
+		return true
+	}
+	// If there's exactly one subdomain, check if it's not the default
+	for _, subdomain := range domain.Subdomains {
+		if subdomain.Key.SubKey() != "default" {
+			return true
+		}
+	}
+	return false
+}
+
 // DomainLookup returns domains by key and domain associations.
 func (r *Requirements) DomainLookup() (map[string]model_domain.Domain, []model_domain.Association) {
 	r.PrepLookups()

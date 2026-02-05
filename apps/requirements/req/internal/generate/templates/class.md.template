@@ -1,8 +1,14 @@
 {{- $reqs := .Reqs -}}
 
 {{- $domain := class_domain $reqs .Class.Key -}}
+{{- $subdomain := class_subdomain $reqs .Class.Key -}}
+{{- $hasMultipleSubdomains := domain_has_multiple_subdomains $reqs $domain.Key -}}
 
+{{- if $hasMultipleSubdomains -}}
+[⇦ {{ $subdomain.Name }}]({{ filename "subdomain" $subdomain.Key "" ".md" }})
+{{- else -}}
 [⇦ {{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
+{{- end }}
 
 {{ .Class.Details }}
 
