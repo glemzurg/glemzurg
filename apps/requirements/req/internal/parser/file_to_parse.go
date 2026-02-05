@@ -14,19 +14,23 @@ const (
 	_EXT_GENERALIZATION = ".generalization"
 	_EXT_ACTOR          = ".actor"
 	_EXT_DOMAIN         = ".domain"
+	_EXT_SUBDOMAIN      = ".subdomain"
 	_EXT_CLASS          = ".class"
 	_EXT_USE_CASE       = ".uc"
 )
 
 const (
-	_PATH_ACTORS = "actors" // The actors path under models (will not be treated as a domain).
+	_PATH_ACTORS    = "actors"    // The actors path under models (will not be treated as a domain).
+	_PATH_CLASSES   = "classes"   // The classes path under domains/subdomains.
+	_PATH_USE_CASES = "use_cases" // The use_cases path under domains/subdomains.
 )
 
 var _extSortValue = map[string]int{
 	_EXT_MODEL:          10, // Higher values sort first.
 	_EXT_ACTOR:          9,
 	_EXT_DOMAIN:         8,
-	_EXT_GENERALIZATION: 7,
+	_EXT_SUBDOMAIN:      7, // Parse subdomains before their contents.
+	_EXT_GENERALIZATION: 6,
 	_EXT_CLASS:          5,
 	_EXT_USE_CASE:       3,
 }
@@ -42,6 +46,7 @@ type fileToParse struct {
 	Generalization string // The generalization can be determined from the file extension but can be found anywhere.
 	Actor          string // The user can be determined from the path. It is a filename under the model's user folder.
 	Domain         string // The domain can be determined from the path. It is the folder just under the model folder.
+	Subdomain      string // The subdomain can be determined from the path. It is a folder under a domain folder (not classes/ or use_cases/).
 	Class          string // The class can be determined from the path. It is a filename under a domain folder.
 	UseCase        string // The use case can be determined from the path. It is a filename under a domain folder.
 }
@@ -71,6 +76,7 @@ func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, er
 
 	// If there is a first part to the path, it is a domain. Unless it is "users/"
 	domain := ""
+	subdomain := ""
 	// Models are above domains.
 	if fileType != _EXT_MODEL {
 		pathRelParts := strings.Split(pathRel, string(filepath.Separator))
@@ -79,6 +85,31 @@ func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, er
 			if pathRelParts[0] != _PATH_ACTORS {
 				domain = pathRelParts[0]
 			}
+		}
+
+		// Detect subdomain from path structure.
+		// A subdomain is a folder under a domain that is NOT "classes" or "use_cases".
+		// Examples:
+		//   domain/subdomain_name/this.subdomain -> subdomain = "subdomain_name"
+		//   domain/subdomain_name/classes/foo.class -> subdomain = "subdomain_name"
+		//   domain/classes/foo.class -> subdomain = "" (default)
+		if len(pathRelParts) >= 2 && pathRelParts[0] != _PATH_ACTORS {
+			secondPart := pathRelParts[1]
+			if secondPart != _PATH_CLASSES && secondPart != _PATH_USE_CASES {
+				// This could be a subdomain folder or the this.domain file.
+				// If it's a file (has extension), it's not a subdomain folder.
+				if !strings.Contains(secondPart, ".") {
+					subdomain = secondPart
+				}
+			}
+		}
+	}
+
+	// Handle .subdomain files - extract subdomain name from path.
+	if fileType == _EXT_SUBDOMAIN {
+		pathRelParts := strings.Split(pathRel, string(filepath.Separator))
+		if len(pathRelParts) >= 2 {
+			subdomain = pathRelParts[1] // domain/subdomain_name/this.subdomain
 		}
 	}
 
@@ -108,6 +139,7 @@ func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, er
 		Generalization: generalization,
 		Actor:          actor,
 		Domain:         domain,
+		Subdomain:      subdomain,
 		Class:          class,
 		UseCase:        useCase,
 	}
@@ -116,7 +148,7 @@ func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, er
 		validation.Field(&toParse.ModelPath, validation.Required),
 		validation.Field(&toParse.PathRel, validation.Required),
 		validation.Field(&toParse.PathAbs, validation.Required),
-		validation.Field(&toParse.FileType, validation.Required, validation.In(_EXT_MODEL, _EXT_GENERALIZATION, _EXT_ACTOR, _EXT_DOMAIN, _EXT_CLASS, _EXT_USE_CASE)),
+		validation.Field(&toParse.FileType, validation.Required, validation.In(_EXT_MODEL, _EXT_GENERALIZATION, _EXT_ACTOR, _EXT_DOMAIN, _EXT_SUBDOMAIN, _EXT_CLASS, _EXT_USE_CASE)),
 	)
 	if err != nil {
 		return fileToParse{}, errors.WithStack(err)

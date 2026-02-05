@@ -95,25 +95,57 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 
 	// Process subdomains.
 	for _, subdomain := range domain.Subdomains {
-		if err := writeSubdomainContents(domainDir, subdomain, classAssociations); err != nil {
-			return err
+		if subdomain.Key.SubKey() == "default" {
+			// Default subdomain: write contents directly under domain directory (backward compatible).
+			if err := writeSubdomainContents(domainDir, subdomain, classAssociations); err != nil {
+				return err
+			}
+		} else {
+			// Explicit subdomain: create subdomain directory with this.subdomain file.
+			if err := writeExplicitSubdomain(domainDir, subdomain, classAssociations); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
+// writeExplicitSubdomain writes an explicit (non-default) subdomain as a separate directory
+// with a this.subdomain file and its contents.
+func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, classAssociations map[identity.Key]model_class.Association) error {
+	// Create subdomain directory.
+	subdomainDir := filepath.Join(domainDir, subdomain.Key.SubKey())
+	if err := os.MkdirAll(subdomainDir, 0755); err != nil {
+		return errors.Wrapf(err, "failed to create subdomain directory: %s", subdomain.Key.SubKey())
+	}
+
+	// Write this.subdomain file.
+	subdomainContent := generateSubdomainContent(subdomain)
+	subdomainPath := filepath.Join(subdomainDir, "this"+_EXT_SUBDOMAIN)
+	if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0644); err != nil {
+		return errors.Wrapf(err, "failed to write subdomain file: %s", subdomain.Key.SubKey())
+	}
+
+	// Write contents under subdomain directory.
+	if err := writeSubdomainContents(subdomainDir, subdomain, classAssociations); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // writeSubdomainContents writes the contents of a subdomain (classes, generalizations, use cases).
-// In the data/yaml format, subdomains are not represented as separate directories - their contents
-// are written directly under the domain directory.
-func writeSubdomainContents(domainDir string, subdomain model_domain.Subdomain, classAssociations map[identity.Key]model_class.Association) error {
+// For default subdomains, the baseDir is the domain directory.
+// For explicit subdomains, the baseDir is the subdomain directory.
+func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, classAssociations map[identity.Key]model_class.Association) error {
 
 	// Build a lookup of class associations by from class key.
 	classAssocsByClass := buildClassAssociationsLookup(subdomain.ClassAssociations)
 
 	// Write classes and generalizations to classes/ directory if there are any.
 	if len(subdomain.Classes) > 0 || len(subdomain.Generalizations) > 0 {
-		classesDir := filepath.Join(domainDir, "classes")
+		classesDir := filepath.Join(baseDir, "classes")
 		if err := os.MkdirAll(classesDir, 0755); err != nil {
 			return errors.Wrap(err, "failed to create classes directory")
 		}
@@ -140,7 +172,7 @@ func writeSubdomainContents(domainDir string, subdomain model_domain.Subdomain, 
 
 	// Write use cases to use_cases/ directory if there are any.
 	if len(subdomain.UseCases) > 0 {
-		useCasesDir := filepath.Join(domainDir, "use_cases")
+		useCasesDir := filepath.Join(baseDir, "use_cases")
 		if err := os.MkdirAll(useCasesDir, 0755); err != nil {
 			return errors.Wrap(err, "failed to create use_cases directory")
 		}

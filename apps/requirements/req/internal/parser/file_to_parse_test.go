@@ -61,6 +61,79 @@ func (suite *FileToParseSuite) TestNew() {
 				Class:     "domain_a/class_a", // Two domains can have different classes.
 			},
 		},
+		// Subdomain file.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/subdomain_b/this.subdomain",
+			pathAbs:   "/home/path/model/domain_a/subdomain_b/this.subdomain",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_a/subdomain_b/this.subdomain",
+				PathAbs:   "/home/path/model/domain_a/subdomain_b/this.subdomain",
+				FileType:  ".subdomain",
+				Domain:    "domain_a",
+				Subdomain: "subdomain_b",
+			},
+		},
+		// Class in explicit subdomain.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/subdomain_b/classes/class_a.class",
+			pathAbs:   "/home/path/model/domain_a/subdomain_b/classes/class_a.class",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_a/subdomain_b/classes/class_a.class",
+				PathAbs:   "/home/path/model/domain_a/subdomain_b/classes/class_a.class",
+				FileType:  ".class",
+				Domain:    "domain_a",
+				Subdomain: "subdomain_b",
+				Class:     "domain_a/class_a",
+			},
+		},
+		// Use case in explicit subdomain.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/subdomain_b/use_cases/uc_a.uc",
+			pathAbs:   "/home/path/model/domain_a/subdomain_b/use_cases/uc_a.uc",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_a/subdomain_b/use_cases/uc_a.uc",
+				PathAbs:   "/home/path/model/domain_a/subdomain_b/use_cases/uc_a.uc",
+				FileType:  ".uc",
+				Domain:    "domain_a",
+				Subdomain: "subdomain_b",
+				UseCase:   "domain_a/uc_a",
+			},
+		},
+		// Generalization in explicit subdomain.
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/subdomain_b/classes/gen_a.generalization",
+			pathAbs:   "/home/path/model/domain_a/subdomain_b/classes/gen_a.generalization",
+			toParse: fileToParse{
+				ModelPath:      "path/model",
+				PathRel:        "domain_a/subdomain_b/classes/gen_a.generalization",
+				PathAbs:        "/home/path/model/domain_a/subdomain_b/classes/gen_a.generalization",
+				FileType:       ".generalization",
+				Domain:         "domain_a",
+				Subdomain:      "subdomain_b",
+				Generalization: "gen_a",
+			},
+		},
+		// Use case in default subdomain (no explicit subdomain folder).
+		{
+			modelPath: "path/model",
+			pathRel:   "domain_a/use_cases/uc_a.uc",
+			pathAbs:   "/home/path/model/domain_a/use_cases/uc_a.uc",
+			toParse: fileToParse{
+				ModelPath: "path/model",
+				PathRel:   "domain_a/use_cases/uc_a.uc",
+				PathAbs:   "/home/path/model/domain_a/use_cases/uc_a.uc",
+				FileType:  ".uc",
+				Domain:    "domain_a",
+				UseCase:   "domain_a/uc_a",
+			},
+		},
 
 		// Error states.
 		{
