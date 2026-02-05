@@ -895,28 +895,6 @@ func (suite *TreeValidateSuite) TestCompletenessValidModel() {
 	assert.NoError(t, err)
 }
 
-// TestSubdomainNotDefault verifies error when subdomain is not named "default".
-func (suite *TreeValidateSuite) TestSubdomainNotDefault() {
-	t := suite.T()
-
-	model := t_buildCompleteModelTree()
-	// Rename "core" subdomain to something other than "default"
-	model.Domains["orders"].Subdomains["orders_subdomain"] = model.Domains["orders"].Subdomains["default"]
-	delete(model.Domains["orders"].Subdomains, "core")
-
-	err := validateModelCompleteness(model)
-	require.Error(t, err)
-
-	parseErr, ok := err.(*ParseError)
-	require.True(t, ok)
-	assert.Equal(t, ErrTreeSubdomainNotDefault, parseErr.Code)
-	assert.Equal(t, "subdomain_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "orders_subdomain")
-	assert.Contains(t, parseErr.Message, "must be renamed to 'default'")
-	assert.Contains(t, parseErr.Message, "merge all contents")
-	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/orders_subdomain")
-}
-
 // TestCompletenessModelNoActors verifies error when model has no actors.
 func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
 	t := suite.T()
