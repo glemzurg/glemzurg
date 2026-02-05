@@ -73,10 +73,61 @@ func validateDomainCompleteness(domainKey string, domain *inputDomain) error {
 		).WithField("subdomains")
 	}
 
+	// Validate subdomain naming rules
+	if err := validateSubdomainNaming(domainKey, domain); err != nil {
+		return err
+	}
+
 	// Validate each subdomain's completeness
 	for subdomainKey, subdomain := range domain.Subdomains {
 		if err := validateSubdomainCompleteness(domainKey, subdomainKey, subdomain); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// validateSubdomainNaming validates subdomain naming rules:
+// - If there's only one subdomain, it must be named "default"
+// - If there are multiple subdomains, none can be named "default"
+func validateSubdomainNaming(domainKey string, domain *inputDomain) error {
+	subdomainCount := len(domain.Subdomains)
+
+	// Check if "default" subdomain exists
+	_, hasDefault := domain.Subdomains["default"]
+
+	if subdomainCount == 1 {
+		// Single subdomain must be named "default"
+		if !hasDefault {
+			// Get the actual subdomain name
+			var actualName string
+			for name := range domain.Subdomains {
+				actualName = name
+				break
+			}
+			subdomainPath := fmt.Sprintf("domains/%s/subdomains/%s", domainKey, actualName)
+			return NewParseError(
+				ErrTreeSingleSubdomainNotDefault,
+				fmt.Sprintf("domain '%s' has a single subdomain '%s' which must be renamed to 'default' - "+
+					"when a domain has only one subdomain, it must be named 'default'; "+
+					"rename 'domains/%s/subdomains/%s/' to 'domains/%s/subdomains/default/'",
+					domainKey, actualName, domainKey, actualName, domainKey),
+				subdomainPath,
+			).WithField("subdomain_key")
+		}
+	} else if subdomainCount > 1 {
+		// Multiple subdomains cannot include one named "default"
+		if hasDefault {
+			subdomainPath := fmt.Sprintf("domains/%s/subdomains/default", domainKey)
+			return NewParseError(
+				ErrTreeMultipleSubdomainsHasDefault,
+				fmt.Sprintf("domain '%s' has multiple subdomains but one is named 'default' - "+
+					"when a domain has multiple subdomains, none should be named 'default'; "+
+					"rename 'domains/%s/subdomains/default/' to a more descriptive name that reflects its purpose",
+					domainKey, domainKey),
+				subdomainPath,
+			).WithField("subdomain_key")
 		}
 	}
 

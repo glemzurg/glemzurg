@@ -949,6 +949,94 @@ func (suite *TreeValidateSuite) TestCompletenessDomainNoSubdomains() {
 	assert.Contains(t, parseErr.Message, "orders") // Check for specific domain name
 }
 
+// TestSingleSubdomainNotDefault verifies error when a single subdomain is not named "default".
+func (suite *TreeValidateSuite) TestSingleSubdomainNotDefault() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	// Rename "default" subdomain to something else (single subdomain case)
+	model.Domains["orders"].Subdomains["core"] = model.Domains["orders"].Subdomains["default"]
+	delete(model.Domains["orders"].Subdomains, "default")
+
+	err := validateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeSingleSubdomainNotDefault, parseErr.Code)
+	assert.Equal(t, "subdomain_key", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "core")
+	assert.Contains(t, parseErr.Message, "must be renamed to 'default'")
+	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/core")
+}
+
+// TestMultipleSubdomainsHasDefault verifies error when multiple subdomains include one named "default".
+func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	// Add a second subdomain while keeping "default" (multiple subdomains case)
+	model.Domains["orders"].Subdomains["shipping"] = &inputSubdomain{
+		Name:    "Shipping",
+		Details: "Shipping subdomain",
+		Classes: map[string]*inputClass{
+			"shipment": t_buildCompleteClass(),
+			"tracking": t_buildCompleteClass(),
+		},
+		Associations: map[string]*inputAssociation{
+			"shipment_tracking": {
+				Name:             "Shipment Tracking",
+				FromClassKey:     "shipment",
+				FromMultiplicity: "1",
+				ToClassKey:       "tracking",
+				ToMultiplicity:   "*",
+			},
+		},
+	}
+
+	err := validateModelCompleteness(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeMultipleSubdomainsHasDefault, parseErr.Code)
+	assert.Equal(t, "subdomain_key", parseErr.Field)
+	assert.Contains(t, parseErr.Message, "multiple subdomains")
+	assert.Contains(t, parseErr.Message, "named 'default'")
+	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/default")
+}
+
+// TestMultipleSubdomainsValid verifies that multiple subdomains without "default" is valid.
+func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
+	t := suite.T()
+
+	model := t_buildCompleteModelTree()
+	// Rename "default" to "ordering" and add "shipping" subdomain
+	model.Domains["orders"].Subdomains["ordering"] = model.Domains["orders"].Subdomains["default"]
+	delete(model.Domains["orders"].Subdomains, "default")
+	model.Domains["orders"].Subdomains["shipping"] = &inputSubdomain{
+		Name:    "Shipping",
+		Details: "Shipping subdomain",
+		Classes: map[string]*inputClass{
+			"shipment": t_buildCompleteClass(),
+			"tracking": t_buildCompleteClass(),
+		},
+		Associations: map[string]*inputAssociation{
+			"shipment_tracking": {
+				Name:             "Shipment Tracking",
+				FromClassKey:     "shipment",
+				FromMultiplicity: "1",
+				ToClassKey:       "tracking",
+				ToMultiplicity:   "*",
+			},
+		},
+	}
+
+	err := validateModelCompleteness(model)
+	// Should pass - multiple subdomains without "default" is valid
+	assert.NoError(t, err)
+}
+
 // TestCompletenessSubdomainTooFewClasses verifies error when subdomain has less than 2 classes.
 func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 	t := suite.T()
