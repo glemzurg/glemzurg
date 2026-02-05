@@ -895,7 +895,7 @@ Each entity type has appropriate structured fields for logic:
 
 ## Constraints
 
-1. **Default subdomain only**: For the initial implementation, only the `default` subdomain is supported. All classes must be in `subdomains/default/`.
+1. **Subdomain size**: Subdomains should contain between 20-40 classes. When a domain grows beyond 40 classes, consider splitting it into multiple subdomains to maintain manageable, cohesive groupings. When starting a new domain, begin with a single subdomain and split when needed.
 
 2. **Actions are independent**: Actions do not reference or call other actions.
 

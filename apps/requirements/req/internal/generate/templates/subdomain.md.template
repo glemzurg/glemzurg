@@ -1,0 +1,24 @@
+{{- $reqs := .Reqs -}}
+
+[⇦ {{ .Model.Name }}](model.md) / [{{ .Domain.Name }}]({{ filename "domain" .Domain.Key "" ".md" }})
+
+{{ .Subdomain.Details }}
+
+## Use Cases
+
+![er]({{ filename "subdomain" .Subdomain.Key "use-cases" ".svg" }})
+
+{{ range .UseCases -}}
+- **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+
+## Classes
+
+The classes of this subdomain.
+
+![er]({{ filename "subdomain" .Subdomain.Key "classes" ".svg" }})
+
+{{ range .Classes -}}
+- **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+

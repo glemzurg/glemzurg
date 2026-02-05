@@ -82,6 +82,10 @@ func init() {
 			_classStateDotTemplate = tmpl
 		case "use_case.md.template":
 			_useCaseMdTemplate = tmpl
+		case "subdomain.md.template":
+			_subdomainMdTemplate = tmpl
+		case "subdomains.dot.template":
+			_subdomainsDotTemplate = tmpl
 		default:
 			return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
 		}
@@ -103,6 +107,8 @@ var _classesDotTemplate *template.Template  // DOT input to GraphViz for SVG UML
 var _classMdTemplate *template.Template
 var _classStateDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
 var _useCaseMdTemplate *template.Template
+var _subdomainMdTemplate *template.Template
+var _subdomainsDotTemplate *template.Template // DOT input to GraphViz for SVG UML diagram.
 
 // Define some function for our templates.
 var _funcMap = template.FuncMap{
@@ -269,6 +275,17 @@ var _funcMap = template.FuncMap{
 	"use_case_domain": func(reqs *req_flat.Requirements, key identity.Key) (domain model_domain.Domain) {
 		lookup := reqs.UseCaseDomainLookup()
 		return lookup[key.String()]
+	},
+	"class_subdomain": func(reqs *req_flat.Requirements, key identity.Key) (subdomain model_domain.Subdomain) {
+		lookup := reqs.ClassSubdomainLookup()
+		return lookup[key.String()]
+	},
+	"use_case_subdomain": func(reqs *req_flat.Requirements, key identity.Key) (subdomain model_domain.Subdomain) {
+		lookup := reqs.UseCaseSubdomainLookup()
+		return lookup[key.String()]
+	},
+	"domain_has_multiple_subdomains": func(reqs *req_flat.Requirements, domainKey identity.Key) bool {
+		return reqs.DomainHasMultipleSubdomains(domainKey)
 	},
 	"domain_use_cases": func(reqs *req_flat.Requirements, key identity.Key) (useCases []model_use_case.UseCase) {
 		lookup := reqs.DomainUseCasesLookup()

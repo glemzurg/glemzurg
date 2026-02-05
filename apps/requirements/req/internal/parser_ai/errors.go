@@ -159,5 +159,6 @@ const (
 	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
 
 	// Subdomain naming errors (11030+)
-	ErrTreeSubdomainNotDefault = 11030 // Subdomain must be named "default" (only default subdomain is supported)
+	ErrTreeSingleSubdomainNotDefault   = 11030 // Single subdomain must be named "default"
+	ErrTreeMultipleSubdomainsHasDefault = 11031 // Multiple subdomains cannot include one named "default"
 )

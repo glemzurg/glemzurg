@@ -6,6 +6,18 @@
 
 {{ .Domain.Details }}
 
+{{ if gt (len .Domain.Subdomains) 1 }}
+## Subdomains
+
+The subdomains of this domain.
+
+![er]({{ filename "domain" .Domain.Key "subdomains" ".svg" }})
+
+{{ range .Subdomains -}}
+- **[{{ .Name }}]({{ filename "subdomain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
+
+{{ else }}
 ## Use Cases
 
 ![er]({{ filename "domain" .Domain.Key "use-cases" ".svg" }})
@@ -22,5 +34,6 @@ The classes of this domain.
 
 {{ range $domainClasses -}}
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+{{ end }}
 {{ end }}
 

@@ -95,6 +95,9 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 	// We store them directly in the model map and track by string key for lookup.
 	domainKeysBySubKey := map[string]identity.Key{}
 
+	// Track subdomains by their composite path key (domain/subdomain) for lookup.
+	subdomainKeysByPath := map[string]identity.Key{}
+
 	// Now, parse each file according to its type.
 
 	for _, toParseFile := range filesToParse {
@@ -137,17 +140,21 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			domain := model.Domains[domainKey]
 
-			// Use the default subdomain.
-			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
-			if err != nil {
-				return req_model.Model{}, errors.WithStack(err)
+			// Determine which subdomain to use (explicit or default).
+			subdomainName := toParseFile.Subdomain
+			if subdomainName == "" {
+				subdomainName = "default"
 			}
-			subdomain, ok := domain.Subdomains[defaultSubdomainKey]
+			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' has no default subdomain for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+			}
+			subdomain, ok := domain.Subdomains[subdomainKey]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
 			}
 
-			generalization, err := parseGeneralization(defaultSubdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+			generalization, err := parseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
 			if err != nil {
 				return req_model.Model{}, err
 			}
@@ -155,7 +162,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
 			}
 			subdomain.Generalizations[generalization.Key] = generalization
-			domain.Subdomains[defaultSubdomainKey] = subdomain
+			domain.Subdomains[subdomainKey] = subdomain
 			model.Domains[domainKey] = domain
 
 		case _EXT_DOMAIN:
@@ -184,6 +191,26 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 
 			model.Domains[domain.Key] = domain
 			domainKeysBySubKey[toParseFile.Domain] = domain.Key
+			// Track default subdomain by path for lookup.
+			subdomainKeysByPath[toParseFile.Domain+"/default"] = defaultSubdomainKey
+
+		case _EXT_SUBDOMAIN:
+			// Find the domain for this subdomain.
+			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("domain '%s' not found for subdomain '%s'", toParseFile.Domain, toParseFile.Subdomain)
+			}
+			domain := model.Domains[domainKey]
+
+			subdomain, err := parseSubdomain(domainKey, toParseFile.Subdomain, toParseFile.PathRel, contents)
+			if err != nil {
+				return req_model.Model{}, err
+			}
+
+			domain.Subdomains[subdomain.Key] = subdomain
+			model.Domains[domainKey] = domain
+			// Track subdomain by path for lookup.
+			subdomainKeysByPath[toParseFile.Domain+"/"+toParseFile.Subdomain] = subdomain.Key
 
 		case _EXT_CLASS:
 			// Need to find the domain for this class.
@@ -193,14 +220,18 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			domain := model.Domains[domainKey]
 
-			// Use the default subdomain.
-			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
-			if err != nil {
-				return req_model.Model{}, errors.WithStack(err)
+			// Determine which subdomain to use (explicit or default).
+			subdomainName := toParseFile.Subdomain
+			if subdomainName == "" {
+				subdomainName = "default"
 			}
-			subdomain, ok := domain.Subdomains[defaultSubdomainKey]
+			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' has no default subdomain for class '%s'", toParseFile.Domain, toParseFile.Class)
+				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for class '%s'", subdomainName, toParseFile.Domain, toParseFile.Class)
+			}
+			subdomain, ok := domain.Subdomains[subdomainKey]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for class '%s'", subdomainName, toParseFile.Domain, toParseFile.Class)
 			}
 
 			// Extract just the class subkey from the full class path (domain/classname -> classname).
@@ -209,7 +240,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				classSubKey = toParseFile.Class[idx:]
 			}
 
-			class, associations, err := parseClass(defaultSubdomainKey, classSubKey, toParseFile.PathRel, contents)
+			class, associations, err := parseClass(subdomainKey, classSubKey, toParseFile.PathRel, contents)
 			if err != nil {
 				return req_model.Model{}, err
 			}
@@ -227,7 +258,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				subdomain.Classes = make(map[identity.Key]model_class.Class)
 			}
 			subdomain.Classes[class.Key] = class
-			domain.Subdomains[defaultSubdomainKey] = subdomain
+			domain.Subdomains[subdomainKey] = subdomain
 			model.Domains[domainKey] = domain
 
 		case _EXT_USE_CASE:
@@ -238,14 +269,18 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			domain := model.Domains[domainKey]
 
-			// Use the default subdomain.
-			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
-			if err != nil {
-				return req_model.Model{}, errors.WithStack(err)
+			// Determine which subdomain to use (explicit or default).
+			subdomainName := toParseFile.Subdomain
+			if subdomainName == "" {
+				subdomainName = "default"
 			}
-			subdomain, ok := domain.Subdomains[defaultSubdomainKey]
+			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' has no default subdomain for use case '%s'", toParseFile.Domain, toParseFile.UseCase)
+				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case '%s'", subdomainName, toParseFile.Domain, toParseFile.UseCase)
+			}
+			subdomain, ok := domain.Subdomains[subdomainKey]
+			if !ok {
+				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case '%s'", subdomainName, toParseFile.Domain, toParseFile.UseCase)
 			}
 
 			// Extract just the use case subkey from the full use case path (domain/usecasename -> usecasename).
@@ -254,7 +289,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				useCaseSubKey = toParseFile.UseCase[idx:]
 			}
 
-			useCase, err := parseUseCase(defaultSubdomainKey, useCaseSubKey, toParseFile.PathRel, contents)
+			useCase, err := parseUseCase(subdomainKey, useCaseSubKey, toParseFile.PathRel, contents)
 			if err != nil {
 				return req_model.Model{}, err
 			}
@@ -264,7 +299,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				subdomain.UseCases = make(map[identity.Key]model_use_case.UseCase)
 			}
 			subdomain.UseCases[useCase.Key] = useCase
-			domain.Subdomains[defaultSubdomainKey] = subdomain
+			domain.Subdomains[subdomainKey] = subdomain
 			model.Domains[domainKey] = domain
 
 		default:

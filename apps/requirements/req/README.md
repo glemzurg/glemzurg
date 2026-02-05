@@ -97,6 +97,10 @@ update to https://github.com/go-playground/validator
 
 - use godoc to review exported methods
 
+- revisit irrationals and how they are handled in a model:
+  - https://grok.com/share/c2hhcmQtMw_524fb597-1e4a-4906-b1ce-37de14fe80af
+  - https://grok.com/share/c2hhcmQtMw_e2b88d89-32b7-4b71-bd3a-a37d5251e03f
+
 - add tla invariants
 
 - postgres more features:

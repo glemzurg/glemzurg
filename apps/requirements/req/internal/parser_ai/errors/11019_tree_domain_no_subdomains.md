@@ -55,7 +55,17 @@ A subdomain should:
 - Contain **closely related classes** that work together
 - Have **minimal dependencies** on other subdomains
 - Represent a **cohesive sub-area** of the domain
-- Be small enough to understand quickly
+- Contain between **20-40 classes** for optimal manageability
+
+### Subdomain Size Guidelines
+
+Subdomains should be sized appropriately:
+
+- **Minimum**: At least 2 classes (a single class cannot have relationships)
+- **Target**: 20-40 classes for a well-organized subdomain
+- **Maximum**: When approaching 40+ classes, consider splitting
+
+When a subdomain grows beyond 40 classes, it becomes difficult to understand and maintain. Split it into multiple subdomains based on cohesive groupings of classes.
 
 ### Subdomain Examples
 
@@ -73,31 +83,32 @@ Within a "Customers" domain:
 
 - Use lowercase with underscores: `order_processing`, `user_management`
 - Be specific: `shipping` not `stuff`
-- Avoid generic names: `core`, `common`, `utils`
+- For simple domains, `core` or `default` are acceptable names
 
 ## When to Create Multiple Subdomains
 
 Create separate subdomains when:
-1. Classes have **different lifecycles** (Cart items are temporary, Orders are permanent)
-2. Classes are **accessed by different actors** (Admin vs Customer)
-3. Classes represent **different stages** of a process (Draft vs Published)
-4. You want to **isolate complexity** (Payment processing vs Order display)
+1. A subdomain exceeds **40 classes** — split based on cohesive groupings
+2. Classes have **different lifecycles** (Cart items are temporary, Orders are permanent)
+3. Classes are **accessed by different actors** (Admin vs Customer)
+4. Classes represent **different stages** of a process (Draft vs Published)
+5. You want to **isolate complexity** (Payment processing vs Order display)
 
-## Single Subdomain Pattern
+## Starting with a Single Subdomain
 
-For simple domains, a single subdomain is acceptable:
+For new domains, start with a single subdomain and split when needed:
 
 ```
 domains/
 └── simple_domain/
     ├── domain.json
     └── subdomains/
-        └── core/              <-- Single subdomain
+        └── core/              <-- Start with one subdomain
             ├── subdomain.json
             └── classes/
 ```
 
-Name it something meaningful like `core`, `default`, or describe its purpose.
+As the domain grows beyond 20-40 classes, identify cohesive groups and split into multiple subdomains.
 
 ## Related Errors
 
