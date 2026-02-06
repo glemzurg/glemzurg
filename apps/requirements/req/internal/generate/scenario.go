@@ -1,8 +1,6 @@
 package generate
 
 import (
-	"path/filepath"
-
 	svgsequence "github.com/aorith/svg-sequence"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -10,29 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/pkg/errors"
 )
-
-func generateScenarioFiles(outputPath string, reqs *req_flat.Requirements) (err error) {
-
-	// Get all the data we want for these files.
-	scenarioLookup := reqs.ScenarioLookup()
-
-	// Generate file for each scenario.
-	for _, scenario := range scenarioLookup {
-
-		// Generate a diagram.
-		svgFilename := convertKeyToFilename("scenario", scenario.Key.String(), "", ".svg")
-		svgFilenameAbs := filepath.Join(outputPath, svgFilename)
-		svgContents, err := generateScenarioSvgContents(reqs, scenario)
-		if err != nil {
-			return err
-		}
-		if err = writeFile(svgFilenameAbs, svgContents); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_scenario.Scenario) (contents string, err error) {
 
