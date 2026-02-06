@@ -13,11 +13,8 @@ And even more.
 ◇
 
 actor_key: actor_key
-
 guards:
-
     FirstLogin:
         details: login count < 1
-
     PriorLogin:
         details: login count >= 1

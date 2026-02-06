@@ -13,9 +13,7 @@ And even more.
 ◇
 
 actor_key: actor_key
-
 actions:
-
     ProcessLog:
         details: Appears in data dictionary.
         requires:
@@ -24,4 +22,3 @@ actions:
         guarantees:
             - userid (with details)
             - username (e.g. bob)
-

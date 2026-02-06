@@ -13,11 +13,8 @@ And even more.
 ◇
 
 actor_key: actor_key
-
 states:
-
-  Started:
-    details: Appears in data dictionary.
-    uml_comment: very import to users
-
-  Stopped:
+    Started:
+        details: Appears in data dictionary.
+        uml_comment: very import to users
+    Stopped: {}

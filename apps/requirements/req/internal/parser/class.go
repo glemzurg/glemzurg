@@ -738,62 +738,64 @@ func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, acti
 }
 
 func generateClassContent(class model_class.Class, associations []model_class.Association) string {
-	yaml := ""
+	builder := NewYamlBuilder()
+
+	// Add top-level fields.
 	if class.ActorKey != nil {
-		yaml += "actor_key: " + class.ActorKey.SubKey() + "\n"
+		builder.AddField("actor_key", class.ActorKey.SubKey())
 	}
 	if class.SuperclassOfKey != nil {
-		yaml += "superclass_of_key: " + class.SuperclassOfKey.SubKey() + "\n"
+		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey())
 	}
 	if class.SubclassOfKey != nil {
-		yaml += "subclass_of_key: " + class.SubclassOfKey.SubKey() + "\n"
-	}
-	if len(class.Attributes) > 0 {
-		yaml += "\n"
-		yaml += "attributes:\n"
-		// Sort attributes for deterministic output.
-		sortedAttrs := req_flat.GetAttributesSorted(class.Attributes)
-		for _, attr := range sortedAttrs {
-			yaml += "\n"
-			name := attr.Key.SubKey()
-			yaml += "    " + name + ":\n"
-			yaml += "        name: " + attr.Name + "\n"
-			yaml += formatYamlField("details", attr.Details, 8)
-			yaml += formatYamlField("rules", attr.DataTypeRules, 8)
-			yaml += formatYamlField("derivation", attr.DerivationPolicy, 8)
-			if attr.Nullable {
-				yaml += "        nullable: true\n"
-			}
-			yaml += formatYamlField("uml_comment", attr.UmlComment, 8)
-			if len(attr.IndexNums) > 0 {
-				yaml += "        index_nums: ["
-				for i, num := range attr.IndexNums {
-					if i > 0 {
-						yaml += ", "
-					}
-					yaml += strconv.Itoa(int(num))
-				}
-				yaml += "]\n"
-			}
-		}
-	}
-	// Generate associations if present.
-	if len(associations) > 0 {
-		yaml += "\nassociations:\n"
-		for _, assoc := range associations {
-			yaml += "\n    - name: " + assoc.Name + "\n"
-			yaml += formatYamlField("details", assoc.Details, 6)
-			yaml += "      from_multiplicity: " + formatMultiplicity(assoc.FromMultiplicity) + "\n"
-			yaml += "      to_class_key: " + assoc.ToClassKey.SubKey() + "\n"
-			yaml += "      to_multiplicity: " + formatMultiplicity(assoc.ToMultiplicity) + "\n"
-			if assoc.AssociationClassKey != nil {
-				yaml += "      association_class_key: " + assoc.AssociationClassKey.SubKey() + "\n"
-			}
-			yaml += formatYamlField("uml_comment", assoc.UmlComment, 6)
-		}
+		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey())
 	}
 
-	// We need a lookup of actions to display names where they need to be.
+	// Add attributes section.
+	if len(class.Attributes) > 0 {
+		attrsBuilder := NewYamlBuilder()
+		sortedAttrs := req_flat.GetAttributesSorted(class.Attributes)
+		for _, attr := range sortedAttrs {
+			attrBuilder := NewYamlBuilder()
+			attrBuilder.AddField("name", attr.Name)
+			attrBuilder.AddField("details", attr.Details)
+			attrBuilder.AddField("rules", attr.DataTypeRules)
+			attrBuilder.AddField("derivation", attr.DerivationPolicy)
+			attrBuilder.AddBoolField("nullable", attr.Nullable)
+			attrBuilder.AddField("uml_comment", attr.UmlComment)
+			// Convert []uint to []int for index_nums.
+			if len(attr.IndexNums) > 0 {
+				intNums := make([]int, len(attr.IndexNums))
+				for i, n := range attr.IndexNums {
+					intNums[i] = int(n)
+				}
+				attrBuilder.AddIntSliceField("index_nums", intNums)
+			}
+			attrsBuilder.AddMappingField(attr.Key.SubKey(), attrBuilder)
+		}
+		builder.AddMappingField("attributes", attrsBuilder)
+	}
+
+	// Add associations section.
+	if len(associations) > 0 {
+		var assocBuilders []*YamlBuilder
+		for _, assoc := range associations {
+			assocBuilder := NewYamlBuilder()
+			assocBuilder.AddField("name", assoc.Name)
+			assocBuilder.AddField("details", assoc.Details)
+			addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
+			assocBuilder.AddField("to_class_key", assoc.ToClassKey.SubKey())
+			addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
+			if assoc.AssociationClassKey != nil {
+				assocBuilder.AddField("association_class_key", assoc.AssociationClassKey.SubKey())
+			}
+			assocBuilder.AddField("uml_comment", assoc.UmlComment)
+			assocBuilders = append(assocBuilders, assocBuilder)
+		}
+		builder.AddSequenceOfMappings("associations", assocBuilders)
+	}
+
+	// Create lookups for names.
 	stateKeyLookups := map[string]model_state.State{}
 	for _, state := range class.States {
 		stateKeyLookups[state.Key.String()] = state
@@ -811,10 +813,9 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		guardKeyLookup[guard.Key.String()] = guard
 	}
 
+	// Add states section.
 	if len(class.States) > 0 {
-		yaml += "\n"
-		yaml += "states:\n"
-		// Sort state keys for deterministic output.
+		statesBuilder := NewYamlBuilder()
 		stateKeys := make([]string, 0, len(class.States))
 		for k := range class.States {
 			stateKeys = append(stateKeys, k.String())
@@ -823,23 +824,27 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		for _, keyStr := range stateKeys {
 			key, _ := identity.ParseKey(keyStr)
 			state := class.States[key]
-			yaml += "\n"
-			yaml += "  " + state.Name + ":\n"
-			yaml += formatYamlField("details", state.Details, 4)
-			yaml += formatYamlField("uml_comment", state.UmlComment, 4)
+			stateBuilder := NewYamlBuilder()
+			stateBuilder.AddField("details", state.Details)
+			stateBuilder.AddField("uml_comment", state.UmlComment)
 			if len(state.Actions) > 0 {
-				yaml += "    actions:\n"
+				var stateActionBuilders []*YamlBuilder
 				for _, sa := range state.Actions {
-					yaml += "        - action: " + actionKeyLookup[sa.ActionKey.String()].Name + "\n"
-					yaml += "          when: " + sa.When + "\n"
+					saBuilder := NewYamlBuilder()
+					saBuilder.AddField("action", actionKeyLookup[sa.ActionKey.String()].Name)
+					saBuilder.AddField("when", sa.When)
+					stateActionBuilders = append(stateActionBuilders, saBuilder)
 				}
+				stateBuilder.AddSequenceOfMappings("actions", stateActionBuilders)
 			}
+			statesBuilder.AddMappingFieldAlways(state.Name, stateBuilder)
 		}
+		builder.AddMappingField("states", statesBuilder)
 	}
+
+	// Add events section.
 	if len(class.Events) > 0 {
-		yaml += "\n"
-		yaml += "events:\n"
-		// Sort event keys for deterministic output.
+		eventsBuilder := NewYamlBuilder()
 		eventKeys := make([]string, 0, len(class.Events))
 		for k := range class.Events {
 			eventKeys = append(eventKeys, k.String())
@@ -848,22 +853,26 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		for _, keyStr := range eventKeys {
 			key, _ := identity.ParseKey(keyStr)
 			event := class.Events[key]
-			yaml += "\n"
-			yaml += "    " + event.Name + ":\n"
-			yaml += formatYamlField("details", event.Details, 8)
+			eventBuilder := NewYamlBuilder()
+			eventBuilder.AddField("details", event.Details)
 			if len(event.Parameters) > 0 {
-				yaml += "        parameters:\n"
+				var paramBuilders []*YamlBuilder
 				for _, param := range event.Parameters {
-					yaml += "            - name: " + param.Name + "\n"
-					yaml += formatYamlField("source", param.Source, 14)
+					paramBuilder := NewYamlBuilder()
+					paramBuilder.AddField("name", param.Name)
+					paramBuilder.AddField("source", param.Source)
+					paramBuilders = append(paramBuilders, paramBuilder)
 				}
+				eventBuilder.AddSequenceOfMappings("parameters", paramBuilders)
 			}
+			eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 		}
+		builder.AddMappingField("events", eventsBuilder)
 	}
+
+	// Add guards section.
 	if len(class.Guards) > 0 {
-		yaml += "\n"
-		yaml += "guards:\n"
-		// Sort guard keys for deterministic output.
+		guardsBuilder := NewYamlBuilder()
 		guardKeys := make([]string, 0, len(class.Guards))
 		for k := range class.Guards {
 			guardKeys = append(guardKeys, k.String())
@@ -872,15 +881,16 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		for _, keyStr := range guardKeys {
 			key, _ := identity.ParseKey(keyStr)
 			guard := class.Guards[key]
-			yaml += "\n"
-			yaml += "    " + guard.Name + ":\n"
-			yaml += formatYamlField("details", guard.Details, 8)
+			guardBuilder := NewYamlBuilder()
+			guardBuilder.AddField("details", guard.Details)
+			guardsBuilder.AddMappingField(guard.Name, guardBuilder)
 		}
+		builder.AddMappingField("guards", guardsBuilder)
 	}
+
+	// Add actions section.
 	if len(class.Actions) > 0 {
-		yaml += "\n"
-		yaml += "actions:\n"
-		// Sort action keys for deterministic output.
+		actionsBuilder := NewYamlBuilder()
 		actionKeys := make([]string, 0, len(class.Actions))
 		for k := range class.Actions {
 			actionKeys = append(actionKeys, k.String())
@@ -889,28 +899,18 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		for _, keyStr := range actionKeys {
 			key, _ := identity.ParseKey(keyStr)
 			action := class.Actions[key]
-			yaml += "\n"
-			yaml += "    " + action.Name + ":\n"
-			yaml += formatYamlField("details", action.Details, 8)
-			if len(action.Requires) > 0 {
-				yaml += "        requires:\n"
-				for _, req := range action.Requires {
-					yaml += formatYamlListItem(req, 12)
-				}
-			}
-			if len(action.Guarantees) > 0 {
-				yaml += "        guarantees:\n"
-				for _, gua := range action.Guarantees {
-					yaml += formatYamlListItem(gua, 12)
-				}
-			}
+			actionBuilder := NewYamlBuilder()
+			actionBuilder.AddField("details", action.Details)
+			actionBuilder.AddSequenceField("requires", action.Requires)
+			actionBuilder.AddSequenceField("guarantees", action.Guarantees)
+			actionsBuilder.AddMappingField(action.Name, actionBuilder)
 		}
+		builder.AddMappingField("actions", actionsBuilder)
 	}
+
+	// Add transitions section.
 	if len(class.Transitions) > 0 {
-		yaml += "\n"
-		yaml += "transitions:\n"
-		yaml += "\n"
-		// Sort transition keys for deterministic output.
+		var transitionBuilders []*YamlBuilder
 		transitionKeys := make([]string, 0, len(class.Transitions))
 		for k := range class.Transitions {
 			transitionKeys = append(transitionKeys, k.String())
@@ -919,67 +919,44 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		for _, keyStr := range transitionKeys {
 			key, _ := identity.ParseKey(keyStr)
 			trans := class.Transitions[key]
+			transBuilder := NewYamlBuilder()
 			from := ""
 			if trans.FromStateKey != nil {
 				from = stateKeyLookups[trans.FromStateKey.String()].Name
 			}
-			event := ""
-			event = eventKeyLookup[trans.EventKey.String()].Name
+			transBuilder.AddQuotedField("from", from)
+			transBuilder.AddQuotedField("event", eventKeyLookup[trans.EventKey.String()].Name)
 			to := ""
 			if trans.ToStateKey != nil {
 				to = stateKeyLookups[trans.ToStateKey.String()].Name
 			}
-			guard := ""
+			transBuilder.AddQuotedField("to", to)
 			if trans.GuardKey != nil {
-				guard = guardKeyLookup[trans.GuardKey.String()].Name
+				transBuilder.AddQuotedField("guard", guardKeyLookup[trans.GuardKey.String()].Name)
 			}
-			action := ""
 			if trans.ActionKey != nil {
-				action = actionKeyLookup[trans.ActionKey.String()].Name
-			}
-			yaml += "    - {from: \"" + from + "\", event: \"" + event + "\", to: \"" + to + "\""
-			if guard != "" {
-				yaml += ", guard: \"" + guard + "\""
-			}
-			if action != "" {
-				yaml += ", action: \"" + action + "\""
+				transBuilder.AddQuotedField("action", actionKeyLookup[trans.ActionKey.String()].Name)
 			}
 			if trans.UmlComment != "" {
-				yaml += ", uml_comment: \"" + trans.UmlComment + "\""
+				transBuilder.AddQuotedField("uml_comment", trans.UmlComment)
 			}
-			yaml += "}\n"
+			transitionBuilders = append(transitionBuilders, transBuilder)
 		}
+		builder.AddFlowSequence("transitions", transitionBuilders)
 	}
-	yamlStr := strings.TrimSpace(yaml)
+
+	yamlStr, _ := builder.Build()
 	return generateFileContent(class.Details, class.UmlComment, yamlStr)
 }
 
-// formatMultiplicity formats a multiplicity for YAML output.
+// addMultiplicityField adds a multiplicity field to the builder.
 // Numeric multiplicities are quoted, "any" is not quoted.
-func formatMultiplicity(m model_class.Multiplicity) string {
+func addMultiplicityField(builder *YamlBuilder, key string, m model_class.Multiplicity) {
 	s := m.ParsedString()
 	if s == "any" {
-		return s
+		builder.AddField(key, s)
+	} else {
+		builder.AddQuotedField(key, s)
 	}
-	return "\"" + s + "\""
 }
 
-// formatYamlListItem formats a string as a YAML list item.
-// If the string contains newlines, it uses literal block scalar (|) notation.
-// The indent parameter specifies the number of spaces for the list item prefix.
-func formatYamlListItem(value string, indent int) string {
-	indentStr := strings.Repeat(" ", indent)
-	if strings.Contains(value, "\n") {
-		// Use literal block scalar for multi-line strings
-		result := indentStr + "- |\n"
-		// Each line of the value needs to be indented beyond the list item
-		contentIndent := strings.Repeat(" ", indent+4)
-		lines := strings.Split(value, "\n")
-		for _, line := range lines {
-			result += contentIndent + line + "\n"
-		}
-		return result
-	}
-	// Single line - simple format
-	return indentStr + "- " + value + "\n"
-}

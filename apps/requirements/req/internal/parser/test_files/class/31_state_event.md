@@ -13,9 +13,7 @@ And even more.
 ◇
 
 actor_key: actor_key
-
 events:
-
     LogIn:
         details: Appears in data dictionary.
         parameters:
@@ -23,9 +21,6 @@ events:
               source: this comes from x
             - name: username
               source: this comes from y
-
-    LogOut:
-
+    LogOut: {}
     Trigger:
         details: Appears in data dictionary.
- 

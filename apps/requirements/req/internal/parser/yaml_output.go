@@ -117,6 +117,32 @@ func (b *YamlBuilder) AddIntSliceField(key string, values []int) {
 	b.node.Content = append(b.node.Content, keyNode, seqNode)
 }
 
+// AddUintSliceField adds a field with an unsigned integer slice value.
+func (b *YamlBuilder) AddUintSliceField(key string, values []uint) {
+	if len(values) == 0 {
+		return
+	}
+
+	keyNode := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: key,
+	}
+
+	seqNode := &yaml.Node{
+		Kind:  yaml.SequenceNode,
+		Style: yaml.FlowStyle,
+	}
+	for _, v := range values {
+		seqNode.Content = append(seqNode.Content, &yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Value: strconv.FormatUint(uint64(v), 10),
+			Tag:   "!!int",
+		})
+	}
+
+	b.node.Content = append(b.node.Content, keyNode, seqNode)
+}
+
 // AddSequenceField adds a field with a sequence of string values.
 // Uses literal block scalar for multiline items.
 func (b *YamlBuilder) AddSequenceField(key string, values []string) {
@@ -140,6 +166,7 @@ func (b *YamlBuilder) AddSequenceField(key string, values []string) {
 }
 
 // AddMappingField adds a field with a nested mapping value.
+// Skips if nested is nil or empty.
 func (b *YamlBuilder) AddMappingField(key string, nested *YamlBuilder) {
 	if nested == nil || len(nested.node.Content) == 0 {
 		return
@@ -148,6 +175,20 @@ func (b *YamlBuilder) AddMappingField(key string, nested *YamlBuilder) {
 	keyNode := &yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Value: key,
+	}
+
+	b.node.Content = append(b.node.Content, keyNode, nested.node)
+}
+
+// AddMappingFieldAlways adds a field with a nested mapping value, even if empty.
+func (b *YamlBuilder) AddMappingFieldAlways(key string, nested *YamlBuilder) {
+	keyNode := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: key,
+	}
+
+	if nested == nil {
+		nested = NewYamlBuilder()
 	}
 
 	b.node.Content = append(b.node.Content, keyNode, nested.node)
@@ -212,6 +253,39 @@ func (b *YamlBuilder) AddRawNode(key string, node *yaml.Node) {
 	}
 
 	b.node.Content = append(b.node.Content, keyNode, node)
+}
+
+// AddFlowSequence adds a field with a sequence of flow-style mappings.
+// Each item in the sequence is rendered in flow style (e.g., {key: "value", key2: "value2"}).
+func (b *YamlBuilder) AddFlowSequence(key string, items []*YamlBuilder) {
+	if len(items) == 0 {
+		return
+	}
+
+	keyNode := &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Value: key,
+	}
+
+	seqNode := &yaml.Node{
+		Kind: yaml.SequenceNode,
+	}
+	for _, item := range items {
+		if item != nil && len(item.node.Content) > 0 {
+			flowNode := &yaml.Node{
+				Kind:    yaml.MappingNode,
+				Style:   yaml.FlowStyle,
+				Content: item.node.Content,
+			}
+			seqNode.Content = append(seqNode.Content, flowNode)
+		}
+	}
+
+	if len(seqNode.Content) == 0 {
+		return
+	}
+
+	b.node.Content = append(b.node.Content, keyNode, seqNode)
 }
 
 // Build marshals the YAML node to a string.
