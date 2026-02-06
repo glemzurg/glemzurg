@@ -28,6 +28,7 @@ april (in parallel)
 
 
 questions:
+  - when is a user entered into the state?
   - targeted build of parts of the system:
     - e.g. wallet before all others
   - model compilers
@@ -44,6 +45,7 @@ questions:
 
 simulator todo:
 
+- LET in TLA (it's is started by AI)
 - Bags in TLA
 - Simulator code
 - data type in simulators

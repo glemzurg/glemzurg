@@ -295,9 +295,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 			name := scenario.Key.SubKey()
 			yaml += "\n    " + name + ":\n"
 			yaml += "        name: " + scenario.Name + "\n"
-			if scenario.Details != "" {
-				yaml += "        details: " + scenario.Details + "\n"
-			}
+			yaml += formatYamlField("details", scenario.Details, 8)
 			if len(scenario.Objects) > 0 {
 				yaml += "        objects:\n"
 				// Sort objects by ObjectNumber for deterministic output.
@@ -311,9 +309,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 				for _, obj := range objects {
 					objName := obj.Key.SubKey()
 					yaml += "            - key: " + objName + "\n"
-					if obj.Name != "" {
-						yaml += "              name: " + obj.Name + "\n"
-					}
+					yaml += formatYamlField("name", obj.Name, 14)
 					if obj.NameStyle != "" && obj.NameStyle != "unnamed" {
 						yaml += "              style: " + obj.NameStyle + "\n"
 					}
@@ -324,9 +320,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 					if obj.Multi {
 						yaml += "              multi: true\n"
 					}
-					if obj.UmlComment != "" {
-						yaml += "              uml_comment: " + obj.UmlComment + "\n"
-					}
+					yaml += formatYamlField("uml_comment", obj.UmlComment, 14)
 				}
 			}
 			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {

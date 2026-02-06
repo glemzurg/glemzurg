@@ -115,11 +115,8 @@ func generateDomainContent(domain model_domain.Domain, associations []model_doma
 	if len(associations) > 0 {
 		yaml += "\n\nassociations:\n"
 		for _, assoc := range associations {
-			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey()
-			if assoc.UmlComment != "" {
-				yaml += "\n      uml_comment: " + assoc.UmlComment
-			}
-			yaml += "\n"
+			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey() + "\n"
+			yaml += formatYamlField("uml_comment", assoc.UmlComment, 6)
 		}
 	}
 

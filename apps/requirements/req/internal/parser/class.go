@@ -280,9 +280,9 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 		attribute, err = model_class.NewAttribute(
 			attrKey,
 			name,
-			normalizeWhitespace(details),
+			details,
 			dataTypeRules,
-			normalizeWhitespace(derivationPolicy),
+			derivationPolicy,
 			nullable,
 			umlComment,
 			indexNums)
@@ -758,21 +758,13 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			name := attr.Key.SubKey()
 			yaml += "    " + name + ":\n"
 			yaml += "        name: " + attr.Name + "\n"
-			if attr.Details != "" {
-				yaml += "        details: " + attr.Details + "\n"
-			}
-			if attr.DataTypeRules != "" {
-				yaml += "        rules: " + attr.DataTypeRules + "\n"
-			}
-			if attr.DerivationPolicy != "" {
-				yaml += "        derivation: " + attr.DerivationPolicy + "\n"
-			}
+			yaml += formatYamlField("details", attr.Details, 8)
+			yaml += formatYamlField("rules", attr.DataTypeRules, 8)
+			yaml += formatYamlField("derivation", attr.DerivationPolicy, 8)
 			if attr.Nullable {
 				yaml += "        nullable: true\n"
 			}
-			if attr.UmlComment != "" {
-				yaml += "        uml_comment: " + attr.UmlComment + "\n"
-			}
+			yaml += formatYamlField("uml_comment", attr.UmlComment, 8)
 			if len(attr.IndexNums) > 0 {
 				yaml += "        index_nums: ["
 				for i, num := range attr.IndexNums {
@@ -790,18 +782,14 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 		yaml += "\nassociations:\n"
 		for _, assoc := range associations {
 			yaml += "\n    - name: " + assoc.Name + "\n"
-			if assoc.Details != "" {
-				yaml += "      details: " + assoc.Details + "\n"
-			}
+			yaml += formatYamlField("details", assoc.Details, 6)
 			yaml += "      from_multiplicity: " + formatMultiplicity(assoc.FromMultiplicity) + "\n"
 			yaml += "      to_class_key: " + assoc.ToClassKey.SubKey() + "\n"
 			yaml += "      to_multiplicity: " + formatMultiplicity(assoc.ToMultiplicity) + "\n"
 			if assoc.AssociationClassKey != nil {
 				yaml += "      association_class_key: " + assoc.AssociationClassKey.SubKey() + "\n"
 			}
-			if assoc.UmlComment != "" {
-				yaml += "      uml_comment: " + assoc.UmlComment + "\n"
-			}
+			yaml += formatYamlField("uml_comment", assoc.UmlComment, 6)
 		}
 	}
 
@@ -837,12 +825,8 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			state := class.States[key]
 			yaml += "\n"
 			yaml += "  " + state.Name + ":\n"
-			if state.Details != "" {
-				yaml += "    details: " + state.Details + "\n"
-			}
-			if state.UmlComment != "" {
-				yaml += "    uml_comment: " + state.UmlComment + "\n"
-			}
+			yaml += formatYamlField("details", state.Details, 4)
+			yaml += formatYamlField("uml_comment", state.UmlComment, 4)
 			if len(state.Actions) > 0 {
 				yaml += "    actions:\n"
 				for _, sa := range state.Actions {
@@ -866,16 +850,12 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			event := class.Events[key]
 			yaml += "\n"
 			yaml += "    " + event.Name + ":\n"
-			if event.Details != "" {
-				yaml += "        details: " + event.Details + "\n"
-			}
+			yaml += formatYamlField("details", event.Details, 8)
 			if len(event.Parameters) > 0 {
 				yaml += "        parameters:\n"
 				for _, param := range event.Parameters {
 					yaml += "            - name: " + param.Name + "\n"
-					if param.Source != "" {
-						yaml += "              source: " + param.Source + "\n"
-					}
+					yaml += formatYamlField("source", param.Source, 14)
 				}
 			}
 		}
@@ -894,9 +874,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			guard := class.Guards[key]
 			yaml += "\n"
 			yaml += "    " + guard.Name + ":\n"
-			if guard.Details != "" {
-				yaml += "        details: " + guard.Details + "\n"
-			}
+			yaml += formatYamlField("details", guard.Details, 8)
 		}
 	}
 	if len(class.Actions) > 0 {
@@ -913,9 +891,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			action := class.Actions[key]
 			yaml += "\n"
 			yaml += "    " + action.Name + ":\n"
-			if action.Details != "" {
-				yaml += "        details: " + action.Details + "\n"
-			}
+			yaml += formatYamlField("details", action.Details, 8)
 			if len(action.Requires) > 0 {
 				yaml += "        requires:\n"
 				for _, req := range action.Requires {
