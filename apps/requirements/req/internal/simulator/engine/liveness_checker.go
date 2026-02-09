@@ -3,11 +3,11 @@ package engine
 import (
 	"sort"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/evaluator"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // LivenessChecker performs post-simulation coverage analysis.

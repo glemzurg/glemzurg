@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // ViolationType indicates what kind of invariant was violated.
@@ -164,7 +164,7 @@ func NewActionGuaranteeViolation(
 ) *Violation {
 	return &Violation{
 		Type:              ViolationTypeActionGuarantee,
-		Message:          fmt.Sprintf("action %s guarantee %d failed: %s - %s", actionName, guaranteeIndex, expression, message),
+		Message:           fmt.Sprintf("action %s guarantee %d failed: %s - %s", actionName, guaranteeIndex, expression, message),
 		InstanceID:        instanceID,
 		ActionOrQueryKey:  actionKey,
 		ActionOrQueryName: actionName,
@@ -184,7 +184,7 @@ func NewQueryGuaranteeViolation(
 ) *Violation {
 	return &Violation{
 		Type:              ViolationTypeQueryGuarantee,
-		Message:          fmt.Sprintf("query %s guarantee %d failed: %s - %s", queryName, guaranteeIndex, expression, message),
+		Message:           fmt.Sprintf("query %s guarantee %d failed: %s - %s", queryName, guaranteeIndex, expression, message),
 		InstanceID:        instanceID,
 		ActionOrQueryKey:  queryKey,
 		ActionOrQueryName: queryName,
@@ -298,8 +298,8 @@ func NewIndexUniquenessViolation(
 	tupleValues []string,
 ) *Violation {
 	return &Violation{
-		Type:    ViolationTypeIndexUniqueness,
-		Message: fmt.Sprintf("index %d uniqueness violated: attributes [%s] = [%s] duplicated on instances %d and %d of class %s", indexNum, strings.Join(attrNames, ", "), strings.Join(tupleValues, ", "), instanceID, conflictingInstanceID, classKey.String()),
+		Type:       ViolationTypeIndexUniqueness,
+		Message:    fmt.Sprintf("index %d uniqueness violated: attributes [%s] = [%s] duplicated on instances %d and %d of class %s", indexNum, strings.Join(attrNames, ", "), strings.Join(tupleValues, ", "), instanceID, conflictingInstanceID, classKey.String()),
 		InstanceID: instanceID,
 		ClassKey:   classKey,
 	}

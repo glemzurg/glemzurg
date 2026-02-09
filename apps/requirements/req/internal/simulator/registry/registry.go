@@ -14,9 +14,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/typechecker"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/types"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
 // DefinitionKey is a fully qualified function name.

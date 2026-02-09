@@ -16,7 +16,7 @@
 package typechecker
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/types"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
 // TypeEnv maps identifiers to their type schemes.

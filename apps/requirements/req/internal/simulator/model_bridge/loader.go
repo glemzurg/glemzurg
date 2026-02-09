@@ -3,8 +3,8 @@ package model_bridge
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/registry"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 )
 
 // LoadResult contains the result of loading all definitions from a model.

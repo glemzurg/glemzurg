@@ -3,14 +3,14 @@ package engine
 import (
 	"testing"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_class"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/actions"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/evaluator"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
 

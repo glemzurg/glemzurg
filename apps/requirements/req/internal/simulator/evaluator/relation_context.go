@@ -3,7 +3,7 @@ package evaluator
 import (
 	"strings"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // Multiplicity represents the cardinality constraints of a relation end.

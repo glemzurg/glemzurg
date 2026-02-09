@@ -1,7 +1,7 @@
 package simulator
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 )
 
 // AssociationConfig contains the configuration for an association.

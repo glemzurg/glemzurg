@@ -1,11 +1,11 @@
 package engine
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/actions"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // StepKind describes the type of simulation step.

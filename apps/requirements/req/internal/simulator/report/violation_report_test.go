@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -3,8 +3,8 @@ package registry
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/typechecker"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/types"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
 // RebuildStrategy determines how to handle type-checking after changes.

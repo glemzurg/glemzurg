@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // Namespace indicates the type of binding scope.

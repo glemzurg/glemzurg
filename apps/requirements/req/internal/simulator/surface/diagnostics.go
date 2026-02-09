@@ -3,15 +3,15 @@ package surface
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 )
 
 // Diagnostic represents a non-fatal issue found during surface analysis.
 type Diagnostic struct {
-	Level   string       // "warning" or "info"
-	Message string       // Human-readable description.
+	Level    string        // "warning" or "info"
+	Message  string        // Human-readable description.
 	ClassKey *identity.Key // Related class, if applicable.
 	AssocKey *identity.Key // Related association, if applicable.
 }

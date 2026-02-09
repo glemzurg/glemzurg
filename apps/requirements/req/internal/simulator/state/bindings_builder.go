@@ -1,9 +1,9 @@
 package state
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/evaluator"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // DerivedAttributeResolver computes derived attribute values for an instance.

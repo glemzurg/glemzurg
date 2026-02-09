@@ -4,10 +4,10 @@ package actions
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // DeferredPostCondition holds a post-condition guarantee to check after all

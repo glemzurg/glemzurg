@@ -4,15 +4,15 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_class"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_data_type"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_domain"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -69,8 +69,8 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	class := model_class.Class{
-		Key:  classKey,
-		Name: "Order",
+		Key:        classKey,
+		Name:       "Order",
 		Attributes: map[identity.Key]model_class.Attribute{},
 		States: map[identity.Key]model_state.State{
 			stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
@@ -927,9 +927,9 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 				Atomic: &model_data_type.Atomic{
 					ConstraintType: model_data_type.ConstraintTypeSpan,
 					Span: &model_data_type.AtomicSpan{
-						LowerType:  "closed",
-						LowerValue: &lowerValue,
-						HigherType: "closed",
+						LowerType:   "closed",
+						LowerValue:  &lowerValue,
+						HigherType:  "closed",
 						HigherValue: &higherValue,
 					},
 				},
@@ -1015,9 +1015,9 @@ func (s *ActionsSuite) TestActionRejectsTlaGuaranteesNonPrimed() {
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:            actionKey,
-		Name:           "BadAction",
-		TlaGuarantees:  []string{"self.count > 0"},
+		Key:           actionKey,
+		Name:          "BadAction",
+		TlaGuarantees: []string{"self.count > 0"},
 	}
 
 	simState := state.NewSimulationState()
@@ -1038,9 +1038,9 @@ func (s *ActionsSuite) TestActionRejectsTlaRequiresWithPrime() {
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:          actionKey,
-		Name:         "BadRequires",
-		TlaRequires:  []string{"self.count' > 0"},
+		Key:         actionKey,
+		Name:        "BadRequires",
+		TlaRequires: []string{"self.count' > 0"},
 	}
 
 	simState := state.NewSimulationState()
@@ -1061,9 +1061,9 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:             actionKey,
-		Name:            "BadSafety",
-		TlaSafetyRules:  []string{"self.count > 0"},
+		Key:            actionKey,
+		Name:           "BadSafety",
+		TlaSafetyRules: []string{"self.count > 0"},
 	}
 
 	simState := state.NewSimulationState()
@@ -1169,10 +1169,10 @@ func (s *ActionsSuite) TestQueryRejectsTlaRequiresWithPrime() {
 	queryKey := mustKey("domain/d/subdomain/s/class/c/query/q")
 
 	query := model_state.Query{
-		Key:            queryKey,
-		Name:           "BadQuery",
-		TlaRequires:    []string{"self.count' > 0"},
-		TlaGuarantees:  []string{"result' = self.count"},
+		Key:           queryKey,
+		Name:          "BadQuery",
+		TlaRequires:   []string{"self.count' > 0"},
+		TlaGuarantees: []string{"result' = self.count"},
 	}
 
 	simState := state.NewSimulationState()

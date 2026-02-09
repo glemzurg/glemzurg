@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 )
 
 func TestDebugPrimed(t *testing.T) {

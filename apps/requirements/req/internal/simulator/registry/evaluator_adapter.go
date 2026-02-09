@@ -3,9 +3,9 @@ package registry
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/typechecker"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 )
 
 // EvalTypedFunc is the function signature for evaluating a typed node.

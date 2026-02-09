@@ -1,9 +1,9 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/typechecker"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 )
 
 // RegistryEvalInterface allows the evaluator to call back to the registry for function evaluation.

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/actions"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/evaluator"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/surface"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
 // SimulationConfig controls how a simulation run behaves.

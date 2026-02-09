@@ -3,8 +3,8 @@ package engine
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // MultiplicityViolation records that an association multiplicity constraint

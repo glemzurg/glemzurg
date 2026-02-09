@@ -1,6 +1,6 @@
 package evaluator
 
-import "github.com/glemzurg/go-tlaplus/internal/simulator/object"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 
 // BuiltinFn is the signature for all builtin functions.
 // Args are pre-evaluated object.Object values.

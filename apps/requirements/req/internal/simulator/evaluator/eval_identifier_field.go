@@ -1,8 +1,8 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // evalFieldIdentifier evaluates a field access expression (base.member or @.member).

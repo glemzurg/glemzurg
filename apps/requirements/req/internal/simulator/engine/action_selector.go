@@ -5,16 +5,16 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // PendingAction describes a single eligible simulation action.
 type PendingAction struct {
 	Class      *ClassInfo
-	Event      *model_state.Event  // Non-nil for event-triggered actions.
-	DoAction   *model_state.Action // Non-nil for "do" state actions.
+	Event      *model_state.Event   // Non-nil for event-triggered actions.
+	DoAction   *model_state.Action  // Non-nil for "do" state actions.
 	Instance   *state.ClassInstance // nil for creation.
 	IsCreation bool
 	IsDo       bool // True when this is a "do" state action.

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_data_type"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // ParameterBinder validates and generates parameter values for actions and queries.

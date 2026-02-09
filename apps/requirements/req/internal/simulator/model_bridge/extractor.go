@@ -1,8 +1,8 @@
 package model_bridge
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
 // ExtractFromModel extracts all TLA+ expressions from the model.

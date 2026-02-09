@@ -1,7 +1,7 @@
 package typechecker
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/types"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
 // RelationTypeBuilder helps construct relation types for a class.

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/parser"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/registry"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 )
 
 // GuaranteeKind classifies what kind of guarantee expression this is.

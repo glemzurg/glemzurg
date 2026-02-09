@@ -3,8 +3,8 @@ package registry
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // ScopeLevel represents the depth of the current binding scope.
@@ -230,11 +230,11 @@ func (sc *ScopeContext) AtClassScope(def *Definition) *ScopeContext {
 		// Global functions don't change the scope context meaningfully,
 		// but we keep the registry reference
 		return &ScopeContext{
-			Level:    sc.Level,
-			Domain:   sc.Domain,
+			Level:     sc.Level,
+			Domain:    sc.Domain,
 			Subdomain: sc.Subdomain,
-			Class:    sc.Class,
-			Registry: sc.Registry,
+			Class:     sc.Class,
+			Registry:  sc.Registry,
 		}
 	}
 

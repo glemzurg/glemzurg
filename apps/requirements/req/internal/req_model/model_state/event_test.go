@@ -81,13 +81,13 @@ func (suite *EventSuite) TestNew() {
 	key := helper.Must(identity.NewEventKey(classKey, "event1"))
 
 	// Test parameters are mapped correctly.
-	event, err := NewEvent(key, "Name", "Details", []EventParameter{{Name: "ParamA", Source: "SourceA"}})
+	event, err := NewEvent(key, "Name", "Details", []Parameter{{Name: "ParamA", DataTypeRules: "Nat"}})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Event{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
-		Parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}},
+		Parameters: []Parameter{{Name: "ParamA", DataTypeRules: "Nat"}},
 	}, event)
 
 	// Test that Validate is called (invalid data should fail).

@@ -9,17 +9,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/engine"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // SimulationTrace is the top-level serializable trace of a simulation run.
 type SimulationTrace struct {
-	StepsTaken        int          `json:"steps_taken"`
-	TerminationReason string       `json:"termination_reason"`
-	Steps             []TraceStep  `json:"steps"`
-	FinalState        *FinalState  `json:"final_state,omitempty"`
+	StepsTaken        int         `json:"steps_taken"`
+	TerminationReason string      `json:"termination_reason"`
+	Steps             []TraceStep `json:"steps"`
+	FinalState        *FinalState `json:"final_state,omitempty"`
 }
 
 // TraceStep is a serializable view of one simulation step.

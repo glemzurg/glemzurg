@@ -11,6 +11,10 @@ feb (in parallel)
   - run simulations on basic model
 
 
+class attribute Tla
+even stent buy
+action query + parameters
+
 
 march (art workshops)
 

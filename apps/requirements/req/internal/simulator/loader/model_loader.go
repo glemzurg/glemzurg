@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/pkg/errors"
 )
 

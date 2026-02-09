@@ -3,7 +3,7 @@ package model_state
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 )
 
 // Parameter is a typed parameter for actions and queries.

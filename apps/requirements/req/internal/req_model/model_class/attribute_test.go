@@ -61,6 +61,24 @@ func (suite *AttributeSuite) TestValidate() {
 			},
 			errstr: "Name: cannot be blank",
 		},
+		{
+			testName: "error TlaDerivationPolicy without DerivationPolicy",
+			attribute: Attribute{
+				Key:                 validKey,
+				Name:                "Name",
+				TlaDerivationPolicy: "self.x + 1",
+			},
+			errstr: "TlaDerivationPolicy requires DerivationPolicy to be set",
+		},
+		{
+			testName: "valid TlaDerivationPolicy with DerivationPolicy",
+			attribute: Attribute{
+				Key:                 validKey,
+				Name:                "Name",
+				DerivationPolicy:    "computed",
+				TlaDerivationPolicy: "self.x + 1",
+			},
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
@@ -82,7 +100,7 @@ func (suite *AttributeSuite) TestNew() {
 	key := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
 
 	// Test parameters are mapped correctly.
-	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", "DerivationPolicy", true, "UmlComment", []uint{1, 2})
+	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", "DerivationPolicy", "", true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              key,
@@ -97,7 +115,7 @@ func (suite *AttributeSuite) TestNew() {
 
 	// Test parseable data type rules result in DataType being set.
 	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
-	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", "DerivationPolicy", true, "UmlComment", []uint{1, 2})
+	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", "DerivationPolicy", "", true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              attrParsedKey,
@@ -118,7 +136,7 @@ func (suite *AttributeSuite) TestNew() {
 	}, attrParsed)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAttribute(key, "", "Details", "DataTypeRules", "DerivationPolicy", true, "UmlComment", nil)
+	_, err = NewAttribute(key, "", "Details", "DataTypeRules", "DerivationPolicy", "", true, "UmlComment", nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

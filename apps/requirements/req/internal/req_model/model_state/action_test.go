@@ -81,7 +81,7 @@ func (suite *ActionSuite) TestNew() {
 	key := helper.Must(identity.NewActionKey(classKey, "action1"))
 
 	// Test parameters are mapped correctly.
-	action, err := NewAction(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"})
+	action, err := NewAction(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"}, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Action{
 		Key:        key,
@@ -89,10 +89,11 @@ func (suite *ActionSuite) TestNew() {
 		Details:    "Details",
 		Requires:   []string{"Requires"},
 		Guarantees: []string{"Guarantees"},
+		Parameters: nil,
 	}, action)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAction(key, "", "Details", nil, nil)
+	_, err = NewAction(key, "", "Details", nil, nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

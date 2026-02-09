@@ -9,14 +9,23 @@ import (
 
 // Action is what happens in a transition between states.
 type Action struct {
-	Key        identity.Key
-	Name       string
-	Details    string
-	Requires   []string // To enter this action.
-	Guarantees []string
+	Key            identity.Key
+	Name           string
+	Details        string
+	Requires       []string // Human-readable preconditions to enter this action.
+	Guarantees     []string // Human-readable postconditions of this action.
+	TlaRequires    []string // TLA+ expressions for preconditions (must not contain primed variables).
+	TlaGuarantees  []string // TLA+ primed assignments only (e.g., self.field' = expr).
+	TlaSafetyRules []string // TLA+ boolean assertions that must reference primed variables.
+	// CalledBy lists class keys whose actions/transitions call this action.
+	// If any calling class is in scope, this action is considered "internal"
+	// and will not be randomly fired by the simulator. Empty means always external.
+	CalledBy []identity.Key
+	// Children
+	Parameters []Parameter // Typed parameters for this action.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees []string) (action Action, err error) {
+func NewAction(key identity.Key, name, details string, requires, guarantees []string, parameters []Parameter) (action Action, err error) {
 
 	action = Action{
 		Key:        key,
@@ -24,6 +33,7 @@ func NewAction(key identity.Key, name, details string, requires, guarantees []st
 		Details:    details,
 		Requires:   requires,
 		Guarantees: guarantees,
+		Parameters: parameters,
 	}
 
 	if err = action.Validate(); err != nil {
@@ -61,6 +71,11 @@ func (a *Action) ValidateWithParent(parent *identity.Key) error {
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Action has no children with keys that need validation.
+	// Validate all children.
+	for i := range a.Parameters {
+		if err := a.Parameters[i].ValidateWithParent(); err != nil {
+			return err
+		}
+	}
 	return nil
 }

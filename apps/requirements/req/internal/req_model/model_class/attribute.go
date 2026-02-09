@@ -13,25 +13,27 @@ type Attribute struct {
 	Name             string
 	Details          string // Markdown.
 	DataTypeRules    string // What are the bounds of this data type.
-	DerivationPolicy string // If this is a derived attribute, how is it derived.
-	Nullable         bool   // Is this attribute optional.
-	UmlComment       string
+	DerivationPolicy    string // If this is a derived attribute, how is it derived.
+	TlaDerivationPolicy string // TLA+ expression computing the derived value.
+	Nullable            bool   // Is this attribute optional.
+	UmlComment string
 	// Children
 	IndexNums []uint                    // The indexes this attribute is part of.
 	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
+func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPolicy, tlaDerivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
 
 	attribute = Attribute{
-		Key:              key,
-		Name:             name,
-		Details:          details,
-		DataTypeRules:    dataTypeRules,
-		DerivationPolicy: derivationPolicy,
-		Nullable:         nullable,
-		UmlComment:       umlComment,
-		IndexNums:        indexNums,
+		Key:                 key,
+		Name:                name,
+		Details:             details,
+		DataTypeRules:       dataTypeRules,
+		DerivationPolicy:    derivationPolicy,
+		TlaDerivationPolicy: tlaDerivationPolicy,
+		Nullable:            nullable,
+		UmlComment:          umlComment,
+		IndexNums:           indexNums,
 	}
 
 	// Parse the data type rules into a DataType object if possible.
@@ -60,7 +62,7 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPoli
 
 // Validate validates the Attribute struct.
 func (a *Attribute) Validate() error {
-	return validation.ValidateStruct(a,
+	if err := validation.ValidateStruct(a,
 		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
@@ -72,7 +74,16 @@ func (a *Attribute) Validate() error {
 			return nil
 		})),
 		validation.Field(&a.Name, validation.Required),
-	)
+	); err != nil {
+		return err
+	}
+
+	// TlaDerivationPolicy requires DerivationPolicy to be set.
+	if a.TlaDerivationPolicy != "" && a.DerivationPolicy == "" {
+		return errors.Errorf("attribute %s: TlaDerivationPolicy requires DerivationPolicy to be set", a.Name)
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the Attribute, its key's parent relationship, and all children.

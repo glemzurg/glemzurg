@@ -12,11 +12,15 @@ type Event struct {
 	Key     identity.Key
 	Name    string
 	Details string
+	// SentBy lists class keys whose actions/transitions send this event.
+	// If any sending class is in scope, this event is considered "internal"
+	// and will not be randomly fired by the simulator. Empty means always external.
+	SentBy []identity.Key
 	// Children
-	Parameters []EventParameter
+	Parameters []Parameter
 }
 
-func NewEvent(key identity.Key, name, details string, parameters []EventParameter) (event Event, err error) {
+func NewEvent(key identity.Key, name, details string, parameters []Parameter) (event Event, err error) {
 
 	event = Event{
 		Key:        key,

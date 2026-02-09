@@ -1,8 +1,8 @@
 package surface
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 )
 
 // ScopeInvariants filters model invariants to those relevant to the given

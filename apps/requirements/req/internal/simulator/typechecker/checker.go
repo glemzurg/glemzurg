@@ -3,8 +3,8 @@ package typechecker
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/types"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
 // RegistryInterface abstracts the registry for type checking purposes.

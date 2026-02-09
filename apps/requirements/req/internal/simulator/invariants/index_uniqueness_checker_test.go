@@ -1,13 +1,13 @@
 package invariants
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_class"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_data_type"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_domain"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
 // --- Helpers for building test models with indexes ---
@@ -55,9 +55,9 @@ func spanAttr(name string, indexNums []uint) model_class.Attribute {
 			Atomic: &model_data_type.Atomic{
 				ConstraintType: model_data_type.ConstraintTypeSpan,
 				Span: &model_data_type.AtomicSpan{
-					LowerType:  "closed",
-					LowerValue: &lower,
-					HigherType: "closed",
+					LowerType:   "closed",
+					LowerValue:  &lower,
+					HigherType:  "closed",
 					HigherValue: &upper,
 				},
 			},

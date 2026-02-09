@@ -8,15 +8,24 @@ import (
 )
 
 // Query is a business logic query of a class that does not change the state of a class.
+// Guarantees describe filtering/selection criteria for returned data, NOT state changes.
 type Query struct {
-	Key        identity.Key
-	Name       string
-	Details    string
-	Requires   []string // To enter this query.
-	Guarantees []string
+	Key           identity.Key
+	Name          string
+	Details       string
+	Requires      []string // Human-readable preconditions for this query.
+	Guarantees    []string // Human-readable filtering criteria for returned data.
+	TlaRequires   []string // TLA+ expressions for preconditions.
+	TlaGuarantees []string // TLA+ expressions for filtering criteria (NOT state changes).
+	// CalledBy lists class keys whose actions call this query.
+	// If any calling class is in scope, this query is considered "internal."
+	// Empty means always external.
+	CalledBy []identity.Key
+	// Children
+	Parameters []Parameter // Typed parameters for this query.
 }
 
-func NewQuery(key identity.Key, name, details string, requires, guarantees []string) (query Query, err error) {
+func NewQuery(key identity.Key, name, details string, requires, guarantees []string, parameters []Parameter) (query Query, err error) {
 
 	query = Query{
 		Key:        key,
@@ -24,6 +33,7 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []str
 		Details:    details,
 		Requires:   requires,
 		Guarantees: guarantees,
+		Parameters: parameters,
 	}
 
 	if err = query.Validate(); err != nil {
@@ -61,6 +71,11 @@ func (q *Query) ValidateWithParent(parent *identity.Key) error {
 	if err := q.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Query has no children with keys that need validation.
+	// Validate all children.
+	for i := range q.Parameters {
+		if err := q.Parameters[i].ValidateWithParent(); err != nil {
+			return err
+		}
+	}
 	return nil
 }

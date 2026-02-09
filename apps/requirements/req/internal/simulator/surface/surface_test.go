@@ -3,12 +3,12 @@ package surface
 import (
 	"testing"
 
-	"github.com/glemzurg/go-tlaplus/internal/helper"
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_class"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_domain"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,28 +25,28 @@ func mustKey(s string) identity.Key {
 }
 
 var (
-	domainKey    = mustKey("domain/d")
-	domain2Key   = mustKey("domain/d2")
-	subdomainKey = mustKey("domain/d/subdomain/s")
+	domainKey     = mustKey("domain/d")
+	domain2Key    = mustKey("domain/d2")
+	subdomainKey  = mustKey("domain/d/subdomain/s")
 	subdomain2Key = mustKey("domain/d2/subdomain/s2")
 
 	orderClassKey   = mustKey("domain/d/subdomain/s/class/order")
 	itemClassKey    = mustKey("domain/d/subdomain/s/class/item")
 	paymentClassKey = mustKey("domain/d2/subdomain/s2/class/payment")
 
-	orderStateOpenKey   = mustKey("domain/d/subdomain/s/class/order/state/open")
-	orderStateClosedKey = mustKey("domain/d/subdomain/s/class/order/state/closed")
-	itemStateActiveKey  = mustKey("domain/d/subdomain/s/class/item/state/active")
+	orderStateOpenKey      = mustKey("domain/d/subdomain/s/class/order/state/open")
+	orderStateClosedKey    = mustKey("domain/d/subdomain/s/class/order/state/closed")
+	itemStateActiveKey     = mustKey("domain/d/subdomain/s/class/item/state/active")
 	paymentStatePendingKey = mustKey("domain/d2/subdomain/s2/class/payment/state/pending")
 
-	orderEventCreateKey = mustKey("domain/d/subdomain/s/class/order/event/create")
-	orderEventCloseKey  = mustKey("domain/d/subdomain/s/class/order/event/close")
-	itemEventCreateKey  = mustKey("domain/d/subdomain/s/class/item/event/create_item")
+	orderEventCreateKey   = mustKey("domain/d/subdomain/s/class/order/event/create")
+	orderEventCloseKey    = mustKey("domain/d/subdomain/s/class/order/event/close")
+	itemEventCreateKey    = mustKey("domain/d/subdomain/s/class/item/event/create_item")
 	paymentEventCreateKey = mustKey("domain/d2/subdomain/s2/class/payment/event/create_payment")
 
-	orderTransCreateKey = mustKey("domain/d/subdomain/s/class/order/transition/create_order")
-	orderTransCloseKey  = mustKey("domain/d/subdomain/s/class/order/transition/close_order")
-	itemTransCreateKey  = mustKey("domain/d/subdomain/s/class/item/transition/create_item")
+	orderTransCreateKey   = mustKey("domain/d/subdomain/s/class/order/transition/create_order")
+	orderTransCloseKey    = mustKey("domain/d/subdomain/s/class/order/transition/close_order")
+	itemTransCreateKey    = mustKey("domain/d/subdomain/s/class/item/transition/create_item")
 	paymentTransCreateKey = mustKey("domain/d2/subdomain/s2/class/payment/transition/create_payment")
 )
 

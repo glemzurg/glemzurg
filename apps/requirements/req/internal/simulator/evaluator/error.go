@@ -3,7 +3,7 @@ package evaluator
 import (
 	"fmt"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // newError creates a new Error object.

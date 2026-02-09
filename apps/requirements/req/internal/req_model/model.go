@@ -14,9 +14,13 @@ import (
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key     string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
-	Name    string
-	Details string // Markdown.
+	Key           string   // Models do not have keys like other entitites. They just need to be unique to other models in the system.
+	Name          string
+	Details       string   // Markdown.
+	TlaInvariants []string // TLA+ expressions that must be true for this model.
+	// Global TLA+ definitions that can be referenced from other TLA+ expressions.
+	// Key is the definition Name (case-preserved, e.g., "_Max", "_SetOfValues").
+	TlaDefinitions map[string]TlaDefinition
 	// Children
 	Actors             map[identity.Key]model_actor.Actor
 	Domains            map[identity.Key]model_domain.Domain
@@ -70,6 +74,17 @@ func (m *Model) Validate() error {
 			for classKey := range subdomain.Classes {
 				classKeys[classKey] = true
 			}
+		}
+	}
+
+	// Validate TLA definitions.
+	for name, def := range m.TlaDefinitions {
+		if err := def.Validate(); err != nil {
+			return errors.Wrapf(err, "TLA definition '%s'", name)
+		}
+		// Ensure the map key matches the definition name.
+		if name != def.Name {
+			return errors.Errorf("TLA definition map key '%s' does not match definition name '%s'", name, def.Name)
 		}
 	}
 

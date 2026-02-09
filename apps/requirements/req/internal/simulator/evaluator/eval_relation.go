@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/go-tlaplus/internal/simulator/object"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // lookupRelation checks if a field name corresponds to a relation on the given class.

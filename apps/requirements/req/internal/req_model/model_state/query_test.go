@@ -81,7 +81,7 @@ func (suite *QuerySuite) TestNew() {
 	key := helper.Must(identity.NewQueryKey(classKey, "query1"))
 
 	// Test parameters are mapped correctly.
-	query, err := NewQuery(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"})
+	query, err := NewQuery(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"}, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Query{
 		Key:        key,
@@ -89,10 +89,11 @@ func (suite *QuerySuite) TestNew() {
 		Details:    "Details",
 		Requires:   []string{"Requires"},
 		Guarantees: []string{"Guarantees"},
+		Parameters: nil,
 	}, query)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewQuery(key, "", "Details", nil, nil)
+	_, err = NewQuery(key, "", "Details", nil, nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

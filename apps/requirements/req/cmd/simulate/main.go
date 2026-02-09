@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/engine"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/loader"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/report"
-	"github.com/glemzurg/go-tlaplus/internal/simulator/trace"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/engine"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/loader"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/report"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/trace"
 )
 
 func main() {

@@ -3,17 +3,17 @@ package engine
 import (
 	"sort"
 
-	"github.com/glemzurg/go-tlaplus/internal/identity"
-	"github.com/glemzurg/go-tlaplus/internal/req_model"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_class"
-	"github.com/glemzurg/go-tlaplus/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
 // ClassInfo holds pre-computed simulation metadata for one class.
 type ClassInfo struct {
 	Class          model_class.Class
 	ClassKey       identity.Key
-	CreationEvents []model_state.Event            // Events that have creation transitions (FromStateKey==nil).
+	CreationEvents []model_state.Event             // Events that have creation transitions (FromStateKey==nil).
 	StateEvents    map[string][]EventInfo          // stateName → eligible events from that state.
 	DoActions      map[string][]model_state.Action // stateName → "do" actions available while in state.
 	HasStates      bool
@@ -27,20 +27,20 @@ type EventInfo struct {
 
 // AssociationInfo holds pre-computed metadata for one class association.
 type AssociationInfo struct {
-	Association  model_class.Association
-	FromClassKey identity.Key
-	ToClassKey   identity.Key
-	MandatoryTo  bool // ToMultiplicity.LowerBound >= 1
+	Association   model_class.Association
+	FromClassKey  identity.Key
+	ToClassKey    identity.Key
+	MandatoryTo   bool // ToMultiplicity.LowerBound >= 1
 	MandatoryFrom bool // FromMultiplicity.LowerBound >= 1
-	MinTo        uint // ToMultiplicity.LowerBound
-	MinFrom      uint // FromMultiplicity.LowerBound
+	MinTo         uint // ToMultiplicity.LowerBound
+	MinFrom       uint // FromMultiplicity.LowerBound
 }
 
 // ClassCatalog pre-computes per-class simulation metadata from the model.
 type ClassCatalog struct {
-	classes     map[identity.Key]*ClassInfo
+	classes      map[identity.Key]*ClassInfo
 	associations []AssociationInfo
-	classAssocs map[identity.Key][]AssociationInfo // classKey → associations involving it
+	classAssocs  map[identity.Key][]AssociationInfo // classKey → associations involving it
 }
 
 // NewClassCatalog builds a class catalog from the model.
@@ -141,13 +141,13 @@ func NewClassCatalog(model *req_model.Model) *ClassCatalog {
 	allAssocs := model.GetClassAssociations()
 	for _, assoc := range allAssocs {
 		ai := AssociationInfo{
-			Association:  assoc,
-			FromClassKey: assoc.FromClassKey,
-			ToClassKey:   assoc.ToClassKey,
-			MandatoryTo:  assoc.ToMultiplicity.LowerBound >= 1,
+			Association:   assoc,
+			FromClassKey:  assoc.FromClassKey,
+			ToClassKey:    assoc.ToClassKey,
+			MandatoryTo:   assoc.ToMultiplicity.LowerBound >= 1,
 			MandatoryFrom: assoc.FromMultiplicity.LowerBound >= 1,
-			MinTo:        assoc.ToMultiplicity.LowerBound,
-			MinFrom:      assoc.FromMultiplicity.LowerBound,
+			MinTo:         assoc.ToMultiplicity.LowerBound,
+			MinFrom:       assoc.FromMultiplicity.LowerBound,
 		}
 		catalog.associations = append(catalog.associations, ai)
 		catalog.classAssocs[assoc.FromClassKey] = append(catalog.classAssocs[assoc.FromClassKey], ai)

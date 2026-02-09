@@ -9,9 +9,10 @@ import (
 
 // Guard is a constraint on an event in a state machine.
 type Guard struct {
-	Key     identity.Key
-	Name    string // A simple unique name for a guard, for internal use.
-	Details string // How the details of the guard are represented, what shows in the uml.
+	Key      identity.Key
+	Name     string   // A simple unique name for a guard, for internal use.
+	Details  string   // How the details of the guard are represented, what shows in the uml.
+	TlaGuard []string // TLA+ boolean expressions that define the guard condition.
 }
 
 func NewGuard(key identity.Key, name, details string) (guard Guard, err error) {

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/go-tlaplus/internal/simulator/invariants"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 )
 
 // ViolationReport categorizes and summarizes violations.

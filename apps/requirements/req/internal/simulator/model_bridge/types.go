@@ -2,7 +2,7 @@
 // for use by the simulator.
 package model_bridge
 
-import "github.com/glemzurg/go-tlaplus/internal/identity"
+import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 // ExpressionSource identifies where a TLA+ expression originates in the model.
 type ExpressionSource int
