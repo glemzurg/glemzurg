@@ -1,7 +1,5 @@
 package generate
 
-import "path/filepath"
-
 const _MD_CSS = `
 h4, h5, h6 {
     text-decoration: underline;
@@ -24,13 +22,3 @@ th, td {
   padding: 8px;
 }
 `
-
-func generateSupportCss(outputPath string) (err error) {
-
-	// Generate css.
-	if err = writeFile(filepath.Join(outputPath, "style.css"), _MD_CSS); err != nil {
-		return err
-	}
-
-	return nil
-}

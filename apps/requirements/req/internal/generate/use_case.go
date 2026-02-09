@@ -1,8 +1,6 @@
 package generate
 
 import (
-	"path/filepath"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
@@ -10,29 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 )
-
-func generateUseCaseFiles(outputPath string, reqs *req_flat.Requirements) (err error) {
-
-	// Get all the data we want for these files.
-	useCaseLookup := reqs.UseCaseLookup()
-
-	// Generate file for each use case.
-	for _, useCase := range useCaseLookup {
-
-		// Generate model summary.
-		modelFilename := convertKeyToFilename("use_case", useCase.Key.String(), "", ".md")
-		modelFilenameAbs := filepath.Join(outputPath, modelFilename)
-		mdContents, err := generateUseCaseMdContents(reqs, useCase)
-		if err != nil {
-			return err
-		}
-		if err = writeFile(modelFilenameAbs, mdContents); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
 
 func generateUseCaseMdContents(reqs *req_flat.Requirements, useCase model_use_case.UseCase) (contents string, err error) {
 

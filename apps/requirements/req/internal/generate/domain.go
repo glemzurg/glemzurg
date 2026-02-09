@@ -1,113 +1,15 @@
 package generate
 
 import (
-	"path/filepath"
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/pkg/errors"
 )
-
-func generateDomainFiles(debug bool, outputPath string, reqs *req_flat.Requirements) (err error) {
-
-	// Get all the data we want for these files.
-	domainLookup, _ := reqs.DomainLookup()
-
-	// Generate file for each domain.
-	for _, domain := range domainLookup {
-
-		// Check if domain has multiple subdomains.
-		hasMultipleSubdomains := len(domain.Subdomains) > 1
-
-		// Generate domain markdown page.
-		modelFilename := convertKeyToFilename("domain", domain.Key.String(), "", ".md")
-		modelFilenameAbs := filepath.Join(outputPath, modelFilename)
-		mdContents, err := generateDomainMdContents(reqs, reqs.Model, domain)
-		if err != nil {
-			return err
-		}
-		if err = writeFile(modelFilenameAbs, mdContents); err != nil {
-			return err
-		}
-
-		if hasMultipleSubdomains {
-			// Generate subdomains diagram (graph of subdomains).
-			subdomainsFilename := convertKeyToFilename("domain", domain.Key.String(), "subdomains", ".svg")
-			subdomainsFilenameAbs := filepath.Join(outputPath, subdomainsFilename)
-			svgContents, dotContents, err := generateSubdomainsSvgContents(reqs, domain)
-			if err != nil {
-				return err
-			}
-			if err = writeFile(subdomainsFilenameAbs, svgContents); err != nil {
-				return err
-			}
-			if err := debugWriteDotFile(debug, outputPath, subdomainsFilename, dotContents); err != nil {
-				return err
-			}
-		} else {
-			// Single subdomain: generate use cases and classes diagrams at domain level.
-
-			// Gather all classes from all subdomains for this domain.
-			var domainClasses []model_class.Class
-			for _, subdomain := range domain.Subdomains {
-				for _, class := range subdomain.Classes {
-					domainClasses = append(domainClasses, class)
-				}
-			}
-
-			// Generate use cases diagram.
-			useCasesFilename := convertKeyToFilename("domain", domain.Key.String(), "use-cases", ".svg")
-			useCasesFilenameAbs := filepath.Join(outputPath, useCasesFilename)
-
-			// Gather all use cases from all subdomains for this domain.
-			var domainUseCases []model_use_case.UseCase
-			for _, subdomain := range domain.Subdomains {
-				for _, useCase := range subdomain.UseCases {
-					domainUseCases = append(domainUseCases, useCase)
-				}
-			}
-
-			relevantUseCases, relevantActors, err := reqs.RegardingUseCases(domainUseCases)
-			if err != nil {
-				return err
-			}
-			useCasesSvgContents, useCasesDotContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
-			if err != nil {
-				return err
-			}
-			if err := debugWriteDotFile(debug, outputPath, useCasesFilename, useCasesDotContents); err != nil {
-				return err
-			}
-			if err = writeFile(useCasesFilenameAbs, useCasesSvgContents); err != nil {
-				return err
-			}
-
-			// Get the data that is important for this class diagram.
-			generalizations, classes, associations := reqs.RegardingClasses(domainClasses)
-
-			// Generate classes diagram.
-			classesFilename := convertKeyToFilename("domain", domain.Key.String(), "classes", ".svg")
-			classesFilenameAbs := filepath.Join(outputPath, classesFilename)
-			classesSvgContents, classesDotContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
-			if err != nil {
-				return err
-			}
-			if err = writeFile(classesFilenameAbs, classesSvgContents); err != nil {
-				return err
-			}
-			if err = debugWriteDotFile(debug, outputPath, classesFilename, classesDotContents); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
 
 func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model, domain model_domain.Domain) (contents string, err error) {
 

@@ -28,6 +28,7 @@ april (in parallel)
 
 
 questions:
+  - how to organize file structure for next steop from model to compiler
   - when is a user entered into the state?
   - targeted build of parts of the system:
     - e.g. wallet before all others
@@ -229,6 +230,8 @@ Long time targets:
 - build out interaction diagrams from existing data and just have users constrain them
 - build a custom svg graphing library
 
+- process tracking:
+  - Benchmark of files changed equals a bug
 - come up with solution for performance-optimized code generation
   - different inputs
 
