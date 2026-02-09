@@ -1,0 +1,92 @@
+package model_state
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestParameterSuite(t *testing.T) {
+	suite.Run(t, new(ParameterSuite))
+}
+
+type ParameterSuite struct {
+	suite.Suite
+}
+
+// TestValidate tests all validation rules for Parameter.
+func (suite *ParameterSuite) TestValidate() {
+	tests := []struct {
+		testName string
+		param    Parameter
+		errstr   string
+	}{
+		{
+			testName: "valid parameter",
+			param: Parameter{
+				Name:          "amount",
+				DataTypeRules: "Nat",
+			},
+		},
+		{
+			testName: "error blank name",
+			param: Parameter{
+				Name:          "",
+				DataTypeRules: "Nat",
+			},
+			errstr: "Name: cannot be blank",
+		},
+		{
+			testName: "error blank data type rules",
+			param: Parameter{
+				Name:          "amount",
+				DataTypeRules: "",
+			},
+			errstr: "DataTypeRules: cannot be blank",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.testName, func(t *testing.T) {
+			err := tt.param.Validate()
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+			}
+		})
+	}
+}
+
+// TestNew tests that NewParameter maps parameters correctly and calls Validate.
+func (suite *ParameterSuite) TestNew() {
+	// Test parameters are mapped correctly.
+	param, err := NewParameter("amount", "Nat")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), "amount", param.Name)
+	assert.Equal(suite.T(), "Nat", param.DataTypeRules)
+	// DataType may or may not be set depending on whether the parser is available
+
+	// Test that Validate is called (invalid data should fail).
+	_, err = NewParameter("", "Nat")
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate.
+func (suite *ParameterSuite) TestValidateWithParent() {
+	// Test that Validate is called.
+	param := Parameter{
+		Name:          "",
+		DataTypeRules: "Nat",
+	}
+	err := param.ValidateWithParent()
+	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+
+	// Test valid case.
+	param = Parameter{
+		Name:          "amount",
+		DataTypeRules: "Nat",
+	}
+	err = param.ValidateWithParent()
+	assert.NoError(suite.T(), err)
+}

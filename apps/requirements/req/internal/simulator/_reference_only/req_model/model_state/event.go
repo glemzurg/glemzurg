@@ -1,0 +1,74 @@
+package model_state
+
+import (
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/pkg/errors"
+
+	"github.com/glemzurg/go-tlaplus/internal/identity"
+)
+
+// Event is what triggers a transition between states.
+type Event struct {
+	Key     identity.Key
+	Name    string
+	Details string
+	// SentBy lists class keys whose actions/transitions send this event.
+	// If any sending class is in scope, this event is considered "internal"
+	// and will not be randomly fired by the simulator. Empty means always external.
+	SentBy []identity.Key
+	// Children
+	Parameters []Parameter
+}
+
+func NewEvent(key identity.Key, name, details string, parameters []Parameter) (event Event, err error) {
+
+	event = Event{
+		Key:        key,
+		Name:       name,
+		Details:    details,
+		Parameters: parameters,
+	}
+
+	if err = event.Validate(); err != nil {
+		return Event{}, err
+	}
+
+	return event, nil
+}
+
+// Validate validates the Event struct.
+func (e *Event) Validate() error {
+	return validation.ValidateStruct(e,
+		validation.Field(&e.Key, validation.Required, validation.By(func(value interface{}) error {
+			k := value.(identity.Key)
+			if err := k.Validate(); err != nil {
+				return err
+			}
+			if k.KeyType() != identity.KEY_TYPE_EVENT {
+				return errors.Errorf("invalid key type '%s' for event", k.KeyType())
+			}
+			return nil
+		})),
+		validation.Field(&e.Name, validation.Required),
+	)
+}
+
+// ValidateWithParent validates the Event, its key's parent relationship, and all children.
+// The parent must be a Class.
+func (e *Event) ValidateWithParent(parent *identity.Key) error {
+	// Validate the object itself.
+	if err := e.Validate(); err != nil {
+		return err
+	}
+	// Validate the key has the correct parent.
+	if err := e.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate all children.
+	for i := range e.Parameters {
+		if err := e.Parameters[i].ValidateWithParent(); err != nil {
+			return err
+		}
+	}
+	return nil
+}

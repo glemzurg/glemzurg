@@ -1,0 +1,292 @@
+{
+package model_data_type
+
+import (
+	"strings"
+	"strconv"
+)
+
+func parserBoolPtr(b bool) *bool {
+	return &b
+}
+
+}
+
+RootDataType <- dataType:DataType !. {
+	return dataType.(*DataType), nil
+}
+
+DataType <- RecordDataType / CollectionDataType / AtomicDataType
+
+RecordDataType <- "{" ws? fields:FieldList ws? "}" {
+	fieldsSlice := fields.([]interface{})
+	fieldList := make([]Field, len(fieldsSlice))
+	for i, f := range fieldsSlice {
+		fieldList[i] = f.(Field)
+	}
+	return &DataType{
+		CollectionType: "record",
+		RecordFields:   fieldList,
+	}, nil
+}
+
+FieldList <- first:Field rest:( ws? ";" ws? Field )* ws? ";"? {
+	result := []interface{}{first}
+	for _, r := range rest.([]interface{}) {
+		if slice, ok := r.([]interface{}); ok && len(slice) > 3 {
+			result = append(result, slice[3]) // If the grammar changes, this index ends moving.
+		}
+	}
+	return result, nil
+}
+
+Field <- name:FieldName ws? ":" ws? dataType:DataType {
+	return Field{
+		Name:          name.(string),
+		FieldDataType: dataType.(*DataType),
+	}, nil
+}
+
+FieldName <- [a-zA-Z_][a-zA-Z0-9_]* {
+	return string(c.text), nil
+}
+
+CollectionDataType <- uniqueFlag:( "unique" ws )? multiplicity:Multiplicity? ws? collectionType:CollectionTypeKeyword ws "of" ws atomic:AtomicDataType {
+	collectionTypeStr := collectionType.(string)
+	atomicDt := atomic.(*DataType)
+
+	// Set collection properties
+	var unique *bool
+	if uniqueFlag != nil {
+		unique = parserBoolPtr(true)
+	}
+
+	var min, maxPtr *int
+	minVal := 0 // Default min is 0 for collections
+	multiplicitySpecified := false
+	if multiplicity != nil {
+		mult := multiplicity.(map[string]interface{})
+		if m, ok := mult["min"]; ok {
+			minVal = m.(int)
+			multiplicitySpecified = true
+		}
+		if m, ok := mult["max"]; ok {
+			maxVal := m.(int)
+			maxPtr = &maxVal
+			multiplicitySpecified = true
+		}
+	}
+	min = &minVal
+
+	// Build name
+	name := ""
+	if unique != nil {
+		name += "unique "
+	}
+	if multiplicitySpecified {
+		name += strconv.Itoa(*min)
+		if maxPtr != nil {
+			name += "-" + strconv.Itoa(*maxPtr)
+		} else {
+			name += "+"
+		}
+		name += " "
+	}
+
+	return &DataType{
+		CollectionType:    collectionTypeStr,
+		CollectionUnique:  unique,
+		CollectionMin:     min,
+		CollectionMax:     maxPtr,
+		Atomic:            atomicDt.Atomic,
+	}, nil
+}
+
+CollectionTypeKeyword <- ( "stack" / "unordered" / "ordered" / "queue" ) {
+	return string(c.text), nil
+}
+
+Multiplicity <- min:Integer suffix:( "-" maxVal:Integer / "+" )? {
+	result := make(map[string]interface{})
+	minVal := min.(int)
+	result["min"] = minVal
+	if suffix != nil {
+		if suffixStr, ok := suffix.(string); ok && suffixStr == "+" {
+			// It's "+", max is nil (unbounded)
+		} else if suffixSlice, ok := suffix.([]interface{}); ok && len(suffixSlice) > 1 {
+			// It's "-" maxVal
+			maximum := suffixSlice[1].(int)
+			result["max"] = maximum
+		}
+	}
+	return result, nil
+}
+
+AtomicDataType <- atomic:( SpanType / OrdEnumType / EnumType / ObjectType / ReferenceType / UnconstrainedType) {
+	return atomic, nil
+}
+
+SpanType <- lowerBracket:LowerBracket ws? lowerValue:( Unconstrained / FractionValue ) ws? ".." ws? higherValue:( Unconstrained / FractionValue ) ws? higherBracket:HigherBracket ws? "at" ws? precision:Float ws? units:Units {
+
+	// What are the bounds?
+	lowerType := "open"
+	higherType := "open"
+	if lowerBracket.(string) == "[" {
+		lowerType = "closed"
+	}
+	if higherBracket.(string) == "]" {
+		higherType = "closed"
+	}
+
+	var lvPtr, ldPtr *int
+	var hvPtr, hdPtr *int
+
+	// lower value may be "unconstrained" or a map of values.
+	if _, ok := lowerValue.(string); ok {
+		lowerType = "unconstrained"
+	} else {
+		// Get the lower values.
+		lm := lowerValue.(map[string]int)
+		lv := lm["value"]  
+		ld := lm["denom"]  
+		lvPtr = &lv
+		ldPtr = &ld
+	}
+
+	// higher value may be "unconstrained" or a map of values.
+	if _, ok := higherValue.(string); ok {
+		higherType = "unconstrained"
+	} else {
+		// Get the higher values.
+		hm := higherValue.(map[string]int)
+		hv := hm["value"]  
+		hd := hm["denom"]  
+		hvPtr = &hv
+		hdPtr = &hd
+	}
+
+	return &DataType{
+		CollectionType: CollectionTypeAtomic,
+		Atomic: &Atomic{
+			ConstraintType: ConstraintTypeSpan,
+			Span: &AtomicSpan{
+				LowerType:         lowerType,
+				LowerValue:        lvPtr,
+				LowerDenominator:  ldPtr,
+				HigherType:        higherType,
+				HigherValue:       hvPtr,
+				HigherDenominator: hdPtr,
+				Units:             units.(string),
+				Precision:         precision.(float64),
+			},
+		},
+	}, nil
+}
+
+FractionValue <- ( value:Integer denom:( ws? "/" ws? denomValue:Integer )? ) {
+	v := value.(int)
+	d := 1
+	if denomSlice, ok := denom.([]interface{}); ok && len(denomSlice) > 0 {
+		d = denomSlice[3].(int)
+		if d == 0 {
+			return nil, errors.New("denominator cannot be zero")
+		}
+	}
+	return map[string]int{"value": v, "denom": d}, nil
+}
+
+Integer <- [0-9]+ {
+	return strconv.Atoi(string(c.text))
+}
+
+Float <- ( [0-9]+ "." [0-9]* / [0-9]* "." [0-9]+ / [0-9]+ ) {
+	str := string(c.text)
+	val, _ := strconv.ParseFloat(str, 64)
+	return val, nil
+}
+
+LowerBracket <- ( "(" / "[" ) {
+	return string(c.text), nil
+}
+
+HigherBracket <- ( ")" / "]" ) {
+	return string(c.text), nil
+}
+
+Unconstrained <- "unconstrained" {
+	return string(c.text), nil
+}
+
+Units <- [a-zA-Z-]+ {
+	return string(c.text), nil
+}
+
+OrdEnumType <- ("ordered" / "ord") ws enumeration:EnumType {
+	// Make it ordered.
+	enumType := enumeration.(*DataType)
+	enumType.Atomic.EnumOrdered = parserBoolPtr(true)
+	return enumType, nil
+}
+
+EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* {
+	valuesBytes := enumValues.([]interface{})
+	valuesStr := ""
+	for _, b := range valuesBytes {
+		valuesStr += string(b.([]byte))
+	}
+	valuesStr = strings.TrimSpace(valuesStr)
+	// Split by comma and trim spaces
+	parts := strings.Split(valuesStr, ",")
+	var enums []AtomicEnum
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			enums = append(enums, AtomicEnum{Value: trimmed})
+		}
+	}
+	return &DataType{
+		CollectionType: CollectionTypeAtomic,
+		Atomic: &Atomic{
+			ConstraintType: ConstraintTypeEnumeration,
+			EnumOrdered:    parserBoolPtr(false),
+			Enums:          enums,
+		},
+	}, nil
+}
+
+ObjectType <- ("object" / "obj") ws ("of" / "from") ws content:Content? {
+	contentStr := strings.TrimSpace(content.(string))
+	return &DataType{
+		CollectionType: CollectionTypeAtomic,
+		Atomic: &Atomic{
+			ConstraintType: ConstraintTypeObject,
+			ObjectClassKey: &contentStr,
+		},
+	}, nil
+}
+
+ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws content:Content? {
+	contentStr := strings.TrimSpace(content.(string))
+	return &DataType{
+		CollectionType: CollectionTypeAtomic,
+		Atomic: &Atomic{
+			ConstraintType: ConstraintTypeReference,
+			Reference: &contentStr,
+		},
+	}, nil
+}
+
+UnconstrainedType <- "unconstrained" {
+	return &DataType{
+		CollectionType: CollectionTypeAtomic,
+		Atomic: &Atomic{
+			ConstraintType: ConstraintTypeUnconstrained,
+		},
+	}, nil
+}
+
+Content <- [a-zA-Z0-9 -_.,#@!*=+]+ {
+	return string(c.text), nil
+} 
+
+ws <- [ ]+

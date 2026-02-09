@@ -1,0 +1,1125 @@
+{
+// Package parser provides a minimal TLA+ expression parser.
+// This parser directly produces internal/simulator/ast nodes.
+package parser
+
+import (
+	"strings"
+
+	"github.com/glemzurg/go-tlaplus/internal/simulator/ast"
+)
+
+}
+
+// =============================================================================
+// Root Rule
+// =============================================================================
+
+// RootExpression is the entry point for parsing a TLA+ expression.
+// It consumes all input and returns an ast.Expression.
+RootExpression <- ws? expr:Expression ws? !. {
+	return expr.(ast.Expression), nil
+}
+
+// =============================================================================
+// Expression Hierarchy (precedence from low to high)
+// =============================================================================
+
+// Expression is the top-level expression rule.
+// Precedence (lowest to highest, per TLA+ spec):
+//
+// Logic operators (lowest precedence):
+// 1.   Implies: ⇒ or =>
+// 2.   Equivalence: ≡ or <=>
+// 3.1  Or: ∨ or \/
+// 3.2  And: ∧ or /\
+// 4.   Not: ¬ or ~ (prefix)
+//
+// Comparison operators:
+// 5.1-5.2: ≤, ≥, <, > (numeric comparisons)
+// 5.3-5.4: =, ≠ (equality)
+// 5.51-5.54: ⊂, ⊃, ⊇, ⊆ (set comparisons)
+// 5.55-5.58: ⊏, ⊑, ⊐, ⊒ (bag comparisons)
+// 5.6-5.7: ∉, ∈ (membership)
+//
+// Set operations (precedence 8.x):
+// 8.1: \ (set difference)
+// 8.2: ∩ (set intersection)
+// 8.3: ∪ (set union)
+// 9:   .. (set range)
+//
+// Arithmetic and Bag operators (precedence 10-14):
+// 10.1: ⊕ (bag sum)
+// 10.2: % (modulo)
+// 10.3: + (addition)
+// 11.1: ⊖ (bag difference)
+// 11.2: - infix (subtraction)
+// 12:   - prefix (negation)
+// 13.1: ÷ (division)
+// 13.2: ∘ (sequence concatenation)
+// 13.3: * (multiplication)
+// 13.4: / (fraction)
+// 14:   ^ (power)
+//
+// Key precedence behaviors:
+// - `x > 5 /\ y < 10` = `(x > 5) /\ (y < 10)` (comparisons higher than logic)
+// - `a /\ b \/ c` = `(a /\ b) \/ c` (and higher than or)
+// - `a => b => c` = `a => (b => c)` (implies is right-associative)
+// - `~a /\ b` = `(~a) /\ b` (not higher than and)
+// - `2 ^ 3 * 4` = `(2 ^ 3) * 4` (power highest)
+
+Expression <- ImpliesExpr
+
+// =============================================================================
+// Logic Operators (precedence 1-4, lowest)
+// =============================================================================
+
+// Implies: ⇒ or => (at 1, lowest precedence, right-associative)
+// a => b => c = a => (b => c)
+ImpliesExpr <- left:EquivExpr rest:( ws? ImpliesOp ws? right:ImpliesExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	right := parts[3].(ast.Expression)
+	return &ast.LogicInfixExpression{
+		Operator: "⇒",
+		Left:     left.(ast.Expression),
+		Right:    right,
+	}, nil
+}
+
+ImpliesOp <- ( "⇒" / "=>" )
+
+// Equivalence: ≡ or <=> (at 2)
+// a <=> b <=> c = (a <=> b) <=> c (left-associative)
+EquivExpr <- left:OrExpr rest:( ws? EquivOp ws? right:OrExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.LogicInfixExpression{
+				Operator: "≡",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+EquivOp <- ( "≡" / "<=>" )
+
+// Or: ∨ or \/ (at 3.1)
+// a \/ b \/ c = (a \/ b) \/ c (left-associative)
+OrExpr <- left:AndExpr rest:( ws? OrOp ws? right:AndExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.LogicInfixExpression{
+				Operator: "∨",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+OrOp <- ( "∨" / "\\/" )
+
+// And: ∧ or /\ (at 3.2)
+// a /\ b /\ c = (a /\ b) /\ c (left-associative)
+AndExpr <- left:NotExpr rest:( ws? AndOp ws? right:NotExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.LogicInfixExpression{
+				Operator: "∧",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+AndOp <- ( "∧" / "/\\" )
+
+// Not: ¬ or ~ (at 4, prefix)
+// ~a /\ b = (~a) /\ b
+NotExpr <- NotOp ws? right:NotExpr {
+	return &ast.LogicPrefixExpression{
+		Operator: "¬",
+		Right:    right.(ast.Expression),
+	}, nil
+} / QuantifierExpr
+
+NotOp <- ( "¬" / "~" )
+
+// =============================================================================
+// Quantifiers (prefix expressions)
+// =============================================================================
+
+// Quantifier: ∀ x ∈ S : P(x) or ∃ x ∈ S : P(x)
+// ASCII variants: \A x \in S : P(x), \E x \in S : P(x)
+// The membership expression binds a variable, and the predicate is evaluated
+// for each element of the set.
+QuantifierExpr <- op:QuantifierOp ws? membership:SetMembershipExpr ws? ":" ws? predicate:Expression {
+	return &ast.Quantifier{
+		Quantifier: op.(string),
+		Membership: membership.(ast.Expression),
+		Predicate:  predicate.(ast.Expression),
+	}, nil
+} / ComparisonExpr
+
+// QuantifierOp: ∀ or \A (universal), ∃ or \E (existential)
+QuantifierOp <- ( "∀" / "\\A" / "∃" / "\\E" ) {
+	text := string(c.text)
+	switch text {
+	case "\\A":
+		return "∀", nil
+	case "\\E":
+		return "∃", nil
+	default:
+		return text, nil
+	}
+}
+
+// =============================================================================
+// Comparison Operators (precedence 5.x)
+// =============================================================================
+
+// ComparisonExpr handles comparison operators.
+// The precedence order within 5.x level (from lowest to highest):
+// 5.1-5.2: ≥, ≤, >, < (numeric comparisons)
+// 5.3-5.4: =, ≠ (equality)
+// 5.51-5.54: ⊂, ⊃, ⊇, ⊆ (set comparisons)
+// 5.6-5.7: ∉, ∈ (membership)
+ComparisonExpr <- SetMembershipExpr
+
+// Set membership: ∈, ∉ (at 5.7, 5.6)
+SetMembershipExpr <- left:SetComparisonExpr rest:( ws? op:SetMembershipOp ws? right:SetComparisonExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	op := parts[1].(string)
+	right := parts[3].(ast.Expression)
+	return &ast.Membership{
+		Operator: op,
+		Left:     left.(ast.Expression),
+		Right:    right,
+	}, nil
+}
+
+// SetMembershipOp: ∈ or \in, ∉ or \notin
+SetMembershipOp <- ( "∈" / "\\in" / "∉" / "\\notin" ) {
+	text := string(c.text)
+	switch text {
+	case "\\in":
+		return "∈", nil
+	case "\\notin":
+		return "∉", nil
+	default:
+		return text, nil
+	}
+}
+
+// Set comparisons: ⊆, ⊇, ⊂, ⊃ (at 5.51-5.54)
+SetComparisonExpr <- left:BagComparisonExpr rest:( ws? op:SetComparisonOp ws? right:BagComparisonExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	op := parts[1].(string)
+	right := parts[3].(ast.Expression)
+	return &ast.BinarySetComparison{
+		Operator: op,
+		Left:     left.(ast.Expression),
+		Right:    right,
+	}, nil
+}
+
+// SetComparisonOp: ⊆, ⊇, ⊂, ⊃ and their ASCII equivalents
+SetComparisonOp <- ( "⊆" / "\\subseteq" / "⊇" / "\\supseteq" / "⊂" / "\\subset" / "⊃" / "\\supset" ) {
+	text := string(c.text)
+	switch text {
+	case "\\subseteq":
+		return "⊆", nil
+	case "\\supseteq":
+		return "⊇", nil
+	case "\\subset":
+		return "⊂", nil
+	case "\\supset":
+		return "⊃", nil
+	default:
+		return text, nil
+	}
+}
+
+// Bag comparisons: ⊏, ⊑, ⊐, ⊒ (at 5.55-5.58, same level as set comparisons)
+BagComparisonExpr <- left:EqualityExpr rest:( ws? op:BagComparisonOp ws? right:EqualityExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	op := parts[1].(string)
+	right := parts[3].(ast.Expression)
+	return &ast.BinaryBagComparison{
+		Operator: op,
+		Left:     left.(ast.Expression),
+		Right:    right,
+	}, nil
+}
+
+// BagComparisonOp: ⊏, ⊑, ⊐, ⊒ and their ASCII equivalents
+// Note: longer ASCII forms must come BEFORE shorter ones (e.g., \sqsubseteq before \sqsubset)
+BagComparisonOp <- ( "⊏" / "\\sqsubseteq" / "\\sqsubset" / "⊑" / "\\sqsupseteq" / "\\sqsupset" / "⊐" / "⊒" ) {
+	text := string(c.text)
+	switch text {
+	case "\\sqsubset":
+		return "⊏", nil
+	case "\\sqsubseteq":
+		return "⊑", nil
+	case "\\sqsupset":
+		return "⊐", nil
+	case "\\sqsupseteq":
+		return "⊒", nil
+	default:
+		return text, nil
+	}
+}
+
+// Equality: =, ≠ (at 5.3, 5.4)
+EqualityExpr <- left:NumericComparisonExpr rest:( ws? op:EqualityOp ws? right:NumericComparisonExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	op := parts[1].(string)
+	right := parts[3].(ast.Expression)
+	return &ast.BinaryEquality{
+		Operator: op,
+		Left:     left.(ast.Expression),
+		Right:    right,
+	}, nil
+}
+
+// EqualityOp: =, ≠, /=, #
+EqualityOp <- ( "≠" / "/=" / "#" / "=" ) {
+	text := string(c.text)
+	switch text {
+	case "/=", "#":
+		return "≠", nil
+	default:
+		return text, nil
+	}
+}
+
+// Numeric comparisons: ≤, ≥, <, > (at 5.1, 5.2)
+NumericComparisonExpr <- left:SetDifferenceExpr rest:( ws? op:NumericComparisonOp ws? right:SetDifferenceExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	op := parts[1].(string)
+	right := parts[3].(ast.Expression)
+	return &ast.BinaryComparison{
+		Operator: op,
+		Left:     left.(ast.Expression),
+		Right:    right,
+	}, nil
+}
+
+// NumericComparisonOp: ≤, ≥, <, > and ASCII equivalents
+NumericComparisonOp <- ( "≤" / "=<" / "<=" / "≥" / ">=" / "<" / ">" ) {
+	text := string(c.text)
+	switch text {
+	case "=<", "<=":
+		return "≤", nil
+	case ">=":
+		return "≥", nil
+	default:
+		return text, nil
+	}
+}
+
+// =============================================================================
+// Set Operations (precedence 8.x)
+// =============================================================================
+
+// Set difference: \ (at 8.1)
+// Note: must not match \/ (or), \in, \cup, etc.
+SetDifferenceExpr <- left:SetIntersectionExpr rest:( ws? "\\" !( "/" / "i" / "c" / "u" / "s" / "n" / "d" / "b" / "o" / "h" / "B" / "O" / "H" ) ws? right:SetIntersectionExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[4].(ast.Expression)
+			result = &ast.BinarySetOperation{
+				Operator: `\`,
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+// Set intersection: ∩ (at 8.2, left-associative)
+SetIntersectionExpr <- left:SetUnionExpr rest:( ws? SetIntersectionOp ws? right:SetUnionExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.BinarySetOperation{
+				Operator: "∩",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+SetIntersectionOp <- ( "∩" / "\\intersect" / "\\cap" )
+
+// Set union: ∪ (at 8.3, left-associative)
+SetUnionExpr <- left:SetRangeExpr rest:( ws? SetUnionOp ws? right:SetRangeExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.BinarySetOperation{
+				Operator: "∪",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+SetUnionOp <- ( "∪" / "\\union" / "\\cup" )
+
+// =============================================================================
+// Set Range (precedence 9)
+// =============================================================================
+
+// Set range: .. (at 9)
+// 1..10 creates the set {1, 2, 3, ..., 10}
+SetRangeExpr <- left:BagSumExpr rest:( ws? ".." ws? right:BagSumExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	right := parts[3].(ast.Expression)
+	return &ast.SetRangeExpr{
+		Start: left.(ast.Expression),
+		End:   right,
+	}, nil
+}
+
+// =============================================================================
+// Arithmetic and Bag Operators (precedence 10-14)
+// From lowest to highest:
+// 10.1: ⊕ (bag sum)
+// 10.2: % (modulo)
+// 10.3: + (addition)
+// 11.1: ⊖ (bag difference)
+// 11.2: - infix (subtraction)
+// 12:   - prefix (negation)
+// 13.1: ÷ (division)
+// 13.2: ∘ (sequence/string concatenation)
+// 13.3: * (multiplication)
+// 13.4: / (fraction)
+// 14:   ^ (power)
+// =============================================================================
+
+// Bag sum: ⊕ or (+) or \oplus (at 10.1, lowest arithmetic precedence)
+BagSumExpr <- left:ModuloExpr rest:( ws? BagSumOp ws? right:ModuloExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.BinaryBagOperation{
+				Operator: "⊕",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+BagSumOp <- ( "⊕" / "(+)" / "\\oplus" )
+
+// Modulo expressions: % (at 10.2)
+ModuloExpr <- left:AdditionExpr rest:( ws? "%" ws? right:AdditionExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.RealInfixExpression{
+				Left:     result,
+				Operator: "%",
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+// Addition expressions: + (at 10.3, left-associative with other +)
+// 1 + 2 + 3 = (1 + 2) + 3
+AdditionExpr <- left:BagDiffExpr rest:( ws? "+" ws? right:BagDiffExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.RealInfixExpression{
+				Left:     result,
+				Operator: "+",
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+// Bag difference: ⊖ or (-) or \ominus (at 11.1)
+BagDiffExpr <- left:SubtractionExpr rest:( ws? BagDiffOp ws? right:SubtractionExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.BinaryBagOperation{
+				Operator: "⊖",
+				Left:     result,
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+BagDiffOp <- ( "⊖" / "(-)" / "\\ominus" )
+
+// Subtraction expressions: - infix (at 11.2, left-associative with other -)
+// 1 - 2 - 3 = (1 - 2) - 3
+SubtractionExpr <- left:NegationExpr rest:( ws? "-" ws? right:NegationExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.RealInfixExpression{
+				Left:     result,
+				Operator: "-",
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+// Negation prefix: - (at 12)
+// -3/4 = -(3/4), -2 * 3 = -(2 * 3)
+NegationExpr <- "-" ws? right:NegationExpr {
+	return ast.NewNegation(right.(ast.Expression)), nil
+} / DivisionExpr
+
+// Division: ÷ or \div (at 13.1)
+// 2 ÷ 3 ÷ 4 = (2 ÷ 3) ÷ 4 (left-associative)
+DivisionExpr <- left:ConcatExpr rest:( ws? DivisionOp ws? right:ConcatExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.RealInfixExpression{
+				Left:     result,
+				Operator: "÷",
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+// DivisionOp matches either ÷ (Unicode) or \div (ASCII)
+DivisionOp <- ( "÷" / "\\div" )
+
+// Sequence/string concatenation: ∘ or \o or \circ (at 13.2)
+// <<1, 2>> \o <<3, 4>> = <<1, 2, 3, 4>>
+ConcatExpr <- left:MultiplicationExpr rest:( ws? ConcatOp ws? right:MultiplicationExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil && len(rest.([]interface{})) > 0 {
+		operands := []ast.Expression{result}
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			operands = append(operands, parts[3].(ast.Expression))
+		}
+		result = &ast.TupleConcat{
+			Operator: "∘",
+			Operands: operands,
+		}
+	}
+	return result, nil
+}
+
+ConcatOp <- ( "∘" / "\\o" !( "m" / "p" ) / "\\circ" )
+
+// Multiplication: * (at 13.3, left-associative with other *)
+// 2 * 3 * 4 = (2 * 3) * 4
+MultiplicationExpr <- left:FractionExpr rest:( ws? "*" ws? right:FractionExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = &ast.RealInfixExpression{
+				Left:     result,
+				Operator: "*",
+				Right:    right,
+			}
+		}
+	}
+	return result, nil
+}
+
+// Fraction: / (at 13.4, creates fractional real, highest among multiplicative)
+// 3/4 creates the fraction three-fourths
+// 2 * 3/4 = 2 * (3/4) because / is higher than *
+// Right side uses UnaryExpr to allow: 3/-4 = 3/(-4)
+FractionExpr <- left:PowerExpr rest:( ws? "/" ws? right:UnaryExpr )* {
+	result := left.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			right := parts[3].(ast.Expression)
+			result = ast.NewFractionExpr(result, right)
+		}
+	}
+	return result, nil
+}
+
+// UnaryExpr: handles negation directly on operands for fraction denominator
+// This allows: 3/-4, 1.4/-.2, etc.
+UnaryExpr <- "-" ws? right:UnaryExpr {
+	return ast.NewNegation(right.(ast.Expression)), nil
+} / PowerExpr
+
+// Power: ^ (at 14, right-associative)
+// 2 ^ 3 ^ 4 = 2 ^ (3 ^ 4)
+PowerExpr <- left:PrimedExpr rest:( ws? "^" ws? right:PowerExpr )? {
+	if rest == nil {
+		return left.(ast.Expression), nil
+	}
+	parts := rest.([]interface{})
+	right := parts[3].(ast.Expression)
+	return &ast.RealInfixExpression{
+		Left:     left.(ast.Expression),
+		Operator: "^",
+		Right:    right,
+	}, nil
+}
+
+// =============================================================================
+// Postfix and Field Access Operators (precedence 15-17, highest)
+// =============================================================================
+
+// Prime: ' (at 15, postfix)
+// x' refers to the next-state value of x
+// Can chain with field access: record.field'
+PrimedExpr <- base:FieldAccessExpr prime:"'"? {
+	if prime == nil {
+		return base.(ast.Expression), nil
+	}
+	return &ast.Primed{Base: base.(ast.Expression)}, nil
+}
+
+// FieldAccess and TupleIndex: . and [] (at 17, highest precedence, left-associative for chaining)
+// a.b.c = (a.b).c
+// tuple[1][2] = (tuple[1])[2]
+// @.field accesses field from existing value
+FieldAccessExpr <- base:AtomicExpr rest:( FieldAccessSuffix / TupleIndexSuffix )* {
+	result := base.(ast.Expression)
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			switch suffix := r.(type) {
+			case string:
+				// Field access: .member
+				result = &ast.FieldAccess{
+					Base:   result,
+					Member: suffix,
+				}
+			case ast.Expression:
+				// Tuple index: [index]
+				result = &ast.TupleIndex{
+					Tuple: result,
+					Index: suffix,
+				}
+			}
+		}
+	}
+	return result, nil
+}
+
+// FieldAccessSuffix: .member
+FieldAccessSuffix <- "." member:IdentifierName {
+	return member.(string), nil
+}
+
+// TupleIndexSuffix: [index]
+TupleIndexSuffix <- "[" ws? index:Expression ws? "]" {
+	return index.(ast.Expression), nil
+}
+
+// =============================================================================
+// Atomic Expressions (primary building blocks)
+// =============================================================================
+
+// AtomicExpr: the most basic expressions that field access can operate on.
+// Order matters:
+// - ParenExpr first (starts with '(')
+// - TupleLiteral before other things (starts with << or ⟨)
+// - RecordExpr before SetLiteral (both start with '[' but records have |-> or EXCEPT)
+// - SetLiteral before Identifier (starts with '{')
+// - IfThenElse before Identifier (starts with IF keyword)
+// - CaseExpr before Identifier (starts with CASE keyword)
+// - FunctionCall before Identifier (identifier followed by '(')
+// - ExistingValue before Identifier (@ is a special symbol)
+// - Literal before Identifier (TRUE/FALSE are keywords, not identifiers)
+// - Identifier last (catch-all for names)
+AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetLiteral / IfThenElse / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
+
+// Parenthesized expression - creates ParenExpr node to preserve parentheses
+ParenExpr <- "(" ws? expr:Expression ws? ")" {
+	return ast.NewParenExpr(expr.(ast.Expression)), nil
+}
+
+// =============================================================================
+// Set Literals
+// =============================================================================
+
+// SetLiteral: {expr1, expr2, ...} or {} (empty set)
+SetLiteral <- "{" ws? elems:SetElements? ws? "}" {
+	if elems == nil {
+		return &ast.SetLiteral{Elements: []ast.Expression{}}, nil
+	}
+	return &ast.SetLiteral{Elements: elems.([]ast.Expression)}, nil
+}
+
+// SetElements: comma-separated list of expressions
+SetElements <- first:Expression rest:( ws? "," ws? expr:Expression )* {
+	elements := []ast.Expression{first.(ast.Expression)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			elements = append(elements, parts[3].(ast.Expression))
+		}
+	}
+	return elements, nil
+}
+
+// =============================================================================
+// Tuple Literals
+// =============================================================================
+
+// TupleLiteral: <<expr1, expr2, ...>> or ⟨expr1, expr2, ...⟩ or <<>> for empty tuple
+TupleLiteral <- TupleOpen ws? elems:TupleElements? ws? TupleClose {
+	if elems == nil {
+		return &ast.TupleLiteral{Elements: []ast.Expression{}}, nil
+	}
+	return &ast.TupleLiteral{Elements: elems.([]ast.Expression)}, nil
+}
+
+// TupleOpen: << or ⟨
+TupleOpen <- "<<" / "⟨"
+
+// TupleClose: >> or ⟩
+TupleClose <- ">>" / "⟩"
+
+// TupleElements: comma-separated list of expressions
+TupleElements <- first:Expression rest:( ws? "," ws? expr:Expression )* {
+	elements := []ast.Expression{first.(ast.Expression)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			elements = append(elements, parts[3].(ast.Expression))
+		}
+	}
+	return elements, nil
+}
+
+// =============================================================================
+// Record Expressions
+// =============================================================================
+
+// RecordExpr: either a record literal [a |-> 1, b |-> 2] or a record EXCEPT [r EXCEPT !.x = 1]
+// We need to look ahead to distinguish them
+RecordExpr <- RecordAltered / RecordInstance
+
+// RecordAltered: [identifier EXCEPT !.field = expr, ...]
+// Pattern: [r EXCEPT !.count = @ + 1, !.total = @ * 2]
+RecordAltered <- "[" ws? id:Identifier ws+ "EXCEPT" ws+ alts:FieldAlterations ws? "]" {
+	alterations := alts.([]*ast.FieldAlteration)
+	return &ast.RecordAltered{
+		Identifier:  id.(*ast.Identifier),
+		Alterations: alterations,
+	}, nil
+}
+
+// FieldAlterations: comma-separated list of !.field = expr
+FieldAlterations <- first:FieldAlteration rest:( ws? "," ws? alt:FieldAlteration )* {
+	alterations := []*ast.FieldAlteration{first.(*ast.FieldAlteration)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			alterations = append(alterations, parts[3].(*ast.FieldAlteration))
+		}
+	}
+	return alterations, nil
+}
+
+// FieldAlteration: !.field = expr
+FieldAlteration <- "!" "." field:IdentifierName ws? "=" ws? expr:Expression {
+	return &ast.FieldAlteration{
+		Field: &ast.FieldAccess{
+			Member: field.(string),
+		},
+		Expression: expr.(ast.Expression),
+	}, nil
+}
+
+// RecordInstance: [field |-> expr, field |-> expr, ...]
+// Pattern: [name |-> "Alice", age |-> 30]
+RecordInstance <- "[" ws? bindings:FieldBindings ws? "]" {
+	return &ast.RecordInstance{
+		Bindings: bindings.([]*ast.FieldBinding),
+	}, nil
+}
+
+// FieldBindings: comma-separated list of field |-> expr
+FieldBindings <- first:FieldBinding rest:( ws? "," ws? binding:FieldBinding )* {
+	bindings := []*ast.FieldBinding{first.(*ast.FieldBinding)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			bindings = append(bindings, parts[3].(*ast.FieldBinding))
+		}
+	}
+	return bindings, nil
+}
+
+// FieldBinding: field |-> expr or field ↦ expr
+FieldBinding <- field:IdentifierName ws? MapsTo ws? expr:Expression {
+	return &ast.FieldBinding{
+		Field:      &ast.Identifier{Value: field.(string)},
+		Expression: expr.(ast.Expression),
+	}, nil
+}
+
+// MapsTo: |-> or ↦
+MapsTo <- "|->" / "↦"
+
+// =============================================================================
+// Control Flow Expressions
+// =============================================================================
+
+// IfThenElse: IF condition THEN expr ELSE expr
+IfThenElse <- "IF" ws+ cond:Expression ws+ "THEN" ws+ then:Expression ws+ "ELSE" ws+ else_:Expression {
+	return &ast.IfThenElse{
+		Condition: cond.(ast.Expression),
+		Then:      then.(ast.Expression),
+		Else:      else_.(ast.Expression),
+	}, nil
+}
+
+// CaseExpr: CASE cond -> result [] cond -> result [] OTHER -> result
+// Uses [] as branch separator and -> for condition to result mapping
+CaseExpr <- "CASE" ws+ branches:CaseBranches other:CaseOther? {
+	caseExpr := &ast.CaseExpr{
+		Branches: branches.([]*ast.CaseBranch),
+	}
+	if other != nil {
+		caseExpr.Other = other.(ast.Expression)
+	}
+	return caseExpr, nil
+}
+
+// CaseBranches: first branch followed by optional additional branches
+CaseBranches <- first:CaseBranch rest:( ws? CaseSeparator ws? branch:CaseBranch )* {
+	branches := []*ast.CaseBranch{first.(*ast.CaseBranch)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			branches = append(branches, parts[3].(*ast.CaseBranch))
+		}
+	}
+	return branches, nil
+}
+
+// CaseBranch: condition -> result
+CaseBranch <- cond:CaseCondition ws? CaseArrow ws? result:CaseResult {
+	return &ast.CaseBranch{
+		Condition: cond.(ast.Expression),
+		Result:    result.(ast.Expression),
+	}, nil
+}
+
+// CaseCondition: expression (must not consume -> or [])
+// Uses a more restricted expression to avoid consuming too much
+CaseCondition <- expr:OrExpr {
+	return expr.(ast.Expression), nil
+}
+
+// CaseResult: expression (must not consume [])
+// Uses OrExpr to avoid consuming the [] separator
+CaseResult <- expr:OrExpr {
+	return expr.(ast.Expression), nil
+}
+
+// CaseOther: [] OTHER -> result
+CaseOther <- ws? CaseSeparator ws? "OTHER" ws? CaseArrow ws? result:CaseResult {
+	return result.(ast.Expression), nil
+}
+
+// CaseSeparator: [] or □
+CaseSeparator <- "[]" / "□"
+
+// CaseArrow: -> or →
+CaseArrow <- "->" / "→"
+
+// =============================================================================
+// Function Calls
+// =============================================================================
+
+// FunctionCall: Supports multi-level scoping
+// Patterns:
+//   - FunctionName(args...)
+//   - _Module!FunctionName(args...)
+//   - Domain!Subdomain!Class!ActionName(args...)
+// Must come before Identifier to match function calls
+FunctionCall <- scopePath:ScopePath funcName:IdentifierName "(" ws? args:FunctionArgs? ws? ")" {
+	var scopeIdents []*ast.Identifier
+	if scopePath != nil {
+		scopeIdents = scopePath.([]*ast.Identifier)
+	}
+	var argList []ast.Expression
+	if args != nil {
+		argList = args.([]ast.Expression)
+	} else {
+		argList = []ast.Expression{}
+	}
+	return &ast.FunctionCall{
+		ScopePath: scopeIdents,
+		Name:      &ast.Identifier{Value: funcName.(string)},
+		Args:      argList,
+	}, nil
+}
+
+// ScopePath: Zero or more "Name!" segments before the function name
+// Returns []*ast.Identifier (empty slice if no scope)
+ScopePath <- segments:( name:IdentifierName "!" )* {
+	if segments == nil {
+		return []*ast.Identifier{}, nil
+	}
+	segList := segments.([]interface{})
+	result := make([]*ast.Identifier, len(segList))
+	for i, seg := range segList {
+		parts := seg.([]interface{})
+		result[i] = &ast.Identifier{Value: parts[0].(string)}
+	}
+	return result, nil
+}
+
+// FunctionArgs: comma-separated list of expressions
+FunctionArgs <- first:Expression rest:( ws? "," ws? expr:Expression )* {
+	args := []ast.Expression{first.(ast.Expression)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			args = append(args, parts[3].(ast.Expression))
+		}
+	}
+	return args, nil
+}
+
+// =============================================================================
+// Identifiers and Existing Value
+// =============================================================================
+
+// ExistingValue: @ (references the existing value in EXCEPT context)
+ExistingValue <- "@" {
+	return &ast.ExistingValue{}, nil
+}
+
+// Identifier: a simple variable reference
+// Must not be a reserved keyword (TRUE, FALSE, IF, THEN, ELSE, etc.)
+Identifier <- !ReservedKeyword name:IdentifierName {
+	return &ast.Identifier{Value: name.(string)}, nil
+}
+
+// IdentifierName: the actual identifier text (letters, digits, underscores)
+// Must start with a letter or underscore
+IdentifierName <- [a-zA-Z_][a-zA-Z0-9_]* {
+	return string(c.text), nil
+}
+
+// ReservedKeyword: words that cannot be used as identifiers
+// Note: \A and \E are NOT in this list since they start with backslash
+ReservedKeyword <- ( "TRUE" / "FALSE" / "IF" / "THEN" / "ELSE" / "CASE" / "OTHER" / "EXCEPT" ) ![a-zA-Z0-9_]
+
+// =============================================================================
+// Literals
+// =============================================================================
+
+Literal <- BooleanLiteral / NumberLiteral / StringLiteral
+
+// Boolean literals: TRUE or FALSE (must not be followed by identifier chars)
+BooleanLiteral <- ("TRUE" / "FALSE") ![a-zA-Z0-9_] {
+	value := string(c.text) == "TRUE"
+	return &ast.BooleanLiteral{Value: value}, nil
+}
+
+// =============================================================================
+// Number Literal
+// =============================================================================
+
+// NumberLiteral handles all numeric forms:
+// - Decimal integers: 42, 007
+// - Decimal with fractional part: 3.14, .5, 0.123
+// - Binary: \b1010, \B0011
+// - Octal: \o17, \O777
+// - Hex: \hFF, \H0abc
+NumberLiteral <- HexNumber / OctalNumber / BinaryNumber / DecimalNumber
+
+// Hexadecimal number: \h or \H followed by hex digits
+HexNumber <- prefix:( "\\h" / "\\H" ) digits:HexDigits {
+	return ast.NewHexNumberLiteral(string(prefix.([]byte)), digits.(string)), nil
+}
+
+// Octal number: \o or \O followed by octal digits
+OctalNumber <- prefix:( "\\o" / "\\O" ) digits:OctalDigits {
+	return ast.NewOctalNumberLiteral(string(prefix.([]byte)), digits.(string)), nil
+}
+
+// Binary number: \b or \B followed by binary digits
+BinaryNumber <- prefix:( "\\b" / "\\B" ) digits:BinaryDigits {
+	return ast.NewBinaryNumberLiteral(string(prefix.([]byte)), digits.(string)), nil
+}
+
+// Decimal number: integer or decimal with optional fractional part
+// Handles: 42, 007, 3.14, .5, 0.123
+DecimalNumber <- DecimalWithFraction / DecimalInteger
+
+// Decimal with fractional part: whole.fractional or .fractional
+DecimalWithFraction <- integer:DecimalDigits? "." fractional:DecimalDigits {
+	intPart := ""
+	if integer != nil {
+		intPart = integer.(string)
+	}
+	return ast.NewDecimalNumberLiteral(intPart, fractional.(string)), nil
+}
+
+// Decimal integer (no fractional part)
+DecimalInteger <- digits:DecimalDigits {
+	return ast.NewNumberLiteral(digits.(string)), nil
+}
+
+// =============================================================================
+// Digit Rules
+// =============================================================================
+
+// DecimalDigits: one or more decimal digits (0-9)
+DecimalDigits <- [0-9]+ {
+	return string(c.text), nil
+}
+
+// HexDigits: one or more hexadecimal digits
+HexDigits <- [0-9a-fA-F]+ {
+	return string(c.text), nil
+}
+
+// OctalDigits: one or more octal digits
+OctalDigits <- [0-7]+ {
+	return string(c.text), nil
+}
+
+// BinaryDigits: one or more binary digits
+BinaryDigits <- [01]+ {
+	return string(c.text), nil
+}
+
+// =============================================================================
+// String Literal
+// =============================================================================
+
+// String literal: "text"
+// Handles escape sequences: \\, \", \n, \t, \r, \f
+StringLiteral <- '"' content:StringContent '"' {
+	return &ast.StringLiteral{Value: content.(string)}, nil
+}
+
+// StringContent: the content inside a string literal
+StringContent <- chars:StringChar* {
+	var sb strings.Builder
+	if chars == nil {
+		return "", nil
+	}
+	for _, ch := range chars.([]interface{}) {
+		sb.WriteString(ch.(string))
+	}
+	return sb.String(), nil
+}
+
+// StringChar: a single character in a string (handles escapes)
+StringChar <- EscapeSequence / NormalChar
+
+// EscapeSequence: escaped characters
+EscapeSequence <- "\\" seq:( '"' / '\\' / 'n' / 't' / 'r' / 'f' ) {
+	seqBytes := seq.([]byte)
+	if len(seqBytes) > 0 {
+		switch seqBytes[0] {
+		case '"':
+			return "\"", nil
+		case '\\':
+			return "\\", nil
+		case 'n':
+			return "\n", nil
+		case 't':
+			return "\t", nil
+		case 'r':
+			return "\r", nil
+		case 'f':
+			return "\f", nil
+		}
+	}
+	return string(seqBytes), nil
+}
+
+// NormalChar: any character except quote or backslash
+NormalChar <- [^"\\] {
+	return string(c.text), nil
+}
+
+// =============================================================================
+// Whitespace
+// =============================================================================
+
+// Whitespace: spaces, tabs, newlines
+ws <- [ \t\n\r]+
