@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_tla"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -70,7 +71,7 @@ func (s *ExtractorTestSuite) TestExtractTlaDefinitions() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaDefinitions: map[string]req_model.TlaDefinition{
+		TlaDefinitions: map[string]model_tla.TlaDefinition{
 			"_Max": {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
@@ -377,7 +378,7 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 		TlaInvariants: []string{
 			"∀ p ∈ Products : p.stock >= 0",
 		},
-		TlaDefinitions: map[string]req_model.TlaDefinition{
+		TlaDefinitions: map[string]model_tla.TlaDefinition{
 			"_LowStockThreshold": {
 				Name:       "_LowStockThreshold",
 				Parameters: nil,

@@ -1,4 +1,4 @@
-package req_model
+package model_tla
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"

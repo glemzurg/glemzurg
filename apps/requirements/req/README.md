@@ -31,21 +31,6 @@ april (in parallel)
   - update simulators to run models together
 
 
-questions:
-  - how to organize file structure for next steop from model to compiler
-  - when is a user entered into the state?
-  - targeted build of parts of the system:
-    - e.g. wallet before all others
-  - model compilers
-    - how to partition a model to different database (technical not domains)
-    - how to model compile performacne tuning
-    - how to hot fix with model compilers
-    - how to incrementally roll out schema changes
-    - complexity metrics
-  - simulator of TLA+
-  - importing model from AI
-    - describe the process: deep dive folder, refine, simulate, next dive
-
 ---------------------------
 
 simulator todo:

@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_tla"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -47,7 +48,7 @@ func (suite *ModelSuite) TestValidate() {
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				TlaDefinitions: map[string]TlaDefinition{
+				TlaDefinitions: map[string]model_tla.TlaDefinition{
 					"_Max": {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
@@ -62,7 +63,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:           "model1",
 				Name:          "Name",
 				TlaInvariants: []string{"x > 0"},
-				TlaDefinitions: map[string]TlaDefinition{
+				TlaDefinitions: map[string]model_tla.TlaDefinition{
 					"_Max": {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
@@ -101,7 +102,7 @@ func (suite *ModelSuite) TestValidate() {
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				TlaDefinitions: map[string]TlaDefinition{
+				TlaDefinitions: map[string]model_tla.TlaDefinition{
 					"Max": {
 						Name: "Max", // Missing underscore
 						Tla:  "42",
@@ -115,7 +116,7 @@ func (suite *ModelSuite) TestValidate() {
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				TlaDefinitions: map[string]TlaDefinition{
+				TlaDefinitions: map[string]model_tla.TlaDefinition{
 					"_Wrong": {
 						Name: "_Right",
 						Tla:  "42",
@@ -140,7 +141,7 @@ func (suite *ModelSuite) TestValidate() {
 // TestNew tests that NewModel maps parameters correctly and calls Validate.
 func (suite *ModelSuite) TestNew() {
 	// Test all parameters are mapped correctly (key is normalized to lowercase and trimmed).
-	tlaDefs := map[string]TlaDefinition{
+	tlaDefs := map[string]model_tla.TlaDefinition{
 		"_Max": {
 			Name:       "_Max",
 			Parameters: []string{"x", "y"},

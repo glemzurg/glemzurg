@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_tla"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 	"github.com/stretchr/testify/suite"
 )
@@ -93,7 +94,7 @@ func (s *LoaderTestSuite) TestLoadTlaDefinitions() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaDefinitions: map[string]req_model.TlaDefinition{
+		TlaDefinitions: map[string]model_tla.TlaDefinition{
 			"_Max": {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
@@ -122,7 +123,7 @@ func (s *LoaderTestSuite) TestLoadTlaDefinitions_NoParams() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaDefinitions: map[string]req_model.TlaDefinition{
+		TlaDefinitions: map[string]model_tla.TlaDefinition{
 			"_StatusSet": {
 				Name:       "_StatusSet",
 				Parameters: []string{},
@@ -366,7 +367,7 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 		TlaInvariants: []string{
 			"TRUE",
 		},
-		TlaDefinitions: map[string]req_model.TlaDefinition{
+		TlaDefinitions: map[string]model_tla.TlaDefinition{
 			"_Threshold": {
 				Name:       "_Threshold",
 				Parameters: nil,

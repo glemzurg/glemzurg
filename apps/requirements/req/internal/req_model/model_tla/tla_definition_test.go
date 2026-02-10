@@ -1,4 +1,4 @@
-package req_model
+package model_tla
 
 import (
 	"testing"
