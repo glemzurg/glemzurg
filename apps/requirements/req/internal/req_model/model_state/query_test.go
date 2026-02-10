@@ -46,7 +46,6 @@ func (suite *QuerySuite) TestValidate() {
 				Guarantees:    []string{"guar1"},
 				TlaRequires:   []string{"tla_req1"},
 				TlaGuarantees: []string{"tla_guar1"},
-				CalledBy:      []identity.Key{classKey},
 			},
 		},
 		{
@@ -63,14 +62,6 @@ func (suite *QuerySuite) TestValidate() {
 				Key:           validKey,
 				Name:          "Name",
 				TlaGuarantees: []string{"result \\in S"},
-			},
-		},
-		{
-			testName: "valid query with called by only",
-			query: Query{
-				Key:      validKey,
-				Name:     "Name",
-				CalledBy: []identity.Key{classKey},
 			},
 		},
 		{
@@ -126,13 +117,11 @@ func (suite *QuerySuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewQueryKey(classKey, "query1"))
-	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
 	// Test all parameters are mapped correctly.
 	query, err := NewQuery(key, "Name", "Details",
 		[]string{"Requires"}, []string{"Guarantees"},
 		[]string{"tla_req"}, []string{"tla_guar"},
-		[]identity.Key{otherClassKey},
 		nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Query{
@@ -143,13 +132,12 @@ func (suite *QuerySuite) TestNew() {
 		Guarantees:    []string{"Guarantees"},
 		TlaRequires:   []string{"tla_req"},
 		TlaGuarantees: []string{"tla_guar"},
-		CalledBy:      []identity.Key{otherClassKey},
 	}, query)
 
-	// Test with nil optional fields (all Tla* and CalledBy are optional).
+	// Test with nil optional fields (all Tla* fields are optional).
 	query, err = NewQuery(key, "Name", "Details",
 		[]string{"Requires"}, []string{"Guarantees"},
-		nil, nil, nil, nil)
+		nil, nil, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Query{
 		Key:        key,
@@ -160,7 +148,7 @@ func (suite *QuerySuite) TestNew() {
 	}, query)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewQuery(key, "", "Details", nil, nil, nil, nil, nil, nil)
+	_, err = NewQuery(key, "", "Details", nil, nil, nil, nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

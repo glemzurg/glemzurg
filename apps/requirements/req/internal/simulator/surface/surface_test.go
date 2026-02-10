@@ -881,6 +881,10 @@ func (s *DiagnosticsSuite) TestDiagnose_HalfAssociation() {
 	s.True(found, "expected half-association diagnostic")
 }
 
+// TODO(CalledBy/SentBy): This test uses Event.SentBy which was removed from the
+// req_model/model_state.Event struct. SentBy is a simulator concern, not part of the pure
+// data model. When re-enabling, update this test to use the simulator-local SentBy field
+// (wrapper struct or parallel map) instead of setting it directly on model_state.Event.
 func (s *DiagnosticsSuite) TestDiagnose_AllEventsInternal() {
 	model := buildSingleDomainModel()
 
@@ -915,6 +919,9 @@ func (s *DiagnosticsSuite) TestDiagnose_AllEventsInternal() {
 	s.True(found, "expected all-events-internal diagnostic")
 }
 
+// TODO(CalledBy/SentBy): This test uses Event.SentBy which was removed from the
+// req_model/model_state.Event struct. SentBy is a simulator concern, not part of the pure
+// data model. When re-enabling, update this test to use the simulator-local SentBy field.
 func (s *DiagnosticsSuite) TestDiagnose_SentByUnknownClass() {
 	model := buildSingleDomainModel()
 	unknownKey := mustKey("domain/d/subdomain/s/class/unknown")
@@ -945,6 +952,9 @@ func (s *DiagnosticsSuite) TestDiagnose_SentByUnknownClass() {
 	s.True(found, "expected SentBy unknown class diagnostic")
 }
 
+// TODO(CalledBy/SentBy): This test uses Action.CalledBy which was removed from the
+// req_model/model_state.Action struct. CalledBy is a simulator concern, not part of the pure
+// data model. When re-enabling, update this test to use the simulator-local CalledBy field.
 func (s *DiagnosticsSuite) TestDiagnose_CalledByUnknownClass() {
 	model := buildSingleDomainModel()
 	unknownKey := mustKey("domain/d/subdomain/s/class/unknown")

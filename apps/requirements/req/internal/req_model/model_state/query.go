@@ -17,15 +17,11 @@ type Query struct {
 	Guarantees    []string // Human-readable filtering criteria for returned data.
 	TlaRequires   []string // TLA+ expressions for preconditions.
 	TlaGuarantees []string // TLA+ expressions for filtering criteria (NOT state changes).
-	// CalledBy lists class keys whose actions call this query.
-	// If any calling class is in scope, this query is considered "internal."
-	// Empty means always external.
-	CalledBy []identity.Key
 	// Children
 	Parameters []Parameter // Typed parameters for this query.
 }
 
-func NewQuery(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees []string, calledBy []identity.Key, parameters []Parameter) (query Query, err error) {
+func NewQuery(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees []string, parameters []Parameter) (query Query, err error) {
 
 	query = Query{
 		Key:           key,
@@ -35,7 +31,6 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees, tlaR
 		Guarantees:    guarantees,
 		TlaRequires:   tlaRequires,
 		TlaGuarantees: tlaGuarantees,
-		CalledBy:      calledBy,
 		Parameters:    parameters,
 	}
 

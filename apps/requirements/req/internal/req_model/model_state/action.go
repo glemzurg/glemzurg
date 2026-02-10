@@ -17,15 +17,11 @@ type Action struct {
 	TlaRequires    []string // TLA+ expressions for preconditions (must not contain primed variables).
 	TlaGuarantees  []string // TLA+ primed assignments only (e.g., self.field' = expr).
 	TlaSafetyRules []string // TLA+ boolean assertions that must reference primed variables.
-	// CalledBy lists class keys whose actions/transitions call this action.
-	// If any calling class is in scope, this action is considered "internal"
-	// and will not be randomly fired by the simulator. Empty means always external.
-	CalledBy []identity.Key
 	// Children
 	Parameters []Parameter // Typed parameters for this action.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees, tlaSafetyRules []string, calledBy []identity.Key, parameters []Parameter) (action Action, err error) {
+func NewAction(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees, tlaSafetyRules []string, parameters []Parameter) (action Action, err error) {
 
 	action = Action{
 		Key:            key,
@@ -36,7 +32,6 @@ func NewAction(key identity.Key, name, details string, requires, guarantees, tla
 		TlaRequires:    tlaRequires,
 		TlaGuarantees:  tlaGuarantees,
 		TlaSafetyRules: tlaSafetyRules,
-		CalledBy:       calledBy,
 		Parameters:     parameters,
 	}
 

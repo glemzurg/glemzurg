@@ -111,6 +111,13 @@ func Diagnose(resolved *ResolvedSurface, model *req_model.Model) []Diagnostic {
 	// 5. Realized domain included (already reported in resolver warnings).
 
 	// 6. All events internal: class where ALL events have SentBy pointing to in-scope classes.
+	//
+	// TODO(CalledBy/SentBy): Event.SentBy was removed from the req_model/model_state.Event struct
+	// because CalledBy/SentBy are simulator concerns, not part of the pure data model. This
+	// diagnostic currently will not compile. When re-enabling:
+	//   1. Define a simulator-local SentBy []identity.Key on a wrapper struct or parallel map.
+	//   2. Populate it from simulator config/annotations during surface resolution.
+	//   3. Update this loop to read from the simulator-local location.
 	for classKey, class := range resolved.Classes {
 		if len(class.Events) == 0 {
 			continue
@@ -146,6 +153,14 @@ func Diagnose(resolved *ResolvedSurface, model *req_model.Model) []Diagnostic {
 	}
 
 	// 7. SentBy/CalledBy referencing unknown class.
+	//
+	// TODO(CalledBy/SentBy): Event.SentBy, Action.CalledBy, and Query.CalledBy were removed from
+	// the req_model structs because these are simulator concerns, not part of the pure data model.
+	// This diagnostic block currently will not compile. When re-enabling:
+	//   1. Define simulator-local SentBy/CalledBy fields on wrapper structs or a parallel map
+	//      keyed by event/action/query identity.Key.
+	//   2. Populate them from simulator config/annotations during surface resolution.
+	//   3. Update these loops to read from the simulator-local location.
 	for _, class := range resolved.Classes {
 		for _, event := range class.Events {
 			for _, senderKey := range event.SentBy {

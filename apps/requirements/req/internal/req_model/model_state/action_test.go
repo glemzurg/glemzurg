@@ -47,7 +47,6 @@ func (suite *ActionSuite) TestValidate() {
 				TlaRequires:    []string{"tla_req1"},
 				TlaGuarantees:  []string{"tla_guar1"},
 				TlaSafetyRules: []string{"tla_safety1"},
-				CalledBy:       []identity.Key{classKey},
 			},
 		},
 		{
@@ -72,14 +71,6 @@ func (suite *ActionSuite) TestValidate() {
 				Key:            validKey,
 				Name:           "Name",
 				TlaSafetyRules: []string{"self.x' > 0"},
-			},
-		},
-		{
-			testName: "valid action with called by only",
-			action: Action{
-				Key:      validKey,
-				Name:     "Name",
-				CalledBy: []identity.Key{classKey},
 			},
 		},
 		{
@@ -135,13 +126,11 @@ func (suite *ActionSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewActionKey(classKey, "action1"))
-	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
 	// Test all parameters are mapped correctly.
 	action, err := NewAction(key, "Name", "Details",
 		[]string{"Requires"}, []string{"Guarantees"},
 		[]string{"tla_req"}, []string{"tla_guar"}, []string{"tla_safety"},
-		[]identity.Key{otherClassKey},
 		nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Action{
@@ -153,13 +142,12 @@ func (suite *ActionSuite) TestNew() {
 		TlaRequires:    []string{"tla_req"},
 		TlaGuarantees:  []string{"tla_guar"},
 		TlaSafetyRules: []string{"tla_safety"},
-		CalledBy:       []identity.Key{otherClassKey},
 	}, action)
 
-	// Test with nil optional fields (all Tla* and CalledBy are optional).
+	// Test with nil optional fields (all Tla* fields are optional).
 	action, err = NewAction(key, "Name", "Details",
 		[]string{"Requires"}, []string{"Guarantees"},
-		nil, nil, nil, nil, nil)
+		nil, nil, nil, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Action{
 		Key:        key,
@@ -170,7 +158,7 @@ func (suite *ActionSuite) TestNew() {
 	}, action)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAction(key, "", "Details", nil, nil, nil, nil, nil, nil, nil)
+	_, err = NewAction(key, "", "Details", nil, nil, nil, nil, nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 
