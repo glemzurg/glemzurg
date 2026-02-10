@@ -8,7 +8,7 @@ import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 type ExpressionSource int
 
 const (
-	// SourceModelInvariant is a model-level invariant from Model.TlaInvariants.
+	// SourceModelInvariant is a model-level invariant from Model.Invariants.
 	SourceModelInvariant ExpressionSource = iota
 	// SourceTlaDefinition is a global TLA+ definition from Model.TlaDefinitions.
 	SourceTlaDefinition

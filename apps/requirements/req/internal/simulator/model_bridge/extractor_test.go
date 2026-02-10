@@ -28,9 +28,9 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"∀ x ∈ Items : x.quantity > 0",
-			"Cardinality(Orders) < 1000",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Item quantities positive.", Notation: model_logic.NotationTLAPlus, Specification: "∀ x ∈ Items : x.quantity > 0"},
+			{Key: "inv_1", Description: "Order count limit.", Notation: model_logic.NotationTLAPlus, Specification: "Cardinality(Orders) < 1000"},
 		},
 	}
 
@@ -41,13 +41,13 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 	s.Equal(SourceModelInvariant, expressions[0].Source)
 	s.Equal("∀ x ∈ Items : x.quantity > 0", expressions[0].Expression)
 	s.Nil(expressions[0].ScopeKey)
-	s.Equal("", expressions[0].Name)
+	s.Equal("Item quantities positive.", expressions[0].Name)
 	s.Equal(0, expressions[0].Index)
 
 	s.Equal(SourceModelInvariant, expressions[1].Source)
 	s.Equal("Cardinality(Orders) < 1000", expressions[1].Expression)
 	s.Nil(expressions[1].ScopeKey)
-	s.Equal("", expressions[1].Name)
+	s.Equal("Order count limit.", expressions[1].Name)
 	s.Equal(1, expressions[1].Index)
 }
 
@@ -55,7 +55,7 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
 	model := &req_model.Model{
 		Key:           "test_model",
 		Name:          "Test Model",
-		TlaInvariants: []string{},
+		Invariants: []model_logic.Logic{},
 	}
 
 	expressions := ExtractFromModel(model)
@@ -385,8 +385,8 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 	model := &req_model.Model{
 		Key:  "shop_model",
 		Name: "Shop Model",
-		TlaInvariants: []string{
-			"∀ p ∈ Products : p.stock >= 0",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Stock non-negative.", Notation: model_logic.NotationTLAPlus, Specification: "∀ p ∈ Products : p.stock >= 0"},
 		},
 		GlobalFunctions: map[string]model_logic.GlobalFunction{
 			"_LowStockThreshold": {

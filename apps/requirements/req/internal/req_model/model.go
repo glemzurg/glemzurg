@@ -18,7 +18,7 @@ type Model struct {
 	Key           string   // Models do not have keys like other entitites. They just need to be unique to other models in the system.
 	Name          string
 	Details       string   // Markdown.
-	TlaInvariants []string // TLA+ expressions that must be true for this model.
+	Invariants []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
 	// Key is the function Name (case-preserved, e.g., "_Max", "_SetOfValues").
 	GlobalFunctions map[string]model_logic.GlobalFunction
@@ -29,13 +29,13 @@ type Model struct {
 	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, tlaInvariants []string, globalFunctions map[string]model_logic.GlobalFunction) (model Model, err error) {
+func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[string]model_logic.GlobalFunction) (model Model, err error) {
 
 	model = Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
 		Name:            name,
 		Details:         details,
-		TlaInvariants:   tlaInvariants,
+		Invariants:      invariants,
 		GlobalFunctions: globalFunctions,
 	}
 
@@ -77,6 +77,13 @@ func (m *Model) Validate() error {
 			for classKey := range subdomain.Classes {
 				classKeys[classKey] = true
 			}
+		}
+	}
+
+	// Validate invariants.
+	for i, inv := range m.Invariants {
+		if err := inv.Validate(); err != nil {
+			return errors.Wrapf(err, "invariant %d", i)
 		}
 	}
 

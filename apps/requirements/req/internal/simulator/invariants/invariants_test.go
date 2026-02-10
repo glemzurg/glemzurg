@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -156,8 +157,8 @@ func createTestModel() *req_model.Model {
 	return &req_model.Model{
 		Key:  "test_model",
 		Name: "TestModel",
-		TlaInvariants: []string{
-			"TRUE", // Always passes
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 		},
 		Domains: map[identity.Key]model_domain.Domain{
 			domain.Key: domain,
@@ -445,8 +446,8 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	model := &req_model.Model{
 		Key:  "test",
 		Name: "Test",
-		TlaInvariants: []string{
-			"FALSE", // Always fails
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always false.", Notation: model_logic.NotationTLAPlus, Specification: "FALSE"},
 		},
 		Domains: map[identity.Key]model_domain.Domain{},
 	}
@@ -468,8 +469,8 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	model := &req_model.Model{
 		Key:  "test",
 		Name: "Test",
-		TlaInvariants: []string{
-			"this is not valid TLA+",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Invalid expression.", Notation: model_logic.NotationTLAPlus, Specification: "this is not valid TLA+"},
 		},
 		Domains: map[identity.Key]model_domain.Domain{},
 	}
@@ -484,7 +485,9 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 	model := createTestModel()
 
 	// Update model invariant to check something real
-	model.TlaInvariants = []string{"TRUE"}
+	model.Invariants = []model_logic.Logic{
+		{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+	}
 
 	invChecker, err := NewInvariantChecker(model)
 	s.NoError(err)
@@ -603,8 +606,8 @@ func (s *InvariantsSuite) TestInvariantCheckerRejectsPrimedInvariants() {
 	model := &req_model.Model{
 		Key:  "test",
 		Name: "Test",
-		TlaInvariants: []string{
-			"x' > 0",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Primed variable check.", Notation: model_logic.NotationTLAPlus, Specification: "x' > 0"},
 		},
 		Domains: map[identity.Key]model_domain.Domain{},
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 )
 
 // ResolvedSurface is the concrete output of resolving a SurfaceSpecification
@@ -19,8 +20,8 @@ type ResolvedSurface struct {
 	// in the Classes set. Cross-boundary associations are excluded.
 	Associations map[identity.Key]model_class.Association
 
-	// ModelInvariants is a filtered copy of Model.TlaInvariants.
-	ModelInvariants []string
+	// ModelInvariants is a filtered copy of Model.Invariants.
+	ModelInvariants []model_logic.Logic
 
 	// Warnings collects non-fatal issues found during resolution.
 	Warnings []string
@@ -122,11 +123,11 @@ func Resolve(spec *SurfaceSpecification, model *req_model.Model) (*ResolvedSurfa
 			}
 		}
 	}
-	included, excluded := ScopeInvariantsWithAllClasses(model.TlaInvariants, inScopeClassNames, allClassNames)
+	included, excluded := ScopeInvariantsWithAllClasses(model.Invariants, inScopeClassNames, allClassNames)
 	resolved.ModelInvariants = included
 	for _, inv := range excluded {
 		resolved.Warnings = append(resolved.Warnings,
-			fmt.Sprintf("invariant excluded (references out-of-scope class): %s", inv))
+			fmt.Sprintf("invariant excluded (references out-of-scope class): %s", inv.Description))
 	}
 
 	// 6. Validate: at least one simulatable class must remain.

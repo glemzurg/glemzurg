@@ -15,7 +15,7 @@ import (
 
 // InvariantChecker evaluates TLA+ invariants against simulation state.
 // It checks:
-//   - Model-level invariants (Model.TlaInvariants)
+//   - Model-level invariants (Model.Invariants)
 //   - Action post-condition guarantees
 //   - Query post-condition guarantees
 type InvariantChecker struct {
@@ -47,20 +47,20 @@ type parsedGuarantee struct {
 func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
 		model:                model,
-		parsedInvariants:     make([]ast.Expression, 0, len(model.TlaInvariants)),
+		parsedInvariants:     make([]ast.Expression, 0, len(model.Invariants)),
 		actionPostConditions: make(map[identity.Key][]parsedGuarantee),
 		queryPostConditions:  make(map[identity.Key][]parsedGuarantee),
 		classNameMap:         make(map[identity.Key]string),
 	}
 
 	// Parse model invariants
-	for i, invStr := range model.TlaInvariants {
-		expr, err := parser.ParseExpression(invStr)
+	for i, inv := range model.Invariants {
+		expr, err := parser.ParseExpression(inv.Specification)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse model invariant %d: %w", i, err)
 		}
 		if model_bridge.ContainsAnyPrimed(expr) {
-			return nil, fmt.Errorf("model invariant %d must not contain primed variables: %s", i, invStr)
+			return nil, fmt.Errorf("model invariant %d must not contain primed variables: %s", i, inv.Specification)
 		}
 		checker.parsedInvariants = append(checker.parsedInvariants, expr)
 	}
@@ -139,7 +139,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		if result.Error != nil {
 			violations = append(violations, NewModelInvariantViolation(
 				i,
-				c.model.TlaInvariants[i],
+				c.model.Invariants[i].Specification,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
@@ -155,7 +155,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 			}
 			violations = append(violations, NewModelInvariantViolation(
 				i,
-				c.model.TlaInvariants[i],
+				c.model.Invariants[i].Specification,
 				message,
 			))
 		}

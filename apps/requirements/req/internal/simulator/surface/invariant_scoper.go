@@ -1,6 +1,7 @@
 package surface
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 )
@@ -11,7 +12,7 @@ import (
 //
 // classNames is the set of in-scope class names.
 // allClassNames is the set of ALL class names in the model.
-func ScopeInvariants(invariants []string, classNames map[string]bool) (included []string, excluded []string) {
+func ScopeInvariants(invariants []model_logic.Logic, classNames map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	// Without knowing all class names, we can't detect out-of-scope references.
 	// Include everything by default. Use ScopeInvariantsWithAllClasses for full filtering.
 	for _, inv := range invariants {
@@ -24,12 +25,12 @@ func ScopeInvariants(invariants []string, classNames map[string]bool) (included 
 // all class names. An invariant is excluded if it references a class name
 // that exists in the model but is NOT in the in-scope set.
 func ScopeInvariantsWithAllClasses(
-	invariants []string,
+	invariants []model_logic.Logic,
 	inScopeClassNames map[string]bool,
 	allClassNames map[string]bool,
-) (included []string, excluded []string) {
+) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	for _, inv := range invariants {
-		expr, err := parser.ParseExpression(inv)
+		expr, err := parser.ParseExpression(inv.Specification)
 		if err != nil {
 			// If we can't parse it, include it — better safe than sorry.
 			included = append(included, inv)

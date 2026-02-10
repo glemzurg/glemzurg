@@ -36,11 +36,14 @@ func (suite *ModelSuite) TestValidate() {
 			},
 		},
 		{
-			testName: "valid model with tla invariants",
+			testName: "valid model with invariants",
 			model: Model{
-				Key:           "model1",
-				Name:          "Name",
-				TlaInvariants: []string{"x > 0", "y < 100"},
+				Key:  "model1",
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: "inv_2", Description: "y must be under 100.", Notation: model_logic.NotationTLAPlus, Specification: "y < 100"},
+				},
 			},
 		},
 		{
@@ -63,11 +66,13 @@ func (suite *ModelSuite) TestValidate() {
 			},
 		},
 		{
-			testName: "valid model with tla invariants and global functions",
+			testName: "valid model with invariants and global functions",
 			model: Model{
-				Key:           "model1",
-				Name:          "Name",
-				TlaInvariants: []string{"x > 0"},
+				Key:  "model1",
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
 				GlobalFunctions: map[string]model_logic.GlobalFunction{
 					"_Max": {
 						Name:       "_Max",
@@ -99,13 +104,26 @@ func (suite *ModelSuite) TestValidate() {
 			errstr: "Name: cannot be blank",
 		},
 		{
-			testName: "error blank name with tla invariants set",
+			testName: "error blank name with invariants set",
 			model: Model{
-				Key:           "model1",
-				Name:          "",
-				TlaInvariants: []string{"x > 0"},
+				Key:  "model1",
+				Name: "",
+				Invariants: []model_logic.Logic{
+					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
 			},
 			errstr: "Name: cannot be blank",
+		},
+		{
+			testName: "error invalid invariant missing key",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					{Key: "", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "invariant 0",
 		},
 		{
 			testName: "error invalid global function name",
@@ -171,18 +189,21 @@ func (suite *ModelSuite) TestNew() {
 			},
 		},
 	}
+	invariants := []model_logic.Logic{
+		{Key: "inv_1", Description: "First invariant.", Notation: model_logic.NotationTLAPlus, Specification: "inv1"},
+	}
 	model, err := NewModel("  MODEL1  ", "Name", "Details",
-		[]string{"inv1"}, globalFuncs)
+		invariants, globalFuncs)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Model{
 		Key:             "model1",
 		Name:            "Name",
 		Details:         "Details",
-		TlaInvariants:   []string{"inv1"},
+		Invariants:      invariants,
 		GlobalFunctions: globalFuncs,
 	}, model)
 
-	// Test with nil optional fields (TlaInvariants and GlobalFunctions are optional).
+	// Test with nil optional fields (Invariants and GlobalFunctions are optional).
 	model, err = NewModel("  MODEL1  ", "Name", "Details", nil, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Model{

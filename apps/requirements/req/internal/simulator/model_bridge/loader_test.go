@@ -29,9 +29,9 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"TRUE",
-			"1 + 1 = 2",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+			{Key: "inv_1", Description: "Basic arithmetic.", Notation: model_logic.NotationTLAPlus, Specification: "1 + 1 = 2"},
 		},
 	}
 
@@ -57,7 +57,7 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_Empty() {
 	model := &req_model.Model{
 		Key:           "test_model",
 		Name:          "Test Model",
-		TlaInvariants: []string{},
+		Invariants: []model_logic.Logic{},
 	}
 
 	loader := NewLoader()
@@ -72,9 +72,9 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_ParseError() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"TRUE",
-			"THIS IS NOT VALID TLA+",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+			{Key: "inv_1", Description: "Invalid expression.", Notation: model_logic.NotationTLAPlus, Specification: "THIS IS NOT VALID TLA+"},
 		},
 	}
 
@@ -374,8 +374,8 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	model := &req_model.Model{
 		Key:  "shop_model",
 		Name: "Shop Model",
-		TlaInvariants: []string{
-			"TRUE",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 		},
 		GlobalFunctions: map[string]model_logic.GlobalFunction{
 			"_Threshold": {
@@ -499,8 +499,8 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"TRUE",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 		},
 	}
 
@@ -516,8 +516,8 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Error() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"INVALID SYNTAX HERE",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Invalid syntax.", Notation: model_logic.NotationTLAPlus, Specification: "INVALID SYNTAX HERE"},
 		},
 	}
 
@@ -536,8 +536,8 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"TRUE",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 		},
 	}
 
@@ -553,8 +553,8 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Panics() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaInvariants: []string{
-			"INVALID SYNTAX HERE",
+		Invariants: []model_logic.Logic{
+			{Key: "inv_0", Description: "Invalid syntax.", Notation: model_logic.NotationTLAPlus, Specification: "INVALID SYNTAX HERE"},
 		},
 	}
 

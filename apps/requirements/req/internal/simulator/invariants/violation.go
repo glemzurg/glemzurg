@@ -131,7 +131,7 @@ type Violation struct {
 	// ActualValue is what the value actually was (for constraint violations).
 	ActualValue string
 
-	// InvariantIndex is the index in Model.TlaInvariants (for model invariants).
+	// InvariantIndex is the index in Model.Invariants (for model invariants).
 	InvariantIndex int
 
 	// GuaranteeIndex is the index in the guarantee array (for guarantee violations).

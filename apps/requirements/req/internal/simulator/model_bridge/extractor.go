@@ -7,7 +7,7 @@ import (
 
 // ExtractFromModel extracts all TLA+ expressions from the model.
 // Returns a slice of ExtractedExpression containing:
-//   - Model invariants (TlaInvariants)
+//   - Model invariants (Invariants)
 //   - Global function definitions (GlobalFunctions)
 //   - Action requires/guarantees (TlaRequires, TlaGuarantees)
 //   - Query requires/guarantees (TlaRequires, TlaGuarantees)
@@ -44,16 +44,16 @@ func ExtractFromModel(model *req_model.Model) []ExtractedExpression {
 	return expressions
 }
 
-// extractModelInvariants extracts TLA+ invariants from the model level.
+// extractModelInvariants extracts invariants from the model level.
 func extractModelInvariants(model *req_model.Model) []ExtractedExpression {
-	expressions := make([]ExtractedExpression, 0, len(model.TlaInvariants))
+	expressions := make([]ExtractedExpression, 0, len(model.Invariants))
 
-	for i, tla := range model.TlaInvariants {
+	for i, inv := range model.Invariants {
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceModelInvariant,
-			Expression: tla,
+			Expression: inv.Specification,
 			ScopeKey:   nil, // Model invariants have global scope
-			Name:       "",
+			Name:       inv.Description,
 			Index:      i,
 		})
 	}

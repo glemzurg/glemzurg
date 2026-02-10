@@ -15,7 +15,7 @@ func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) *r
 		Key:            original.Key,
 		Name:           original.Name,
 		Details:        original.Details,
-		TlaInvariants:  resolved.ModelInvariants,
+		Invariants:     resolved.ModelInvariants,
 		GlobalFunctions: original.GlobalFunctions,
 		Actors:         original.Actors,
 	}

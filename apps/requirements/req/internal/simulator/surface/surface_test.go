@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/suite"
 )
@@ -534,9 +535,9 @@ func (s *ResolverSuite) TestResolve_InvalidSpec_Error() {
 func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 	// Build a model with two domains so Payment is a known class.
 	model2 := buildTwoDomainModel()
-	model2.TlaInvariants = []string{
-		"Order.count > 0",
-		"Payment.count > 0",
+	model2.Invariants = []model_logic.Logic{
+		{Key: "inv_0", Description: "Order count positive.", Notation: model_logic.NotationTLAPlus, Specification: "Order.count > 0"},
+		{Key: "inv_1", Description: "Payment count positive.", Notation: model_logic.NotationTLAPlus, Specification: "Payment.count > 0"},
 	}
 	spec2 := &SurfaceSpecification{
 		IncludeDomains: []identity.Key{domainKey},
@@ -545,7 +546,7 @@ func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 	s.NoError(err)
 	// Only "Order.count > 0" should be included.
 	s.Len(resolved2.ModelInvariants, 1)
-	s.Equal("Order.count > 0", resolved2.ModelInvariants[0])
+	s.Equal("Order.count > 0", resolved2.ModelInvariants[0].Specification)
 }
 
 func (s *ResolverSuite) TestResolve_MultipleIncludes() {
@@ -690,8 +691,8 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 	s.Equal(2, totalClasses)
 
 	// Check invariants.
-	s.Len(filtered.TlaInvariants, 1)
-	s.Equal("Order.count > 0", filtered.TlaInvariants[0])
+	s.Len(filtered.Invariants, 1)
+	s.Equal("Order.count > 0", filtered.Invariants[0].Specification)
 }
 
 func (s *FilteredModelSuite) TestBuildFilteredModel_ExcludesFilteredClasses() {
