@@ -10,16 +10,16 @@ var _validate = validator.New()
 
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
-	Id            string `validate:"required"`
+	Key            string `validate:"required"`
 	Description   string `validate:"required"`
 	Notation      string `validate:"required,oneof=TLA+"`
 	Specification string // Optional logic specification body.
 }
 
 // NewLogic creates a new Logic and validates it.
-func NewLogic(id, description, notation, specification string) (logic Logic, err error) {
+func NewLogic(key, description, notation, specification string) (logic Logic, err error) {
 	logic = Logic{
-		Id:            id,
+		Key:            key,
 		Description:   description,
 		Notation:      notation,
 		Specification: specification,

@@ -25,7 +25,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "valid minimal",
 			logic: Logic{
-				Id:          "inv_1",
+				Key:          "inv_1",
 				Description: "All orders must have at least one item.",
 				Notation:    NotationTLAPlus,
 			},
@@ -33,7 +33,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "valid with specification",
 			logic: Logic{
-				Id:            "inv_2",
+				Key:            "inv_2",
 				Description:   "Stock is never negative.",
 				Notation:      NotationTLAPlus,
 				Specification: "\\A p \\in Products : p.stock >= 0",
@@ -42,25 +42,25 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "valid with empty specification",
 			logic: Logic{
-				Id:            "inv_3",
+				Key:            "inv_3",
 				Description:   "Placeholder invariant.",
 				Notation:      NotationTLAPlus,
 				Specification: "",
 			},
 		},
 		{
-			testName: "error missing id",
+			testName: "error missing key",
 			logic: Logic{
-				Id:          "",
+				Key:          "",
 				Description: "Some description.",
 				Notation:    NotationTLAPlus,
 			},
-			errstr: "Id",
+			errstr: "Key",
 		},
 		{
 			testName: "error missing description",
 			logic: Logic{
-				Id:          "inv_1",
+				Key:          "inv_1",
 				Description: "",
 				Notation:    NotationTLAPlus,
 			},
@@ -69,7 +69,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "error missing notation",
 			logic: Logic{
-				Id:          "inv_1",
+				Key:          "inv_1",
 				Description: "Some description.",
 				Notation:    "",
 			},
@@ -78,35 +78,35 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "error invalid notation",
 			logic: Logic{
-				Id:          "inv_1",
+				Key:          "inv_1",
 				Description: "Some description.",
 				Notation:    "Z",
 			},
 			errstr: "Notation",
 		},
 		{
-			testName: "error missing id and description",
+			testName: "error missing key and description",
 			logic: Logic{
-				Id:          "",
+				Key:          "",
 				Description: "",
 				Notation:    NotationTLAPlus,
 			},
-			errstr: "Id",
+			errstr: "Key",
 		},
 		{
-			testName: "error missing id with specification set",
+			testName: "error missing key with specification set",
 			logic: Logic{
-				Id:            "",
+				Key:            "",
 				Description:   "Some description.",
 				Notation:      NotationTLAPlus,
 				Specification: "TRUE",
 			},
-			errstr: "Id",
+			errstr: "Key",
 		},
 		{
 			testName: "error invalid notation with specification set",
 			logic: Logic{
-				Id:            "inv_1",
+				Key:            "inv_1",
 				Description:   "Some description.",
 				Notation:      "Alloy",
 				Specification: "some spec",
@@ -133,7 +133,7 @@ func (s *LogicTestSuite) TestNew() {
 	logic, err := NewLogic("inv_1", "Stock is never negative.", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
 	s.NoError(err)
 	s.Equal(Logic{
-		Id:            "inv_1",
+		Key:            "inv_1",
 		Description:   "Stock is never negative.",
 		Notation:      NotationTLAPlus,
 		Specification: "\\A p \\in Products : p.stock >= 0",
@@ -143,7 +143,7 @@ func (s *LogicTestSuite) TestNew() {
 	logic, err = NewLogic("inv_2", "Placeholder.", NotationTLAPlus, "")
 	s.NoError(err)
 	s.Equal(Logic{
-		Id:          "inv_2",
+		Key:          "inv_2",
 		Description: "Placeholder.",
 		Notation:    NotationTLAPlus,
 	}, logic)
@@ -151,7 +151,7 @@ func (s *LogicTestSuite) TestNew() {
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewLogic("", "Some description.", NotationTLAPlus, "")
 	s.Error(err)
-	s.Contains(err.Error(), "Id")
+	s.Contains(err.Error(), "Key")
 
 	// Test that invalid notation fails.
 	_, err = NewLogic("inv_1", "Some description.", "Z", "")
