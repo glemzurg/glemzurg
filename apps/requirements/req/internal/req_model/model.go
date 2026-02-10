@@ -19,9 +19,9 @@ type Model struct {
 	Name          string
 	Details       string   // Markdown.
 	TlaInvariants []string // TLA+ expressions that must be true for this model.
-	// Global TLA+ definitions that can be referenced from other TLA+ expressions.
-	// Key is the definition Name (case-preserved, e.g., "_Max", "_SetOfValues").
-	TlaDefinitions map[string]model_logic.TlaDefinition
+	// Global functions that can be referenced from other expressions.
+	// Key is the function Name (case-preserved, e.g., "_Max", "_SetOfValues").
+	GlobalFunctions map[string]model_logic.GlobalFunction
 	// Children
 	Actors             map[identity.Key]model_actor.Actor
 	Domains            map[identity.Key]model_domain.Domain
@@ -29,14 +29,14 @@ type Model struct {
 	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, tlaInvariants []string, tlaDefinitions map[string]model_logic.TlaDefinition) (model Model, err error) {
+func NewModel(key, name, details string, tlaInvariants []string, globalFunctions map[string]model_logic.GlobalFunction) (model Model, err error) {
 
 	model = Model{
-		Key:            strings.TrimSpace(strings.ToLower(key)),
-		Name:           name,
-		Details:        details,
-		TlaInvariants:  tlaInvariants,
-		TlaDefinitions: tlaDefinitions,
+		Key:             strings.TrimSpace(strings.ToLower(key)),
+		Name:            name,
+		Details:         details,
+		TlaInvariants:   tlaInvariants,
+		GlobalFunctions: globalFunctions,
 	}
 
 	if err = model.Validate(); err != nil {
@@ -80,14 +80,14 @@ func (m *Model) Validate() error {
 		}
 	}
 
-	// Validate TLA definitions.
-	for name, def := range m.TlaDefinitions {
-		if err := def.Validate(); err != nil {
-			return errors.Wrapf(err, "TLA definition '%s'", name)
+	// Validate global functions.
+	for name, gf := range m.GlobalFunctions {
+		if err := gf.Validate(); err != nil {
+			return errors.Wrapf(err, "global function '%s'", name)
 		}
-		// Ensure the map key matches the definition name.
-		if name != def.Name {
-			return errors.Errorf("TLA definition map key '%s' does not match definition name '%s'", name, def.Name)
+		// Ensure the map key matches the function name.
+		if name != gf.Name {
+			return errors.Errorf("global function map key '%s' does not match function name '%s'", name, gf.Name)
 		}
 	}
 

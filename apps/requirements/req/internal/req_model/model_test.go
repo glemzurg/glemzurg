@@ -44,30 +44,40 @@ func (suite *ModelSuite) TestValidate() {
 			},
 		},
 		{
-			testName: "valid model with tla definitions",
+			testName: "valid model with global functions",
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				TlaDefinitions: map[string]model_logic.TlaDefinition{
+				GlobalFunctions: map[string]model_logic.GlobalFunction{
 					"_Max": {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
-						Tla:        "IF x > y THEN x ELSE y",
+						Specification: model_logic.Logic{
+							Key:           "spec_max",
+							Description:   "Max of two values.",
+							Notation:      model_logic.NotationTLAPlus,
+							Specification: "IF x > y THEN x ELSE y",
+						},
 					},
 				},
 			},
 		},
 		{
-			testName: "valid model with tla invariants and definitions",
+			testName: "valid model with tla invariants and global functions",
 			model: Model{
 				Key:           "model1",
 				Name:          "Name",
 				TlaInvariants: []string{"x > 0"},
-				TlaDefinitions: map[string]model_logic.TlaDefinition{
+				GlobalFunctions: map[string]model_logic.GlobalFunction{
 					"_Max": {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
-						Tla:        "IF x > y THEN x ELSE y",
+						Specification: model_logic.Logic{
+							Key:           "spec_max",
+							Description:   "Max of two values.",
+							Notation:      model_logic.NotationTLAPlus,
+							Specification: "IF x > y THEN x ELSE y",
+						},
 					},
 				},
 			},
@@ -98,32 +108,40 @@ func (suite *ModelSuite) TestValidate() {
 			errstr: "Name: cannot be blank",
 		},
 		{
-			testName: "error invalid tla definition",
+			testName: "error invalid global function name",
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				TlaDefinitions: map[string]model_logic.TlaDefinition{
+				GlobalFunctions: map[string]model_logic.GlobalFunction{
 					"Max": {
 						Name: "Max", // Missing underscore
-						Tla:  "42",
+						Specification: model_logic.Logic{
+							Key:         "spec_1",
+							Description: "Some desc.",
+							Notation:    model_logic.NotationTLAPlus,
+						},
 					},
 				},
 			},
 			errstr: "must start with underscore",
 		},
 		{
-			testName: "error tla definition map key mismatch",
+			testName: "error global function map key mismatch",
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				TlaDefinitions: map[string]model_logic.TlaDefinition{
+				GlobalFunctions: map[string]model_logic.GlobalFunction{
 					"_Wrong": {
 						Name: "_Right",
-						Tla:  "42",
+						Specification: model_logic.Logic{
+							Key:         "spec_1",
+							Description: "Some desc.",
+							Notation:    model_logic.NotationTLAPlus,
+						},
 					},
 				},
 			},
-			errstr: "does not match definition name",
+			errstr: "does not match function name",
 		},
 	}
 	for _, tt := range tests {
@@ -141,25 +159,30 @@ func (suite *ModelSuite) TestValidate() {
 // TestNew tests that NewModel maps parameters correctly and calls Validate.
 func (suite *ModelSuite) TestNew() {
 	// Test all parameters are mapped correctly (key is normalized to lowercase and trimmed).
-	tlaDefs := map[string]model_logic.TlaDefinition{
+	globalFuncs := map[string]model_logic.GlobalFunction{
 		"_Max": {
 			Name:       "_Max",
 			Parameters: []string{"x", "y"},
-			Tla:        "IF x > y THEN x ELSE y",
+			Specification: model_logic.Logic{
+				Key:           "spec_max",
+				Description:   "Max of two values.",
+				Notation:      model_logic.NotationTLAPlus,
+				Specification: "IF x > y THEN x ELSE y",
+			},
 		},
 	}
 	model, err := NewModel("  MODEL1  ", "Name", "Details",
-		[]string{"inv1"}, tlaDefs)
+		[]string{"inv1"}, globalFuncs)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Model{
-		Key:            "model1",
-		Name:           "Name",
-		Details:        "Details",
-		TlaInvariants:  []string{"inv1"},
-		TlaDefinitions: tlaDefs,
+		Key:             "model1",
+		Name:            "Name",
+		Details:         "Details",
+		TlaInvariants:   []string{"inv1"},
+		GlobalFunctions: globalFuncs,
 	}, model)
 
-	// Test with nil optional fields (TlaInvariants and TlaDefinitions are optional).
+	// Test with nil optional fields (TlaInvariants and GlobalFunctions are optional).
 	model, err = NewModel("  MODEL1  ", "Name", "Details", nil, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Model{

@@ -87,18 +87,23 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_ParseError() {
 }
 
 // =============================================================================
-// TLA Definitions Loading
+// Global Functions Loading
 // =============================================================================
 
-func (s *LoaderTestSuite) TestLoadTlaDefinitions() {
+func (s *LoaderTestSuite) TestLoadGlobalFunctions() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaDefinitions: map[string]model_logic.TlaDefinition{
+		GlobalFunctions: map[string]model_logic.GlobalFunction{
 			"_Max": {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
-				Tla:        "IF x > y THEN x ELSE y",
+				Specification: model_logic.Logic{
+					Key:           "spec_max",
+					Description:   "Max of two values.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "IF x > y THEN x ELSE y",
+				},
 			},
 		},
 	}
@@ -119,15 +124,20 @@ func (s *LoaderTestSuite) TestLoadTlaDefinitions() {
 	s.Equal("y", def.Parameters[1].Name)
 }
 
-func (s *LoaderTestSuite) TestLoadTlaDefinitions_NoParams() {
+func (s *LoaderTestSuite) TestLoadGlobalFunctions_NoParams() {
 	model := &req_model.Model{
 		Key:  "test_model",
 		Name: "Test Model",
-		TlaDefinitions: map[string]model_logic.TlaDefinition{
+		GlobalFunctions: map[string]model_logic.GlobalFunction{
 			"_StatusSet": {
 				Name:       "_StatusSet",
 				Parameters: []string{},
-				Tla:        `{"pending", "active"}`,
+				Specification: model_logic.Logic{
+					Key:           "spec_statuses",
+					Description:   "Status set.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: `{"pending", "active"}`,
+				},
 			},
 		},
 	}
@@ -367,11 +377,16 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 		TlaInvariants: []string{
 			"TRUE",
 		},
-		TlaDefinitions: map[string]model_logic.TlaDefinition{
+		GlobalFunctions: map[string]model_logic.GlobalFunction{
 			"_Threshold": {
 				Name:       "_Threshold",
 				Parameters: nil,
-				Tla:        "10",
+				Specification: model_logic.Logic{
+					Key:           "spec_threshold",
+					Description:   "Threshold value.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "10",
+				},
 			},
 		},
 		Domains: map[identity.Key]model_domain.Domain{

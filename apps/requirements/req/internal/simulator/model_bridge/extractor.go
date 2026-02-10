@@ -8,7 +8,7 @@ import (
 // ExtractFromModel extracts all TLA+ expressions from the model.
 // Returns a slice of ExtractedExpression containing:
 //   - Model invariants (TlaInvariants)
-//   - Global TLA definitions (TlaDefinitions)
+//   - Global function definitions (GlobalFunctions)
 //   - Action requires/guarantees (TlaRequires, TlaGuarantees)
 //   - Query requires/guarantees (TlaRequires, TlaGuarantees)
 //   - Guard conditions (TlaGuard)
@@ -18,8 +18,8 @@ func ExtractFromModel(model *req_model.Model) []ExtractedExpression {
 	// Extract model-level invariants (global scope, no key)
 	expressions = append(expressions, extractModelInvariants(model)...)
 
-	// Extract global TLA definitions
-	expressions = append(expressions, extractTlaDefinitions(model)...)
+	// Extract global function definitions
+	expressions = append(expressions, extractGlobalFunctions(model)...)
 
 	// Extract from all domains -> subdomains -> classes
 	for _, domain := range model.Domains {
@@ -61,17 +61,17 @@ func extractModelInvariants(model *req_model.Model) []ExtractedExpression {
 	return expressions
 }
 
-// extractTlaDefinitions extracts global TLA+ definitions from the model.
-func extractTlaDefinitions(model *req_model.Model) []ExtractedExpression {
-	expressions := make([]ExtractedExpression, 0, len(model.TlaDefinitions))
+// extractGlobalFunctions extracts global function definitions from the model.
+func extractGlobalFunctions(model *req_model.Model) []ExtractedExpression {
+	expressions := make([]ExtractedExpression, 0, len(model.GlobalFunctions))
 
-	for _, def := range model.TlaDefinitions {
+	for _, gf := range model.GlobalFunctions {
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceTlaDefinition,
-			Expression: def.Tla,
-			ScopeKey:   nil, // TLA definitions have global scope
-			Name:       def.Name,
-			Parameters: def.Parameters,
+			Expression: gf.Specification.Specification,
+			ScopeKey:   nil, // Global functions have global scope
+			Name:       gf.Name,
+			Parameters: gf.Parameters,
 			Index:      0,
 		})
 	}
