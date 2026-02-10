@@ -1,4 +1,4 @@
-package model_tla
+package model_logic
 
 import (
 	"testing"

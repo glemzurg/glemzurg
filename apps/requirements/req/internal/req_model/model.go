@@ -10,7 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_tla"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 )
 
 // Model is the documentation summary of a set of requirements.
@@ -21,7 +21,7 @@ type Model struct {
 	TlaInvariants []string // TLA+ expressions that must be true for this model.
 	// Global TLA+ definitions that can be referenced from other TLA+ expressions.
 	// Key is the definition Name (case-preserved, e.g., "_Max", "_SetOfValues").
-	TlaDefinitions map[string]model_tla.TlaDefinition
+	TlaDefinitions map[string]model_logic.TlaDefinition
 	// Children
 	Actors             map[identity.Key]model_actor.Actor
 	Domains            map[identity.Key]model_domain.Domain
@@ -29,7 +29,7 @@ type Model struct {
 	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, tlaInvariants []string, tlaDefinitions map[string]model_tla.TlaDefinition) (model Model, err error) {
+func NewModel(key, name, details string, tlaInvariants []string, tlaDefinitions map[string]model_logic.TlaDefinition) (model Model, err error) {
 
 	model = Model{
 		Key:            strings.TrimSpace(strings.ToLower(key)),

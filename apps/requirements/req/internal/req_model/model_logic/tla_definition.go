@@ -1,4 +1,4 @@
-package model_tla
+package model_logic
 
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
