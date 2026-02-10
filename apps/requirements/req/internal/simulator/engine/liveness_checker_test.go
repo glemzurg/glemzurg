@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -253,10 +254,14 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 		Name: "Order",
 		Attributes: map[identity.Key]model_class.Attribute{
 			attrDerivedKey: {
-				Key:                 attrDerivedKey,
-				Name:                "total",
-				DerivationPolicy:    "sum of items",
-				TlaDerivationPolicy: "self.amount * 2",
+				Key:  attrDerivedKey,
+				Name: "total",
+				DerivationPolicy: &model_logic.Logic{
+					Key:           "spec_total",
+					Description:   "Sum of items.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "self.amount * 2",
+				},
 			},
 		},
 		States: map[identity.Key]model_state.State{

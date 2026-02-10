@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -25,7 +26,7 @@ func TestDerivedEvaluatorSuite(t *testing.T) {
 // ========================================================================
 
 // TestDerivedAttributeEvaluation verifies that a derived attribute with a
-// TlaDerivationPolicy expression is correctly evaluated. A "doublePrice"
+// DerivationPolicy expression is correctly evaluated. A "doublePrice"
 // attribute defined as "self.price * 2" should resolve to 20 when price=10.
 func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
@@ -41,10 +42,14 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 				Name: "price",
 			},
 			attrDoublePriceKey: {
-				Key:                 attrDoublePriceKey,
-				Name:                "doublePrice",
-				DerivationPolicy:    "computed",
-				TlaDerivationPolicy: "self.price * 2",
+				Key:  attrDoublePriceKey,
+				Name: "doublePrice",
+				DerivationPolicy: &model_logic.Logic{
+					Key:           "spec_double_price",
+					Description:   "Double the price.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "self.price * 2",
+				},
 			},
 		},
 		States:      map[identity.Key]model_state.State{},
@@ -77,10 +82,9 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	s.Equal("20", doublePriceVal.Inspect())
 }
 
-// TestDerivedAttributeMissingTlaPolicy verifies that NewDerivedAttributeEvaluator
-// returns an error when an attribute has DerivationPolicy set but TlaDerivationPolicy
-// is empty.
-func (s *DerivedEvaluatorSuite) TestDerivedAttributeMissingTlaPolicy() {
+// TestDerivedAttributeEmptySpecification verifies that NewDerivedAttributeEvaluator
+// returns an error when an attribute has a DerivationPolicy with an empty Specification.
+func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
@@ -89,10 +93,14 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeMissingTlaPolicy() {
 		Name: "Product",
 		Attributes: map[identity.Key]model_class.Attribute{
 			attrKey: {
-				Key:                 attrKey,
-				Name:                "derivedField",
-				DerivationPolicy:    "computed",
-				TlaDerivationPolicy: "", // Missing!
+				Key:  attrKey,
+				Name: "derivedField",
+				DerivationPolicy: &model_logic.Logic{
+					Key:           "spec_derived",
+					Description:   "A derived field.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "", // Empty specification.
+				},
 			},
 		},
 		States:      map[identity.Key]model_state.State{},
@@ -110,11 +118,11 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeMissingTlaPolicy() {
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
 	s.Error(err)
 	s.Nil(dae)
-	s.Contains(err.Error(), "has DerivationPolicy but no TlaDerivationPolicy")
+	s.Contains(err.Error(), "DerivationPolicy parse error")
 }
 
 // TestDerivedAttributeRejectsPrimedVars verifies that NewDerivedAttributeEvaluator
-// returns an error when a TlaDerivationPolicy expression contains primed variables.
+// returns an error when a DerivationPolicy specification contains primed variables.
 func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
@@ -129,10 +137,14 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 				Name: "price",
 			},
 			attrDerivedKey: {
-				Key:                 attrDerivedKey,
-				Name:                "derivedField",
-				DerivationPolicy:    "computed",
-				TlaDerivationPolicy: "self.price'",
+				Key:  attrDerivedKey,
+				Name: "derivedField",
+				DerivationPolicy: &model_logic.Logic{
+					Key:           "spec_derived",
+					Description:   "A derived field.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "self.price'",
+				},
 			},
 		},
 		States:      map[identity.Key]model_state.State{},
@@ -170,10 +182,14 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 				Name: "price",
 			},
 			attrDoublePriceKey: {
-				Key:                 attrDoublePriceKey,
-				Name:                "doublePrice",
-				DerivationPolicy:    "computed",
-				TlaDerivationPolicy: "self.price * 2",
+				Key:  attrDoublePriceKey,
+				Name: "doublePrice",
+				DerivationPolicy: &model_logic.Logic{
+					Key:           "spec_double_price",
+					Description:   "Double the price.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "self.price * 2",
+				},
 			},
 		},
 		States:      map[identity.Key]model_state.State{},

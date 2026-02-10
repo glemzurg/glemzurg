@@ -3,6 +3,7 @@ package model_class
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
@@ -13,27 +14,25 @@ type Attribute struct {
 	Name             string
 	Details          string // Markdown.
 	DataTypeRules    string // What are the bounds of this data type.
-	DerivationPolicy    string // If this is a derived attribute, how is it derived.
-	TlaDerivationPolicy string // TLA+ expression computing the derived value.
-	Nullable            bool   // Is this attribute optional.
-	UmlComment string
+	DerivationPolicy *model_logic.Logic // If this is a derived attribute, the logic for how it is derived.
+	Nullable         bool               // Is this attribute optional.
+	UmlComment       string
 	// Children
 	IndexNums []uint                    // The indexes this attribute is part of.
 	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPolicy, tlaDerivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
+func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
 
 	attribute = Attribute{
-		Key:                 key,
-		Name:                name,
-		Details:             details,
-		DataTypeRules:       dataTypeRules,
-		DerivationPolicy:    derivationPolicy,
-		TlaDerivationPolicy: tlaDerivationPolicy,
-		Nullable:            nullable,
-		UmlComment:          umlComment,
-		IndexNums:           indexNums,
+		Key:              key,
+		Name:             name,
+		Details:          details,
+		DataTypeRules:    dataTypeRules,
+		DerivationPolicy: derivationPolicy,
+		Nullable:         nullable,
+		UmlComment:       umlComment,
+		IndexNums:        indexNums,
 	}
 
 	// Parse the data type rules into a DataType object if possible.
@@ -78,9 +77,11 @@ func (a *Attribute) Validate() error {
 		return err
 	}
 
-	// TlaDerivationPolicy requires DerivationPolicy to be set.
-	if a.TlaDerivationPolicy != "" && a.DerivationPolicy == "" {
-		return errors.Errorf("attribute %s: TlaDerivationPolicy requires DerivationPolicy to be set", a.Name)
+	// Validate the derivation policy logic if present.
+	if a.DerivationPolicy != nil {
+		if err := a.DerivationPolicy.Validate(); err != nil {
+			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		}
 	}
 
 	return nil

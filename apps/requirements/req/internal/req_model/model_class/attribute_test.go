@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -62,22 +63,36 @@ func (suite *AttributeSuite) TestValidate() {
 			errstr: "Name: cannot be blank",
 		},
 		{
-			testName: "error TlaDerivationPolicy without DerivationPolicy",
+			testName: "valid with DerivationPolicy",
 			attribute: Attribute{
-				Key:                 validKey,
-				Name:                "Name",
-				TlaDerivationPolicy: "self.x + 1",
+				Key:  validKey,
+				Name: "Name",
+				DerivationPolicy: &model_logic.Logic{
+					Key:         "spec_1",
+					Description: "Computed from other fields.",
+					Notation:    model_logic.NotationTLAPlus,
+				},
 			},
-			errstr: "TlaDerivationPolicy requires DerivationPolicy to be set",
 		},
 		{
-			testName: "valid TlaDerivationPolicy with DerivationPolicy",
+			testName: "valid without DerivationPolicy",
 			attribute: Attribute{
-				Key:                 validKey,
-				Name:                "Name",
-				DerivationPolicy:    "computed",
-				TlaDerivationPolicy: "self.x + 1",
+				Key:  validKey,
+				Name: "Name",
 			},
+		},
+		{
+			testName: "error invalid DerivationPolicy missing key",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				DerivationPolicy: &model_logic.Logic{
+					Key:         "",
+					Description: "Computed from other fields.",
+					Notation:    model_logic.NotationTLAPlus,
+				},
+			},
+			errstr: "DerivationPolicy",
 		},
 	}
 	for _, tt := range tests {
@@ -99,30 +114,41 @@ func (suite *AttributeSuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
 
+	derivationPolicy := &model_logic.Logic{
+		Key:         "spec_1",
+		Description: "Computed from other fields.",
+		Notation:    model_logic.NotationTLAPlus,
+	}
+
 	// Test parameters are mapped correctly.
-	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", "DerivationPolicy", "", true, "UmlComment", []uint{1, 2})
+	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              key,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: derivationPolicy,
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
 	}, attr)
 
+	// Test with nil DerivationPolicy (non-derived attribute).
+	attrNoDeriv, err := NewAttribute(key, "Name", "Details", "DataTypeRules", nil, true, "UmlComment", []uint{1, 2})
+	assert.NoError(suite.T(), err)
+	assert.Nil(suite.T(), attrNoDeriv.DerivationPolicy)
+
 	// Test parseable data type rules result in DataType being set.
 	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
-	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", "DerivationPolicy", "", true, "UmlComment", []uint{1, 2})
+	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivationPolicy, true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              attrParsedKey,
 		Name:             "NameParsed",
 		Details:          "Details",
 		DataTypeRules:    "unconstrained",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: derivationPolicy,
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
@@ -136,7 +162,7 @@ func (suite *AttributeSuite) TestNew() {
 	}, attrParsed)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAttribute(key, "", "Details", "DataTypeRules", "DerivationPolicy", "", true, "UmlComment", nil)
+	_, err = NewAttribute(key, "", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

@@ -76,7 +76,7 @@ func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult)
 		// Collect non-derived attribute names, sorted for deterministic output.
 		var attrNames []string
 		for _, attr := range classInfo.Class.Attributes {
-			if attr.TlaDerivationPolicy != "" {
+			if attr.DerivationPolicy != nil {
 				continue // Derived attributes are computed, not written.
 			}
 			attrNames = append(attrNames, attr.Name)

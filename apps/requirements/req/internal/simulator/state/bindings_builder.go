@@ -7,7 +7,7 @@ import (
 )
 
 // DerivedAttributeResolver computes derived attribute values for an instance.
-// Implementations should evaluate TlaDerivationPolicy expressions on-demand.
+// Implementations should evaluate DerivationPolicy expressions on-demand.
 type DerivedAttributeResolver interface {
 	// ResolveDerived evaluates all derived attributes for the given instance
 	// and returns a map of attribute name -> computed value.
