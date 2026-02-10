@@ -28,10 +28,47 @@ func (suite *ModelSuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid model",
+			testName: "valid model minimal",
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
+			},
+		},
+		{
+			testName: "valid model with tla invariants",
+			model: Model{
+				Key:           "model1",
+				Name:          "Name",
+				TlaInvariants: []string{"x > 0", "y < 100"},
+			},
+		},
+		{
+			testName: "valid model with tla definitions",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
+				TlaDefinitions: map[string]TlaDefinition{
+					"_Max": {
+						Name:       "_Max",
+						Parameters: []string{"x", "y"},
+						Tla:        "IF x > y THEN x ELSE y",
+					},
+				},
+			},
+		},
+		{
+			testName: "valid model with tla invariants and definitions",
+			model: Model{
+				Key:           "model1",
+				Name:          "Name",
+				TlaInvariants: []string{"x > 0"},
+				TlaDefinitions: map[string]TlaDefinition{
+					"_Max": {
+						Name:       "_Max",
+						Parameters: []string{"x", "y"},
+						Tla:        "IF x > y THEN x ELSE y",
+					},
+				},
 			},
 		},
 		{
@@ -50,6 +87,43 @@ func (suite *ModelSuite) TestValidate() {
 			},
 			errstr: "Name: cannot be blank",
 		},
+		{
+			testName: "error blank name with tla invariants set",
+			model: Model{
+				Key:           "model1",
+				Name:          "",
+				TlaInvariants: []string{"x > 0"},
+			},
+			errstr: "Name: cannot be blank",
+		},
+		{
+			testName: "error invalid tla definition",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
+				TlaDefinitions: map[string]TlaDefinition{
+					"Max": {
+						Name: "Max", // Missing underscore
+						Tla:  "42",
+					},
+				},
+			},
+			errstr: "must start with underscore",
+		},
+		{
+			testName: "error tla definition map key mismatch",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
+				TlaDefinitions: map[string]TlaDefinition{
+					"_Wrong": {
+						Name: "_Right",
+						Tla:  "42",
+					},
+				},
+			},
+			errstr: "does not match definition name",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
@@ -65,8 +139,27 @@ func (suite *ModelSuite) TestValidate() {
 
 // TestNew tests that NewModel maps parameters correctly and calls Validate.
 func (suite *ModelSuite) TestNew() {
-	// Test parameters are mapped correctly (key is normalized to lowercase and trimmed).
-	model, err := NewModel("  MODEL1  ", "Name", "Details")
+	// Test all parameters are mapped correctly (key is normalized to lowercase and trimmed).
+	tlaDefs := map[string]TlaDefinition{
+		"_Max": {
+			Name:       "_Max",
+			Parameters: []string{"x", "y"},
+			Tla:        "IF x > y THEN x ELSE y",
+		},
+	}
+	model, err := NewModel("  MODEL1  ", "Name", "Details",
+		[]string{"inv1"}, tlaDefs)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Model{
+		Key:            "model1",
+		Name:           "Name",
+		Details:        "Details",
+		TlaInvariants:  []string{"inv1"},
+		TlaDefinitions: tlaDefs,
+	}, model)
+
+	// Test with nil optional fields (TlaInvariants and TlaDefinitions are optional).
+	model, err = NewModel("  MODEL1  ", "Name", "Details", nil, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Model{
 		Key:     "model1",
@@ -75,7 +168,7 @@ func (suite *ModelSuite) TestNew() {
 	}, model)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewModel("model1", "", "Details")
+	_, err = NewModel("model1", "", "Details", nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

@@ -25,15 +25,19 @@ type Action struct {
 	Parameters []Parameter // Typed parameters for this action.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees []string, parameters []Parameter) (action Action, err error) {
+func NewAction(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees, tlaSafetyRules []string, calledBy []identity.Key, parameters []Parameter) (action Action, err error) {
 
 	action = Action{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Requires:   requires,
-		Guarantees: guarantees,
-		Parameters: parameters,
+		Key:            key,
+		Name:           name,
+		Details:        details,
+		Requires:       requires,
+		Guarantees:     guarantees,
+		TlaRequires:    tlaRequires,
+		TlaGuarantees:  tlaGuarantees,
+		TlaSafetyRules: tlaSafetyRules,
+		CalledBy:       calledBy,
+		Parameters:     parameters,
 	}
 
 	if err = action.Validate(); err != nil {

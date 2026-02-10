@@ -25,15 +25,18 @@ type Query struct {
 	Parameters []Parameter // Typed parameters for this query.
 }
 
-func NewQuery(key identity.Key, name, details string, requires, guarantees []string, parameters []Parameter) (query Query, err error) {
+func NewQuery(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees []string, calledBy []identity.Key, parameters []Parameter) (query Query, err error) {
 
 	query = Query{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Requires:   requires,
-		Guarantees: guarantees,
-		Parameters: parameters,
+		Key:           key,
+		Name:          name,
+		Details:       details,
+		Requires:      requires,
+		Guarantees:    guarantees,
+		TlaRequires:   tlaRequires,
+		TlaGuarantees: tlaGuarantees,
+		CalledBy:      calledBy,
+		Parameters:    parameters,
 	}
 
 	if err = query.Validate(); err != nil {

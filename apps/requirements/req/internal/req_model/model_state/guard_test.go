@@ -30,11 +30,29 @@ func (suite *GuardSuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid guard",
+			testName: "valid guard minimal",
 			guard: Guard{
 				Key:     validKey,
 				Name:    "Name",
 				Details: "Details",
+			},
+		},
+		{
+			testName: "valid guard with tla guard",
+			guard: Guard{
+				Key:      validKey,
+				Name:     "Name",
+				Details:  "Details",
+				TlaGuard: []string{"self.balance > 0"},
+			},
+		},
+		{
+			testName: "valid guard with multiple tla guards",
+			guard: Guard{
+				Key:      validKey,
+				Name:     "Name",
+				Details:  "Details",
+				TlaGuard: []string{"self.balance > 0", "self.status = \"active\""},
 			},
 		},
 		{
@@ -61,6 +79,16 @@ func (suite *GuardSuite) TestValidate() {
 				Key:     validKey,
 				Name:    "",
 				Details: "Details",
+			},
+			errstr: "Name: cannot be blank",
+		},
+		{
+			testName: "error blank name with tla guard set",
+			guard: Guard{
+				Key:      validKey,
+				Name:     "",
+				Details:  "Details",
+				TlaGuard: []string{"self.x > 0"},
 			},
 			errstr: "Name: cannot be blank",
 		},
@@ -93,8 +121,18 @@ func (suite *GuardSuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 
-	// Test parameters are mapped correctly.
-	guard, err := NewGuard(key, "Name", "Details")
+	// Test all parameters are mapped correctly.
+	guard, err := NewGuard(key, "Name", "Details", []string{"self.x > 0"})
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Guard{
+		Key:      key,
+		Name:     "Name",
+		Details:  "Details",
+		TlaGuard: []string{"self.x > 0"},
+	}, guard)
+
+	// Test with nil optional TlaGuard.
+	guard, err = NewGuard(key, "Name", "Details", nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Guard{
 		Key:     key,
@@ -103,7 +141,7 @@ func (suite *GuardSuite) TestNew() {
 	}, guard)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewGuard(key, "", "Details")
+	_, err = NewGuard(key, "", "Details", nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

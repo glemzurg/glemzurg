@@ -30,10 +30,56 @@ func (suite *ActionSuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid action",
+			testName: "valid action minimal",
 			action: Action{
 				Key:  validKey,
 				Name: "Name",
+			},
+		},
+		{
+			testName: "valid action with all optional fields",
+			action: Action{
+				Key:            validKey,
+				Name:           "Name",
+				Details:        "Details",
+				Requires:       []string{"req1"},
+				Guarantees:     []string{"guar1"},
+				TlaRequires:    []string{"tla_req1"},
+				TlaGuarantees:  []string{"tla_guar1"},
+				TlaSafetyRules: []string{"tla_safety1"},
+				CalledBy:       []identity.Key{classKey},
+			},
+		},
+		{
+			testName: "valid action with tla requires only",
+			action: Action{
+				Key:         validKey,
+				Name:        "Name",
+				TlaRequires: []string{"x > 0"},
+			},
+		},
+		{
+			testName: "valid action with tla guarantees only",
+			action: Action{
+				Key:           validKey,
+				Name:          "Name",
+				TlaGuarantees: []string{"self.x' = 1"},
+			},
+		},
+		{
+			testName: "valid action with tla safety rules only",
+			action: Action{
+				Key:            validKey,
+				Name:           "Name",
+				TlaSafetyRules: []string{"self.x' > 0"},
+			},
+		},
+		{
+			testName: "valid action with called by only",
+			action: Action{
+				Key:      validKey,
+				Name:     "Name",
+				CalledBy: []identity.Key{classKey},
 			},
 		},
 		{
@@ -60,6 +106,16 @@ func (suite *ActionSuite) TestValidate() {
 			},
 			errstr: "Name: cannot be blank",
 		},
+		{
+			testName: "error blank name with tla fields set",
+			action: Action{
+				Key:           validKey,
+				Name:          "",
+				TlaRequires:   []string{"x > 0"},
+				TlaGuarantees: []string{"self.x' = 1"},
+			},
+			errstr: "Name: cannot be blank",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
@@ -79,9 +135,31 @@ func (suite *ActionSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewActionKey(classKey, "action1"))
+	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
-	// Test parameters are mapped correctly.
-	action, err := NewAction(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"}, nil)
+	// Test all parameters are mapped correctly.
+	action, err := NewAction(key, "Name", "Details",
+		[]string{"Requires"}, []string{"Guarantees"},
+		[]string{"tla_req"}, []string{"tla_guar"}, []string{"tla_safety"},
+		[]identity.Key{otherClassKey},
+		nil)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Action{
+		Key:            key,
+		Name:           "Name",
+		Details:        "Details",
+		Requires:       []string{"Requires"},
+		Guarantees:     []string{"Guarantees"},
+		TlaRequires:    []string{"tla_req"},
+		TlaGuarantees:  []string{"tla_guar"},
+		TlaSafetyRules: []string{"tla_safety"},
+		CalledBy:       []identity.Key{otherClassKey},
+	}, action)
+
+	// Test with nil optional fields (all Tla* and CalledBy are optional).
+	action, err = NewAction(key, "Name", "Details",
+		[]string{"Requires"}, []string{"Guarantees"},
+		nil, nil, nil, nil, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Action{
 		Key:        key,
@@ -89,11 +167,10 @@ func (suite *ActionSuite) TestNew() {
 		Details:    "Details",
 		Requires:   []string{"Requires"},
 		Guarantees: []string{"Guarantees"},
-		Parameters: nil,
 	}, action)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAction(key, "", "Details", nil, nil, nil)
+	_, err = NewAction(key, "", "Details", nil, nil, nil, nil, nil, nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

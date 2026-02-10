@@ -20,12 +20,13 @@ type Event struct {
 	Parameters []Parameter
 }
 
-func NewEvent(key identity.Key, name, details string, parameters []Parameter) (event Event, err error) {
+func NewEvent(key identity.Key, name, details string, sentBy []identity.Key, parameters []Parameter) (event Event, err error) {
 
 	event = Event{
 		Key:        key,
 		Name:       name,
 		Details:    details,
+		SentBy:     sentBy,
 		Parameters: parameters,
 	}
 

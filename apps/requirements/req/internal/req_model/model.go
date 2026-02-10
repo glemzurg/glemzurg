@@ -28,12 +28,14 @@ type Model struct {
 	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string) (model Model, err error) {
+func NewModel(key, name, details string, tlaInvariants []string, tlaDefinitions map[string]TlaDefinition) (model Model, err error) {
 
 	model = Model{
-		Key:     strings.TrimSpace(strings.ToLower(key)),
-		Name:    name,
-		Details: details,
+		Key:            strings.TrimSpace(strings.ToLower(key)),
+		Name:           name,
+		Details:        details,
+		TlaInvariants:  tlaInvariants,
+		TlaDefinitions: tlaDefinitions,
 	}
 
 	if err = model.Validate(); err != nil {

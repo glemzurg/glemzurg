@@ -30,10 +30,27 @@ func (suite *EventSuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid event",
+			testName: "valid event minimal",
 			event: Event{
 				Key:  validKey,
 				Name: "Name",
+			},
+		},
+		{
+			testName: "valid event with sent by",
+			event: Event{
+				Key:    validKey,
+				Name:   "Name",
+				SentBy: []identity.Key{classKey},
+			},
+		},
+		{
+			testName: "valid event with all optional fields",
+			event: Event{
+				Key:     validKey,
+				Name:    "Name",
+				Details: "Details",
+				SentBy:  []identity.Key{classKey},
 			},
 		},
 		{
@@ -60,6 +77,15 @@ func (suite *EventSuite) TestValidate() {
 			},
 			errstr: "Name: cannot be blank",
 		},
+		{
+			testName: "error blank name with sent by set",
+			event: Event{
+				Key:    validKey,
+				Name:   "",
+				SentBy: []identity.Key{classKey},
+			},
+			errstr: "Name: cannot be blank",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
@@ -79,9 +105,24 @@ func (suite *EventSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewEventKey(classKey, "event1"))
+	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
-	// Test parameters are mapped correctly.
-	event, err := NewEvent(key, "Name", "Details", []Parameter{{Name: "ParamA", DataTypeRules: "Nat"}})
+	// Test all parameters are mapped correctly.
+	event, err := NewEvent(key, "Name", "Details",
+		[]identity.Key{otherClassKey},
+		[]Parameter{{Name: "ParamA", DataTypeRules: "Nat"}})
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Event{
+		Key:        key,
+		Name:       "Name",
+		Details:    "Details",
+		SentBy:     []identity.Key{otherClassKey},
+		Parameters: []Parameter{{Name: "ParamA", DataTypeRules: "Nat"}},
+	}, event)
+
+	// Test with nil optional SentBy.
+	event, err = NewEvent(key, "Name", "Details", nil,
+		[]Parameter{{Name: "ParamA", DataTypeRules: "Nat"}})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Event{
 		Key:        key,
@@ -91,7 +132,7 @@ func (suite *EventSuite) TestNew() {
 	}, event)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewEvent(key, "", "Details", nil)
+	_, err = NewEvent(key, "", "Details", nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 

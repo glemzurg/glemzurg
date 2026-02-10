@@ -15,12 +15,13 @@ type Guard struct {
 	TlaGuard []string // TLA+ boolean expressions that define the guard condition.
 }
 
-func NewGuard(key identity.Key, name, details string) (guard Guard, err error) {
+func NewGuard(key identity.Key, name, details string, tlaGuard []string) (guard Guard, err error) {
 
 	guard = Guard{
-		Key:     key,
-		Name:    name,
-		Details: details,
+		Key:      key,
+		Name:     name,
+		Details:  details,
+		TlaGuard: tlaGuard,
 	}
 
 	if err = guard.Validate(); err != nil {
