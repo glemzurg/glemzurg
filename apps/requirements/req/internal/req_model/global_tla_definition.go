@@ -17,6 +17,7 @@ import (
 // from class-scoped actions.
 type TlaDefinition struct {
 	Name       string   // The definition name (e.g., _Max, _SetOfValues). Must start with underscore.
+	Comment    string   // Optional human-readable description of this definition.
 	Parameters []string // The parameter names in TLA+ (e.g., ["x", "y"] for _Max(x, y)).
 	Tla        string   // The TLA+ expression body.
 }

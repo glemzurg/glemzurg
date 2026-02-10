@@ -23,6 +23,16 @@ func (s *TlaDefinitionTestSuite) TestValidate_Success_Function() {
 	s.NoError(def.Validate())
 }
 
+func (s *TlaDefinitionTestSuite) TestValidate_Success_WithComment() {
+	def := TlaDefinition{
+		Name:       "_Max",
+		Comment:    "Returns the maximum of two values.",
+		Parameters: []string{"x", "y"},
+		Tla:        "IF x > y THEN x ELSE y",
+	}
+	s.NoError(def.Validate())
+}
+
 func (s *TlaDefinitionTestSuite) TestValidate_Success_Set() {
 	def := TlaDefinition{
 		Name:       "_ValidStatuses",
