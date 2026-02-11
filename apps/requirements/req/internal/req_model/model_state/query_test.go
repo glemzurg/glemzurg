@@ -93,7 +93,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank name with logic fields set",
@@ -107,7 +107,7 @@ func (suite *QuerySuite) TestValidate() {
 					{Key: "guar_1", Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
 				},
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error invalid requires logic missing key",
@@ -182,7 +182,7 @@ func (suite *QuerySuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewQuery(key, "", "Details", nil, nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -199,7 +199,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := query.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - query key has class1 as parent, but we pass other_class.
 	query = Query{

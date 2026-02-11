@@ -106,7 +106,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank name with logic fields set",
@@ -120,7 +120,7 @@ func (suite *ActionSuite) TestValidate() {
 					{Key: "guar_1", Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' = 1"},
 				},
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error invalid requires logic missing key",
@@ -210,7 +210,7 @@ func (suite *ActionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAction(key, "", "Details", nil, nil, nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -227,7 +227,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := action.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - action key has class1 as parent, but we pass other_class.
 	action = Action{

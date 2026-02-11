@@ -1,15 +1,13 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 )
 
 // Parameter is a typed parameter for actions and queries.
 type Parameter struct {
-	Name          string
-	DataTypeRules string                    // What are the bounds of this data type.
+	Name          string                    `validate:"required"`
+	DataTypeRules string                    `validate:"required"` // What are the bounds of this data type.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
@@ -57,10 +55,10 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 
 // Validate validates the Parameter struct.
 func (p *Parameter) Validate() error {
-	return validation.ValidateStruct(p,
-		validation.Field(&p.Name, validation.Required),
-		validation.Field(&p.DataTypeRules, validation.Required),
-	)
+	if err := _validate.Struct(p); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateWithParent validates the Parameter.

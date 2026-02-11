@@ -98,7 +98,7 @@ func (suite *StateActionSuite) TestValidate() {
 				ActionKey: actionKey,
 				When:      "",
 			},
-			errstr: "When: cannot be blank",
+			errstr: "When",
 		},
 		{
 			testName: "error unknown when",
@@ -107,7 +107,7 @@ func (suite *StateActionSuite) TestValidate() {
 				ActionKey: actionKey,
 				When:      "unknown",
 			},
-			errstr: "When: must be a valid value",
+			errstr: "When",
 		},
 	}
 	for _, tt := range tests {
@@ -142,7 +142,7 @@ func (suite *StateActionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewStateAction(key, actionKey, "")
-	assert.ErrorContains(suite.T(), err, "When: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "When")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -162,7 +162,7 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		When:      "", // Invalid
 	}
 	err := stateAction.ValidateWithParent(&stateKey)
-	assert.ErrorContains(suite.T(), err, "When: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "When", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - stateAction key has state1 as parent, but we pass other_state.
 	stateAction = StateAction{

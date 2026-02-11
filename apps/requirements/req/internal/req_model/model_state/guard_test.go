@@ -81,7 +81,7 @@ func (suite *GuardSuite) TestValidate() {
 					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error invalid logic missing key",
@@ -92,7 +92,7 @@ func (suite *GuardSuite) TestValidate() {
 					Key: "", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
-			errstr: "logic",
+			errstr: "Key",
 		},
 		{
 			testName: "error invalid logic missing description",
@@ -103,7 +103,7 @@ func (suite *GuardSuite) TestValidate() {
 					Key: "guard_logic_1", Description: "", Notation: model_logic.NotationTLAPlus,
 				},
 			},
-			errstr: "logic",
+			errstr: "Description",
 		},
 	}
 	for _, tt := range tests {
@@ -140,7 +140,7 @@ func (suite *GuardSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGuard(key, "", logic)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -162,7 +162,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Logic: validLogic,
 	}
 	err := guard.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - guard key has class1 as parent, but we pass other_class.
 	guard = Guard{

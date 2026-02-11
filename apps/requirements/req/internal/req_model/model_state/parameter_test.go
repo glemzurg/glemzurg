@@ -35,7 +35,7 @@ func (suite *ParameterSuite) TestValidate() {
 				Name:          "",
 				DataTypeRules: "Nat",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank data type rules",
@@ -43,7 +43,7 @@ func (suite *ParameterSuite) TestValidate() {
 				Name:          "amount",
 				DataTypeRules: "",
 			},
-			errstr: "DataTypeRules: cannot be blank",
+			errstr: "DataTypeRules",
 		},
 	}
 	for _, tt := range tests {
@@ -69,7 +69,7 @@ func (suite *ParameterSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewParameter("", "Nat")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
@@ -80,7 +80,7 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		DataTypeRules: "Nat",
 	}
 	err := param.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
 	param = Parameter{

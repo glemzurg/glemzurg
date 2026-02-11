@@ -66,7 +66,7 @@ func (suite *EventSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -110,7 +110,7 @@ func (suite *EventSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewEvent(key, "", "Details", nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -127,7 +127,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := event.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - event key has class1 as parent, but we pass other_class.
 	event = Event{

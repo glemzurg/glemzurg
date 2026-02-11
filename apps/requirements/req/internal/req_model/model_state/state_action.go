@@ -1,7 +1,8 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -23,7 +24,7 @@ var _whenSortValue = map[string]int{
 type StateAction struct {
 	Key       identity.Key
 	ActionKey identity.Key
-	When      string
+	When      string `validate:"required,oneof=entry exit do"`
 }
 
 func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {
@@ -43,29 +44,28 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 
 // Validate validates the StateAction struct.
 func (sa *StateAction) Validate() error {
-	return validation.ValidateStruct(sa,
-		validation.Field(&sa.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_STATE_ACTION {
-				return errors.Errorf("invalid key type '%s' for state action", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&sa.ActionKey, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_ACTION {
-				return errors.Errorf("invalid key type '%s' for action", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&sa.When, validation.Required, validation.In(_WHEN_ENTRY, _WHEN_EXIT, _WHEN_DO)),
-	)
+	// Validate the key.
+	if err := sa.Key.Validate(); err != nil {
+		return err
+	}
+	if sa.Key.KeyType() != identity.KEY_TYPE_STATE_ACTION {
+		return errors.Errorf("Key: invalid key type '%s' for state action", sa.Key.KeyType())
+	}
+
+	// Validate the action key.
+	if err := sa.ActionKey.Validate(); err != nil {
+		return fmt.Errorf("ActionKey: %w", err)
+	}
+	if sa.ActionKey.KeyType() != identity.KEY_TYPE_ACTION {
+		return errors.Errorf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType())
+	}
+
+	// Validate struct tags (When required + oneof).
+	if err := _validate.Struct(sa); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the StateAction, its key's parent relationship, and all children.

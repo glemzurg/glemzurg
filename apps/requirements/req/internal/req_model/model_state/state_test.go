@@ -58,7 +58,7 @@ func (suite *StateSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -92,7 +92,7 @@ func (suite *StateSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewState(key, "", "Details", "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -109,7 +109,7 @@ func (suite *StateSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := state.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - state key has class1 as parent, but we pass other_class.
 	state = State{

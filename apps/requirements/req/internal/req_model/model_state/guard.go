@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,7 +10,7 @@ import (
 // Guard is a constraint on an event in a state machine.
 type Guard struct {
 	Key   identity.Key
-	Name  string             // A simple unique name for a guard, for internal use.
+	Name  string             `validate:"required"` // A simple unique name for a guard, for internal use.
 	Logic model_logic.Logic  // The formal logic specification for this guard condition.
 }
 
@@ -32,19 +31,16 @@ func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Gua
 
 // Validate validates the Guard struct.
 func (g *Guard) Validate() error {
-	if err := validation.ValidateStruct(g,
-		validation.Field(&g.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_GUARD {
-				return errors.Errorf("invalid key type '%s' for guard", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&g.Name, validation.Required),
-	); err != nil {
+	// Validate the key.
+	if err := g.Key.Validate(); err != nil {
+		return err
+	}
+	if g.Key.KeyType() != identity.KEY_TYPE_GUARD {
+		return errors.Errorf("Key: invalid key type '%s' for guard", g.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(g); err != nil {
 		return err
 	}
 

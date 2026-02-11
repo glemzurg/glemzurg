@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,7 +10,7 @@ import (
 // Action is what happens in a transition between states.
 type Action struct {
 	Key         identity.Key
-	Name        string
+	Name        string `validate:"required"`
 	Details     string
 	Requires    []model_logic.Logic // Preconditions to enter this action (must not contain primed variables).
 	Guarantees  []model_logic.Logic // Postconditions of this action (primed assignments only, e.g., self.field' = expr).
@@ -41,19 +40,16 @@ func NewAction(key identity.Key, name, details string, requires, guarantees, saf
 
 // Validate validates the Action struct.
 func (a *Action) Validate() error {
-	if err := validation.ValidateStruct(a,
-		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_ACTION {
-				return errors.Errorf("invalid key type '%s' for action", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&a.Name, validation.Required),
-	); err != nil {
+	// Validate the key.
+	if err := a.Key.Validate(); err != nil {
+		return err
+	}
+	if a.Key.KeyType() != identity.KEY_TYPE_ACTION {
+		return errors.Errorf("Key: invalid key type '%s' for action", a.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(a); err != nil {
 		return err
 	}
 

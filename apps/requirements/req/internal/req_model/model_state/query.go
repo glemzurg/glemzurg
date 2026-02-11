@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -12,7 +11,7 @@ import (
 // Guarantees describe filtering/selection criteria for returned data, NOT state changes.
 type Query struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string
 	Requires   []model_logic.Logic // Preconditions for this query.
 	Guarantees []model_logic.Logic // Filtering criteria for returned data (NOT state changes).
@@ -40,19 +39,16 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []mod
 
 // Validate validates the Query struct.
 func (q *Query) Validate() error {
-	if err := validation.ValidateStruct(q,
-		validation.Field(&q.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_QUERY {
-				return errors.Errorf("invalid key type '%s' for query", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&q.Name, validation.Required),
-	); err != nil {
+	// Validate the key.
+	if err := q.Key.Validate(); err != nil {
+		return err
+	}
+	if q.Key.KeyType() != identity.KEY_TYPE_QUERY {
+		return errors.Errorf("Key: invalid key type '%s' for query", q.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(q); err != nil {
 		return err
 	}
 
