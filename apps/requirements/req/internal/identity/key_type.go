@@ -348,3 +348,27 @@ func NewStateActionKey(stateKey Key, when, subKey string) (key Key, err error) {
 	}
 	return newKey(stateKey.String(), KEY_TYPE_STATE_ACTION, when+"/"+subKey)
 }
+
+func NewActionRequireKey(actionKey Key, subKey string) (key Key, err error) {
+	// The parent must be an action.
+	if actionKey.KeyType() != KEY_TYPE_ACTION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'arequire' key", actionKey.KeyType())
+	}
+	return newKey(actionKey.String(), KEY_TYPE_ACTION_REQUIRE, subKey)
+}
+
+func NewActionGuaranteeKey(actionKey Key, subKey string) (key Key, err error) {
+	// The parent must be an action.
+	if actionKey.KeyType() != KEY_TYPE_ACTION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aguarantee' key", actionKey.KeyType())
+	}
+	return newKey(actionKey.String(), KEY_TYPE_ACTION_GUARANTEE, subKey)
+}
+
+func NewActionSafetyKey(actionKey Key, subKey string) (key Key, err error) {
+	// The parent must be an action.
+	if actionKey.KeyType() != KEY_TYPE_ACTION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'asafety' key", actionKey.KeyType())
+	}
+	return newKey(actionKey.String(), KEY_TYPE_ACTION_SAFETY, subKey)
+}
