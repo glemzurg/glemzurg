@@ -3,7 +3,6 @@ package req_model
 import (
 	"strings"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -15,9 +14,9 @@ import (
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key           string   // Models do not have keys like other entitites. They just need to be unique to other models in the system.
-	Name          string
-	Details       string   // Markdown.
+	Key        string              `validate:"required"` // Models do not have keys like other entitites. They just need to be unique to other models in the system.
+	Name       string              `validate:"required"`
+	Details    string              // Markdown.
 	Invariants []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
 	// Key is the function Name (case-preserved, e.g., "_Max", "_SetOfValues").
@@ -50,10 +49,7 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 // This is the entry point for validating the entire model tree.
 func (m *Model) Validate() error {
 	// Validate the model's own fields.
-	if err := validation.ValidateStruct(m,
-		validation.Field(&m.Key, validation.Required),
-		validation.Field(&m.Name, validation.Required),
-	); err != nil {
+	if err := _validate.Struct(m); err != nil {
 		return err
 	}
 

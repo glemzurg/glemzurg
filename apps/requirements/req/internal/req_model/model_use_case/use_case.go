@@ -1,11 +1,11 @@
 package model_use_case
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	pkgerrors "github.com/pkg/errors"
 )
 
 const (
@@ -17,9 +17,9 @@ const (
 // UseCase is a user story for the system.
 type UseCase struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string // Markdown.
-	Level      string // How high cocept or tightly focused the user case is.
+	Level      string `validate:"required,oneof=sky sea mud"` // How high cocept or tightly focused the user case is.
 	ReadOnly   bool   // This is a user story that does not change the state of the system.
 	UmlComment string
 	// Children
@@ -47,20 +47,18 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 
 // Validate validates the UseCase struct.
 func (uc *UseCase) Validate() error {
-	return validation.ValidateStruct(uc,
-		validation.Field(&uc.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_USE_CASE {
-				return errors.New("invalid key type for use_case")
-			}
-			return nil
-		})),
-		validation.Field(&uc.Name, validation.Required),
-		validation.Field(&uc.Level, validation.Required, validation.In(_USE_CASE_LEVEL_SKY, _USE_CASE_LEVEL_SEA, _USE_CASE_LEVEL_MUD)),
-	)
+	// Validate the key.
+	if err := uc.Key.Validate(); err != nil {
+		return err
+	}
+	if uc.Key.KeyType() != identity.KEY_TYPE_USE_CASE {
+		return errors.New("invalid key type for use_case")
+	}
+	// Validate struct tags (Name required, Level required+oneof).
+	if err := _validate.Struct(uc); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (uc *UseCase) SetActors(actors map[identity.Key]Actor) {
@@ -97,7 +95,7 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 			return err
 		}
 		if !actorClasses[actorClassKey] {
-			return errors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
+			return pkgerrors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
 		}
 	}
 	for _, scenario := range uc.Scenarios {

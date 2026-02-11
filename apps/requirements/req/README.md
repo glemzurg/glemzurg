@@ -1,22 +1,42 @@
 
 ---------------------------
 
+todo:
+  - finish conversion to validate/go-validator
+    - apps/requirements/req/internal/req_model/model_use_case
+    - apps/requirements/req/internal/req_model
+  - make keys for logic
+  - verify keys are correct parent/child correctly
+  - save objects to database:
+    - logic
+    - model
+    - ... next ...
+    - update the yaml parsing
+    - update hte parser ai parsing
+      - add the extra structures to parser ai
+    - update the md file output
+      - include tla+
+    - update the simulator
+      - finish the todo processing
+    - join simulator into req with parameters
+  - replace all fmt.Errorf() with errors.Errorf()
+
+
+
   
 feb (in parallel)
-  - generate data models compilers
-  - generate protocols compilers
   - create complete model
     - add TLA+ parsing to create complete model
     - move parameters to actions and parsed into database
-  - run simulations on basic model
-
-
-class attribute Tla
-even stent buy
-action query + parameters
-
+  - prepare the md output to be complete
+    - update the scenarios to use the logic
+    - update the use cases if needed
+  - enter the evenplay model
 
 march (art workshops)
+  - steven tockey model freivew
+  - generate data models compilers
+  - generate protocols compilers
 
 when:
   - generate ui designs compilers
