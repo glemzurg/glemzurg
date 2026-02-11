@@ -158,12 +158,12 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 									actionKey: {
 										Key:  actionKey,
 										Name: "PlaceOrder",
-										TlaRequires: []string{
-											"self.status = \"pending\"",
-											"self.items # {}",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"pending\""},
+											{Key: "req_2", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.items # {}"},
 										},
-										TlaGuarantees: []string{
-											"self'.status = \"placed\"",
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self'.status = \"placed\""},
 										},
 									},
 								},
@@ -247,12 +247,12 @@ func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
 									queryKey: {
 										Key:  queryKey,
 										Name: "FindPending",
-										TlaRequires: []string{
-											"user.role = \"admin\"",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "user.role = \"admin\""},
 										},
-										TlaGuarantees: []string{
-											"∀ o ∈ result : o.status = \"pending\"",
-											"result ⊆ Orders",
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "∀ o ∈ result : o.status = \"pending\""},
+											{Key: "guar_2", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "result ⊆ Orders"},
 										},
 									},
 								},
@@ -414,18 +414,26 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 								Name: "Product",
 								Actions: map[identity.Key]model_state.Action{
 									actionKey: {
-										Key:           actionKey,
-										Name:          "Restock",
-										TlaRequires:   []string{"quantity > 0"},
-										TlaGuarantees: []string{"self'.stock = self.stock + quantity"},
+										Key:  actionKey,
+										Name: "Restock",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "quantity > 0"},
+										},
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self'.stock = self.stock + quantity"},
+										},
 									},
 								},
 								Queries: map[identity.Key]model_state.Query{
 									queryKey: {
-										Key:           queryKey,
-										Name:          "FindLowStock",
-										TlaRequires:   []string{"TRUE"},
-										TlaGuarantees: []string{"∀ p ∈ result : p.stock < _LowStockThreshold"},
+										Key:  queryKey,
+										Name: "FindLowStock",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+										},
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "∀ p ∈ result : p.stock < _LowStockThreshold"},
+										},
 									},
 								},
 								Guards: map[identity.Key]model_state.Guard{

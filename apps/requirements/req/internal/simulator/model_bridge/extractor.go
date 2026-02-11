@@ -9,8 +9,8 @@ import (
 // Returns a slice of ExtractedExpression containing:
 //   - Model invariants (Invariants)
 //   - Global function definitions (GlobalFunctions)
-//   - Action requires/guarantees (TlaRequires, TlaGuarantees)
-//   - Query requires/guarantees (TlaRequires, TlaGuarantees)
+//   - Action requires/guarantees (Requires, Guarantees)
+//   - Query requires/guarantees (Requires, Guarantees)
 //   - Guard conditions (TlaGuard)
 func ExtractFromModel(model *req_model.Model) []ExtractedExpression {
 	var expressions []ExtractedExpression
@@ -81,26 +81,26 @@ func extractGlobalFunctions(model *req_model.Model) []ExtractedExpression {
 
 // extractActionExpressions extracts TLA+ requires and guarantees from an action.
 func extractActionExpressions(action *model_state.Action) []ExtractedExpression {
-	expressions := make([]ExtractedExpression, 0, len(action.TlaRequires)+len(action.TlaGuarantees))
+	expressions := make([]ExtractedExpression, 0, len(action.Requires)+len(action.Guarantees))
 
-	// Extract TlaRequires
-	for i, tla := range action.TlaRequires {
+	// Extract Requires
+	for i, req := range action.Requires {
 		key := action.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceActionRequires,
-			Expression: tla,
+			Expression: req.Specification,
 			ScopeKey:   &key,
 			Name:       action.Name,
 			Index:      i,
 		})
 	}
 
-	// Extract TlaGuarantees
-	for i, tla := range action.TlaGuarantees {
+	// Extract Guarantees
+	for i, guar := range action.Guarantees {
 		key := action.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceActionGuarantees,
-			Expression: tla,
+			Expression: guar.Specification,
 			ScopeKey:   &key,
 			Name:       action.Name,
 			Index:      i,
@@ -112,26 +112,26 @@ func extractActionExpressions(action *model_state.Action) []ExtractedExpression 
 
 // extractQueryExpressions extracts TLA+ requires and guarantees from a query.
 func extractQueryExpressions(query *model_state.Query) []ExtractedExpression {
-	expressions := make([]ExtractedExpression, 0, len(query.TlaRequires)+len(query.TlaGuarantees))
+	expressions := make([]ExtractedExpression, 0, len(query.Requires)+len(query.Guarantees))
 
-	// Extract TlaRequires
-	for i, tla := range query.TlaRequires {
+	// Extract Requires
+	for i, req := range query.Requires {
 		key := query.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceQueryRequires,
-			Expression: tla,
+			Expression: req.Specification,
 			ScopeKey:   &key,
 			Name:       query.Name,
 			Index:      i,
 		})
 	}
 
-	// Extract TlaGuarantees
-	for i, tla := range query.TlaGuarantees {
+	// Extract Guarantees
+	for i, guar := range query.Guarantees {
 		key := query.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceQueryGuarantees,
-			Expression: tla,
+			Expression: guar.Specification,
 			ScopeKey:   &key,
 			Name:       query.Name,
 			Index:      i,

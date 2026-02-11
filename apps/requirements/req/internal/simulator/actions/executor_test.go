@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -84,8 +85,8 @@ func testOrderClass() (model_class.Class, identity.Key) {
 			actionCloseKey: {
 				Key:  actionCloseKey,
 				Name: "DoClose",
-				TlaGuarantees: []string{
-					"self.amount' = self.amount + 10",
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.amount' = self.amount + 10"},
 				},
 			},
 		},
@@ -203,8 +204,8 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 	action := model_state.Action{
 		Key:  actionKey,
 		Name: "increment",
-		TlaGuarantees: []string{
-			"self.count' = self.count + 1",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' = self.count + 1"},
 		},
 	}
 
@@ -233,11 +234,11 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 	action := model_state.Action{
 		Key:  actionKey,
 		Name: "close",
-		TlaRequires: []string{
-			"self.status = \"open\"",
+		Requires: []model_logic.Logic{
+			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"open\""},
 		},
-		TlaGuarantees: []string{
-			"self.status' = \"closed\"",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status' = \"closed\""},
 		},
 	}
 
@@ -264,11 +265,11 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 	action := model_state.Action{
 		Key:  actionKey,
 		Name: "close",
-		TlaRequires: []string{
-			"self.status = \"open\"",
+		Requires: []model_logic.Logic{
+			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"open\""},
 		},
-		TlaGuarantees: []string{
-			"self.status' = \"closed\"",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status' = \"closed\""},
 		},
 	}
 
@@ -292,8 +293,8 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 	action := model_state.Action{
 		Key:  actionKey,
 		Name: "set_amount",
-		TlaGuarantees: []string{
-			"self.amount' = amount",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.amount' = amount"},
 		},
 	}
 
@@ -328,8 +329,8 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	query := model_state.Query{
 		Key:  queryKey,
 		Name: "get_total",
-		TlaGuarantees: []string{
-			"result' = self.amount * 2",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "result' = self.amount * 2"},
 		},
 	}
 
@@ -355,8 +356,8 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 	query := model_state.Query{
 		Key:  queryKey,
 		Name: "get_total",
-		TlaGuarantees: []string{
-			"result' = self.amount",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "result' = self.amount"},
 		},
 	}
 
@@ -383,11 +384,11 @@ func (s *ActionsSuite) TestExecuteQueryPreconditionFails() {
 	query := model_state.Query{
 		Key:  queryKey,
 		Name: "get_total",
-		TlaRequires: []string{
-			"self.amount > 100",
+		Requires: []model_logic.Logic{
+			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.amount > 100"},
 		},
-		TlaGuarantees: []string{
-			"result' = self.amount",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "result' = self.amount"},
 		},
 	}
 
@@ -1010,14 +1011,16 @@ func (s *ActionsSuite) TestExecutionContextSafetyRules() {
 // Action validation tests (primed / non-primed constraints)
 // ========================================================================
 
-func (s *ActionsSuite) TestActionRejectsTlaGuaranteesNonPrimed() {
+func (s *ActionsSuite) TestActionRejectsGuaranteesNonPrimed() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:           actionKey,
-		Name:          "BadAction",
-		TlaGuarantees: []string{"self.count > 0"},
+		Key:  actionKey,
+		Name: "BadAction",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count > 0"},
+		},
 	}
 
 	simState := state.NewSimulationState()
@@ -1030,17 +1033,19 @@ func (s *ActionsSuite) TestActionRejectsTlaGuaranteesNonPrimed() {
 
 	_, err = executor.ExecuteAction(action, instance, nil)
 	s.Error(err)
-	s.Contains(err.Error(), "TlaGuarantees must be primed assignments only")
+	s.Contains(err.Error(), "Guarantees must be primed assignments only")
 }
 
-func (s *ActionsSuite) TestActionRejectsTlaRequiresWithPrime() {
+func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:         actionKey,
-		Name:        "BadRequires",
-		TlaRequires: []string{"self.count' > 0"},
+		Key:  actionKey,
+		Name: "BadRequires",
+		Requires: []model_logic.Logic{
+			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' > 0"},
+		},
 	}
 
 	simState := state.NewSimulationState()
@@ -1053,7 +1058,7 @@ func (s *ActionsSuite) TestActionRejectsTlaRequiresWithPrime() {
 
 	_, err = executor.ExecuteAction(action, instance, nil)
 	s.Error(err)
-	s.Contains(err.Error(), "TlaRequires must not contain primed variables")
+	s.Contains(err.Error(), "Requires must not contain primed variables")
 }
 
 func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
@@ -1061,9 +1066,11 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:            actionKey,
-		Name:           "BadSafety",
-		TlaSafetyRules: []string{"self.count > 0"},
+		Key:  actionKey,
+		Name: "BadSafety",
+		SafetyRules: []model_logic.Logic{
+			{Key: "safety_1", Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "self.count > 0"},
+		},
 	}
 
 	simState := state.NewSimulationState()
@@ -1076,7 +1083,7 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 
 	_, err = executor.ExecuteAction(action, instance, nil)
 	s.Error(err)
-	s.Contains(err.Error(), "TlaSafetyRules must reference primed variables")
+	s.Contains(err.Error(), "SafetyRules must reference primed variables")
 }
 
 // ========================================================================
@@ -1088,10 +1095,14 @@ func (s *ActionsSuite) TestActionSafetyRulesPass() {
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:            actionKey,
-		Name:           "GoodAction",
-		TlaGuarantees:  []string{"self.count' = self.count + 1"},
-		TlaSafetyRules: []string{"self.count' >= 1"},
+		Key:  actionKey,
+		Name: "GoodAction",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' = self.count + 1"},
+		},
+		SafetyRules: []model_logic.Logic{
+			{Key: "safety_1", Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' >= 1"},
+		},
 	}
 
 	simState := state.NewSimulationState()
@@ -1113,10 +1124,14 @@ func (s *ActionsSuite) TestActionSafetyRuleViolation() {
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
 	action := model_state.Action{
-		Key:            actionKey,
-		Name:           "ViolatingAction",
-		TlaGuarantees:  []string{"self.count' = self.count + 1"},
-		TlaSafetyRules: []string{"self.count' < 0"}, // Will be FALSE (6 < 0 is false)
+		Key:  actionKey,
+		Name: "ViolatingAction",
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' = self.count + 1"},
+		},
+		SafetyRules: []model_logic.Logic{
+			{Key: "safety_1", Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' < 0"}, // Will be FALSE (6 < 0 is false)
+		},
 	}
 
 	simState := state.NewSimulationState()
@@ -1161,18 +1176,22 @@ func (s *ActionsSuite) TestGuardRejectsPrimedVariables() {
 }
 
 // ========================================================================
-// Query rejects primed variables in TlaRequires test
+// Query rejects primed variables in Requires test
 // ========================================================================
 
-func (s *ActionsSuite) TestQueryRejectsTlaRequiresWithPrime() {
+func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	queryKey := mustKey("domain/d/subdomain/s/class/c/query/q")
 
 	query := model_state.Query{
-		Key:           queryKey,
-		Name:          "BadQuery",
-		TlaRequires:   []string{"self.count' > 0"},
-		TlaGuarantees: []string{"result' = self.count"},
+		Key:  queryKey,
+		Name: "BadQuery",
+		Requires: []model_logic.Logic{
+			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' > 0"},
+		},
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "result' = self.count"},
+		},
 	}
 
 	simState := state.NewSimulationState()
@@ -1185,5 +1204,5 @@ func (s *ActionsSuite) TestQueryRejectsTlaRequiresWithPrime() {
 
 	_, err = executor.ExecuteQuery(query, instance, nil)
 	s.Error(err)
-	s.Contains(err.Error(), "TlaRequires must not contain primed variables")
+	s.Contains(err.Error(), "Requires must not contain primed variables")
 }

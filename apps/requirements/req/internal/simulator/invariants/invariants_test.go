@@ -112,12 +112,12 @@ func createTestModel() *req_model.Model {
 	completeAction := model_state.Action{
 		Key:  actionKey,
 		Name: "complete",
-		TlaRequires: []string{
-			"self.status = \"active\"",
+		Requires: []model_logic.Logic{
+			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"active\""},
 		},
-		TlaGuarantees: []string{
-			"self.status' = \"completed\"", // This is a primed assignment, not a post-condition
-			"self.status' # self.status",   // This is a post-condition invariant
+		Guarantees: []model_logic.Logic{
+			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status' = \"completed\""}, // This is a primed assignment, not a post-condition
+			{Key: "guar_2", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status' # self.status"},   // This is a post-condition invariant
 		},
 	}
 

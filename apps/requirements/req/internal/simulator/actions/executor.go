@@ -228,17 +228,17 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 	defer ctx.DecrementDepth()
 
-	// Step 1: Check preconditions (TlaRequires)
+	// Step 1: Check preconditions (Requires)
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
-	for i, requireStr := range action.TlaRequires {
-		expr, err := parser.ParseExpression(requireStr)
+	for i, req := range action.Requires {
+		expr, err := parser.ParseExpression(req.Specification)
 		if err != nil {
 			return fmt.Errorf("action %s requires[%d] parse error: %w", action.Name, i, err)
 		}
 
 		if model_bridge.ContainsAnyPrimed(expr) {
-			return fmt.Errorf("action %s requires[%d]: TlaRequires must not contain primed variables", action.Name, i)
+			return fmt.Errorf("action %s requires[%d]: Requires must not contain primed variables", action.Name, i)
 		}
 
 		result := evaluator.Eval(expr, bindings)
@@ -246,13 +246,13 @@ func (e *ActionExecutor) executeActionInContext(
 			return fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, requireStr)
+			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Specification)
 		}
 	}
 
 	// Step 2: Evaluate guarantees (must be primed assignments only).
-	for i, guaranteeStr := range action.TlaGuarantees {
-		expr, err := parser.ParseExpression(guaranteeStr)
+	for i, guar := range action.Guarantees {
+		expr, err := parser.ParseExpression(guar.Specification)
 		if err != nil {
 			return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
 		}
@@ -260,7 +260,7 @@ func (e *ActionExecutor) executeActionInContext(
 		kind := model_bridge.ClassifyGuarantee(expr)
 
 		if kind != model_bridge.GuaranteePrimedAssignment {
-			return fmt.Errorf("action %s guarantee[%d]: TlaGuarantees must be primed assignments only (e.g., self.field' = expr); use TlaSafetyRules for boolean assertions", action.Name, i)
+			return fmt.Errorf("action %s guarantee[%d]: Guarantees must be primed assignments only (e.g., self.field' = expr); use SafetyRules for boolean assertions", action.Name, i)
 		}
 
 		// Check re-entrancy constraint
@@ -279,14 +279,14 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 
 	// Step 3: Collect safety rules (must contain primed variables).
-	for i, ruleStr := range action.TlaSafetyRules {
-		expr, err := parser.ParseExpression(ruleStr)
+	for i, rule := range action.SafetyRules {
+		expr, err := parser.ParseExpression(rule.Specification)
 		if err != nil {
 			return fmt.Errorf("action %s safety_rule[%d] parse error: %w", action.Name, i, err)
 		}
 
 		if !model_bridge.ContainsAnyPrimed(expr) {
-			return fmt.Errorf("action %s safety_rule[%d]: TlaSafetyRules must reference primed variables", action.Name, i)
+			return fmt.Errorf("action %s safety_rule[%d]: SafetyRules must reference primed variables", action.Name, i)
 		}
 
 		ctx.AddSafetyRule(DeferredSafetyRule{
@@ -295,7 +295,7 @@ func (e *ActionExecutor) executeActionInContext(
 			SourceKey:          action.Key,
 			SourceName:         action.Name,
 			Index:              i,
-			OriginalExpression: ruleStr,
+			OriginalExpression: rule.Specification,
 		})
 	}
 
@@ -367,14 +367,14 @@ func (e *ActionExecutor) executeQueryInContext(
 	// Step 1: Check preconditions
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
-	for i, requireStr := range query.TlaRequires {
-		expr, err := parser.ParseExpression(requireStr)
+	for i, req := range query.Requires {
+		expr, err := parser.ParseExpression(req.Specification)
 		if err != nil {
 			return nil, fmt.Errorf("query %s requires[%d] parse error: %w", query.Name, i, err)
 		}
 
 		if model_bridge.ContainsAnyPrimed(expr) {
-			return nil, fmt.Errorf("query %s requires[%d]: TlaRequires must not contain primed variables", query.Name, i)
+			return nil, fmt.Errorf("query %s requires[%d]: Requires must not contain primed variables", query.Name, i)
 		}
 
 		result := evaluator.Eval(expr, bindings)
@@ -382,15 +382,15 @@ func (e *ActionExecutor) executeQueryInContext(
 			return nil, fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, requireStr)
+			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Specification)
 		}
 	}
 
 	// Step 2: Evaluate guarantees
 	outputs := make(map[string]object.Object)
 
-	for i, guaranteeStr := range query.TlaGuarantees {
-		expr, err := parser.ParseExpression(guaranteeStr)
+	for i, guar := range query.Guarantees {
+		expr, err := parser.ParseExpression(guar.Specification)
 		if err != nil {
 			return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
 		}
@@ -414,7 +414,7 @@ func (e *ActionExecutor) executeQueryInContext(
 				SourceName:         query.Name,
 				SourceType:         "query",
 				Index:              i,
-				OriginalExpression: guaranteeStr,
+				OriginalExpression: guar.Specification,
 			})
 		}
 	}

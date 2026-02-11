@@ -7,8 +7,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 	"github.com/stretchr/testify/suite"
 )
@@ -55,8 +55,8 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 
 func (s *LoaderTestSuite) TestLoadModelInvariants_Empty() {
 	model := &req_model.Model{
-		Key:           "test_model",
-		Name:          "Test Model",
+		Key:        "test_model",
+		Name:       "Test Model",
 		Invariants: []model_logic.Logic{},
 	}
 
@@ -186,11 +186,11 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 									actionKey: {
 										Key:  actionKey,
 										Name: "PlaceOrder",
-										TlaRequires: []string{
-											"TRUE",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 										},
-										TlaGuarantees: []string{
-											"TRUE",
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 										},
 									},
 								},
@@ -256,12 +256,12 @@ func (s *LoaderTestSuite) TestLoadQueryExpressions() {
 									queryKey: {
 										Key:  queryKey,
 										Name: "FindPending",
-										TlaRequires: []string{
-											"TRUE",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
 										},
-										TlaGuarantees: []string{
-											"TRUE",
-											"FALSE",
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+											{Key: "guar_2", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "FALSE"},
 										},
 									},
 								},
@@ -403,10 +403,14 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 								Name: "Product",
 								Actions: map[identity.Key]model_state.Action{
 									actionKey: {
-										Key:           actionKey,
-										Name:          "Restock",
-										TlaRequires:   []string{"TRUE"},
-										TlaGuarantees: []string{"TRUE"},
+										Key:  actionKey,
+										Name: "Restock",
+										Requires: []model_logic.Logic{
+											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+										},
+										Guarantees: []model_logic.Logic{
+											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+										},
 									},
 								},
 							},

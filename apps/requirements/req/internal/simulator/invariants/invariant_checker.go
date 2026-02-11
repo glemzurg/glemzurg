@@ -74,8 +74,8 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 				// Parse action post-conditions
 				for _, action := range class.Actions {
 					guarantees := make([]parsedGuarantee, 0)
-					for i, gStr := range action.TlaGuarantees {
-						expr, err := parser.ParseExpression(gStr)
+					for i, guar := range action.Guarantees {
+						expr, err := parser.ParseExpression(guar.Specification)
 						if err != nil {
 							return nil, fmt.Errorf("failed to parse action %s guarantee %d: %w", action.Name, i, err)
 						}
@@ -97,8 +97,8 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 				// Parse query post-conditions
 				for _, query := range class.Queries {
 					guarantees := make([]parsedGuarantee, 0)
-					for i, gStr := range query.TlaGuarantees {
-						expr, err := parser.ParseExpression(gStr)
+					for i, guar := range query.Guarantees {
+						expr, err := parser.ParseExpression(guar.Specification)
 						if err != nil {
 							return nil, fmt.Errorf("failed to parse query %s guarantee %d: %w", query.Name, i, err)
 						}

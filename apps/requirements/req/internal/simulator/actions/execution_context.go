@@ -28,7 +28,7 @@ type DeferredPostCondition struct {
 	// SourceType is "action" or "query".
 	SourceType string
 
-	// Index is the index in the original TlaGuarantees array.
+	// Index is the index in the original Guarantees array.
 	Index int
 
 	// OriginalExpression is the original TLA+ string (for error messages).
@@ -51,7 +51,7 @@ type DeferredSafetyRule struct {
 	// SourceName is the name of the action.
 	SourceName string
 
-	// Index is the index in the original TlaSafetyRules array.
+	// Index is the index in the original SafetyRules array.
 	Index int
 
 	// OriginalExpression is the original TLA+ string (for error messages).

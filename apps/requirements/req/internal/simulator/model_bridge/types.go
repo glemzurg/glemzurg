@@ -12,13 +12,13 @@ const (
 	SourceModelInvariant ExpressionSource = iota
 	// SourceTlaDefinition is a global TLA+ definition from Model.TlaDefinitions.
 	SourceTlaDefinition
-	// SourceActionRequires is an action precondition from Action.TlaRequires.
+	// SourceActionRequires is an action precondition from Action.Requires.
 	SourceActionRequires
-	// SourceActionGuarantees is an action postcondition from Action.TlaGuarantees.
+	// SourceActionGuarantees is an action postcondition from Action.Guarantees.
 	SourceActionGuarantees
-	// SourceQueryRequires is a query precondition from Query.TlaRequires.
+	// SourceQueryRequires is a query precondition from Query.Requires.
 	SourceQueryRequires
-	// SourceQueryGuarantees is a query filtering criterion from Query.TlaGuarantees.
+	// SourceQueryGuarantees is a query filtering criterion from Query.Guarantees.
 	SourceQueryGuarantees
 	// SourceGuardCondition is a guard condition from Guard.TlaGuard.
 	SourceGuardCondition
@@ -72,7 +72,7 @@ type ExtractedExpression struct {
 	// Only populated for SourceTlaDefinition.
 	Parameters []string
 
-	// Index is the position in the source array (e.g., which TlaRequires entry).
+	// Index is the position in the source array (e.g., which Requires entry).
 	// For TLA definitions: always 0
 	Index int
 }

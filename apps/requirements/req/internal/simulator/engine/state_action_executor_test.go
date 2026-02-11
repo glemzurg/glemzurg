@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -52,9 +53,11 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 		Guards: map[identity.Key]model_state.Guard{},
 		Actions: map[identity.Key]model_state.Action{
 			actionExitKey: {
-				Key:           actionExitKey,
-				Name:          "OnExit",
-				TlaGuarantees: []string{"self.exit_count' = self.exit_count + 1"},
+				Key:  actionExitKey,
+				Name: "OnExit",
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.exit_count' = self.exit_count + 1"},
+				},
 			},
 		},
 		Queries:     map[identity.Key]model_state.Query{},
@@ -102,9 +105,11 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 		Guards: map[identity.Key]model_state.Guard{},
 		Actions: map[identity.Key]model_state.Action{
 			actionEntryKey: {
-				Key:           actionEntryKey,
-				Name:          "OnEntry",
-				TlaGuarantees: []string{"self.entry_count' = self.entry_count + 1"},
+				Key:  actionEntryKey,
+				Name: "OnEntry",
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.entry_count' = self.entry_count + 1"},
+				},
 			},
 		},
 		Queries:     map[identity.Key]model_state.Query{},

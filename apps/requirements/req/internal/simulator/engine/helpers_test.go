@@ -5,6 +5,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
@@ -46,8 +47,8 @@ func testOrderClass() (model_class.Class, identity.Key) {
 			actionCloseKey: {
 				Key:  actionCloseKey,
 				Name: "DoClose",
-				TlaGuarantees: []string{
-					"self.amount' = self.amount + 10",
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.amount' = self.amount + 10"},
 				},
 			},
 		},

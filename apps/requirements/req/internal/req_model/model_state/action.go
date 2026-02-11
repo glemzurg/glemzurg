@@ -5,34 +5,31 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 )
 
 // Action is what happens in a transition between states.
 type Action struct {
-	Key            identity.Key
-	Name           string
-	Details        string
-	Requires       []string // Human-readable preconditions to enter this action.
-	Guarantees     []string // Human-readable postconditions of this action.
-	TlaRequires    []string // TLA+ expressions for preconditions (must not contain primed variables).
-	TlaGuarantees  []string // TLA+ primed assignments only (e.g., self.field' = expr).
-	TlaSafetyRules []string // TLA+ boolean assertions that must reference primed variables.
+	Key         identity.Key
+	Name        string
+	Details     string
+	Requires    []model_logic.Logic // Preconditions to enter this action (must not contain primed variables).
+	Guarantees  []model_logic.Logic // Postconditions of this action (primed assignments only, e.g., self.field' = expr).
+	SafetyRules []model_logic.Logic // Boolean assertions that must reference primed variables.
 	// Children
 	Parameters []Parameter // Typed parameters for this action.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees, tlaRequires, tlaGuarantees, tlaSafetyRules []string, parameters []Parameter) (action Action, err error) {
+func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) (action Action, err error) {
 
 	action = Action{
-		Key:            key,
-		Name:           name,
-		Details:        details,
-		Requires:       requires,
-		Guarantees:     guarantees,
-		TlaRequires:    tlaRequires,
-		TlaGuarantees:  tlaGuarantees,
-		TlaSafetyRules: tlaSafetyRules,
-		Parameters:     parameters,
+		Key:         key,
+		Name:        name,
+		Details:     details,
+		Requires:    requires,
+		Guarantees:  guarantees,
+		SafetyRules: safetyRules,
+		Parameters:  parameters,
 	}
 
 	if err = action.Validate(); err != nil {
@@ -44,7 +41,7 @@ func NewAction(key identity.Key, name, details string, requires, guarantees, tla
 
 // Validate validates the Action struct.
 func (a *Action) Validate() error {
-	return validation.ValidateStruct(a,
+	if err := validation.ValidateStruct(a,
 		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
@@ -56,7 +53,27 @@ func (a *Action) Validate() error {
 			return nil
 		})),
 		validation.Field(&a.Name, validation.Required),
-	)
+	); err != nil {
+		return err
+	}
+
+	for i, req := range a.Requires {
+		if err := req.Validate(); err != nil {
+			return errors.Wrapf(err, "requires %d", i)
+		}
+	}
+	for i, guar := range a.Guarantees {
+		if err := guar.Validate(); err != nil {
+			return errors.Wrapf(err, "guarantee %d", i)
+		}
+	}
+	for i, rule := range a.SafetyRules {
+		if err := rule.Validate(); err != nil {
+			return errors.Wrapf(err, "safety rule %d", i)
+		}
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the Action, its key's parent relationship, and all children.

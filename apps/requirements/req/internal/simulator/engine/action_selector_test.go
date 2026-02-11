@@ -6,6 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -142,8 +143,8 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 			actionDoKey: {
 				Key:  actionDoKey,
 				Name: "DoCount",
-				TlaGuarantees: []string{
-					"self.count' = self.count + 1",
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' = self.count + 1"},
 				},
 			},
 		},

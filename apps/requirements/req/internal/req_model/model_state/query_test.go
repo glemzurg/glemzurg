@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,29 +40,35 @@ func (suite *QuerySuite) TestValidate() {
 		{
 			testName: "valid query with all optional fields",
 			query: Query{
-				Key:           validKey,
-				Name:          "Name",
-				Details:       "Details",
-				Requires:      []string{"req1"},
-				Guarantees:    []string{"guar1"},
-				TlaRequires:   []string{"tla_req1"},
-				TlaGuarantees: []string{"tla_guar1"},
+				Key:     validKey,
+				Name:    "Name",
+				Details: "Details",
+				Requires: []model_logic.Logic{
+					{Key: "req_1", Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
+				},
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Guarantee 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+				},
 			},
 		},
 		{
-			testName: "valid query with tla requires only",
+			testName: "valid query with requires only",
 			query: Query{
-				Key:         validKey,
-				Name:        "Name",
-				TlaRequires: []string{"x > 0"},
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: "req_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
 			},
 		},
 		{
-			testName: "valid query with tla guarantees only",
+			testName: "valid query with guarantees only",
 			query: Query{
-				Key:           validKey,
-				Name:          "Name",
-				TlaGuarantees: []string{"result \\in S"},
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+				},
 			},
 		},
 		{
@@ -89,14 +96,40 @@ func (suite *QuerySuite) TestValidate() {
 			errstr: "Name: cannot be blank",
 		},
 		{
-			testName: "error blank name with tla fields set",
+			testName: "error blank name with logic fields set",
 			query: Query{
-				Key:           validKey,
-				Name:          "",
-				TlaRequires:   []string{"x > 0"},
-				TlaGuarantees: []string{"result \\in S"},
+				Key:  validKey,
+				Name: "",
+				Requires: []model_logic.Logic{
+					{Key: "req_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
+				Guarantees: []model_logic.Logic{
+					{Key: "guar_1", Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+				},
 			},
 			errstr: "Name: cannot be blank",
+		},
+		{
+			testName: "error invalid requires logic missing key",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: "", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "requires 0",
+		},
+		{
+			testName: "error invalid guarantee logic missing key",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: "", Description: "Result in S.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "guarantee 0",
 		},
 	}
 	for _, tt := range tests {
@@ -118,37 +151,37 @@ func (suite *QuerySuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewQueryKey(classKey, "query1"))
 
+	requires := []model_logic.Logic{
+		{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
+	}
+	guarantees := []model_logic.Logic{
+		{Key: "guar_1", Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+	}
+
 	// Test all parameters are mapped correctly.
 	query, err := NewQuery(key, "Name", "Details",
-		[]string{"Requires"}, []string{"Guarantees"},
-		[]string{"tla_req"}, []string{"tla_guar"},
-		nil)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Query{
-		Key:           key,
-		Name:          "Name",
-		Details:       "Details",
-		Requires:      []string{"Requires"},
-		Guarantees:    []string{"Guarantees"},
-		TlaRequires:   []string{"tla_req"},
-		TlaGuarantees: []string{"tla_guar"},
-	}, query)
-
-	// Test with nil optional fields (all Tla* fields are optional).
-	query, err = NewQuery(key, "Name", "Details",
-		[]string{"Requires"}, []string{"Guarantees"},
-		nil, nil, nil)
+		requires, guarantees, nil)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Query{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
-		Requires:   []string{"Requires"},
-		Guarantees: []string{"Guarantees"},
+		Requires:   requires,
+		Guarantees: guarantees,
+	}, query)
+
+	// Test with nil optional fields (all Logic slice fields are optional).
+	query, err = NewQuery(key, "Name", "Details",
+		nil, nil, nil)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Query{
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
 	}, query)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewQuery(key, "", "Details", nil, nil, nil, nil, nil)
+	_, err = NewQuery(key, "", "Details", nil, nil, nil)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 
