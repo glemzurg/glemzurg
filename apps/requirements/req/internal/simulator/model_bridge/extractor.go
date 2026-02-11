@@ -11,7 +11,7 @@ import (
 //   - Global function definitions (GlobalFunctions)
 //   - Action requires/guarantees (Requires, Guarantees)
 //   - Query requires/guarantees (Requires, Guarantees)
-//   - Guard conditions (TlaGuard)
+//   - Guard conditions (Guard.Logic)
 func ExtractFromModel(model *req_model.Model) []ExtractedExpression {
 	var expressions []ExtractedExpression
 
@@ -143,18 +143,18 @@ func extractQueryExpressions(query *model_state.Query) []ExtractedExpression {
 
 // extractGuardExpressions extracts TLA+ guard conditions from a guard.
 func extractGuardExpressions(guard *model_state.Guard) []ExtractedExpression {
-	expressions := make([]ExtractedExpression, 0, len(guard.TlaGuard))
-
-	for i, tla := range guard.TlaGuard {
-		key := guard.Key // Copy to get addressable value
-		expressions = append(expressions, ExtractedExpression{
-			Source:     SourceGuardCondition,
-			Expression: tla,
-			ScopeKey:   &key,
-			Name:       guard.Name,
-			Index:      i,
-		})
+	if guard.Logic.Specification == "" {
+		return nil
 	}
 
-	return expressions
+	key := guard.Key // Copy to get addressable value
+	return []ExtractedExpression{
+		{
+			Source:     SourceGuardCondition,
+			Expression: guard.Logic.Specification,
+			ScopeKey:   &key,
+			Name:       guard.Name,
+			Index:      0,
+		},
+	}
 }

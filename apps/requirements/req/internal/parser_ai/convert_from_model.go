@@ -274,7 +274,7 @@ func convertEventFromModel(event *model_state.Event) *inputEvent {
 func convertGuardFromModel(guard *model_state.Guard) *inputGuard {
 	return &inputGuard{
 		Name:    guard.Name,
-		Details: guard.Details,
+		Details: guard.Logic.Description,
 	}
 }
 

@@ -20,7 +20,7 @@ const (
 	SourceQueryRequires
 	// SourceQueryGuarantees is a query filtering criterion from Query.Guarantees.
 	SourceQueryGuarantees
-	// SourceGuardCondition is a guard condition from Guard.TlaGuard.
+	// SourceGuardCondition is a guard condition from Guard.Logic.
 	SourceGuardCondition
 )
 

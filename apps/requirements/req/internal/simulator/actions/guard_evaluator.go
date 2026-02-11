@@ -11,8 +11,8 @@ import (
 )
 
 // GuardEvaluator evaluates guard conditions on class instances.
-// Guards are TLA+ boolean expressions that must all be TRUE for
-// the guard to pass. Multiple TlaGuard entries are ANDed together.
+// Guards are boolean expressions that must evaluate to TRUE for
+// the guard to pass.
 type GuardEvaluator struct {
 	bindingsBuilder *state.BindingsBuilder
 }
@@ -32,26 +32,28 @@ func (g *GuardEvaluator) EvaluateGuard(
 ) (bool, error) {
 	bindings := g.bindingsBuilder.BuildForInstance(instance)
 
-	for i, guardStr := range guard.TlaGuard {
-		expr, err := parser.ParseExpression(guardStr)
-		if err != nil {
-			return false, fmt.Errorf("guard %s[%d] parse error: %w", guard.Name, i, err)
-		}
-
-		if model_bridge.ContainsAnyPrimed(expr) {
-			return false, fmt.Errorf("guard %s[%d]: guards must not contain primed variables", guard.Name, i)
-		}
-
-		result := evaluator.Eval(expr, bindings)
-
-		if result.IsError() {
-			return false, fmt.Errorf("guard %s[%d] evaluation error: %s", guard.Name, i, result.Error.Inspect())
-		}
-
-		if !isTrueBoolean(result.Value) {
-			return false, nil // Guard not satisfied (not an error)
-		}
+	if guard.Logic.Specification == "" {
+		return true, nil // No specification means guard always passes
 	}
 
-	return true, nil // All guard expressions passed
+	expr, err := parser.ParseExpression(guard.Logic.Specification)
+	if err != nil {
+		return false, fmt.Errorf("guard %s parse error: %w", guard.Name, err)
+	}
+
+	if model_bridge.ContainsAnyPrimed(expr) {
+		return false, fmt.Errorf("guard %s: guards must not contain primed variables", guard.Name)
+	}
+
+	result := evaluator.Eval(expr, bindings)
+
+	if result.IsError() {
+		return false, fmt.Errorf("guard %s evaluation error: %s", guard.Name, result.Error.Inspect())
+	}
+
+	if !isTrueBoolean(result.Value) {
+		return false, nil // Guard not satisfied (not an error)
+	}
+
+	return true, nil // Guard expression passed
 }

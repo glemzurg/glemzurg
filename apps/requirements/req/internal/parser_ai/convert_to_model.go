@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/pkg/errors"
 )
@@ -345,9 +346,13 @@ func convertStateMachineToModel(sm *inputStateMachine, actions map[string]*input
 		}
 
 		converted := model_state.Guard{
-			Key:     guardKey,
-			Name:    guard.Name,
-			Details: guard.Details,
+			Key:  guardKey,
+			Name: guard.Name,
+			Logic: model_logic.Logic{
+				Key:         guardKeyStr,
+				Description: guard.Details,
+				Notation:    model_logic.NotationTLAPlus,
+			},
 		}
 
 		class.Guards[converted.Key] = converted

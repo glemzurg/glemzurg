@@ -415,9 +415,11 @@ func (s *ActionsSuite) TestGuardEvaluatorAllTrue() {
 	guard := model_state.Guard{
 		Key:  mustKey("domain/d/subdomain/s/class/order/guard/is_open"),
 		Name: "is_open",
-		TlaGuard: []string{
-			"self.status = \"open\"",
-			"self.amount > 0",
+		Logic: model_logic.Logic{
+			Key:           "guard_logic_1",
+			Description:   "Guard for open status and positive amount.",
+			Notation:      model_logic.NotationTLAPlus,
+			Specification: "self.status = \"open\" /\\ self.amount > 0",
 		},
 	}
 
@@ -441,9 +443,11 @@ func (s *ActionsSuite) TestGuardEvaluatorOneFalse() {
 	guard := model_state.Guard{
 		Key:  mustKey("domain/d/subdomain/s/class/order/guard/is_open"),
 		Name: "is_open",
-		TlaGuard: []string{
-			"self.status = \"open\"",
-			"self.amount > 0",
+		Logic: model_logic.Logic{
+			Key:           "guard_logic_2",
+			Description:   "Guard for open status and positive amount.",
+			Notation:      model_logic.NotationTLAPlus,
+			Specification: "self.status = \"open\" /\\ self.amount > 0",
 		},
 	}
 
@@ -650,14 +654,24 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 		},
 		Guards: map[identity.Key]model_state.Guard{
 			guardHighKey: {
-				Key:      guardHighKey,
-				Name:     "high_value",
-				TlaGuard: []string{"self.amount >= 100"},
+				Key:  guardHighKey,
+				Name: "high_value",
+				Logic: model_logic.Logic{
+					Key:           "guard_logic_3",
+					Description:   "High value guard.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "self.amount >= 100",
+				},
 			},
 			guardLowKey: {
-				Key:      guardLowKey,
-				Name:     "low_value",
-				TlaGuard: []string{"self.amount < 100"},
+				Key:  guardLowKey,
+				Name: "low_value",
+				Logic: model_logic.Logic{
+					Key:           "guard_logic_4",
+					Description:   "Low value guard.",
+					Notation:      model_logic.NotationTLAPlus,
+					Specification: "self.amount < 100",
+				},
 			},
 		},
 		Actions: map[identity.Key]model_state.Action{},
@@ -733,8 +747,8 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 			eventKey: {Key: eventKey, Name: "go"},
 		},
 		Guards: map[identity.Key]model_state.Guard{
-			guardAlwaysKey1: {Key: guardAlwaysKey1, Name: "always1", TlaGuard: []string{"TRUE"}},
-			guardAlwaysKey2: {Key: guardAlwaysKey2, Name: "always2", TlaGuard: []string{"TRUE"}},
+			guardAlwaysKey1: {Key: guardAlwaysKey1, Name: "always1", Logic: model_logic.Logic{Key: "guard_logic_5", Description: "Always true guard.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}},
+			guardAlwaysKey2: {Key: guardAlwaysKey2, Name: "always2", Logic: model_logic.Logic{Key: "guard_logic_6", Description: "Always true guard.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}},
 		},
 		Actions: map[identity.Key]model_state.Action{},
 		Queries: map[identity.Key]model_state.Query{},
@@ -791,7 +805,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 			eventKey: {Key: eventKey, Name: "go"},
 		},
 		Guards: map[identity.Key]model_state.Guard{
-			guardNeverKey: {Key: guardNeverKey, Name: "never", TlaGuard: []string{"FALSE"}},
+			guardNeverKey: {Key: guardNeverKey, Name: "never", Logic: model_logic.Logic{Key: "guard_logic_7", Description: "Never true guard.", Notation: model_logic.NotationTLAPlus, Specification: "FALSE"}},
 		},
 		Actions: map[identity.Key]model_state.Action{},
 		Queries: map[identity.Key]model_state.Query{},
@@ -1157,9 +1171,14 @@ func (s *ActionsSuite) TestGuardRejectsPrimedVariables() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
 	guard := model_state.Guard{
-		Key:      mustKey("domain/d/subdomain/s/class/c/guard/g"),
-		Name:     "BadGuard",
-		TlaGuard: []string{"self.count' > 0"},
+		Key:  mustKey("domain/d/subdomain/s/class/c/guard/g"),
+		Name: "BadGuard",
+		Logic: model_logic.Logic{
+			Key:           "guard_logic_8",
+			Description:   "Guard with primed variable.",
+			Notation:      model_logic.NotationTLAPlus,
+			Specification: "self.count' > 0",
+		},
 	}
 
 	simState := state.NewSimulationState()

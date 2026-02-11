@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,74 +33,77 @@ func (suite *GuardSuite) TestValidate() {
 		{
 			testName: "valid guard minimal",
 			guard: Guard{
-				Key:     validKey,
-				Name:    "Name",
-				Details: "Details",
+				Key:  validKey,
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+				},
 			},
 		},
 		{
-			testName: "valid guard with tla guard",
+			testName: "valid guard with specification",
 			guard: Guard{
-				Key:      validKey,
-				Name:     "Name",
-				Details:  "Details",
-				TlaGuard: []string{"self.balance > 0"},
-			},
-		},
-		{
-			testName: "valid guard with multiple tla guards",
-			guard: Guard{
-				Key:      validKey,
-				Name:     "Name",
-				Details:  "Details",
-				TlaGuard: []string{"self.balance > 0", "self.status = \"active\""},
+				Key:  validKey,
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: "guard_logic_1", Description: "Balance must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0",
+				},
 			},
 		},
 		{
 			testName: "error empty key",
 			guard: Guard{
-				Key:     identity.Key{},
-				Name:    "Name",
-				Details: "Details",
+				Key:  identity.Key{},
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+				},
 			},
 			errstr: "keyType: cannot be blank",
 		},
 		{
 			testName: "error wrong key type",
 			guard: Guard{
-				Key:     domainKey,
-				Name:    "Name",
-				Details: "Details",
+				Key:  domainKey,
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+				},
 			},
 			errstr: "Key: invalid key type 'domain' for guard",
 		},
 		{
 			testName: "error blank name",
 			guard: Guard{
-				Key:     validKey,
-				Name:    "",
-				Details: "Details",
+				Key:  validKey,
+				Name: "",
+				Logic: model_logic.Logic{
+					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+				},
 			},
 			errstr: "Name: cannot be blank",
 		},
 		{
-			testName: "error blank name with tla guard set",
+			testName: "error invalid logic missing key",
 			guard: Guard{
-				Key:      validKey,
-				Name:     "",
-				Details:  "Details",
-				TlaGuard: []string{"self.x > 0"},
+				Key:  validKey,
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: "", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+				},
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "logic",
 		},
 		{
-			testName: "error blank details",
+			testName: "error invalid logic missing description",
 			guard: Guard{
-				Key:     validKey,
-				Name:    "Name",
-				Details: "",
+				Key:  validKey,
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: "guard_logic_1", Description: "", Notation: model_logic.NotationTLAPlus,
+				},
 			},
-			errstr: "Details: cannot be blank",
+			errstr: "logic",
 		},
 	}
 	for _, tt := range tests {
@@ -121,27 +125,21 @@ func (suite *GuardSuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 
-	// Test all parameters are mapped correctly.
-	guard, err := NewGuard(key, "Name", "Details", []string{"self.x > 0"})
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Guard{
-		Key:      key,
-		Name:     "Name",
-		Details:  "Details",
-		TlaGuard: []string{"self.x > 0"},
-	}, guard)
+	logic := model_logic.Logic{
+		Key: "guard_logic_1", Description: "Balance check.", Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0",
+	}
 
-	// Test with nil optional TlaGuard.
-	guard, err = NewGuard(key, "Name", "Details", nil)
+	// Test all parameters are mapped correctly.
+	guard, err := NewGuard(key, "Name", logic)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Guard{
-		Key:     key,
-		Name:    "Name",
-		Details: "Details",
+		Key:   key,
+		Name:  "Name",
+		Logic: logic,
 	}, guard)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewGuard(key, "", "Details", nil)
+	_, err = NewGuard(key, "", logic)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
 }
 
@@ -153,20 +151,24 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
+	validLogic := model_logic.Logic{
+		Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+	}
+
 	// Test that Validate is called.
 	guard := Guard{
-		Key:     validKey,
-		Name:    "", // Invalid
-		Details: "Details",
+		Key:   validKey,
+		Name:  "", // Invalid
+		Logic: validLogic,
 	}
 	err := guard.ValidateWithParent(&classKey)
 	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - guard key has class1 as parent, but we pass other_class.
 	guard = Guard{
-		Key:     validKey,
-		Name:    "Name",
-		Details: "Details",
+		Key:   validKey,
+		Name:  "Name",
+		Logic: validLogic,
 	}
 	err = guard.ValidateWithParent(&otherClassKey)
 	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")

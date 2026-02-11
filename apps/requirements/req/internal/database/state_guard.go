@@ -18,7 +18,7 @@ func scanGuard(scanner Scanner, classKeyPtr *identity.Key, guard *model_state.Gu
 		&classKeyStr,
 		&guardKeyStr,
 		&guard.Name,
-		&guard.Details,
+		&guard.Logic.Description,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -100,7 +100,7 @@ func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard mo
 		classKey.String(),
 		guard.Key.String(),
 		guard.Name,
-		guard.Details)
+		guard.Logic.Description)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -191,7 +191,7 @@ func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_s
 			}
 			base := i * 5
 			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
-			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name, guard.Details)
+			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name, guard.Logic.Description)
 			i++
 		}
 	}

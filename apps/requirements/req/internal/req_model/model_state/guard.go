@@ -5,23 +5,22 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 )
 
 // Guard is a constraint on an event in a state machine.
 type Guard struct {
-	Key      identity.Key
-	Name     string   // A simple unique name for a guard, for internal use.
-	Details  string   // How the details of the guard are represented, what shows in the uml.
-	TlaGuard []string // TLA+ boolean expressions that define the guard condition.
+	Key   identity.Key
+	Name  string             // A simple unique name for a guard, for internal use.
+	Logic model_logic.Logic  // The formal logic specification for this guard condition.
 }
 
-func NewGuard(key identity.Key, name, details string, tlaGuard []string) (guard Guard, err error) {
+func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Guard, err error) {
 
 	guard = Guard{
-		Key:      key,
-		Name:     name,
-		Details:  details,
-		TlaGuard: tlaGuard,
+		Key:   key,
+		Name:  name,
+		Logic: logic,
 	}
 
 	if err = guard.Validate(); err != nil {
@@ -33,7 +32,7 @@ func NewGuard(key identity.Key, name, details string, tlaGuard []string) (guard 
 
 // Validate validates the Guard struct.
 func (g *Guard) Validate() error {
-	return validation.ValidateStruct(g,
+	if err := validation.ValidateStruct(g,
 		validation.Field(&g.Key, validation.Required, validation.By(func(value interface{}) error {
 			k := value.(identity.Key)
 			if err := k.Validate(); err != nil {
@@ -45,8 +44,15 @@ func (g *Guard) Validate() error {
 			return nil
 		})),
 		validation.Field(&g.Name, validation.Required),
-		validation.Field(&g.Details, validation.Required),
-	)
+	); err != nil {
+		return err
+	}
+
+	if err := g.Logic.Validate(); err != nil {
+		return errors.Wrap(err, "logic")
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the Guard, its key's parent relationship, and all children.

@@ -181,7 +181,7 @@ var _funcMap = template.FuncMap{
 		// Add a guard if there is one.
 		if transition.GuardKey != nil {
 			guard := guardLookup[transition.GuardKey.String()]
-			eventCall += " [" + guard.Details + "]"
+			eventCall += " [" + guard.Logic.Description + "]"
 		}
 
 		return eventCall

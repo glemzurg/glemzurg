@@ -7,8 +7,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,8 +53,8 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 
 func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
 	model := &req_model.Model{
-		Key:           "test_model",
-		Name:          "Test Model",
+		Key:        "test_model",
+		Name:       "Test Model",
 		Invariants: []model_logic.Logic{},
 	}
 
@@ -331,12 +331,13 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 								Name: "Order",
 								Guards: map[identity.Key]model_state.Guard{
 									guardKey: {
-										Key:     guardKey,
-										Name:    "CanShip",
-										Details: "Order can be shipped",
-										TlaGuard: []string{
-											"self.status = \"paid\"",
-											"self.items # {}",
+										Key:  guardKey,
+										Name: "CanShip",
+										Logic: model_logic.Logic{
+											Key:           "guard_logic_1",
+											Description:   "Order can be shipped",
+											Notation:      model_logic.NotationTLAPlus,
+											Specification: "self.status = \"paid\" /\\ self.items # {}",
 										},
 									},
 								},
@@ -350,18 +351,14 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 
 	expressions := ExtractFromModel(model)
 
-	s.Len(expressions, 2)
+	s.Len(expressions, 1)
 
 	s.Equal(SourceGuardCondition, expressions[0].Source)
-	s.Equal(`self.status = "paid"`, expressions[0].Expression)
+	s.Equal("self.status = \"paid\" /\\ self.items # {}", expressions[0].Expression)
 	s.NotNil(expressions[0].ScopeKey)
 	s.Equal(guardKey, *expressions[0].ScopeKey)
 	s.Equal("CanShip", expressions[0].Name)
 	s.Equal(0, expressions[0].Index)
-
-	s.Equal(SourceGuardCondition, expressions[1].Source)
-	s.Equal("self.items # {}", expressions[1].Expression)
-	s.Equal(1, expressions[1].Index)
 }
 
 // =============================================================================
@@ -438,10 +435,14 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 								},
 								Guards: map[identity.Key]model_state.Guard{
 									guardKey: {
-										Key:      guardKey,
-										Name:     "LowStock",
-										Details:  "Stock is low",
-										TlaGuard: []string{"self.stock < _LowStockThreshold"},
+										Key:  guardKey,
+										Name: "LowStock",
+										Logic: model_logic.Logic{
+											Key:           "guard_logic_2",
+											Description:   "Stock is low",
+											Notation:      model_logic.NotationTLAPlus,
+											Specification: "self.stock < _LowStockThreshold",
+										},
 									},
 								},
 							},

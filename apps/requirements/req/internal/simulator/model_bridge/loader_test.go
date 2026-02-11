@@ -327,11 +327,13 @@ func (s *LoaderTestSuite) TestLoadGuardExpressions() {
 								Name: "Order",
 								Guards: map[identity.Key]model_state.Guard{
 									guardKey: {
-										Key:     guardKey,
-										Name:    "CanShip",
-										Details: "Order can be shipped",
-										TlaGuard: []string{
-											"TRUE",
+										Key:  guardKey,
+										Name: "CanShip",
+										Logic: model_logic.Logic{
+											Key:           "guard_logic_can_ship",
+											Description:   "Order can be shipped",
+											Notation:      model_logic.NotationTLAPlus,
+											Specification: "TRUE",
 										},
 									},
 								},

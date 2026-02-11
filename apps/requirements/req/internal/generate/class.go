@@ -34,7 +34,7 @@ func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_clas
 	}
 	guardDetailsLookup := map[string]string{}
 	for _, guard := range class.Guards {
-		guardDetailsLookup[guard.Key.String()] = guard.Details
+		guardDetailsLookup[guard.Key.String()] = guard.Logic.Description
 	}
 	actionNameLookup := map[string]string{}
 	for _, action := range class.Actions {

@@ -882,7 +882,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			key, _ := identity.ParseKey(keyStr)
 			guard := class.Guards[key]
 			guardBuilder := NewYamlBuilder()
-			guardBuilder.AddField("details", guard.Details)
+			guardBuilder.AddField("details", guard.Logic.Description)
 			guardsBuilder.AddMappingField(guard.Name, guardBuilder)
 		}
 		builder.AddMappingField("guards", guardsBuilder)
