@@ -38,7 +38,7 @@ const (
 	KEY_TYPE_TRANSITION = "transition"
 
 	// Keys with class attribute parents.
-	KEY_TYPE_ATTRIBUTE_DERIVATION = "atderivation"
+	KEY_TYPE_ATTRIBUTE_DERIVATION = "aderive"
 
 	// Keys with state parents.
 	KEY_TYPE_STATE_ACTION = "saction"
@@ -327,6 +327,14 @@ func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'attribute' key", classKey.KeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_ATTRIBUTE, subKey)
+}
+
+func NewAttributeDerivationKey(attributeKey Key, subKey string) (key Key, err error) {
+	// The parent must be an attribute.
+	if attributeKey.KeyType() != KEY_TYPE_ATTRIBUTE {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aderive' key", attributeKey.KeyType())
+	}
+	return newKey(attributeKey.String(), KEY_TYPE_ATTRIBUTE_DERIVATION, subKey)
 }
 
 func NewStateActionKey(stateKey Key, when, subKey string) (key Key, err error) {

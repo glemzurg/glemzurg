@@ -258,6 +258,72 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	attributeKey, err := NewAttributeKey(classKey, "attribute1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		attributeKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			attributeKey: attributeKey,
+			subKey:       "attribute1",
+			expected:     helper.Must(newKey(attributeKey.String(), KEY_TYPE_ATTRIBUTE_DERIVATION, "attribute1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			attributeKey: Key{},
+			subKey:       "attribute1",
+			errstr:       "parent key cannot be of type '' for 'aderive' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			attributeKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "subdomain1",
+			errstr:       "parent key cannot be of type 'actor' for 'aderive' key",
+		},
+		{
+			testName:     "error blank subKey",
+			attributeKey: attributeKey,
+			subKey:       "",
+			errstr:       "cannot be blank",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewAttributeDerivationKey(tt.attributeKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 
 	domainKey, err := NewDomainKey("domain1")
