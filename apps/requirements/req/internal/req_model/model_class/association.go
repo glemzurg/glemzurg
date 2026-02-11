@@ -1,15 +1,15 @@
 package model_class
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Association is how two classes relate to each other.
 type Association struct {
 	Key                 identity.Key
-	Name                string
+	Name                string `validate:"required"`
 	Details             string        // Markdown.
 	FromClassKey        identity.Key  // The class on one end of the association.
 	FromMultiplicity    Multiplicity  // The multiplicity from one end of the association.
@@ -42,41 +42,35 @@ func NewAssociation(key identity.Key, name, details string, fromClassKey identit
 
 // Validate validates the Association struct.
 func (a *Association) Validate() error {
-	if err := validation.ValidateStruct(a,
-		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_CLASS_ASSOCIATION {
-				return errors.Errorf("invalid key type '%s' for association", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&a.Name, validation.Required),
-		validation.Field(&a.FromClassKey, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_CLASS {
-				return errors.Errorf("invalid key type '%s' for from class", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&a.ToClassKey, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_CLASS {
-				return errors.Errorf("invalid key type '%s' for to class", k.KeyType())
-			}
-			return nil
-		})),
-	); err != nil {
+	// Validate the key.
+	if err := a.Key.Validate(); err != nil {
 		return err
 	}
+	if a.Key.KeyType() != identity.KEY_TYPE_CLASS_ASSOCIATION {
+		return errors.Errorf("Key: invalid key type '%s' for association.", a.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(a); err != nil {
+		return err
+	}
+
+	// Validate the FromClassKey.
+	if err := a.FromClassKey.Validate(); err != nil {
+		return err
+	}
+	if a.FromClassKey.KeyType() != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("FromClassKey: invalid key type '%s' for from class.", a.FromClassKey.KeyType())
+	}
+
+	// Validate the ToClassKey.
+	if err := a.ToClassKey.Validate(); err != nil {
+		return err
+	}
+	if a.ToClassKey.KeyType() != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("ToClassKey: invalid key type '%s' for to class.", a.ToClassKey.KeyType())
+	}
+
 	// Validate multiplicities as properties.
 	if err := a.FromMultiplicity.Validate(); err != nil {
 		return err

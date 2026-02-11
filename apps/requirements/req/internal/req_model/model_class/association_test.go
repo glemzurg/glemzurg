@@ -67,7 +67,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error empty from class key",
@@ -172,7 +172,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -192,7 +192,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		ToClassKey:   toClassKey,
 	}
 	err := assoc.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - association key has subdomain1 as parent, but we pass other_subdomain.
 	assoc = Association{

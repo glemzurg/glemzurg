@@ -1,20 +1,20 @@
 package model_class
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
 )
 
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
-	Name             string
+	Name             string `validate:"required"`
 	Details          string // Markdown.
 	DataTypeRules    string // What are the bounds of this data type.
-	DerivationPolicy *model_logic.Logic // If this is a derived attribute, the logic for how it is derived.
+	DerivationPolicy *model_logic.Logic `validate:"-"` // If this is a derived attribute, the logic for how it is derived.
 	Nullable         bool               // Is this attribute optional.
 	UmlComment       string
 	// Children
@@ -61,19 +61,16 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 
 // Validate validates the Attribute struct.
 func (a *Attribute) Validate() error {
-	if err := validation.ValidateStruct(a,
-		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_ATTRIBUTE {
-				return errors.Errorf("invalid key type '%s' for attribute", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&a.Name, validation.Required),
-	); err != nil {
+	// Validate the key.
+	if err := a.Key.Validate(); err != nil {
+		return err
+	}
+	if a.Key.KeyType() != identity.KEY_TYPE_ATTRIBUTE {
+		return errors.Errorf("Key: invalid key type '%s' for attribute.", a.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(a); err != nil {
 		return err
 	}
 

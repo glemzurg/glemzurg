@@ -60,7 +60,7 @@ func (suite *AttributeSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "valid with DerivationPolicy",
@@ -163,7 +163,7 @@ func (suite *AttributeSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAttribute(key, "", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -180,7 +180,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := attr.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - attribute key has class1 as parent, but we pass other_class.
 	attr = Attribute{

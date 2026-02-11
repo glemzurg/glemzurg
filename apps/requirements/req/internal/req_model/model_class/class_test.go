@@ -58,7 +58,7 @@ func (suite *ClassSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error SuperclassOfKey and SubclassOfKey are the same",
@@ -118,7 +118,7 @@ func (suite *ClassSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewClass(key, "", "Details", nil, nil, nil, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -134,7 +134,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := class.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - class key has subdomain1 as parent, but we pass other_subdomain.
 	class = Class{

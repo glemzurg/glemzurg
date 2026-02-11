@@ -1,7 +1,6 @@
 package model_class
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,7 +10,7 @@ import (
 // Class is a thing in the system.
 type Class struct {
 	Key             identity.Key
-	Name            string
+	Name            string `validate:"required"`
 	Details         string        // Markdown.
 	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
@@ -48,21 +47,19 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 
 // Validate validates the Class struct.
 func (c *Class) Validate() error {
-	if err := validation.ValidateStruct(c,
-		validation.Field(&c.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_CLASS {
-				return errors.Errorf("invalid key type '%s' for class", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&c.Name, validation.Required),
-	); err != nil {
+	// Validate the key.
+	if err := c.Key.Validate(); err != nil {
 		return err
 	}
+	if c.Key.KeyType() != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("Key: invalid key type '%s' for class.", c.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(c); err != nil {
+		return err
+	}
+
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if c.SuperclassOfKey != nil && c.SubclassOfKey != nil && *c.SuperclassOfKey == *c.SubclassOfKey {
 		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
