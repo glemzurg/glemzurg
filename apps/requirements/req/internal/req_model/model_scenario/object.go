@@ -1,7 +1,6 @@
 package model_scenario
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -19,7 +18,7 @@ type Object struct {
 	Key          identity.Key
 	ObjectNumber uint         // Order in the scenario diagram.
 	Name         string       // The name or id of the object.
-	NameStyle    string       // Used to format the name in the diagram.
+	NameStyle    string       `validate:"required,oneof=name id unnamed"` // Used to format the name in the diagram.
 	ClassKey     identity.Key // The class key this object is an instance of.
 	Multi        bool
 	UmlComment   string
@@ -46,42 +45,35 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 
 // Validate validates the Object struct.
 func (o *Object) Validate() error {
-	return validation.ValidateStruct(o,
-		validation.Field(&o.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_SCENARIO_OBJECT {
-				return errors.Errorf("invalid key type '%s' for scenario object", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&o.Name, validation.By(func(value interface{}) error {
-			name := value.(string)
-			if o.NameStyle == _NAME_STYLE_UNNAMED {
-				if name != "" {
-					return errors.New("Name must be blank for unnamed style")
-				}
-			} else {
-				if name == "" {
-					return errors.New("Name cannot be blank")
-				}
-			}
-			return nil
-		})),
-		validation.Field(&o.NameStyle, validation.Required, validation.In(_NAME_STYLE_NAME, _NAME_STYLE_ID, _NAME_STYLE_UNNAMED)),
-		validation.Field(&o.ClassKey, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_CLASS {
-				return errors.Errorf("invalid key type '%s' for class", k.KeyType())
-			}
-			return nil
-		})),
-	)
+	// Validate the key.
+	if err := o.Key.Validate(); err != nil {
+		return err
+	}
+	if o.Key.KeyType() != identity.KEY_TYPE_SCENARIO_OBJECT {
+		return errors.Errorf("Key: invalid key type '%s' for scenario object.", o.Key.KeyType())
+	}
+	// Validate Name conditionally based on NameStyle.
+	if o.NameStyle == _NAME_STYLE_UNNAMED {
+		if o.Name != "" {
+			return errors.New("Name: Name must be blank for unnamed style")
+		}
+	} else {
+		if o.Name == "" {
+			return errors.New("Name: Name cannot be blank")
+		}
+	}
+	// Validate NameStyle (required + oneof).
+	if err := _validate.Struct(o); err != nil {
+		return err
+	}
+	// Validate ClassKey.
+	if err := o.ClassKey.Validate(); err != nil {
+		return errors.Wrap(err, "ClassKey")
+	}
+	if o.ClassKey.KeyType() != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("ClassKey: invalid key type '%s' for class.", o.ClassKey.KeyType())
+	}
+	return nil
 }
 
 // ValidateWithParent validates the Object, its key's parent relationship, and all children.

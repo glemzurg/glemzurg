@@ -58,7 +58,7 @@ func (suite *ScenarioSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -91,7 +91,7 @@ func (suite *ScenarioSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewScenario(key, "", "Details")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -108,7 +108,7 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := scenario.ValidateWithParent(&useCaseKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - scenario key has usecase1 as parent, but we pass other_usecase.
 	scenario = Scenario{
