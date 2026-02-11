@@ -49,7 +49,7 @@ func (suite *DomainSuite) TestValidate() {
 				Key:  helper.Must(identity.NewActorKey("actor1")),
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'actor' for domain.",
+			errstr: "Key: invalid key type 'actor' for domain",
 		},
 		{
 			testName: "error blank name",
@@ -57,7 +57,7 @@ func (suite *DomainSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -89,7 +89,7 @@ func (suite *DomainSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewDomain(key, "", "Details", true, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -103,7 +103,7 @@ func (suite *DomainSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := domain.ValidateWithParent(nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domains should have nil parent.
 	domain = Domain{

@@ -57,7 +57,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
 			},
-			errstr: "Key: invalid key type 'actor' for domain association.",
+			errstr: "Key: invalid key type 'actor' for domain association",
 		},
 		{
 			testName: "error empty problem key",
@@ -75,7 +75,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  helper.Must(identity.NewActorKey("actor1")),
 				SolutionDomainKey: suite.solutionDomainKey,
 			},
-			errstr: "ProblemDomainKey: invalid key type 'actor' for domain.",
+			errstr: "ProblemDomainKey: invalid key type 'actor' for domain",
 		},
 		{
 			testName: "error empty solution key",
@@ -93,7 +93,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: helper.Must(identity.NewActorKey("actor1")),
 			},
-			errstr: "SolutionDomainKey: invalid key type 'actor' for domain.",
+			errstr: "SolutionDomainKey: invalid key type 'actor' for domain",
 		},
 		{
 			testName: "error ProblemDomainKey and SolutionDomainKey are the same",

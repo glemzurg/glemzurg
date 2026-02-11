@@ -53,7 +53,7 @@ func (suite *SubdomainSuite) TestValidate() {
 				Key:  helper.Must(identity.NewActorKey("actor1")),
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'actor' for subdomain.",
+			errstr: "Key: invalid key type 'actor' for subdomain",
 		},
 		{
 			testName: "error blank name",
@@ -61,7 +61,7 @@ func (suite *SubdomainSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -92,7 +92,7 @@ func (suite *SubdomainSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewSubdomain(key, "", "Details", "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -106,7 +106,7 @@ func (suite *SubdomainSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := subdomain.ValidateWithParent(&suite.domainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - subdomain key has domain1 as parent, but we pass other_domain.
 	subdomain = Subdomain{

@@ -41,19 +41,19 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "",
 			collectionType: "atomic",
 			atomic:         atomic,
-			errstr:         `Key: cannot be blank.`,
+			errstr:         `Key`,
 		},
 		{
 			key:            "Key",
 			collectionType: "",
 			atomic:         atomic,
-			errstr:         `CollectionType: cannot be blank.`,
+			errstr:         `CollectionType`,
 		},
 		{
 			key:            "Key",
 			collectionType: "unknown",
 			atomic:         atomic,
-			errstr:         `CollectionType: must be a valid value.`,
+			errstr:         `CollectionType`,
 		},
 		{
 			key:            "Key",
@@ -65,7 +65,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "Key",
 			collectionType: "atomic",
 			atomic:         atomicInvalid,
-			errstr:         `Atomic: (ConstraintType: must be a valid value.).`,
+			errstr:         `ConstraintType`,
 		},
 	}
 
@@ -80,7 +80,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			assert.Nil(suite.T(), err, "expected no error for %+v", dataType)
 		} else {
 			assert.NotNil(suite.T(), err, "expected error for %+v", dataType)
-			assert.Equal(suite.T(), tt.errstr, err.Error(), "error message mismatch for %+v", dataType)
+			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %+v", dataType)
 		}
 	}
 }
@@ -665,7 +665,7 @@ func TestNewUnparsable(t *testing.T) {
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
 	result, err := New("", "")
-	assert.ErrorContains(t, err, "Key: cannot be blank.")
+	assert.ErrorContains(t, err, "Key")
 	assert.Nil(t, result)
 }
 

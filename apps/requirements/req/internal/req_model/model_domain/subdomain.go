@@ -1,7 +1,6 @@
 package model_domain
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -12,7 +11,7 @@ import (
 // Subdomain is a nested category of the model.
 type Subdomain struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string // Markdown.
 	UmlComment string
 	// Children
@@ -41,19 +40,18 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 
 // Validate validates the Subdomain struct.
 func (s *Subdomain) Validate() error {
-	return validation.ValidateStruct(s,
-		validation.Field(&s.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_SUBDOMAIN {
-				return errors.Errorf("invalid key type '%s' for subdomain", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&s.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := s.Key.Validate(); err != nil {
+		return err
+	}
+	if s.Key.KeyType() != identity.KEY_TYPE_SUBDOMAIN {
+		return errors.Errorf("Key: invalid key type '%s' for subdomain", s.Key.KeyType())
+	}
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(s); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateWithParent validates the Subdomain, its key's parent relationship, and all children.
