@@ -56,8 +56,10 @@ func newRootKey(keyType, rootKey string) (key Key, err error) {
 func (k *Key) Validate() error {
 	return validation.ValidateStruct(k,
 		validation.Field(&k.keyType, validation.Required, validation.In(
+			KEY_TYPE_ACTOR,
 			KEY_TYPE_DOMAIN,
 			KEY_TYPE_DOMAIN_ASSOCIATION,
+			KEY_TYPE_INVARIANT,
 			KEY_TYPE_SUBDOMAIN,
 			KEY_TYPE_USE_CASE,
 			KEY_TYPE_CLASS,
@@ -70,7 +72,6 @@ func (k *Key) Validate() error {
 			KEY_TYPE_GENERALIZATION,
 			KEY_TYPE_SCENARIO,
 			KEY_TYPE_SCENARIO_OBJECT,
-			KEY_TYPE_ACTOR,
 			KEY_TYPE_CLASS_ASSOCIATION,
 			KEY_TYPE_ATTRIBUTE,
 			KEY_TYPE_STATE_ACTION,
@@ -79,7 +80,7 @@ func (k *Key) Validate() error {
 		validation.Field(&k.parentKey, validation.By(func(value interface{}) error {
 			parent := value.(string)
 			switch k.keyType {
-			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN_ASSOCIATION:
+			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_INVARIANT:
 				// These key types must have blank parentKey.
 				if parent != "" {
 					return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.keyType, parent)

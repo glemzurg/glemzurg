@@ -12,13 +12,13 @@ const (
 	// It is a string that is unique in the system.
 
 	// Keys without parents (parent is the model itself).
-	KEY_TYPE_ACTOR     = "actor"
-	KEY_TYPE_DOMAIN    = "domain"
-	KEY_TYPE_INVARIANT = "invariant"
+	KEY_TYPE_ACTOR              = "actor"
+	KEY_TYPE_DOMAIN             = "domain"
+	KEY_TYPE_DOMAIN_ASSOCIATION = "dassociation"
+	KEY_TYPE_INVARIANT          = "invariant"
 
 	// Keys with domain parents.
-	KEY_TYPE_SUBDOMAIN          = "subdomain"
-	KEY_TYPE_DOMAIN_ASSOCIATION = "dassociation"
+	KEY_TYPE_SUBDOMAIN = "subdomain"
 
 	// Keys with subdomain parents.
 	KEY_TYPE_USE_CASE       = "usecase"
@@ -65,6 +65,10 @@ func NewActorKey(subKey string) (key Key, err error) {
 
 func NewDomainKey(subKey string) (key Key, err error) {
 	return newRootKey(KEY_TYPE_DOMAIN, subKey)
+}
+
+func NewInvariantKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_INVARIANT, subKey)
 }
 
 func NewDomainAssociationKey(problemDomainKey, solutionDomainKey Key) (key Key, err error) {

@@ -92,6 +92,44 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewInvariantKey() {
+	tests := []struct {
+		testName string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			subKey:   "_InvariantA",
+			expected: helper.Must(newRootKey(KEY_TYPE_INVARIANT, "_InvariantA")),
+		},
+
+		// Errors.
+		{
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "cannot be blank",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewInvariantKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 
 	problemDomainKey, err := NewDomainKey("problem1")
