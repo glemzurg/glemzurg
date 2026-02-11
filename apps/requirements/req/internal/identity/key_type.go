@@ -12,8 +12,9 @@ const (
 	// It is a string that is unique in the system.
 
 	// Keys without parents (parent is the model itself).
-	KEY_TYPE_ACTOR  = "actor"
-	KEY_TYPE_DOMAIN = "domain"
+	KEY_TYPE_ACTOR     = "actor"
+	KEY_TYPE_DOMAIN    = "domain"
+	KEY_TYPE_INVARIANT = "invariant"
 
 	// Keys with domain parents.
 	KEY_TYPE_SUBDOMAIN          = "subdomain"
@@ -31,13 +32,25 @@ const (
 	KEY_TYPE_ATTRIBUTE  = "attribute"
 	KEY_TYPE_STATE      = "state"
 	KEY_TYPE_EVENT      = "event"
-	KEY_TYPE_GUARD      = "guard"
+	KEY_TYPE_GUARD      = "guard" // Used for both guards and the logic inside guards.
 	KEY_TYPE_ACTION     = "action"
 	KEY_TYPE_QUERY      = "query"
 	KEY_TYPE_TRANSITION = "transition"
 
+	// Keys with class attribute parents.
+	KEY_TYPE_ATTRIBUTE_DERIVATION = "atderivation"
+
 	// Keys with state parents.
 	KEY_TYPE_STATE_ACTION = "saction"
+
+	// Keys with actions as parents.
+	KEY_TYPE_ACTION_REQUIRE   = "arequire"
+	KEY_TYPE_ACTION_GUARANTEE = "aguarantee"
+	KEY_TYPE_ACTION_SAFETY    = "asafety"
+
+	// Keys with queries as parents.
+	KEY_TYPE_QUERY_REQUIRE   = "qrequire"
+	KEY_TYPE_QUERY_GUARANTEE = "qguarantee"
 
 	// Keys with use case parents.
 	KEY_TYPE_SCENARIO = "scenario"
