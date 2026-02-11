@@ -372,3 +372,19 @@ func NewActionSafetyKey(actionKey Key, subKey string) (key Key, err error) {
 	}
 	return newKey(actionKey.String(), KEY_TYPE_ACTION_SAFETY, subKey)
 }
+
+func NewQueryRequireKey(queryKey Key, subKey string) (key Key, err error) {
+	// The parent must be a query.
+	if queryKey.KeyType() != KEY_TYPE_QUERY {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qrequire' key", queryKey.KeyType())
+	}
+	return newKey(queryKey.String(), KEY_TYPE_QUERY_REQUIRE, subKey)
+}
+
+func NewQueryGuaranteeKey(queryKey Key, subKey string) (key Key, err error) {
+	// The parent must be a query.
+	if queryKey.KeyType() != KEY_TYPE_QUERY {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qguarantee' key", queryKey.KeyType())
+	}
+	return newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, subKey)
+}

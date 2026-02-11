@@ -522,6 +522,138 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	queryKey, err := NewQueryKey(classKey, "query1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		queryKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			queryKey: queryKey,
+			subKey:   "1",
+			expected: helper.Must(newKey(queryKey.String(), KEY_TYPE_QUERY_REQUIRE, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			queryKey: Key{},
+			subKey:   "1",
+			errstr:   "parent key cannot be of type '' for 'qrequire' key",
+		},
+		{
+			testName: "error wrong parent type",
+			queryKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "1",
+			errstr:   "parent key cannot be of type 'actor' for 'qrequire' key",
+		},
+		{
+			testName: "error blank subKey",
+			queryKey: queryKey,
+			subKey:   "",
+			errstr:   "cannot be blank",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewQueryRequireKey(tt.queryKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	queryKey, err := NewQueryKey(classKey, "query1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		queryKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			queryKey: queryKey,
+			subKey:   "1",
+			expected: helper.Must(newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			queryKey: Key{},
+			subKey:   "1",
+			errstr:   "parent key cannot be of type '' for 'qguarantee' key",
+		},
+		{
+			testName: "error wrong parent type",
+			queryKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "1",
+			errstr:   "parent key cannot be of type 'actor' for 'qguarantee' key",
+		},
+		{
+			testName: "error blank subKey",
+			queryKey: queryKey,
+			subKey:   "",
+			errstr:   "cannot be blank",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewQueryGuaranteeKey(tt.queryKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 
 	domainKey, err := NewDomainKey("domain1")
