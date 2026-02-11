@@ -67,7 +67,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "",
 				Type: _USER_TYPE_PERSON,
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank type",
@@ -76,7 +76,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: "",
 			},
-			errstr: "Type: cannot be blank",
+			errstr: "Type",
 		},
 		{
 			testName: "error invalid type",
@@ -85,7 +85,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: "unknown",
 			},
-			errstr: "Type: must be a valid value",
+			errstr: "Type",
 		},
 	}
 	for _, tt := range tests {
@@ -117,7 +117,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -131,7 +131,7 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		Type: _USER_TYPE_PERSON,
 	}
 	err := actor.ValidateWithParent(nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actors should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

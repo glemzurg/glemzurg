@@ -1,11 +1,13 @@
 package model_actor
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
+
+var _validate = validator.New()
 
 const (
 	_USER_TYPE_PERSON = "person"
@@ -15,9 +17,9 @@ const (
 // An actor is a external user of this sytem, either a person or another system.
 type Actor struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string // Markdown.
-	Type       string // "person" or "system"
+	Type       string `validate:"required,oneof=person system"` // "person" or "system"
 	UmlComment string
 }
 
@@ -40,20 +42,16 @@ func NewActor(key identity.Key, name, details, userType, umlComment string) (act
 
 // Validate validates the Actor struct.
 func (a *Actor) Validate() error {
-	return validation.ValidateStruct(a,
-		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_ACTOR {
-				return errors.Errorf("invalid key type '%s' for actor", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&a.Name, validation.Required),
-		validation.Field(&a.Type, validation.Required, validation.In(_USER_TYPE_PERSON, _USER_TYPE_SYSTEM)),
-	)
+	// Validate the key.
+	if err := a.Key.Validate(); err != nil {
+		return err
+	}
+	if a.Key.KeyType() != identity.KEY_TYPE_ACTOR {
+		return errors.Errorf("Key: invalid key type '%s' for actor.", a.Key.KeyType())
+	}
+
+	// Validate struct tags (Name required, Type required+oneof).
+	return _validate.Struct(a)
 }
 
 // ValidateWithParent validates the Actor, its key's parent relationship, and all children.
