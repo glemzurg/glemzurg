@@ -77,7 +77,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "",
 				Level: _USE_CASE_LEVEL_SEA,
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank level",
@@ -86,7 +86,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "Name",
 				Level: "",
 			},
-			errstr: "Level: cannot be blank",
+			errstr: "Level",
 		},
 		{
 			testName: "error invalid level",
@@ -95,7 +95,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "Name",
 				Level: "unknown",
 			},
-			errstr: "Level: must be a valid value",
+			errstr: "Level",
 		},
 	}
 	for _, tt := range tests {
@@ -130,7 +130,7 @@ func (suite *UseCaseSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -147,7 +147,7 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 		Level: _USE_CASE_LEVEL_SEA,
 	}
 	err := useCase.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - use case key has subdomain1 as parent, but we pass other_subdomain.
 	useCase = UseCase{

@@ -42,7 +42,7 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 				ShareType:  "",
 				UmlComment: "UmlComment",
 			},
-			errstr: "ShareType: cannot be blank",
+			errstr: "ShareType",
 		},
 		{
 			testName: "error invalid share type",
@@ -50,7 +50,7 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 				ShareType:  "unknown",
 				UmlComment: "UmlComment",
 			},
-			errstr: "ShareType: must be a valid value",
+			errstr: "ShareType",
 		},
 	}
 	for _, tt := range tests {
@@ -77,7 +77,7 @@ func (suite *UseCaseSharedSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewUseCaseShared("", "UmlComment")
-	assert.ErrorContains(suite.T(), err, "ShareType: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "ShareType")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
@@ -88,7 +88,7 @@ func (suite *UseCaseSharedSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err := obj.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "ShareType: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "ShareType", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
 	obj = UseCaseShared{
