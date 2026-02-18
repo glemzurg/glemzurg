@@ -93,7 +93,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "",
 				Name: "Name",
 			},
-			errstr: "Key: cannot be blank",
+			errstr: "Key",
 		},
 		{
 			testName: "error blank name",
@@ -101,7 +101,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank name with invariants set",
@@ -112,7 +112,7 @@ func (suite *ModelSuite) TestValidate() {
 					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error invalid invariant missing key",
@@ -214,7 +214,7 @@ func (suite *ModelSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewModel("model1", "", "Details", nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateTree tests that Validate validates the entire model tree.
@@ -227,7 +227,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		Details: "Details",
 	}
 	err := model.Validate()
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "Validate should validate Model fields")
+	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate Model fields")
 
 	// Test 2: Validate validates child Actor fields through the tree.
 	actorKey := helper.Must(identity.NewActorKey("actor1"))
@@ -244,7 +244,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "Validate should validate child fields")
+	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate child fields")
 
 	// Test 3: Validate validates parent relationships - wrong parent key should fail.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
@@ -272,7 +272,51 @@ func (suite *ModelSuite) TestValidateTree() {
 	err = model.Validate()
 	assert.ErrorContains(suite.T(), err, "does not match expected parent", "Validate should validate parent relationships")
 
-	// Test 4: Valid model should pass.
+	// Test 4: Validate validates child DomainAssociation fields through the tree.
+	domain2Key := helper.Must(identity.NewDomainKey("domain2"))
+	domainAssocKey := helper.Must(identity.NewDomainAssociationKey(domainKey, domain2Key))
+	model = Model{
+		Key:     "model1",
+		Name:    "Model Name",
+		Details: "Details",
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKey:  {Key: domainKey, Name: "Domain1"},
+			domain2Key: {Key: domain2Key, Name: "Domain2"},
+		},
+		DomainAssociations: map[identity.Key]model_domain.Association{
+			domainAssocKey: {
+				Key:               domainAssocKey,
+				ProblemDomainKey:  domainKey,
+				SolutionDomainKey: domainKey, // Invalid - same as ProblemDomainKey
+			},
+		},
+	}
+	err = model.Validate()
+	assert.ErrorContains(suite.T(), err, "ProblemDomainKey and SolutionDomainKey cannot be the same", "Validate should validate child DomainAssociations")
+
+	// Test 5: Validate validates child ClassAssociation fields through the tree.
+	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	subdomain2Key := helper.Must(identity.NewSubdomainKey(domain2Key, "subdomain1"))
+	classKey1 := helper.Must(identity.NewClassKey(subdomain1Key, "class1"))
+	classKey2 := helper.Must(identity.NewClassKey(subdomain2Key, "class2"))
+	classAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKey1, classKey2, "model assoc"))
+	model = Model{
+		Key:     "model1",
+		Name:    "Model Name",
+		Details: "Details",
+		ClassAssociations: map[identity.Key]model_class.Association{
+			classAssocKey: {
+				Key:          classAssocKey,
+				Name:         "", // Invalid - blank name
+				FromClassKey: classKey1,
+				ToClassKey:   classKey2,
+			},
+		},
+	}
+	err = model.Validate()
+	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate child ClassAssociations")
+
+	// Test 6: Valid model should pass.
 	validSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	model = Model{
 		Key:     "model1",

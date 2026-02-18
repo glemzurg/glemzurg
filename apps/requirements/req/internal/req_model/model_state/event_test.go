@@ -140,4 +140,26 @@ func (suite *EventSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = event.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
+
+	// Test child Parameter validation propagates error.
+	event = Event{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+		},
+	}
+	err = event.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+
+	// Test valid with child Parameters.
+	event = Event{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "param1", DataTypeRules: "Nat"},
+		},
+	}
+	err = event.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
 }

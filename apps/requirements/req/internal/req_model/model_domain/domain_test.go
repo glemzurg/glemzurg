@@ -318,3 +318,53 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 	assert.NotNil(suite.T(), emptyResult)
 	assert.Equal(suite.T(), 0, len(emptyResult))
 }
+
+// TestValidateWithParentAndActorsAndClasses tests child validation propagation.
+func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	subdomain2Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain2"))
+	classKey1 := helper.Must(identity.NewClassKey(subdomain1Key, "class1"))
+	classKey2 := helper.Must(identity.NewClassKey(subdomain2Key, "class2"))
+
+	actors := map[identity.Key]bool{}
+	classes := map[identity.Key]bool{
+		classKey1: true,
+		classKey2: true,
+	}
+
+	// Test invalid Subdomain child propagates error.
+	domain := Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomain1Key: {Key: subdomain1Key, Name: ""}, // Invalid: blank name
+		},
+	}
+	err := domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Subdomains")
+
+	// Test invalid ClassAssociation child propagates error.
+	// Domain-level associations require classes in different subdomains.
+	assocKey := helper.Must(identity.NewClassAssociationKey(domainKey, classKey1, classKey2, "assoc1"))
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		ClassAssociations: map[identity.Key]model_class.Association{
+			assocKey: {Key: assocKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child ClassAssociations")
+
+	// Test valid domain with all children.
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.NoError(suite.T(), err, "Valid domain with all children should pass")
+}

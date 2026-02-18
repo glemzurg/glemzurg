@@ -5,6 +5,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -147,6 +149,162 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = class.ValidateWithParent(&subdomainKey)
 	assert.NoError(suite.T(), err)
+
+	// Test child Attribute validation propagates error.
+	attrKey := helper.Must(identity.NewAttributeKey(validKey, "attr1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Attributes: map[identity.Key]Attribute{
+			attrKey: {Key: attrKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Attributes")
+
+	// Test child Action validation propagates error.
+	actionKey := helper.Must(identity.NewActionKey(validKey, "action1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Actions: map[identity.Key]model_state.Action{
+			actionKey: {Key: actionKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Actions")
+
+	// Test child Query validation propagates error.
+	queryKey := helper.Must(identity.NewQueryKey(validKey, "query1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Queries: map[identity.Key]model_state.Query{
+			queryKey: {Key: queryKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Queries")
+
+	// Test child Event validation propagates error.
+	eventKey := helper.Must(identity.NewEventKey(validKey, "event1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Events: map[identity.Key]model_state.Event{
+			eventKey: {Key: eventKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Events")
+
+	// Test child Guard validation propagates error.
+	guardKey := helper.Must(identity.NewGuardKey(validKey, "guard1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Guards: map[identity.Key]model_state.Guard{
+			guardKey: {Key: guardKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Guards")
+
+	// Test child State validation propagates error.
+	stateKey := helper.Must(identity.NewStateKey(validKey, "state1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		States: map[identity.Key]model_state.State{
+			stateKey: {Key: stateKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child States")
+
+	// Test child Transition validation propagates error (bad event key).
+	transitionKey := helper.Must(identity.NewTransitionKey(validKey, "state1", "event1", "", "", "state2"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Transitions: map[identity.Key]model_state.Transition{
+			transitionKey: {Key: transitionKey, EventKey: identity.Key{}}, // Invalid: empty event key
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.Error(suite.T(), err, "Should validate child Transitions")
+
+	// Test valid class with all child types.
+	validLogic := model_logic.Logic{Key: "logic_1", Description: "Desc.", Notation: model_logic.NotationTLAPlus}
+	validAction := model_state.Action{Key: actionKey, Name: "Action"}
+	validEvent := model_state.Event{Key: eventKey, Name: "Event"}
+	validState := model_state.State{Key: stateKey, Name: "State"}
+	validGuard := model_state.Guard{Key: guardKey, Name: "Guard", Logic: validLogic}
+	validQuery := model_state.Query{Key: queryKey, Name: "Query"}
+	validAttr := Attribute{Key: attrKey, Name: "Attr"}
+	validTransition := model_state.Transition{
+		Key:          transitionKey,
+		FromStateKey: &stateKey,
+		EventKey:     eventKey,
+		ToStateKey:   &stateKey,
+	}
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Attributes:  map[identity.Key]Attribute{attrKey: validAttr},
+		States:      map[identity.Key]model_state.State{stateKey: validState},
+		Events:      map[identity.Key]model_state.Event{eventKey: validEvent},
+		Guards:      map[identity.Key]model_state.Guard{guardKey: validGuard},
+		Actions:     map[identity.Key]model_state.Action{actionKey: validAction},
+		Queries:     map[identity.Key]model_state.Query{queryKey: validQuery},
+		Transitions: map[identity.Key]model_state.Transition{transitionKey: validTransition},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.NoError(suite.T(), err, "Valid class with all children should pass")
+}
+
+// TestSetters tests that all Set* methods correctly set their fields.
+func (suite *ClassSuite) TestSetters() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	class := Class{Key: classKey, Name: "Name"}
+
+	attrKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
+	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	eventKey := helper.Must(identity.NewEventKey(classKey, "event1"))
+	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state1"))
+
+	attrs := map[identity.Key]Attribute{attrKey: {Key: attrKey, Name: "Attr"}}
+	class.SetAttributes(attrs)
+	assert.Equal(suite.T(), attrs, class.Attributes)
+
+	states := map[identity.Key]model_state.State{stateKey: {Key: stateKey, Name: "State"}}
+	class.SetStates(states)
+	assert.Equal(suite.T(), states, class.States)
+
+	events := map[identity.Key]model_state.Event{eventKey: {Key: eventKey, Name: "Event"}}
+	class.SetEvents(events)
+	assert.Equal(suite.T(), events, class.Events)
+
+	guards := map[identity.Key]model_state.Guard{guardKey: {Key: guardKey, Name: "Guard"}}
+	class.SetGuards(guards)
+	assert.Equal(suite.T(), guards, class.Guards)
+
+	actions := map[identity.Key]model_state.Action{actionKey: {Key: actionKey, Name: "Action"}}
+	class.SetActions(actions)
+	assert.Equal(suite.T(), actions, class.Actions)
+
+	queries := map[identity.Key]model_state.Query{queryKey: {Key: queryKey, Name: "Query"}}
+	class.SetQueries(queries)
+	assert.Equal(suite.T(), queries, class.Queries)
+
+	transitions := map[identity.Key]model_state.Transition{transitionKey: {Key: transitionKey, EventKey: eventKey}}
+	class.SetTransitions(transitions)
+	assert.Equal(suite.T(), transitions, class.Transitions)
 }
 
 // TestValidateReferences tests that ValidateReferences validates cross-references correctly.

@@ -123,3 +123,77 @@ func (suite *StateSuite) TestValidateWithParent() {
 	err = state.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
 }
+
+// TestValidateWithParentAndActions tests that ValidateWithParentAndActions validates child StateActions.
+func (suite *StateSuite) TestValidateWithParentAndActions() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	stateActionKey := helper.Must(identity.NewStateActionKey(stateKey, "entry", "sa1"))
+
+	actionKeys := map[identity.Key]bool{
+		actionKey: true,
+	}
+
+	// Test valid state with valid StateAction child.
+	state := State{
+		Key:  stateKey,
+		Name: "Name",
+		Actions: []StateAction{
+			{Key: stateActionKey, ActionKey: actionKey, When: "entry"},
+		},
+	}
+	err := state.ValidateWithParentAndActions(&classKey, actionKeys)
+	assert.NoError(suite.T(), err)
+
+	// Test invalid child StateAction (empty action key) propagates error.
+	state = State{
+		Key:  stateKey,
+		Name: "Name",
+		Actions: []StateAction{
+			{Key: stateActionKey, ActionKey: identity.Key{}, When: "entry"},
+		},
+	}
+	err = state.ValidateWithParentAndActions(&classKey, actionKeys)
+	assert.Error(suite.T(), err, "Invalid child StateAction should propagate error")
+
+	// Test action reference validation - reference non-existent action.
+	nonExistentActionKey := helper.Must(identity.NewActionKey(classKey, "nonexistent"))
+	state = State{
+		Key:  stateKey,
+		Name: "Name",
+		Actions: []StateAction{
+			{Key: stateActionKey, ActionKey: nonExistentActionKey, When: "entry"},
+		},
+	}
+	err = state.ValidateWithParentAndActions(&classKey, actionKeys)
+	assert.ErrorContains(suite.T(), err, "references non-existent action", "Should validate action references")
+}
+
+// TestSetActions tests that SetActions sets and sorts actions.
+func (suite *StateSuite) TestSetActions() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	stateKey := helper.Must(identity.NewStateKey(classKey, "state1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	saKeyExit := helper.Must(identity.NewStateActionKey(stateKey, "exit", "sa_exit"))
+	saKeyEntry := helper.Must(identity.NewStateActionKey(stateKey, "entry", "sa_entry"))
+
+	state := State{Key: stateKey, Name: "Name"}
+
+	// Add actions in reverse order (exit before entry).
+	actions := []StateAction{
+		{Key: saKeyExit, ActionKey: actionKey, When: "exit"},
+		{Key: saKeyEntry, ActionKey: actionKey, When: "entry"},
+	}
+	state.SetActions(actions)
+
+	// Verify actions are set.
+	assert.Equal(suite.T(), 2, len(state.Actions))
+	// Verify sorted: entry should come before exit.
+	assert.Equal(suite.T(), "entry", state.Actions[0].When)
+	assert.Equal(suite.T(), "exit", state.Actions[1].When)
+}

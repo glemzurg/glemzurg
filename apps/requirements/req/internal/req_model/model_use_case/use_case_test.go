@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -235,4 +236,52 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 			}
 		})
 	}
+
+	// Test child Scenario validation propagates error.
+	scenarioKey := helper.Must(identity.NewScenarioKey(validKey, "scenario1"))
+	useCase := UseCase{
+		Key:   validKey,
+		Name:  "Name",
+		Level: _USE_CASE_LEVEL_SEA,
+		Scenarios: map[identity.Key]model_scenario.Scenario{
+			scenarioKey: {Key: scenarioKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err := useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Scenarios")
+
+	// Test valid with child Scenario.
+	useCase = UseCase{
+		Key:   validKey,
+		Name:  "Name",
+		Level: _USE_CASE_LEVEL_SEA,
+		Scenarios: map[identity.Key]model_scenario.Scenario{
+			scenarioKey: {Key: scenarioKey, Name: "Scenario"},
+		},
+	}
+	err = useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
+	assert.NoError(suite.T(), err)
+}
+
+// TestSetters tests that SetActors and SetScenarios correctly set their fields.
+func (suite *UseCaseSuite) TestSetters() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	actorClassKey := helper.Must(identity.NewClassKey(subdomainKey, "actorclass"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+
+	useCase := UseCase{Key: useCaseKey, Name: "Name", Level: _USE_CASE_LEVEL_SEA}
+
+	actors := map[identity.Key]Actor{
+		actorClassKey: {UmlComment: "actor"},
+	}
+	useCase.SetActors(actors)
+	assert.Equal(suite.T(), actors, useCase.Actors)
+
+	scenarios := map[identity.Key]model_scenario.Scenario{
+		scenarioKey: {Key: scenarioKey, Name: "Scenario"},
+	}
+	useCase.SetScenarios(scenarios)
+	assert.Equal(suite.T(), scenarios, useCase.Scenarios)
 }

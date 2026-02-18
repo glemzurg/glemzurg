@@ -300,6 +300,33 @@ func (suite *AssociationSuite) TestValidateReferences() {
 	}
 }
 
+// TestIncludes tests that Includes returns true for FromClassKey, ToClassKey, and AssociationClassKey.
+func (suite *AssociationSuite) TestIncludes() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
+	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
+	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
+	unknownClassKey := helper.Must(identity.NewClassKey(subdomainKey, "unknown"))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
+
+	// Without AssociationClassKey.
+	assoc := Association{
+		Key:          validKey,
+		Name:         "Name",
+		FromClassKey: fromClassKey,
+		ToClassKey:   toClassKey,
+	}
+	assert.True(suite.T(), assoc.Includes(fromClassKey), "Should include FromClassKey")
+	assert.True(suite.T(), assoc.Includes(toClassKey), "Should include ToClassKey")
+	assert.False(suite.T(), assoc.Includes(unknownClassKey), "Should not include unknown key")
+
+	// With AssociationClassKey.
+	assoc.AssociationClassKey = &assocClassKey
+	assert.True(suite.T(), assoc.Includes(assocClassKey), "Should include AssociationClassKey")
+	assert.False(suite.T(), assoc.Includes(unknownClassKey), "Should not include unknown key")
+}
+
 func (suite *AssociationSuite) TestOther() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
