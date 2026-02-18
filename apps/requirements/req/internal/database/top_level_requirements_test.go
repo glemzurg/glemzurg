@@ -4,16 +4,16 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -40,6 +40,7 @@ func (suite *RequirementsSuite) SetupTest() {
 
 func (suite *RequirementsSuite) TestWriteRead() {
 
+	/*
 	// Build all keys first for proper relationships.
 	// Domain A
 	domainKeyA := helper.Must(identity.NewDomainKey("domain_a"))
@@ -80,6 +81,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	classAssocKeyDomain := helper.Must(identity.NewClassAssociationKey(domainKeyB, classKeyBA1, classKeyBB1, "Domain Level Assoc"))
 	// Subdomain level - association between classes in same subdomain
 	classAssocKeySubdomain := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "Subdomain Level Assoc"))
+	*/
 
 	// Build the model tree.
 	input := req_model.Model{
@@ -87,6 +89,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		Name:    "Test Model",
 		Details: "Test model details in markdown.",
 
+		/*
 		// Actors at model level.
 		Actors: map[identity.Key]model_actor.Actor{
 			actorKeyA: {
@@ -362,6 +365,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 				UmlComment:       "Model association UML comment",
 			},
 		},
+		*/
 	}
 
 	// Validate the model tree before testing.

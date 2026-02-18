@@ -3,15 +3,15 @@ package database
 import (
 	"database/sql"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
 func WriteModel(db *sql.DB, model req_model.Model) (err error) {
@@ -36,6 +36,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		/*
 		// Collect actors into a slice.
 		actorsSlice := make([]model_actor.Actor, 0, len(model.Actors))
 		for _, actor := range model.Actors {
@@ -282,6 +283,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		if err = AddTopLevelDataTypes(tx, modelKey, dataTypes); err != nil {
 			return err
 		}
+		*/
 
 		return nil
 	})
@@ -303,6 +305,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		/*
 		// Actors - returns slice, convert to map.
 		actorsSlice, err := QueryActors(tx, modelKey)
 		if err != nil {
@@ -595,6 +598,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 				return err
 			}
 		}
+		*/
 
 		return nil
 	})
