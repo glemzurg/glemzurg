@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"strings"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
 
 // Key uniquely identifies an entity in the model.
 type Key struct {
-	ParentKey string // The parent entity's key.
-	KeyType   string // The type of the key, e.g., "class", "association".
-	SubKey    string // The unique key of the child entity within its parent and type.
+	ParentKey string `validate:"-"`                                                                                                                                                                              // The parent entity's key.
+	KeyType   string `validate:"required,oneof=actor domain dassociation invariant subdomain usecase class attribute aderive state event guard action arequire aguarantee asafety query qrequire qguarantee transition generalization scenario sobject cassociation saction"` // The type of the key, e.g., "class", "association".
+	SubKey    string `validate:"required"`                                                                                                                                                                       // The unique key of the child entity within its parent and type.
 	SubKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
 	SubKey3   string // Optional tertiary key (e.g., for association names). Empty string means not set.
 }
@@ -54,54 +53,26 @@ func newRootKey(keyType, rootKey string) (key Key, err error) {
 
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
-	return validation.ValidateStruct(k,
-		validation.Field(&k.KeyType, validation.Required, validation.In(
-			KEY_TYPE_ACTOR,
-			KEY_TYPE_DOMAIN,
-			KEY_TYPE_DOMAIN_ASSOCIATION,
-			KEY_TYPE_INVARIANT,
-			KEY_TYPE_SUBDOMAIN,
-			KEY_TYPE_USE_CASE,
-			KEY_TYPE_CLASS,
-			KEY_TYPE_ATTRIBUTE,
-			KEY_TYPE_ATTRIBUTE_DERIVATION,
-			KEY_TYPE_STATE,
-			KEY_TYPE_EVENT,
-			KEY_TYPE_GUARD,
-			KEY_TYPE_ACTION,
-			KEY_TYPE_ACTION_REQUIRE,
-			KEY_TYPE_ACTION_GUARANTEE,
-			KEY_TYPE_ACTION_SAFETY,
-			KEY_TYPE_QUERY,
-			KEY_TYPE_QUERY_REQUIRE,
-			KEY_TYPE_QUERY_GUARANTEE,
-			KEY_TYPE_TRANSITION,
-			KEY_TYPE_GENERALIZATION,
-			KEY_TYPE_SCENARIO,
-			KEY_TYPE_SCENARIO_OBJECT,
-			KEY_TYPE_CLASS_ASSOCIATION,
-			KEY_TYPE_STATE_ACTION,
-		)),
-		validation.Field(&k.SubKey, validation.Required),
-		validation.Field(&k.ParentKey, validation.By(func(value interface{}) error {
-			parent := value.(string)
-			switch k.KeyType {
-			case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_INVARIANT:
-				// These key types must have blank parentKey.
-				if parent != "" {
-					return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, parent)
-				}
-			case KEY_TYPE_CLASS_ASSOCIATION:
-				// Class associations can have blank parentKey (model-level) or non-blank (domain/subdomain level).
-				// No validation needed - both are valid.
-			default:
-				if parent == "" {
-					return errors.Errorf("parentKey must be non-blank for '%s' keys", k.KeyType)
-				}
-			}
-			return nil
-		})),
-	)
+	if err := _validate.Struct(k); err != nil {
+		return err
+	}
+
+	// Custom ParentKey validation (context-dependent on KeyType).
+	switch k.KeyType {
+	case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_INVARIANT:
+		// These key types must have blank parentKey.
+		if k.ParentKey != "" {
+			return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey)
+		}
+	case KEY_TYPE_CLASS_ASSOCIATION:
+		// Class associations can have blank parentKey (model-level) or non-blank (domain/subdomain level).
+		// No validation needed - both are valid.
+	default:
+		if k.ParentKey == "" {
+			return errors.Errorf("parentKey must be non-blank for '%s' keys", k.KeyType)
+		}
+	}
+	return nil
 }
 
 // String returns the string representation of the key.

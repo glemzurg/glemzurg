@@ -54,7 +54,7 @@ func (suite *KeySuite) TestNewKey() {
 			parentKey: "something",
 			keyType:   "", // Trigger validation error.
 			subKey:    "somethingelse",
-			errstr:    "KeyType: cannot be blank.",
+			errstr:    "'KeyType' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -166,12 +166,12 @@ func (suite *KeySuite) TestParseKey() {
 		{
 			testName: "error empty keyType",
 			input:    "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
-			errstr:   "KeyType: cannot be blank.",
+			errstr:   "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error unknown keyType",
 			input:    "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
-			errstr:   "KeyType: must be a valid value.",
+			errstr:   "'KeyType' failed on the 'oneof' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -295,49 +295,49 @@ func (suite *KeySuite) TestValidate() {
 		{
 			testName: "error no subKey",
 			key:      Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: ""},
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 		{
 			testName: "error no keyType",
 			key:      Key{ParentKey: "domain/domain1", KeyType: "", SubKey: "subdomain1"},
-			errstr:   "cannot be blank",
+			errstr:   "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error invalid keyType",
 			key:      Key{ParentKey: "domain/domain1", KeyType: "unknown", SubKey: "something1"},
-			errstr:   "KeyType: must be a valid value.",
+			errstr:   "'KeyType' failed on the 'oneof' tag",
 		},
 
 		// Error cases: specific key types.
 		{
 			testName: "error parentKey for actor",
 			key:      Key{ParentKey: "notallowed", KeyType: "actor", SubKey: "actor1"},
-			errstr:   "ParentKey: parentKey must be blank for 'actor' keys, cannot be 'notallowed'.",
+			errstr:   "parentKey must be blank for 'actor' keys, cannot be 'notallowed'",
 		},
 		{
 			testName: "error parentKey for domain",
 			key:      Key{ParentKey: "notallowed", KeyType: "domain", SubKey: "domain1"},
-			errstr:   "ParentKey: parentKey must be blank for 'domain' keys, cannot be 'notallowed'.",
+			errstr:   "parentKey must be blank for 'domain' keys, cannot be 'notallowed'",
 		},
 		{
 			testName: "error domain association with parentKey",
 			key:      Key{ParentKey: "notallowed", KeyType: "dassociation", SubKey: "1", SubKey2: "2"},
-			errstr:   "ParentKey: parentKey must be blank for 'dassociation' keys, cannot be 'notallowed'.",
+			errstr:   "parentKey must be blank for 'dassociation' keys, cannot be 'notallowed'",
 		},
 		{
 			testName: "error missing parentKey for subdomain",
 			key:      Key{ParentKey: "", KeyType: "subdomain", SubKey: "subdomain1"},
-			errstr:   "ParentKey: parentKey must be non-blank for 'subdomain' keys.",
+			errstr:   "parentKey must be non-blank for 'subdomain' keys",
 		},
 		{
 			testName: "error missing parentKey for usecase",
 			key:      Key{ParentKey: "", KeyType: "usecase", SubKey: "usecase1"},
-			errstr:   "ParentKey: parentKey must be non-blank for 'usecase' keys.",
+			errstr:   "parentKey must be non-blank for 'usecase' keys",
 		},
 		{
 			testName: "error missing parentKey for class",
 			key:      Key{ParentKey: "", KeyType: "class", SubKey: "thing1"},
-			errstr:   "ParentKey: parentKey must be non-blank for 'class' keys.",
+			errstr:   "parentKey must be non-blank for 'class' keys",
 		},
 	}
 	for _, tt := range tests {
@@ -873,7 +873,7 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 		{
 			testName: "unknown key type",
 			jsonStr:  `"unknown/something"`,
-			errstr:   "must be a valid value",
+			errstr:   "'KeyType' failed on the 'oneof' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -975,7 +975,7 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 		{
 			testName: "unknown key type",
 			text:     "unknown/something",
-			errstr:   "must be a valid value",
+			errstr:   "'KeyType' failed on the 'oneof' tag",
 		},
 	}
 	for _, tt := range tests {

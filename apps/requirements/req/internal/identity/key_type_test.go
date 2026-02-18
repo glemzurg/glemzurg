@@ -34,7 +34,7 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 		{
 			testName: "error blank",
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -72,7 +72,7 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 		{
 			testName: "error blank",
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -110,7 +110,7 @@ func (suite *KeyTypeSuite) TestNewInvariantKey() {
 		{
 			testName: "error blank",
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -238,7 +238,7 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 			testName:  "error blank subKey",
 			domainKey: domainKey,
 			subKey:    "",
-			errstr:    "cannot be blank",
+			errstr:    "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -304,7 +304,7 @@ func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
 			testName:     "error blank subKey",
 			attributeKey: attributeKey,
 			subKey:       "",
-			errstr:       "cannot be blank",
+			errstr:       "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -370,7 +370,7 @@ func (suite *KeyTypeSuite) TestNewActionRequireKey() {
 			testName:  "error blank subKey",
 			actionKey: actionKey,
 			subKey:    "",
-			errstr:    "cannot be blank",
+			errstr:    "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -436,7 +436,7 @@ func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
 			testName:  "error blank subKey",
 			actionKey: actionKey,
 			subKey:    "",
-			errstr:    "cannot be blank",
+			errstr:    "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -502,7 +502,7 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 			testName:  "error blank subKey",
 			actionKey: actionKey,
 			subKey:    "",
-			errstr:    "cannot be blank",
+			errstr:    "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -568,7 +568,7 @@ func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
 			testName: "error blank subKey",
 			queryKey: queryKey,
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -634,7 +634,7 @@ func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
 			testName: "error blank subKey",
 			queryKey: queryKey,
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -694,7 +694,7 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 			testName:     "error blank subKey",
 			subdomainKey: subdomainKey,
 			subKey:       "",
-			errstr:       "cannot be blank",
+			errstr:       "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
