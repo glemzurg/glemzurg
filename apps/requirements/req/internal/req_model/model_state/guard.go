@@ -62,9 +62,9 @@ func (g *Guard) ValidateWithParent(parent *identity.Key) error {
 	if err := g.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Guard's logic shares the guard's exact key.
-	if err := g.Logic.ValidateWithParent(parent); err != nil {
-		return errors.Wrap(err, "logic")
+	// Guard's logic must use the guard's exact key.
+	if g.Logic.Key != g.Key {
+		return errors.Errorf("logic key '%s' does not match guard key '%s'", g.Logic.Key.String(), g.Key.String())
 	}
 	return nil
 }

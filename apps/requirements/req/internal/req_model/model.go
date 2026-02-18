@@ -85,7 +85,7 @@ func (m *Model) Validate() error {
 
 	// Validate global functions.
 	for name, gf := range m.GlobalFunctions {
-		if err := gf.Validate(); err != nil {
+		if err := gf.ValidateWithParent(); err != nil {
 			return errors.Wrapf(err, "global function '%s'", name)
 		}
 		// Ensure the map key matches the function name.

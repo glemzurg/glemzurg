@@ -261,6 +261,65 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	}
 	err = class.ValidateWithParent(&subdomainKey)
 	assert.NoError(suite.T(), err, "Valid class with all children should pass")
+
+	// Test guard logic key mismatch is caught through class validation.
+	otherGuardKey := helper.Must(identity.NewGuardKey(validKey, "other_guard"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Guards: map[identity.Key]model_state.Guard{
+			guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
+				Key: otherGuardKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus,
+			}},
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "does not match guard key", "Should catch guard logic key mismatch")
+
+	// Test action require key with wrong parent is caught.
+	otherActionKey := helper.Must(identity.NewActionKey(validKey, "other_action"))
+	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Actions: map[identity.Key]model_state.Action{
+			actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
+				{Key: wrongReqKey, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+			}},
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "requires 0", "Should catch action require key with wrong parent")
+
+	// Test query guarantee key with wrong parent is caught.
+	otherQueryKey := helper.Must(identity.NewQueryKey(validKey, "other_query"))
+	wrongGuarKey := helper.Must(identity.NewQueryGuaranteeKey(otherQueryKey, "guar_1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Queries: map[identity.Key]model_state.Query{
+			queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
+				{Key: wrongGuarKey, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
+			}},
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "guarantee 0", "Should catch query guarantee key with wrong parent")
+
+	// Test attribute derivation policy key with wrong parent is caught.
+	otherAttrKey := helper.Must(identity.NewAttributeKey(validKey, "other_attr"))
+	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Attributes: map[identity.Key]Attribute{
+			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
+				Key: wrongDerivKey, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
+			}},
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "DerivationPolicy", "Should catch attribute derivation policy key with wrong parent")
 }
 
 // TestSetters tests that all Set* methods correctly set their fields.

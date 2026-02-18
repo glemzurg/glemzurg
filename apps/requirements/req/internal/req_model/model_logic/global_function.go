@@ -41,6 +41,10 @@ func NewGlobalFunction(name, comment string, parameters []string, specification 
 
 // Validate validates the GlobalFunction struct.
 func (gf *GlobalFunction) Validate() error {
+	// Validate the specification logic explicitly (Key.Validate() is not called by struct tag validation).
+	if err := gf.Specification.Validate(); err != nil {
+		return fmt.Errorf("specification: %w", err)
+	}
 	if err := _validate.Struct(gf); err != nil {
 		// Wrap startswith error with a clearer message for the underscore rule.
 		if _, ok := err.(validator.ValidationErrors); ok {
@@ -51,6 +55,18 @@ func (gf *GlobalFunction) Validate() error {
 			}
 		}
 		return err
+	}
+	return nil
+}
+
+// ValidateWithParent validates the GlobalFunction and its specification logic's parent relationship.
+// Global function specification keys are root-level (invariant keys with nil parent).
+func (gf *GlobalFunction) ValidateWithParent() error {
+	if err := gf.Validate(); err != nil {
+		return err
+	}
+	if err := gf.Specification.ValidateWithParent(nil); err != nil {
+		return fmt.Errorf("specification: %w", err)
 	}
 	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -349,4 +351,117 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
 	assert.NoError(suite.T(), err, "Valid subdomain with all children should pass")
+}
+
+// TestValidateWithParentDeepTree tests that key validation propagates through the full tree:
+// subdomain → class → guard/action/query logic keys.
+func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
+	subdomainKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	reqKey := helper.Must(identity.NewActionRequireKey(actionKey, "req_1"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "guar_1"))
+	attrKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(attrKey, "deriv1"))
+
+	actors := map[identity.Key]bool{}
+	classes := map[identity.Key]bool{classKey: true}
+
+	// Test valid full tree.
+	subdomain := Subdomain{
+		Key:  subdomainKey,
+		Name: "Subdomain",
+		Classes: map[identity.Key]model_class.Class{
+			classKey: {
+				Key:  classKey,
+				Name: "Class",
+				Guards: map[identity.Key]model_state.Guard{
+					guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
+						Key: guardKey, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
+					}},
+				},
+				Actions: map[identity.Key]model_state.Action{
+					actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
+						{Key: reqKey, Description: "Req.", Notation: model_logic.NotationTLAPlus},
+					}},
+				},
+				Queries: map[identity.Key]model_state.Query{
+					queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
+						{Key: guarKey, Description: "Guar.", Notation: model_logic.NotationTLAPlus},
+					}},
+				},
+				Attributes: map[identity.Key]model_class.Attribute{
+					attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
+						Key: derivKey, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
+					}},
+				},
+			},
+		},
+	}
+	err := subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
+	assert.NoError(suite.T(), err, "Valid full tree should pass")
+
+	// Test guard logic key mismatch is caught deep in the tree.
+	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
+	subdomain = Subdomain{
+		Key:  subdomainKey,
+		Name: "Subdomain",
+		Classes: map[identity.Key]model_class.Class{
+			classKey: {
+				Key:  classKey,
+				Name: "Class",
+				Guards: map[identity.Key]model_state.Guard{
+					guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
+						Key: otherGuardKey, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
+					}},
+				},
+			},
+		},
+	}
+	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
+	assert.ErrorContains(suite.T(), err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
+
+	// Test action require key with wrong parent is caught deep in the tree.
+	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
+	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
+	subdomain = Subdomain{
+		Key:  subdomainKey,
+		Name: "Subdomain",
+		Classes: map[identity.Key]model_class.Class{
+			classKey: {
+				Key:  classKey,
+				Name: "Class",
+				Actions: map[identity.Key]model_state.Action{
+					actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
+						{Key: wrongReqKey, Description: "Req.", Notation: model_logic.NotationTLAPlus},
+					}},
+				},
+			},
+		},
+	}
+	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
+	assert.ErrorContains(suite.T(), err, "requires 0", "Should catch action require key error in deep tree")
+
+	// Test attribute derivation key with wrong parent is caught deep in the tree.
+	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
+	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
+	subdomain = Subdomain{
+		Key:  subdomainKey,
+		Name: "Subdomain",
+		Classes: map[identity.Key]model_class.Class{
+			classKey: {
+				Key:  classKey,
+				Name: "Class",
+				Attributes: map[identity.Key]model_class.Attribute{
+					attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
+						Key: wrongDerivKey, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
+					}},
+				},
+			},
+		},
+	}
+	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
+	assert.ErrorContains(suite.T(), err, "DerivationPolicy", "Should catch attribute derivation key error in deep tree")
 }

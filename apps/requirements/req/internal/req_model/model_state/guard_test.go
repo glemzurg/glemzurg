@@ -177,15 +177,15 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	err = guard.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
 
-	// Test logic key validation - logic with wrong parent should fail.
-	wrongLogicKey := helper.Must(identity.NewGuardKey(otherClassKey, "guard1"))
+	// Test logic key equality - logic key must match the guard's own key.
+	differentGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
 	guard = Guard{
 		Key:  validKey,
 		Name: "Name",
 		Logic: model_logic.Logic{
-			Key: wrongLogicKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+			Key: differentGuardKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 		},
 	}
 	err = guard.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should validate logic key parent")
+	assert.ErrorContains(suite.T(), err, "does not match guard key", "ValidateWithParent should enforce logic key == guard key")
 }

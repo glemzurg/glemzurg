@@ -208,3 +208,53 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	s.Error(err)
 	s.Contains(err.Error(), "KeyType")
 }
+
+// TestValidateWithParent tests that ValidateWithParent validates the specification logic's parent relationship.
+func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
+	specKey := helper.Must(identity.NewInvariantKey("spec_1"))
+
+	validSpec := Logic{
+		Key:         specKey,
+		Description: "Max of two values.",
+		Notation:    NotationTLAPlus,
+	}
+
+	// Test valid case - spec key is root-level (nil parent).
+	gf := GlobalFunction{
+		Name:          "_Max",
+		Parameters:    []string{"x", "y"},
+		Specification: validSpec,
+	}
+	err := gf.ValidateWithParent()
+	s.NoError(err)
+
+	// Test that Validate is called.
+	gf = GlobalFunction{
+		Name:          "Max", // Invalid: no underscore
+		Parameters:    []string{"x", "y"},
+		Specification: validSpec,
+	}
+	err = gf.ValidateWithParent()
+	s.Error(err)
+	s.Contains(err.Error(), "must start with underscore")
+
+	// Test that spec key parent validation is called - invariant key should have nil parent.
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	wrongSpecKey := helper.Must(identity.NewActionRequireKey(actionKey, "req_1"))
+
+	gf = GlobalFunction{
+		Name:       "_Max",
+		Parameters: []string{"x", "y"},
+		Specification: Logic{
+			Key:         wrongSpecKey,
+			Description: "Max of two values.",
+			Notation:    NotationTLAPlus,
+		},
+	}
+	err = gf.ValidateWithParent()
+	s.Error(err)
+	s.Contains(err.Error(), "specification")
+}
