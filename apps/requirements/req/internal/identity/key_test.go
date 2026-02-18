@@ -361,8 +361,24 @@ func (suite *KeySuite) TestValidateParent() {
 	classKey, _ := NewClassKey(subdomainKey, "testclass")
 	classKey2, _ := NewClassKey(subdomainKey2, "testclass2")
 	useCaseKey, _ := NewUseCaseKey(subdomainKey, "testusecase")
+	generalizationKey, _ := NewGeneralizationKey(subdomainKey, "testgen")
 	scenarioKey, _ := NewScenarioKey(useCaseKey, "testscenario")
+	scenarioObjectKey, _ := NewScenarioObjectKey(scenarioKey, "testsobject")
 	stateKey, _ := NewStateKey(classKey, "teststate")
+	eventKey, _ := NewEventKey(classKey, "testevent")
+	guardKey, _ := NewGuardKey(classKey, "testguard")
+	actionKey, _ := NewActionKey(classKey, "testaction")
+	queryKey, _ := NewQueryKey(classKey, "testquery")
+	transitionKey, _ := NewTransitionKey(classKey, "state_a", "testevent", "", "", "state_b")
+	attributeKey, _ := NewAttributeKey(classKey, "testattr")
+	stateActionKey, _ := NewStateActionKey(stateKey, "entry", "testaction")
+	invariantKey, _ := NewInvariantKey("testinvariant")
+	actionRequireKey, _ := NewActionRequireKey(actionKey, "testreq")
+	actionGuaranteeKey, _ := NewActionGuaranteeKey(actionKey, "testguar")
+	actionSafetyKey, _ := NewActionSafetyKey(actionKey, "testsafety")
+	queryRequireKey, _ := NewQueryRequireKey(queryKey, "testreq")
+	queryGuaranteeKey, _ := NewQueryGuaranteeKey(queryKey, "testguar")
+	attributeDerivationKey, _ := NewAttributeDerivationKey(attributeKey, "testderiv")
 	actorKey, _ := NewActorKey("testactor")
 	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
 
@@ -375,6 +391,11 @@ func (suite *KeySuite) TestValidateParent() {
 	subdomainKey3, _ := NewSubdomainKey(domainKey3, "testsubdomain3")
 	classKey3, _ := NewClassKey(subdomainKey3, "testclass3")
 	modelCassocKey, _ := NewClassAssociationKey(Key{}, classKey, classKey3, "model assoc")
+
+	// Keys for wrong-parent tests.
+	otherActionKey, _ := NewActionKey(classKey, "otheraction")
+	otherQueryKey, _ := NewQueryKey(classKey, "otherquery")
+	otherAttributeKey, _ := NewAttributeKey(classKey, "otherattr")
 
 	tests := []struct {
 		testName string
@@ -485,6 +506,311 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      scenarioKey,
 			parent:   nil,
 			errstr:   "requires a parent of type 'usecase'",
+		},
+
+		// Invariant is a root key (no parent).
+		{
+			testName: "ok invariant nil parent",
+			key:      invariantKey,
+			parent:   nil,
+		},
+		{
+			testName: "error invariant with parent",
+			key:      invariantKey,
+			parent:   &domainKey,
+			errstr:   "should not have a parent",
+		},
+
+		// UseCase requires subdomain parent.
+		{
+			testName: "ok usecase with subdomain parent",
+			key:      useCaseKey,
+			parent:   &subdomainKey,
+		},
+		{
+			testName: "error usecase nil parent",
+			key:      useCaseKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'subdomain'",
+		},
+		{
+			testName: "error usecase wrong parent type",
+			key:      useCaseKey,
+			parent:   &domainKey,
+			errstr:   "requires parent of type 'subdomain', but got 'domain'",
+		},
+
+		// Generalization requires subdomain parent.
+		{
+			testName: "ok generalization with subdomain parent",
+			key:      generalizationKey,
+			parent:   &subdomainKey,
+		},
+		{
+			testName: "error generalization nil parent",
+			key:      generalizationKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'subdomain'",
+		},
+		{
+			testName: "error generalization wrong parent type",
+			key:      generalizationKey,
+			parent:   &classKey,
+			errstr:   "requires parent of type 'subdomain', but got 'class'",
+		},
+
+		// ScenarioObject requires scenario parent.
+		{
+			testName: "ok scenario object with scenario parent",
+			key:      scenarioObjectKey,
+			parent:   &scenarioKey,
+		},
+		{
+			testName: "error scenario object nil parent",
+			key:      scenarioObjectKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'scenario'",
+		},
+		{
+			testName: "error scenario object wrong parent type",
+			key:      scenarioObjectKey,
+			parent:   &useCaseKey,
+			errstr:   "requires parent of type 'scenario', but got 'usecase'",
+		},
+
+		// Event requires class parent.
+		{
+			testName: "ok event with class parent",
+			key:      eventKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error event nil parent",
+			key:      eventKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+		{
+			testName: "error event wrong parent type",
+			key:      eventKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+
+		// Guard requires class parent.
+		{
+			testName: "ok guard with class parent",
+			key:      guardKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error guard nil parent",
+			key:      guardKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+
+		// Action requires class parent.
+		{
+			testName: "ok action with class parent",
+			key:      actionKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error action nil parent",
+			key:      actionKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+
+		// Query requires class parent.
+		{
+			testName: "ok query with class parent",
+			key:      queryKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error query nil parent",
+			key:      queryKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+
+		// Transition requires class parent.
+		{
+			testName: "ok transition with class parent",
+			key:      transitionKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error transition nil parent",
+			key:      transitionKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+
+		// Attribute requires class parent.
+		{
+			testName: "ok attribute with class parent",
+			key:      attributeKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error attribute nil parent",
+			key:      attributeKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+
+		// StateAction requires state parent.
+		{
+			testName: "ok state action with state parent",
+			key:      stateActionKey,
+			parent:   &stateKey,
+		},
+		{
+			testName: "error state action nil parent",
+			key:      stateActionKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'state'",
+		},
+		{
+			testName: "error state action wrong parent type",
+			key:      stateActionKey,
+			parent:   &classKey,
+			errstr:   "requires parent of type 'state', but got 'class'",
+		},
+
+		// ActionRequire requires action parent.
+		{
+			testName: "ok action require with action parent",
+			key:      actionRequireKey,
+			parent:   &actionKey,
+		},
+		{
+			testName: "error action require nil parent",
+			key:      actionRequireKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'action'",
+		},
+		{
+			testName: "error action require wrong parent type",
+			key:      actionRequireKey,
+			parent:   &classKey,
+			errstr:   "requires parent of type 'action', but got 'class'",
+		},
+		{
+			testName: "error action require wrong parent key",
+			key:      actionRequireKey,
+			parent:   &otherActionKey,
+			errstr:   "does not match expected parent",
+		},
+
+		// ActionGuarantee requires action parent.
+		{
+			testName: "ok action guarantee with action parent",
+			key:      actionGuaranteeKey,
+			parent:   &actionKey,
+		},
+		{
+			testName: "error action guarantee nil parent",
+			key:      actionGuaranteeKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'action'",
+		},
+		{
+			testName: "error action guarantee wrong parent type",
+			key:      actionGuaranteeKey,
+			parent:   &queryKey,
+			errstr:   "requires parent of type 'action', but got 'query'",
+		},
+
+		// ActionSafety requires action parent.
+		{
+			testName: "ok action safety with action parent",
+			key:      actionSafetyKey,
+			parent:   &actionKey,
+		},
+		{
+			testName: "error action safety nil parent",
+			key:      actionSafetyKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'action'",
+		},
+		{
+			testName: "error action safety wrong parent type",
+			key:      actionSafetyKey,
+			parent:   &classKey,
+			errstr:   "requires parent of type 'action', but got 'class'",
+		},
+
+		// QueryRequire requires query parent.
+		{
+			testName: "ok query require with query parent",
+			key:      queryRequireKey,
+			parent:   &queryKey,
+		},
+		{
+			testName: "error query require nil parent",
+			key:      queryRequireKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'query'",
+		},
+		{
+			testName: "error query require wrong parent type",
+			key:      queryRequireKey,
+			parent:   &actionKey,
+			errstr:   "requires parent of type 'query', but got 'action'",
+		},
+		{
+			testName: "error query require wrong parent key",
+			key:      queryRequireKey,
+			parent:   &otherQueryKey,
+			errstr:   "does not match expected parent",
+		},
+
+		// QueryGuarantee requires query parent.
+		{
+			testName: "ok query guarantee with query parent",
+			key:      queryGuaranteeKey,
+			parent:   &queryKey,
+		},
+		{
+			testName: "error query guarantee nil parent",
+			key:      queryGuaranteeKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'query'",
+		},
+		{
+			testName: "error query guarantee wrong parent type",
+			key:      queryGuaranteeKey,
+			parent:   &classKey,
+			errstr:   "requires parent of type 'query', but got 'class'",
+		},
+
+		// AttributeDerivation requires attribute parent.
+		{
+			testName: "ok attribute derivation with attribute parent",
+			key:      attributeDerivationKey,
+			parent:   &attributeKey,
+		},
+		{
+			testName: "error attribute derivation nil parent",
+			key:      attributeDerivationKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'attribute'",
+		},
+		{
+			testName: "error attribute derivation wrong parent type",
+			key:      attributeDerivationKey,
+			parent:   &classKey,
+			errstr:   "requires parent of type 'attribute', but got 'class'",
+		},
+		{
+			testName: "error attribute derivation wrong parent key",
+			key:      attributeDerivationKey,
+			parent:   &otherAttributeKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// Class association at subdomain level.
