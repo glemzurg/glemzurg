@@ -49,8 +49,8 @@ func (o *Object) Validate() error {
 	if err := o.Key.Validate(); err != nil {
 		return err
 	}
-	if o.Key.KeyType() != identity.KEY_TYPE_SCENARIO_OBJECT {
-		return errors.Errorf("Key: invalid key type '%s' for scenario object.", o.Key.KeyType())
+	if o.Key.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
+		return errors.Errorf("Key: invalid key type '%s' for scenario object.", o.Key.KeyType)
 	}
 	// Validate Name conditionally based on NameStyle.
 	if o.NameStyle == _NAME_STYLE_UNNAMED {
@@ -70,8 +70,8 @@ func (o *Object) Validate() error {
 	if err := o.ClassKey.Validate(); err != nil {
 		return errors.Wrap(err, "ClassKey")
 	}
-	if o.ClassKey.KeyType() != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("ClassKey: invalid key type '%s' for class.", o.ClassKey.KeyType())
+	if o.ClassKey.KeyType != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("ClassKey: invalid key type '%s' for class.", o.ClassKey.KeyType)
 	}
 	return nil
 }

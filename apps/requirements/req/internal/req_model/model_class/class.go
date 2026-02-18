@@ -51,8 +51,8 @@ func (c *Class) Validate() error {
 	if err := c.Key.Validate(); err != nil {
 		return err
 	}
-	if c.Key.KeyType() != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("Key: invalid key type '%s' for class.", c.Key.KeyType())
+	if c.Key.KeyType != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("Key: invalid key type '%s' for class.", c.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).
@@ -80,7 +80,7 @@ func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations
 	}
 
 	// Get this class's subdomain from its parent key.
-	classSubdomainKey := c.Key.ParentKey()
+	classSubdomainKey := c.Key.ParentKey
 
 	// Validate SuperclassOfKey references a real generalization in the same subdomain.
 	if c.SuperclassOfKey != nil {
@@ -88,7 +88,7 @@ func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations
 			return errors.Errorf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SuperclassOfKey.String())
 		}
 		// Check same subdomain.
-		generalizationSubdomainKey := c.SuperclassOfKey.ParentKey()
+		generalizationSubdomainKey := c.SuperclassOfKey.ParentKey
 		if classSubdomainKey != generalizationSubdomainKey {
 			return errors.Errorf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SuperclassOfKey.String())
 		}
@@ -100,7 +100,7 @@ func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations
 			return errors.Errorf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SubclassOfKey.String())
 		}
 		// Check same subdomain.
-		generalizationSubdomainKey := c.SubclassOfKey.ParentKey()
+		generalizationSubdomainKey := c.SubclassOfKey.ParentKey
 		if classSubdomainKey != generalizationSubdomainKey {
 			return errors.Errorf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SubclassOfKey.String())
 		}

@@ -42,8 +42,8 @@ func (d *Domain) Validate() error {
 	if err := d.Key.Validate(); err != nil {
 		return err
 	}
-	if d.Key.KeyType() != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("Key: invalid key type '%s' for domain", d.Key.KeyType())
+	if d.Key.KeyType != identity.KEY_TYPE_DOMAIN {
+		return errors.Errorf("Key: invalid key type '%s' for domain", d.Key.KeyType)
 	}
 	// Validate struct tags (Name required).
 	if err := _validate.Struct(d); err != nil {

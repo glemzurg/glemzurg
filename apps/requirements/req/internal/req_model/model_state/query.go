@@ -43,8 +43,8 @@ func (q *Query) Validate() error {
 	if err := q.Key.Validate(); err != nil {
 		return err
 	}
-	if q.Key.KeyType() != identity.KEY_TYPE_QUERY {
-		return errors.Errorf("Key: invalid key type '%s' for query", q.Key.KeyType())
+	if q.Key.KeyType != identity.KEY_TYPE_QUERY {
+		return errors.Errorf("Key: invalid key type '%s' for query", q.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

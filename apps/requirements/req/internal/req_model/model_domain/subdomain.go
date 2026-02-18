@@ -44,8 +44,8 @@ func (s *Subdomain) Validate() error {
 	if err := s.Key.Validate(); err != nil {
 		return err
 	}
-	if s.Key.KeyType() != identity.KEY_TYPE_SUBDOMAIN {
-		return errors.Errorf("Key: invalid key type '%s' for subdomain", s.Key.KeyType())
+	if s.Key.KeyType != identity.KEY_TYPE_SUBDOMAIN {
+		return errors.Errorf("Key: invalid key type '%s' for subdomain", s.Key.KeyType)
 	}
 	// Validate struct tags (Name required).
 	if err := _validate.Struct(s); err != nil {

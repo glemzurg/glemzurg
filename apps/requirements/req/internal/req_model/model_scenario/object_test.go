@@ -67,7 +67,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  classKey,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -107,7 +107,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  identity.Key{},
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong class key type",

@@ -42,16 +42,16 @@ func (t *Transition) Validate() error {
 	if err := t.Key.Validate(); err != nil {
 		return err
 	}
-	if t.Key.KeyType() != identity.KEY_TYPE_TRANSITION {
-		return errors.Errorf("Key: invalid key type '%s' for transition", t.Key.KeyType())
+	if t.Key.KeyType != identity.KEY_TYPE_TRANSITION {
+		return errors.Errorf("Key: invalid key type '%s' for transition", t.Key.KeyType)
 	}
 
 	// Validate the event key (required).
 	if err := t.EventKey.Validate(); err != nil {
 		return errors.Wrap(err, "EventKey")
 	}
-	if t.EventKey.KeyType() != identity.KEY_TYPE_EVENT {
-		return errors.Errorf("EventKey: invalid key type '%s' for event", t.EventKey.KeyType())
+	if t.EventKey.KeyType != identity.KEY_TYPE_EVENT {
+		return errors.Errorf("EventKey: invalid key type '%s' for event", t.EventKey.KeyType)
 	}
 
 	// Validate optional key fields.
@@ -59,32 +59,32 @@ func (t *Transition) Validate() error {
 		if err := t.FromStateKey.Validate(); err != nil {
 			return errors.Wrap(err, "FromStateKey")
 		}
-		if t.FromStateKey.KeyType() != identity.KEY_TYPE_STATE {
-			return errors.Errorf("FromStateKey: invalid key type '%s' for from state", t.FromStateKey.KeyType())
+		if t.FromStateKey.KeyType != identity.KEY_TYPE_STATE {
+			return errors.Errorf("FromStateKey: invalid key type '%s' for from state", t.FromStateKey.KeyType)
 		}
 	}
 	if t.ToStateKey != nil {
 		if err := t.ToStateKey.Validate(); err != nil {
 			return errors.Wrap(err, "ToStateKey")
 		}
-		if t.ToStateKey.KeyType() != identity.KEY_TYPE_STATE {
-			return errors.Errorf("ToStateKey: invalid key type '%s' for to state", t.ToStateKey.KeyType())
+		if t.ToStateKey.KeyType != identity.KEY_TYPE_STATE {
+			return errors.Errorf("ToStateKey: invalid key type '%s' for to state", t.ToStateKey.KeyType)
 		}
 	}
 	if t.GuardKey != nil {
 		if err := t.GuardKey.Validate(); err != nil {
 			return errors.Wrap(err, "GuardKey")
 		}
-		if t.GuardKey.KeyType() != identity.KEY_TYPE_GUARD {
-			return errors.Errorf("GuardKey: invalid key type '%s' for guard", t.GuardKey.KeyType())
+		if t.GuardKey.KeyType != identity.KEY_TYPE_GUARD {
+			return errors.Errorf("GuardKey: invalid key type '%s' for guard", t.GuardKey.KeyType)
 		}
 	}
 	if t.ActionKey != nil {
 		if err := t.ActionKey.Validate(); err != nil {
 			return errors.Wrap(err, "ActionKey")
 		}
-		if t.ActionKey.KeyType() != identity.KEY_TYPE_ACTION {
-			return errors.Errorf("ActionKey: invalid key type '%s' for action", t.ActionKey.KeyType())
+		if t.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
+			return errors.Errorf("ActionKey: invalid key type '%s' for action", t.ActionKey.KeyType)
 		}
 	}
 

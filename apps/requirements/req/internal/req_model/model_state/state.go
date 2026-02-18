@@ -40,8 +40,8 @@ func (s *State) Validate() error {
 	if err := s.Key.Validate(); err != nil {
 		return err
 	}
-	if s.Key.KeyType() != identity.KEY_TYPE_STATE {
-		return errors.Errorf("Key: invalid key type '%s' for state", s.Key.KeyType())
+	if s.Key.KeyType != identity.KEY_TYPE_STATE {
+		return errors.Errorf("Key: invalid key type '%s' for state", s.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

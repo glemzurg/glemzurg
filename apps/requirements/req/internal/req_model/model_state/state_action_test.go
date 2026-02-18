@@ -62,7 +62,7 @@ func (suite *StateActionSuite) TestValidate() {
 				ActionKey: actionKey,
 				When:      "entry",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -80,7 +80,7 @@ func (suite *StateActionSuite) TestValidate() {
 				ActionKey: identity.Key{},
 				When:      "entry",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong action key type",

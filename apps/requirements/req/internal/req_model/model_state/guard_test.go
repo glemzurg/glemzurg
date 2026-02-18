@@ -59,7 +59,7 @@ func (suite *GuardSuite) TestValidate() {
 					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",

@@ -37,8 +37,8 @@ func (e *Event) Validate() error {
 	if err := e.Key.Validate(); err != nil {
 		return err
 	}
-	if e.Key.KeyType() != identity.KEY_TYPE_EVENT {
-		return errors.Errorf("Key: invalid key type '%s' for event", e.Key.KeyType())
+	if e.Key.KeyType != identity.KEY_TYPE_EVENT {
+		return errors.Errorf("Key: invalid key type '%s' for event", e.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

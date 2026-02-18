@@ -37,8 +37,8 @@ func (s *Scenario) Validate() error {
 	if err := s.Key.Validate(); err != nil {
 		return err
 	}
-	if s.Key.KeyType() != identity.KEY_TYPE_SCENARIO {
-		return errors.Errorf("Key: invalid key type '%s' for scenario.", s.Key.KeyType())
+	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO {
+		return errors.Errorf("Key: invalid key type '%s' for scenario.", s.Key.KeyType)
 	}
 	// Validate struct tags (Name required).
 	if err := _validate.Struct(s); err != nil {

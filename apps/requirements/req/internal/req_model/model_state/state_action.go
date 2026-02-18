@@ -48,16 +48,16 @@ func (sa *StateAction) Validate() error {
 	if err := sa.Key.Validate(); err != nil {
 		return err
 	}
-	if sa.Key.KeyType() != identity.KEY_TYPE_STATE_ACTION {
-		return errors.Errorf("Key: invalid key type '%s' for state action", sa.Key.KeyType())
+	if sa.Key.KeyType != identity.KEY_TYPE_STATE_ACTION {
+		return errors.Errorf("Key: invalid key type '%s' for state action", sa.Key.KeyType)
 	}
 
 	// Validate the action key.
 	if err := sa.ActionKey.Validate(); err != nil {
 		return fmt.Errorf("ActionKey: %w", err)
 	}
-	if sa.ActionKey.KeyType() != identity.KEY_TYPE_ACTION {
-		return errors.Errorf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType())
+	if sa.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
+		return errors.Errorf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType)
 	}
 
 	// Validate struct tags (When required + oneof).

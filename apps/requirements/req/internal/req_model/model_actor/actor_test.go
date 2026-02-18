@@ -49,7 +49,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: _USER_TYPE_PERSON,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",

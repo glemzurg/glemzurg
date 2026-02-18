@@ -35,22 +35,22 @@ func (a *Association) Validate() error {
 	if err := a.Key.Validate(); err != nil {
 		return err
 	}
-	if a.Key.KeyType() != identity.KEY_TYPE_DOMAIN_ASSOCIATION {
-		return errors.Errorf("Key: invalid key type '%s' for domain association", a.Key.KeyType())
+	if a.Key.KeyType != identity.KEY_TYPE_DOMAIN_ASSOCIATION {
+		return errors.Errorf("Key: invalid key type '%s' for domain association", a.Key.KeyType)
 	}
 	// Validate ProblemDomainKey.
 	if err := a.ProblemDomainKey.Validate(); err != nil {
 		return errors.Wrap(err, "ProblemDomainKey")
 	}
-	if a.ProblemDomainKey.KeyType() != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("ProblemDomainKey: invalid key type '%s' for domain", a.ProblemDomainKey.KeyType())
+	if a.ProblemDomainKey.KeyType != identity.KEY_TYPE_DOMAIN {
+		return errors.Errorf("ProblemDomainKey: invalid key type '%s' for domain", a.ProblemDomainKey.KeyType)
 	}
 	// Validate SolutionDomainKey.
 	if err := a.SolutionDomainKey.Validate(); err != nil {
 		return errors.Wrap(err, "SolutionDomainKey")
 	}
-	if a.SolutionDomainKey.KeyType() != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("SolutionDomainKey: invalid key type '%s' for domain", a.SolutionDomainKey.KeyType())
+	if a.SolutionDomainKey.KeyType != identity.KEY_TYPE_DOMAIN {
+		return errors.Errorf("SolutionDomainKey: invalid key type '%s' for domain", a.SolutionDomainKey.KeyType)
 	}
 	// ProblemDomainKey and SolutionDomainKey cannot be the same.
 	if a.ProblemDomainKey == a.SolutionDomainKey {

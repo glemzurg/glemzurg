@@ -46,8 +46,8 @@ func (a *Association) Validate() error {
 	if err := a.Key.Validate(); err != nil {
 		return err
 	}
-	if a.Key.KeyType() != identity.KEY_TYPE_CLASS_ASSOCIATION {
-		return errors.Errorf("Key: invalid key type '%s' for association.", a.Key.KeyType())
+	if a.Key.KeyType != identity.KEY_TYPE_CLASS_ASSOCIATION {
+		return errors.Errorf("Key: invalid key type '%s' for association.", a.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).
@@ -59,16 +59,16 @@ func (a *Association) Validate() error {
 	if err := a.FromClassKey.Validate(); err != nil {
 		return err
 	}
-	if a.FromClassKey.KeyType() != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("FromClassKey: invalid key type '%s' for from class.", a.FromClassKey.KeyType())
+	if a.FromClassKey.KeyType != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("FromClassKey: invalid key type '%s' for from class.", a.FromClassKey.KeyType)
 	}
 
 	// Validate the ToClassKey.
 	if err := a.ToClassKey.Validate(); err != nil {
 		return err
 	}
-	if a.ToClassKey.KeyType() != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("ToClassKey: invalid key type '%s' for to class.", a.ToClassKey.KeyType())
+	if a.ToClassKey.KeyType != identity.KEY_TYPE_CLASS {
+		return errors.Errorf("ToClassKey: invalid key type '%s' for to class.", a.ToClassKey.KeyType)
 	}
 
 	// Validate multiplicities as properties.

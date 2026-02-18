@@ -51,7 +51,7 @@ func (uc *UseCase) Validate() error {
 	if err := uc.Key.Validate(); err != nil {
 		return err
 	}
-	if uc.Key.KeyType() != identity.KEY_TYPE_USE_CASE {
+	if uc.Key.KeyType != identity.KEY_TYPE_USE_CASE {
 		return errors.New("invalid key type for use_case")
 	}
 	// Validate struct tags (Name required, Level required+oneof).
