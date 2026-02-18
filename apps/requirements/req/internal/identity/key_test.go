@@ -31,21 +31,21 @@ func (suite *KeySuite) TestNewKey() {
 			parentKey: "",
 			keyType:   "domain",
 			subKey:    "rootkey",
-			expected:  Key{parentKey: "", keyType: "domain", subKey: "rootkey"},
+			expected:  Key{ParentKey: "", KeyType: "domain", SubKey: "rootkey"},
 		},
 		{
 			testName:  "ok nested",
 			parentKey: "domain/domain1",
 			keyType:   "subdomain",
 			subKey:    "subdomain1",
-			expected:  Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
+			expected:  Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: "subdomain1"},
 		},
 		{
 			testName:  "ok with spaces and case insensitivity",
 			parentKey: " PARENT ",
 			keyType:   "class",
 			subKey:    " KEY ",
-			expected:  Key{parentKey: "parent", keyType: "class", subKey: "key"},
+			expected:  Key{ParentKey: "parent", KeyType: "class", SubKey: "key"},
 		},
 
 		// Error cases: verify that validate is being called.
@@ -54,7 +54,7 @@ func (suite *KeySuite) TestNewKey() {
 			parentKey: "something",
 			keyType:   "", // Trigger validation error.
 			subKey:    "somethingelse",
-			errstr:    "keyType: cannot be blank.",
+			errstr:    "KeyType: cannot be blank.",
 		},
 	}
 	for _, tt := range tests {
@@ -85,76 +85,76 @@ func (suite *KeySuite) TestParseKey() {
 		{
 			testName: "ok simple",
 			input:    "domain/domain1",
-			expected: Key{parentKey: "", keyType: "domain", subKey: "domain1"},
+			expected: Key{ParentKey: "", KeyType: "domain", SubKey: "domain1"},
 		},
 		{
 			testName: "ok nested",
 			input:    "domain/domain1/subdomain/subdomain1",
-			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
+			expected: Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: "subdomain1"},
 		},
 		{
 			testName: "ok deep",
 			input:    "domain/domain1/subdomain/subdomain1/class/thing1",
-			expected: Key{parentKey: "domain/domain1/subdomain/subdomain1", keyType: "class", subKey: "thing1"},
+			expected: Key{ParentKey: "domain/domain1/subdomain/subdomain1", KeyType: "class", SubKey: "thing1"},
 		},
 		{
 			testName: "ok with spaces",
 			input:    " DOMAIN / DOMAIN1  /  SUBDOMAIN  /  SUBDOMAIN1  ", // with spaces
-			expected: Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
+			expected: Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: "subdomain1"},
 		},
 		{
 			testName: "ok domain association with subKey2",
 			input:    "dassociation/problem1/solution1",
-			expected: Key{parentKey: "", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
+			expected: Key{ParentKey: "", KeyType: "dassociation", SubKey: "problem1", SubKey2: "solution1"},
 		},
 		// Class association with subdomain parent.
 		// Format: domain/d/subdomain/s/cassociation/class/class_a/class/class_b/name
 		{
 			testName: "ok class association with subdomain parent",
 			input:    "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b/assoc_name",
-			expected: Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b", subKey3: "assoc_name"},
+			expected: Key{ParentKey: "domain/domain_a/subdomain/subdomain_a", KeyType: "cassociation", SubKey: "class/class_a", SubKey2: "class/class_b", SubKey3: "assoc_name"},
 		},
 		// Class association with domain parent.
 		// Format: domain/d/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b/name
 		{
 			testName: "ok class association with domain parent",
 			input:    "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b/assoc_name",
-			expected: Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
+			expected: Key{ParentKey: "domain/domain_a", KeyType: "cassociation", SubKey: "subdomain/subdomain_a/class/class_a", SubKey2: "subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 		},
 		// Class association with model parent (no parent).
 		// Format: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b/name
 		{
 			testName: "ok class association with model parent",
 			input:    "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b/assoc_name",
-			expected: Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
+			expected: Key{ParentKey: "", KeyType: "cassociation", SubKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", SubKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 		},
 
 		// State action key with composite subKey (when/subKey).
 		{
 			testName: "ok state action key",
 			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/entry/key",
-			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "entry/key"},
+			expected: Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", KeyType: "saction", SubKey: "entry/key"},
 		},
 		{
 			testName: "ok state action key with exit",
 			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/exit/key_b",
-			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "exit/key_b"},
+			expected: Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", KeyType: "saction", SubKey: "exit/key_b"},
 		},
 		{
 			testName: "ok state action key with do",
 			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/do/action_name",
-			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "do/action_name"},
+			expected: Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", KeyType: "saction", SubKey: "do/action_name"},
 		},
 		// Transition key with composite subKey (from/event/guard/action/to).
 		{
 			testName: "ok transition key",
 			input:    "domain/domain_key/subdomain/subdomain_key/class/class_key/transition/state_a/event_key/guard_key/action_key/state_b",
-			expected: Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key", keyType: "transition", subKey: "state_a/event_key/guard_key/action_key/state_b"},
+			expected: Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key", KeyType: "transition", SubKey: "state_a/event_key/guard_key/action_key/state_b"},
 		},
 		{
 			testName: "ok transition key with different states",
 			input:    "domain/d1/subdomain/s1/class/c1/transition/from_state/my_event/my_guard/my_action/to_state",
-			expected: Key{parentKey: "domain/d1/subdomain/s1/class/c1", keyType: "transition", subKey: "from_state/my_event/my_guard/my_action/to_state"},
+			expected: Key{ParentKey: "domain/d1/subdomain/s1/class/c1", KeyType: "transition", SubKey: "from_state/my_event/my_guard/my_action/to_state"},
 		},
 
 		// Error cases: invalid format.
@@ -166,12 +166,12 @@ func (suite *KeySuite) TestParseKey() {
 		{
 			testName: "error empty keyType",
 			input:    "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
-			errstr:   "keyType: cannot be blank.",
+			errstr:   "KeyType: cannot be blank.",
 		},
 		{
 			testName: "error unknown keyType",
 			input:    "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
-			errstr:   "keyType: must be a valid value.",
+			errstr:   "KeyType: must be a valid value.",
 		},
 	}
 	for _, tt := range tests {
@@ -199,52 +199,52 @@ func (suite *KeySuite) TestString() {
 	}{
 		{
 			testName: "with parent",
-			key:      Key{parentKey: "domain/domain1", keyType: "class", subKey: "thing1"},
+			key:      Key{ParentKey: "domain/domain1", KeyType: "class", SubKey: "thing1"},
 			expected: "domain/domain1/class/thing1",
 		},
 		{
 			testName: "root",
-			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
+			key:      Key{ParentKey: "", KeyType: "domain", SubKey: "domain1"},
 			expected: "domain/domain1",
 		},
 		{
 			testName: "with subKey2",
-			key:      Key{parentKey: "", keyType: "dassociation", subKey: "problem1", subKey2: "solution1"},
+			key:      Key{ParentKey: "", KeyType: "dassociation", SubKey: "problem1", SubKey2: "solution1"},
 			expected: "dassociation/problem1/solution1",
 		},
 		// Class association with subdomain parent.
 		{
 			testName: "class association with subdomain parent",
-			key:      Key{parentKey: "domain/domain_a/subdomain/subdomain_a", keyType: "cassociation", subKey: "class/class_a", subKey2: "class/class_b", subKey3: "assoc_name"},
+			key:      Key{ParentKey: "domain/domain_a/subdomain/subdomain_a", KeyType: "cassociation", SubKey: "class/class_a", SubKey2: "class/class_b", SubKey3: "assoc_name"},
 			expected: "domain/domain_a/subdomain/subdomain_a/cassociation/class/class_a/class/class_b/assoc_name",
 		},
 		// Class association with domain parent.
 		{
 			testName: "class association with domain parent",
-			key:      Key{parentKey: "domain/domain_a", keyType: "cassociation", subKey: "subdomain/subdomain_a/class/class_a", subKey2: "subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
+			key:      Key{ParentKey: "domain/domain_a", KeyType: "cassociation", SubKey: "subdomain/subdomain_a/class/class_a", SubKey2: "subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 			expected: "domain/domain_a/cassociation/subdomain/subdomain_a/class/class_a/subdomain/subdomain_b/class/class_b/assoc_name",
 		},
 		// Class association with model parent (no parent).
 		{
 			testName: "class association with model parent",
-			key:      Key{parentKey: "", keyType: "cassociation", subKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", subKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", subKey3: "assoc_name"},
+			key:      Key{ParentKey: "", KeyType: "cassociation", SubKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", SubKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 			expected: "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b/assoc_name",
 		},
 		// State action key with composite subKey.
 		{
 			testName: "state action key",
-			key:      Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "entry/key"},
+			key:      Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", KeyType: "saction", SubKey: "entry/key"},
 			expected: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/entry/key",
 		},
 		{
 			testName: "state action key with exit",
-			key:      Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", keyType: "saction", subKey: "exit/key_b"},
+			key:      Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key", KeyType: "saction", SubKey: "exit/key_b"},
 			expected: "domain/domain_key/subdomain/subdomain_key/class/class_key/state/state_key/saction/exit/key_b",
 		},
 		// Transition key with composite subKey.
 		{
 			testName: "transition key",
-			key:      Key{parentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key", keyType: "transition", subKey: "state_a/event_key/guard_key/action_key/state_b"},
+			key:      Key{ParentKey: "domain/domain_key/subdomain/subdomain_key/class/class_key", KeyType: "transition", SubKey: "state_a/event_key/guard_key/action_key/state_b"},
 			expected: "domain/domain_key/subdomain/subdomain_key/class/class_key/transition/state_a/event_key/guard_key/action_key/state_b",
 		},
 	}
@@ -267,77 +267,77 @@ func (suite *KeySuite) TestValidate() {
 		// OK cases, test for each key type.
 		{
 			testName: "ok actor",
-			key:      Key{parentKey: "", keyType: "actor", subKey: "actor1"},
+			key:      Key{ParentKey: "", KeyType: "actor", SubKey: "actor1"},
 		},
 		{
 			testName: "ok domain",
-			key:      Key{parentKey: "", keyType: "domain", subKey: "domain1"},
+			key:      Key{ParentKey: "", KeyType: "domain", SubKey: "domain1"},
 		},
 		{
 			testName: "ok domain association",
-			key:      Key{parentKey: "", keyType: "dassociation", subKey: "1", subKey2: "2"},
+			key:      Key{ParentKey: "", KeyType: "dassociation", SubKey: "1", SubKey2: "2"},
 		},
 		{
 			testName: "ok subdomain",
-			key:      Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: "subdomain1"},
+			key:      Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: "subdomain1"},
 		},
 		{
 			testName: "ok use case",
-			key:      Key{parentKey: ".../subdomain/subdomain1", keyType: "usecase", subKey: "usecase1"},
+			key:      Key{ParentKey: ".../subdomain/subdomain1", KeyType: "usecase", SubKey: "usecase1"},
 		},
 
 		{
 			testName: "ok class",
-			key:      Key{parentKey: ".../subdomain/subdomain1", keyType: "class", subKey: "thing1"},
+			key:      Key{ParentKey: ".../subdomain/subdomain1", KeyType: "class", SubKey: "thing1"},
 		},
 
 		// Error cases for all keys.
 		{
 			testName: "error no subKey",
-			key:      Key{parentKey: "domain/domain1", keyType: "subdomain", subKey: ""},
+			key:      Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: ""},
 			errstr:   "cannot be blank",
 		},
 		{
 			testName: "error no keyType",
-			key:      Key{parentKey: "domain/domain1", keyType: "", subKey: "subdomain1"},
+			key:      Key{ParentKey: "domain/domain1", KeyType: "", SubKey: "subdomain1"},
 			errstr:   "cannot be blank",
 		},
 		{
 			testName: "error invalid keyType",
-			key:      Key{parentKey: "domain/domain1", keyType: "unknown", subKey: "something1"},
-			errstr:   "keyType: must be a valid value.",
+			key:      Key{ParentKey: "domain/domain1", KeyType: "unknown", SubKey: "something1"},
+			errstr:   "KeyType: must be a valid value.",
 		},
 
 		// Error cases: specific key types.
 		{
 			testName: "error parentKey for actor",
-			key:      Key{parentKey: "notallowed", keyType: "actor", subKey: "actor1"},
-			errstr:   "parentKey: parentKey must be blank for 'actor' keys, cannot be 'notallowed'.",
+			key:      Key{ParentKey: "notallowed", KeyType: "actor", SubKey: "actor1"},
+			errstr:   "ParentKey: parentKey must be blank for 'actor' keys, cannot be 'notallowed'.",
 		},
 		{
 			testName: "error parentKey for domain",
-			key:      Key{parentKey: "notallowed", keyType: "domain", subKey: "domain1"},
-			errstr:   "parentKey: parentKey must be blank for 'domain' keys, cannot be 'notallowed'.",
+			key:      Key{ParentKey: "notallowed", KeyType: "domain", SubKey: "domain1"},
+			errstr:   "ParentKey: parentKey must be blank for 'domain' keys, cannot be 'notallowed'.",
 		},
 		{
 			testName: "error domain association with parentKey",
-			key:      Key{parentKey: "notallowed", keyType: "dassociation", subKey: "1", subKey2: "2"},
-			errstr:   "parentKey: parentKey must be blank for 'dassociation' keys, cannot be 'notallowed'.",
+			key:      Key{ParentKey: "notallowed", KeyType: "dassociation", SubKey: "1", SubKey2: "2"},
+			errstr:   "ParentKey: parentKey must be blank for 'dassociation' keys, cannot be 'notallowed'.",
 		},
 		{
 			testName: "error missing parentKey for subdomain",
-			key:      Key{parentKey: "", keyType: "subdomain", subKey: "subdomain1"},
-			errstr:   "parentKey: parentKey must be non-blank for 'subdomain' keys.",
+			key:      Key{ParentKey: "", KeyType: "subdomain", SubKey: "subdomain1"},
+			errstr:   "ParentKey: parentKey must be non-blank for 'subdomain' keys.",
 		},
 		{
 			testName: "error missing parentKey for usecase",
-			key:      Key{parentKey: "", keyType: "usecase", subKey: "usecase1"},
-			errstr:   "parentKey: parentKey must be non-blank for 'usecase' keys.",
+			key:      Key{ParentKey: "", KeyType: "usecase", SubKey: "usecase1"},
+			errstr:   "ParentKey: parentKey must be non-blank for 'usecase' keys.",
 		},
 		{
 			testName: "error missing parentKey for class",
-			key:      Key{parentKey: "", keyType: "class", subKey: "thing1"},
-			errstr:   "parentKey: parentKey must be non-blank for 'class' keys.",
+			key:      Key{ParentKey: "", KeyType: "class", SubKey: "thing1"},
+			errstr:   "ParentKey: parentKey must be non-blank for 'class' keys.",
 		},
 	}
 	for _, tt := range tests {
@@ -769,9 +769,9 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 			assert.NoError(t, err, "Failed to parse key string '%s' for: %s", keyStr, tt.description)
 
 			// Verify the parsed key matches the original.
-			assert.Equal(t, originalKey.parentKey, parsedKey.parentKey, "ParentKey mismatch for: %s", tt.description)
-			assert.Equal(t, originalKey.keyType, parsedKey.keyType, "KeyType mismatch for: %s", tt.description)
-			assert.Equal(t, originalKey.subKey, parsedKey.subKey, "SubKey mismatch for: %s", tt.description)
+			assert.Equal(t, originalKey.ParentKey, parsedKey.ParentKey, "ParentKey mismatch for: %s", tt.description)
+			assert.Equal(t, originalKey.KeyType, parsedKey.KeyType, "KeyType mismatch for: %s", tt.description)
+			assert.Equal(t, originalKey.SubKey, parsedKey.SubKey, "SubKey mismatch for: %s", tt.description)
 			assert.Equal(t, originalKey.String(), parsedKey.String(), "String() mismatch for: %s", tt.description)
 		})
 		if !pass {

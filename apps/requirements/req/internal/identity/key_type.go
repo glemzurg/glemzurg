@@ -73,108 +73,108 @@ func NewInvariantKey(subKey string) (key Key, err error) {
 
 func NewDomainAssociationKey(problemDomainKey, solutionDomainKey Key) (key Key, err error) {
 	// Both must be domains.
-	if problemDomainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("problem domain key cannot be of type '%s' for 'dassociation' key", problemDomainKey.KeyType())
+	if problemDomainKey.GetKeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("problem domain key cannot be of type '%s' for 'dassociation' key", problemDomainKey.GetKeyType())
 	}
-	if solutionDomainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("solution domain key cannot be of type '%s' for 'dassociation' key", solutionDomainKey.KeyType())
+	if solutionDomainKey.GetKeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("solution domain key cannot be of type '%s' for 'dassociation' key", solutionDomainKey.GetKeyType())
 	}
 	// No parent, problem domain subKey as subKey, solution domain subKey as subKey2.
-	return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, problemDomainKey.SubKey(), solutionDomainKey.SubKey())
+	return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, problemDomainKey.GetSubKey(), solutionDomainKey.GetSubKey())
 }
 
 func NewSubdomainKey(domainKey Key, subKey string) (key Key, err error) {
 	// The parent must be a domain.
-	if domainKey.KeyType() != KEY_TYPE_DOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'subdomain' key", domainKey.KeyType())
+	if domainKey.GetKeyType() != KEY_TYPE_DOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'subdomain' key", domainKey.GetKeyType())
 	}
 	return newKey(domainKey.String(), KEY_TYPE_SUBDOMAIN, subKey)
 }
 
 func NewUseCaseKey(subdomainKey Key, subKey string) (key Key, err error) {
 	// The parent must be a subdomain.
-	if subdomainKey.KeyType() != KEY_TYPE_SUBDOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'usecase' key", subdomainKey.KeyType())
+	if subdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'usecase' key", subdomainKey.GetKeyType())
 	}
 	return newKey(subdomainKey.String(), KEY_TYPE_USE_CASE, subKey)
 }
 
 func NewClassKey(subdomainKey Key, subKey string) (key Key, err error) {
 	// The parent must be a subdomain.
-	if subdomainKey.KeyType() != KEY_TYPE_SUBDOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'class' key", subdomainKey.KeyType())
+	if subdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'class' key", subdomainKey.GetKeyType())
 	}
 	return newKey(subdomainKey.String(), KEY_TYPE_CLASS, subKey)
 }
 
 func NewGeneralizationKey(subdomainKey Key, subKey string) (key Key, err error) {
 	// The parent must be a subdomain.
-	if subdomainKey.KeyType() != KEY_TYPE_SUBDOMAIN {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'generalization' key", subdomainKey.KeyType())
+	if subdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'generalization' key", subdomainKey.GetKeyType())
 	}
 	return newKey(subdomainKey.String(), KEY_TYPE_GENERALIZATION, subKey)
 }
 
 func NewScenarioKey(useCaseKey Key, subKey string) (key Key, err error) {
 	// The parent must be a use case.
-	if useCaseKey.KeyType() != KEY_TYPE_USE_CASE {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'scenario' key", useCaseKey.KeyType())
+	if useCaseKey.GetKeyType() != KEY_TYPE_USE_CASE {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'scenario' key", useCaseKey.GetKeyType())
 	}
 	return newKey(useCaseKey.String(), KEY_TYPE_SCENARIO, subKey)
 }
 
 func NewScenarioObjectKey(scenarioKey Key, subKey string) (key Key, err error) {
 	// The parent must be a scenario.
-	if scenarioKey.KeyType() != KEY_TYPE_SCENARIO {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'sobject' key", scenarioKey.KeyType())
+	if scenarioKey.GetKeyType() != KEY_TYPE_SCENARIO {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'sobject' key", scenarioKey.GetKeyType())
 	}
 	return newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_OBJECT, subKey)
 }
 
 func NewStateKey(classKey Key, subKey string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'state' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'state' key", classKey.GetKeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_STATE, subKey)
 }
 
 func NewEventKey(classKey Key, subKey string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'event' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'event' key", classKey.GetKeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_EVENT, subKey)
 }
 
 func NewGuardKey(classKey Key, subKey string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'guard' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'guard' key", classKey.GetKeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_GUARD, subKey)
 }
 
 func NewActionKey(classKey Key, subKey string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'action' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'action' key", classKey.GetKeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_ACTION, subKey)
 }
 
 func NewQueryKey(classKey Key, subKey string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'query' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'query' key", classKey.GetKeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_QUERY, subKey)
 }
 
 func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'transition' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'transition' key", classKey.GetKeyType())
 	}
 	// Event cannot be blank.
 	if event == "" {
@@ -199,11 +199,11 @@ func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key 
 
 func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string) (key Key, err error) {
 	// Both must be classes.
-	if fromClassKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("from class key cannot be of type '%s' for 'cassociation' key", fromClassKey.KeyType())
+	if fromClassKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("from class key cannot be of type '%s' for 'cassociation' key", fromClassKey.GetKeyType())
 	}
-	if toClassKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("to class key cannot be of type '%s' for 'cassociation' key", toClassKey.KeyType())
+	if toClassKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("to class key cannot be of type '%s' for 'cassociation' key", toClassKey.GetKeyType())
 	}
 
 	// Name is required.
@@ -216,7 +216,7 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string
 
 	var subKey, subKey2 string
 
-	switch parentKey.KeyType() {
+	switch parentKey.GetKeyType() {
 	case KEY_TYPE_SUBDOMAIN:
 		// Parent is a subdomain - both classes must be in this subdomain.
 		// subKey and subKey2 are "class/something" portions.
@@ -299,12 +299,12 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string
 		subKey2 = toStr
 
 	default:
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassociation' key, must be subdomain, domain, or empty (model)", parentKey.KeyType())
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassociation' key, must be subdomain, domain, or empty (model)", parentKey.GetKeyType())
 	}
 
 	// For model parent (empty key), use empty string; otherwise use the key string.
 	var parentKeyStr string
-	if parentKey.KeyType() != "" {
+	if parentKey.GetKeyType() != "" {
 		parentKeyStr = parentKey.String()
 	}
 
@@ -323,24 +323,24 @@ func distillName(name string) string {
 
 func NewAttributeKey(classKey Key, subKey string) (key Key, err error) {
 	// The parent must be a class.
-	if classKey.KeyType() != KEY_TYPE_CLASS {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'attribute' key", classKey.KeyType())
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'attribute' key", classKey.GetKeyType())
 	}
 	return newKey(classKey.String(), KEY_TYPE_ATTRIBUTE, subKey)
 }
 
 func NewAttributeDerivationKey(attributeKey Key, subKey string) (key Key, err error) {
 	// The parent must be an attribute.
-	if attributeKey.KeyType() != KEY_TYPE_ATTRIBUTE {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aderive' key", attributeKey.KeyType())
+	if attributeKey.GetKeyType() != KEY_TYPE_ATTRIBUTE {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aderive' key", attributeKey.GetKeyType())
 	}
 	return newKey(attributeKey.String(), KEY_TYPE_ATTRIBUTE_DERIVATION, subKey)
 }
 
 func NewStateActionKey(stateKey Key, when, subKey string) (key Key, err error) {
 	// The parent must be a state.
-	if stateKey.KeyType() != KEY_TYPE_STATE {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'saction' key", stateKey.KeyType())
+	if stateKey.GetKeyType() != KEY_TYPE_STATE {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'saction' key", stateKey.GetKeyType())
 	}
 	// When cannot be empty.
 	if when == "" {
@@ -351,40 +351,40 @@ func NewStateActionKey(stateKey Key, when, subKey string) (key Key, err error) {
 
 func NewActionRequireKey(actionKey Key, subKey string) (key Key, err error) {
 	// The parent must be an action.
-	if actionKey.KeyType() != KEY_TYPE_ACTION {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'arequire' key", actionKey.KeyType())
+	if actionKey.GetKeyType() != KEY_TYPE_ACTION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'arequire' key", actionKey.GetKeyType())
 	}
 	return newKey(actionKey.String(), KEY_TYPE_ACTION_REQUIRE, subKey)
 }
 
 func NewActionGuaranteeKey(actionKey Key, subKey string) (key Key, err error) {
 	// The parent must be an action.
-	if actionKey.KeyType() != KEY_TYPE_ACTION {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aguarantee' key", actionKey.KeyType())
+	if actionKey.GetKeyType() != KEY_TYPE_ACTION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aguarantee' key", actionKey.GetKeyType())
 	}
 	return newKey(actionKey.String(), KEY_TYPE_ACTION_GUARANTEE, subKey)
 }
 
 func NewActionSafetyKey(actionKey Key, subKey string) (key Key, err error) {
 	// The parent must be an action.
-	if actionKey.KeyType() != KEY_TYPE_ACTION {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'asafety' key", actionKey.KeyType())
+	if actionKey.GetKeyType() != KEY_TYPE_ACTION {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'asafety' key", actionKey.GetKeyType())
 	}
 	return newKey(actionKey.String(), KEY_TYPE_ACTION_SAFETY, subKey)
 }
 
 func NewQueryRequireKey(queryKey Key, subKey string) (key Key, err error) {
 	// The parent must be a query.
-	if queryKey.KeyType() != KEY_TYPE_QUERY {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qrequire' key", queryKey.KeyType())
+	if queryKey.GetKeyType() != KEY_TYPE_QUERY {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qrequire' key", queryKey.GetKeyType())
 	}
 	return newKey(queryKey.String(), KEY_TYPE_QUERY_REQUIRE, subKey)
 }
 
 func NewQueryGuaranteeKey(queryKey Key, subKey string) (key Key, err error) {
 	// The parent must be a query.
-	if queryKey.KeyType() != KEY_TYPE_QUERY {
-		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qguarantee' key", queryKey.KeyType())
+	if queryKey.GetKeyType() != KEY_TYPE_QUERY {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'qguarantee' key", queryKey.GetKeyType())
 	}
 	return newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, subKey)
 }
