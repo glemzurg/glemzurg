@@ -62,6 +62,9 @@ func (g *Guard) ValidateWithParent(parent *identity.Key) error {
 	if err := g.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Guard has no children with keys that need validation.
+	// Guard's logic shares the guard's exact key.
+	if err := g.Logic.ValidateWithParent(parent); err != nil {
+		return errors.Wrap(err, "logic")
+	}
 	return nil
 }

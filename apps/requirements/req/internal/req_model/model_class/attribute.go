@@ -95,6 +95,11 @@ func (a *Attribute) ValidateWithParent(parent *identity.Key) error {
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Attribute has no children with keys that need validation.
+	// Validate derivation policy with attribute as parent.
+	if a.DerivationPolicy != nil {
+		if err := a.DerivationPolicy.ValidateWithParent(&a.Key); err != nil {
+			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		}
+	}
 	return nil
 }

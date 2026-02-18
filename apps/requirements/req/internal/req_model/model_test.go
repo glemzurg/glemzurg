@@ -23,6 +23,11 @@ type ModelSuite struct {
 
 // TestValidate tests all validation rules for Model.
 func (suite *ModelSuite) TestValidate() {
+	invKey1 := helper.Must(identity.NewInvariantKey("inv_1"))
+	invKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
+	specKey := helper.Must(identity.NewInvariantKey("spec_max"))
+	specKey1 := helper.Must(identity.NewInvariantKey("spec_1"))
+
 	tests := []struct {
 		testName string
 		model    Model
@@ -41,8 +46,8 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
-					{Key: "inv_2", Description: "y must be under 100.", Notation: model_logic.NotationTLAPlus, Specification: "y < 100"},
+					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: invKey2, Description: "y must be under 100.", Notation: model_logic.NotationTLAPlus, Specification: "y < 100"},
 				},
 			},
 		},
@@ -56,7 +61,7 @@ func (suite *ModelSuite) TestValidate() {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
 						Specification: model_logic.Logic{
-							Key:           "spec_max",
+							Key:           specKey,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
 							Specification: "IF x > y THEN x ELSE y",
@@ -71,14 +76,14 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 				GlobalFunctions: map[string]model_logic.GlobalFunction{
 					"_Max": {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
 						Specification: model_logic.Logic{
-							Key:           "spec_max",
+							Key:           specKey,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
 							Specification: "IF x > y THEN x ELSE y",
@@ -109,7 +114,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "",
 				Invariants: []model_logic.Logic{
-					{Key: "inv_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 			},
 			errstr: "Name",
@@ -120,7 +125,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: "", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "invariant 0",
@@ -134,7 +139,7 @@ func (suite *ModelSuite) TestValidate() {
 					"Max": {
 						Name: "Max", // Missing underscore
 						Specification: model_logic.Logic{
-							Key:         "spec_1",
+							Key:         specKey1,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
 						},
@@ -152,7 +157,7 @@ func (suite *ModelSuite) TestValidate() {
 					"_Wrong": {
 						Name: "_Right",
 						Specification: model_logic.Logic{
-							Key:         "spec_1",
+							Key:         specKey1,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
 						},
@@ -176,13 +181,16 @@ func (suite *ModelSuite) TestValidate() {
 
 // TestNew tests that NewModel maps parameters correctly and calls Validate.
 func (suite *ModelSuite) TestNew() {
+	invKey1 := helper.Must(identity.NewInvariantKey("inv_1"))
+	specKey := helper.Must(identity.NewInvariantKey("spec_max"))
+
 	// Test all parameters are mapped correctly (key is normalized to lowercase and trimmed).
 	globalFuncs := map[string]model_logic.GlobalFunction{
 		"_Max": {
 			Name:       "_Max",
 			Parameters: []string{"x", "y"},
 			Specification: model_logic.Logic{
-				Key:           "spec_max",
+				Key:           specKey,
 				Description:   "Max of two values.",
 				Notation:      model_logic.NotationTLAPlus,
 				Specification: "IF x > y THEN x ELSE y",
@@ -190,7 +198,7 @@ func (suite *ModelSuite) TestNew() {
 		},
 	}
 	invariants := []model_logic.Logic{
-		{Key: "inv_1", Description: "First invariant.", Notation: model_logic.NotationTLAPlus, Specification: "inv1"},
+		{Key: invKey1, Description: "First invariant.", Notation: model_logic.NotationTLAPlus, Specification: "inv1"},
 	}
 	model, err := NewModel("  MODEL1  ", "Name", "Details",
 		invariants, globalFuncs)

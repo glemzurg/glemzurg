@@ -25,6 +25,7 @@ func (suite *AttributeSuite) TestValidate() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(validKey, "deriv1"))
 
 	tests := []struct {
 		testName  string
@@ -68,7 +69,7 @@ func (suite *AttributeSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				DerivationPolicy: &model_logic.Logic{
-					Key:         "spec_1",
+					Key:         derivKey,
 					Description: "Computed from other fields.",
 					Notation:    model_logic.NotationTLAPlus,
 				},
@@ -87,7 +88,7 @@ func (suite *AttributeSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				DerivationPolicy: &model_logic.Logic{
-					Key:         "",
+					Key:         identity.Key{},
 					Description: "Computed from other fields.",
 					Notation:    model_logic.NotationTLAPlus,
 				},
@@ -113,9 +114,10 @@ func (suite *AttributeSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(key, "deriv1"))
 
 	derivationPolicy := &model_logic.Logic{
-		Key:         "spec_1",
+		Key:         derivKey,
 		Description: "Computed from other fields.",
 		Notation:    model_logic.NotationTLAPlus,
 	}
@@ -141,14 +143,20 @@ func (suite *AttributeSuite) TestNew() {
 
 	// Test parseable data type rules result in DataType being set.
 	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
-	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivationPolicy, true, "UmlComment", []uint{1, 2})
+	derivParsedKey := helper.Must(identity.NewAttributeDerivationKey(attrParsedKey, "deriv_parsed"))
+	derivParsedPolicy := &model_logic.Logic{
+		Key:         derivParsedKey,
+		Description: "Computed from other fields.",
+		Notation:    model_logic.NotationTLAPlus,
+	}
+	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              attrParsedKey,
 		Name:             "NameParsed",
 		Details:          "Details",
 		DataTypeRules:    "unconstrained",
-		DerivationPolicy: derivationPolicy,
+		DerivationPolicy: derivParsedPolicy,
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
@@ -173,6 +181,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(validKey, "deriv1"))
 
 	// Test that Validate is called.
 	attr := Attribute{
@@ -193,4 +202,32 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = attr.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
+
+	// Test valid with derivation policy.
+	attr = Attribute{
+		Key:  validKey,
+		Name: "Name",
+		DerivationPolicy: &model_logic.Logic{
+			Key:         derivKey,
+			Description: "Computed from other fields.",
+			Notation:    model_logic.NotationTLAPlus,
+		},
+	}
+	err = attr.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test derivation policy key validation - wrong parent should fail.
+	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
+	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
+	attr = Attribute{
+		Key:  validKey,
+		Name: "Name",
+		DerivationPolicy: &model_logic.Logic{
+			Key:         wrongDerivKey,
+			Description: "Computed from other fields.",
+			Notation:    model_logic.NotationTLAPlus,
+		},
+	}
+	err = attr.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "DerivationPolicy", "ValidateWithParent should validate derivation policy key parent")
 }

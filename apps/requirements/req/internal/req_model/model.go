@@ -78,7 +78,7 @@ func (m *Model) Validate() error {
 
 	// Validate invariants.
 	for i, inv := range m.Invariants {
-		if err := inv.Validate(); err != nil {
+		if err := inv.ValidateWithParent(nil); err != nil {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
 	}

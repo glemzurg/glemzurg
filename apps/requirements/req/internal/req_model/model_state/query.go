@@ -77,6 +77,17 @@ func (q *Query) ValidateWithParent(parent *identity.Key) error {
 	if err := q.Key.ValidateParent(parent); err != nil {
 		return err
 	}
+	// Validate logic children with query as parent.
+	for i := range q.Requires {
+		if err := q.Requires[i].ValidateWithParent(&q.Key); err != nil {
+			return errors.Wrapf(err, "requires %d", i)
+		}
+	}
+	for i := range q.Guarantees {
+		if err := q.Guarantees[i].ValidateWithParent(&q.Key); err != nil {
+			return errors.Wrapf(err, "guarantee %d", i)
+		}
+	}
 	// Validate all children.
 	for i := range q.Parameters {
 		if err := q.Parameters[i].ValidateWithParent(); err != nil {

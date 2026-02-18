@@ -235,7 +235,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	assert.Error(suite.T(), err, "Should validate child Transitions")
 
 	// Test valid class with all child types.
-	validLogic := model_logic.Logic{Key: "logic_1", Description: "Desc.", Notation: model_logic.NotationTLAPlus}
+	validLogic := model_logic.Logic{Key: guardKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
 	validAction := model_state.Action{Key: actionKey, Name: "Action"}
 	validEvent := model_state.Event{Key: eventKey, Name: "Event"}
 	validState := model_state.State{Key: stateKey, Name: "State"}

@@ -24,6 +24,8 @@ func (suite *QuerySuite) TestValidate() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	reqKey := helper.Must(identity.NewQueryRequireKey(validKey, "req_1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(validKey, "guar_1"))
 
 	tests := []struct {
 		testName string
@@ -44,10 +46,10 @@ func (suite *QuerySuite) TestValidate() {
 				Name:    "Name",
 				Details: "Details",
 				Requires: []model_logic.Logic{
-					{Key: "req_1", Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
+					{Key: reqKey, Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: "guar_1", Description: "Guarantee 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+					{Key: guarKey, Description: "Guarantee 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
 				},
 			},
 		},
@@ -57,7 +59,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: "req_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: reqKey, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 			},
 		},
@@ -67,7 +69,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: "guar_1", Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+					{Key: guarKey, Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
 				},
 			},
 		},
@@ -101,10 +103,10 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Requires: []model_logic.Logic{
-					{Key: "req_1", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: reqKey, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: "guar_1", Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+					{Key: guarKey, Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
 				},
 			},
 			errstr: "Name",
@@ -115,7 +117,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: "", Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "requires 0",
@@ -126,7 +128,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: "", Description: "Result in S.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Description: "Result in S.", Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "guarantee 0",
@@ -150,12 +152,14 @@ func (suite *QuerySuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	reqKey := helper.Must(identity.NewQueryRequireKey(key, "req_1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(key, "guar_1"))
 
 	requires := []model_logic.Logic{
-		{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
+		{Key: reqKey, Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
 	}
 	guarantees := []model_logic.Logic{
-		{Key: "guar_1", Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+		{Key: guarKey, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
 	}
 
 	// Test all parameters are mapped correctly.
@@ -192,6 +196,8 @@ func (suite *QuerySuite) TestValidateWithParent() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+	reqKey := helper.Must(identity.NewQueryRequireKey(validKey, "req_1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(validKey, "guar_1"))
 
 	// Test that Validate is called.
 	query := Query{
@@ -212,6 +218,33 @@ func (suite *QuerySuite) TestValidateWithParent() {
 	// Test valid case.
 	err = query.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
+
+	// Test valid with logic children.
+	query = Query{
+		Key:  validKey,
+		Name: "Name",
+		Requires: []model_logic.Logic{
+			{Key: reqKey, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+		},
+		Guarantees: []model_logic.Logic{
+			{Key: guarKey, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = query.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test logic key validation - require with wrong parent should fail.
+	otherQueryKey := helper.Must(identity.NewQueryKey(classKey, "other_query"))
+	wrongReqKey := helper.Must(identity.NewQueryRequireKey(otherQueryKey, "req_1"))
+	query = Query{
+		Key:  validKey,
+		Name: "Name",
+		Requires: []model_logic.Logic{
+			{Key: wrongReqKey, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = query.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "requires 0", "ValidateWithParent should validate logic key parent")
 
 	// Test child Parameter validation propagates error.
 	query = Query{

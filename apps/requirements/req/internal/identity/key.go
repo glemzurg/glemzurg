@@ -130,7 +130,7 @@ func (k *Key) ValidateParent(parent *Key) error {
 	}
 
 	switch k.KeyType {
-	case KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION:
+	case KEY_TYPE_ACTOR, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_INVARIANT:
 		// These are root keys - parent must be nil.
 		if parent != nil {
 			return errors.Errorf("key type '%s' should not have a parent, but got parent of type '%s'", k.KeyType, parent.KeyType)
@@ -206,6 +206,42 @@ func (k *Key) ValidateParent(parent *Key) error {
 		}
 		if parent.KeyType != KEY_TYPE_STATE {
 			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_STATE, parent.KeyType)
+		}
+		if k.ParentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
+		}
+
+	case KEY_TYPE_ACTION_REQUIRE, KEY_TYPE_ACTION_GUARANTEE, KEY_TYPE_ACTION_SAFETY:
+		// Parent must be an action.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_ACTION)
+		}
+		if parent.KeyType != KEY_TYPE_ACTION {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_ACTION, parent.KeyType)
+		}
+		if k.ParentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
+		}
+
+	case KEY_TYPE_QUERY_REQUIRE, KEY_TYPE_QUERY_GUARANTEE:
+		// Parent must be a query.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_QUERY)
+		}
+		if parent.KeyType != KEY_TYPE_QUERY {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_QUERY, parent.KeyType)
+		}
+		if k.ParentKey != parent.String() {
+			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
+		}
+
+	case KEY_TYPE_ATTRIBUTE_DERIVATION:
+		// Parent must be an attribute.
+		if parent == nil {
+			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_ATTRIBUTE)
+		}
+		if parent.KeyType != KEY_TYPE_ATTRIBUTE {
+			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_ATTRIBUTE, parent.KeyType)
 		}
 		if k.ParentKey != parent.String() {
 			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())

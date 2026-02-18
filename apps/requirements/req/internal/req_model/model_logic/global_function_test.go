@@ -3,6 +3,8 @@ package model_logic
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,8 +19,12 @@ func TestGlobalFunctionSuite(t *testing.T) {
 
 // TestValidate tests all validation rules for GlobalFunction.
 func (s *GlobalFunctionTestSuite) TestValidate() {
+	specKey1 := helper.Must(identity.NewInvariantKey("spec_1"))
+	specKey2 := helper.Must(identity.NewInvariantKey("spec_2"))
+	specKey3 := helper.Must(identity.NewInvariantKey("spec_3"))
+
 	validSpec := Logic{
-		Key:         "spec_1",
+		Key:         specKey1,
 		Description: "Max of two values.",
 		Notation:    NotationTLAPlus,
 	}
@@ -50,7 +56,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 			gf: GlobalFunction{
 				Name: "_ValidStatuses",
 				Specification: Logic{
-					Key:           "spec_2",
+					Key:           specKey2,
 					Description:   "Set of valid statuses.",
 					Notation:      NotationTLAPlus,
 					Specification: `{"pending", "active", "complete"}`,
@@ -63,7 +69,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Name:       "_Constant",
 				Parameters: nil,
 				Specification: Logic{
-					Key:           "spec_3",
+					Key:           specKey3,
 					Description:   "A constant value.",
 					Notation:      NotationTLAPlus,
 					Specification: "42",
@@ -94,12 +100,12 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         "",
+					Key:         identity.Key{},
 					Description: "Some desc.",
 					Notation:    NotationTLAPlus,
 				},
 			},
-			errstr: "Key",
+			errstr: "KeyType",
 		},
 		{
 			testName: "error missing specification description",
@@ -107,7 +113,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         "spec_1",
+					Key:         specKey1,
 					Description: "",
 					Notation:    NotationTLAPlus,
 				},
@@ -120,7 +126,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         "spec_1",
+					Key:         specKey1,
 					Description: "Some desc.",
 					Notation:    "",
 				},
@@ -133,7 +139,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         "spec_1",
+					Key:         specKey1,
 					Description: "Some desc.",
 					Notation:    "Z",
 				},
@@ -156,8 +162,11 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 
 // TestNew tests that NewGlobalFunction maps parameters correctly and calls Validate.
 func (s *GlobalFunctionTestSuite) TestNew() {
+	specKey1 := helper.Must(identity.NewInvariantKey("spec_1"))
+	specKey2 := helper.Must(identity.NewInvariantKey("spec_2"))
+
 	spec := Logic{
-		Key:           "spec_1",
+		Key:           specKey1,
 		Description:   "Returns the maximum of two values.",
 		Notation:      NotationTLAPlus,
 		Specification: "IF x > y THEN x ELSE y",
@@ -175,7 +184,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 
 	// Test with nil optional fields (Comment and Parameters are optional).
 	gf, err = NewGlobalFunction("_Constant", "", nil, Logic{
-		Key:           "spec_2",
+		Key:           specKey2,
 		Description:   "A constant.",
 		Notation:      NotationTLAPlus,
 		Specification: "42",
@@ -192,10 +201,10 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 
 	// Test that invalid specification fails.
 	_, err = NewGlobalFunction("_Max", "", []string{"x"}, Logic{
-		Key:         "",
+		Key:         identity.Key{},
 		Description: "Some desc.",
 		Notation:    NotationTLAPlus,
 	})
 	s.Error(err)
-	s.Contains(err.Error(), "Key")
+	s.Contains(err.Error(), "KeyType")
 }

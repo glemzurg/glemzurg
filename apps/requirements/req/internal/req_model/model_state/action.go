@@ -83,6 +83,22 @@ func (a *Action) ValidateWithParent(parent *identity.Key) error {
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err
 	}
+	// Validate logic children with action as parent.
+	for i := range a.Requires {
+		if err := a.Requires[i].ValidateWithParent(&a.Key); err != nil {
+			return errors.Wrapf(err, "requires %d", i)
+		}
+	}
+	for i := range a.Guarantees {
+		if err := a.Guarantees[i].ValidateWithParent(&a.Key); err != nil {
+			return errors.Wrapf(err, "guarantee %d", i)
+		}
+	}
+	for i := range a.SafetyRules {
+		if err := a.SafetyRules[i].ValidateWithParent(&a.Key); err != nil {
+			return errors.Wrapf(err, "safety rule %d", i)
+		}
+	}
 	// Validate all children.
 	for i := range a.Parameters {
 		if err := a.Parameters[i].ValidateWithParent(); err != nil {

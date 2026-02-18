@@ -3,6 +3,8 @@ package model_logic
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,6 +19,10 @@ func TestLogicSuite(t *testing.T) {
 
 // TestValidate tests all validation rules for Logic.
 func (s *LogicTestSuite) TestValidate() {
+	validKey := helper.Must(identity.NewInvariantKey("inv_1"))
+	validKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
+	validKey3 := helper.Must(identity.NewInvariantKey("inv_3"))
+
 	tests := []struct {
 		testName string
 		logic    Logic
@@ -25,7 +31,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "valid minimal",
 			logic: Logic{
-				Key:          "inv_1",
+				Key:         validKey,
 				Description: "All orders must have at least one item.",
 				Notation:    NotationTLAPlus,
 			},
@@ -33,7 +39,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "valid with specification",
 			logic: Logic{
-				Key:            "inv_2",
+				Key:           validKey2,
 				Description:   "Stock is never negative.",
 				Notation:      NotationTLAPlus,
 				Specification: "\\A p \\in Products : p.stock >= 0",
@@ -42,7 +48,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "valid with empty specification",
 			logic: Logic{
-				Key:            "inv_3",
+				Key:           validKey3,
 				Description:   "Placeholder invariant.",
 				Notation:      NotationTLAPlus,
 				Specification: "",
@@ -51,16 +57,16 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "error missing key",
 			logic: Logic{
-				Key:          "",
+				Key:         identity.Key{},
 				Description: "Some description.",
 				Notation:    NotationTLAPlus,
 			},
-			errstr: "Key",
+			errstr: "KeyType",
 		},
 		{
 			testName: "error missing description",
 			logic: Logic{
-				Key:          "inv_1",
+				Key:         validKey,
 				Description: "",
 				Notation:    NotationTLAPlus,
 			},
@@ -69,7 +75,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "error missing notation",
 			logic: Logic{
-				Key:          "inv_1",
+				Key:         validKey,
 				Description: "Some description.",
 				Notation:    "",
 			},
@@ -78,7 +84,7 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "error invalid notation",
 			logic: Logic{
-				Key:          "inv_1",
+				Key:         validKey,
 				Description: "Some description.",
 				Notation:    "Z",
 			},
@@ -87,26 +93,26 @@ func (s *LogicTestSuite) TestValidate() {
 		{
 			testName: "error missing key and description",
 			logic: Logic{
-				Key:          "",
+				Key:         identity.Key{},
 				Description: "",
 				Notation:    NotationTLAPlus,
 			},
-			errstr: "Key",
+			errstr: "KeyType",
 		},
 		{
 			testName: "error missing key with specification set",
 			logic: Logic{
-				Key:            "",
+				Key:           identity.Key{},
 				Description:   "Some description.",
 				Notation:      NotationTLAPlus,
 				Specification: "TRUE",
 			},
-			errstr: "Key",
+			errstr: "KeyType",
 		},
 		{
 			testName: "error invalid notation with specification set",
 			logic: Logic{
-				Key:            "inv_1",
+				Key:           validKey,
 				Description:   "Some description.",
 				Notation:      "Alloy",
 				Specification: "some spec",
@@ -129,32 +135,86 @@ func (s *LogicTestSuite) TestValidate() {
 
 // TestNew tests that NewLogic maps parameters correctly and calls Validate.
 func (s *LogicTestSuite) TestNew() {
+	validKey := helper.Must(identity.NewInvariantKey("inv_1"))
+	validKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
+
 	// Test all parameters are mapped correctly.
-	logic, err := NewLogic("inv_1", "Stock is never negative.", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
+	logic, err := NewLogic(validKey, "Stock is never negative.", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
 	s.NoError(err)
 	s.Equal(Logic{
-		Key:            "inv_1",
+		Key:           validKey,
 		Description:   "Stock is never negative.",
 		Notation:      NotationTLAPlus,
 		Specification: "\\A p \\in Products : p.stock >= 0",
 	}, logic)
 
 	// Test with empty specification (optional).
-	logic, err = NewLogic("inv_2", "Placeholder.", NotationTLAPlus, "")
+	logic, err = NewLogic(validKey2, "Placeholder.", NotationTLAPlus, "")
 	s.NoError(err)
 	s.Equal(Logic{
-		Key:          "inv_2",
+		Key:         validKey2,
 		Description: "Placeholder.",
 		Notation:    NotationTLAPlus,
 	}, logic)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewLogic("", "Some description.", NotationTLAPlus, "")
+	_, err = NewLogic(identity.Key{}, "Some description.", NotationTLAPlus, "")
 	s.Error(err)
-	s.Contains(err.Error(), "Key")
+	s.Contains(err.Error(), "KeyType")
 
 	// Test that invalid notation fails.
-	_, err = NewLogic("inv_1", "Some description.", "Z", "")
+	_, err = NewLogic(validKey, "Some description.", "Z", "")
 	s.Error(err)
 	s.Contains(err.Error(), "Notation")
+}
+
+// TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
+func (s *LogicTestSuite) TestValidateWithParent() {
+	validKey := helper.Must(identity.NewInvariantKey("inv_1"))
+
+	// Test valid case - invariant keys have nil parent.
+	logic := Logic{
+		Key:         validKey,
+		Description: "Some description.",
+		Notation:    NotationTLAPlus,
+	}
+	err := logic.ValidateWithParent(nil)
+	s.NoError(err)
+
+	// Test that Validate is called.
+	logic = Logic{
+		Key:         validKey,
+		Description: "", // Invalid
+		Notation:    NotationTLAPlus,
+	}
+	err = logic.ValidateWithParent(nil)
+	s.ErrorContains(err, "Description")
+
+	// Test that ValidateParent is called - invariant key should have nil parent.
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	logic = Logic{
+		Key:         validKey,
+		Description: "Some description.",
+		Notation:    NotationTLAPlus,
+	}
+	err = logic.ValidateWithParent(&domainKey)
+	s.ErrorContains(err, "should not have a parent")
+
+	// Test with action require key and action parent.
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	requireKey := helper.Must(identity.NewActionRequireKey(actionKey, "req1"))
+
+	logic = Logic{
+		Key:         requireKey,
+		Description: "Precondition.",
+		Notation:    NotationTLAPlus,
+	}
+	err = logic.ValidateWithParent(&actionKey)
+	s.NoError(err)
+
+	// Test wrong parent for action require key.
+	err = logic.ValidateWithParent(&classKey)
+	s.Error(err)
 }

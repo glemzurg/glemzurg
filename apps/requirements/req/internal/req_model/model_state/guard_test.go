@@ -36,7 +36,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 		},
@@ -46,7 +46,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: "guard_logic_1", Description: "Balance must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0",
+					Key: validKey, Description: "Balance must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0",
 				},
 			},
 		},
@@ -56,7 +56,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "'KeyType' failed on the 'required' tag",
@@ -67,7 +67,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  domainKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "Key: invalid key type 'domain' for guard",
@@ -78,7 +78,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Logic: model_logic.Logic{
-					Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "Name",
@@ -89,10 +89,10 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: "", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: identity.Key{}, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
-			errstr: "Key",
+			errstr: "KeyType",
 		},
 		{
 			testName: "error invalid logic missing description",
@@ -100,7 +100,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: "guard_logic_1", Description: "", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Description: "", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "Description",
@@ -126,7 +126,7 @@ func (suite *GuardSuite) TestNew() {
 	key := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 
 	logic := model_logic.Logic{
-		Key: "guard_logic_1", Description: "Balance check.", Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0",
+		Key: key, Description: "Balance check.", Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0",
 	}
 
 	// Test all parameters are mapped correctly.
@@ -152,7 +152,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
 	validLogic := model_logic.Logic{
-		Key: "guard_logic_1", Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+		Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 	}
 
 	// Test that Validate is called.
@@ -176,4 +176,16 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = guard.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
+
+	// Test logic key validation - logic with wrong parent should fail.
+	wrongLogicKey := helper.Must(identity.NewGuardKey(otherClassKey, "guard1"))
+	guard = Guard{
+		Key:  validKey,
+		Name: "Name",
+		Logic: model_logic.Logic{
+			Key: wrongLogicKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+		},
+	}
+	err = guard.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should validate logic key parent")
 }
