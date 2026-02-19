@@ -25,6 +25,7 @@ type InvariantSuite struct {
 	db            *sql.DB
 	model         req_model.Model
 	logic         model_logic.Logic
+	logicB        model_logic.Logic
 	invariantKey  identity.Key
 	invariantKeyB identity.Key
 }
@@ -37,7 +38,7 @@ func (suite *InvariantSuite) SetupTest() {
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
 	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key")))
-	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key_b"))
+	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key_b")))
 
 	// Create the invariant keys for reuse.
 	suite.invariantKey = suite.logic.Key
@@ -47,142 +48,73 @@ func (suite *InvariantSuite) SetupTest() {
 func (suite *InvariantSuite) TestLoad() {
 
 	// Logic row exists from SetupTest, but no invariant join row yet.
-	logic, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
+	_, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), logic)
 
 	// Insert the invariant join row.
-	_, err = dbExec(suite.db, `
-		INSERT INTO invariant
-			(model_key, logic_key)
-		VALUES
-			($1, $2)
-	`, suite.model.Key, suite.invariantKey.String())
+	err = AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
 
-	logic, err = LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
+	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logic, logic)
+	assert.Equal(suite.T(), suite.invariantKey, key)
 }
 
 func (suite *InvariantSuite) TestAdd() {
 
-	err := AddInvariant(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.invariantKey,
-		Description:   "Description",
-		Notation:      "tla_plus",
-		Specification: "Specification",
-	})
+	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
 
-	logic, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
+	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.invariantKey,
-		Description:   "Description",
-		Notation:      "tla_plus",
-		Specification: "Specification",
-	}, logic)
-}
-
-func (suite *InvariantSuite) TestAddNulls() {
-
-	err := AddInvariant(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.invariantKeyB,
-		Description:   "Description",
-		Notation:      "tla_plus",
-		Specification: "",
-	})
-	assert.Nil(suite.T(), err)
-
-	logic, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.invariantKeyB,
-		Description:   "Description",
-		Notation:      "tla_plus",
-		Specification: "",
-	}, logic)
+	assert.Equal(suite.T(), suite.invariantKey, key)
 }
 
 func (suite *InvariantSuite) TestRemove() {
 
-	err := AddInvariant(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.invariantKeyB,
-		Description:   "Description",
-		Notation:      "tla_plus",
-		Specification: "Specification",
-	})
+	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
 	assert.Nil(suite.T(), err)
 
 	err = RemoveInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
 	assert.Nil(suite.T(), err)
 
 	// Invariant should be gone.
-	logic, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
+	_, err = LoadInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), logic)
 
-	// Logic row should also be gone.
-	logic, err = LoadLogic(suite.db, suite.model.Key, suite.invariantKeyB)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), logic)
+	// Logic row should still exist (invariant only manages the join table).
+	logic, err := LoadLogic(suite.db, suite.model.Key, suite.invariantKeyB)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), suite.logicB, logic)
 }
 
 func (suite *InvariantSuite) TestQuery() {
 
-	invariantKeyC := helper.Must(identity.NewInvariantKey("key_c"))
-
-	err := AddInvariants(suite.db, suite.model.Key, []model_logic.Logic{
-		{
-			Key:           invariantKeyC,
-			Description:   "DescriptionX",
-			Notation:      "tla_plus",
-			Specification: "SpecificationX",
-		},
-		{
-			Key:           suite.invariantKeyB,
-			Description:   "Description",
-			Notation:      "tla_plus",
-			Specification: "Specification",
-		},
+	err := AddInvariants(suite.db, suite.model.Key, []identity.Key{
+		suite.invariantKeyB,
+		suite.invariantKey,
 	})
 	assert.Nil(suite.T(), err)
 
-	logics, err := QueryInvariants(suite.db, suite.model.Key)
+	keys, err := QueryInvariants(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_logic.Logic{
-		{
-			Key:           suite.invariantKeyB,
-			Description:   "Description",
-			Notation:      "tla_plus",
-			Specification: "Specification",
-		},
-		{
-			Key:           invariantKeyC,
-			Description:   "DescriptionX",
-			Notation:      "tla_plus",
-			Specification: "SpecificationX",
-		},
-	}, logics)
+	assert.Equal(suite.T(), []identity.Key{
+		suite.invariantKey,
+		suite.invariantKeyB,
+	}, keys)
 }
 
 //==================================================
 // Test objects for other tests.
 //==================================================
 
-func t_AddInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic model_logic.Logic) {
+func t_AddInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key) identity.Key {
 
-	err := AddInvariant(dbOrTx, modelKey, model_logic.Logic{
-		Key:           logicKey,
-		Description:   logicKey.String(),
-		Notation:      "tla_plus",
-		Specification: "Specification",
-	})
+	err := AddInvariant(dbOrTx, modelKey, logicKey)
 	assert.Nil(t, err)
 
-	logic, err = LoadInvariant(dbOrTx, modelKey, logicKey)
+	key, err := LoadInvariant(dbOrTx, modelKey, logicKey)
 	assert.Nil(t, err)
 
-	return logic
+	return key
 }

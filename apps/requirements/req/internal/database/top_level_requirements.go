@@ -3,8 +3,9 @@ package database
 import (
 	"database/sql"
 
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
@@ -36,8 +37,17 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Add invariants (logic + invariant join rows).
-		if err = AddInvariants(tx, modelKey, model.Invariants); err != nil {
+		// Add all logic rows first.
+		if err = AddLogics(tx, modelKey, model.Invariants); err != nil {
+			return err
+		}
+
+		// Add invariant join rows.
+		invariantKeys := make([]identity.Key, len(model.Invariants))
+		for i, inv := range model.Invariants {
+			invariantKeys[i] = inv.Key
+		}
+		if err = AddInvariants(tx, modelKey, invariantKeys); err != nil {
 			return err
 		}
 
@@ -310,10 +320,24 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Invariants.
-		model.Invariants, err = QueryInvariants(tx, modelKey)
+		// Logics.
+		logics, err := QueryLogics(tx, modelKey)
 		if err != nil {
 			return err
+		}
+		logicsByKey := make(map[identity.Key]model_logic.Logic, len(logics))
+		for _, logic := range logics {
+			logicsByKey[logic.Key] = logic
+		}
+
+		// Invariants — stitch logic data onto invariant keys.
+		invariantKeys, err := QueryInvariants(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		model.Invariants = make([]model_logic.Logic, len(invariantKeys))
+		for i, key := range invariantKeys {
+			model.Invariants[i] = logicsByKey[key]
 		}
 
 		/*

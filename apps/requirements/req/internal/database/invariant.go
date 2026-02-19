@@ -4,56 +4,56 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 
 	"github.com/pkg/errors"
 )
 
-// LoadInvariant loads an invariant (as its Logic) from the database.
-func LoadInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic model_logic.Logic, err error) {
+// LoadInvariant loads an invariant logic key from the database.
+func LoadInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (key identity.Key, err error) {
 
-	// Query the database by joining invariant with logic.
+	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanLogic(scanner, &logic); err != nil {
+			if err = scanner.Scan(&logicKeyStr); err != nil {
+				if err.Error() == _POSTGRES_NOT_FOUND {
+					err = ErrNotFound
+				}
 				return err
 			}
 			return nil
 		},
 		`SELECT
-			l.logic_key     ,
-			l.description   ,
-			l.notation      ,
-			l.specification
+			logic_key
 		FROM
-			invariant i
-		JOIN
-			logic l ON l.model_key = i.model_key AND l.logic_key = i.logic_key
+			invariant
 		WHERE
-			i.logic_key = $2
+			model_key = $1
 		AND
-			i.model_key = $1`,
+			logic_key = $2`,
 		modelKey,
 		logicKey.String())
 	if err != nil {
-		return model_logic.Logic{}, errors.WithStack(err)
+		return identity.Key{}, errors.WithStack(err)
 	}
 
-	return logic, nil
+	key, err = identity.ParseKey(logicKeyStr)
+	if err != nil {
+		return identity.Key{}, errors.WithStack(err)
+	}
+
+	return key, nil
 }
 
-// AddInvariant adds an invariant to the database.
-// This inserts the logic row and the invariant join row.
-func AddInvariant(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err error) {
-	return AddInvariants(dbOrTx, modelKey, []model_logic.Logic{logic})
+// AddInvariant adds an invariant join row to the database.
+// The logic row must already exist.
+func AddInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
+	return AddInvariants(dbOrTx, modelKey, []identity.Key{logicKey})
 }
 
-// RemoveInvariant deletes an invariant from the database.
-// This removes the invariant join row and the logic row.
+// RemoveInvariant deletes an invariant join row from the database.
 func RemoveInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
 
-	// Delete the invariant join row first.
 	_, err = dbExec(dbOrTx, `
 		DELETE FROM
 			invariant
@@ -67,71 +67,57 @@ func RemoveInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err
 		return errors.WithStack(err)
 	}
 
-	// Delete the logic row.
-	err = RemoveLogic(dbOrTx, modelKey, logicKey)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
-// QueryInvariants loads all invariants (as Logic structs) from the database for a given model.
-func QueryInvariants(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, err error) {
+// QueryInvariants loads all invariant logic keys from the database for a given model.
+func QueryInvariants(dbOrTx DbOrTx, modelKey string) (keys []identity.Key, err error) {
 
-	// Query the database by joining invariant with logic.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var logic model_logic.Logic
-			if err = scanLogic(scanner, &logic); err != nil {
+			var logicKeyStr string
+			if err = scanner.Scan(&logicKeyStr); err != nil {
 				return errors.WithStack(err)
 			}
-			logics = append(logics, logic)
+			key, err := identity.ParseKey(logicKeyStr)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			keys = append(keys, key)
 			return nil
 		},
 		`SELECT
-			l.logic_key     ,
-			l.description   ,
-			l.notation      ,
-			l.specification
+			logic_key
 		FROM
-			invariant i
-		JOIN
-			logic l ON l.model_key = i.model_key AND l.logic_key = i.logic_key
+			invariant
 		WHERE
-			i.model_key = $1
-		ORDER BY l.logic_key`,
+			model_key = $1
+		ORDER BY logic_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return logics, nil
+	return keys, nil
 }
 
-// AddInvariants adds multiple invariants to the database.
-// This inserts the logic rows and the invariant join rows.
-func AddInvariants(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic) (err error) {
-	if len(logics) == 0 {
+// AddInvariants adds multiple invariant join rows to the database.
+// The logic rows must already exist.
+func AddInvariants(dbOrTx DbOrTx, modelKey string, logicKeys []identity.Key) (err error) {
+	if len(logicKeys) == 0 {
 		return nil
 	}
 
-	// First, insert the logic rows.
-	if err = AddLogics(dbOrTx, modelKey, logics); err != nil {
-		return err
-	}
-
-	// Then, insert the invariant join rows.
 	query := `INSERT INTO invariant (model_key, logic_key) VALUES `
-	args := make([]interface{}, 0, len(logics)*2)
-	for i, logic := range logics {
+	args := make([]interface{}, 0, len(logicKeys)*2)
+	for i, logicKey := range logicKeys {
 		if i > 0 {
 			query += ", "
 		}
 		base := i * 2
 		query += fmt.Sprintf("($%d, $%d)", base+1, base+2)
-		args = append(args, modelKey, logic.Key.String())
+		args = append(args, modelKey, logicKey.String())
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)
