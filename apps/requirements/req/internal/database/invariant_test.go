@@ -52,7 +52,12 @@ func (suite *InvariantSuite) TestLoad() {
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the invariant join row.
-	err = AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
+	_, err = dbExec(suite.db, `
+		INSERT INTO invariant
+			(model_key, logic_key)
+		VALUES
+			($1, $2)
+	`, suite.model.Key, suite.invariantKey.String())
 	assert.Nil(suite.T(), err)
 
 	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
