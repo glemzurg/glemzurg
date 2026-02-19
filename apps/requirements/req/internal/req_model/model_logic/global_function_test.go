@@ -284,4 +284,20 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 	err = gf.ValidateWithParent()
 	s.Error(err)
 	s.Contains(err.Error(), "must start with underscore")
+
+	// Test that Specification.ValidateWithParent is called - invalid spec description should fail.
+	gf = GlobalFunction{
+		Key:        gfKey,
+		Name:       "_Max",
+		Parameters: []string{"x", "y"},
+		Specification: Logic{
+			Key:         gfKey,
+			Description: "", // Invalid: missing description
+			Notation:    NotationTLAPlus,
+		},
+	}
+	err = gf.ValidateWithParent()
+	s.Error(err)
+	s.Contains(err.Error(), "specification")
+	s.Contains(err.Error(), "Description")
 }

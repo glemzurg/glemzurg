@@ -380,6 +380,7 @@ func (suite *KeySuite) TestValidateParent() {
 	queryGuaranteeKey, _ := NewQueryGuaranteeKey(queryKey, "testguar")
 	attributeDerivationKey, _ := NewAttributeDerivationKey(attributeKey, "testderiv")
 	actorKey, _ := NewActorKey("testactor")
+	globalFuncKey, _ := NewGlobalFunctionKey("_max")
 	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
 
 	// Class associations at different levels.
@@ -434,6 +435,19 @@ func (suite *KeySuite) TestValidateParent() {
 		{
 			testName: "error domain association with parent",
 			key:      domainAssocKey,
+			parent:   &domainKey,
+			errstr:   "should not have a parent",
+		},
+
+		// Global function is a root key (no parent).
+		{
+			testName: "ok global function nil parent",
+			key:      globalFuncKey,
+			parent:   nil,
+		},
+		{
+			testName: "error global function with parent",
+			key:      globalFuncKey,
 			parent:   &domainKey,
 			errstr:   "should not have a parent",
 		},

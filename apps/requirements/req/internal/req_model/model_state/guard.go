@@ -66,5 +66,9 @@ func (g *Guard) ValidateWithParent(parent *identity.Key) error {
 	if g.Logic.Key != g.Key {
 		return errors.Errorf("logic key '%s' does not match guard key '%s'", g.Logic.Key.String(), g.Key.String())
 	}
+	// Validate the logic's key parent relationship.
+	if err := g.Logic.ValidateWithParent(parent); err != nil {
+		return errors.Wrap(err, "logic")
+	}
 	return nil
 }

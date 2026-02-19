@@ -130,6 +130,44 @@ func (suite *KeyTypeSuite) TestNewInvariantKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
+	tests := []struct {
+		testName string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			subKey:   "_max",
+			expected: helper.Must(newRootKey(KEY_TYPE_GLOBAL_FUNCTION, "_max")),
+		},
+
+		// Errors.
+		{
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewGlobalFunctionKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 
 	problemDomainKey, err := NewDomainKey("problem1")

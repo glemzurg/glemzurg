@@ -351,7 +351,7 @@ func ParseKey(s string) (key Key, err error) {
 		parts[i] = strings.TrimSpace(parts[i])
 	}
 	if len(parts) < 2 {
-		return Key{}, errors.New("invalid key format2")
+		return Key{}, errors.New("invalid key format")
 	}
 
 	// Check if this is a domain association key (root-level with subKey2).
