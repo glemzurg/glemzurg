@@ -37,8 +37,13 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Add all logic rows first.
-		if err = AddLogics(tx, modelKey, model.Invariants); err != nil {
+		// Collect all logic rows to insert.
+		allLogics := make([]model_logic.Logic, 0, len(model.Invariants)+len(model.GlobalFunctions))
+		allLogics = append(allLogics, model.Invariants...)
+		for _, gf := range model.GlobalFunctions {
+			allLogics = append(allLogics, gf.Specification)
+		}
+		if err = AddLogics(tx, modelKey, allLogics); err != nil {
 			return err
 		}
 
@@ -48,6 +53,20 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			invariantKeys[i] = inv.Key
 		}
 		if err = AddInvariants(tx, modelKey, invariantKeys); err != nil {
+			return err
+		}
+
+		// Add global function rows.
+		gfRows := make([]globalFunctionRow, 0, len(model.GlobalFunctions))
+		for _, gf := range model.GlobalFunctions {
+			gfRows = append(gfRows, globalFunctionRow{
+				LogicKey:   gf.Key,
+				Name:       gf.Name,
+				Comment:    gf.Comment,
+				Parameters: gf.Parameters,
+			})
+		}
+		if err = AddGlobalFunctions(tx, modelKey, gfRows); err != nil {
 			return err
 		}
 
@@ -338,6 +357,24 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		model.Invariants = make([]model_logic.Logic, len(invariantKeys))
 		for i, key := range invariantKeys {
 			model.Invariants[i] = logicsByKey[key]
+		}
+
+		// Global functions — stitch logic data onto global function rows.
+		gfRows, err := QueryGlobalFunctions(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		if len(gfRows) > 0 {
+			model.GlobalFunctions = make(map[identity.Key]model_logic.GlobalFunction, len(gfRows))
+			for _, row := range gfRows {
+				model.GlobalFunctions[row.LogicKey] = model_logic.GlobalFunction{
+					Key:           row.LogicKey,
+					Name:          row.Name,
+					Comment:       row.Comment,
+					Parameters:    row.Parameters,
+					Specification: logicsByKey[row.LogicKey],
+				}
+			}
 		}
 
 		/*

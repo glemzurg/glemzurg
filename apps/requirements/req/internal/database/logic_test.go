@@ -36,7 +36,7 @@ func (suite *LogicSuite) SetupTest() {
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
 
-	// Create the logic keys for reuse.
+	// Create the keys for reuse.
 	suite.logicKey = helper.Must(identity.NewInvariantKey("key"))
 	suite.logicKeyB = helper.Must(identity.NewInvariantKey("key_b"))
 }

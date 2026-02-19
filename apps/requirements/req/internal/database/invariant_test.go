@@ -40,7 +40,7 @@ func (suite *InvariantSuite) SetupTest() {
 	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key")))
 	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key_b")))
 
-	// Create the invariant keys for reuse.
+	// Create the keys for reuse.
 	suite.invariantKey = suite.logic.Key
 	suite.invariantKeyB = suite.logicB.Key
 }
