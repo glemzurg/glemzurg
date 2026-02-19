@@ -48,6 +48,26 @@ COMMENT ON TABLE logic IS 'An invariant that is forever true in the model.';
 COMMENT ON COLUMN logic.model_key IS 'The model this invariant is part of.';
 COMMENT ON COLUMN logic.logic_key IS 'The logic of the invariant.';
 
+
+--------------------------------------------------------------
+
+CREATE TABLE global_function (
+  model_key text NOT NULL,
+  logic_key text NOT NULL,
+  name text NOT NULL,
+  comment text DEFAULT NULL,
+  parameters text[],
+  PRIMARY KEY (model_key, logic_key),
+  CONSTRAINT fk_global_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE global_function IS 'An global function used to describe simulation and code generation.';
+COMMENT ON COLUMN global_function.model_key IS 'The model this function is part of.';
+COMMENT ON COLUMN global_function.logic_key IS 'The logic of the function.';
+COMMENT ON COLUMN global_function.name IS 'The name of the function, fitting for the notation of the logic.';
+COMMENT ON COLUMN global_function.comment IS 'A descriptive comment about the function.';
+COMMENT ON COLUMN global_function.parameters IS 'The parameters of the function, fitting for the notation of the logic.';
+
 --------------------------------------------------------------
 
 CREATE TABLE domain (

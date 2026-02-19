@@ -7,6 +7,7 @@
 | [public.model](public.model.md) | 3 | A fully distinct semantic model, separate from all others. | BASE TABLE |
 | [public.logic](public.logic.md) | 5 | An invariant that is forever true in the model. | BASE TABLE |
 | [public.invariant](public.invariant.md) | 2 |  | BASE TABLE |
+| [public.global_function](public.global_function.md) | 5 | An global function used to describe simulation and code generation. | BASE TABLE |
 | [public.domain](public.domain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.subdomain](public.subdomain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |

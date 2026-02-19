@@ -258,6 +258,112 @@
       ]
     },
     {
+      "name": "public.global_function",
+      "type": "BASE TABLE",
+      "comment": "An global function used to describe simulation and code generation.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this function is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the function."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The name of the function, fitting for the notation of the logic."
+        },
+        {
+          "name": "comment",
+          "type": "text",
+          "nullable": true,
+          "comment": "A descriptive comment about the function."
+        },
+        {
+          "name": "parameters",
+          "type": "text[]",
+          "nullable": true,
+          "comment": "The parameters of the function, fitting for the notation of the logic."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "global_function_pkey",
+          "def": "CREATE UNIQUE INDEX global_function_pkey ON public.global_function USING btree (model_key, logic_key)",
+          "table": "public.global_function",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "global_function_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.global_function",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "global_function_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.global_function",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "global_function_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.global_function",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "fk_global_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.global_function",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "global_function_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, logic_key)",
+          "table": "public.global_function",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.domain",
       "type": "BASE TABLE",
       "comment": "A bucket for parts of a model.",
@@ -4413,6 +4519,21 @@
     },
     {
       "table": "public.invariant",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_one",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.global_function",
       "columns": [
         "model_key",
         "logic_key"
