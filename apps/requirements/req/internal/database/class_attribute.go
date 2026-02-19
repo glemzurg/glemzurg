@@ -21,10 +21,21 @@ func derivationPolicyKey(attr model_class.Attribute) *string {
 	return nil
 }
 
+// dataTypeKey extracts the data type key string for database storage.
+// Returns nil if no data type is set.
+func dataTypeKey(attr model_class.Attribute) *string {
+	if attr.DataType != nil {
+		s := attr.DataType.Key
+		return &s
+	}
+	return nil
+}
+
 // Populate a golang struct from a database row.
 func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_class.Attribute) (err error) {
 	var classKeyStr string
 	var attributeKeyStr string
+	var dataTypeKeyStr sql.NullString
 	var derivationPolicyKeyStr sql.NullString
 
 	if err = scanner.Scan(
@@ -33,6 +44,7 @@ func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_
 		&attribute.Name,
 		&attribute.Details,
 		&attribute.DataTypeRules,
+		&dataTypeKeyStr,
 		&derivationPolicyKeyStr,
 		&attribute.Nullable,
 		&attribute.UmlComment,
@@ -88,6 +100,7 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (c
 			name                  ,
 			details               ,
 			data_type_rules       ,
+			data_type_key         ,
 			derivation_policy_key ,
 			nullable              ,
 			uml_comment
@@ -121,12 +134,13 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 		UPDATE
 			attribute
 		SET
-			name                  = $4 ,
-			details               = $5 ,
-			data_type_rules       = $6 ,
-			derivation_policy_key = $7 ,
-			nullable              = $8 ,
-			uml_comment           = $9
+			name                  = $4  ,
+			details               = $5  ,
+			data_type_rules       = $6  ,
+			data_type_key         = $7  ,
+			derivation_policy_key = $8  ,
+			nullable              = $9  ,
+			uml_comment           = $10
 		WHERE
 			class_key = $2
 		AND
@@ -139,6 +153,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 		attribute.Name,
 		attribute.Details,
 		attribute.DataTypeRules,
+		dataTypeKey(attribute),
 		derivationPolicyKey(attribute),
 		attribute.Nullable,
 		attribute.UmlComment)
@@ -200,6 +215,7 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Ke
 			name                  ,
 			details               ,
 			data_type_rules       ,
+			data_type_key         ,
 			derivation_policy_key ,
 			nullable              ,
 			uml_comment
@@ -228,17 +244,17 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, derivation_policy_key, nullable, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*9)
+	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, data_type_key, derivation_policy_key, nullable, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*10)
 	i := 0
 	for classKey, attrList := range attributes {
 		for _, attr := range attrList {
 			if i > 0 {
 				query += ", "
 			}
-			base := i * 9
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
-			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
+			base := i * 10
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
+			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, dataTypeKey(attr), derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
 			i++
 		}
 	}

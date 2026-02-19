@@ -9,7 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -152,6 +152,19 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect data types from attributes (must be inserted before attributes due to FK).
+		dataTypes := make(map[string]model_data_type.DataType)
+		for _, attrs := range attributesMap {
+			for _, attr := range attrs {
+				if attr.DataType != nil {
+					dataTypes[attr.DataType.Key] = *attr.DataType
+				}
+			}
+		}
+		if err = AddTopLevelDataTypes(tx, modelKey, dataTypes); err != nil {
+			return err
+		}
+
 		// Bulk insert attributes.
 		if err = AddAttributes(tx, modelKey, attributesMap); err != nil {
 			return err
@@ -274,13 +287,23 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Stitch derivation policy logics onto attributes and load class indexes.
+		// Load data types for stitching onto attributes.
+		dataTypes, err := LoadTopLevelDataTypes(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch derivation policy logics, data types, and class indexes onto attributes.
 		for classKey, attrs := range attributesMap {
 			for i, attr := range attrs {
 				// Stitch derivation policy from logics table.
 				if attr.DerivationPolicy != nil {
 					logic := logicsByKey[attr.DerivationPolicy.Key]
 					attrs[i].DerivationPolicy = &logic
+				}
+				// Stitch data type from data types table.
+				if dt, ok := dataTypes[attr.Key.String()]; ok {
+					attrs[i].DataType = &dt
 				}
 				// Load class indexes for this attribute.
 				indexNums, err := LoadClassAttributeIndexes(tx, modelKey, classKey, attr.Key)

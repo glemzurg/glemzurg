@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 
 	"github.com/stretchr/testify/assert"
@@ -177,6 +178,13 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Nullable:   false,
 										UmlComment: "Attribute A UML comment",
 										IndexNums:  []uint{1, 2},
+										DataType: &model_data_type.DataType{
+											Key:            attributeKeyAA1A.String(),
+											CollectionType: "atomic",
+											Atomic: &model_data_type.Atomic{
+												ConstraintType: "unconstrained",
+											},
+										},
 									},
 									attributeKeyAA1B: {
 										Key:              attributeKeyAA1B,
