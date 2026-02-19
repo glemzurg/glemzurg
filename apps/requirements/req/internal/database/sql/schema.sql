@@ -48,7 +48,6 @@ COMMENT ON TABLE logic IS 'An invariant that is forever true in the model.';
 COMMENT ON COLUMN logic.model_key IS 'The model this invariant is part of.';
 COMMENT ON COLUMN logic.logic_key IS 'The logic of the invariant.';
 
-
 --------------------------------------------------------------
 
 CREATE TABLE global_function (
