@@ -36,6 +36,11 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Add invariants (logic + invariant join rows).
+		if err = AddInvariants(tx, modelKey, model.Invariants); err != nil {
+			return err
+		}
+
 		/*
 		// Collect actors into a slice.
 		actorsSlice := make([]model_actor.Actor, 0, len(model.Actors))
@@ -301,6 +306,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 
 		// Model.
 		model, err = LoadModel(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Invariants.
+		model.Invariants, err = QueryInvariants(tx, modelKey)
 		if err != nil {
 			return err
 		}

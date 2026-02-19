@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"testing"
 
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
@@ -39,6 +40,10 @@ func (suite *RequirementsSuite) SetupTest() {
 }
 
 func (suite *RequirementsSuite) TestWriteRead() {
+
+	// Invariant keys.
+	invariantKeyA := helper.Must(identity.NewInvariantKey("inv_a"))
+	invariantKeyB := helper.Must(identity.NewInvariantKey("inv_b"))
 
 	/*
 	// Build all keys first for proper relationships.
@@ -88,6 +93,21 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		Key:     "model_key",
 		Name:    "Test Model",
 		Details: "Test model details in markdown.",
+
+		Invariants: []model_logic.Logic{
+			{
+				Key:           invariantKeyA,
+				Description:   "Invariant A description",
+				Notation:      "tla_plus",
+				Specification: "InvariantA == TRUE",
+			},
+			{
+				Key:           invariantKeyB,
+				Description:   "Invariant B description",
+				Notation:      "tla_plus",
+				Specification: "",
+			},
+		},
 
 		/*
 		// Actors at model level.
