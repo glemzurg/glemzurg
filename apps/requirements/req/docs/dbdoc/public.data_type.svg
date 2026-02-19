@@ -161,8 +161,8 @@
 <text text-anchor="start" x="1078.84" y="-747" font-family="Arial" font-size="14.00">data_type_key </text>
 <text text-anchor="start" x="1173.79" y="-747" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" points="1071.84,-704 1071.84,-734.8 1319.79,-734.8 1319.79,-704 1071.84,-704"/>
-<text text-anchor="start" x="1078.84" y="-716.2" font-family="Arial" font-size="14.00">derivation_policy </text>
-<text text-anchor="start" x="1187.01" y="-716.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<text text-anchor="start" x="1078.84" y="-716.2" font-family="Arial" font-size="14.00">derivation_policy_key </text>
+<text text-anchor="start" x="1216.58" y="-716.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 <polygon fill="none" stroke="black" points="1071.84,-673.2 1071.84,-704 1319.79,-704 1319.79,-673.2 1071.84,-673.2"/>
 <text text-anchor="start" x="1078.84" y="-685.4" font-family="Arial" font-size="14.00">nullable </text>
 <text text-anchor="start" x="1130.99" y="-685.4" font-family="Arial" font-size="14.00" fill="#666666">[boolean]</text>

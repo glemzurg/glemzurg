@@ -368,11 +368,12 @@ CREATE TABLE attribute (
   details text DEFAULT NULL,
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
-  derivation_policy text DEFAULT NULL,
+  derivation_policy_key text DEFAULT NULL,
   nullable boolean NOT NULL, 
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, attribute_key),
   CONSTRAINT fk_attribute_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE,
+  CONSTRAINT fk_global_logic FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE,
   CONSTRAINT fk_attribute_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
@@ -383,7 +384,7 @@ COMMENT ON COLUMN attribute.model_key IS 'The model this class attribute is part
 COMMENT ON COLUMN attribute.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN attribute.data_type_key IS 'If the rules are parsable, the data type they parse into.';
 COMMENT ON COLUMN attribute.name IS 'The unique name of the attribute within the class.';
-COMMENT ON COLUMN attribute.derivation_policy IS 'If this attribute is derived, the details of the deriviation.';
+COMMENT ON COLUMN attribute.derivation_policy_key IS 'If this attribute is derived, the logic of it.';
 COMMENT ON COLUMN attribute.nullable IS 'A nullable attribute is one that only humans have to deal with, not software. Should not be used in a sea-level use case. Example: a missing phone number on a contact page.';
 COMMENT ON COLUMN attribute.details IS 'A summary description.';
 COMMENT ON COLUMN attribute.uml_comment IS 'A comment that appears in the diagrams.';

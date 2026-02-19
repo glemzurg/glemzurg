@@ -1941,10 +1941,10 @@
           "comment": "If the rules are parsable, the data type they parse into."
         },
         {
-          "name": "derivation_policy",
+          "name": "derivation_policy_key",
           "type": "text",
           "nullable": true,
-          "comment": "If this attribute is derived, the details of the deriviation."
+          "comment": "If this attribute is derived, the logic of it."
         },
         {
           "name": "nullable",
@@ -2019,6 +2019,21 @@
           "referenced_table": "",
           "columns": [
             "nullable"
+          ]
+        },
+        {
+          "name": "fk_global_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.attribute",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "derivation_policy_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
           ]
         },
         {
@@ -4986,6 +5001,21 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization(model_key, generalization_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.attribute",
+      "columns": [
+        "model_key",
+        "derivation_policy_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
     },
     {
       "table": "public.attribute",
