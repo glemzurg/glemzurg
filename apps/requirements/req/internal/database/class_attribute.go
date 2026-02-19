@@ -1,18 +1,31 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 
 	"github.com/pkg/errors"
 )
+
+// derivationPolicyKey extracts the derivation policy key string for database storage.
+// Returns nil if no derivation policy is set.
+func derivationPolicyKey(attr model_class.Attribute) *string {
+	if attr.DerivationPolicy != nil {
+		s := attr.DerivationPolicy.Key.String()
+		return &s
+	}
+	return nil
+}
 
 // Populate a golang struct from a database row.
 func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_class.Attribute) (err error) {
 	var classKeyStr string
 	var attributeKeyStr string
+	var derivationPolicyKeyStr sql.NullString
 
 	if err = scanner.Scan(
 		&classKeyStr,
@@ -20,7 +33,7 @@ func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_
 		&attribute.Name,
 		&attribute.Details,
 		&attribute.DataTypeRules,
-		&attribute.DerivationPolicy,
+		&derivationPolicyKeyStr,
 		&attribute.Nullable,
 		&attribute.UmlComment,
 	); err != nil {
@@ -42,10 +55,22 @@ func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_
 		return err
 	}
 
+	// Parse the derivation policy key into a Logic stub if present.
+	// The full Logic is stitched in top_level_requirements.go from the logics table.
+	if derivationPolicyKeyStr.Valid {
+		dpKey, err := identity.ParseKey(derivationPolicyKeyStr.String)
+		if err != nil {
+			return err
+		}
+		attribute.DerivationPolicy = &model_logic.Logic{Key: dpKey}
+	}
+
 	return nil
 }
 
-// LoadAttribute loads a attribute from the database
+// LoadAttribute loads a attribute from the database.
+// The returned Attribute will have DerivationPolicy as a stub (Key only);
+// the full Logic is stitched in top_level_requirements.go.
 func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (classKey identity.Key, attribute model_class.Attribute, err error) {
 
 	// Query the database.
@@ -63,7 +88,7 @@ func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (c
 			name                  ,
 			details               ,
 			data_type_rules       ,
-			derivation_policy     ,
+			derivation_policy_key ,
 			nullable              ,
 			uml_comment
 		FROM
@@ -99,7 +124,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 			name                  = $4 ,
 			details               = $5 ,
 			data_type_rules       = $6 ,
-			derivation_policy     = $7 ,
+			derivation_policy_key = $7 ,
 			nullable              = $8 ,
 			uml_comment           = $9
 		WHERE
@@ -114,7 +139,7 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 		attribute.Name,
 		attribute.Details,
 		attribute.DataTypeRules,
-		attribute.DerivationPolicy,
+		derivationPolicyKey(attribute),
 		attribute.Nullable,
 		attribute.UmlComment)
 	if err != nil {
@@ -147,7 +172,9 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 	return nil
 }
 
-// QueryAttributes loads all attribute from the database
+// QueryAttributes loads all attributes from the database.
+// The returned Attributes will have DerivationPolicy as a stub (Key only);
+// the full Logic is stitched in top_level_requirements.go.
 func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Key][]model_class.Attribute, err error) {
 
 	// Query the database.
@@ -173,7 +200,7 @@ func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Ke
 			name                  ,
 			details               ,
 			data_type_rules       ,
-			derivation_policy     ,
+			derivation_policy_key ,
 			nullable              ,
 			uml_comment
 		FROM
@@ -201,7 +228,7 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, derivation_policy, nullable, uml_comment) VALUES `
+	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, derivation_policy_key, nullable, uml_comment) VALUES `
 	args := make([]interface{}, 0, count*9)
 	i := 0
 	for classKey, attrList := range attributes {
@@ -211,7 +238,7 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 			}
 			base := i * 9
 			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
-			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, attr.DerivationPolicy, attr.Nullable, attr.UmlComment)
+			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
 			i++
 		}
 	}

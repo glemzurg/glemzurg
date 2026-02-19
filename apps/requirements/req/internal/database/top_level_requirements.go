@@ -43,6 +43,18 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		for _, gf := range model.GlobalFunctions {
 			allLogics = append(allLogics, gf.Specification)
 		}
+		// Collect derivation policy logics from attributes.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, attr := range class.Attributes {
+						if attr.DerivationPolicy != nil {
+							allLogics = append(allLogics, *attr.DerivationPolicy)
+						}
+					}
+				}
+			}
+		}
 		if err = AddLogics(tx, modelKey, allLogics); err != nil {
 			return err
 		}
@@ -93,10 +105,11 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Collect subdomains, generalizations, and classes into bulk structures.
+		// Collect subdomains, generalizations, classes, and attributes into bulk structures.
 		subdomainsMap := make(map[identity.Key][]model_domain.Subdomain)
 		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
 		classesMap := make(map[identity.Key][]model_class.Class)
+		attributesMap := make(map[identity.Key][]model_class.Attribute)
 
 		for _, domain := range model.Domains {
 			domainKey := domain.Key
@@ -113,7 +126,13 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 				// Collect classes.
 				for _, class := range subdomain.Classes {
+					classKey := class.Key
 					classesMap[subdomainKey] = append(classesMap[subdomainKey], class)
+
+					// Collect attributes.
+					for _, attribute := range class.Attributes {
+						attributesMap[classKey] = append(attributesMap[classKey], attribute)
+					}
 				}
 			}
 		}
@@ -131,6 +150,27 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		// Bulk insert classes.
 		if err = AddClasses(tx, modelKey, classesMap); err != nil {
 			return err
+		}
+
+		// Bulk insert attributes.
+		if err = AddAttributes(tx, modelKey, attributesMap); err != nil {
+			return err
+		}
+
+		// Bulk insert class indexes (must be done individually since we need attribute.IndexNums).
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					classKey := class.Key
+					for _, attribute := range class.Attributes {
+						for _, indexNum := range attribute.IndexNums {
+							if err = AddClassIndex(tx, modelKey, classKey, attribute.Key, indexNum); err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
 		}
 
 		return nil
@@ -228,6 +268,30 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Attributes grouped by class key.
+		attributesMap, err := QueryAttributes(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch derivation policy logics onto attributes and load class indexes.
+		for classKey, attrs := range attributesMap {
+			for i, attr := range attrs {
+				// Stitch derivation policy from logics table.
+				if attr.DerivationPolicy != nil {
+					logic := logicsByKey[attr.DerivationPolicy.Key]
+					attrs[i].DerivationPolicy = &logic
+				}
+				// Load class indexes for this attribute.
+				indexNums, err := LoadClassAttributeIndexes(tx, modelKey, classKey, attr.Key)
+				if err != nil {
+					return err
+				}
+				attrs[i].IndexNums = indexNums
+			}
+			attributesMap[classKey] = attrs
+		}
+
 		// Now assemble the tree structure.
 		if len(domainsSlice) > 0 {
 			model.Domains = make(map[identity.Key]model_domain.Domain)
@@ -252,6 +316,16 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 						if classes, ok := classesMap[subdomainKey]; ok {
 							subdomain.Classes = make(map[identity.Key]model_class.Class)
 							for _, class := range classes {
+								classKey := class.Key
+
+								// Attach attributes to class.
+								if attributes, ok := attributesMap[classKey]; ok {
+									class.Attributes = make(map[identity.Key]model_class.Attribute)
+									for _, attr := range attributes {
+										class.Attributes[attr.Key] = attr
+									}
+								}
+
 								subdomain.Classes[class.Key] = class
 							}
 						}

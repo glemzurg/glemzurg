@@ -6,12 +6,15 @@ todo:
     - apps/requirements/req/internal/req_model/model_use_case
     - apps/requirements/req/internal/req_model
   - make keys for logic
-  - verify keys are correct parent/child correctly
   - save objects to database:
     - logic
     - model
     - ... next ...
-    - update the yaml parsing
+  - make keys for actor super/sub class
+  - make keys for use cases super/sub class
+  - verify keys are correct parent/child correctly
+  - update load tests to not use $params
+  - update the yaml parsing
     - update hte parser ai parsing
       - add the extra structures to parser ai
     - update the md file output

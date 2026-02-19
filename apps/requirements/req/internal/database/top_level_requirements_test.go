@@ -64,6 +64,13 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	classKeyAA2 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa2"))
 	classKeyBA1 := helper.Must(identity.NewClassKey(subdomainKeyBA, "class_ba1"))
 
+	// Attribute keys.
+	attributeKeyAA1A := helper.Must(identity.NewAttributeKey(classKeyAA1, "attr_a"))
+	attributeKeyAA1B := helper.Must(identity.NewAttributeKey(classKeyAA1, "attr_b"))
+
+	// Derivation policy logic key (child of attribute).
+	derivationKeyAA1A := helper.Must(identity.NewAttributeDerivationKey(attributeKeyAA1A, "deriv"))
+
 	// Domain association key.
 	domainAssociationKey := helper.Must(identity.NewDomainAssociationKey(domainKeyA, domainKeyB))
 
@@ -155,6 +162,33 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								SuperclassOfKey: &generalizationKeyAA,
 								SubclassOfKey:   &generalizationKeyAAB,
 								UmlComment:      "Class AA1 UML comment",
+								Attributes: map[identity.Key]model_class.Attribute{
+									attributeKeyAA1A: {
+										Key:           attributeKeyAA1A,
+										Name:          "AttributeA",
+										Details:       "Attribute A details",
+										DataTypeRules: "unconstrained",
+										DerivationPolicy: &model_logic.Logic{
+											Key:           derivationKeyAA1A,
+											Description:   "Derivation A description",
+											Notation:      "tla_plus",
+											Specification: "DeriveA == value + 1",
+										},
+										Nullable:   false,
+										UmlComment: "Attribute A UML comment",
+										IndexNums:  []uint{1, 2},
+									},
+									attributeKeyAA1B: {
+										Key:              attributeKeyAA1B,
+										Name:             "AttributeB",
+										Details:          "Attribute B details",
+										DataTypeRules:    "constrained",
+										DerivationPolicy: nil,
+										Nullable:         true,
+										UmlComment:       "Attribute B UML comment",
+										IndexNums:        []uint{1},
+									},
+								},
 							},
 							classKeyAA2: {
 								Key:     classKeyAA2,
