@@ -19,8 +19,7 @@ type Model struct {
 	Details    string              // Markdown.
 	Invariants []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
-	// Key is the function Name (case-preserved, e.g., "_Max", "_SetOfValues").
-	GlobalFunctions map[string]model_logic.GlobalFunction
+	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
 	// Children
 	Actors             map[identity.Key]model_actor.Actor
 	Domains            map[identity.Key]model_domain.Domain
@@ -28,7 +27,7 @@ type Model struct {
 	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[string]model_logic.GlobalFunction) (model Model, err error) {
+func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction) (model Model, err error) {
 
 	model = Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
@@ -84,13 +83,13 @@ func (m *Model) Validate() error {
 	}
 
 	// Validate global functions.
-	for name, gf := range m.GlobalFunctions {
+	for gfKey, gf := range m.GlobalFunctions {
 		if err := gf.ValidateWithParent(); err != nil {
-			return errors.Wrapf(err, "global function '%s'", name)
+			return errors.Wrapf(err, "global function '%s'", gfKey.String())
 		}
-		// Ensure the map key matches the function name.
-		if name != gf.Name {
-			return errors.Errorf("global function map key '%s' does not match function name '%s'", name, gf.Name)
+		// Ensure the map key matches the function key.
+		if gfKey != gf.Key {
+			return errors.Errorf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String())
 		}
 	}
 

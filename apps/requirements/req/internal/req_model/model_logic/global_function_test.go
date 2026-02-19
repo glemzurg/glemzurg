@@ -19,12 +19,12 @@ func TestGlobalFunctionSuite(t *testing.T) {
 
 // TestValidate tests all validation rules for GlobalFunction.
 func (s *GlobalFunctionTestSuite) TestValidate() {
-	specKey1 := helper.Must(identity.NewInvariantKey("spec_1"))
-	specKey2 := helper.Must(identity.NewInvariantKey("spec_2"))
-	specKey3 := helper.Must(identity.NewInvariantKey("spec_3"))
+	gfKey1 := helper.Must(identity.NewGlobalFunctionKey("_max"))
+	gfKey2 := helper.Must(identity.NewGlobalFunctionKey("_valid_statuses"))
+	gfKey3 := helper.Must(identity.NewGlobalFunctionKey("_constant"))
 
 	validSpec := Logic{
-		Key:         specKey1,
+		Key:         gfKey1,
 		Description: "Max of two values.",
 		Notation:    NotationTLAPlus,
 	}
@@ -37,6 +37,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "valid function with parameters",
 			gf: GlobalFunction{
+				Key:           gfKey1,
 				Name:          "_Max",
 				Parameters:    []string{"x", "y"},
 				Specification: validSpec,
@@ -45,6 +46,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "valid function with comment",
 			gf: GlobalFunction{
+				Key:           gfKey1,
 				Name:          "_Max",
 				Comment:       "Returns the maximum of two values.",
 				Parameters:    []string{"x", "y"},
@@ -54,9 +56,10 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "valid set definition no parameters",
 			gf: GlobalFunction{
+				Key:  gfKey2,
 				Name: "_ValidStatuses",
 				Specification: Logic{
-					Key:           specKey2,
+					Key:           gfKey2,
 					Description:   "Set of valid statuses.",
 					Notation:      NotationTLAPlus,
 					Specification: `{"pending", "active", "complete"}`,
@@ -66,10 +69,11 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "valid predicate with nil parameters",
 			gf: GlobalFunction{
+				Key:        gfKey3,
 				Name:       "_Constant",
 				Parameters: nil,
 				Specification: Logic{
-					Key:           specKey3,
+					Key:           gfKey3,
 					Description:   "A constant value.",
 					Notation:      NotationTLAPlus,
 					Specification: "42",
@@ -77,8 +81,29 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 			},
 		},
 		{
+			testName: "error missing key",
+			gf: GlobalFunction{
+				Key:           identity.Key{},
+				Name:          "_Max",
+				Parameters:    []string{"x"},
+				Specification: validSpec,
+			},
+			errstr: "KeyType",
+		},
+		{
+			testName: "error wrong key type",
+			gf: GlobalFunction{
+				Key:           helper.Must(identity.NewInvariantKey("inv_1")),
+				Name:          "_Max",
+				Parameters:    []string{"x"},
+				Specification: validSpec,
+			},
+			errstr: "invalid key type",
+		},
+		{
 			testName: "error missing name",
 			gf: GlobalFunction{
+				Key:           gfKey1,
 				Name:          "",
 				Parameters:    []string{"x"},
 				Specification: validSpec,
@@ -88,6 +113,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "error name missing underscore",
 			gf: GlobalFunction{
+				Key:           gfKey1,
 				Name:          "Max",
 				Parameters:    []string{"x", "y"},
 				Specification: validSpec,
@@ -97,6 +123,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "error missing specification key",
 			gf: GlobalFunction{
+				Key:        gfKey1,
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
@@ -108,12 +135,27 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 			errstr: "KeyType",
 		},
 		{
-			testName: "error missing specification description",
+			testName: "error specification key mismatch",
 			gf: GlobalFunction{
+				Key:        gfKey1,
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         specKey1,
+					Key:         gfKey2, // Different key than gfKey1
+					Description: "Some desc.",
+					Notation:    NotationTLAPlus,
+				},
+			},
+			errstr: "does not match global function key",
+		},
+		{
+			testName: "error missing specification description",
+			gf: GlobalFunction{
+				Key:        gfKey1,
+				Name:       "_Max",
+				Parameters: []string{"x", "y"},
+				Specification: Logic{
+					Key:         gfKey1,
 					Description: "",
 					Notation:    NotationTLAPlus,
 				},
@@ -123,10 +165,11 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "error missing specification notation",
 			gf: GlobalFunction{
+				Key:        gfKey1,
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         specKey1,
+					Key:         gfKey1,
 					Description: "Some desc.",
 					Notation:    "",
 				},
@@ -136,10 +179,11 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "error invalid specification notation",
 			gf: GlobalFunction{
+				Key:        gfKey1,
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
 				Specification: Logic{
-					Key:         specKey1,
+					Key:         gfKey1,
 					Description: "Some desc.",
 					Notation:    "Z",
 				},
@@ -162,20 +206,21 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 
 // TestNew tests that NewGlobalFunction maps parameters correctly and calls Validate.
 func (s *GlobalFunctionTestSuite) TestNew() {
-	specKey1 := helper.Must(identity.NewInvariantKey("spec_1"))
-	specKey2 := helper.Must(identity.NewInvariantKey("spec_2"))
+	gfKey1 := helper.Must(identity.NewGlobalFunctionKey("_max"))
+	gfKey2 := helper.Must(identity.NewGlobalFunctionKey("_constant"))
 
 	spec := Logic{
-		Key:           specKey1,
+		Key:           gfKey1,
 		Description:   "Returns the maximum of two values.",
 		Notation:      NotationTLAPlus,
 		Specification: "IF x > y THEN x ELSE y",
 	}
 
 	// Test all parameters are mapped correctly.
-	gf, err := NewGlobalFunction("_Max", "Max function", []string{"x", "y"}, spec)
+	gf, err := NewGlobalFunction(gfKey1, "_Max", "Max function", []string{"x", "y"}, spec)
 	s.NoError(err)
 	s.Equal(GlobalFunction{
+		Key:           gfKey1,
 		Name:          "_Max",
 		Comment:       "Max function",
 		Parameters:    []string{"x", "y"},
@@ -183,8 +228,8 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	}, gf)
 
 	// Test with nil optional fields (Comment and Parameters are optional).
-	gf, err = NewGlobalFunction("_Constant", "", nil, Logic{
-		Key:           specKey2,
+	gf, err = NewGlobalFunction(gfKey2, "_Constant", "", nil, Logic{
+		Key:           gfKey2,
 		Description:   "A constant.",
 		Notation:      NotationTLAPlus,
 		Specification: "42",
@@ -195,12 +240,12 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	s.Nil(gf.Parameters)
 
 	// Test that Validate is called (invalid name should fail).
-	_, err = NewGlobalFunction("Max", "", []string{"x"}, spec)
+	_, err = NewGlobalFunction(gfKey1, "Max", "", []string{"x"}, spec)
 	s.Error(err)
 	s.Contains(err.Error(), "must start with underscore")
 
 	// Test that invalid specification fails.
-	_, err = NewGlobalFunction("_Max", "", []string{"x"}, Logic{
+	_, err = NewGlobalFunction(gfKey1, "_Max", "", []string{"x"}, Logic{
 		Key:         identity.Key{},
 		Description: "Some desc.",
 		Notation:    NotationTLAPlus,
@@ -209,18 +254,19 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	s.Contains(err.Error(), "KeyType")
 }
 
-// TestValidateWithParent tests that ValidateWithParent validates the specification logic's parent relationship.
+// TestValidateWithParent tests that ValidateWithParent validates the key's parent relationship.
 func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
-	specKey := helper.Must(identity.NewInvariantKey("spec_1"))
+	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
 
 	validSpec := Logic{
-		Key:         specKey,
+		Key:         gfKey,
 		Description: "Max of two values.",
 		Notation:    NotationTLAPlus,
 	}
 
-	// Test valid case - spec key is root-level (nil parent).
+	// Test valid case - gfunc key is root-level (nil parent).
 	gf := GlobalFunction{
+		Key:           gfKey,
 		Name:          "_Max",
 		Parameters:    []string{"x", "y"},
 		Specification: validSpec,
@@ -230,6 +276,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 
 	// Test that Validate is called.
 	gf = GlobalFunction{
+		Key:           gfKey,
 		Name:          "Max", // Invalid: no underscore
 		Parameters:    []string{"x", "y"},
 		Specification: validSpec,
@@ -237,24 +284,4 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 	err = gf.ValidateWithParent()
 	s.Error(err)
 	s.Contains(err.Error(), "must start with underscore")
-
-	// Test that spec key parent validation is called - invariant key should have nil parent.
-	domainKey := helper.Must(identity.NewDomainKey("domain1"))
-	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
-	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
-	wrongSpecKey := helper.Must(identity.NewActionRequireKey(actionKey, "req_1"))
-
-	gf = GlobalFunction{
-		Name:       "_Max",
-		Parameters: []string{"x", "y"},
-		Specification: Logic{
-			Key:         wrongSpecKey,
-			Description: "Max of two values.",
-			Notation:    NotationTLAPlus,
-		},
-	}
-	err = gf.ValidateWithParent()
-	s.Error(err)
-	s.Contains(err.Error(), "specification")
 }

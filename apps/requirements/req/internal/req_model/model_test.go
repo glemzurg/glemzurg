@@ -25,8 +25,8 @@ type ModelSuite struct {
 func (suite *ModelSuite) TestValidate() {
 	invKey1 := helper.Must(identity.NewInvariantKey("inv_1"))
 	invKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
-	specKey := helper.Must(identity.NewInvariantKey("spec_max"))
-	specKey1 := helper.Must(identity.NewInvariantKey("spec_1"))
+	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
+	gfKey1 := helper.Must(identity.NewGlobalFunctionKey("_some"))
 
 	tests := []struct {
 		testName string
@@ -56,12 +56,13 @@ func (suite *ModelSuite) TestValidate() {
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				GlobalFunctions: map[string]model_logic.GlobalFunction{
-					"_Max": {
+				GlobalFunctions: map[identity.Key]model_logic.GlobalFunction{
+					gfKey: {
+						Key:        gfKey,
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
 						Specification: model_logic.Logic{
-							Key:           specKey,
+							Key:           gfKey,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
 							Specification: "IF x > y THEN x ELSE y",
@@ -78,12 +79,13 @@ func (suite *ModelSuite) TestValidate() {
 				Invariants: []model_logic.Logic{
 					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
-				GlobalFunctions: map[string]model_logic.GlobalFunction{
-					"_Max": {
+				GlobalFunctions: map[identity.Key]model_logic.GlobalFunction{
+					gfKey: {
+						Key:        gfKey,
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
 						Specification: model_logic.Logic{
-							Key:           specKey,
+							Key:           gfKey,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
 							Specification: "IF x > y THEN x ELSE y",
@@ -135,11 +137,12 @@ func (suite *ModelSuite) TestValidate() {
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				GlobalFunctions: map[string]model_logic.GlobalFunction{
-					"Max": {
-						Name: "Max", // Missing underscore
+				GlobalFunctions: map[identity.Key]model_logic.GlobalFunction{
+					gfKey1: {
+						Key:  gfKey1,
+						Name: "Some", // Missing underscore
 						Specification: model_logic.Logic{
-							Key:         specKey1,
+							Key:         gfKey1,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
 						},
@@ -153,18 +156,19 @@ func (suite *ModelSuite) TestValidate() {
 			model: Model{
 				Key:  "model1",
 				Name: "Name",
-				GlobalFunctions: map[string]model_logic.GlobalFunction{
-					"_Wrong": {
-						Name: "_Right",
+				GlobalFunctions: map[identity.Key]model_logic.GlobalFunction{
+					gfKey: { // Map key is gfKey ("_max")
+						Key:  gfKey1, // But struct Key is gfKey1 ("_some")
+						Name: "_Some",
 						Specification: model_logic.Logic{
-							Key:         specKey1,
+							Key:         gfKey1,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
 						},
 					},
 				},
 			},
-			errstr: "does not match function name",
+			errstr: "does not match function key",
 		},
 	}
 	for _, tt := range tests {
@@ -182,15 +186,16 @@ func (suite *ModelSuite) TestValidate() {
 // TestNew tests that NewModel maps parameters correctly and calls Validate.
 func (suite *ModelSuite) TestNew() {
 	invKey1 := helper.Must(identity.NewInvariantKey("inv_1"))
-	specKey := helper.Must(identity.NewInvariantKey("spec_max"))
+	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
 
 	// Test all parameters are mapped correctly (key is normalized to lowercase and trimmed).
-	globalFuncs := map[string]model_logic.GlobalFunction{
-		"_Max": {
+	globalFuncs := map[identity.Key]model_logic.GlobalFunction{
+		gfKey: {
+			Key:        gfKey,
 			Name:       "_Max",
 			Parameters: []string{"x", "y"},
 			Specification: model_logic.Logic{
-				Key:           specKey,
+				Key:           gfKey,
 				Description:   "Max of two values.",
 				Notation:      model_logic.NotationTLAPlus,
 				Specification: "IF x > y THEN x ELSE y",

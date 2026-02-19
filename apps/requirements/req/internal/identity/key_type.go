@@ -15,6 +15,7 @@ const (
 	KEY_TYPE_ACTOR              = "actor"
 	KEY_TYPE_DOMAIN             = "domain"
 	KEY_TYPE_DOMAIN_ASSOCIATION = "dassociation"
+	KEY_TYPE_GLOBAL_FUNCTION    = "gfunc"
 	KEY_TYPE_INVARIANT          = "invariant"
 
 	// Keys with domain parents.
@@ -65,6 +66,10 @@ func NewActorKey(subKey string) (key Key, err error) {
 
 func NewDomainKey(subKey string) (key Key, err error) {
 	return newRootKey(KEY_TYPE_DOMAIN, subKey)
+}
+
+func NewGlobalFunctionKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_GLOBAL_FUNCTION, subKey)
 }
 
 func NewInvariantKey(subKey string) (key Key, err error) {
