@@ -11,13 +11,13 @@
 | [public.domain](public.domain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.subdomain](public.subdomain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
-| [public.generalization](public.generalization.md) | 7 | A relationship between classes indicating super classes and subclasses. This is also for actors which would also be classes in this case. And for use cases. | BASE TABLE |
-| [public.actor](public.actor.md) | 8 | A role that a person or sytem can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
+| [public.actor](public.actor.md) | 6 | A role that a person or sytem can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
 | [public.data_type](public.data_type.md) | 6 | An data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 4 | A value of an attribute that is an enum. | BASE TABLE |
 | [public.data_type_atomic_span](public.data_type_atomic_span.md) | 10 | The definition of a span for an atomic data type. | BASE TABLE |
 | [public.data_type_field](public.data_type_field.md) | 4 | A field of a record data type. | BASE TABLE |
+| [public.class_generalization](public.class_generalization.md) | 8 | A relationship between classes indicating super classes and subclasses. | BASE TABLE |
 | [public.class](public.class.md) | 9 | A set of objects that share the same semantics. | BASE TABLE |
 | [public.attribute](public.attribute.md) | 10 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be mulitple attributes together for the identity. | BASE TABLE |
@@ -31,6 +31,7 @@
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |
 | [public.state_action](public.state_action.md) | 5 | An action triggered on entry, exit, or continual do from a state. | BASE TABLE |
 | [public.action_parameter](public.action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
+| [public.use_case_generalization](public.use_case_generalization.md) | 8 | A relationship between use cases indicating super classes and subclasses. | BASE TABLE |
 | [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
 | [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |
 | [public.use_case_shared](public.use_case_shared.md) | 5 | Which use cases are used by with other use cases. | BASE TABLE |

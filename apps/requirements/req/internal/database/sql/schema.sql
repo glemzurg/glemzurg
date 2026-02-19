@@ -57,6 +57,7 @@ CREATE TABLE global_function (
   comment text NOT NULL DEFAULT '',
   parameters text[],
   PRIMARY KEY (model_key, logic_key),
+  UNIQUE (model_key, name),
   CONSTRAINT fk_global_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
@@ -131,29 +132,6 @@ COMMENT ON COLUMN domain_association.uml_comment IS 'A comment that appears in t
 
 --------------------------------------------------------------
 
-CREATE TABLE generalization (
-  model_key text NOT NULL,
-  generalization_key text NOT NULL,
-  name text NOT NULL,
-  is_complete boolean DEFAULT NULL,
-  is_static boolean DEFAULT NULL,
-  details text DEFAULT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (model_key, generalization_key),
-  CONSTRAINT fk_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE generalization IS 'A relationship between classes indicating super classes and subclasses. This is also for actors which would also be classes in this case. And for use cases.';
-COMMENT ON COLUMN generalization.model_key IS 'The model this generalization is part of.';
-COMMENT ON COLUMN generalization.generalization_key IS 'The internal ID.';
-COMMENT ON COLUMN generalization.name IS 'The unique name of the generalization.';
-COMMENT ON COLUMN generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
-COMMENT ON COLUMN generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
-COMMENT ON COLUMN generalization.details IS 'A summary description.';
-COMMENT ON COLUMN generalization.uml_comment IS 'A comment that appears in the diagrams.';
-
---------------------------------------------------------------
-
 CREATE TYPE actor_type AS ENUM ('person', 'system');
 COMMENT ON TYPE actor_type IS 'Whether an actor is a person fulfilling a role, or a system.';
 
@@ -163,13 +141,11 @@ CREATE TABLE actor (
   name text NOT NULL,
   details text DEFAULT NULL,
   actor_type actor_type NOT NULL,
-  superclass_of_key text DEFAULT NULL,
-  subclass_of_key text DEFAULT NULL,
+--  superclass_of_key text DEFAULT NULL,
+--  subclass_of_key text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, actor_key),
-  CONSTRAINT fk_actor_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
-  CONSTRAINT fk_actor_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE,
-  CONSTRAINT fk_actor_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE
+  CONSTRAINT fk_actor_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE actor IS 'A role that a person or sytem can take who uses the system. Actors are outside of subdomains.';
@@ -178,8 +154,8 @@ COMMENT ON COLUMN actor.actor_key IS 'The internal ID.';
 COMMENT ON COLUMN actor.name IS 'The unique name of the actor.';
 COMMENT ON COLUMN actor.details IS 'A summary description.';
 COMMENT ON COLUMN actor.actor_type IS 'Whether this actor is a person or a system.';
-COMMENT ON COLUMN actor.superclass_of_key IS 'The generalization this actor is a superclass of, if it is one.';
-COMMENT ON COLUMN actor.subclass_of_key IS 'The generalization this actor is a subclass of, if it is one.';
+-- COMMENT ON COLUMN actor.superclass_of_key IS 'The generalization this actor is a superclass of, if it is one.';
+-- COMMENT ON COLUMN actor.subclass_of_key IS 'The generalization this actor is a subclass of, if it is one.';
 COMMENT ON COLUMN actor.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
@@ -323,6 +299,32 @@ COMMENT ON COLUMN data_type_field.field_data_type_key IS 'The data type of this 
 
 --------------------------------------------------------------
 
+CREATE TABLE class_generalization (
+  model_key text NOT NULL,
+  generalization_key text NOT NULL,
+  name text NOT NULL,
+  subdomain_key text NOT NULL,
+  is_complete boolean DEFAULT NULL,
+  is_static boolean DEFAULT NULL,
+  details text DEFAULT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (model_key, generalization_key),
+  CONSTRAINT fk_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_class_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE class_generalization IS 'A relationship between classes indicating super classes and subclasses.';
+COMMENT ON COLUMN class_generalization.model_key IS 'The model this generalization is part of.';
+COMMENT ON COLUMN class_generalization.generalization_key IS 'The internal ID.';
+COMMENT ON COLUMN class_generalization.name IS 'The unique name of the generalization.';
+COMMENT ON COLUMN class_generalization.subdomain_key IS 'The subdomain this class is part of.';
+COMMENT ON COLUMN class_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
+COMMENT ON COLUMN class_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
+COMMENT ON COLUMN class_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN class_generalization.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
 CREATE TABLE class (
   model_key text NOT NULL,
   class_key text NOT NULL,
@@ -337,15 +339,15 @@ CREATE TABLE class (
   CONSTRAINT fk_class_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
   CONSTRAINT fk_class_actor FOREIGN KEY (model_key, actor_key) REFERENCES actor (model_key, actor_key) ON DELETE CASCADE,
-  CONSTRAINT fk_class_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE,
-  CONSTRAINT fk_class_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE
+  CONSTRAINT fk_class_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES class_generalization (model_key, generalization_key) ON DELETE CASCADE,
+  CONSTRAINT fk_class_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES class_generalization (model_key, generalization_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE class IS 'A set of objects that share the same semantics.';
 COMMENT ON COLUMN class.class_key IS 'The internal ID.';
 COMMENT ON COLUMN class.model_key IS 'The model this class is part of.';
 COMMENT ON COLUMN class.name IS 'The unique name of the class.';
-COMMENT ON COLUMN class.subdomain_key IS 'The subdomain this use case is part of.';
+COMMENT ON COLUMN class.subdomain_key IS 'The subdomain this class is part of.';
 COMMENT ON COLUMN class.actor_key IS 'If this class is also an actor, which actor is it.';
 COMMENT ON COLUMN class.superclass_of_key IS 'The generalization this class is a superclass of, if it is one.';
 COMMENT ON COLUMN class.subclass_of_key IS 'The generalization this class is a subclass of, if it is one.';
@@ -660,6 +662,32 @@ COMMENT ON COLUMN action_parameter.uml_comment IS 'A comment that appears in the
 
 --------------------------------------------------------------
 
+CREATE TABLE use_case_generalization (
+  model_key text NOT NULL,
+  generalization_key text NOT NULL,
+  name text NOT NULL,
+  subdomain_key text NOT NULL,
+  is_complete boolean DEFAULT NULL,
+  is_static boolean DEFAULT NULL,
+  details text DEFAULT NULL,
+  uml_comment text DEFAULT NULL,
+  PRIMARY KEY (model_key, generalization_key),
+  CONSTRAINT fk_generalization_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_class_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE use_case_generalization IS 'A relationship between use cases indicating super classes and subclasses.';
+COMMENT ON COLUMN use_case_generalization.model_key IS 'The model this generalization is part of.';
+COMMENT ON COLUMN use_case_generalization.generalization_key IS 'The internal ID.';
+COMMENT ON COLUMN use_case_generalization.name IS 'The unique name of the generalization.';
+COMMENT ON COLUMN use_case_generalization.subdomain_key IS 'The subdomain this use case is part of.';
+COMMENT ON COLUMN use_case_generalization.is_complete IS 'Are the specializations complete, or can an instantiation of this generalization exist without a specialization.';
+COMMENT ON COLUMN use_case_generalization.is_static IS 'Are the specializations static and unchanging or can they change during runtime.';
+COMMENT ON COLUMN use_case_generalization.details IS 'A summary description.';
+COMMENT ON COLUMN use_case_generalization.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
 CREATE TYPE use_case_level AS ENUM ('sky', 'sea', 'mud');
 COMMENT ON TYPE use_case_level IS 'How high- or low-level the use case is.
 
@@ -682,8 +710,8 @@ CREATE TABLE use_case (
   PRIMARY KEY (model_key, use_case_key),
   CONSTRAINT fk_use_case_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
   CONSTRAINT fk_use_case_subdomain FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain (model_key, subdomain_key) ON DELETE CASCADE,
-  CONSTRAINT fk_use_case_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE,
-  CONSTRAINT fk_use_case_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization (model_key, generalization_key) ON DELETE CASCADE
+  CONSTRAINT fk_use_case_superclass FOREIGN KEY (model_key, superclass_of_key) REFERENCES use_case_generalization (model_key, generalization_key) ON DELETE CASCADE,
+  CONSTRAINT fk_use_case_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES use_case_generalization (model_key, generalization_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE use_case IS 'A sequence of steps in the business rules.';

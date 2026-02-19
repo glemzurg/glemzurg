@@ -54,7 +54,7 @@ func (suite *GeneralizationSuite) TestLoad() {
 	assert.Empty(suite.T(), generalization)
 
 	_, err = dbExec(suite.db, `
-		INSERT INTO generalization
+		INSERT INTO class_generalization
 			(
 				model_key,
 				generalization_key,

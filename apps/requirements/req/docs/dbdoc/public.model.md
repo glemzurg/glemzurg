@@ -8,7 +8,7 @@ A fully distinct semantic model, separate from all others.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.logic](public.logic.md) [public.domain](public.domain.md) [public.domain_association](public.domain_association.md) [public.generalization](public.generalization.md) [public.actor](public.actor.md) [public.data_type](public.data_type.md) [public.class](public.class.md) [public.association](public.association.md) [public.use_case](public.use_case.md) [public.scenario](public.scenario.md) [public.scenario_object](public.scenario_object.md) |  | The internal ID. |
+| model_key | text |  | false | [public.logic](public.logic.md) [public.domain](public.domain.md) [public.domain_association](public.domain_association.md) [public.actor](public.actor.md) [public.data_type](public.data_type.md) [public.class_generalization](public.class_generalization.md) [public.class](public.class.md) [public.association](public.association.md) [public.use_case_generalization](public.use_case_generalization.md) [public.use_case](public.use_case.md) [public.scenario](public.scenario.md) [public.scenario_object](public.scenario_object.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the domain. |
 | details | text |  | true |  |  | A summary description. |
 

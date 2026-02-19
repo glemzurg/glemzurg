@@ -56,7 +56,7 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identi
 			is_static          ,
 			uml_comment
 		FROM
-			generalization
+			class_generalization
 		WHERE
 			generalization_key = $2
 		AND
@@ -81,7 +81,7 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_c
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
-			generalization
+			class_generalization
 		SET
 			name        = $3 ,
 			details     = $4 ,
@@ -112,7 +112,7 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey iden
 	// Delete the data.
 	_, err = dbExec(dbOrTx, `
 			DELETE FROM
-				generalization
+				class_generalization
 			WHERE
 				model_key = $1
 			AND
@@ -148,7 +148,7 @@ func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []mod
 			is_static          ,
 			uml_comment
 		FROM
-			generalization
+			class_generalization
 		WHERE
 			model_key = $1
 		ORDER BY generalization_key`,
@@ -167,7 +167,7 @@ func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []model_
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
+	query := `INSERT INTO class_generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
 	args := make([]interface{}, 0, len(generalizations)*7)
 	for i, gen := range generalizations {
 		if i > 0 {
