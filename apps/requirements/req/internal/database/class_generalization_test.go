@@ -67,7 +67,7 @@ func (suite *GeneralizationSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'domain/domain_key/subdomain/subdomain_key/generalization/key',
+				'domain/domain_key/subdomain/subdomain_key/cgeneralization/key',
 				'Name',
 				'Details',
 				true,
