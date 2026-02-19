@@ -10,10 +10,12 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanGeneralization(scanner Scanner, generalization *model_class.Generalization) (err error) {
+func scanGeneralization(scanner Scanner, subdomainKeyPtr *identity.Key, generalization *model_class.Generalization) (err error) {
+	var subdomainKeyStr string
 	var keyStr string
 
 	if err = scanner.Scan(
+		&subdomainKeyStr,
 		&keyStr,
 		&generalization.Name,
 		&generalization.Details,
@@ -27,6 +29,12 @@ func scanGeneralization(scanner Scanner, generalization *model_class.Generalizat
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
+	// Parse the subdomain key string into an identity.Key.
+	*subdomainKeyPtr, err = identity.ParseKey(subdomainKeyStr)
+	if err != nil {
+		return err
+	}
+
 	// Parse the key string into an identity.Key.
 	generalization.Key, err = identity.ParseKey(keyStr)
 	if err != nil {
@@ -36,19 +44,20 @@ func scanGeneralization(scanner Scanner, generalization *model_class.Generalizat
 	return nil
 }
 
-// LoadGeneralization loads a generalization from the database
-func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_class.Generalization, err error) {
+// LoadGeneralization loads a generalization from the database.
+func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (subdomainKey identity.Key, generalization model_class.Generalization, err error) {
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanGeneralization(scanner, &generalization); err != nil {
+			if err = scanGeneralization(scanner, &subdomainKey, &generalization); err != nil {
 				return err
 			}
 			return nil
 		},
 		`SELECT
+			subdomain_key      ,
 			generalization_key ,
 			name               ,
 			details            ,
@@ -64,15 +73,17 @@ func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identi
 		modelKey,
 		generalizationKey.String())
 	if err != nil {
-		return model_class.Generalization{}, errors.WithStack(err)
+		return identity.Key{}, model_class.Generalization{}, errors.WithStack(err)
 	}
 
-	return generalization, nil
+	return subdomainKey, generalization, nil
 }
 
 // AddGeneralization adds a generalization to the database.
-func AddGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
-	return AddGeneralizations(dbOrTx, modelKey, []model_class.Generalization{generalization})
+func AddGeneralization(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, generalization model_class.Generalization) (err error) {
+	return AddGeneralizations(dbOrTx, modelKey, map[identity.Key][]model_class.Generalization{
+		subdomainKey: {generalization},
+	})
 }
 
 // UpdateGeneralization updates a generalization in the database.
@@ -126,21 +137,26 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey iden
 	return nil
 }
 
-// QueryGeneralizations loads all generalizations from the database
-func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []model_class.Generalization, err error) {
+// QueryGeneralizations loads all generalizations from the database grouped by subdomain key.
+func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations map[identity.Key][]model_class.Generalization, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
+			var subdomainKey identity.Key
 			var generalization model_class.Generalization
-			if err = scanGeneralization(scanner, &generalization); err != nil {
+			if err = scanGeneralization(scanner, &subdomainKey, &generalization); err != nil {
 				return errors.WithStack(err)
 			}
-			generalizations = append(generalizations, generalization)
+			if generalizations == nil {
+				generalizations = map[identity.Key][]model_class.Generalization{}
+			}
+			generalizations[subdomainKey] = append(generalizations[subdomainKey], generalization)
 			return nil
 		},
 		`SELECT
+			subdomain_key      ,
 			generalization_key ,
 			name               ,
 			details            ,
@@ -151,7 +167,7 @@ func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []mod
 			class_generalization
 		WHERE
 			model_key = $1
-		ORDER BY generalization_key`,
+		ORDER BY subdomain_key, generalization_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -161,21 +177,30 @@ func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []mod
 }
 
 // AddGeneralizations adds multiple generalizations to the database in a single insert.
-func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []model_class.Generalization) (err error) {
-	if len(generalizations) == 0 {
+func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations map[identity.Key][]model_class.Generalization) (err error) {
+	// Count total generalizations.
+	count := 0
+	for _, gens := range generalizations {
+		count += len(gens)
+	}
+	if count == 0 {
 		return nil
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO class_generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(generalizations)*7)
-	for i, gen := range generalizations {
-		if i > 0 {
-			query += ", "
+	query := `INSERT INTO class_generalization (model_key, subdomain_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
+	args := make([]interface{}, 0, count*8)
+	i := 0
+	for subdomainKey, gens := range generalizations {
+		for _, gen := range gens {
+			if i > 0 {
+				query += ", "
+			}
+			base := i * 8
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			args = append(args, modelKey, subdomainKey.String(), gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
+			i++
 		}
-		base := i * 7
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

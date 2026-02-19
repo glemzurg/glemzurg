@@ -96,7 +96,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 		// Collect subdomains, classes, and other nested content into bulk structures.
 		subdomainsMap := make(map[identity.Key][]model_domain.Subdomain)
-		generalizationsSlice := make([]model_class.Generalization, 0)
+		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
 		classesMap := make(map[identity.Key][]model_class.Class)
 		attributesMap := make(map[identity.Key][]model_class.Attribute)
 		eventsMap := make(map[identity.Key][]model_state.Event)
@@ -123,7 +123,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 				// Collect generalizations.
 				for _, generalization := range subdomain.Generalizations {
-					generalizationsSlice = append(generalizationsSlice, generalization)
+					generalizationsMap[subdomainKey] = append(generalizationsMap[subdomainKey], generalization)
 				}
 
 				// Collect classes.
@@ -213,7 +213,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		}
 
 		// Bulk insert generalizations.
-		if err = AddGeneralizations(tx, modelKey, generalizationsSlice); err != nil {
+		if err = AddGeneralizations(tx, modelKey, generalizationsMap); err != nil {
 			return err
 		}
 
@@ -396,19 +396,10 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Generalizations - returned as slice, need to group by subdomain (parent) key.
-		generalizationsSlice, err := QueryGeneralizations(tx, modelKey)
+		// Generalizations grouped by subdomain key.
+		generalizationsMap, err := QueryGeneralizations(tx, modelKey)
 		if err != nil {
 			return err
-		}
-		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
-		for _, gen := range generalizationsSlice {
-			// Extract parent (subdomain) key from the generalization key.
-			parentKeyStr := gen.Key.ParentKey()
-			parentKey, parseErr := identity.ParseKey(parentKeyStr)
-			if parseErr == nil {
-				generalizationsMap[parentKey] = append(generalizationsMap[parentKey], gen)
-			}
 		}
 
 		// Classes grouped by subdomain key.
