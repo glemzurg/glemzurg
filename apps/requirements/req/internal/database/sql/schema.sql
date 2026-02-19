@@ -30,10 +30,23 @@ CREATE TABLE logic (
 
 COMMENT ON TABLE logic IS 'A bit of business logic.';
 COMMENT ON COLUMN logic.logic_key IS 'The internal ID.';
-COMMENT ON COLUMN logic.model_key IS 'The model this domain is part of.';
+COMMENT ON COLUMN logic.model_key IS 'The model this logic is part of.';
 COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
 COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
+
+--------------------------------------------------------------
+
+CREATE TABLE invariant (
+  model_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, logic_key),
+  CONSTRAINT fk_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE logic IS 'An invariant that is forever true in the model.';
+COMMENT ON COLUMN logic.model_key IS 'The model this invariant is part of.';
+COMMENT ON COLUMN logic.logic_key IS 'The logic of the invariant.';
 
 --------------------------------------------------------------
 

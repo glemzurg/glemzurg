@@ -2,14 +2,14 @@
 
 ## Description
 
-A bit of business logic.
+An invariant that is forever true in the model.
 
 ## Columns
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| logic_key | text |  | false |  |  | The internal ID. |
-| model_key | text |  | false |  | [public.model](public.model.md) | The model this domain is part of. |
+| logic_key | text |  | false | [public.invariant](public.invariant.md) |  | The logic of the invariant. |
+| model_key | text |  | false | [public.invariant](public.invariant.md) | [public.model](public.model.md) | The model this invariant is part of. |
 | description | text |  | false |  |  | The casual readable form of the logic. |
 | notation | notation |  | false |  |  | The type of notation used for the specification. |
 | specification | text |  | true |  |  | The unambiguous form of the logic. |
