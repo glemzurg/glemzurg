@@ -1,35 +1,24 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
-// globalFunctionRow holds the columns stored in the global_function table.
-// The logic (Specification) is stored separately in the logic table and
-// stitched together in top_level_requirements.go.
-type globalFunctionRow struct {
-	LogicKey   identity.Key
-	Name       string
-	Comment    string
-	Parameters []string
-}
-
 // Populate a golang struct from a database row.
-func scanGlobalFunction(scanner Scanner, row *globalFunctionRow) (err error) {
+func scanGlobalFunction(scanner Scanner, gf *model_logic.GlobalFunction) (err error) {
 	var logicKeyStr string
-	var comment sql.NullString
 
 	if err = scanner.Scan(
 		&logicKeyStr,
-		&row.Name,
-		&comment,
-		pq.Array(&row.Parameters),
+		&gf.Name,
+		&gf.Comment,
+		pq.Array(&gf.Parameters),
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -38,26 +27,23 @@ func scanGlobalFunction(scanner Scanner, row *globalFunctionRow) (err error) {
 	}
 
 	// Parse the key string into an identity.Key.
-	row.LogicKey, err = identity.ParseKey(logicKeyStr)
+	gf.Key, err = identity.ParseKey(logicKeyStr)
 	if err != nil {
 		return err
-	}
-
-	// Handle nullable comment.
-	if comment.Valid {
-		row.Comment = comment.String
 	}
 
 	return nil
 }
 
-// LoadGlobalFunction loads a global function row from the database.
-func LoadGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (row globalFunctionRow, err error) {
+// LoadGlobalFunction loads a global function from the database.
+// The returned GlobalFunction will not have Specification populated;
+// that is stitched in top_level_requirements.go.
+func LoadGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (gf model_logic.GlobalFunction, err error) {
 
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanGlobalFunction(scanner, &row); err != nil {
+			if err = scanGlobalFunction(scanner, &gf); err != nil {
 				return err
 			}
 			return nil
@@ -76,20 +62,20 @@ func LoadGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (
 		modelKey,
 		logicKey.String())
 	if err != nil {
-		return globalFunctionRow{}, errors.WithStack(err)
+		return model_logic.GlobalFunction{}, errors.WithStack(err)
 	}
 
-	return row, nil
+	return gf, nil
 }
 
 // AddGlobalFunction adds a global function row to the database.
 // The logic row must already exist.
-func AddGlobalFunction(dbOrTx DbOrTx, modelKey string, row globalFunctionRow) (err error) {
-	return AddGlobalFunctions(dbOrTx, modelKey, []globalFunctionRow{row})
+func AddGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalFunction) (err error) {
+	return AddGlobalFunctions(dbOrTx, modelKey, []model_logic.GlobalFunction{gf})
 }
 
 // UpdateGlobalFunction updates a global function row in the database.
-func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, row globalFunctionRow) (err error) {
+func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalFunction) (err error) {
 
 	_, err = dbExec(dbOrTx, `
 		UPDATE
@@ -103,10 +89,10 @@ func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, row globalFunctionRow)
 		AND
 			logic_key = $2`,
 		modelKey,
-		row.LogicKey.String(),
-		row.Name,
-		sql.NullString{String: row.Comment, Valid: row.Comment != ""},
-		pq.Array(row.Parameters))
+		gf.Key.String(),
+		gf.Name,
+		gf.Comment,
+		pq.Array(gf.Parameters))
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -133,17 +119,19 @@ func RemoveGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key)
 	return nil
 }
 
-// QueryGlobalFunctions loads all global function rows from the database for a given model.
-func QueryGlobalFunctions(dbOrTx DbOrTx, modelKey string) (rows []globalFunctionRow, err error) {
+// QueryGlobalFunctions loads all global functions from the database for a given model.
+// The returned GlobalFunctions will not have Specification populated;
+// that is stitched in top_level_requirements.go.
+func QueryGlobalFunctions(dbOrTx DbOrTx, modelKey string) (gfs []model_logic.GlobalFunction, err error) {
 
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var row globalFunctionRow
-			if err = scanGlobalFunction(scanner, &row); err != nil {
+			var gf model_logic.GlobalFunction
+			if err = scanGlobalFunction(scanner, &gf); err != nil {
 				return errors.WithStack(err)
 			}
-			rows = append(rows, row)
+			gfs = append(gfs, gf)
 			return nil
 		},
 		`SELECT
@@ -161,19 +149,19 @@ func QueryGlobalFunctions(dbOrTx DbOrTx, modelKey string) (rows []globalFunction
 		return nil, errors.WithStack(err)
 	}
 
-	return rows, nil
+	return gfs, nil
 }
 
 // AddGlobalFunctions adds multiple global function rows to the database in a single insert.
 // The logic rows must already exist.
-func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, rows []globalFunctionRow) (err error) {
-	if len(rows) == 0 {
+func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.GlobalFunction) (err error) {
+	if len(gfs) == 0 {
 		return nil
 	}
 
 	query := `INSERT INTO global_function (model_key, logic_key, name, comment, parameters) VALUES `
-	args := make([]interface{}, 0, len(rows)*5)
-	for i, row := range rows {
+	args := make([]interface{}, 0, len(gfs)*5)
+	for i, gf := range gfs {
 		if i > 0 {
 			query += ", "
 		}
@@ -181,10 +169,10 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, rows []globalFunctionRow
 		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
 		args = append(args,
 			modelKey,
-			row.LogicKey.String(),
-			row.Name,
-			sql.NullString{String: row.Comment, Valid: row.Comment != ""},
-			pq.Array(row.Parameters))
+			gf.Key.String(),
+			gf.Name,
+			gf.Comment,
+			pq.Array(gf.Parameters))
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

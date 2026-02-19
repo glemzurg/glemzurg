@@ -283,7 +283,8 @@
         {
           "name": "comment",
           "type": "text",
-          "nullable": true,
+          "nullable": false,
+          "default": "''::text",
           "comment": "A descriptive comment about the function."
         },
         {
@@ -305,6 +306,16 @@
         }
       ],
       "constraints": [
+        {
+          "name": "global_function_comment_not_null",
+          "type": "n",
+          "def": "NOT NULL comment",
+          "table": "public.global_function",
+          "referenced_table": "",
+          "columns": [
+            "comment"
+          ]
+        },
         {
           "name": "global_function_logic_key_not_null",
           "type": "n",

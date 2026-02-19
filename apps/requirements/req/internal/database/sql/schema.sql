@@ -55,7 +55,7 @@ CREATE TABLE global_function (
   model_key text NOT NULL,
   logic_key text NOT NULL,
   name text NOT NULL,
-  comment text DEFAULT NULL,
+  comment text NOT NULL DEFAULT '',
   parameters text[],
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_global_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE

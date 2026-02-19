@@ -57,16 +57,11 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		}
 
 		// Add global function rows.
-		gfRows := make([]globalFunctionRow, 0, len(model.GlobalFunctions))
+		gfSlice := make([]model_logic.GlobalFunction, 0, len(model.GlobalFunctions))
 		for _, gf := range model.GlobalFunctions {
-			gfRows = append(gfRows, globalFunctionRow{
-				LogicKey:   gf.Key,
-				Name:       gf.Name,
-				Comment:    gf.Comment,
-				Parameters: gf.Parameters,
-			})
+			gfSlice = append(gfSlice, gf)
 		}
-		if err = AddGlobalFunctions(tx, modelKey, gfRows); err != nil {
+		if err = AddGlobalFunctions(tx, modelKey, gfSlice); err != nil {
 			return err
 		}
 
@@ -360,20 +355,15 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		}
 
 		// Global functions — stitch logic data onto global function rows.
-		gfRows, err := QueryGlobalFunctions(tx, modelKey)
+		gfs, err := QueryGlobalFunctions(tx, modelKey)
 		if err != nil {
 			return err
 		}
-		if len(gfRows) > 0 {
-			model.GlobalFunctions = make(map[identity.Key]model_logic.GlobalFunction, len(gfRows))
-			for _, row := range gfRows {
-				model.GlobalFunctions[row.LogicKey] = model_logic.GlobalFunction{
-					Key:           row.LogicKey,
-					Name:          row.Name,
-					Comment:       row.Comment,
-					Parameters:    row.Parameters,
-					Specification: logicsByKey[row.LogicKey],
-				}
+		if len(gfs) > 0 {
+			model.GlobalFunctions = make(map[identity.Key]model_logic.GlobalFunction, len(gfs))
+			for _, gf := range gfs {
+				gf.Specification = logicsByKey[gf.Key]
+				model.GlobalFunctions[gf.Key] = gf
 			}
 		}
 

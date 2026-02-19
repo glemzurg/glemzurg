@@ -11,13 +11,14 @@ An global function used to describe simulation and code generation.
 | model_key | text |  | false |  | [public.logic](public.logic.md) | The model this function is part of. |
 | logic_key | text |  | false |  | [public.logic](public.logic.md) | The logic of the function. |
 | name | text |  | false |  |  | The name of the function, fitting for the notation of the logic. |
-| comment | text |  | true |  |  | A descriptive comment about the function. |
+| comment | text | ''::text | false |  |  | A descriptive comment about the function. |
 | parameters | text[] |  | true |  |  | The parameters of the function, fitting for the notation of the logic. |
 
 ## Constraints
 
 | Name | Type | Definition |
 | ---- | ---- | ---------- |
+| global_function_comment_not_null | n | NOT NULL comment |
 | global_function_logic_key_not_null | n | NOT NULL logic_key |
 | global_function_model_key_not_null | n | NOT NULL model_key |
 | global_function_name_not_null | n | NOT NULL name |

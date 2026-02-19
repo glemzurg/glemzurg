@@ -22,12 +22,12 @@ func TestGlobalFunctionSuite(t *testing.T) {
 
 type GlobalFunctionSuite struct {
 	suite.Suite
-	db       *sql.DB
-	model    req_model.Model
-	logic    model_logic.Logic
-	logicB   model_logic.Logic
-	gfKey    identity.Key
-	gfKeyB   identity.Key
+	db     *sql.DB
+	model  req_model.Model
+	logic  model_logic.Logic
+	logicB model_logic.Logic
+	gfKey  identity.Key
+	gfKeyB identity.Key
 }
 
 func (suite *GlobalFunctionSuite) SetupTest() {
@@ -38,12 +38,11 @@ func (suite *GlobalFunctionSuite) SetupTest() {
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
 	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("key")))
-	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("key_b"))
+	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("key_b")))
 
 	// Create the keys for reuse.
 	suite.gfKey = suite.logic.Key
 	suite.gfKeyB = suite.logicB.Key
-
 }
 
 func (suite *GlobalFunctionSuite) TestLoad() {
@@ -61,116 +60,116 @@ func (suite *GlobalFunctionSuite) TestLoad() {
 	`, suite.model.Key, suite.gfKey.String())
 	assert.Nil(suite.T(), err)
 
-	row, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
+	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	assert.Equal(suite.T(), model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
-	}, row)
+	}, gf)
 }
 
 func (suite *GlobalFunctionSuite) TestAdd() {
 
-	err := AddGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
 
-	row, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
+	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	assert.Equal(suite.T(), model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
-	}, row)
+	}, gf)
 }
 
 func (suite *GlobalFunctionSuite) TestAddNulls() {
 
-	err := AddGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "",
 		Parameters: nil,
 	})
 	assert.Nil(suite.T(), err)
 
-	row, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
+	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	assert.Equal(suite.T(), model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "",
 		Parameters: nil,
-	}, row)
+	}, gf)
 }
 
 func (suite *GlobalFunctionSuite) TestUpdate() {
 
-	err := AddGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err = UpdateGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Min",
 		Comment:    "Returns the minimum",
 		Parameters: []string{"a", "b"},
 	})
 	assert.Nil(suite.T(), err)
 
-	row, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
+	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	assert.Equal(suite.T(), model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Min",
 		Comment:    "Returns the minimum",
 		Parameters: []string{"a", "b"},
-	}, row)
+	}, gf)
 }
 
 func (suite *GlobalFunctionSuite) TestUpdateNulls() {
 
-	err := AddGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err = UpdateGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Min",
 		Comment:    "",
 		Parameters: nil,
 	})
 	assert.Nil(suite.T(), err)
 
-	row, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
+	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	assert.Equal(suite.T(), model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Min",
 		Comment:    "",
 		Parameters: nil,
-	}, row)
+	}, gf)
 }
 
 func (suite *GlobalFunctionSuite) TestRemove() {
 
-	err := AddGlobalFunction(suite.db, suite.model.Key, globalFunctionRow{
-		LogicKey:   suite.gfKey,
+	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
+		Key:        suite.gfKey,
 		Name:       "_Max",
 		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
@@ -187,15 +186,15 @@ func (suite *GlobalFunctionSuite) TestRemove() {
 
 func (suite *GlobalFunctionSuite) TestQuery() {
 
-	err := AddGlobalFunctions(suite.db, suite.model.Key, []globalFunctionRow{
+	err := AddGlobalFunctions(suite.db, suite.model.Key, []model_logic.GlobalFunction{
 		{
-			LogicKey:   suite.gfKeyB,
+			Key:        suite.gfKeyB,
 			Name:       "_Min",
 			Comment:    "Returns the minimum",
 			Parameters: []string{"a", "b"},
 		},
 		{
-			LogicKey:   suite.gfKey,
+			Key:        suite.gfKey,
 			Name:       "_Max",
 			Comment:    "Returns the maximum",
 			Parameters: []string{"x", "y"},
@@ -203,40 +202,40 @@ func (suite *GlobalFunctionSuite) TestQuery() {
 	})
 	assert.Nil(suite.T(), err)
 
-	rows, err := QueryGlobalFunctions(suite.db, suite.model.Key)
+	gfs, err := QueryGlobalFunctions(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []globalFunctionRow{
+	assert.Equal(suite.T(), []model_logic.GlobalFunction{
 		{
-			LogicKey:   suite.gfKey,
+			Key:        suite.gfKey,
 			Name:       "_Max",
 			Comment:    "Returns the maximum",
 			Parameters: []string{"x", "y"},
 		},
 		{
-			LogicKey:   suite.gfKeyB,
+			Key:        suite.gfKeyB,
 			Name:       "_Min",
 			Comment:    "Returns the minimum",
 			Parameters: []string{"a", "b"},
 		},
-	}, rows)
+	}, gfs)
 }
 
 //==================================================
 // Test objects for other tests.
 //==================================================
 
-func t_AddGlobalFunction(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key, name string, comment string, parameters []string) globalFunctionRow {
+func t_AddGlobalFunction(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key, name string, comment string, parameters []string) model_logic.GlobalFunction {
 
-	err := AddGlobalFunction(dbOrTx, modelKey, globalFunctionRow{
-		LogicKey:   logicKey,
+	err := AddGlobalFunction(dbOrTx, modelKey, model_logic.GlobalFunction{
+		Key:        logicKey,
 		Name:       name,
 		Comment:    comment,
 		Parameters: parameters,
 	})
 	assert.Nil(t, err)
 
-	row, err := LoadGlobalFunction(dbOrTx, modelKey, logicKey)
+	gf, err := LoadGlobalFunction(dbOrTx, modelKey, logicKey)
 	assert.Nil(t, err)
 
-	return row
+	return gf
 }
