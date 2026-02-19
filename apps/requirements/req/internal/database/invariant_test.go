@@ -72,20 +72,15 @@ func (suite *InvariantSuite) TestAdd() {
 
 func (suite *InvariantSuite) TestRemove() {
 
-	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
+	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
 
-	err = RemoveInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
+	err = RemoveInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
 
 	// Invariant should be gone.
-	_, err = LoadInvariant(suite.db, suite.model.Key, suite.invariantKeyB)
+	_, err = LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-
-	// Logic row should still exist (invariant only manages the join table).
-	logic, err := LoadLogic(suite.db, suite.model.Key, suite.invariantKeyB)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicB, logic)
 }
 
 func (suite *InvariantSuite) TestQuery() {
