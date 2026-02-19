@@ -5,6 +5,7 @@
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
 | [public.model](public.model.md) | 3 | A fully distinct semantic model, separate from all others. | BASE TABLE |
+| [public.logic](public.logic.md) | 5 | A bit of business logic. | BASE TABLE |
 | [public.domain](public.domain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.subdomain](public.subdomain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
@@ -42,6 +43,7 @@
 | public.bound_limit_type | closed, open, unconstrained |
 | public.collection_type | atomic, ordered, queue, record, stack, unordered |
 | public.constraint_type | enumeration, object, reference, span, unconstrained |
+| public.notation | tla_plus |
 | public.scenario_object_name_style | id, name, unnamed |
 | public.share_type | extend, include |
 | public.state_action_when | do, entry, exit |

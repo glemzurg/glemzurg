@@ -7,7 +7,7 @@ import (
 )
 
 // NotationTLAPlus is the only supported notation for logic specifications.
-const NotationTLAPlus = "TLA+"
+const NotationTLAPlus = "tla_plus"
 
 // _validate is the shared validator instance for this package.
 var _validate = validator.New()
@@ -16,7 +16,7 @@ var _validate = validator.New()
 type Logic struct {
 	Key           identity.Key // The key is unique in the whole model, and built on the key of the containing object.
 	Description   string       `validate:"required"`
-	Notation      string       `validate:"required,oneof=TLA+"`
+	Notation      string       `validate:"required,oneof=tla_plus"`
 	Specification string       // Optional logic specification body.
 }
 

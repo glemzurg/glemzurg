@@ -69,6 +69,120 @@
       ]
     },
     {
+      "name": "public.logic",
+      "type": "BASE TABLE",
+      "comment": "A bit of business logic.",
+      "columns": [
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID."
+        },
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this domain is part of."
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": false,
+          "comment": "The casual readable form of the logic."
+        },
+        {
+          "name": "notation",
+          "type": "notation",
+          "nullable": false,
+          "comment": "The type of notation used for the specification."
+        },
+        {
+          "name": "specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "The unambiguous form of the logic."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "logic_pkey",
+          "def": "CREATE UNIQUE INDEX logic_pkey ON public.logic USING btree (model_key, logic_key)",
+          "table": "public.logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "logic_description_not_null",
+          "type": "n",
+          "def": "NOT NULL description",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "description"
+          ]
+        },
+        {
+          "name": "logic_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "logic_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "logic_notation_not_null",
+          "type": "n",
+          "def": "NOT NULL notation",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "notation"
+          ]
+        },
+        {
+          "name": "fk_logic_model",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
+          "table": "public.logic",
+          "referenced_table": "model",
+          "columns": [
+            "model_key"
+          ],
+          "referenced_columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "logic_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, logic_key)",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.domain",
       "type": "BASE TABLE",
       "comment": "A bucket for parts of a model.",
@@ -4210,6 +4324,19 @@
   ],
   "relations": [
     {
+      "table": "public.logic",
+      "columns": [
+        "model_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.model",
+      "parent_columns": [
+        "model_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.domain",
       "columns": [
         "model_key"
@@ -5080,6 +5207,12 @@
         "reference",
         "span",
         "unconstrained"
+      ]
+    },
+    {
+      "name": "public.notation",
+      "values": [
+        "tla_plus"
       ]
     },
     {

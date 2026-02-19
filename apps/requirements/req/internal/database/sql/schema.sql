@@ -15,6 +15,28 @@ COMMENT ON COLUMN model.details IS 'A summary description.';
 
 --------------------------------------------------------------
 
+CREATE TYPE notation AS ENUM ('tla_plus');
+COMMENT ON TYPE notation IS 'The notation used for a logic specification.';
+
+CREATE TABLE logic (
+  logic_key text NOT NULL,
+  model_key text NOT NULL,
+  description text NOT NULL,
+  notation notation NOT NULL,
+  specification text DEFAULT NULL,
+  PRIMARY KEY (model_key, logic_key),
+  CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE logic IS 'A bit of business logic.';
+COMMENT ON COLUMN logic.logic_key IS 'The internal ID.';
+COMMENT ON COLUMN logic.model_key IS 'The model this domain is part of.';
+COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
+COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
+COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
+
+--------------------------------------------------------------
+
 CREATE TABLE domain (
   domain_key text NOT NULL,
   model_key text NOT NULL,
