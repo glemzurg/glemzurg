@@ -86,5 +86,10 @@ func (gf *GlobalFunction) ValidateWithParent() error {
 	if err := gf.Key.ValidateParent(nil); err != nil {
 		return err
 	}
+	// Validate the specification logic's key parent relationship.
+	// The spec shares the global function's exact key (root-level, nil parent).
+	if err := gf.Specification.ValidateWithParent(nil); err != nil {
+		return errors.Wrap(err, "specification")
+	}
 	return nil
 }
