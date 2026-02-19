@@ -24,16 +24,16 @@ func TestClassSuite(t *testing.T) {
 
 type ClassSuite struct {
 	suite.Suite
-	db                 *sql.DB
-	model              req_model.Model
-	domain             model_domain.Domain
-	subdomain          model_domain.Subdomain
-	generalization     model_class.Generalization
-	generalizationB    model_class.Generalization
-	actor              model_actor.Actor
-	actorB             model_actor.Actor
-	classKey           identity.Key
-	classKeyB          identity.Key
+	db              *sql.DB
+	model           req_model.Model
+	domain          model_domain.Domain
+	subdomain       model_domain.Subdomain
+	generalization  model_class.Generalization
+	generalizationB model_class.Generalization
+	actor           model_actor.Actor
+	actorB          model_actor.Actor
+	classKey        identity.Key
+	classKeyB       identity.Key
 }
 
 func (suite *ClassSuite) SetupTest() {
@@ -84,8 +84,8 @@ func (suite *ClassSuite) TestLoad() {
 				'Name',
 				'Details',
 				'actor/actor_key',
-				'domain/domain_key/subdomain/subdomain_key/generalization/generalization_key',
-				'domain/domain_key/subdomain/subdomain_key/generalization/generalization_key_b',
+				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key',
+				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key_b',
 				'UmlComment'
 			)
 	`)
