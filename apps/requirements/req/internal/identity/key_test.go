@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -354,49 +355,49 @@ func (suite *KeySuite) TestValidate() {
 
 func (suite *KeySuite) TestValidateParent() {
 	// Create some test keys.
-	domainKey, _ := NewDomainKey("testdomain")
-	domainKey2, _ := NewDomainKey("testdomain2")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "testsubdomain")
-	subdomainKey2, _ := NewSubdomainKey(domainKey, "testsubdomain2")
-	classKey, _ := NewClassKey(subdomainKey, "testclass")
-	classKey2, _ := NewClassKey(subdomainKey2, "testclass2")
-	useCaseKey, _ := NewUseCaseKey(subdomainKey, "testusecase")
-	generalizationKey, _ := NewGeneralizationKey(subdomainKey, "testgen")
-	scenarioKey, _ := NewScenarioKey(useCaseKey, "testscenario")
-	scenarioObjectKey, _ := NewScenarioObjectKey(scenarioKey, "testsobject")
-	stateKey, _ := NewStateKey(classKey, "teststate")
-	eventKey, _ := NewEventKey(classKey, "testevent")
-	guardKey, _ := NewGuardKey(classKey, "testguard")
-	actionKey, _ := NewActionKey(classKey, "testaction")
-	queryKey, _ := NewQueryKey(classKey, "testquery")
-	transitionKey, _ := NewTransitionKey(classKey, "state_a", "testevent", "", "", "state_b")
-	attributeKey, _ := NewAttributeKey(classKey, "testattr")
-	stateActionKey, _ := NewStateActionKey(stateKey, "entry", "testaction")
-	invariantKey, _ := NewInvariantKey("testinvariant")
-	actionRequireKey, _ := NewActionRequireKey(actionKey, "testreq")
-	actionGuaranteeKey, _ := NewActionGuaranteeKey(actionKey, "testguar")
-	actionSafetyKey, _ := NewActionSafetyKey(actionKey, "testsafety")
-	queryRequireKey, _ := NewQueryRequireKey(queryKey, "testreq")
-	queryGuaranteeKey, _ := NewQueryGuaranteeKey(queryKey, "testguar")
-	attributeDerivationKey, _ := NewAttributeDerivationKey(attributeKey, "testderiv")
-	actorKey, _ := NewActorKey("testactor")
-	globalFuncKey, _ := NewGlobalFunctionKey("_max")
-	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
+	domainKey := helper.Must(NewDomainKey("testdomain"))
+	domainKey2 := helper.Must(NewDomainKey("testdomain2"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "testsubdomain"))
+	subdomainKey2 := helper.Must(NewSubdomainKey(domainKey, "testsubdomain2"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "testclass"))
+	classKey2 := helper.Must(NewClassKey(subdomainKey2, "testclass2"))
+	useCaseKey := helper.Must(NewUseCaseKey(subdomainKey, "testusecase"))
+	generalizationKey := helper.Must(NewGeneralizationKey(subdomainKey, "testgen"))
+	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "testscenario"))
+	scenarioObjectKey := helper.Must(NewScenarioObjectKey(scenarioKey, "testsobject"))
+	stateKey := helper.Must(NewStateKey(classKey, "teststate"))
+	eventKey := helper.Must(NewEventKey(classKey, "testevent"))
+	guardKey := helper.Must(NewGuardKey(classKey, "testguard"))
+	actionKey := helper.Must(NewActionKey(classKey, "testaction"))
+	queryKey := helper.Must(NewQueryKey(classKey, "testquery"))
+	transitionKey := helper.Must(NewTransitionKey(classKey, "state_a", "testevent", "", "", "state_b"))
+	attributeKey := helper.Must(NewAttributeKey(classKey, "testattr"))
+	stateActionKey := helper.Must(NewStateActionKey(stateKey, "entry", "testaction"))
+	invariantKey := helper.Must(NewInvariantKey("testinvariant"))
+	actionRequireKey := helper.Must(NewActionRequireKey(actionKey, "testreq"))
+	actionGuaranteeKey := helper.Must(NewActionGuaranteeKey(actionKey, "testguar"))
+	actionSafetyKey := helper.Must(NewActionSafetyKey(actionKey, "testsafety"))
+	queryRequireKey := helper.Must(NewQueryRequireKey(queryKey, "testreq"))
+	queryGuaranteeKey := helper.Must(NewQueryGuaranteeKey(queryKey, "testguar"))
+	attributeDerivationKey := helper.Must(NewAttributeDerivationKey(attributeKey, "testderiv"))
+	actorKey := helper.Must(NewActorKey("testactor"))
+	globalFuncKey := helper.Must(NewGlobalFunctionKey("_max"))
+	domainAssocKey := helper.Must(NewDomainAssociationKey(domainKey, domainKey2))
 
 	// Class associations at different levels.
-	subdomainCassocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey, "subdomain assoc")
-	domainCassocKey, _ := NewClassAssociationKey(domainKey, classKey, classKey2, "domain assoc")
+	subdomainCassocKey := helper.Must(NewClassAssociationKey(subdomainKey, classKey, classKey, "subdomain assoc"))
+	domainCassocKey := helper.Must(NewClassAssociationKey(domainKey, classKey, classKey2, "domain assoc"))
 
 	// For model-level class association, we need classes from different domains.
-	domainKey3, _ := NewDomainKey("testdomain3")
-	subdomainKey3, _ := NewSubdomainKey(domainKey3, "testsubdomain3")
-	classKey3, _ := NewClassKey(subdomainKey3, "testclass3")
-	modelCassocKey, _ := NewClassAssociationKey(Key{}, classKey, classKey3, "model assoc")
+	domainKey3 := helper.Must(NewDomainKey("testdomain3"))
+	subdomainKey3 := helper.Must(NewSubdomainKey(domainKey3, "testsubdomain3"))
+	classKey3 := helper.Must(NewClassKey(subdomainKey3, "testclass3"))
+	modelCassocKey := helper.Must(NewClassAssociationKey(Key{}, classKey, classKey3, "model assoc"))
 
 	// Keys for wrong-parent tests.
-	otherActionKey, _ := NewActionKey(classKey, "otheraction")
-	otherQueryKey, _ := NewQueryKey(classKey, "otherquery")
-	otherAttributeKey, _ := NewAttributeKey(classKey, "otherattr")
+	otherActionKey := helper.Must(NewActionKey(classKey, "otheraction"))
+	otherQueryKey := helper.Must(NewQueryKey(classKey, "otherquery"))
+	otherAttributeKey := helper.Must(NewAttributeKey(classKey, "otherattr"))
 
 	tests := []struct {
 		testName string
@@ -895,11 +896,11 @@ func (suite *KeySuite) TestValidateParent() {
 
 func (suite *KeySuite) TestHasNoParent() {
 	// Create hierarchy of keys.
-	domainKey, _ := NewDomainKey("testdomain")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "testsubdomain")
-	classKey, _ := NewClassKey(subdomainKey, "testclass")
-	stateKey, _ := NewStateKey(classKey, "teststate")
-	actorKey, _ := NewActorKey("testactor")
+	domainKey := helper.Must(NewDomainKey("testdomain"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "testsubdomain"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "testclass"))
+	stateKey := helper.Must(NewStateKey(classKey, "teststate"))
+	actorKey := helper.Must(NewActorKey("testactor"))
 
 	tests := []struct {
 		testName string
@@ -948,12 +949,12 @@ func (suite *KeySuite) TestHasNoParent() {
 
 func (suite *KeySuite) TestIsParent() {
 	// Create hierarchy of keys.
-	domainKey, _ := NewDomainKey("testdomain")
-	domainKey2, _ := NewDomainKey("otherdomain")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "testsubdomain")
-	classKey, _ := NewClassKey(subdomainKey, "testclass")
-	stateKey, _ := NewStateKey(classKey, "teststate")
-	actorKey, _ := NewActorKey("testactor")
+	domainKey := helper.Must(NewDomainKey("testdomain"))
+	domainKey2 := helper.Must(NewDomainKey("otherdomain"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "testsubdomain"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "testclass"))
+	stateKey := helper.Must(NewStateKey(classKey, "teststate"))
+	actorKey := helper.Must(NewActorKey("testactor"))
 
 	tests := []struct {
 		testName  string
@@ -1048,10 +1049,10 @@ func (suite *KeySuite) TestIsParent() {
 // can be converted to string and parsed back successfully.
 func (suite *KeySuite) TestParseKeyRoundTrip() {
 	// Create hierarchy of keys.
-	domainKey, _ := NewDomainKey("domain_key")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
-	classKey, _ := NewClassKey(subdomainKey, "class_key")
-	stateKey, _ := NewStateKey(classKey, "state_key")
+	domainKey := helper.Must(NewDomainKey("domain_key"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain_key"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class_key"))
+	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
 
 	tests := []struct {
 		testName    string
@@ -1123,25 +1124,25 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 // TestJSONRoundTrip tests that keys can be marshalled to JSON and unmarshalled back.
 func (suite *KeySuite) TestJSONRoundTrip() {
 	// Create hierarchy of keys.
-	domainKey, _ := NewDomainKey("domain_key")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
-	classKey, _ := NewClassKey(subdomainKey, "class_key")
-	classKey2, _ := NewClassKey(subdomainKey, "class_key2")
-	stateKey, _ := NewStateKey(classKey, "state_key")
-	useCaseKey, _ := NewUseCaseKey(subdomainKey, "use_case_key")
-	scenarioKey, _ := NewScenarioKey(useCaseKey, "scenario_key")
-	actorKey, _ := NewActorKey("actor_key")
+	domainKey := helper.Must(NewDomainKey("domain_key"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain_key"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class_key"))
+	classKey2 := helper.Must(NewClassKey(subdomainKey, "class_key2"))
+	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
+	useCaseKey := helper.Must(NewUseCaseKey(subdomainKey, "use_case_key"))
+	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "scenario_key"))
+	actorKey := helper.Must(NewActorKey("actor_key"))
 
 	// State action and transition keys.
-	stateActionKey, _ := NewStateActionKey(stateKey, "entry", "action_key")
-	transitionKey, _ := NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b")
+	stateActionKey := helper.Must(NewStateActionKey(stateKey, "entry", "action_key"))
+	transitionKey := helper.Must(NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b"))
 
 	// Domain association key.
-	domainKey2, _ := NewDomainKey("domain_key2")
-	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
+	domainKey2 := helper.Must(NewDomainKey("domain_key2"))
+	domainAssocKey := helper.Must(NewDomainAssociationKey(domainKey, domainKey2))
 
 	// Class association key.
-	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2, "json test assoc")
+	classAssocKey := helper.Must(NewClassAssociationKey(subdomainKey, classKey, classKey2, "json test assoc"))
 
 	tests := []struct {
 		testName string
@@ -1232,25 +1233,25 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 // This is required for Key to be used as a map key in JSON marshalling/unmarshalling.
 func (suite *KeySuite) TestTextMarshalRoundTrip() {
 	// Create hierarchy of keys.
-	domainKey, _ := NewDomainKey("domain_key")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
-	classKey, _ := NewClassKey(subdomainKey, "class_key")
-	classKey2, _ := NewClassKey(subdomainKey, "class_key2")
-	stateKey, _ := NewStateKey(classKey, "state_key")
-	useCaseKey, _ := NewUseCaseKey(subdomainKey, "use_case_key")
-	scenarioKey, _ := NewScenarioKey(useCaseKey, "scenario_key")
-	actorKey, _ := NewActorKey("actor_key")
+	domainKey := helper.Must(NewDomainKey("domain_key"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain_key"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class_key"))
+	classKey2 := helper.Must(NewClassKey(subdomainKey, "class_key2"))
+	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
+	useCaseKey := helper.Must(NewUseCaseKey(subdomainKey, "use_case_key"))
+	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "scenario_key"))
+	actorKey := helper.Must(NewActorKey("actor_key"))
 
 	// State action and transition keys.
-	stateActionKey, _ := NewStateActionKey(stateKey, "entry", "action_key")
-	transitionKey, _ := NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b")
+	stateActionKey := helper.Must(NewStateActionKey(stateKey, "entry", "action_key"))
+	transitionKey := helper.Must(NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b"))
 
 	// Domain association key.
-	domainKey2, _ := NewDomainKey("domain_key2")
-	domainAssocKey, _ := NewDomainAssociationKey(domainKey, domainKey2)
+	domainKey2 := helper.Must(NewDomainKey("domain_key2"))
+	domainAssocKey := helper.Must(NewDomainAssociationKey(domainKey, domainKey2))
 
 	// Class association key.
-	classAssocKey, _ := NewClassAssociationKey(subdomainKey, classKey, classKey2, "text test assoc")
+	classAssocKey := helper.Must(NewClassAssociationKey(subdomainKey, classKey, classKey2, "text test assoc"))
 
 	tests := []struct {
 		testName string
@@ -1334,10 +1335,10 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 // This verifies that MarshalText and UnmarshalText work correctly for map keys.
 func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
 	// Create test keys.
-	domainKey, _ := NewDomainKey("domain_key")
-	subdomainKey, _ := NewSubdomainKey(domainKey, "subdomain_key")
-	classKey, _ := NewClassKey(subdomainKey, "class_key")
-	stateKey, _ := NewStateKey(classKey, "state_key")
+	domainKey := helper.Must(NewDomainKey("domain_key"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain_key"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class_key"))
+	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
 
 	// Create a map with Key as the key type.
 	originalMap := map[Key]string{

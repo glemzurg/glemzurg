@@ -61,7 +61,7 @@ subgraph {{ $subgraphId }} {
 	{rank=same;{{ range $subclasses }} {{ nodeid "class" .Key }};{{ end -}} }
 
 	{{- $generalizationLabel := generalization_label $reqs .Key -}}
-	{{- $generalizationNode := nodeid "generalization" .Key }}
+	{{- $generalizationNode := nodeid "cgeneralization" .Key }}
 	{{ $generalizationNode }} [shape=point]
 
 	{rank=same; {{ $generalizationNode }}; {{ range $subclasses }} {{ nodeid "subclassangle" .Key }};{{ end -}} }

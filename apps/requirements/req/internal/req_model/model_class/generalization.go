@@ -40,7 +40,7 @@ func (g *Generalization) Validate() error {
 	if err := g.Key.Validate(); err != nil {
 		return err
 	}
-	if g.Key.KeyType != identity.KEY_TYPE_GENERALIZATION {
+	if g.Key.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
 		return errors.Errorf("Key: invalid key type '%s' for generalization.", g.Key.KeyType)
 	}
 

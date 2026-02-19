@@ -22,9 +22,9 @@ const (
 	KEY_TYPE_SUBDOMAIN = "subdomain"
 
 	// Keys with subdomain parents.
-	KEY_TYPE_USE_CASE       = "usecase"
-	KEY_TYPE_CLASS          = "class"
-	KEY_TYPE_GENERALIZATION = "generalization"
+	KEY_TYPE_USE_CASE             = "usecase"
+	KEY_TYPE_CLASS                = "class"
+	KEY_TYPE_CLASS_GENERALIZATION = "cgeneralization"
 
 	// Keys with model, domain, subdomain parents.
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
@@ -117,7 +117,7 @@ func NewGeneralizationKey(subdomainKey Key, subKey string) (key Key, err error) 
 	if subdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'generalization' key", subdomainKey.GetKeyType())
 	}
-	return newKey(subdomainKey.String(), KEY_TYPE_GENERALIZATION, subKey)
+	return newKey(subdomainKey.String(), KEY_TYPE_CLASS_GENERALIZATION, subKey)
 }
 
 func NewScenarioKey(useCaseKey Key, subKey string) (key Key, err error) {
