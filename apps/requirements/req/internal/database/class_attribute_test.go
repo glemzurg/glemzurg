@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 
@@ -33,6 +34,8 @@ type AttributeSuite struct {
 	logicB        model_logic.Logic
 	attributeKey  identity.Key
 	attributeKeyB identity.Key
+	dataType      model_data_type.DataType
+	dataTypeB     model_data_type.DataType
 }
 
 func (suite *AttributeSuite) SetupTest() {
@@ -53,6 +56,10 @@ func (suite *AttributeSuite) SetupTest() {
 	// Create logic rows for derivation policies (logic must exist before attribute references it).
 	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewAttributeDerivationKey(suite.attributeKey, "deriv")))
 	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewAttributeDerivationKey(suite.attributeKeyB, "deriv")))
+
+	// Create data type rows (data type must exist before attribute references it via FK).
+	suite.dataType = t_AddDataType(suite.T(), suite.db, suite.model.Key, suite.attributeKey.String())
+	suite.dataTypeB = t_AddDataType(suite.T(), suite.db, suite.model.Key, suite.attributeKeyB.String())
 }
 
 func (suite *AttributeSuite) TestLoad() {
@@ -115,6 +122,7 @@ func (suite *AttributeSuite) TestAdd() {
 		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType, // DataType is written as FK but not read back by LoadAttribute.
 	})
 	assert.Nil(suite.T(), err)
 
@@ -129,6 +137,7 @@ func (suite *AttributeSuite) TestAdd() {
 		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		// DataType is not stitched by LoadAttribute; it stays nil.
 	}, attribute)
 }
 
@@ -169,6 +178,7 @@ func (suite *AttributeSuite) TestUpdate() {
 		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -180,6 +190,7 @@ func (suite *AttributeSuite) TestUpdate() {
 		DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
 		Nullable:         false,
 		UmlComment:       "UmlCommentX",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -207,6 +218,7 @@ func (suite *AttributeSuite) TestUpdateNulls() {
 		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -218,6 +230,7 @@ func (suite *AttributeSuite) TestUpdateNulls() {
 		DerivationPolicy: nil, // No derivation policy.
 		Nullable:         false,
 		UmlComment:       "UmlCommentX",
+		DataType:         nil, // No data type.
 	})
 	assert.Nil(suite.T(), err)
 
@@ -245,6 +258,7 @@ func (suite *AttributeSuite) TestRemove() {
 		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -269,6 +283,7 @@ func (suite *AttributeSuite) TestQuery() {
 				DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
 				Nullable:         true,
 				UmlComment:       "UmlCommentX",
+				DataType:         &suite.dataTypeB,
 			},
 			{
 				Key:              suite.attributeKey,
@@ -278,6 +293,7 @@ func (suite *AttributeSuite) TestQuery() {
 				DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 				Nullable:         true,
 				UmlComment:       "UmlComment",
+				DataType:         &suite.dataType,
 			},
 		},
 	})
