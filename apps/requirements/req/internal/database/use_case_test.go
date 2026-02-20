@@ -23,12 +23,14 @@ func TestUseCaseSuite(t *testing.T) {
 
 type UseCaseSuite struct {
 	suite.Suite
-	db          *sql.DB
-	model       req_model.Model
-	domain      model_domain.Domain
-	subdomain   model_domain.Subdomain
-	useCaseKey  identity.Key
-	useCaseKeyB identity.Key
+	db               *sql.DB
+	model            req_model.Model
+	domain           model_domain.Domain
+	subdomain        model_domain.Subdomain
+	generalization   model_use_case.Generalization
+	generalizationB  model_use_case.Generalization
+	useCaseKey       identity.Key
+	useCaseKeyB      identity.Key
 }
 
 func (suite *UseCaseSuite) SetupTest() {
@@ -40,6 +42,8 @@ func (suite *UseCaseSuite) SetupTest() {
 	suite.model = t_AddModel(suite.T(), suite.db)
 	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
 	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
+	suite.generalization = t_AddUseCaseGeneralization(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewUseCaseGeneralizationKey(suite.subdomain.Key, "generalization_key")))
+	suite.generalizationB = t_AddUseCaseGeneralization(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewUseCaseGeneralizationKey(suite.subdomain.Key, "generalization_key_b")))
 
 	// Create the use case keys for reuse.
 	suite.useCaseKey = helper.Must(identity.NewUseCaseKey(suite.subdomain.Key, "key"))
@@ -64,6 +68,8 @@ func (suite *UseCaseSuite) TestLoad() {
 				details,
 				level,
 				read_only,
+				superclass_of_key,
+				subclass_of_key,
 				uml_comment
 			)
 		VALUES
@@ -75,6 +81,8 @@ func (suite *UseCaseSuite) TestLoad() {
 				'Details',
 				'sea',
 				true,
+				'domain/domain_key/subdomain/subdomain_key/ucgeneralization/generalization_key',
+				'domain/domain_key/subdomain/subdomain_key/ucgeneralization/generalization_key_b',
 				'UmlComment'
 			)
 	`)
@@ -84,24 +92,28 @@ func (suite *UseCaseSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "Name",
-		Details:    "Details",
-		Level:      "sea",
-		ReadOnly:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "Details",
+		Level:           "sea",
+		ReadOnly:        true,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
+		UmlComment:      "UmlComment",
 	}, useCase)
 }
 
 func (suite *UseCaseSuite) TestAdd() {
 
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "Name",
-		Details:    "Details",
-		Level:      "mud",
-		ReadOnly:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "Details",
+		Level:           "mud",
+		ReadOnly:        true,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
+		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -109,34 +121,69 @@ func (suite *UseCaseSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "Name",
-		Details:    "Details",
-		Level:      "mud",
-		ReadOnly:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "Details",
+		Level:           "mud",
+		ReadOnly:        true,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
+		UmlComment:      "UmlComment",
+	}, useCase)
+}
+
+func (suite *UseCaseSuite) TestAddNulls() {
+
+	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "",
+		Level:           "sea",
+		ReadOnly:        false,
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "",
+	})
+	assert.Nil(suite.T(), err)
+
+	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
+	assert.Equal(suite.T(), model_use_case.UseCase{
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "",
+		Level:           "sea",
+		ReadOnly:        false,
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "",
 	}, useCase)
 }
 
 func (suite *UseCaseSuite) TestUpdate() {
 
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "Name",
-		Details:    "Details",
-		Level:      "sea",
-		ReadOnly:   true,
-		UmlComment: "UmlComment",
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "Details",
+		Level:           "sea",
+		ReadOnly:        true,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
+		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateUseCase(suite.db, suite.model.Key, model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Level:      "sky",
-		ReadOnly:   false,
-		UmlComment: "UmlCommentX",
+		Key:             suite.useCaseKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		Level:           "sky",
+		ReadOnly:        false,
+		SuperclassOfKey: &suite.generalizationB.Key,
+		SubclassOfKey:   &suite.generalization.Key,
+		UmlComment:      "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -144,12 +191,55 @@ func (suite *UseCaseSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
 	assert.Equal(suite.T(), model_use_case.UseCase{
-		Key:        suite.useCaseKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Level:      "sky",
-		ReadOnly:   false,
-		UmlComment: "UmlCommentX",
+		Key:             suite.useCaseKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		Level:           "sky",
+		ReadOnly:        false,
+		SuperclassOfKey: &suite.generalizationB.Key,
+		SubclassOfKey:   &suite.generalization.Key,
+		UmlComment:      "UmlCommentX",
+	}, useCase)
+}
+
+func (suite *UseCaseSuite) TestUpdateNulls() {
+
+	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
+		Key:             suite.useCaseKey,
+		Name:            "Name",
+		Details:         "Details",
+		Level:           "sea",
+		ReadOnly:        true,
+		SuperclassOfKey: &suite.generalization.Key,
+		SubclassOfKey:   &suite.generalizationB.Key,
+		UmlComment:      "UmlComment",
+	})
+	assert.Nil(suite.T(), err)
+
+	err = UpdateUseCase(suite.db, suite.model.Key, model_use_case.UseCase{
+		Key:             suite.useCaseKey,
+		Name:            "NameX",
+		Details:         "",
+		Level:           "mud",
+		ReadOnly:        false,
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "",
+	})
+	assert.Nil(suite.T(), err)
+
+	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
+	assert.Equal(suite.T(), model_use_case.UseCase{
+		Key:             suite.useCaseKey,
+		Name:            "NameX",
+		Details:         "",
+		Level:           "mud",
+		ReadOnly:        false,
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "",
 	}, useCase)
 }
 
@@ -181,20 +271,24 @@ func (suite *UseCaseSuite) TestQuery() {
 		suite.useCaseKey:  suite.subdomain.Key,
 	}, []model_use_case.UseCase{
 		{
-			Key:        suite.useCaseKeyB,
-			Name:       "NameX",
-			Details:    "DetailsX",
-			Level:      "sea",
-			ReadOnly:   true,
-			UmlComment: "UmlCommentX",
+			Key:             suite.useCaseKeyB,
+			Name:            "NameX",
+			Details:         "DetailsX",
+			Level:           "sea",
+			ReadOnly:        true,
+			SuperclassOfKey: &suite.generalizationB.Key,
+			SubclassOfKey:   &suite.generalization.Key,
+			UmlComment:      "UmlCommentX",
 		},
 		{
-			Key:        suite.useCaseKey,
-			Name:       "Name",
-			Details:    "Details",
-			Level:      "sea",
-			ReadOnly:   true,
-			UmlComment: "UmlComment",
+			Key:             suite.useCaseKey,
+			Name:            "Name",
+			Details:         "Details",
+			Level:           "sea",
+			ReadOnly:        true,
+			SuperclassOfKey: &suite.generalization.Key,
+			SubclassOfKey:   &suite.generalizationB.Key,
+			UmlComment:      "UmlComment",
 		},
 	})
 	assert.Nil(suite.T(), err)
@@ -207,20 +301,24 @@ func (suite *UseCaseSuite) TestQuery() {
 	}, subdomainKeys)
 	assert.Equal(suite.T(), []model_use_case.UseCase{
 		{
-			Key:        suite.useCaseKey,
-			Name:       "Name",
-			Details:    "Details",
-			Level:      "sea",
-			ReadOnly:   true,
-			UmlComment: "UmlComment",
+			Key:             suite.useCaseKey,
+			Name:            "Name",
+			Details:         "Details",
+			Level:           "sea",
+			ReadOnly:        true,
+			SuperclassOfKey: &suite.generalization.Key,
+			SubclassOfKey:   &suite.generalizationB.Key,
+			UmlComment:      "UmlComment",
 		},
 		{
-			Key:        suite.useCaseKeyB,
-			Name:       "NameX",
-			Details:    "DetailsX",
-			Level:      "sea",
-			ReadOnly:   true,
-			UmlComment: "UmlCommentX",
+			Key:             suite.useCaseKeyB,
+			Name:            "NameX",
+			Details:         "DetailsX",
+			Level:           "sea",
+			ReadOnly:        true,
+			SuperclassOfKey: &suite.generalizationB.Key,
+			SubclassOfKey:   &suite.generalization.Key,
+			UmlComment:      "UmlCommentX",
 		},
 	}, useCases)
 }

@@ -13,6 +13,7 @@ import (
 func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_use_case.UseCase) (err error) {
 	var subdomainKeyStr string
 	var useCaseKeyStr string
+	var superclassOfKeyPtr, subclassOfKeyPtr *string
 
 	if err = scanner.Scan(
 		&subdomainKeyStr,
@@ -21,6 +22,8 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_
 		&useCase.Details,
 		&useCase.Level,
 		&useCase.ReadOnly,
+		&superclassOfKeyPtr,
+		&subclassOfKeyPtr,
 		&useCase.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -39,6 +42,22 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_
 		return err
 	}
 
+	// Parse optional key pointers.
+	if superclassOfKeyPtr != nil {
+		superclassOfKey, err := identity.ParseKey(*superclassOfKeyPtr)
+		if err != nil {
+			return err
+		}
+		useCase.SuperclassOfKey = &superclassOfKey
+	}
+	if subclassOfKeyPtr != nil {
+		subclassOfKey, err := identity.ParseKey(*subclassOfKeyPtr)
+		if err != nil {
+			return err
+		}
+		useCase.SubclassOfKey = &subclassOfKey
+	}
+
 	return nil
 }
 
@@ -55,12 +74,14 @@ func LoadUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (subdo
 			return nil
 		},
 		`SELECT
-			subdomain_key ,
-			use_case_key  ,
-			name          ,
-			details       ,
-			level         ,
-			read_only     ,
+			subdomain_key     ,
+			use_case_key      ,
+			name              ,
+			details           ,
+			level             ,
+			read_only         ,
+			superclass_of_key ,
+			subclass_of_key   ,
 			uml_comment
 		FROM
 			use_case
@@ -87,16 +108,30 @@ func AddUseCase(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, useCa
 // UpdateUseCase updates a use case in the database.
 func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCase) (err error) {
 
+	// We may or may not have optional key pointers.
+	var superclassOfKeyPtr *string
+	if useCase.SuperclassOfKey != nil {
+		superclassOfKeyStr := useCase.SuperclassOfKey.String()
+		superclassOfKeyPtr = &superclassOfKeyStr
+	}
+	var subclassOfKeyPtr *string
+	if useCase.SubclassOfKey != nil {
+		subclassOfKeyStr := useCase.SubclassOfKey.String()
+		subclassOfKeyPtr = &subclassOfKeyStr
+	}
+
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
 			use_case
 		SET
-			name        = $3 ,
-			details     = $4 ,
-			level       = $5 ,
-			read_only   = $6 ,
-			uml_comment = $7
+			name              = $3 ,
+			details           = $4 ,
+			level             = $5 ,
+			read_only         = $6 ,
+			superclass_of_key = $7 ,
+			subclass_of_key   = $8 ,
+			uml_comment       = $9
 		WHERE
 			model_key = $1
 		AND
@@ -107,6 +142,8 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 		useCase.Details,
 		useCase.Level,
 		useCase.ReadOnly,
+		superclassOfKeyPtr,
+		subclassOfKeyPtr,
 		useCase.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
@@ -135,7 +172,7 @@ func RemoveUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (err
 	return nil
 }
 
-// QueryUseCases loads all use case from the database
+// QueryUseCases loads all use cases from the database.
 func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.Key]identity.Key, useCases []model_use_case.UseCase, err error) {
 
 	// Query the database.
@@ -155,12 +192,14 @@ func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.K
 			return nil
 		},
 		`SELECT
-			subdomain_key ,
-			use_case_key  ,
-			name          ,
-			details       ,
-			level         ,
-			read_only     ,
+			subdomain_key     ,
+			use_case_key      ,
+			name              ,
+			details           ,
+			level             ,
+			read_only         ,
+			superclass_of_key ,
+			subclass_of_key   ,
 			uml_comment
 		FROM
 			use_case
@@ -183,16 +222,28 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(useCases)*8)
+	query := `INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(useCases)*10)
 	for i, uc := range useCases {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 8
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		base := i * 10
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
+
+		// Handle optional key pointers.
+		var superclassOfKeyPtr, subclassOfKeyPtr *string
+		if uc.SuperclassOfKey != nil {
+			s := uc.SuperclassOfKey.String()
+			superclassOfKeyPtr = &s
+		}
+		if uc.SubclassOfKey != nil {
+			s := uc.SubclassOfKey.String()
+			subclassOfKeyPtr = &s
+		}
+
 		subdomainKey := subdomainKeys[uc.Key]
-		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, uc.UmlComment)
+		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, superclassOfKeyPtr, subclassOfKeyPtr, uc.UmlComment)
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

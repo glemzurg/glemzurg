@@ -70,6 +70,10 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	ucGeneralizationKeyAA := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKeyAA, "ucgen_a"))
 	ucGeneralizationKeyAAB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKeyAA, "ucgen_b"))
 
+	// Use case keys.
+	useCaseKeyAA := helper.Must(identity.NewUseCaseKey(subdomainKeyAA, "uc_a"))
+	useCaseKeyAAB := helper.Must(identity.NewUseCaseKey(subdomainKeyAA, "uc_b"))
+
 	// Class keys.
 	classKeyAA1 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa1"))
 	classKeyAA2 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa2"))
@@ -241,6 +245,26 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								IsComplete: false,
 								IsStatic:   true,
 								UmlComment: "UC Generalization B UML comment",
+							},
+						},
+						UseCases: map[identity.Key]model_use_case.UseCase{
+							useCaseKeyAA: {
+								Key:             useCaseKeyAA,
+								Name:            "UseCaseA",
+								Details:         "Use case A details",
+								Level:           "sea",
+								ReadOnly:        false,
+								SuperclassOfKey: &ucGeneralizationKeyAA,
+								SubclassOfKey:   &ucGeneralizationKeyAAB,
+								UmlComment:      "Use case A UML comment",
+							},
+							useCaseKeyAAB: {
+								Key:        useCaseKeyAAB,
+								Name:       "UseCaseB",
+								Details:    "Use case B details",
+								Level:      "mud",
+								ReadOnly:   true,
+								UmlComment: "Use case B UML comment",
 							},
 						},
 						ClassAssociations: map[identity.Key]model_class.Association{

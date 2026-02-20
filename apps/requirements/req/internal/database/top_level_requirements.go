@@ -200,6 +200,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect use cases from subdomains (must be inserted after use_case_generalization due to FK).
+		useCaseSubdomainKeys := make(map[identity.Key]identity.Key) // useCaseKey -> subdomainKey
+		useCasesSlice := make([]model_use_case.UseCase, 0)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					useCaseSubdomainKeys[uc.Key] = subdomain.Key
+					useCasesSlice = append(useCasesSlice, uc)
+				}
+			}
+		}
+		if err = AddUseCases(tx, modelKey, useCaseSubdomainKeys, useCasesSlice); err != nil {
+			return err
+		}
+
 		// Bulk insert classes.
 		if err = AddClasses(tx, modelKey, classesMap); err != nil {
 			return err
@@ -600,6 +615,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Use cases - returns subdomainKeys map and slice.
+		useCaseSubdomainKeys, useCasesSlice, err := QueryUseCases(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
 		// Classes grouped by subdomain key.
 		classesMap, err := QueryClasses(tx, modelKey)
 		if err != nil {
@@ -882,6 +903,19 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 							subdomain.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
 							for _, ucGen := range ucGens {
 								subdomain.UseCaseGeneralizations[ucGen.Key] = ucGen
+							}
+						}
+
+						// Attach use cases to subdomain.
+						{
+							useCasesForSubdomain := make(map[identity.Key]model_use_case.UseCase)
+							for _, uc := range useCasesSlice {
+								if useCaseSubdomainKeys[uc.Key] == subdomainKey {
+									useCasesForSubdomain[uc.Key] = uc
+								}
+							}
+							if len(useCasesForSubdomain) > 0 {
+								subdomain.UseCases = useCasesForSubdomain
 							}
 						}
 
