@@ -74,7 +74,7 @@ func (suite *AssociationSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'domain/domain_key/subdomain/subdomain_key/cassociation/class/class_key/class/class_key_b',
+				'domain/domain_key/subdomain/subdomain_key/cassociation/class/class_key/class/class_key_b/test_association',
 				'Name',
 				'Details',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key',

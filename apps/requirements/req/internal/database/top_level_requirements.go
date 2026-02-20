@@ -186,6 +186,22 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			}
 		}
 
+		// Collect class associations from subdomains and model level.
+		var allClassAssociations []model_class.Association
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, assoc := range subdomain.ClassAssociations {
+					allClassAssociations = append(allClassAssociations, assoc)
+				}
+			}
+		}
+		for _, assoc := range model.ClassAssociations {
+			allClassAssociations = append(allClassAssociations, assoc)
+		}
+		if err = AddAssociations(tx, modelKey, allClassAssociations); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -366,6 +382,42 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			model.DomainAssociations = make(map[identity.Key]model_domain.Association)
 			for _, assoc := range domainAssociationsSlice {
 				model.DomainAssociations[assoc.Key] = assoc
+			}
+		}
+
+		// Class associations — query all and route to subdomains or model level.
+		classAssociationsSlice, err := QueryAssociations(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		if len(classAssociationsSlice) > 0 {
+			// Route each association: if its key is a child of a subdomain, attach there; otherwise model-level.
+			for _, assoc := range classAssociationsSlice {
+				routed := false
+				for domainKey, domain := range model.Domains {
+					for subdomainKey, subdomain := range domain.Subdomains {
+						if assoc.Key.IsParent(subdomainKey) {
+							if subdomain.ClassAssociations == nil {
+								subdomain.ClassAssociations = make(map[identity.Key]model_class.Association)
+							}
+							subdomain.ClassAssociations[assoc.Key] = assoc
+							domain.Subdomains[subdomainKey] = subdomain
+							routed = true
+							break
+						}
+					}
+					if routed {
+						model.Domains[domainKey] = domain
+						break
+					}
+				}
+				if !routed {
+					// Model-level class association.
+					if model.ClassAssociations == nil {
+						model.ClassAssociations = make(map[identity.Key]model_class.Association)
+					}
+					model.ClassAssociations[assoc.Key] = assoc
+				}
 			}
 		}
 

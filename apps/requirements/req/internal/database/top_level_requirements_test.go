@@ -72,6 +72,9 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Derivation policy logic key (child of attribute).
 	derivationKeyAA1A := helper.Must(identity.NewAttributeDerivationKey(attributeKeyAA1A, "deriv"))
 
+	// Class association key (within subdomain AA).
+	classAssociationKeyAA := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "assoc_aa"))
+
 	// Domain association key.
 	domainAssociationKey := helper.Must(identity.NewDomainAssociationKey(domainKeyA, domainKeyB))
 
@@ -152,6 +155,18 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								IsComplete: false,
 								IsStatic:   true,
 								UmlComment: "Generalization B UML comment",
+							},
+						},
+						ClassAssociations: map[identity.Key]model_class.Association{
+							classAssociationKeyAA: {
+								Key:              classAssociationKeyAA,
+								Name:             "AssociationAA",
+								Details:          "Association AA details",
+								FromClassKey:     classKeyAA1,
+								FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+								ToClassKey:       classKeyAA2,
+								ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 5},
+								UmlComment:       "Association AA UML comment",
 							},
 						},
 						Classes: map[identity.Key]model_class.Class{
