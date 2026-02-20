@@ -257,6 +257,11 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								SuperclassOfKey: &ucGeneralizationKeyAA,
 								SubclassOfKey:   &ucGeneralizationKeyAAB,
 								UmlComment:      "Use case A UML comment",
+								Actors: map[identity.Key]model_use_case.Actor{
+									classKeyAA1: {
+										UmlComment: "UC actor AA1 comment",
+									},
+								},
 							},
 							useCaseKeyAAB: {
 								Key:        useCaseKeyAAB,
@@ -265,6 +270,14 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								Level:      "mud",
 								ReadOnly:   true,
 								UmlComment: "Use case B UML comment",
+							},
+						},
+						UseCaseShares: map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
+							useCaseKeyAA: {
+								useCaseKeyAAB: {
+									ShareType:  "include",
+									UmlComment: "UC share comment",
+								},
 							},
 						},
 						ClassAssociations: map[identity.Key]model_class.Association{

@@ -508,6 +508,34 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect use case actors from use cases (must be inserted after use cases and classes due to FK).
+		useCaseActorsMap := make(map[identity.Key]map[identity.Key]model_use_case.Actor)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					if len(uc.Actors) > 0 {
+						useCaseActorsMap[uc.Key] = uc.Actors
+					}
+				}
+			}
+		}
+		if err = AddUseCaseActors(tx, modelKey, useCaseActorsMap); err != nil {
+			return err
+		}
+
+		// Collect use case shared entries from subdomains (must be inserted after use cases due to FK).
+		useCaseSharedsMap := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for seaKey, mudMap := range subdomain.UseCaseShares {
+					useCaseSharedsMap[seaKey] = mudMap
+				}
+			}
+		}
+		if err = AddUseCaseShareds(tx, modelKey, useCaseSharedsMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -617,6 +645,18 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 
 		// Use cases - returns subdomainKeys map and slice.
 		useCaseSubdomainKeys, useCasesSlice, err := QueryUseCases(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Use case actors grouped by use case key -> actor class key -> Actor.
+		useCaseActorsMap, err := QueryUseCaseActors(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Use case shared entries grouped by sea-level key -> mud-level key -> UseCaseShared.
+		useCaseSharedsMap, err := QueryUseCaseShareds(tx, modelKey)
 		if err != nil {
 			return err
 		}
@@ -906,16 +946,33 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 							}
 						}
 
-						// Attach use cases to subdomain.
+						// Attach use cases to subdomain, stitching actors onto each use case.
 						{
 							useCasesForSubdomain := make(map[identity.Key]model_use_case.UseCase)
 							for _, uc := range useCasesSlice {
 								if useCaseSubdomainKeys[uc.Key] == subdomainKey {
+									// Stitch actors onto use case.
+									if actors, ok := useCaseActorsMap[uc.Key]; ok {
+										uc.Actors = actors
+									}
 									useCasesForSubdomain[uc.Key] = uc
 								}
 							}
 							if len(useCasesForSubdomain) > 0 {
 								subdomain.UseCases = useCasesForSubdomain
+							}
+						}
+
+						// Attach use case shares to subdomain.
+						{
+							sharesForSubdomain := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
+							for seaKey, mudMap := range useCaseSharedsMap {
+								if useCaseSubdomainKeys[seaKey] == subdomainKey {
+									sharesForSubdomain[seaKey] = mudMap
+								}
+							}
+							if len(sharesForSubdomain) > 0 {
+								subdomain.UseCaseShares = sharesForSubdomain
 							}
 						}
 
