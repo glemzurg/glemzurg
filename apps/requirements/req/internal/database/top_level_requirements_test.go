@@ -13,6 +13,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -64,6 +65,10 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Generalization keys.
 	generalizationKeyAA := helper.Must(identity.NewGeneralizationKey(subdomainKeyAA, "gen_a"))
 	generalizationKeyAAB := helper.Must(identity.NewGeneralizationKey(subdomainKeyAA, "gen_b"))
+
+	// Use case generalization keys.
+	ucGeneralizationKeyAA := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKeyAA, "ucgen_a"))
+	ucGeneralizationKeyAAB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKeyAA, "ucgen_b"))
 
 	// Class keys.
 	classKeyAA1 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa1"))
@@ -218,6 +223,24 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								IsComplete: false,
 								IsStatic:   true,
 								UmlComment: "Generalization B UML comment",
+							},
+						},
+						UseCaseGeneralizations: map[identity.Key]model_use_case.Generalization{
+							ucGeneralizationKeyAA: {
+								Key:        ucGeneralizationKeyAA,
+								Name:       "UCGeneralizationA",
+								Details:    "UC Generalization A details",
+								IsComplete: true,
+								IsStatic:   false,
+								UmlComment: "UC Generalization A UML comment",
+							},
+							ucGeneralizationKeyAAB: {
+								Key:        ucGeneralizationKeyAAB,
+								Name:       "UCGeneralizationB",
+								Details:    "UC Generalization B details",
+								IsComplete: false,
+								IsStatic:   true,
+								UmlComment: "UC Generalization B UML comment",
 							},
 						},
 						ClassAssociations: map[identity.Key]model_class.Association{

@@ -13,6 +13,7 @@ todo:
   - verify keys are correct parent/child correctly
   - update load tests to not use $params
   - use ai to check comemnts and forieng keys in schema
+    - coverage of tests
   - update the yaml parsing
     - update hte parser ai parsing
       - add the extra structures to parser ai
@@ -22,7 +23,6 @@ todo:
       - finish the todo processing
     - join simulator into req with parameters
   - replace all fmt.Errorf() with errors.Errorf()
-
   
 feb (in parallel)
   - create complete model

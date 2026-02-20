@@ -12,7 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
 func WriteModel(db *sql.DB, model req_model.Model) (err error) {
@@ -147,9 +147,10 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Collect subdomains, generalizations, classes, and attributes into bulk structures.
+		// Collect subdomains, generalizations, use case generalizations, classes, and attributes into bulk structures.
 		subdomainsMap := make(map[identity.Key][]model_domain.Subdomain)
 		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
+		useCaseGeneralizationsMap := make(map[identity.Key][]model_use_case.Generalization)
 		classesMap := make(map[identity.Key][]model_class.Class)
 		attributesMap := make(map[identity.Key][]model_class.Attribute)
 
@@ -164,6 +165,11 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				// Collect generalizations.
 				for _, generalization := range subdomain.Generalizations {
 					generalizationsMap[subdomainKey] = append(generalizationsMap[subdomainKey], generalization)
+				}
+
+				// Collect use case generalizations.
+				for _, ucGen := range subdomain.UseCaseGeneralizations {
+					useCaseGeneralizationsMap[subdomainKey] = append(useCaseGeneralizationsMap[subdomainKey], ucGen)
 				}
 
 				// Collect classes.
@@ -186,6 +192,11 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 		// Bulk insert generalizations.
 		if err = AddGeneralizations(tx, modelKey, generalizationsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert use case generalizations.
+		if err = AddUseCaseGeneralizations(tx, modelKey, useCaseGeneralizationsMap); err != nil {
 			return err
 		}
 
@@ -583,6 +594,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Use case generalizations grouped by subdomain key.
+		useCaseGeneralizationsMap, err := QueryUseCaseGeneralizations(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
 		// Classes grouped by subdomain key.
 		classesMap, err := QueryClasses(tx, modelKey)
 		if err != nil {
@@ -857,6 +874,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 							subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
 							for _, gen := range generalizations {
 								subdomain.Generalizations[gen.Key] = gen
+							}
+						}
+
+						// Attach use case generalizations to subdomain.
+						if ucGens, ok := useCaseGeneralizationsMap[subdomainKey]; ok {
+							subdomain.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
+							for _, ucGen := range ucGens {
+								subdomain.UseCaseGeneralizations[ucGen.Key] = ucGen
 							}
 						}
 
