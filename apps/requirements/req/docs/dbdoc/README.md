@@ -37,7 +37,6 @@
 | [public.action_safety](public.action_safety.md) | 3 | A safety rule check of before and after state that fails if the model is in an incorrect state. | BASE TABLE |
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |
 | [public.state_action](public.state_action.md) | 5 | An action triggered on entry, exit, or continual do from a state. | BASE TABLE |
-| [public.state_action_parameter](public.state_action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
 | [public.use_case_generalization](public.use_case_generalization.md) | 8 | A relationship between use cases indicating super classes and subclasses. | BASE TABLE |
 | [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
 | [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |

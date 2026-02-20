@@ -752,32 +752,6 @@ COMMENT ON COLUMN state_action.action_when IS 'When the triggere takes place.';
 
 --------------------------------------------------------------
 
-CREATE TABLE state_action_parameter (
-  model_key text NOT NULL,
-  parameter_key text NOT NULL,
-  action_key text NOT NULL,
-  data_type_rules text DEFAULT NULL,
-  data_type_key text DEFAULT NULL,
-  name text NOT NULL,
-  details text DEFAULT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (model_key, parameter_key),
-  CONSTRAINT fk_state_action_parameter_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
-  CONSTRAINT fk_state_action_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE state_action_parameter IS 'A parameter of an action.';
-COMMENT ON COLUMN state_action_parameter.model_key IS 'The model this state machine is part of.';
-COMMENT ON COLUMN state_action_parameter.parameter_key IS 'The internal ID.';
-COMMENT ON COLUMN state_action_parameter.action_key IS 'The action this parameter is part of.';
-COMMENT ON COLUMN state_action_parameter.data_type_rules IS 'The rules for a well-formed value.';
-COMMENT ON COLUMN state_action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
-COMMENT ON COLUMN state_action_parameter.name IS 'The unique name of the parameter within the attribute.';
-COMMENT ON COLUMN state_action_parameter.details IS 'A summary description.';
-COMMENT ON COLUMN state_action_parameter.uml_comment IS 'A comment that appears in the diagrams.';
-
---------------------------------------------------------------
-
 CREATE TABLE use_case_generalization (
   model_key text NOT NULL,
   generalization_key text NOT NULL,
