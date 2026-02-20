@@ -8,13 +8,11 @@ An business logic query of a class that does not change the state of a class.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.query_parameter](public.query_parameter.md) | [public.class](public.class.md) | The model this state machine is part of. |
+| model_key | text |  | false | [public.query_parameter](public.query_parameter.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) | [public.class](public.class.md) | The model this state machine is part of. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this query is part of. |
-| query_key | text |  | false | [public.query_parameter](public.query_parameter.md) |  | The internal ID. |
+| query_key | text |  | false | [public.query_parameter](public.query_parameter.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the query within the class. |
 | details | text |  | true |  |  | A summary description. |
-| requires | text[] |  | true |  |  | The requires half of the query contract in TLA+ notation. |
-| guarantees | text[] |  | true |  |  | The guarantees half of the query contract in TLA+ notation. |
 
 ## Constraints
 

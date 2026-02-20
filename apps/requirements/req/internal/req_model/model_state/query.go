@@ -10,13 +10,13 @@ import (
 // Query is a business logic query of a class that does not change the state of a class.
 // Guarantees describe filtering/selection criteria for returned data, NOT state changes.
 type Query struct {
-	Key        identity.Key
-	Name       string `validate:"required"`
-	Details    string
+	Key     identity.Key
+	Name    string `validate:"required"`
+	Details string
+	// Children
+	Parameters []Parameter         // Typed parameters for this query.
 	Requires   []model_logic.Logic // Preconditions for this query.
 	Guarantees []model_logic.Logic // Filtering criteria for returned data (NOT state changes).
-	// Children
-	Parameters []Parameter // Typed parameters for this query.
 }
 
 func NewQuery(key identity.Key, name, details string, requires, guarantees []model_logic.Logic, parameters []Parameter) (query Query, err error) {

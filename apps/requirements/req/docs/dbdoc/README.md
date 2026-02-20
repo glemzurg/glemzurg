@@ -22,8 +22,10 @@
 | [public.attribute](public.attribute.md) | 10 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be mulitple attributes together for the identity. | BASE TABLE |
 | [public.association](public.association.md) | 12 | A semantic relationship between typed instances. | BASE TABLE |
-| [public.query](public.query.md) | 7 | An business logic query of a class that does not change the state of a class. | BASE TABLE |
-| [public.query_parameter](public.query_parameter.md) | 8 | A parameter of a query. | BASE TABLE |
+| [public.query](public.query.md) | 5 | An business logic query of a class that does not change the state of a class. | BASE TABLE |
+| [public.query_parameter](public.query_parameter.md) | 7 | A parameter of a query. | BASE TABLE |
+| [public.query_require](public.query_require.md) | 3 | A state requirement that must be true for this query to be run. | BASE TABLE |
+| [public.query_guarantee](public.query_guarantee.md) | 3 | A guarantee of what is returned by this query. | BASE TABLE |
 | [public.state](public.state.md) | 6 | A situation where invariant conditions on a class instance hold. | BASE TABLE |
 | [public.event](public.event.md) | 6 | Some occurence that can potentially trigger a change in and instance. | BASE TABLE |
 | [public.guard](public.guard.md) | 5 | An extra condition on when the transition can take place. | BASE TABLE |

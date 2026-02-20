@@ -2493,18 +2493,6 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
-        },
-        {
-          "name": "requires",
-          "type": "text[]",
-          "nullable": true,
-          "comment": "The requires half of the query contract in TLA+ notation."
-        },
-        {
-          "name": "guarantees",
-          "type": "text[]",
-          "nullable": true,
-          "comment": "The guarantees half of the query contract in TLA+ notation."
         }
       ],
       "indexes": [
@@ -2599,16 +2587,28 @@
           "comment": "The model this query is part of."
         },
         {
-          "name": "parameter_key",
-          "type": "text",
-          "nullable": false,
-          "comment": "The internal ID."
-        },
-        {
           "name": "query_key",
           "type": "text",
           "nullable": false,
           "comment": "The query this parameter is part of."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID, the name but lower case."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the parameter within the attribute."
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Parameters are an ordered list."
         },
         {
           "name": "data_type_rules",
@@ -2621,33 +2621,16 @@
           "type": "text",
           "nullable": true,
           "comment": "If the rules are parsable, the data type they parse into."
-        },
-        {
-          "name": "name",
-          "type": "text",
-          "nullable": false,
-          "comment": "The unique name of the parameter within the attribute."
-        },
-        {
-          "name": "details",
-          "type": "text",
-          "nullable": true,
-          "comment": "A summary description."
-        },
-        {
-          "name": "uml_comment",
-          "type": "text",
-          "nullable": true,
-          "comment": "A comment that appears in the diagrams."
         }
       ],
       "indexes": [
         {
           "name": "query_parameter_pkey",
-          "def": "CREATE UNIQUE INDEX query_parameter_pkey ON public.query_parameter USING btree (model_key, parameter_key)",
+          "def": "CREATE UNIQUE INDEX query_parameter_pkey ON public.query_parameter USING btree (model_key, query_key, parameter_key)",
           "table": "public.query_parameter",
           "columns": [
             "model_key",
+            "query_key",
             "parameter_key"
           ]
         }
@@ -2694,6 +2677,16 @@
           ]
         },
         {
+          "name": "query_parameter_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL sort_order",
+          "table": "public.query_parameter",
+          "referenced_table": "",
+          "columns": [
+            "sort_order"
+          ]
+        },
+        {
           "name": "fk_parameter_data_type",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
@@ -2726,12 +2719,235 @@
         {
           "name": "query_parameter_pkey",
           "type": "PRIMARY KEY",
-          "def": "PRIMARY KEY (model_key, parameter_key)",
+          "def": "PRIMARY KEY (model_key, query_key, parameter_key)",
           "table": "public.query_parameter",
           "referenced_table": "",
           "columns": [
             "model_key",
+            "query_key",
             "parameter_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.query_require",
+      "type": "BASE TABLE",
+      "comment": "A state requirement that must be true for this query to be run.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this require is part of."
+        },
+        {
+          "name": "query_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The query this require is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the require."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "query_require_pkey",
+          "def": "CREATE UNIQUE INDEX query_require_pkey ON public.query_require USING btree (model_key, query_key, logic_key)",
+          "table": "public.query_require",
+          "columns": [
+            "model_key",
+            "query_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "query_require_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.query_require",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "query_require_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.query_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "query_require_query_key_not_null",
+          "type": "n",
+          "def": "NOT NULL query_key",
+          "table": "public.query_require",
+          "referenced_table": "",
+          "columns": [
+            "query_key"
+          ]
+        },
+        {
+          "name": "fk_require_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.query_require",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_require_query",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
+          "table": "public.query_require",
+          "referenced_table": "query",
+          "columns": [
+            "model_key",
+            "query_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "query_key"
+          ]
+        },
+        {
+          "name": "query_require_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, query_key, logic_key)",
+          "table": "public.query_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "query_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.query_guarantee",
+      "type": "BASE TABLE",
+      "comment": "A guarantee of what is returned by this query.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this guarantee is part of."
+        },
+        {
+          "name": "query_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The query this guarantee is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the guarantee."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "query_guarantee_pkey",
+          "def": "CREATE UNIQUE INDEX query_guarantee_pkey ON public.query_guarantee USING btree (model_key, query_key, logic_key)",
+          "table": "public.query_guarantee",
+          "columns": [
+            "model_key",
+            "query_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "query_guarantee_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.query_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "query_guarantee_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.query_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "query_guarantee_query_key_not_null",
+          "type": "n",
+          "def": "NOT NULL query_key",
+          "table": "public.query_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "query_key"
+          ]
+        },
+        {
+          "name": "fk_guarantee_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.query_guarantee",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_guarantee_query",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
+          "table": "public.query_guarantee",
+          "referenced_table": "query",
+          "columns": [
+            "model_key",
+            "query_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "query_key"
+          ]
+        },
+        {
+          "name": "query_guarantee_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, query_key, logic_key)",
+          "table": "public.query_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "query_key",
+            "logic_key"
           ]
         }
       ]
@@ -5167,6 +5383,66 @@
     },
     {
       "table": "public.query_parameter",
+      "columns": [
+        "model_key",
+        "query_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.query",
+      "parent_columns": [
+        "model_key",
+        "query_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_require",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_require",
+      "columns": [
+        "model_key",
+        "query_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.query",
+      "parent_columns": [
+        "model_key",
+        "query_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_guarantee",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.query_guarantee",
       "columns": [
         "model_key",
         "query_key"

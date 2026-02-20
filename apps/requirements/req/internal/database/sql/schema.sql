@@ -451,8 +451,6 @@ CREATE TABLE query (
   query_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
-  requires text[] DEFAULT NULL,
-  guarantees text[] DEFAULT NULL,
   PRIMARY KEY (model_key, query_key),
   CONSTRAINT fk_query_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
 );
@@ -463,34 +461,62 @@ COMMENT ON COLUMN query.class_key IS 'The class this query is part of.';
 COMMENT ON COLUMN query.query_key IS 'The internal ID.';
 COMMENT ON COLUMN query.name IS 'The unique name of the query within the class.';
 COMMENT ON COLUMN query.details IS 'A summary description.';
-COMMENT ON COLUMN query.requires IS 'The requires half of the query contract in TLA+ notation.';
-COMMENT ON COLUMN query.guarantees IS 'The guarantees half of the query contract in TLA+ notation.';
 
 --------------------------------------------------------------
 
 CREATE TABLE query_parameter (
   model_key text NOT NULL,
-  parameter_key text NOT NULL,
   query_key text NOT NULL,
+  parameter_key text NOT NULL,
+  name text NOT NULL,
+  sort_order int NOT NULL,
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
-  name text NOT NULL,
-  details text DEFAULT NULL,
-  uml_comment text DEFAULT NULL,
-  PRIMARY KEY (model_key, parameter_key),
+  PRIMARY KEY (model_key, query_key, parameter_key),
   CONSTRAINT fk_parameter_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
   CONSTRAINT fk_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE query_parameter IS 'A parameter of a query.';
 COMMENT ON COLUMN query_parameter.model_key IS 'The model this query is part of.';
-COMMENT ON COLUMN query_parameter.parameter_key IS 'The internal ID.';
 COMMENT ON COLUMN query_parameter.query_key IS 'The query this parameter is part of.';
+COMMENT ON COLUMN query_parameter.parameter_key IS 'The internal ID, the name but lower case.';
+COMMENT ON COLUMN query_parameter.name IS 'The unique name of the parameter within the attribute.';
+COMMENT ON COLUMN query_parameter.sort_order IS 'Parameters are an ordered list.';
 COMMENT ON COLUMN query_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN query_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
-COMMENT ON COLUMN query_parameter.name IS 'The unique name of the parameter within the attribute.';
-COMMENT ON COLUMN query_parameter.details IS 'A summary description.';
-COMMENT ON COLUMN query_parameter.uml_comment IS 'A comment that appears in the diagrams.';
+
+--------------------------------------------------------------
+
+CREATE TABLE query_require (
+  model_key text NOT NULL,
+  query_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, query_key, logic_key),
+  CONSTRAINT fk_require_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
+  CONSTRAINT fk_require_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE query_require IS 'A state requirement that must be true for this query to be run.';
+COMMENT ON COLUMN query_require.model_key IS 'The model this require is part of.';
+COMMENT ON COLUMN query_require.query_key IS 'The query this require is part of.';
+COMMENT ON COLUMN query_require.logic_key IS 'The logic of the require.';
+
+--------------------------------------------------------------
+
+CREATE TABLE query_guarantee (
+  model_key text NOT NULL,
+  query_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, query_key, logic_key),
+  CONSTRAINT fk_guarantee_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
+  CONSTRAINT fk_guarantee_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE query_guarantee IS 'A guarantee of what is returned by this query.';
+COMMENT ON COLUMN query_guarantee.model_key IS 'The model this guarantee is part of.';
+COMMENT ON COLUMN query_guarantee.query_key IS 'The query this guarantee is part of.';
+COMMENT ON COLUMN query_guarantee.logic_key IS 'The logic of the guarantee.';
 
 --------------------------------------------------------------
 

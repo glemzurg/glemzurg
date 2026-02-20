@@ -2,16 +2,14 @@
 ---------------------------
 
 todo:
-  - finish conversion to validate/go-validator
-    - apps/requirements/req/internal/req_model/model_use_case
-    - apps/requirements/req/internal/req_model
-  - make keys for logic
   - save objects to database:
     - logic
     - model
     - ... next ...
   - make keys for actor super/sub class
+    - model and database code
   - make keys for use cases super/sub class
+    - model and database code
   - verify keys are correct parent/child correctly
   - update load tests to not use $params
   - update the yaml parsing
