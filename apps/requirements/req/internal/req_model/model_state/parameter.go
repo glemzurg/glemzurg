@@ -54,6 +54,13 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 	return false
 }
 
+// setSortOrder sets the SortOrder field on each parameter based on its index in the slice.
+func setSortOrder(params []Parameter) {
+	for i := range params {
+		params[i].SortOrder = i
+	}
+}
+
 // Validate validates the Parameter struct.
 func (p *Parameter) Validate() error {
 	if err := _validate.Struct(p); err != nil {

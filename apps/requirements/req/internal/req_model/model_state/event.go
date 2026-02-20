@@ -24,6 +24,9 @@ func NewEvent(key identity.Key, name, details string, parameters []Parameter) (e
 		Parameters: parameters,
 	}
 
+	// Compute sort order from slice index.
+	setSortOrder(event.Parameters)
+
 	if err = event.Validate(); err != nil {
 		return Event{}, err
 	}

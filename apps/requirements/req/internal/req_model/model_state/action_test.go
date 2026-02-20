@@ -191,9 +191,13 @@ func (suite *ActionSuite) TestNew() {
 		{Key: safetyKey, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "tla_safety"},
 	}
 
-	// Test all parameters are mapped correctly.
+	// Test all parameters are mapped correctly and SortOrder is computed.
+	params := []Parameter{
+		{Name: "ParamA", DataTypeRules: "Nat"},
+		{Name: "ParamB", DataTypeRules: "Int"},
+	}
 	action, err := NewAction(key, "Name", "Details",
-		requires, guarantees, safetyRules, nil)
+		requires, guarantees, safetyRules, params)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Action{
 		Key:         key,
@@ -202,6 +206,10 @@ func (suite *ActionSuite) TestNew() {
 		Requires:    requires,
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
+		Parameters: []Parameter{
+			{Name: "ParamA", SortOrder: 0, DataTypeRules: "Nat"},
+			{Name: "ParamB", SortOrder: 1, DataTypeRules: "Int"},
+		},
 	}, action)
 
 	// Test with nil optional fields (all Logic slice fields are optional).

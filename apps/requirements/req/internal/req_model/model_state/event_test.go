@@ -88,15 +88,18 @@ func (suite *EventSuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewEventKey(classKey, "event1"))
 
-	// Test parameters are mapped correctly.
+	// Test parameters are mapped correctly and SortOrder is computed.
 	event, err := NewEvent(key, "Name", "Details",
-		[]Parameter{{Name: "ParamA", DataTypeRules: "Nat"}})
+		[]Parameter{{Name: "ParamA", DataTypeRules: "Nat"}, {Name: "ParamB", DataTypeRules: "Int"}})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Event{
-		Key:        key,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []Parameter{{Name: "ParamA", DataTypeRules: "Nat"}},
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
+		Parameters: []Parameter{
+			{Name: "ParamA", SortOrder: 0, DataTypeRules: "Nat"},
+			{Name: "ParamB", SortOrder: 1, DataTypeRules: "Int"},
+		},
 	}, event)
 
 	// Test with nil optional Parameters.

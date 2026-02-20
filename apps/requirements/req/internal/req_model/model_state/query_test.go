@@ -162,9 +162,13 @@ func (suite *QuerySuite) TestNew() {
 		{Key: guarKey, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
 	}
 
-	// Test all parameters are mapped correctly.
+	// Test all parameters are mapped correctly and SortOrder is computed.
+	params := []Parameter{
+		{Name: "ParamA", DataTypeRules: "Nat"},
+		{Name: "ParamB", DataTypeRules: "Int"},
+	}
 	query, err := NewQuery(key, "Name", "Details",
-		requires, guarantees, nil)
+		requires, guarantees, params)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Query{
 		Key:        key,
@@ -172,6 +176,10 @@ func (suite *QuerySuite) TestNew() {
 		Details:    "Details",
 		Requires:   requires,
 		Guarantees: guarantees,
+		Parameters: []Parameter{
+			{Name: "ParamA", SortOrder: 0, DataTypeRules: "Nat"},
+			{Name: "ParamB", SortOrder: 1, DataTypeRules: "Int"},
+		},
 	}, query)
 
 	// Test with nil optional fields (all Logic slice fields are optional).
