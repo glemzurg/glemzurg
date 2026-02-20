@@ -8,22 +8,46 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Populate golang structs from a database row.
+func scanQueryRequire(scanner Scanner, queryKeyPtr *identity.Key, logicKeyPtr *identity.Key) (err error) {
+	var queryKeyStr string
+	var logicKeyStr string
+
+	if err = scanner.Scan(&queryKeyStr, &logicKeyStr); err != nil {
+		if err.Error() == _POSTGRES_NOT_FOUND {
+			err = ErrNotFound
+		}
+		return err // Do not wrap in stack here. It will be wrapped in the database calls.
+	}
+
+	*queryKeyPtr, err = identity.ParseKey(queryKeyStr)
+	if err != nil {
+		return err
+	}
+
+	*logicKeyPtr, err = identity.ParseKey(logicKeyStr)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // LoadQueryRequire loads a query require join row from the database.
 func LoadQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
 
-	var logicKeyStr string
+	var loadedQueryKey identity.Key
+
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanner.Scan(&logicKeyStr); err != nil {
-				if err.Error() == _POSTGRES_NOT_FOUND {
-					err = ErrNotFound
-				}
+			if err = scanQueryRequire(scanner, &loadedQueryKey, &key); err != nil {
 				return err
 			}
 			return nil
 		},
 		`SELECT
+			query_key,
 			logic_key
 		FROM
 			query_require
@@ -36,11 +60,6 @@ func LoadQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, log
 		modelKey,
 		queryKey.String(),
 		logicKey.String())
-	if err != nil {
-		return identity.Key{}, errors.WithStack(err)
-	}
-
-	key, err = identity.ParseKey(logicKeyStr)
 	if err != nil {
 		return identity.Key{}, errors.WithStack(err)
 	}
@@ -84,17 +103,9 @@ func QueryQueryRequires(dbOrTx DbOrTx, modelKey string) (requires map[identity.K
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var queryKeyStr string
-			var logicKeyStr string
-			if err = scanner.Scan(&queryKeyStr, &logicKeyStr); err != nil {
-				return errors.WithStack(err)
-			}
-			queryKey, err := identity.ParseKey(queryKeyStr)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			logicKey, err := identity.ParseKey(logicKeyStr)
-			if err != nil {
+			var queryKey identity.Key
+			var logicKey identity.Key
+			if err = scanQueryRequire(scanner, &queryKey, &logicKey); err != nil {
 				return errors.WithStack(err)
 			}
 			if requires == nil {
