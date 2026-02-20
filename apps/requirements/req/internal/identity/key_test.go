@@ -291,6 +291,98 @@ func (suite *KeySuite) TestValidate() {
 			testName: "ok class",
 			key:      Key{ParentKey: ".../subdomain/subdomain1", KeyType: "class", SubKey: "thing1"},
 		},
+		{
+			testName: "ok actor generalization",
+			key:      Key{ParentKey: "", KeyType: "ageneralization", SubKey: "gen1"},
+		},
+		{
+			testName: "ok global function",
+			key:      Key{ParentKey: "", KeyType: "gfunc", SubKey: "func1"},
+		},
+		{
+			testName: "ok invariant",
+			key:      Key{ParentKey: "", KeyType: "invariant", SubKey: "inv1"},
+		},
+		{
+			testName: "ok use case generalization",
+			key:      Key{ParentKey: ".../subdomain/subdomain1", KeyType: "ucgeneralization", SubKey: "gen1"},
+		},
+		{
+			testName: "ok class generalization",
+			key:      Key{ParentKey: ".../subdomain/subdomain1", KeyType: "cgeneralization", SubKey: "gen1"},
+		},
+		{
+			testName: "ok state",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "state", SubKey: "state1"},
+		},
+		{
+			testName: "ok event",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "event", SubKey: "event1"},
+		},
+		{
+			testName: "ok guard",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "guard", SubKey: "guard1"},
+		},
+		{
+			testName: "ok action",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "action", SubKey: "action1"},
+		},
+		{
+			testName: "ok query",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "query", SubKey: "query1"},
+		},
+		{
+			testName: "ok transition",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "transition", SubKey: "s1/e1/g1/a1/s2"},
+		},
+		{
+			testName: "ok attribute",
+			key:      Key{ParentKey: ".../class/class1", KeyType: "attribute", SubKey: "attr1"},
+		},
+		{
+			testName: "ok scenario",
+			key:      Key{ParentKey: ".../usecase/uc1", KeyType: "scenario", SubKey: "sc1"},
+		},
+		{
+			testName: "ok scenario object",
+			key:      Key{ParentKey: ".../scenario/sc1", KeyType: "sobject", SubKey: "obj1"},
+		},
+		{
+			testName: "ok attribute derivation",
+			key:      Key{ParentKey: ".../attribute/attr1", KeyType: "aderive", SubKey: "deriv1"},
+		},
+		{
+			testName: "ok state action",
+			key:      Key{ParentKey: ".../state/state1", KeyType: "saction", SubKey: "entry/action1"},
+		},
+		{
+			testName: "ok action require",
+			key:      Key{ParentKey: ".../action/action1", KeyType: "arequire", SubKey: "req1"},
+		},
+		{
+			testName: "ok action guarantee",
+			key:      Key{ParentKey: ".../action/action1", KeyType: "aguarantee", SubKey: "guar1"},
+		},
+		{
+			testName: "ok action safety",
+			key:      Key{ParentKey: ".../action/action1", KeyType: "asafety", SubKey: "safe1"},
+		},
+		{
+			testName: "ok query require",
+			key:      Key{ParentKey: ".../query/query1", KeyType: "qrequire", SubKey: "req1"},
+		},
+		{
+			testName: "ok query guarantee",
+			key:      Key{ParentKey: ".../query/query1", KeyType: "qguarantee", SubKey: "guar1"},
+		},
+		{
+			testName: "ok class association with parent",
+			key:      Key{ParentKey: ".../subdomain/subdomain1", KeyType: "cassociation", SubKey: "class/c1", SubKey2: "class/c2", SubKey3: "assoc"},
+		},
+		{
+			testName: "ok class association without parent",
+			key:      Key{ParentKey: "", KeyType: "cassociation", SubKey: "domain/d1/subdomain/s1/class/c1", SubKey2: "domain/d2/subdomain/s2/class/c2", SubKey3: "assoc"},
+		},
 
 		// Error cases for all keys.
 		{
@@ -339,6 +431,115 @@ func (suite *KeySuite) TestValidate() {
 			testName: "error missing parentKey for class",
 			key:      Key{ParentKey: "", KeyType: "class", SubKey: "thing1"},
 			errstr:   "parentKey must be non-blank for 'class' keys",
+		},
+
+		// Error cases: root keys with parentKey.
+		{
+			testName: "error parentKey for actor generalization",
+			key:      Key{ParentKey: "notallowed", KeyType: "ageneralization", SubKey: "gen1"},
+			errstr:   "parentKey must be blank for 'ageneralization' keys, cannot be 'notallowed'",
+		},
+		{
+			testName: "error parentKey for global function",
+			key:      Key{ParentKey: "notallowed", KeyType: "gfunc", SubKey: "func1"},
+			errstr:   "parentKey must be blank for 'gfunc' keys, cannot be 'notallowed'",
+		},
+		{
+			testName: "error parentKey for invariant",
+			key:      Key{ParentKey: "notallowed", KeyType: "invariant", SubKey: "inv1"},
+			errstr:   "parentKey must be blank for 'invariant' keys, cannot be 'notallowed'",
+		},
+
+		// Error cases: non-root keys with missing parentKey.
+		{
+			testName: "error missing parentKey for ucgeneralization",
+			key:      Key{ParentKey: "", KeyType: "ucgeneralization", SubKey: "gen1"},
+			errstr:   "parentKey must be non-blank for 'ucgeneralization' keys",
+		},
+		{
+			testName: "error missing parentKey for cgeneralization",
+			key:      Key{ParentKey: "", KeyType: "cgeneralization", SubKey: "gen1"},
+			errstr:   "parentKey must be non-blank for 'cgeneralization' keys",
+		},
+		{
+			testName: "error missing parentKey for state",
+			key:      Key{ParentKey: "", KeyType: "state", SubKey: "state1"},
+			errstr:   "parentKey must be non-blank for 'state' keys",
+		},
+		{
+			testName: "error missing parentKey for event",
+			key:      Key{ParentKey: "", KeyType: "event", SubKey: "event1"},
+			errstr:   "parentKey must be non-blank for 'event' keys",
+		},
+		{
+			testName: "error missing parentKey for guard",
+			key:      Key{ParentKey: "", KeyType: "guard", SubKey: "guard1"},
+			errstr:   "parentKey must be non-blank for 'guard' keys",
+		},
+		{
+			testName: "error missing parentKey for action",
+			key:      Key{ParentKey: "", KeyType: "action", SubKey: "action1"},
+			errstr:   "parentKey must be non-blank for 'action' keys",
+		},
+		{
+			testName: "error missing parentKey for query",
+			key:      Key{ParentKey: "", KeyType: "query", SubKey: "query1"},
+			errstr:   "parentKey must be non-blank for 'query' keys",
+		},
+		{
+			testName: "error missing parentKey for transition",
+			key:      Key{ParentKey: "", KeyType: "transition", SubKey: "s1/e1/g1/a1/s2"},
+			errstr:   "parentKey must be non-blank for 'transition' keys",
+		},
+		{
+			testName: "error missing parentKey for attribute",
+			key:      Key{ParentKey: "", KeyType: "attribute", SubKey: "attr1"},
+			errstr:   "parentKey must be non-blank for 'attribute' keys",
+		},
+		{
+			testName: "error missing parentKey for scenario",
+			key:      Key{ParentKey: "", KeyType: "scenario", SubKey: "sc1"},
+			errstr:   "parentKey must be non-blank for 'scenario' keys",
+		},
+		{
+			testName: "error missing parentKey for sobject",
+			key:      Key{ParentKey: "", KeyType: "sobject", SubKey: "obj1"},
+			errstr:   "parentKey must be non-blank for 'sobject' keys",
+		},
+		{
+			testName: "error missing parentKey for aderive",
+			key:      Key{ParentKey: "", KeyType: "aderive", SubKey: "deriv1"},
+			errstr:   "parentKey must be non-blank for 'aderive' keys",
+		},
+		{
+			testName: "error missing parentKey for saction",
+			key:      Key{ParentKey: "", KeyType: "saction", SubKey: "entry/action1"},
+			errstr:   "parentKey must be non-blank for 'saction' keys",
+		},
+		{
+			testName: "error missing parentKey for arequire",
+			key:      Key{ParentKey: "", KeyType: "arequire", SubKey: "req1"},
+			errstr:   "parentKey must be non-blank for 'arequire' keys",
+		},
+		{
+			testName: "error missing parentKey for aguarantee",
+			key:      Key{ParentKey: "", KeyType: "aguarantee", SubKey: "guar1"},
+			errstr:   "parentKey must be non-blank for 'aguarantee' keys",
+		},
+		{
+			testName: "error missing parentKey for asafety",
+			key:      Key{ParentKey: "", KeyType: "asafety", SubKey: "safe1"},
+			errstr:   "parentKey must be non-blank for 'asafety' keys",
+		},
+		{
+			testName: "error missing parentKey for qrequire",
+			key:      Key{ParentKey: "", KeyType: "qrequire", SubKey: "req1"},
+			errstr:   "parentKey must be non-blank for 'qrequire' keys",
+		},
+		{
+			testName: "error missing parentKey for qguarantee",
+			key:      Key{ParentKey: "", KeyType: "qguarantee", SubKey: "guar1"},
+			errstr:   "parentKey must be non-blank for 'qguarantee' keys",
 		},
 	}
 	for _, tt := range tests {
