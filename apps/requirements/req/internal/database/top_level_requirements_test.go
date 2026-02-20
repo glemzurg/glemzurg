@@ -83,6 +83,9 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	queryRequireKeyA := helper.Must(identity.NewQueryRequireKey(queryKeyAA1A, "req_a"))
 	queryRequireKeyB := helper.Must(identity.NewQueryRequireKey(queryKeyAA1A, "req_b"))
 
+	// Query guarantee keys (children of query key).
+	queryGuaranteeKeyA := helper.Must(identity.NewQueryGuaranteeKey(queryKeyAA1A, "guar_a"))
+
 	// Domain association key.
 	domainAssociationKey := helper.Must(identity.NewDomainAssociationKey(domainKeyA, domainKeyB))
 
@@ -222,6 +225,14 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												Description:   "Query require B description",
 												Notation:      "tla_plus",
 												Specification: "QueryReqB == x > 0",
+											},
+										},
+										Guarantees: []model_logic.Logic{
+											{
+												Key:           queryGuaranteeKeyA,
+												Description:   "Query guarantee A description",
+												Notation:      "tla_plus",
+												Specification: "QueryGuarA == result > 0",
 											},
 										},
 									},

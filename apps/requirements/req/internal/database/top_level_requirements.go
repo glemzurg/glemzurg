@@ -55,12 +55,13 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
-		// Collect query require logics.
+		// Collect query require and guarantee logics.
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
 				for _, class := range subdomain.Classes {
 					for _, query := range class.Queries {
 						allLogics = append(allLogics, query.Requires...)
+						allLogics = append(allLogics, query.Guarantees...)
 					}
 				}
 			}
@@ -266,6 +267,19 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect query guarantee join rows from queries.
+		queryGuaranteesMap := make(map[identity.Key][]identity.Key)
+		for _, queryList := range queriesMap {
+			for _, query := range queryList {
+				for _, guar := range query.Guarantees {
+					queryGuaranteesMap[query.Key] = append(queryGuaranteesMap[query.Key], guar.Key)
+				}
+			}
+		}
+		if err = AddQueryGuarantees(tx, modelKey, queryGuaranteesMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -385,7 +399,13 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Stitch parameters and requires onto queries (data types are stitched onto parameters below after dataTypes are loaded).
+		// Query guarantee join rows grouped by query key.
+		queryGuaranteesMap, err := QueryQueryGuarantees(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters, requires, and guarantees onto queries (data types are stitched onto parameters below after dataTypes are loaded).
 		for classKey, queries := range queriesMap {
 			for i, query := range queries {
 				if params, ok := queryParamsMap[query.Key]; ok {
@@ -396,6 +416,13 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 					queries[i].Requires = make([]model_logic.Logic, len(reqKeys))
 					for j, key := range reqKeys {
 						queries[i].Requires[j] = logicsByKey[key]
+					}
+				}
+				// Stitch guarantees from logic data.
+				if guarKeys, ok := queryGuaranteesMap[query.Key]; ok {
+					queries[i].Guarantees = make([]model_logic.Logic, len(guarKeys))
+					for j, key := range guarKeys {
+						queries[i].Guarantees[j] = logicsByKey[key]
 					}
 				}
 			}
