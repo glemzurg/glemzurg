@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -14,14 +13,12 @@ import (
 func scanEvent(scanner Scanner, classKeyPtr *identity.Key, event *model_state.Event) (err error) {
 	var classKeyStr string
 	var eventKeyStr string
-	var parametersAsList []string
 
 	if err = scanner.Scan(
 		&classKeyStr,
 		&eventKeyStr,
 		&event.Name,
 		&event.Details,
-		pq.Array(&parametersAsList),
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -39,14 +36,6 @@ func scanEvent(scanner Scanner, classKeyPtr *identity.Key, event *model_state.Ev
 	event.Key, err = identity.ParseKey(eventKeyStr)
 	if err != nil {
 		return err
-	}
-
-	// Construct parameters.
-	for i := 0; i < len(parametersAsList); i += 2 {
-		event.Parameters = append(event.Parameters, model_state.EventParameter{
-			Name:   parametersAsList[i],
-			Source: parametersAsList[i+1],
-		})
 	}
 
 	return nil
@@ -68,8 +57,7 @@ func LoadEvent(dbOrTx DbOrTx, modelKey string, eventKey identity.Key) (classKey 
 			class_key  ,
 			event_key  ,
 			name       ,
-			details    ,
-	        parameters
+			details
 		FROM
 			event
 		WHERE
@@ -95,21 +83,13 @@ func AddEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model
 // UpdateEvent updates a event in the database.
 func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
 
-	// Flatten parameters.
-	var parametersAsList []string
-	for _, param := range event.Parameters {
-		parametersAsList = append(parametersAsList, param.Name)
-		parametersAsList = append(parametersAsList, param.Source)
-	}
-
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
 			event
 		SET
 			name       = $4 ,
-			details    = $5 ,
-			parameters = $6
+			details    = $5
 		WHERE
 			class_key = $2
 		AND
@@ -120,8 +100,7 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event mo
 		classKey.String(),
 		event.Key.String(),
 		event.Name,
-		event.Details,
-		pq.Array(parametersAsList))
+		event.Details)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -176,8 +155,7 @@ func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[identity.Key][]mode
 			class_key  ,
 			event_key  ,
 			name       ,
-			details    ,
-			parameters
+			details
 		FROM
 			event
 		WHERE
@@ -203,25 +181,17 @@ func AddEvents(dbOrTx DbOrTx, modelKey string, events map[identity.Key][]model_s
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO event (model_key, class_key, event_key, name, details, parameters) VALUES `
-	args := make([]interface{}, 0, count*6)
+	query := `INSERT INTO event (model_key, class_key, event_key, name, details) VALUES `
+	args := make([]interface{}, 0, count*5)
 	i := 0
 	for classKey, eventList := range events {
 		for _, event := range eventList {
 			if i > 0 {
 				query += ", "
 			}
-			base := i * 6
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
-
-			// Flatten parameters.
-			var parametersAsList []string
-			for _, param := range event.Parameters {
-				parametersAsList = append(parametersAsList, param.Name)
-				parametersAsList = append(parametersAsList, param.Source)
-			}
-
-			args = append(args, modelKey, classKey.String(), event.Key.String(), event.Name, event.Details, pq.Array(parametersAsList))
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, classKey.String(), event.Key.String(), event.Name, event.Details)
 			i++
 		}
 	}

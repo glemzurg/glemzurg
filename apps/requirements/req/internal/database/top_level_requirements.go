@@ -182,6 +182,13 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 							}
 						}
 					}
+					for _, event := range class.Events {
+						for _, param := range event.Parameters {
+							if param.DataType != nil {
+								dataTypes[param.DataType.Key] = *param.DataType
+							}
+						}
+					}
 				}
 			}
 		}
@@ -241,6 +248,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect events from classes.
+		eventsMap := make(map[identity.Key][]model_state.Event)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, event := range class.Events {
+						eventsMap[class.Key] = append(eventsMap[class.Key], event)
+					}
+				}
+			}
+		}
+		if err = AddEvents(tx, modelKey, eventsMap); err != nil {
+			return err
+		}
+
 		// Collect queries from classes.
 		queriesMap := make(map[identity.Key][]model_state.Query)
 		for _, domain := range model.Domains {
@@ -292,6 +314,19 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			}
 		}
 		if err = AddQueryGuarantees(tx, modelKey, queryGuaranteesMap); err != nil {
+			return err
+		}
+
+		// Collect event parameters from events (must be inserted after events due to FK).
+		eventParamsMap := make(map[identity.Key][]model_state.Parameter)
+		for _, eventList := range eventsMap {
+			for _, event := range eventList {
+				for _, param := range event.Parameters {
+					eventParamsMap[event.Key] = append(eventParamsMap[event.Key], param)
+				}
+			}
+		}
+		if err = AddEventParameters(tx, modelKey, eventParamsMap); err != nil {
 			return err
 		}
 
@@ -402,6 +437,28 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Events grouped by class key.
+		eventsMap, err := QueryEvents(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Event parameters grouped by event key.
+		eventParamsMap, err := QueryEventParameters(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters onto events.
+		for classKey, events := range eventsMap {
+			for i, event := range events {
+				if params, ok := eventParamsMap[event.Key]; ok {
+					events[i].Parameters = params
+				}
+			}
+			eventsMap[classKey] = events
+		}
+
 		// Queries grouped by class key.
 		queriesMap, err := QueryQueries(tx, modelKey)
 		if err != nil {
@@ -492,6 +549,20 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			queriesMap[classKey] = queries
 		}
 
+		// Stitch data types onto event parameters.
+		for classKey, events := range eventsMap {
+			for i, event := range events {
+				for j, param := range event.Parameters {
+					if param.DataType != nil {
+						if dt, ok := dataTypes[param.DataType.Key]; ok {
+							events[i].Parameters[j].DataType = &dt
+						}
+					}
+				}
+			}
+			eventsMap[classKey] = events
+		}
+
 		// Now assemble the tree structure.
 		if len(domainsSlice) > 0 {
 			model.Domains = make(map[identity.Key]model_domain.Domain)
@@ -531,6 +602,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									class.States = make(map[identity.Key]model_state.State)
 									for _, state := range states {
 										class.States[state.Key] = state
+									}
+								}
+
+								// Attach events to class.
+								if events, ok := eventsMap[classKey]; ok {
+									class.Events = make(map[identity.Key]model_state.Event)
+									for _, event := range events {
+										class.Events[event.Key] = event
 									}
 								}
 

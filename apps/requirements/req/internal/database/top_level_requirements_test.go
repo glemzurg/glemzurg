@@ -80,6 +80,9 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	stateKeyAA1A := helper.Must(identity.NewStateKey(classKeyAA1, "state_a"))
 	stateKeyAA1B := helper.Must(identity.NewStateKey(classKeyAA1, "state_b"))
 
+	// Event keys.
+	eventKeyAA1A := helper.Must(identity.NewEventKey(classKeyAA1, "event_a"))
+
 	// Query keys.
 	queryKeyAA1A := helper.Must(identity.NewQueryKey(classKeyAA1, "query_a"))
 
@@ -205,6 +208,27 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Name:       "StateB",
 										Details:    "State B details",
 										UmlComment: "",
+									},
+								},
+								Events: map[identity.Key]model_state.Event{
+									eventKeyAA1A: {
+										Key:     eventKeyAA1A,
+										Name:    "EventA",
+										Details: "Event A details",
+										Parameters: []model_state.Parameter{
+											{
+												Name:          "Payload",
+												SortOrder:     0,
+												DataTypeRules: "unconstrained",
+												DataType: &model_data_type.DataType{
+													Key:            "payload",
+													CollectionType: "atomic",
+													Atomic: &model_data_type.Atomic{
+														ConstraintType: "unconstrained",
+													},
+												},
+											},
+										},
 									},
 								},
 								Queries: map[identity.Key]model_state.Query{
