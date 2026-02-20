@@ -110,6 +110,15 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect actor generalizations into a slice (must be inserted before actors due to FK).
+		actorGeneralizationsSlice := make([]model_actor.Generalization, 0, len(model.ActorGeneralizations))
+		for _, ag := range model.ActorGeneralizations {
+			actorGeneralizationsSlice = append(actorGeneralizationsSlice, ag)
+		}
+		if err = AddActorGeneralizations(tx, modelKey, actorGeneralizationsSlice); err != nil {
+			return err
+		}
+
 		// Collect actors into a slice.
 		actorsSlice := make([]model_actor.Actor, 0, len(model.Actors))
 		for _, actor := range model.Actors {
@@ -523,6 +532,18 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			for _, gf := range gfs {
 				gf.Specification = logicsByKey[gf.Key]
 				model.GlobalFunctions[gf.Key] = gf
+			}
+		}
+
+		// Actor generalizations - returns slice, convert to map.
+		actorGeneralizationsSlice, err := QueryActorGeneralizations(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		if len(actorGeneralizationsSlice) > 0 {
+			model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization, len(actorGeneralizationsSlice))
+			for _, ag := range actorGeneralizationsSlice {
+				model.ActorGeneralizations[ag.Key] = ag
 			}
 		}
 

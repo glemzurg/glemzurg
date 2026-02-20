@@ -46,6 +46,10 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Global function keys.
 	globalFunctionKeyA := helper.Must(identity.NewGlobalFunctionKey("gfunc_a"))
 
+	// Actor generalization keys.
+	actorGeneralizationKeyA := helper.Must(identity.NewActorGeneralizationKey("agen_a"))
+	actorGeneralizationKeyB := helper.Must(identity.NewActorGeneralizationKey("agen_b"))
+
 	// Actor keys.
 	actorKeyA := helper.Must(identity.NewActorKey("actor_a"))
 
@@ -150,6 +154,26 @@ func (suite *RequirementsSuite) TestWriteRead() {
 					Notation:      "tla_plus",
 					Specification: "_Max(x, y) == IF x > y THEN x ELSE y",
 				},
+			},
+		},
+
+		// Actor generalizations at model level.
+		ActorGeneralizations: map[identity.Key]model_actor.Generalization{
+			actorGeneralizationKeyA: {
+				Key:        actorGeneralizationKeyA,
+				Name:       "ActorGenA",
+				Details:    "Actor generalization A details",
+				IsComplete: true,
+				IsStatic:   false,
+				UmlComment: "Actor gen A UML comment",
+			},
+			actorGeneralizationKeyB: {
+				Key:        actorGeneralizationKeyB,
+				Name:       "ActorGenB",
+				Details:    "Actor generalization B details",
+				IsComplete: false,
+				IsStatic:   true,
+				UmlComment: "Actor gen B UML comment",
 			},
 		},
 
