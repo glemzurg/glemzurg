@@ -17,9 +17,9 @@ psql "postgresql://postgres:postgres@localhost:5432/postgres" -f "$SCRIPT_PATH/i
 psql "postgresql://postgres:postgres@localhost:5432/postgres" -f "$SCRIPT_PATH/internal/database/sql/schema.sql"
 [ $? -ne 0 ] && exit 1
 
-# Clear it out example uml.
-rm -fr $SCRIPT_PATH/docs/dbdoc
-[ $? -ne 0 ] && exit 1
+# # Clear documentation for removed tables.
+# rm -fr $SCRIPT_PATH/docs/dbdoc
+# [ $? -ne 0 ] && exit 1
 
 # Documentation uses config: .tbls.yml
 # Use force to rewrite without removing files, allows the files to update in a reader.

@@ -770,6 +770,122 @@
       ]
     },
     {
+      "name": "public.actor_generalization",
+      "type": "BASE TABLE",
+      "comment": "A relationship between actors indicating super classes and subclasses.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this generalization is part of."
+        },
+        {
+          "name": "generalization_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the generalization."
+        },
+        {
+          "name": "is_complete",
+          "type": "boolean",
+          "nullable": true,
+          "comment": "Are the specializations complete, or can an instantiation of this generalization exist without a specialization."
+        },
+        {
+          "name": "is_static",
+          "type": "boolean",
+          "nullable": true,
+          "comment": "Are the specializations static and unchanging or can they change during runtime."
+        },
+        {
+          "name": "details",
+          "type": "text",
+          "nullable": true,
+          "comment": "A summary description."
+        },
+        {
+          "name": "uml_comment",
+          "type": "text",
+          "nullable": true,
+          "comment": "A comment that appears in the diagrams."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "actor_generalization_pkey",
+          "def": "CREATE UNIQUE INDEX actor_generalization_pkey ON public.actor_generalization USING btree (model_key, generalization_key)",
+          "table": "public.actor_generalization",
+          "columns": [
+            "model_key",
+            "generalization_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "actor_generalization_generalization_key_not_null",
+          "type": "n",
+          "def": "NOT NULL generalization_key",
+          "table": "public.actor_generalization",
+          "referenced_table": "",
+          "columns": [
+            "generalization_key"
+          ]
+        },
+        {
+          "name": "actor_generalization_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.actor_generalization",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "actor_generalization_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.actor_generalization",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "fk_actor_generalization_model",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
+          "table": "public.actor_generalization",
+          "referenced_table": "model",
+          "columns": [
+            "model_key"
+          ],
+          "referenced_columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "actor_generalization_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, generalization_key)",
+          "table": "public.actor_generalization",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "generalization_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.actor",
       "type": "BASE TABLE",
       "comment": "A role that a person or sytem can take who uses the system. Actors are outside of subdomains.",
@@ -803,6 +919,18 @@
           "type": "actor_type",
           "nullable": false,
           "comment": "Whether this actor is a person or a system."
+        },
+        {
+          "name": "superclass_of_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "The generalization this actor is a superclass of, if it is one."
+        },
+        {
+          "name": "subclass_of_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "The generalization this actor is a subclass of, if it is one."
         },
         {
           "name": "uml_comment",
@@ -874,6 +1002,36 @@
           ],
           "referenced_columns": [
             "model_key"
+          ]
+        },
+        {
+          "name": "fk_actor_subclass",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, subclass_of_key) REFERENCES actor_generalization(model_key, generalization_key) ON DELETE CASCADE",
+          "table": "public.actor",
+          "referenced_table": "actor_generalization",
+          "columns": [
+            "model_key",
+            "subclass_of_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "generalization_key"
+          ]
+        },
+        {
+          "name": "fk_actor_superclass",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, superclass_of_key) REFERENCES actor_generalization(model_key, generalization_key) ON DELETE CASCADE",
+          "table": "public.actor",
+          "referenced_table": "actor_generalization",
+          "columns": [
+            "model_key",
+            "superclass_of_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "generalization_key"
           ]
         },
         {
@@ -1655,7 +1813,7 @@
           ]
         },
         {
-          "name": "fk_generalization_model",
+          "name": "fk_class_generalization_model",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
           "table": "public.class_generalization",
@@ -1668,7 +1826,7 @@
           ]
         },
         {
-          "name": "fk_class_subdomain",
+          "name": "fk_class_generalization_subdomain",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE",
           "table": "public.class_generalization",
@@ -4521,7 +4679,7 @@
           ]
         },
         {
-          "name": "fk_generalization_model",
+          "name": "fk_use_case_generalization_model",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
           "table": "public.use_case_generalization",
@@ -4534,7 +4692,7 @@
           ]
         },
         {
-          "name": "fk_class_subdomain",
+          "name": "fk_use_case_generalization_subdomain",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE",
           "table": "public.use_case_generalization",
@@ -5502,6 +5660,19 @@
       "def": "FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.actor_generalization",
+      "columns": [
+        "model_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.model",
+      "parent_columns": [
+        "model_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.actor",
       "columns": [
         "model_key"
@@ -5513,6 +5684,36 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.actor",
+      "columns": [
+        "model_key",
+        "subclass_of_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.actor_generalization",
+      "parent_columns": [
+        "model_key",
+        "generalization_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, subclass_of_key) REFERENCES actor_generalization(model_key, generalization_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.actor",
+      "columns": [
+        "model_key",
+        "superclass_of_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.actor_generalization",
+      "parent_columns": [
+        "model_key",
+        "generalization_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, superclass_of_key) REFERENCES actor_generalization(model_key, generalization_key) ON DELETE CASCADE"
     },
     {
       "table": "public.data_type",

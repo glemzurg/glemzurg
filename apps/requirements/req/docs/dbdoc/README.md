@@ -11,7 +11,8 @@
 | [public.domain](public.domain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.subdomain](public.subdomain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
-| [public.actor](public.actor.md) | 6 | A role that a person or sytem can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
+| [public.actor_generalization](public.actor_generalization.md) | 7 | A relationship between actors indicating super classes and subclasses. | BASE TABLE |
+| [public.actor](public.actor.md) | 8 | A role that a person or sytem can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
 | [public.data_type](public.data_type.md) | 6 | An data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventually use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 4 | A value of an attribute that is an enum. | BASE TABLE |

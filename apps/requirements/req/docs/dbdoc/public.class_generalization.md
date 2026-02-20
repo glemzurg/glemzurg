@@ -25,8 +25,8 @@ A relationship between classes indicating super classes and subclasses.
 | class_generalization_model_key_not_null | n | NOT NULL model_key |
 | class_generalization_name_not_null | n | NOT NULL name |
 | class_generalization_subdomain_key_not_null | n | NOT NULL subdomain_key |
-| fk_generalization_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
-| fk_class_subdomain | FOREIGN KEY | FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE |
+| fk_class_generalization_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
+| fk_class_generalization_subdomain | FOREIGN KEY | FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE |
 | class_generalization_pkey | PRIMARY KEY | PRIMARY KEY (model_key, generalization_key) |
 
 ## Indexes

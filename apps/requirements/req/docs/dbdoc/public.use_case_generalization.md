@@ -25,8 +25,8 @@ A relationship between use cases indicating super classes and subclasses.
 | use_case_generalization_model_key_not_null | n | NOT NULL model_key |
 | use_case_generalization_name_not_null | n | NOT NULL name |
 | use_case_generalization_subdomain_key_not_null | n | NOT NULL subdomain_key |
-| fk_generalization_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
-| fk_class_subdomain | FOREIGN KEY | FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE |
+| fk_use_case_generalization_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
+| fk_use_case_generalization_subdomain | FOREIGN KEY | FOREIGN KEY (model_key, subdomain_key) REFERENCES subdomain(model_key, subdomain_key) ON DELETE CASCADE |
 | use_case_generalization_pkey | PRIMARY KEY | PRIMARY KEY (model_key, generalization_key) |
 
 ## Indexes
