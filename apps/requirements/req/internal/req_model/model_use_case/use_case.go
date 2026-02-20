@@ -16,12 +16,14 @@ const (
 
 // UseCase is a user story for the system.
 type UseCase struct {
-	Key        identity.Key
-	Name       string `validate:"required"`
-	Details    string // Markdown.
-	Level      string `validate:"required,oneof=sky sea mud"` // How high cocept or tightly focused the user case is.
-	ReadOnly   bool   // This is a user story that does not change the state of the system.
-	UmlComment string
+	Key             identity.Key
+	Name            string        `validate:"required"`
+	Details         string        // Markdown.
+	Level           string        `validate:"required,oneof=sky sea mud"` // How high cocept or tightly focused the user case is.
+	ReadOnly        bool          // This is a user story that does not change the state of the system.
+	SuperclassOfKey *identity.Key // If this use case is part of a generalization as the superclass.
+	SubclassOfKey   *identity.Key // If this use case is part of a generalization as a subclass.
+	UmlComment      string
 	// Children
 	Actors    map[identity.Key]Actor
 	Scenarios map[identity.Key]model_scenario.Scenario
