@@ -21,10 +21,11 @@ type Model struct {
 	// Global functions that can be referenced from other expressions.
 	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
 	// Children
-	Actors             map[identity.Key]model_actor.Actor
-	Domains            map[identity.Key]model_domain.Domain
-	DomainAssociations map[identity.Key]model_domain.Association
-	ClassAssociations  map[identity.Key]model_class.Association // Associations between classes that span domains.
+	Actors                map[identity.Key]model_actor.Actor
+	ActorGeneralizations  map[identity.Key]model_actor.Generalization
+	Domains               map[identity.Key]model_domain.Domain
+	DomainAssociations    map[identity.Key]model_domain.Association
+	ClassAssociations     map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
 func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction) (model Model, err error) {
@@ -93,10 +94,26 @@ func (m *Model) Validate() error {
 		}
 	}
 
+	// Build a set of actor generalization keys for reference validation.
+	actorGeneralizationKeys := make(map[identity.Key]bool)
+	for agKey := range m.ActorGeneralizations {
+		actorGeneralizationKeys[agKey] = true
+	}
+
+	// Validate actor generalizations.
+	for _, ag := range m.ActorGeneralizations {
+		if err := ag.ValidateWithParent(nil); err != nil {
+			return err
+		}
+	}
+
 	// Validate all children - they all have nil as their parent since Model
 	// doesn't have an identity.Key.
 	for _, actor := range m.Actors {
 		if err := actor.ValidateWithParent(nil); err != nil {
+			return err
+		}
+		if err := actor.ValidateReferences(actorGeneralizationKeys); err != nil {
 			return err
 		}
 	}

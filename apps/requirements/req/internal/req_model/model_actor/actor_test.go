@@ -20,6 +20,8 @@ type ActorSuite struct {
 // TestValidate tests all validation rules for Actor.
 func (suite *ActorSuite) TestValidate() {
 	validKey := helper.Must(identity.NewActorKey("actor1"))
+	genKeyA := helper.Must(identity.NewActorGeneralizationKey("gen_a"))
+	genKeyB := helper.Must(identity.NewActorGeneralizationKey("gen_b"))
 
 	tests := []struct {
 		testName string
@@ -40,6 +42,16 @@ func (suite *ActorSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Type: _USER_TYPE_SYSTEM,
+			},
+		},
+		{
+			testName: "valid actor with superclass and subclass",
+			actor: Actor{
+				Key:             validKey,
+				Name:            "Name",
+				Type:            _USER_TYPE_PERSON,
+				SuperclassOfKey: &genKeyA,
+				SubclassOfKey:   &genKeyB,
 			},
 		},
 		{
@@ -87,6 +99,17 @@ func (suite *ActorSuite) TestValidate() {
 			},
 			errstr: "Type",
 		},
+		{
+			testName: "error superclass and subclass same key",
+			actor: Actor{
+				Key:             validKey,
+				Name:            "Name",
+				Type:            _USER_TYPE_PERSON,
+				SuperclassOfKey: &genKeyA,
+				SubclassOfKey:   &genKeyA,
+			},
+			errstr: "SuperclassOfKey and SubclassOfKey cannot be the same",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
@@ -103,9 +126,24 @@ func (suite *ActorSuite) TestValidate() {
 // TestNew tests that NewActor maps parameters correctly and calls Validate.
 func (suite *ActorSuite) TestNew() {
 	key := helper.Must(identity.NewActorKey("actor1"))
+	genKeyA := helper.Must(identity.NewActorGeneralizationKey("gen_a"))
+	genKeyB := helper.Must(identity.NewActorGeneralizationKey("gen_b"))
 
 	// Test parameters are mapped correctly.
-	actor, err := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, "UmlComment")
+	actor, err := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, &genKeyA, &genKeyB, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Actor{
+		Key:             key,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            _USER_TYPE_PERSON,
+		SuperclassOfKey: &genKeyA,
+		SubclassOfKey:   &genKeyB,
+		UmlComment:      "UmlComment",
+	}, actor)
+
+	// Test with nil superclass/subclass.
+	actor, err = NewActor(key, "Name", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Actor{
 		Key:        key,
@@ -116,7 +154,7 @@ func (suite *ActorSuite) TestNew() {
 	}, actor)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, "UmlComment")
+	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
 	assert.ErrorContains(suite.T(), err, "Name")
 }
 
@@ -146,4 +184,57 @@ func (suite *ActorSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = actor.ValidateWithParent(nil)
 	assert.NoError(suite.T(), err)
+}
+
+// TestValidateReferences tests that ValidateReferences validates actor references.
+func (suite *ActorSuite) TestValidateReferences() {
+	validKey := helper.Must(identity.NewActorKey("actor1"))
+	genKeyA := helper.Must(identity.NewActorGeneralizationKey("gen_a"))
+	genKeyB := helper.Must(identity.NewActorGeneralizationKey("gen_b"))
+	genKeyC := helper.Must(identity.NewActorGeneralizationKey("gen_c"))
+
+	generalizations := map[identity.Key]bool{
+		genKeyA: true,
+		genKeyB: true,
+	}
+
+	// Valid: references existing generalizations.
+	actor := Actor{
+		Key:             validKey,
+		Name:            "Name",
+		Type:            _USER_TYPE_PERSON,
+		SuperclassOfKey: &genKeyA,
+		SubclassOfKey:   &genKeyB,
+	}
+	err := actor.ValidateReferences(generalizations)
+	assert.NoError(suite.T(), err)
+
+	// Valid: no references.
+	actor = Actor{
+		Key:  validKey,
+		Name: "Name",
+		Type: _USER_TYPE_PERSON,
+	}
+	err = actor.ValidateReferences(generalizations)
+	assert.NoError(suite.T(), err)
+
+	// Error: superclass references non-existent generalization.
+	actor = Actor{
+		Key:             validKey,
+		Name:            "Name",
+		Type:            _USER_TYPE_PERSON,
+		SuperclassOfKey: &genKeyC,
+	}
+	err = actor.ValidateReferences(generalizations)
+	assert.ErrorContains(suite.T(), err, "non-existent generalization")
+
+	// Error: subclass references non-existent generalization.
+	actor = Actor{
+		Key:           validKey,
+		Name:          "Name",
+		Type:          _USER_TYPE_PERSON,
+		SubclassOfKey: &genKeyC,
+	}
+	err = actor.ValidateReferences(generalizations)
+	assert.ErrorContains(suite.T(), err, "non-existent generalization")
 }

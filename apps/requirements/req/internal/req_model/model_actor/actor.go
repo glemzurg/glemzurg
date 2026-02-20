@@ -25,14 +25,16 @@ type Actor struct {
 	UmlComment      string
 }
 
-func NewActor(key identity.Key, name, details, userType, umlComment string) (actor Actor, err error) {
+func NewActor(key identity.Key, name, details, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (actor Actor, err error) {
 
 	actor = Actor{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Type:       userType,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		Type:            userType,
+		SuperclassOfKey: superclassOfKey,
+		SubclassOfKey:   subclassOfKey,
+		UmlComment:      umlComment,
 	}
 
 	if err = actor.Validate(); err != nil {
@@ -53,7 +55,15 @@ func (a *Actor) Validate() error {
 	}
 
 	// Validate struct tags (Name required, Type required+oneof).
-	return _validate.Struct(a)
+	if err := _validate.Struct(a); err != nil {
+		return err
+	}
+
+	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
+	if a.SuperclassOfKey != nil && a.SubclassOfKey != nil && *a.SuperclassOfKey == *a.SubclassOfKey {
+		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+	}
+	return nil
 }
 
 // ValidateWithParent validates the Actor, its key's parent relationship, and all children.
@@ -68,5 +78,22 @@ func (a *Actor) ValidateWithParent(parent *identity.Key) error {
 		return err
 	}
 	// Actor has no children with keys that need validation.
+	return nil
+}
+
+// ValidateReferences validates that the actor's reference keys point to valid entities.
+// - SuperclassOfKey must exist in the generalizations map
+// - SubclassOfKey must exist in the generalizations map
+func (a *Actor) ValidateReferences(generalizations map[identity.Key]bool) error {
+	if a.SuperclassOfKey != nil {
+		if !generalizations[*a.SuperclassOfKey] {
+			return errors.Errorf("actor '%s' references non-existent generalization '%s'", a.Key.String(), a.SuperclassOfKey.String())
+		}
+	}
+	if a.SubclassOfKey != nil {
+		if !generalizations[*a.SubclassOfKey] {
+			return errors.Errorf("actor '%s' references non-existent generalization '%s'", a.Key.String(), a.SubclassOfKey.String())
+		}
+	}
 	return nil
 }

@@ -19,9 +19,7 @@ type GeneralizationSuite struct {
 
 // TestValidate tests all validation rules for Generalization.
 func (suite *GeneralizationSuite) TestValidate() {
-	domainKey := helper.Must(identity.NewDomainKey("domain1"))
-	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	validKey := helper.Must(identity.NewActorGeneralizationKey("gen1"))
 
 	tests := []struct {
 		testName       string
@@ -46,10 +44,10 @@ func (suite *GeneralizationSuite) TestValidate() {
 		{
 			testName: "error wrong key type",
 			generalization: Generalization{
-				Key:  domainKey,
+				Key:  helper.Must(identity.NewDomainKey("domain1")),
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'domain' for generalization.",
+			errstr: "Key: invalid key type 'domain' for actor generalization.",
 		},
 		{
 			testName: "error blank name",
@@ -74,9 +72,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 
 // TestNew tests that NewGeneralization maps parameters correctly and calls Validate.
 func (suite *GeneralizationSuite) TestNew() {
-	domainKey := helper.Must(identity.NewDomainKey("domain1"))
-	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	key := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	key := helper.Must(identity.NewActorGeneralizationKey("gen1"))
 
 	// Test parameters are mapped correctly.
 	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
@@ -97,28 +93,26 @@ func (suite *GeneralizationSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (suite *GeneralizationSuite) TestValidateWithParent() {
-	domainKey := helper.Must(identity.NewDomainKey("domain1"))
-	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
-	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
+	validKey := helper.Must(identity.NewActorGeneralizationKey("gen1"))
 
 	// Test that Validate is called.
 	gen := Generalization{
 		Key:  validKey,
 		Name: "", // Invalid
 	}
-	err := gen.ValidateWithParent(&subdomainKey)
+	err := gen.ValidateWithParent(nil)
 	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
-	// Test that ValidateParent is called - generalization key has subdomain1 as parent, but we pass other_subdomain.
+	// Test that ValidateParent is called - actor generalizations should have nil parent.
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	gen = Generalization{
 		Key:  validKey,
 		Name: "Name",
 	}
-	err = gen.ValidateWithParent(&otherSubdomainKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	err = gen.ValidateWithParent(&domainKey)
+	assert.ErrorContains(suite.T(), err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
-	err = gen.ValidateWithParent(&subdomainKey)
+	err = gen.ValidateWithParent(nil)
 	assert.NoError(suite.T(), err)
 }

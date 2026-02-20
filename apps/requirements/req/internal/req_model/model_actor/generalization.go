@@ -40,8 +40,8 @@ func (g *Generalization) Validate() error {
 	if err := g.Key.Validate(); err != nil {
 		return err
 	}
-	if g.Key.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
-		return errors.Errorf("Key: invalid key type '%s' for generalization.", g.Key.KeyType)
+	if g.Key.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
+		return errors.Errorf("Key: invalid key type '%s' for actor generalization.", g.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).
@@ -53,7 +53,7 @@ func (g *Generalization) Validate() error {
 }
 
 // ValidateWithParent validates the Generalization, its key's parent relationship, and all children.
-// The parent must be a Subdomain.
+// The parent must be nil (actor generalizations are root-level entities).
 func (g *Generalization) ValidateWithParent(parent *identity.Key) error {
 	// Validate the object itself.
 	if err := g.Validate(); err != nil {

@@ -54,6 +54,44 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
+	tests := []struct {
+		testName string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			subKey:   "gen1",
+			expected: helper.Must(newRootKey(KEY_TYPE_ACTOR_GENERALIZATION, "gen1")),
+		},
+
+		// Errors.
+		{
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewActorGeneralizationKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewDomainKey() {
 	tests := []struct {
 		testName string

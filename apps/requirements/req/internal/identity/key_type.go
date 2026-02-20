@@ -12,11 +12,12 @@ const (
 	// It is a string that is unique in the system.
 
 	// Keys without parents (parent is the model itself).
-	KEY_TYPE_ACTOR              = "actor"
-	KEY_TYPE_DOMAIN             = "domain"
-	KEY_TYPE_DOMAIN_ASSOCIATION = "dassociation"
-	KEY_TYPE_GLOBAL_FUNCTION    = "gfunc"
-	KEY_TYPE_INVARIANT          = "invariant"
+	KEY_TYPE_ACTOR                = "actor"
+	KEY_TYPE_ACTOR_GENERALIZATION = "ageneralization"
+	KEY_TYPE_DOMAIN               = "domain"
+	KEY_TYPE_DOMAIN_ASSOCIATION   = "dassociation"
+	KEY_TYPE_GLOBAL_FUNCTION      = "gfunc"
+	KEY_TYPE_INVARIANT            = "invariant"
 
 	// Keys with domain parents.
 	KEY_TYPE_SUBDOMAIN = "subdomain"
@@ -62,6 +63,10 @@ const (
 
 func NewActorKey(subKey string) (key Key, err error) {
 	return newRootKey(KEY_TYPE_ACTOR, subKey)
+}
+
+func NewActorGeneralizationKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_ACTOR_GENERALIZATION, subKey)
 }
 
 func NewDomainKey(subKey string) (key Key, err error) {

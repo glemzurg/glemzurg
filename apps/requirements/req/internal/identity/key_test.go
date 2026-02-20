@@ -381,6 +381,7 @@ func (suite *KeySuite) TestValidateParent() {
 	queryGuaranteeKey := helper.Must(NewQueryGuaranteeKey(queryKey, "testguar"))
 	attributeDerivationKey := helper.Must(NewAttributeDerivationKey(attributeKey, "testderiv"))
 	actorKey := helper.Must(NewActorKey("testactor"))
+	actorGeneralizationKey := helper.Must(NewActorGeneralizationKey("testactorgen"))
 	globalFuncKey := helper.Must(NewGlobalFunctionKey("_max"))
 	domainAssocKey := helper.Must(NewDomainAssociationKey(domainKey, domainKey2))
 
@@ -436,6 +437,17 @@ func (suite *KeySuite) TestValidateParent() {
 		{
 			testName: "error domain association with parent",
 			key:      domainAssocKey,
+			parent:   &domainKey,
+			errstr:   "should not have a parent",
+		},
+		{
+			testName: "ok actor generalization nil parent",
+			key:      actorGeneralizationKey,
+			parent:   nil,
+		},
+		{
+			testName: "error actor generalization with parent",
+			key:      actorGeneralizationKey,
 			parent:   &domainKey,
 			errstr:   "should not have a parent",
 		},
