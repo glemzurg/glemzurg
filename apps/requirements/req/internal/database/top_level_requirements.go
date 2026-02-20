@@ -65,6 +65,18 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
+		// Collect action require, guarantee, and safety logics.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, action := range class.Actions {
+						allLogics = append(allLogics, action.Requires...)
+						allLogics = append(allLogics, action.Guarantees...)
+						allLogics = append(allLogics, action.SafetyRules...)
+					}
+				}
+			}
+		}
 		// Collect query require and guarantee logics.
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
@@ -199,6 +211,13 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 							}
 						}
 					}
+					for _, action := range class.Actions {
+						for _, param := range action.Parameters {
+							if param.DataType != nil {
+								dataTypes[param.DataType.Key] = *param.DataType
+							}
+						}
+					}
 				}
 			}
 		}
@@ -270,6 +289,73 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			}
 		}
 		if err = AddGuards(tx, modelKey, guardsMap); err != nil {
+			return err
+		}
+
+		// Collect actions from classes.
+		actionsMap := make(map[identity.Key][]model_state.Action)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, action := range class.Actions {
+						actionsMap[class.Key] = append(actionsMap[class.Key], action)
+					}
+				}
+			}
+		}
+		if err = AddActions(tx, modelKey, actionsMap); err != nil {
+			return err
+		}
+
+		// Collect action parameters from actions (must be inserted after actions due to FK).
+		actionParamsMap := make(map[identity.Key][]model_state.Parameter)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, param := range action.Parameters {
+					actionParamsMap[action.Key] = append(actionParamsMap[action.Key], param)
+				}
+			}
+		}
+		if err = AddActionParameters(tx, modelKey, actionParamsMap); err != nil {
+			return err
+		}
+
+		// Collect action require join rows from actions.
+		actionRequiresMap := make(map[identity.Key][]identity.Key)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, req := range action.Requires {
+					actionRequiresMap[action.Key] = append(actionRequiresMap[action.Key], req.Key)
+				}
+			}
+		}
+		if err = AddActionRequires(tx, modelKey, actionRequiresMap); err != nil {
+			return err
+		}
+
+		// Collect action guarantee join rows from actions.
+		actionGuaranteesMap := make(map[identity.Key][]identity.Key)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, guar := range action.Guarantees {
+					actionGuaranteesMap[action.Key] = append(actionGuaranteesMap[action.Key], guar.Key)
+				}
+			}
+		}
+		if err = AddActionGuarantees(tx, modelKey, actionGuaranteesMap); err != nil {
+			return err
+		}
+
+		// Collect action safety join rows from actions.
+		actionSafetiesMap := make(map[identity.Key][]identity.Key)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, rule := range action.SafetyRules {
+					actionSafetiesMap[action.Key] = append(actionSafetiesMap[action.Key], rule.Key)
+				}
+			}
+		}
+		if err = AddActionSafeties(tx, modelKey, actionSafetiesMap); err != nil {
 			return err
 		}
 
@@ -472,6 +558,67 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			guardsMap[classKey] = guards
 		}
 
+		// Actions grouped by class key.
+		actionsMap, err := QueryActions(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action parameters grouped by action key.
+		actionParamsMap, err := QueryActionParameters(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action require join rows grouped by action key.
+		actionRequiresMap, err := QueryActionRequires(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action guarantee join rows grouped by action key.
+		actionGuaranteesMap, err := QueryActionGuarantees(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action safety join rows grouped by action key.
+		actionSafetiesMap, err := QueryActionSafeties(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters, requires, guarantees, and safety rules onto actions.
+		for classKey, actions := range actionsMap {
+			for i, action := range actions {
+				if params, ok := actionParamsMap[action.Key]; ok {
+					actions[i].Parameters = params
+				}
+				// Stitch requires from logic data.
+				if reqKeys, ok := actionRequiresMap[action.Key]; ok {
+					actions[i].Requires = make([]model_logic.Logic, len(reqKeys))
+					for j, key := range reqKeys {
+						actions[i].Requires[j] = logicsByKey[key]
+					}
+				}
+				// Stitch guarantees from logic data.
+				if guarKeys, ok := actionGuaranteesMap[action.Key]; ok {
+					actions[i].Guarantees = make([]model_logic.Logic, len(guarKeys))
+					for j, key := range guarKeys {
+						actions[i].Guarantees[j] = logicsByKey[key]
+					}
+				}
+				// Stitch safety rules from logic data.
+				if safetyKeys, ok := actionSafetiesMap[action.Key]; ok {
+					actions[i].SafetyRules = make([]model_logic.Logic, len(safetyKeys))
+					for j, key := range safetyKeys {
+						actions[i].SafetyRules[j] = logicsByKey[key]
+					}
+				}
+			}
+			actionsMap[classKey] = actions
+		}
+
 		// States grouped by class key.
 		statesMap, err := QueryStates(tx, modelKey)
 		if err != nil {
@@ -604,6 +751,20 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			eventsMap[classKey] = events
 		}
 
+		// Stitch data types onto action parameters.
+		for classKey, actions := range actionsMap {
+			for i, action := range actions {
+				for j, param := range action.Parameters {
+					if param.DataType != nil {
+						if dt, ok := dataTypes[param.DataType.Key]; ok {
+							actions[i].Parameters[j].DataType = &dt
+						}
+					}
+				}
+			}
+			actionsMap[classKey] = actions
+		}
+
 		// Now assemble the tree structure.
 		if len(domainsSlice) > 0 {
 			model.Domains = make(map[identity.Key]model_domain.Domain)
@@ -643,6 +804,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									class.Guards = make(map[identity.Key]model_state.Guard)
 									for _, guard := range guards {
 										class.Guards[guard.Key] = guard
+									}
+								}
+
+								// Attach actions to class.
+								if actions, ok := actionsMap[classKey]; ok {
+									class.Actions = make(map[identity.Key]model_state.Action)
+									for _, action := range actions {
+										class.Actions[action.Key] = action
 									}
 								}
 

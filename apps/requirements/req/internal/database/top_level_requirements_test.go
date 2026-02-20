@@ -79,6 +79,18 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Guard keys.
 	guardKeyAA1A := helper.Must(identity.NewGuardKey(classKeyAA1, "guard_a"))
 
+	// Action keys.
+	actionKeyAA1A := helper.Must(identity.NewActionKey(classKeyAA1, "action_a"))
+
+	// Action require keys (children of action key).
+	actionRequireKeyA := helper.Must(identity.NewActionRequireKey(actionKeyAA1A, "req_a"))
+
+	// Action guarantee keys (children of action key).
+	actionGuaranteeKeyA := helper.Must(identity.NewActionGuaranteeKey(actionKeyAA1A, "guar_a"))
+
+	// Action safety keys (children of action key).
+	actionSafetyKeyA := helper.Must(identity.NewActionSafetyKey(actionKeyAA1A, "safety_a"))
+
 	// State keys.
 	stateKeyAA1A := helper.Must(identity.NewStateKey(classKeyAA1, "state_a"))
 	stateKeyAA1B := helper.Must(identity.NewStateKey(classKeyAA1, "state_b"))
@@ -208,6 +220,51 @@ func (suite *RequirementsSuite) TestWriteRead() {
 											Description:   "Guard A logic description",
 											Notation:      "tla_plus",
 											Specification: "GuardA == x > 0",
+										},
+									},
+								},
+								Actions: map[identity.Key]model_state.Action{
+									actionKeyAA1A: {
+										Key:     actionKeyAA1A,
+										Name:    "ActionA",
+										Details: "Action A details",
+										Parameters: []model_state.Parameter{
+											{
+												Name:          "Amount",
+												SortOrder:     0,
+												DataTypeRules: "unconstrained",
+												DataType: &model_data_type.DataType{
+													Key:            "amount",
+													CollectionType: "atomic",
+													Atomic: &model_data_type.Atomic{
+														ConstraintType: "unconstrained",
+													},
+												},
+											},
+										},
+										Requires: []model_logic.Logic{
+											{
+												Key:           actionRequireKeyA,
+												Description:   "Action require A description",
+												Notation:      "tla_plus",
+												Specification: "ActionReqA == x > 0",
+											},
+										},
+										Guarantees: []model_logic.Logic{
+											{
+												Key:           actionGuaranteeKeyA,
+												Description:   "Action guarantee A description",
+												Notation:      "tla_plus",
+												Specification: "ActionGuarA == result' = x + 1",
+											},
+										},
+										SafetyRules: []model_logic.Logic{
+											{
+												Key:           actionSafetyKeyA,
+												Description:   "Action safety A description",
+												Notation:      "tla_plus",
+												Specification: "ActionSafetyA == balance' >= 0",
+											},
 										},
 									},
 								},

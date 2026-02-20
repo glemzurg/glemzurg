@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -20,8 +19,6 @@ func scanAction(scanner Scanner, classKeyPtr *identity.Key, action *model_state.
 		&actionKeyStr,
 		&action.Name,
 		&action.Details,
-		pq.Array(&action.Requires),
-		pq.Array(&action.Guarantees),
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -60,9 +57,7 @@ func LoadAction(dbOrTx DbOrTx, modelKey string, actionKey identity.Key) (classKe
 			class_key  ,
 			action_key ,
 			name       ,
-			details    ,
-			requires   ,
-			guarantees
+			details
 		FROM
 			action
 		WHERE
@@ -93,10 +88,8 @@ func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action 
 		UPDATE
 			action
 		SET
-			name       = $4 ,
-			details    = $5 ,
-			requires   = $6 ,
-			guarantees = $7
+			name    = $4 ,
+			details = $5
 		WHERE
 			class_key = $2
 		AND
@@ -107,9 +100,7 @@ func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action 
 		classKey.String(),
 		action.Key.String(),
 		action.Name,
-		action.Details,
-		pq.Array(action.Requires),
-		pq.Array(action.Guarantees))
+		action.Details)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -164,9 +155,7 @@ func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[identity.Key][]mo
 			class_key  ,
 			action_key ,
 			name       ,
-			details    ,
-			requires   ,
-			guarantees
+			details
 		FROM
 			action
 		WHERE
@@ -192,17 +181,17 @@ func AddActions(dbOrTx DbOrTx, modelKey string, actions map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO action (model_key, class_key, action_key, name, details, requires, guarantees) VALUES `
-	args := make([]interface{}, 0, count*7)
+	query := `INSERT INTO action (model_key, class_key, action_key, name, details) VALUES `
+	args := make([]interface{}, 0, count*5)
 	i := 0
 	for classKey, actionList := range actions {
 		for _, action := range actionList {
 			if i > 0 {
 				query += ", "
 			}
-			base := i * 7
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-			args = append(args, modelKey, classKey.String(), action.Key.String(), action.Name, action.Details, pq.Array(action.Requires), pq.Array(action.Guarantees))
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, classKey.String(), action.Key.String(), action.Name, action.Details)
 			i++
 		}
 	}
