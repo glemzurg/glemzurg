@@ -187,6 +187,18 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Key:     queryKeyAA1A,
 										Name:    "QueryA",
 										Details: "Query A details",
+										Parameters: []model_state.Parameter{
+											{
+												Name:          "Limit",
+												SortOrder:     0,
+												DataTypeRules: "Nat",
+											},
+											{
+												Name:          "Offset",
+												SortOrder:     1,
+												DataTypeRules: "Int",
+											},
+										},
 									},
 								},
 								Attributes: map[identity.Key]model_class.Attribute{

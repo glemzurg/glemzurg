@@ -217,6 +217,19 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect query parameters from queries (must be inserted after queries due to FK).
+		queryParamsMap := make(map[identity.Key][]model_state.Parameter)
+		for _, queryList := range queriesMap {
+			for _, query := range queryList {
+				for _, param := range query.Parameters {
+					queryParamsMap[query.Key] = append(queryParamsMap[query.Key], param)
+				}
+			}
+		}
+		if err = AddQueryParameters(tx, modelKey, queryParamsMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -322,6 +335,22 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		queriesMap, err := QueryQueries(tx, modelKey)
 		if err != nil {
 			return err
+		}
+
+		// Query parameters grouped by query key.
+		queryParamsMap, err := QueryQueryParameters(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters onto queries.
+		for classKey, queries := range queriesMap {
+			for i, query := range queries {
+				if params, ok := queryParamsMap[query.Key]; ok {
+					queries[i].Parameters = params
+				}
+			}
+			queriesMap[classKey] = queries
 		}
 
 		// Load data types for stitching onto attributes.
