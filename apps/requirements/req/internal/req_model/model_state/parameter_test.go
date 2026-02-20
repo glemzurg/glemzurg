@@ -90,3 +90,38 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 	err = param.ValidateWithParent()
 	assert.NoError(suite.T(), err)
 }
+
+// TestSetSortOrder tests that setSortOrder assigns the slice index to each parameter's SortOrder.
+func (suite *ParameterSuite) TestSetSortOrder() {
+	// Empty slice.
+	params := []Parameter{}
+	setSortOrder(params)
+	assert.Empty(suite.T(), params)
+
+	// Single parameter.
+	params = []Parameter{
+		{Name: "a", DataTypeRules: "Nat"},
+	}
+	setSortOrder(params)
+	assert.Equal(suite.T(), 0, params[0].SortOrder)
+
+	// Multiple parameters get ascending sort order.
+	params = []Parameter{
+		{Name: "a", DataTypeRules: "Nat"},
+		{Name: "b", DataTypeRules: "Int"},
+		{Name: "c", DataTypeRules: "Bool"},
+	}
+	setSortOrder(params)
+	assert.Equal(suite.T(), 0, params[0].SortOrder)
+	assert.Equal(suite.T(), 1, params[1].SortOrder)
+	assert.Equal(suite.T(), 2, params[2].SortOrder)
+
+	// Overwrites any existing SortOrder values.
+	params = []Parameter{
+		{Name: "a", SortOrder: 99, DataTypeRules: "Nat"},
+		{Name: "b", SortOrder: 42, DataTypeRules: "Int"},
+	}
+	setSortOrder(params)
+	assert.Equal(suite.T(), 0, params[0].SortOrder)
+	assert.Equal(suite.T(), 1, params[1].SortOrder)
+}
