@@ -27,7 +27,8 @@
 | [public.query_require](public.query_require.md) | 3 | A state requirement that must be true for this query to be run. | BASE TABLE |
 | [public.query_guarantee](public.query_guarantee.md) | 3 | A guarantee of what is returned by this query. | BASE TABLE |
 | [public.state](public.state.md) | 6 | A situation where invariant conditions on a class instance hold. | BASE TABLE |
-| [public.event](public.event.md) | 6 | Some occurence that can potentially trigger a change in and instance. | BASE TABLE |
+| [public.event](public.event.md) | 5 | Some occurence that can potentially trigger a change in and instance. | BASE TABLE |
+| [public.event_parameter](public.event_parameter.md) | 7 | A parameter of an event. | BASE TABLE |
 | [public.guard](public.guard.md) | 5 | An extra condition on when the transition can take place. | BASE TABLE |
 | [public.action](public.action.md) | 7 | An action of a class that can be attached to transitions. | BASE TABLE |
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |

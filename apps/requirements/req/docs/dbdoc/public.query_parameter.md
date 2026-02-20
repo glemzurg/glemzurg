@@ -11,7 +11,7 @@ A parameter of a query.
 | model_key | text |  | false |  | [public.data_type](public.data_type.md) [public.query](public.query.md) | The model this query is part of. |
 | query_key | text |  | false |  | [public.query](public.query.md) | The query this parameter is part of. |
 | parameter_key | text |  | false |  |  | The internal ID, the name but lower case. |
-| name | text |  | false |  |  | The unique name of the parameter within the attribute. |
+| name | text |  | false |  |  | The unique name of the parameter within the query. |
 | sort_order | integer |  | false |  |  | Parameters are an ordered list. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |
 | data_type_key | text |  | true |  | [public.data_type](public.data_type.md) | If the rules are parsable, the data type they parse into. |

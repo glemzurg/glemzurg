@@ -8,12 +8,11 @@ Some occurence that can potentially trigger a change in and instance.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.transition](public.transition.md) | [public.class](public.class.md) | The model this state machine is part of. |
+| model_key | text |  | false | [public.event_parameter](public.event_parameter.md) [public.transition](public.transition.md) | [public.class](public.class.md) | The model this state machine is part of. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this event is in. |
-| event_key | text |  | false | [public.transition](public.transition.md) |  | The internal ID. |
+| event_key | text |  | false | [public.event_parameter](public.event_parameter.md) [public.transition](public.transition.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the event in the class. |
 | details | text |  | true |  |  | A summary description. |
-| parameters | text[] |  | true |  |  | The parameters for the query, alternating parameter name, with how its satified. |
 
 ## Constraints
 

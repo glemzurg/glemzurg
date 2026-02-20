@@ -481,7 +481,7 @@ COMMENT ON TABLE query_parameter IS 'A parameter of a query.';
 COMMENT ON COLUMN query_parameter.model_key IS 'The model this query is part of.';
 COMMENT ON COLUMN query_parameter.query_key IS 'The query this parameter is part of.';
 COMMENT ON COLUMN query_parameter.parameter_key IS 'The internal ID, the name but lower case.';
-COMMENT ON COLUMN query_parameter.name IS 'The unique name of the parameter within the attribute.';
+COMMENT ON COLUMN query_parameter.name IS 'The unique name of the parameter within the query.';
 COMMENT ON COLUMN query_parameter.sort_order IS 'Parameters are an ordered list.';
 COMMENT ON COLUMN query_parameter.data_type_rules IS 'The rules for a well-formed value.';
 COMMENT ON COLUMN query_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
@@ -551,7 +551,6 @@ CREATE TABLE event (
   event_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
-  parameters text[] DEFAULT NULL,
   PRIMARY KEY (model_key, event_key),
   CONSTRAINT fk_event_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
 );
@@ -562,7 +561,30 @@ COMMENT ON COLUMN event.event_key IS 'The internal ID.';
 COMMENT ON COLUMN event.class_key IS 'The class this event is in.';
 COMMENT ON COLUMN event.name IS 'The unique name of the event in the class.';
 COMMENT ON COLUMN event.details IS 'A summary description.';
-COMMENT ON COLUMN event.parameters IS 'The parameters for the query, alternating parameter name, with how its satified.';
+
+--------------------------------------------------------------
+
+CREATE TABLE event_parameter (
+  model_key text NOT NULL,
+  event_key text NOT NULL,
+  parameter_key text NOT NULL,
+  name text NOT NULL,
+  sort_order int NOT NULL,
+  data_type_rules text DEFAULT NULL,
+  data_type_key text DEFAULT NULL,
+  PRIMARY KEY (model_key, event_key, parameter_key),
+  CONSTRAINT fk_parameter_query FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
+  CONSTRAINT fk_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE event_parameter IS 'A parameter of an event.';
+COMMENT ON COLUMN event_parameter.model_key IS 'The model this event is part of.';
+COMMENT ON COLUMN event_parameter.event_key IS 'The event this parameter is part of.';
+COMMENT ON COLUMN event_parameter.parameter_key IS 'The internal ID, the name but lower case.';
+COMMENT ON COLUMN event_parameter.name IS 'The unique name of the parameter within the event.';
+COMMENT ON COLUMN event_parameter.sort_order IS 'Parameters are an ordered list.';
+COMMENT ON COLUMN event_parameter.data_type_rules IS 'The rules for a well-formed value.';
+COMMENT ON COLUMN event_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
 
 --------------------------------------------------------------
 

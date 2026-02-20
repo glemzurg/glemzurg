@@ -2602,7 +2602,7 @@
           "name": "name",
           "type": "text",
           "nullable": false,
-          "comment": "The unique name of the parameter within the attribute."
+          "comment": "The unique name of the parameter within the query."
         },
         {
           "name": "sort_order",
@@ -3108,12 +3108,6 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
-        },
-        {
-          "name": "parameters",
-          "type": "text[]",
-          "nullable": true,
-          "comment": "The parameters for the query, alternating parameter name, with how its satified."
         }
       ],
       "indexes": [
@@ -3192,6 +3186,161 @@
           "columns": [
             "model_key",
             "event_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.event_parameter",
+      "type": "BASE TABLE",
+      "comment": "A parameter of an event.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this event is part of."
+        },
+        {
+          "name": "event_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The event this parameter is part of."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID, the name but lower case."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the parameter within the event."
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Parameters are an ordered list."
+        },
+        {
+          "name": "data_type_rules",
+          "type": "text",
+          "nullable": true,
+          "comment": "The rules for a well-formed value."
+        },
+        {
+          "name": "data_type_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "If the rules are parsable, the data type they parse into."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "event_parameter_pkey",
+          "def": "CREATE UNIQUE INDEX event_parameter_pkey ON public.event_parameter USING btree (model_key, event_key, parameter_key)",
+          "table": "public.event_parameter",
+          "columns": [
+            "model_key",
+            "event_key",
+            "parameter_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "event_parameter_event_key_not_null",
+          "type": "n",
+          "def": "NOT NULL event_key",
+          "table": "public.event_parameter",
+          "referenced_table": "",
+          "columns": [
+            "event_key"
+          ]
+        },
+        {
+          "name": "event_parameter_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.event_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "event_parameter_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.event_parameter",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "event_parameter_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.event_parameter",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "event_parameter_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL sort_order",
+          "table": "public.event_parameter",
+          "referenced_table": "",
+          "columns": [
+            "sort_order"
+          ]
+        },
+        {
+          "name": "fk_parameter_data_type",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
+          "table": "public.event_parameter",
+          "referenced_table": "data_type",
+          "columns": [
+            "model_key",
+            "data_type_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "data_type_key"
+          ]
+        },
+        {
+          "name": "fk_parameter_query",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE",
+          "table": "public.event_parameter",
+          "referenced_table": "event",
+          "columns": [
+            "model_key",
+            "event_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "event_key"
+          ]
+        },
+        {
+          "name": "event_parameter_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, event_key, parameter_key)",
+          "table": "public.event_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "event_key",
+            "parameter_key"
           ]
         }
       ]
@@ -5485,6 +5634,36 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.event_parameter",
+      "columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.data_type",
+      "parent_columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.event_parameter",
+      "columns": [
+        "model_key",
+        "event_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.event",
+      "parent_columns": [
+        "model_key",
+        "event_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE"
     },
     {
       "table": "public.guard",
