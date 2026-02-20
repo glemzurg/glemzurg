@@ -55,6 +55,16 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
+		// Collect query require logics.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, query := range class.Queries {
+						allLogics = append(allLogics, query.Requires...)
+					}
+				}
+			}
+		}
 		if err = AddLogics(tx, modelKey, allLogics); err != nil {
 			return err
 		}
@@ -243,6 +253,19 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect query require join rows from queries.
+		queryRequiresMap := make(map[identity.Key][]identity.Key)
+		for _, queryList := range queriesMap {
+			for _, query := range queryList {
+				for _, req := range query.Requires {
+					queryRequiresMap[query.Key] = append(queryRequiresMap[query.Key], req.Key)
+				}
+			}
+		}
+		if err = AddQueryRequires(tx, modelKey, queryRequiresMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -356,11 +379,24 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Stitch parameters onto queries (data types are stitched onto parameters below after dataTypes are loaded).
+		// Query require join rows grouped by query key.
+		queryRequiresMap, err := QueryQueryRequires(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters and requires onto queries (data types are stitched onto parameters below after dataTypes are loaded).
 		for classKey, queries := range queriesMap {
 			for i, query := range queries {
 				if params, ok := queryParamsMap[query.Key]; ok {
 					queries[i].Parameters = params
+				}
+				// Stitch requires from logic data.
+				if reqKeys, ok := queryRequiresMap[query.Key]; ok {
+					queries[i].Requires = make([]model_logic.Logic, len(reqKeys))
+					for j, key := range reqKeys {
+						queries[i].Requires[j] = logicsByKey[key]
+					}
 				}
 			}
 			queriesMap[classKey] = queries

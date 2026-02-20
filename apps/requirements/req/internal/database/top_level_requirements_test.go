@@ -79,6 +79,10 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Query keys.
 	queryKeyAA1A := helper.Must(identity.NewQueryKey(classKeyAA1, "query_a"))
 
+	// Query require keys (children of query key).
+	queryRequireKeyA := helper.Must(identity.NewQueryRequireKey(queryKeyAA1A, "req_a"))
+	queryRequireKeyB := helper.Must(identity.NewQueryRequireKey(queryKeyAA1A, "req_b"))
+
 	// Domain association key.
 	domainAssociationKey := helper.Must(identity.NewDomainAssociationKey(domainKeyA, domainKeyB))
 
@@ -204,6 +208,20 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												Name:          "Offset",
 												SortOrder:     1,
 												DataTypeRules: "Int",
+											},
+										},
+										Requires: []model_logic.Logic{
+											{
+												Key:           queryRequireKeyA,
+												Description:   "Query require A description",
+												Notation:      "tla_plus",
+												Specification: "QueryReqA == TRUE",
+											},
+											{
+												Key:           queryRequireKeyB,
+												Description:   "Query require B description",
+												Notation:      "tla_plus",
+												Specification: "QueryReqB == x > 0",
 											},
 										},
 									},

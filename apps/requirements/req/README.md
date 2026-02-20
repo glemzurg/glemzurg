@@ -22,8 +22,6 @@ todo:
     - join simulator into req with parameters
   - replace all fmt.Errorf() with errors.Errorf()
 
-
-
   
 feb (in parallel)
   - create complete model
