@@ -19,8 +19,8 @@ A state requirement that must be true for this query to be run.
 | query_require_logic_key_not_null | n | NOT NULL logic_key |
 | query_require_model_key_not_null | n | NOT NULL model_key |
 | query_require_query_key_not_null | n | NOT NULL query_key |
-| fk_require_logic | FOREIGN KEY | FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
-| fk_require_query | FOREIGN KEY | FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE |
+| fk_query_require_logic | FOREIGN KEY | FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
+| fk_query_require_query | FOREIGN KEY | FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE |
 | query_require_pkey | PRIMARY KEY | PRIMARY KEY (model_key, query_key, logic_key) |
 
 ## Indexes

@@ -19,8 +19,8 @@ A guarantee of what is returned by this query.
 | query_guarantee_logic_key_not_null | n | NOT NULL logic_key |
 | query_guarantee_model_key_not_null | n | NOT NULL model_key |
 | query_guarantee_query_key_not_null | n | NOT NULL query_key |
-| fk_guarantee_logic | FOREIGN KEY | FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
-| fk_guarantee_query | FOREIGN KEY | FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE |
+| fk_query_guarantee_logic | FOREIGN KEY | FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
+| fk_query_guarantee_query | FOREIGN KEY | FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE |
 | query_guarantee_pkey | PRIMARY KEY | PRIMARY KEY (model_key, query_key, logic_key) |
 
 ## Indexes

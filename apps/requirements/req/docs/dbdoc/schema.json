@@ -2687,7 +2687,7 @@
           ]
         },
         {
-          "name": "fk_parameter_data_type",
+          "name": "fk_query_parameter_data_type",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
           "table": "public.query_parameter",
@@ -2702,7 +2702,7 @@
           ]
         },
         {
-          "name": "fk_parameter_query",
+          "name": "fk_query_parameter_query",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
           "table": "public.query_parameter",
@@ -2798,7 +2798,7 @@
           ]
         },
         {
-          "name": "fk_require_logic",
+          "name": "fk_query_require_logic",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
           "table": "public.query_require",
@@ -2813,7 +2813,7 @@
           ]
         },
         {
-          "name": "fk_require_query",
+          "name": "fk_query_require_query",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
           "table": "public.query_require",
@@ -2909,7 +2909,7 @@
           ]
         },
         {
-          "name": "fk_guarantee_logic",
+          "name": "fk_query_guarantee_logic",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
           "table": "public.query_guarantee",
@@ -2924,7 +2924,7 @@
           ]
         },
         {
-          "name": "fk_guarantee_query",
+          "name": "fk_query_guarantee_query",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
           "table": "public.query_guarantee",
@@ -3302,7 +3302,7 @@
           ]
         },
         {
-          "name": "fk_parameter_data_type",
+          "name": "fk_event_parameter_data_type",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
           "table": "public.event_parameter",
@@ -3317,7 +3317,7 @@
           ]
         },
         {
-          "name": "fk_parameter_query",
+          "name": "fk_event_parameter_query",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE",
           "table": "public.event_parameter",
@@ -3504,18 +3504,6 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
-        },
-        {
-          "name": "requires",
-          "type": "text[]",
-          "nullable": true,
-          "comment": "The requires half of the action contract in TLA+ notation."
-        },
-        {
-          "name": "guarantees",
-          "type": "text[]",
-          "nullable": true,
-          "comment": "The guarantees half of the action contract in TLA+ notation."
         }
       ],
       "indexes": [
@@ -3594,6 +3582,494 @@
           "columns": [
             "model_key",
             "action_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_parameter",
+      "type": "BASE TABLE",
+      "comment": "A parameter of a action.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this action is part of."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action this parameter is part of."
+        },
+        {
+          "name": "parameter_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID, the name but lower case."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the parameter within the action."
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Parameters are an ordered list."
+        },
+        {
+          "name": "data_type_rules",
+          "type": "text",
+          "nullable": true,
+          "comment": "The rules for a well-formed value."
+        },
+        {
+          "name": "data_type_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "If the rules are parsable, the data type they parse into."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_parameter_pkey",
+          "def": "CREATE UNIQUE INDEX action_parameter_pkey ON public.action_parameter USING btree (model_key, action_key, parameter_key)",
+          "table": "public.action_parameter",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_parameter_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "action_parameter_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "action_parameter_parameter_key_not_null",
+          "type": "n",
+          "def": "NOT NULL parameter_key",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "parameter_key"
+          ]
+        },
+        {
+          "name": "action_parameter_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL sort_order",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "sort_order"
+          ]
+        },
+        {
+          "name": "fk_action_parameter_data_type",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
+          "table": "public.action_parameter",
+          "referenced_table": "data_type",
+          "columns": [
+            "model_key",
+            "data_type_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "data_type_key"
+          ]
+        },
+        {
+          "name": "fk_action_parameter_action",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE",
+          "table": "public.action_parameter",
+          "referenced_table": "action",
+          "columns": [
+            "model_key",
+            "action_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_parameter_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, parameter_key)",
+          "table": "public.action_parameter",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "parameter_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_require",
+      "type": "BASE TABLE",
+      "comment": "A state requirement that must be true for this action to be run.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this require is part of."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action this require is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the require."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_require_pkey",
+          "def": "CREATE UNIQUE INDEX action_require_pkey ON public.action_require USING btree (model_key, action_key, logic_key)",
+          "table": "public.action_require",
+          "columns": [
+            "model_key",
+            "action_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_require_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_require",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_require_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_require",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_require_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_action_require_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_require",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_require_action",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE",
+          "table": "public.action_require",
+          "referenced_table": "action",
+          "columns": [
+            "model_key",
+            "action_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_require_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, logic_key)",
+          "table": "public.action_require",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_guarantee",
+      "type": "BASE TABLE",
+      "comment": "A guarantee of what is returned by this action.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this guarantee is part of."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action this guarantee is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the guarantee."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_guarantee_pkey",
+          "def": "CREATE UNIQUE INDEX action_guarantee_pkey ON public.action_guarantee USING btree (model_key, action_key, logic_key)",
+          "table": "public.action_guarantee",
+          "columns": [
+            "model_key",
+            "action_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_guarantee_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_guarantee_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_guarantee_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_action_guarantee_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_guarantee",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_guarantee_action",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE",
+          "table": "public.action_guarantee",
+          "referenced_table": "action",
+          "columns": [
+            "model_key",
+            "action_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_guarantee_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, logic_key)",
+          "table": "public.action_guarantee",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.action_safety",
+      "type": "BASE TABLE",
+      "comment": "A safety rule check of before and after state that fails if the model is in an incorrect state.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this safety rule is part of."
+        },
+        {
+          "name": "action_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The action this safety rule is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the safety rule."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "action_safety_pkey",
+          "def": "CREATE UNIQUE INDEX action_safety_pkey ON public.action_safety USING btree (model_key, action_key, logic_key)",
+          "table": "public.action_safety",
+          "columns": [
+            "model_key",
+            "action_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "action_safety_action_key_not_null",
+          "type": "n",
+          "def": "NOT NULL action_key",
+          "table": "public.action_safety",
+          "referenced_table": "",
+          "columns": [
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_safety_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.action_safety",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "action_safety_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.action_safety",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_action_safety_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.action_safety",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_action_safety_action",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE",
+          "table": "public.action_safety",
+          "referenced_table": "action",
+          "columns": [
+            "model_key",
+            "action_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "action_key"
+          ]
+        },
+        {
+          "name": "action_safety_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, action_key, logic_key)",
+          "table": "public.action_safety",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "action_key",
+            "logic_key"
           ]
         }
       ]
@@ -3939,7 +4415,7 @@
       ]
     },
     {
-      "name": "public.action_parameter",
+      "name": "public.state_action_parameter",
       "type": "BASE TABLE",
       "comment": "A parameter of an action.",
       "columns": [
@@ -3994,9 +4470,9 @@
       ],
       "indexes": [
         {
-          "name": "action_parameter_pkey",
-          "def": "CREATE UNIQUE INDEX action_parameter_pkey ON public.action_parameter USING btree (model_key, parameter_key)",
-          "table": "public.action_parameter",
+          "name": "state_action_parameter_pkey",
+          "def": "CREATE UNIQUE INDEX state_action_parameter_pkey ON public.state_action_parameter USING btree (model_key, parameter_key)",
+          "table": "public.state_action_parameter",
           "columns": [
             "model_key",
             "parameter_key"
@@ -4005,50 +4481,50 @@
       ],
       "constraints": [
         {
-          "name": "action_parameter_action_key_not_null",
+          "name": "state_action_parameter_action_key_not_null",
           "type": "n",
           "def": "NOT NULL action_key",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "",
           "columns": [
             "action_key"
           ]
         },
         {
-          "name": "action_parameter_model_key_not_null",
+          "name": "state_action_parameter_model_key_not_null",
           "type": "n",
           "def": "NOT NULL model_key",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "",
           "columns": [
             "model_key"
           ]
         },
         {
-          "name": "action_parameter_name_not_null",
+          "name": "state_action_parameter_name_not_null",
           "type": "n",
           "def": "NOT NULL name",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "",
           "columns": [
             "name"
           ]
         },
         {
-          "name": "action_parameter_parameter_key_not_null",
+          "name": "state_action_parameter_parameter_key_not_null",
           "type": "n",
           "def": "NOT NULL parameter_key",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "",
           "columns": [
             "parameter_key"
           ]
         },
         {
-          "name": "fk_parameter_data_type",
+          "name": "fk_state_action_parameter_data_type",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "data_type",
           "columns": [
             "model_key",
@@ -4060,10 +4536,10 @@
           ]
         },
         {
-          "name": "fk_parameter_action",
+          "name": "fk_state_action_parameter_action",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "action",
           "columns": [
             "model_key",
@@ -4075,10 +4551,10 @@
           ]
         },
         {
-          "name": "action_parameter_pkey",
+          "name": "state_action_parameter_pkey",
           "type": "PRIMARY KEY",
           "def": "PRIMARY KEY (model_key, parameter_key)",
-          "table": "public.action_parameter",
+          "table": "public.state_action_parameter",
           "referenced_table": "",
           "columns": [
             "model_key",
@@ -5720,6 +6196,126 @@
       "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.action_parameter",
+      "columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.data_type",
+      "parent_columns": [
+        "model_key",
+        "data_type_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_parameter",
+      "columns": [
+        "model_key",
+        "action_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action",
+      "parent_columns": [
+        "model_key",
+        "action_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_require",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_require",
+      "columns": [
+        "model_key",
+        "action_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action",
+      "parent_columns": [
+        "model_key",
+        "action_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_guarantee",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_guarantee",
+      "columns": [
+        "model_key",
+        "action_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action",
+      "parent_columns": [
+        "model_key",
+        "action_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_safety",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.action_safety",
+      "columns": [
+        "model_key",
+        "action_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.action",
+      "parent_columns": [
+        "model_key",
+        "action_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.transition",
       "columns": [
         "model_key",
@@ -5825,7 +6421,7 @@
       "def": "FOREIGN KEY (model_key, action_key) REFERENCES action(model_key, action_key) ON DELETE CASCADE"
     },
     {
-      "table": "public.action_parameter",
+      "table": "public.state_action_parameter",
       "columns": [
         "model_key",
         "data_type_key"
@@ -5840,7 +6436,7 @@
       "def": "FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE"
     },
     {
-      "table": "public.action_parameter",
+      "table": "public.state_action_parameter",
       "columns": [
         "model_key",
         "action_key"

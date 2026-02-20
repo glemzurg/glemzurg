@@ -473,8 +473,8 @@ CREATE TABLE query_parameter (
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
   PRIMARY KEY (model_key, query_key, parameter_key),
-  CONSTRAINT fk_parameter_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
-  CONSTRAINT fk_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+  CONSTRAINT fk_query_parameter_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
+  CONSTRAINT fk_query_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE query_parameter IS 'A parameter of a query.';
@@ -493,8 +493,8 @@ CREATE TABLE query_require (
   query_key text NOT NULL,
   logic_key text NOT NULL,
   PRIMARY KEY (model_key, query_key, logic_key),
-  CONSTRAINT fk_require_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
-  CONSTRAINT fk_require_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+  CONSTRAINT fk_query_require_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
+  CONSTRAINT fk_query_require_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE query_require IS 'A state requirement that must be true for this query to be run.';
@@ -509,8 +509,8 @@ CREATE TABLE query_guarantee (
   query_key text NOT NULL,
   logic_key text NOT NULL,
   PRIMARY KEY (model_key, query_key, logic_key),
-  CONSTRAINT fk_guarantee_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
-  CONSTRAINT fk_guarantee_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+  CONSTRAINT fk_query_guarantee_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
+  CONSTRAINT fk_query_guarantee_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE query_guarantee IS 'A guarantee of what is returned by this query.';
@@ -573,8 +573,8 @@ CREATE TABLE event_parameter (
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
   PRIMARY KEY (model_key, event_key, parameter_key),
-  CONSTRAINT fk_parameter_query FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
-  CONSTRAINT fk_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+  CONSTRAINT fk_event_parameter_query FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
+  CONSTRAINT fk_event_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE event_parameter IS 'A parameter of an event.';
@@ -612,8 +612,6 @@ CREATE TABLE action (
   action_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
-  requires text[] DEFAULT NULL,
-  guarantees text[] DEFAULT NULL,
   PRIMARY KEY (model_key, action_key),
   CONSTRAINT fk_action_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
 );
@@ -624,8 +622,78 @@ COMMENT ON COLUMN action.class_key IS 'The class this action is part of.';
 COMMENT ON COLUMN action.action_key IS 'The internal ID.';
 COMMENT ON COLUMN action.name IS 'The unique name of the action within the class.';
 COMMENT ON COLUMN action.details IS 'A summary description.';
-COMMENT ON COLUMN action.requires IS 'The requires half of the action contract in TLA+ notation.';
-COMMENT ON COLUMN action.guarantees IS 'The guarantees half of the action contract in TLA+ notation.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_parameter (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  parameter_key text NOT NULL,
+  name text NOT NULL,
+  sort_order int NOT NULL,
+  data_type_rules text DEFAULT NULL,
+  data_type_key text DEFAULT NULL,
+  PRIMARY KEY (model_key, action_key, parameter_key),
+  CONSTRAINT fk_action_parameter_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_parameter IS 'A parameter of a action.';
+COMMENT ON COLUMN action_parameter.model_key IS 'The model this action is part of.';
+COMMENT ON COLUMN action_parameter.action_key IS 'The action this parameter is part of.';
+COMMENT ON COLUMN action_parameter.parameter_key IS 'The internal ID, the name but lower case.';
+COMMENT ON COLUMN action_parameter.name IS 'The unique name of the parameter within the action.';
+COMMENT ON COLUMN action_parameter.sort_order IS 'Parameters are an ordered list.';
+COMMENT ON COLUMN action_parameter.data_type_rules IS 'The rules for a well-formed value.';
+COMMENT ON COLUMN action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_require (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, logic_key),
+  CONSTRAINT fk_action_require_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_require_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_require IS 'A state requirement that must be true for this action to be run.';
+COMMENT ON COLUMN action_require.model_key IS 'The model this require is part of.';
+COMMENT ON COLUMN action_require.action_key IS 'The action this require is part of.';
+COMMENT ON COLUMN action_require.logic_key IS 'The logic of the require.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_guarantee (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, logic_key),
+  CONSTRAINT fk_action_guarantee_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_guarantee_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_guarantee IS 'A guarantee of what is returned by this action.';
+COMMENT ON COLUMN action_guarantee.model_key IS 'The model this guarantee is part of.';
+COMMENT ON COLUMN action_guarantee.action_key IS 'The action this guarantee is part of.';
+COMMENT ON COLUMN action_guarantee.logic_key IS 'The logic of the guarantee.';
+
+--------------------------------------------------------------
+
+CREATE TABLE action_safety (
+  model_key text NOT NULL,
+  action_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, action_key, logic_key),
+  CONSTRAINT fk_action_safety_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
+  CONSTRAINT fk_action_safety_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE action_safety IS 'A safety rule check of before and after state that fails if the model is in an incorrect state.';
+COMMENT ON COLUMN action_safety.model_key IS 'The model this safety rule is part of.';
+COMMENT ON COLUMN action_safety.action_key IS 'The action this safety rule is part of.';
+COMMENT ON COLUMN action_safety.logic_key IS 'The logic of the safety rule.';
 
 --------------------------------------------------------------
 
@@ -684,7 +752,7 @@ COMMENT ON COLUMN state_action.action_when IS 'When the triggere takes place.';
 
 --------------------------------------------------------------
 
-CREATE TABLE action_parameter (
+CREATE TABLE state_action_parameter (
   model_key text NOT NULL,
   parameter_key text NOT NULL,
   action_key text NOT NULL,
@@ -694,19 +762,19 @@ CREATE TABLE action_parameter (
   details text DEFAULT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, parameter_key),
-  CONSTRAINT fk_parameter_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
-  CONSTRAINT fk_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
+  CONSTRAINT fk_state_action_parameter_action FOREIGN KEY (model_key, action_key) REFERENCES action (model_key, action_key) ON DELETE CASCADE,
+  CONSTRAINT fk_state_action_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE action_parameter IS 'A parameter of an action.';
-COMMENT ON COLUMN action_parameter.model_key IS 'The model this state machine is part of.';
-COMMENT ON COLUMN action_parameter.parameter_key IS 'The internal ID.';
-COMMENT ON COLUMN action_parameter.action_key IS 'The action this parameter is part of.';
-COMMENT ON COLUMN action_parameter.data_type_rules IS 'The rules for a well-formed value.';
-COMMENT ON COLUMN action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
-COMMENT ON COLUMN action_parameter.name IS 'The unique name of the parameter within the attribute.';
-COMMENT ON COLUMN action_parameter.details IS 'A summary description.';
-COMMENT ON COLUMN action_parameter.uml_comment IS 'A comment that appears in the diagrams.';
+COMMENT ON TABLE state_action_parameter IS 'A parameter of an action.';
+COMMENT ON COLUMN state_action_parameter.model_key IS 'The model this state machine is part of.';
+COMMENT ON COLUMN state_action_parameter.parameter_key IS 'The internal ID.';
+COMMENT ON COLUMN state_action_parameter.action_key IS 'The action this parameter is part of.';
+COMMENT ON COLUMN state_action_parameter.data_type_rules IS 'The rules for a well-formed value.';
+COMMENT ON COLUMN state_action_parameter.data_type_key IS 'If the rules are parsable, the data type they parse into.';
+COMMENT ON COLUMN state_action_parameter.name IS 'The unique name of the parameter within the attribute.';
+COMMENT ON COLUMN state_action_parameter.details IS 'A summary description.';
+COMMENT ON COLUMN state_action_parameter.uml_comment IS 'A comment that appears in the diagrams.';
 
 --------------------------------------------------------------
 

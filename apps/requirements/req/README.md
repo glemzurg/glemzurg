@@ -65,7 +65,6 @@ simulator todo:
   - extend into database and input/outputs
 - implement stubbed simulator logic
 
-
 ---------------------------
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
@@ -82,6 +81,10 @@ simulator todo:
 
 - make generalization a class object, and make a use case one too
 
+- schema has commented out columsn that represent undone features
+
+- last half of year: complete all the functionality from text book
+  - and create working example for documentation
 
 - tla plus peg parser
 - design the simuilator - chained with derived simulators

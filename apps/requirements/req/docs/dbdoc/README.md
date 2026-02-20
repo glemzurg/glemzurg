@@ -30,10 +30,14 @@
 | [public.event](public.event.md) | 5 | Some occurence that can potentially trigger a change in and instance. | BASE TABLE |
 | [public.event_parameter](public.event_parameter.md) | 7 | A parameter of an event. | BASE TABLE |
 | [public.guard](public.guard.md) | 4 | An extra condition on when the transition can take place. | BASE TABLE |
-| [public.action](public.action.md) | 7 | An action of a class that can be attached to transitions. | BASE TABLE |
+| [public.action](public.action.md) | 5 | An action of a class that can be attached to transitions. | BASE TABLE |
+| [public.action_parameter](public.action_parameter.md) | 7 | A parameter of a action. | BASE TABLE |
+| [public.action_require](public.action_require.md) | 3 | A state requirement that must be true for this action to be run. | BASE TABLE |
+| [public.action_guarantee](public.action_guarantee.md) | 3 | A guarantee of what is returned by this action. | BASE TABLE |
+| [public.action_safety](public.action_safety.md) | 3 | A safety rule check of before and after state that fails if the model is in an incorrect state. | BASE TABLE |
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |
 | [public.state_action](public.state_action.md) | 5 | An action triggered on entry, exit, or continual do from a state. | BASE TABLE |
-| [public.action_parameter](public.action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
+| [public.state_action_parameter](public.state_action_parameter.md) | 8 | A parameter of an action. | BASE TABLE |
 | [public.use_case_generalization](public.use_case_generalization.md) | 8 | A relationship between use cases indicating super classes and subclasses. | BASE TABLE |
 | [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
 | [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |

@@ -9,14 +9,14 @@ import (
 
 // Action is what happens in a transition between states.
 type Action struct {
-	Key         identity.Key
-	Name        string `validate:"required"`
-	Details     string
+	Key     identity.Key
+	Name    string `validate:"required"`
+	Details string
+	// Children
+	Parameters  []Parameter         // Typed parameters for this action.
 	Requires    []model_logic.Logic // Preconditions to enter this action (must not contain primed variables).
 	Guarantees  []model_logic.Logic // Postconditions of this action (primed assignments only, e.g., self.field' = expr).
 	SafetyRules []model_logic.Logic // Boolean assertions that must reference primed variables.
-	// Children
-	Parameters []Parameter // Typed parameters for this action.
 }
 
 func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) (action Action, err error) {
