@@ -47,6 +47,10 @@ func (suite *GuardSuite) SetupTest() {
 	// Create the guard keys for reuse.
 	suite.guardKey = helper.Must(identity.NewGuardKey(suite.class.Key, "key"))
 	suite.guardKeyB = helper.Must(identity.NewGuardKey(suite.class.Key, "key_b"))
+
+	// Logic rows must exist before guards can be inserted (FK constraint).
+	t_AddLogic(suite.T(), suite.db, suite.model.Key, suite.guardKey)
+	t_AddLogic(suite.T(), suite.db, suite.model.Key, suite.guardKeyB)
 }
 
 func (suite *GuardSuite) TestLoad() {
@@ -63,36 +67,32 @@ func (suite *GuardSuite) TestLoad() {
 				model_key,
 				class_key,
 				guard_key,
-				name,
-				details
+				name
 			)
 		VALUES
 			(
 				'model_key',
-				'domain/domain_key/subdomain/subdomain_key/class/class_key',
-				'domain/domain_key/subdomain/subdomain_key/class/class_key/guard/key',
-				'Name',
-				'Details'
+				$1,
+				$2,
+				'Name'
 			)
-	`)
+	`, suite.class.Key.String(), suite.guardKey.String())
 	assert.Nil(suite.T(), err)
 
 	classKey, guard, err = LoadGuard(suite.db, suite.model.Key, suite.guardKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "Name",
-		Details: "Details",
+		Key:  suite.guardKey,
+		Name: "Name",
 	}, guard)
 }
 
 func (suite *GuardSuite) TestAdd() {
 
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "Name",
-		Details: "Details",
+		Key:  suite.guardKey,
+		Name: "Name",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -100,25 +100,22 @@ func (suite *GuardSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "Name",
-		Details: "Details",
+		Key:  suite.guardKey,
+		Name: "Name",
 	}, guard)
 }
 
 func (suite *GuardSuite) TestUpdate() {
 
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "Name",
-		Details: "Details",
+		Key:  suite.guardKey,
+		Name: "Name",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "NameX",
-		Details: "DetailsX",
+		Key:  suite.guardKey,
+		Name: "NameX",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -126,18 +123,16 @@ func (suite *GuardSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "NameX",
-		Details: "DetailsX",
+		Key:  suite.guardKey,
+		Name: "NameX",
 	}, guard)
 }
 
 func (suite *GuardSuite) TestRemove() {
 
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
-		Key:     suite.guardKey,
-		Name:    "Name",
-		Details: "Details",
+		Key:  suite.guardKey,
+		Name: "Name",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -155,14 +150,12 @@ func (suite *GuardSuite) TestQuery() {
 	err := AddGuards(suite.db, suite.model.Key, map[identity.Key][]model_state.Guard{
 		suite.class.Key: {
 			{
-				Key:     suite.guardKeyB,
-				Name:    "NameX",
-				Details: "DetailsX",
+				Key:  suite.guardKeyB,
+				Name: "NameX",
 			},
 			{
-				Key:     suite.guardKey,
-				Name:    "Name",
-				Details: "Details",
+				Key:  suite.guardKey,
+				Name: "Name",
 			},
 		},
 	})
@@ -173,14 +166,12 @@ func (suite *GuardSuite) TestQuery() {
 	assert.Equal(suite.T(), map[identity.Key][]model_state.Guard{
 		suite.class.Key: {
 			{
-				Key:     suite.guardKey,
-				Name:    "Name",
-				Details: "Details",
+				Key:  suite.guardKey,
+				Name: "Name",
 			},
 			{
-				Key:     suite.guardKeyB,
-				Name:    "NameX",
-				Details: "DetailsX",
+				Key:  suite.guardKeyB,
+				Name: "NameX",
 			},
 		},
 	}, guards)
@@ -192,10 +183,12 @@ func (suite *GuardSuite) TestQuery() {
 
 func t_AddGuard(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey identity.Key) (guard model_state.Guard) {
 
+	// Logic row must exist before guard (FK constraint).
+	t_AddLogic(t, dbOrTx, modelKey, guardKey)
+
 	err := AddGuard(dbOrTx, modelKey, classKey, model_state.Guard{
-		Key:     guardKey,
-		Name:    guardKey.String(),
-		Details: "Details",
+		Key:  guardKey,
+		Name: guardKey.String(),
 	})
 	assert.Nil(t, err)
 

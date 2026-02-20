@@ -55,6 +55,16 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
+		// Collect guard logics (guard key is also the logic key).
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, guard := range class.Guards {
+						allLogics = append(allLogics, guard.Logic)
+					}
+				}
+			}
+		}
 		// Collect query require and guarantee logics.
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
@@ -248,6 +258,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect guards from classes.
+		guardsMap := make(map[identity.Key][]model_state.Guard)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, guard := range class.Guards {
+						guardsMap[class.Key] = append(guardsMap[class.Key], guard)
+					}
+				}
+			}
+		}
+		if err = AddGuards(tx, modelKey, guardsMap); err != nil {
+			return err
+		}
+
 		// Collect events from classes.
 		eventsMap := make(map[identity.Key][]model_state.Event)
 		for _, domain := range model.Domains {
@@ -431,6 +456,22 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Guards grouped by class key.
+		guardsMap, err := QueryGuards(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch logic data onto guards.
+		for classKey, guards := range guardsMap {
+			for i, guard := range guards {
+				if logic, ok := logicsByKey[guard.Key]; ok {
+					guards[i].Logic = logic
+				}
+			}
+			guardsMap[classKey] = guards
+		}
+
 		// States grouped by class key.
 		statesMap, err := QueryStates(tx, modelKey)
 		if err != nil {
@@ -594,6 +635,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									class.Attributes = make(map[identity.Key]model_class.Attribute)
 									for _, attr := range attributes {
 										class.Attributes[attr.Key] = attr
+									}
+								}
+
+								// Attach guards to class.
+								if guards, ok := guardsMap[classKey]; ok {
+									class.Guards = make(map[identity.Key]model_state.Guard)
+									for _, guard := range guards {
+										class.Guards[guard.Key] = guard
 									}
 								}
 

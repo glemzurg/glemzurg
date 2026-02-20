@@ -18,7 +18,6 @@ func scanGuard(scanner Scanner, classKeyPtr *identity.Key, guard *model_state.Gu
 		&classKeyStr,
 		&guardKeyStr,
 		&guard.Name,
-		&guard.Logic.Description,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -56,8 +55,7 @@ func LoadGuard(dbOrTx DbOrTx, modelKey string, guardKey identity.Key) (classKey 
 		`SELECT
 			class_key   ,
 			guard_key   ,
-			name        ,
-			details
+			name
 		FROM
 			guard
 		WHERE
@@ -88,8 +86,7 @@ func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard mo
 		UPDATE
 			guard
 		SET
-			name                  = $4 ,
-			details               = $5
+			name = $4
 		WHERE
 			class_key = $2
 		AND
@@ -99,8 +96,7 @@ func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard mo
 		modelKey,
 		classKey.String(),
 		guard.Key.String(),
-		guard.Name,
-		guard.Logic.Description)
+		guard.Name)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -154,8 +150,7 @@ func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[identity.Key][]mode
 		`SELECT
 			class_key   ,
 			guard_key   ,
-			name        ,
-			details
+			name
 		FROM
 			guard
 		WHERE
@@ -181,17 +176,17 @@ func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_s
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO guard (model_key, class_key, guard_key, name, details) VALUES `
-	args := make([]interface{}, 0, count*5)
+	query := `INSERT INTO guard (model_key, class_key, guard_key, name) VALUES `
+	args := make([]interface{}, 0, count*4)
 	i := 0
 	for classKey, guardList := range guards {
 		for _, guard := range guardList {
 			if i > 0 {
 				query += ", "
 			}
-			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
-			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name, guard.Logic.Description)
+			base := i * 4
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
+			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name)
 			i++
 		}
 	}

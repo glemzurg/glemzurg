@@ -76,6 +76,9 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Class association key (within subdomain AA).
 	classAssociationKeyAA := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "assoc_aa"))
 
+	// Guard keys.
+	guardKeyAA1A := helper.Must(identity.NewGuardKey(classKeyAA1, "guard_a"))
+
 	// State keys.
 	stateKeyAA1A := helper.Must(identity.NewStateKey(classKeyAA1, "state_a"))
 	stateKeyAA1B := helper.Must(identity.NewStateKey(classKeyAA1, "state_b"))
@@ -196,6 +199,18 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								SuperclassOfKey: &generalizationKeyAA,
 								SubclassOfKey:   &generalizationKeyAAB,
 								UmlComment:      "Class AA1 UML comment",
+								Guards: map[identity.Key]model_state.Guard{
+									guardKeyAA1A: {
+										Key:  guardKeyAA1A,
+										Name: "GuardA",
+										Logic: model_logic.Logic{
+											Key:           guardKeyAA1A,
+											Description:   "Guard A logic description",
+											Notation:      "tla_plus",
+											Specification: "GuardA == x > 0",
+										},
+									},
+								},
 								States: map[identity.Key]model_state.State{
 									stateKeyAA1A: {
 										Key:        stateKeyAA1A,
