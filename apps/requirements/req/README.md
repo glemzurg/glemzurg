@@ -12,6 +12,7 @@ todo:
     - model and database code
   - verify keys are correct parent/child correctly
   - update load tests to not use $params
+  - use ai to check comemnts and forieng keys in schema
   - update the yaml parsing
     - update hte parser ai parsing
       - add the extra structures to parser ai

@@ -16,11 +16,13 @@ const (
 
 // An actor is a external user of this sytem, either a person or another system.
 type Actor struct {
-	Key        identity.Key
-	Name       string `validate:"required"`
-	Details    string // Markdown.
-	Type       string `validate:"required,oneof=person system"` // "person" or "system"
-	UmlComment string
+	Key             identity.Key
+	Name            string        `validate:"required"`
+	Details         string        // Markdown.
+	Type            string        `validate:"required,oneof=person system"` // "person" or "system"
+	SuperclassOfKey *identity.Key // If this actor is part of a generalization as the superclass.
+	SubclassOfKey   *identity.Key // If this actor is part of a generalization as a subclass.
+	UmlComment      string
 }
 
 func NewActor(key identity.Key, name, details, userType, umlComment string) (actor Actor, err error) {
