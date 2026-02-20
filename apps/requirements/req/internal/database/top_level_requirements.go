@@ -226,6 +226,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect states from classes.
+		statesMap := make(map[identity.Key][]model_state.State)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, state := range class.States {
+						statesMap[class.Key] = append(statesMap[class.Key], state)
+					}
+				}
+			}
+		}
+		if err = AddStates(tx, modelKey, statesMap); err != nil {
+			return err
+		}
+
 		// Collect queries from classes.
 		queriesMap := make(map[identity.Key][]model_state.Query)
 		for _, domain := range model.Domains {
@@ -381,6 +396,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// States grouped by class key.
+		statesMap, err := QueryStates(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
 		// Queries grouped by class key.
 		queriesMap, err := QueryQueries(tx, modelKey)
 		if err != nil {
@@ -502,6 +523,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									class.Attributes = make(map[identity.Key]model_class.Attribute)
 									for _, attr := range attributes {
 										class.Attributes[attr.Key] = attr
+									}
+								}
+
+								// Attach states to class.
+								if states, ok := statesMap[classKey]; ok {
+									class.States = make(map[identity.Key]model_state.State)
+									for _, state := range states {
+										class.States[state.Key] = state
 									}
 								}
 

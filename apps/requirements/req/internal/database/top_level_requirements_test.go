@@ -76,6 +76,10 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Class association key (within subdomain AA).
 	classAssociationKeyAA := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "assoc_aa"))
 
+	// State keys.
+	stateKeyAA1A := helper.Must(identity.NewStateKey(classKeyAA1, "state_a"))
+	stateKeyAA1B := helper.Must(identity.NewStateKey(classKeyAA1, "state_b"))
+
 	// Query keys.
 	queryKeyAA1A := helper.Must(identity.NewQueryKey(classKeyAA1, "query_a"))
 
@@ -189,6 +193,20 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								SuperclassOfKey: &generalizationKeyAA,
 								SubclassOfKey:   &generalizationKeyAAB,
 								UmlComment:      "Class AA1 UML comment",
+								States: map[identity.Key]model_state.State{
+									stateKeyAA1A: {
+										Key:        stateKeyAA1A,
+										Name:       "StateA",
+										Details:    "State A details",
+										UmlComment: "State A UML comment",
+									},
+									stateKeyAA1B: {
+										Key:        stateKeyAA1B,
+										Name:       "StateB",
+										Details:    "State B details",
+										UmlComment: "",
+									},
+								},
 								Queries: map[identity.Key]model_state.Query{
 									queryKeyAA1A: {
 										Key:     queryKeyAA1A,
