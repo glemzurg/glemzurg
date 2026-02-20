@@ -32,11 +32,11 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return model_data_type.DataType{}, err
 	}
-	dataTypeKey, err = PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return model_data_type.DataType{}, err
 	}
@@ -75,11 +75,11 @@ func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_d
 func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err := PreenKey(dataType.Key)
+	dataTypeKey, err := preenKey(dataType.Key)
 	if err != nil {
 		return err
 	}
@@ -121,11 +121,11 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err := PreenKey(dataType.Key)
+	dataTypeKey, err := preenKey(dataType.Key)
 	if err != nil {
 		return err
 	}
@@ -159,11 +159,11 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []model_data_type.DataType, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	args := make([]interface{}, 0, len(dataTypes)*6)
 	valueStrings := make([]string, 0, len(dataTypes))
 	for i, dt := range dataTypes {
-		dataTypeKey, err := PreenKey(dt.Key)
+		dataTypeKey, err := preenKey(dt.Key)
 		if err != nil {
 			return err
 		}
