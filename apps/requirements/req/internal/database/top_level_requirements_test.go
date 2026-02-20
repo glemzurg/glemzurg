@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -74,6 +75,9 @@ func (suite *RequirementsSuite) TestWriteRead() {
 
 	// Class association key (within subdomain AA).
 	classAssociationKeyAA := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "assoc_aa"))
+
+	// Query keys.
+	queryKeyAA1A := helper.Must(identity.NewQueryKey(classKeyAA1, "query_a"))
 
 	// Domain association key.
 	domainAssociationKey := helper.Must(identity.NewDomainAssociationKey(domainKeyA, domainKeyB))
@@ -178,6 +182,13 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								SuperclassOfKey: &generalizationKeyAA,
 								SubclassOfKey:   &generalizationKeyAAB,
 								UmlComment:      "Class AA1 UML comment",
+								Queries: map[identity.Key]model_state.Query{
+									queryKeyAA1A: {
+										Key:     queryKeyAA1A,
+										Name:    "QueryA",
+										Details: "Query A details",
+									},
+								},
 								Attributes: map[identity.Key]model_class.Attribute{
 									attributeKeyAA1A: {
 										Key:           attributeKeyAA1A,

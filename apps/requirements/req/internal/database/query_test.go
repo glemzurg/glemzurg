@@ -64,9 +64,7 @@ func (suite *QuerySuite) TestLoad() {
 				class_key,
 				query_key,
 				name,
-				details,
-				requires,
-				guarantees
+				details
 			)
 		VALUES
 			(
@@ -74,9 +72,7 @@ func (suite *QuerySuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/key',
 				'Name',
-				'Details',
-				'{"RequiresA","RequiresB"}',
-				'{"GuaranteesA","GuaranteesB"}'
+				'Details'
 			)
 	`)
 	assert.Nil(suite.T(), err)
@@ -85,22 +81,18 @@ func (suite *QuerySuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.queryKey,
+		Name:    "Name",
+		Details: "Details",
 	}, query)
 }
 
 func (suite *QuerySuite) TestAdd() {
 
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.queryKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -108,31 +100,25 @@ func (suite *QuerySuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.queryKey,
+		Name:    "Name",
+		Details: "Details",
 	}, query)
 }
 
 func (suite *QuerySuite) TestUpdate() {
 
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.queryKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Requires:   []string{"RequiresAX", "RequiresBX"},
-		Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+		Key:     suite.queryKey,
+		Name:    "NameX",
+		Details: "DetailsX",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -140,22 +126,18 @@ func (suite *QuerySuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Requires:   []string{"RequiresAX", "RequiresBX"},
-		Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+		Key:     suite.queryKey,
+		Name:    "NameX",
+		Details: "DetailsX",
 	}, query)
 }
 
 func (suite *QuerySuite) TestRemove() {
 
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
-		Key:        suite.queryKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.queryKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -173,18 +155,14 @@ func (suite *QuerySuite) TestQuery() {
 	err := AddQueries(suite.db, suite.model.Key, map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{
-				Key:        suite.queryKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				Requires:   []string{"RequiresAX", "RequiresBX"},
-				Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+				Key:     suite.queryKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
 			},
 			{
-				Key:        suite.queryKey,
-				Name:       "Name",
-				Details:    "Details",
-				Requires:   []string{"RequiresA", "RequiresB"},
-				Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+				Key:     suite.queryKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 		},
 	})
@@ -195,18 +173,14 @@ func (suite *QuerySuite) TestQuery() {
 	assert.Equal(suite.T(), map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{
-				Key:        suite.queryKey,
-				Name:       "Name",
-				Details:    "Details",
-				Requires:   []string{"RequiresA", "RequiresB"},
-				Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+				Key:     suite.queryKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 			{
-				Key:        suite.queryKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				Requires:   []string{"RequiresAX", "RequiresBX"},
-				Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+				Key:     suite.queryKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
 			},
 		},
 	}, queries)
@@ -219,11 +193,9 @@ func (suite *QuerySuite) TestQuery() {
 func t_AddQuery(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, queryKey identity.Key) (query model_state.Query) {
 
 	err := AddQuery(dbOrTx, modelKey, classKey, model_state.Query{
-		Key:        queryKey,
-		Name:       queryKey.String(),
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     queryKey,
+		Name:    queryKey.String(),
+		Details: "Details",
 	})
 	assert.Nil(t, err)
 
@@ -231,4 +203,14 @@ func t_AddQuery(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.
 	assert.Nil(t, err)
 
 	return query
+}
+
+func (suite *QuerySuite) TestVerifyTestObjects() {
+
+	query := t_AddQuery(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.queryKey)
+	assert.Equal(suite.T(), model_state.Query{
+		Key:     suite.queryKey,
+		Name:    suite.queryKey.String(),
+		Details: "Details",
+	}, query)
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
@@ -20,8 +19,6 @@ func scanQuery(scanner Scanner, classKeyPtr *identity.Key, query *model_state.Qu
 		&queryKeyStr,
 		&query.Name,
 		&query.Details,
-		pq.Array(&query.Requires),
-		pq.Array(&query.Guarantees),
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -60,9 +57,7 @@ func LoadQuery(dbOrTx DbOrTx, modelKey string, queryKey identity.Key) (classKey 
 			class_key  ,
 			query_key ,
 			name       ,
-			details    ,
-			requires   ,
-			guarantees
+			details
 		FROM
 			query
 		WHERE
@@ -94,9 +89,7 @@ func UpdateQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, query mo
 			query
 		SET
 			name       = $4 ,
-			details    = $5 ,
-			requires   = $6 ,
-			guarantees = $7
+			details    = $5
 		WHERE
 			class_key = $2
 		AND
@@ -107,9 +100,7 @@ func UpdateQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, query mo
 		classKey.String(),
 		query.Key.String(),
 		query.Name,
-		query.Details,
-		pq.Array(query.Requires),
-		pq.Array(query.Guarantees))
+		query.Details)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -164,9 +155,7 @@ func QueryQueries(dbOrTx DbOrTx, modelKey string) (queries map[identity.Key][]mo
 			class_key  ,
 			query_key ,
 			name       ,
-			details    ,
-			requires   ,
-			guarantees
+			details
 		FROM
 			query
 		WHERE
@@ -192,17 +181,17 @@ func AddQueries(dbOrTx DbOrTx, modelKey string, queries map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	sqlQuery := `INSERT INTO query (model_key, class_key, query_key, name, details, requires, guarantees) VALUES `
-	args := make([]interface{}, 0, count*7)
+	sqlQuery := `INSERT INTO query (model_key, class_key, query_key, name, details) VALUES `
+	args := make([]interface{}, 0, count*5)
 	i := 0
 	for classKey, queryList := range queries {
 		for _, query := range queryList {
 			if i > 0 {
 				sqlQuery += ", "
 			}
-			base := i * 7
-			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-			args = append(args, modelKey, classKey.String(), query.Key.String(), query.Name, query.Details, pq.Array(query.Requires), pq.Array(query.Guarantees))
+			base := i * 5
+			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, classKey.String(), query.Key.String(), query.Name, query.Details)
 			i++
 		}
 	}

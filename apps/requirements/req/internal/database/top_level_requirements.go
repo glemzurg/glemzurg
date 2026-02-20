@@ -11,7 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
@@ -202,6 +202,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect queries from classes.
+		queriesMap := make(map[identity.Key][]model_state.Query)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, query := range class.Queries {
+						queriesMap[class.Key] = append(queriesMap[class.Key], query)
+					}
+				}
+			}
+		}
+		if err = AddQueries(tx, modelKey, queriesMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -303,6 +318,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Queries grouped by class key.
+		queriesMap, err := QueryQueries(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
 		// Load data types for stitching onto attributes.
 		dataTypes, err := LoadTopLevelDataTypes(tx, modelKey)
 		if err != nil {
@@ -362,6 +383,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									class.Attributes = make(map[identity.Key]model_class.Attribute)
 									for _, attr := range attributes {
 										class.Attributes[attr.Key] = attr
+									}
+								}
+
+								// Attach queries to class.
+								if queries, ok := queriesMap[classKey]; ok {
+									class.Queries = make(map[identity.Key]model_state.Query)
+									for _, query := range queries {
+										class.Queries[query.Key] = query
 									}
 								}
 
