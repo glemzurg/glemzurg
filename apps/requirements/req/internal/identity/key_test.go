@@ -382,6 +382,7 @@ func (suite *KeySuite) TestValidateParent() {
 	attributeDerivationKey := helper.Must(NewAttributeDerivationKey(attributeKey, "testderiv"))
 	actorKey := helper.Must(NewActorKey("testactor"))
 	actorGeneralizationKey := helper.Must(NewActorGeneralizationKey("testactorgen"))
+	useCaseGeneralizationKey := helper.Must(NewUseCaseGeneralizationKey(subdomainKey, "testucgen"))
 	globalFuncKey := helper.Must(NewGlobalFunctionKey("_max"))
 	domainAssocKey := helper.Must(NewDomainAssociationKey(domainKey, domainKey2))
 
@@ -450,6 +451,25 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      actorGeneralizationKey,
 			parent:   &domainKey,
 			errstr:   "should not have a parent",
+		},
+
+		// Use case generalization requires subdomain parent.
+		{
+			testName: "ok use case generalization with subdomain parent",
+			key:      useCaseGeneralizationKey,
+			parent:   &subdomainKey,
+		},
+		{
+			testName: "error use case generalization nil parent",
+			key:      useCaseGeneralizationKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'subdomain'",
+		},
+		{
+			testName: "error use case generalization wrong parent type",
+			key:      useCaseGeneralizationKey,
+			parent:   &domainKey,
+			errstr:   "requires parent of type 'subdomain', but got 'domain'",
 		},
 
 		// Global function is a root key (no parent).

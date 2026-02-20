@@ -92,6 +92,66 @@ func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		subdomainKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			subdomainKey: subdomainKey,
+			subKey:       "gen1",
+			expected:     helper.Must(newKey(subdomainKey.String(), KEY_TYPE_USE_CASE_GENERALIZATION, "gen1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			subdomainKey: Key{},
+			subKey:       "gen1",
+			errstr:       "parent key cannot be of type '' for 'ucgeneralization' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			subdomainKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "gen1",
+			errstr:       "parent key cannot be of type 'actor' for 'ucgeneralization' key",
+		},
+		{
+			testName:     "error blank subKey",
+			subdomainKey: subdomainKey,
+			subKey:       "",
+			errstr:       "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewUseCaseGeneralizationKey(tt.subdomainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewDomainKey() {
 	tests := []struct {
 		testName string

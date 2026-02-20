@@ -15,11 +15,12 @@ type Subdomain struct {
 	Details    string // Markdown.
 	UmlComment string
 	// Children
-	Generalizations   map[identity.Key]model_class.Generalization                            // Generalizations for the classes and use cases in this subdomain.
-	Classes           map[identity.Key]model_class.Class                                     // Classes in this subdomain.
-	UseCases          map[identity.Key]model_use_case.UseCase                                // Use cases in this subdomain.
-	ClassAssociations map[identity.Key]model_class.Association                               // Associations between classes in this subdomain.
-	UseCaseShares     map[identity.Key]map[identity.Key]model_use_case.UseCaseShared         // Outer key is sea-level use case, inner key is mud-level use case.
+	Generalizations        map[identity.Key]model_class.Generalization                       // Generalizations for the classes in this subdomain.
+	UseCaseGeneralizations map[identity.Key]model_use_case.Generalization                    // Generalizations for the use cases in this subdomain.
+	Classes                map[identity.Key]model_class.Class                                // Classes in this subdomain.
+	UseCases               map[identity.Key]model_use_case.UseCase                           // Use cases in this subdomain.
+	ClassAssociations      map[identity.Key]model_class.Association                          // Associations between classes in this subdomain.
+	UseCaseShares          map[identity.Key]map[identity.Key]model_use_case.UseCaseShared    // Outer key is sea-level use case, inner key is mud-level use case.
 }
 
 func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain Subdomain, err error) {
@@ -98,9 +99,20 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 		}
 	}
 
+	// Build a set of use case generalization keys for reference validation.
+	useCaseGeneralizationKeys := make(map[identity.Key]bool)
+	for ucGenKey := range s.UseCaseGeneralizations {
+		useCaseGeneralizationKeys[ucGenKey] = true
+	}
+
 	// Validate all children.
 	for _, gen := range s.Generalizations {
 		if err := gen.ValidateWithParent(&s.Key); err != nil {
+			return err
+		}
+	}
+	for _, ucGen := range s.UseCaseGeneralizations {
+		if err := ucGen.ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
 	}
@@ -114,6 +126,9 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 	}
 	for _, useCase := range s.UseCases {
 		if err := useCase.ValidateWithParentAndClasses(&s.Key, subdomainClassKeys, actorClassKeys); err != nil {
+			return err
+		}
+		if err := useCase.ValidateReferences(useCaseGeneralizationKeys); err != nil {
 			return err
 		}
 	}

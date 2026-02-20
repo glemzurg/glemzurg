@@ -1,11 +1,9 @@
 package model_use_case
 
 import (
-	"errors"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	pkgerrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -29,15 +27,17 @@ type UseCase struct {
 	Scenarios map[identity.Key]model_scenario.Scenario
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (useCase UseCase, err error) {
 
 	useCase = UseCase{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Level:      level,
-		ReadOnly:   readOnly,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		Level:           level,
+		ReadOnly:        readOnly,
+		SuperclassOfKey: superclassOfKey,
+		SubclassOfKey:   subclassOfKey,
+		UmlComment:      umlComment,
 	}
 
 	if err = useCase.Validate(); err != nil {
@@ -59,6 +59,10 @@ func (uc *UseCase) Validate() error {
 	// Validate struct tags (Name required, Level required+oneof).
 	if err := _validate.Struct(uc); err != nil {
 		return err
+	}
+	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
+	if uc.SuperclassOfKey != nil && uc.SubclassOfKey != nil && *uc.SuperclassOfKey == *uc.SubclassOfKey {
+		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
 	}
 	return nil
 }
@@ -97,12 +101,29 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 			return err
 		}
 		if !actorClasses[actorClassKey] {
-			return pkgerrors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
+			return errors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
 		}
 	}
 	for _, scenario := range uc.Scenarios {
 		if err := scenario.ValidateWithParentAndClasses(&uc.Key, classes); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// ValidateReferences validates that the use case's reference keys point to valid entities.
+// - SuperclassOfKey must exist in the generalizations map
+// - SubclassOfKey must exist in the generalizations map
+func (uc *UseCase) ValidateReferences(generalizations map[identity.Key]bool) error {
+	if uc.SuperclassOfKey != nil {
+		if !generalizations[*uc.SuperclassOfKey] {
+			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SuperclassOfKey.String())
+		}
+	}
+	if uc.SubclassOfKey != nil {
+		if !generalizations[*uc.SubclassOfKey] {
+			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SubclassOfKey.String())
 		}
 	}
 	return nil

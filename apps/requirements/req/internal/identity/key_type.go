@@ -23,9 +23,10 @@ const (
 	KEY_TYPE_SUBDOMAIN = "subdomain"
 
 	// Keys with subdomain parents.
-	KEY_TYPE_USE_CASE             = "usecase"
-	KEY_TYPE_CLASS                = "class"
-	KEY_TYPE_CLASS_GENERALIZATION = "cgeneralization"
+	KEY_TYPE_USE_CASE                 = "usecase"
+	KEY_TYPE_USE_CASE_GENERALIZATION  = "ucgeneralization"
+	KEY_TYPE_CLASS                    = "class"
+	KEY_TYPE_CLASS_GENERALIZATION     = "cgeneralization"
 
 	// Keys with model, domain, subdomain parents.
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
@@ -107,6 +108,14 @@ func NewUseCaseKey(subdomainKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'usecase' key", subdomainKey.GetKeyType())
 	}
 	return newKey(subdomainKey.String(), KEY_TYPE_USE_CASE, subKey)
+}
+
+func NewUseCaseGeneralizationKey(subdomainKey Key, subKey string) (key Key, err error) {
+	// The parent must be a subdomain.
+	if subdomainKey.GetKeyType() != KEY_TYPE_SUBDOMAIN {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'ucgeneralization' key", subdomainKey.GetKeyType())
+	}
+	return newKey(subdomainKey.String(), KEY_TYPE_USE_CASE_GENERALIZATION, subKey)
 }
 
 func NewClassKey(subdomainKey Key, subKey string) (key Key, err error) {

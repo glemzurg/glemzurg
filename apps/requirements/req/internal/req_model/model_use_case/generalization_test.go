@@ -21,7 +21,7 @@ type GeneralizationSuite struct {
 func (suite *GeneralizationSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	validKey := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen1"))
 
 	tests := []struct {
 		testName       string
@@ -49,7 +49,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  domainKey,
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'domain' for generalization.",
+			errstr: "Key: invalid key type 'domain' for use case generalization.",
 		},
 		{
 			testName: "error blank name",
@@ -76,7 +76,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 func (suite *GeneralizationSuite) TestNew() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	key := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	key := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen1"))
 
 	// Test parameters are mapped correctly.
 	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
@@ -99,7 +99,7 @@ func (suite *GeneralizationSuite) TestNew() {
 func (suite *GeneralizationSuite) TestValidateWithParent() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
-	validKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
+	validKey := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen1"))
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "other_subdomain"))
 
 	// Test that Validate is called.
