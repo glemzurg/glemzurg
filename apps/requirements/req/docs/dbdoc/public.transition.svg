@@ -121,32 +121,29 @@
 <!-- public.guard -->
 <g id="node4" class="node">
 <title>public.guard</title>
-<polygon fill="#efefef" stroke="none" points="870.11,-228 870.11,-263.6 1099.07,-263.6 1099.07,-228 870.11,-228"/>
-<polygon fill="none" stroke="black" points="870.11,-228 870.11,-263.6 1099.07,-263.6 1099.07,-228 870.11,-228"/>
-<text text-anchor="start" x="877.11" y="-241.4" font-family="Arial Bold" font-size="18.00">public.guard</text>
-<text text-anchor="start" x="967.58" y="-241.4" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="998.7" y="-241.4" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="870.11,-197.2 870.11,-228 1099.07,-228 1099.07,-197.2 870.11,-197.2"/>
-<text text-anchor="start" x="877.11" y="-209.4" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="948.7" y="-209.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="870.11,-166.4 870.11,-197.2 1099.07,-197.2 1099.07,-166.4 870.11,-166.4"/>
-<text text-anchor="start" x="877.11" y="-178.6" font-family="Arial" font-size="14.00">class_key </text>
-<text text-anchor="start" x="942.47" y="-178.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="870.11,-135.6 870.11,-166.4 1099.07,-166.4 1099.07,-135.6 870.11,-135.6"/>
-<text text-anchor="start" x="877.11" y="-147.8" font-family="Arial" font-size="14.00">guard_key </text>
-<text text-anchor="start" x="946.38" y="-147.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="870.11,-104.8 870.11,-135.6 1099.07,-135.6 1099.07,-104.8 870.11,-104.8"/>
-<text text-anchor="start" x="877.11" y="-117" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="916.02" y="-117" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="870.11,-74 870.11,-104.8 1099.07,-104.8 1099.07,-74 870.11,-74"/>
-<text text-anchor="start" x="877.11" y="-86.2" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="921.47" y="-86.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="870.11,-212.6 870.11,-248.2 1099.07,-248.2 1099.07,-212.6 870.11,-212.6"/>
+<polygon fill="none" stroke="black" points="870.11,-212.6 870.11,-248.2 1099.07,-248.2 1099.07,-212.6 870.11,-212.6"/>
+<text text-anchor="start" x="877.11" y="-226" font-family="Arial Bold" font-size="18.00">public.guard</text>
+<text text-anchor="start" x="967.58" y="-226" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="998.7" y="-226" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="870.11,-181.8 870.11,-212.6 1099.07,-212.6 1099.07,-181.8 870.11,-181.8"/>
+<text text-anchor="start" x="877.11" y="-194" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="948.7" y="-194" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="870.11,-151 870.11,-181.8 1099.07,-181.8 1099.07,-151 870.11,-151"/>
+<text text-anchor="start" x="877.11" y="-163.2" font-family="Arial" font-size="14.00">class_key </text>
+<text text-anchor="start" x="942.47" y="-163.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="870.11,-120.2 870.11,-151 1099.07,-151 1099.07,-120.2 870.11,-120.2"/>
+<text text-anchor="start" x="877.11" y="-132.4" font-family="Arial" font-size="14.00">guard_key </text>
+<text text-anchor="start" x="946.38" y="-132.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="870.11,-89.4 870.11,-120.2 1099.07,-120.2 1099.07,-89.4 870.11,-89.4"/>
+<text text-anchor="start" x="877.11" y="-101.6" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="916.02" y="-101.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.transition&#45;&gt;public.guard -->
 <g id="edge4" class="edge">
 <title>public.transition:model_key&#45;&gt;public.guard:model_key</title>
-<path fill="none" stroke="black" d="M791.66,-679.99C879.36,-650.09 766.71,-212.6 869.11,-212.6"/>
-<polygon fill="black" stroke="black" points="791.78,-679.97 781.2,-677.1 786.51,-680.81 782.24,-681.49 782.24,-681.49 782.24,-681.49 786.51,-680.81 782.62,-685.99 791.78,-679.97"/>
+<path fill="none" stroke="black" d="M791.69,-680.03C882.51,-649.97 763.35,-197.2 869.11,-197.2"/>
+<polygon fill="black" stroke="black" points="791.79,-680.02 781.22,-677.1 786.52,-680.83 782.24,-681.5 782.24,-681.5 782.24,-681.5 786.52,-680.83 782.6,-686 791.79,-680.02"/>
 <text text-anchor="start" x="788.58" y="-665.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, guard_key) REFERENCES guard(model_key, guard_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.action -->

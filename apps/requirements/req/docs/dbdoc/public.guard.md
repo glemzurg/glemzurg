@@ -8,11 +8,10 @@ An extra condition on when the transition can take place.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.transition](public.transition.md) | [public.class](public.class.md) | The model this state machine is part of. |
+| model_key | text |  | false | [public.transition](public.transition.md) | [public.logic](public.logic.md) [public.class](public.class.md) | The model this state machine is part of. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this guard is in. |
-| guard_key | text |  | false | [public.transition](public.transition.md) |  | The internal ID. |
+| guard_key | text |  | false | [public.transition](public.transition.md) | [public.logic](public.logic.md) | The internal ID. This is also the key for the logic that defines this guard. |
 | name | text |  | false |  |  | The extra condition on when the transition can take place. |
-| details | text |  | true |  |  | A summary description. |
 
 ## Constraints
 
@@ -22,6 +21,7 @@ An extra condition on when the transition can take place.
 | guard_guard_key_not_null | n | NOT NULL guard_key |
 | guard_model_key_not_null | n | NOT NULL model_key |
 | guard_name_not_null | n | NOT NULL name |
+| fk_guard_logic | FOREIGN KEY | FOREIGN KEY (model_key, guard_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
 | fk_guard_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | guard_pkey | PRIMARY KEY | PRIMARY KEY (model_key, guard_key) |
 

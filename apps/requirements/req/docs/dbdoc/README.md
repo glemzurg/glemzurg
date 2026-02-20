@@ -29,7 +29,7 @@
 | [public.state](public.state.md) | 6 | A situation where invariant conditions on a class instance hold. | BASE TABLE |
 | [public.event](public.event.md) | 5 | Some occurence that can potentially trigger a change in and instance. | BASE TABLE |
 | [public.event_parameter](public.event_parameter.md) | 7 | A parameter of an event. | BASE TABLE |
-| [public.guard](public.guard.md) | 5 | An extra condition on when the transition can take place. | BASE TABLE |
+| [public.guard](public.guard.md) | 4 | An extra condition on when the transition can take place. | BASE TABLE |
 | [public.action](public.action.md) | 7 | An action of a class that can be attached to transitions. | BASE TABLE |
 | [public.transition](public.transition.md) | 9 | The movement between states. | BASE TABLE |
 | [public.state_action](public.state_action.md) | 5 | An action triggered on entry, exit, or continual do from a state. | BASE TABLE |

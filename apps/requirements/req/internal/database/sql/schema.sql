@@ -593,17 +593,16 @@ CREATE TABLE guard (
   class_key text NOT NULL,
   guard_key text NOT NULL,
   name text NOT NULL,
-  details text DEFAULT NULL,
   PRIMARY KEY (model_key, guard_key),
-  CONSTRAINT fk_guard_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
+  CONSTRAINT fk_guard_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE,
+  CONSTRAINT fk_guard_logic FOREIGN KEY (model_key, guard_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE guard IS 'An extra condition on when the transition can take place.';
 COMMENT ON COLUMN guard.model_key IS 'The model this state machine is part of.';
 COMMENT ON COLUMN guard.class_key IS 'The class this guard is in.';
-COMMENT ON COLUMN guard.guard_key IS 'The internal ID.';
+COMMENT ON COLUMN guard.guard_key IS 'The internal ID. This is also the key for the logic that defines this guard.';
 COMMENT ON COLUMN guard.name IS 'The extra condition on when the transition can take place.';
-COMMENT ON COLUMN guard.details IS 'A summary description.';
 
 --------------------------------------------------------------
 
