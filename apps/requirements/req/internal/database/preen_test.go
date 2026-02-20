@@ -38,6 +38,11 @@ func (suite *PreenSuite) TestPreen() {
 			key:      "KEY",
 			preened:  "key",
 		},
+		{
+			testName: "ok spaces inside",
+			key:      "K  E	\nY",
+			preened:  "k-e-y",
+		},
 
 		// Error states.
 		{
