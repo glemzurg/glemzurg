@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/pkg/errors"
@@ -12,9 +13,13 @@ import (
 
 // parameterDataTypeKey extracts the data type key string for database storage.
 // Returns nil if no data type is set.
+// The key is preened to match how BulkInsertDataTypes stores data type keys.
 func parameterDataTypeKey(param model_state.Parameter) *string {
 	if param.DataType != nil {
-		s := param.DataType.Key
+		s, err := preenKey(param.DataType.Key)
+		if err != nil {
+			return nil
+		}
 		return &s
 	}
 	return nil
@@ -50,6 +55,12 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 	// Set nullable fields.
 	if dataTypeRules.Valid {
 		param.DataTypeRules = dataTypeRules.String
+	}
+
+	// Create a stub DataType with just the key if present.
+	// The full DataType is stitched in top_level_requirements.go from the data_type table.
+	if dataTypeKey.Valid {
+		param.DataType = &model_data_type.DataType{Key: dataTypeKey.String}
 	}
 
 	return nil

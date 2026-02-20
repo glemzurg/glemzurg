@@ -191,7 +191,14 @@ func (suite *RequirementsSuite) TestWriteRead() {
 											{
 												Name:          "Limit",
 												SortOrder:     0,
-												DataTypeRules: "Nat",
+												DataTypeRules: "unconstrained",
+												DataType: &model_data_type.DataType{
+													Key:            "limit",
+													CollectionType: "atomic",
+													Atomic: &model_data_type.Atomic{
+														ConstraintType: "unconstrained",
+													},
+												},
 											},
 											{
 												Name:          "Offset",

@@ -152,12 +152,25 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Collect data types from attributes (must be inserted before attributes due to FK).
+		// Collect data types from attributes and query parameters (must be inserted before attributes/query_parameter due to FK).
 		dataTypes := make(map[string]model_data_type.DataType)
 		for _, attrs := range attributesMap {
 			for _, attr := range attrs {
 				if attr.DataType != nil {
 					dataTypes[attr.DataType.Key] = *attr.DataType
+				}
+			}
+		}
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, query := range class.Queries {
+						for _, param := range query.Parameters {
+							if param.DataType != nil {
+								dataTypes[param.DataType.Key] = *param.DataType
+							}
+						}
+					}
 				}
 			}
 		}
@@ -343,7 +356,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Stitch parameters onto queries.
+		// Stitch parameters onto queries (data types are stitched onto parameters below after dataTypes are loaded).
 		for classKey, queries := range queriesMap {
 			for i, query := range queries {
 				if params, ok := queryParamsMap[query.Key]; ok {
@@ -379,6 +392,20 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 				attrs[i].IndexNums = indexNums
 			}
 			attributesMap[classKey] = attrs
+		}
+
+		// Stitch data types onto query parameters.
+		for classKey, queries := range queriesMap {
+			for i, query := range queries {
+				for j, param := range query.Parameters {
+					if param.DataType != nil {
+						if dt, ok := dataTypes[param.DataType.Key]; ok {
+							queries[i].Parameters[j].DataType = &dt
+						}
+					}
+				}
+			}
+			queriesMap[classKey] = queries
 		}
 
 		// Now assemble the tree structure.
