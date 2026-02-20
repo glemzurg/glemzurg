@@ -108,6 +108,12 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Query guarantee keys (children of query key).
 	queryGuaranteeKeyA := helper.Must(identity.NewQueryGuaranteeKey(queryKeyAA1A, "guar_a"))
 
+	// State action key (child of state).
+	stateActionKeyAA1A := helper.Must(identity.NewStateActionKey(stateKeyAA1A, "entry", "action_a"))
+
+	// Transition key (child of class).
+	transitionKeyAA1A := helper.Must(identity.NewTransitionKey(classKeyAA1, "state_a", "event_a", "guard_a", "action_a", "state_b"))
+
 	// Domain association key.
 	domainAssociationKey := helper.Must(identity.NewDomainAssociationKey(domainKeyA, domainKeyB))
 
@@ -274,6 +280,13 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Name:       "StateA",
 										Details:    "State A details",
 										UmlComment: "State A UML comment",
+										Actions: []model_state.StateAction{
+											{
+												Key:       stateActionKeyAA1A,
+												ActionKey: actionKeyAA1A,
+												When:      "entry",
+											},
+										},
 									},
 									stateKeyAA1B: {
 										Key:        stateKeyAA1B,
@@ -349,6 +362,17 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												Specification: "QueryGuarA == result > 0",
 											},
 										},
+									},
+								},
+								Transitions: map[identity.Key]model_state.Transition{
+									transitionKeyAA1A: {
+										Key:          transitionKeyAA1A,
+										FromStateKey: &stateKeyAA1A,
+										EventKey:     eventKeyAA1A,
+										GuardKey:     &guardKeyAA1A,
+										ActionKey:    &actionKeyAA1A,
+										ToStateKey:   &stateKeyAA1B,
+										UmlComment:   "Transition UML comment",
 									},
 								},
 								Attributes: map[identity.Key]model_class.Attribute{

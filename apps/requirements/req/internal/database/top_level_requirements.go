@@ -441,6 +441,38 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect state actions from states (must be inserted after states and actions due to FK).
+		stateActionsMap := make(map[identity.Key][]model_state.StateAction)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, state := range class.States {
+						if len(state.Actions) > 0 {
+							stateActionsMap[state.Key] = append(stateActionsMap[state.Key], state.Actions...)
+						}
+					}
+				}
+			}
+		}
+		if err = AddStateActions(tx, modelKey, stateActionsMap); err != nil {
+			return err
+		}
+
+		// Collect transitions from classes (must be inserted after states, events, guards, and actions due to FK).
+		transitionsMap := make(map[identity.Key][]model_state.Transition)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, transition := range class.Transitions {
+						transitionsMap[class.Key] = append(transitionsMap[class.Key], transition)
+					}
+				}
+			}
+		}
+		if err = AddTransitions(tx, modelKey, transitionsMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -621,6 +653,28 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 
 		// States grouped by class key.
 		statesMap, err := QueryStates(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// State actions grouped by state key.
+		stateActionsMap, err := QueryStateActions(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch state actions onto states.
+		for classKey, states := range statesMap {
+			for i, state := range states {
+				if stateActions, ok := stateActionsMap[state.Key]; ok {
+					states[i].Actions = stateActions
+				}
+			}
+			statesMap[classKey] = states
+		}
+
+		// Transitions grouped by class key.
+		transitionsMap, err := QueryTransitions(tx, modelKey)
 		if err != nil {
 			return err
 		}
@@ -836,6 +890,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									class.Queries = make(map[identity.Key]model_state.Query)
 									for _, query := range queries {
 										class.Queries[query.Key] = query
+									}
+								}
+
+								// Attach transitions to class.
+								if transitions, ok := transitionsMap[classKey]; ok {
+									class.Transitions = make(map[identity.Key]model_state.Transition)
+									for _, transition := range transitions {
+										class.Transitions[transition.Key] = transition
 									}
 								}
 
