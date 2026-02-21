@@ -119,6 +119,16 @@ func (suite *ObjectSuite) TestValidate() {
 			},
 			errstr: "ClassKey: invalid key type 'domain' for class.",
 		},
+		{
+			testName: "error invalid name style",
+			object: Object{
+				Key:       validKey,
+				Name:      "Name",
+				NameStyle: "bogus",
+				ClassKey:  classKey,
+			},
+			errstr: "'NameStyle' failed on the 'oneof' tag",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {

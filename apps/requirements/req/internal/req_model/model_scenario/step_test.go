@@ -382,6 +382,205 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	}
 	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf must have a from_object_key")
+
+	// Invalid query: no from_object_key
+	step = Step{
+		Key:         suite.stepKey(0),
+		StepType:    STEP_TYPE_LEAF,
+		LeafType:    t_strPtr(LEAF_TYPE_QUERY),
+		ToObjectKey: suite.toObjKey,
+		QueryKey:    suite.queryKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "query leaf must have a from_object_key")
+
+	// Invalid query: no to_object_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_QUERY),
+		FromObjectKey: suite.fromObjKey,
+		QueryKey:      suite.queryKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "query leaf must have a to_object_key")
+
+	// Invalid scenario: no from_object_key
+	step = Step{
+		Key:         suite.stepKey(0),
+		StepType:    STEP_TYPE_LEAF,
+		LeafType:    t_strPtr(LEAF_TYPE_SCENARIO),
+		ToObjectKey: suite.toObjKey,
+		ScenarioKey: suite.scenarioRef,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "scenario leaf must have a from_object_key")
+
+	// Invalid scenario: no to_object_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ScenarioKey:   suite.scenarioRef,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "scenario leaf must have a to_object_key")
+
+	// Cross-validation: event leaf with scenario_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+		ScenarioKey:   suite.scenarioRef,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf cannot have scenario_key or query_key")
+
+	// Cross-validation: event leaf with query_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+		QueryKey:      suite.queryKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf cannot have scenario_key or query_key")
+
+	// Cross-validation: query leaf with event_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_QUERY),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		QueryKey:      suite.queryKey,
+		EventKey:      suite.eventKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "query leaf cannot have event_key or scenario_key")
+
+	// Cross-validation: query leaf with scenario_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_QUERY),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		QueryKey:      suite.queryKey,
+		ScenarioKey:   suite.scenarioRef,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "query leaf cannot have event_key or scenario_key")
+
+	// Cross-validation: scenario leaf with event_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   suite.scenarioRef,
+		EventKey:      suite.eventKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "scenario leaf cannot have event_key or query_key")
+
+	// Cross-validation: scenario leaf with query_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   suite.scenarioRef,
+		QueryKey:      suite.queryKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "scenario leaf cannot have event_key or query_key")
+
+	// Cross-validation: delete leaf with scenario_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		FromObjectKey: suite.fromObjKey,
+		ScenarioKey:   suite.scenarioRef,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
+
+	// Cross-validation: delete leaf with query_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		FromObjectKey: suite.fromObjKey,
+		QueryKey:      suite.queryKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
+}
+
+func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
+	// A bad child inside a sequence propagates the error.
+	badChild := Step{
+		Key:      suite.stepKey(1),
+		StepType: STEP_TYPE_LEAF,
+		LeafType: t_strPtr(LEAF_TYPE_EVENT),
+		// Missing from_object_key, to_object_key, event_key.
+	}
+
+	// Sequence with bad child.
+	step := Step{
+		Key:        suite.stepKey(0),
+		StepType:   STEP_TYPE_SEQUENCE,
+		Statements: []Step{badChild},
+	}
+	err := step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+
+	// Loop with bad child.
+	step = Step{
+		Key:        suite.stepKey(0),
+		StepType:   STEP_TYPE_LOOP,
+		Condition:  "while true",
+		Statements: []Step{badChild},
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+
+	// Case with bad child.
+	step = Step{
+		Key:        suite.stepKey(0),
+		StepType:   STEP_TYPE_CASE,
+		Condition:  "some condition",
+		Statements: []Step{badChild},
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+
+	// Switch with bad case child (case itself is valid, but its child is bad).
+	step = Step{
+		Key:      suite.stepKey(0),
+		StepType: STEP_TYPE_SWITCH,
+		Statements: []Step{
+			{
+				Key:        suite.stepKey(2),
+				StepType:   STEP_TYPE_CASE,
+				Condition:  "cond",
+				Statements: []Step{badChild},
+			},
+		},
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateUnknownStepType() {
@@ -574,8 +773,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 								"key": "%[1]s/sstep/8",
 								"step_type": "leaf",
 								"leaf_type": "delete",
-								"from_object_key": "%[1]s/sobject/from4",
-								"is_delete": true
+								"from_object_key": "%[1]s/sobject/from4"
 							}
 						]
 					}
@@ -643,7 +841,6 @@ statements:
               step_type: leaf
               leaf_type: delete
               from_object_key: %[1]s/sobject/from4
-              is_delete: true
 `, scenarioKeyStr)
 
 	// Parse into structure

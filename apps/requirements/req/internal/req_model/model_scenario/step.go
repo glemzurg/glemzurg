@@ -36,7 +36,6 @@ type Step struct {
 	EventKey      *identity.Key `json:"event_key,omitempty" yaml:"event_key,omitempty"`
 	QueryKey      *identity.Key `json:"query_key,omitempty" yaml:"query_key,omitempty"`
 	ScenarioKey   *identity.Key `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
-	IsDelete      bool          `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
 }
 
 // Validate validates the step and its sub-steps.
@@ -116,6 +115,9 @@ func (s *Step) Validate() error {
 			if s.EventKey == nil {
 				return errors.New("event leaf must have an event_key")
 			}
+			if s.ScenarioKey != nil || s.QueryKey != nil {
+				return errors.New("event leaf cannot have scenario_key or query_key")
+			}
 		case LEAF_TYPE_QUERY:
 			if s.FromObjectKey == nil {
 				return errors.New("query leaf must have a from_object_key")
@@ -126,6 +128,9 @@ func (s *Step) Validate() error {
 			if s.QueryKey == nil {
 				return errors.New("query leaf must have a query_key")
 			}
+			if s.EventKey != nil || s.ScenarioKey != nil {
+				return errors.New("query leaf cannot have event_key or scenario_key")
+			}
 		case LEAF_TYPE_SCENARIO:
 			if s.FromObjectKey == nil {
 				return errors.New("scenario leaf must have a from_object_key")
@@ -135,6 +140,9 @@ func (s *Step) Validate() error {
 			}
 			if s.ScenarioKey == nil {
 				return errors.New("scenario leaf must have a scenario_key")
+			}
+			if s.EventKey != nil || s.QueryKey != nil {
+				return errors.New("scenario leaf cannot have event_key or query_key")
 			}
 		default:
 			return errors.Errorf("unknown leaf type '%s'", *s.LeafType)
@@ -217,9 +225,6 @@ func (s Step) MarshalJSON() ([]byte, error) {
 	if s.ScenarioKey != nil {
 		m["scenario_key"] = s.ScenarioKey
 	}
-	if s.IsDelete {
-		m["is_delete"] = s.IsDelete
-	}
 	return json.Marshal(m)
 }
 
@@ -255,9 +260,6 @@ func (s Step) MarshalYAML() (interface{}, error) {
 	}
 	if s.ScenarioKey != nil {
 		m["scenario_key"] = s.ScenarioKey.String()
-	}
-	if s.IsDelete {
-		m["is_delete"] = s.IsDelete
 	}
 	return m, nil
 }
