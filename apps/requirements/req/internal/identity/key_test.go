@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v3"
 )
 
 func TestKeySuite(t *testing.T) {
@@ -130,6 +131,13 @@ func (suite *KeySuite) TestParseKey() {
 			expected: Key{ParentKey: "", KeyType: "cassociation", SubKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", SubKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 		},
 
+		// Scenario step key.
+		{
+			testName: "ok scenario step key",
+			input:    "domain/domain1/subdomain/subdomain1/usecase/usecase1/scenario/scenario1/sstep/0",
+			expected: Key{ParentKey: "domain/domain1/subdomain/subdomain1/usecase/usecase1/scenario/scenario1", KeyType: "sstep", SubKey: "0"},
+		},
+
 		// State action key with composite subKey (when/subKey).
 		{
 			testName: "ok state action key",
@@ -231,6 +239,13 @@ func (suite *KeySuite) TestString() {
 			key:      Key{ParentKey: "", KeyType: "cassociation", SubKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", SubKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 			expected: "cassociation/domain/domain_a/subdomain/subdomain_a/class/class_a/domain/domain_b/subdomain/subdomain_b/class/class_b/assoc_name",
 		},
+		// Scenario step key.
+		{
+			testName: "scenario step key",
+			key:      Key{ParentKey: "domain/d/subdomain/s/usecase/uc/scenario/sc", KeyType: "sstep", SubKey: "0"},
+			expected: "domain/d/subdomain/s/usecase/uc/scenario/sc/sstep/0",
+		},
+
 		// State action key with composite subKey.
 		{
 			testName: "state action key",
@@ -346,6 +361,10 @@ func (suite *KeySuite) TestValidate() {
 		{
 			testName: "ok scenario object",
 			key:      Key{ParentKey: ".../scenario/sc1", KeyType: "sobject", SubKey: "obj1"},
+		},
+		{
+			testName: "ok scenario step",
+			key:      Key{ParentKey: ".../scenario/sc1", KeyType: "sstep", SubKey: "0"},
 		},
 		{
 			testName: "ok attribute derivation",
@@ -507,6 +526,11 @@ func (suite *KeySuite) TestValidate() {
 			errstr:   "parentKey must be non-blank for 'sobject' keys",
 		},
 		{
+			testName: "error missing parentKey for sstep",
+			key:      Key{ParentKey: "", KeyType: "sstep", SubKey: "0"},
+			errstr:   "parentKey must be non-blank for 'sstep' keys",
+		},
+		{
 			testName: "error missing parentKey for aderive",
 			key:      Key{ParentKey: "", KeyType: "aderive", SubKey: "deriv1"},
 			errstr:   "parentKey must be non-blank for 'aderive' keys",
@@ -598,7 +622,12 @@ func (suite *KeySuite) TestValidateParent() {
 	classKey3 := helper.Must(NewClassKey(subdomainKey3, "testclass3"))
 	modelCassocKey := helper.Must(NewClassAssociationKey(Key{}, classKey, classKey3, "model assoc"))
 
-	// Keys for wrong-parent tests.
+	// Keys for wrong-parent-key tests (right type, wrong key value).
+	otherSubdomainKey := helper.Must(NewSubdomainKey(domainKey2, "othersubdomain"))
+	otherClassKey := helper.Must(NewClassKey(subdomainKey2, "otherclass"))
+	otherUseCaseKey := helper.Must(NewUseCaseKey(subdomainKey2, "otherusecase"))
+	otherScenarioKey := helper.Must(NewScenarioKey(otherUseCaseKey, "otherscenario"))
+	otherStateKey := helper.Must(NewStateKey(classKey2, "otherstate"))
 	otherActionKey := helper.Must(NewActionKey(classKey, "otheraction"))
 	otherQueryKey := helper.Must(NewQueryKey(classKey, "otherquery"))
 	otherAttributeKey := helper.Must(NewAttributeKey(classKey, "otherattr"))
@@ -730,6 +759,12 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   &domainKey,
 			errstr:   "requires parent of type 'subdomain', but got 'domain'",
 		},
+		{
+			testName: "error class wrong parent key",
+			key:      classKey,
+			parent:   &otherSubdomainKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// State requires class parent.
 		{
@@ -743,6 +778,18 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   nil,
 			errstr:   "requires a parent of type 'class'",
 		},
+		{
+			testName: "error state wrong parent type",
+			key:      stateKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error state wrong parent key",
+			key:      stateKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// Scenario requires use case parent.
 		{
@@ -755,6 +802,18 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      scenarioKey,
 			parent:   nil,
 			errstr:   "requires a parent of type 'usecase'",
+		},
+		{
+			testName: "error scenario wrong parent type",
+			key:      scenarioKey,
+			parent:   &domainKey,
+			errstr:   "requires parent of type 'usecase', but got 'domain'",
+		},
+		{
+			testName: "error scenario wrong parent key",
+			key:      scenarioKey,
+			parent:   &otherUseCaseKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// Invariant is a root key (no parent).
@@ -787,6 +846,12 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      useCaseKey,
 			parent:   &domainKey,
 			errstr:   "requires parent of type 'subdomain', but got 'domain'",
+		},
+		{
+			testName: "error usecase wrong parent key",
+			key:      useCaseKey,
+			parent:   &otherSubdomainKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// Generalization requires subdomain parent.
@@ -826,6 +891,12 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   &useCaseKey,
 			errstr:   "requires parent of type 'scenario', but got 'usecase'",
 		},
+		{
+			testName: "error scenario object wrong parent key",
+			key:      scenarioObjectKey,
+			parent:   &otherScenarioKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// ScenarioStep requires scenario parent.
 		{
@@ -844,6 +915,12 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      scenarioStepKey,
 			parent:   &useCaseKey,
 			errstr:   "requires parent of type 'scenario', but got 'usecase'",
+		},
+		{
+			testName: "error scenario step wrong parent key",
+			key:      scenarioStepKey,
+			parent:   &otherScenarioKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// Event requires class parent.
@@ -864,6 +941,12 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   &subdomainKey,
 			errstr:   "requires parent of type 'class', but got 'subdomain'",
 		},
+		{
+			testName: "error event wrong parent key",
+			key:      eventKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// Guard requires class parent.
 		{
@@ -876,6 +959,18 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      guardKey,
 			parent:   nil,
 			errstr:   "requires a parent of type 'class'",
+		},
+		{
+			testName: "error guard wrong parent type",
+			key:      guardKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error guard wrong parent key",
+			key:      guardKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// Action requires class parent.
@@ -890,6 +985,18 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   nil,
 			errstr:   "requires a parent of type 'class'",
 		},
+		{
+			testName: "error action wrong parent type",
+			key:      actionKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error action wrong parent key",
+			key:      actionKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// Query requires class parent.
 		{
@@ -902,6 +1009,18 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      queryKey,
 			parent:   nil,
 			errstr:   "requires a parent of type 'class'",
+		},
+		{
+			testName: "error query wrong parent type",
+			key:      queryKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error query wrong parent key",
+			key:      queryKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// Transition requires class parent.
@@ -916,6 +1035,18 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   nil,
 			errstr:   "requires a parent of type 'class'",
 		},
+		{
+			testName: "error transition wrong parent type",
+			key:      transitionKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error transition wrong parent key",
+			key:      transitionKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// Attribute requires class parent.
 		{
@@ -928,6 +1059,18 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      attributeKey,
 			parent:   nil,
 			errstr:   "requires a parent of type 'class'",
+		},
+		{
+			testName: "error attribute wrong parent type",
+			key:      attributeKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error attribute wrong parent key",
+			key:      attributeKey,
+			parent:   &otherClassKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// StateAction requires state parent.
@@ -947,6 +1090,12 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      stateActionKey,
 			parent:   &classKey,
 			errstr:   "requires parent of type 'state', but got 'class'",
+		},
+		{
+			testName: "error state action wrong parent key",
+			key:      stateActionKey,
+			parent:   &otherStateKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// ActionRequire requires action parent.
@@ -992,6 +1141,12 @@ func (suite *KeySuite) TestValidateParent() {
 			parent:   &queryKey,
 			errstr:   "requires parent of type 'action', but got 'query'",
 		},
+		{
+			testName: "error action guarantee wrong parent key",
+			key:      actionGuaranteeKey,
+			parent:   &otherActionKey,
+			errstr:   "does not match expected parent",
+		},
 
 		// ActionSafety requires action parent.
 		{
@@ -1010,6 +1165,12 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      actionSafetyKey,
 			parent:   &classKey,
 			errstr:   "requires parent of type 'action', but got 'class'",
+		},
+		{
+			testName: "error action safety wrong parent key",
+			key:      actionSafetyKey,
+			parent:   &otherActionKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// QueryRequire requires query parent.
@@ -1054,6 +1215,12 @@ func (suite *KeySuite) TestValidateParent() {
 			key:      queryGuaranteeKey,
 			parent:   &classKey,
 			errstr:   "requires parent of type 'query', but got 'class'",
+		},
+		{
+			testName: "error query guarantee wrong parent key",
+			key:      queryGuaranteeKey,
+			parent:   &otherQueryKey,
+			errstr:   "does not match expected parent",
 		},
 
 		// AttributeDerivation requires attribute parent.
@@ -1620,5 +1787,105 @@ func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
 		parsedValue, ok := parsedMap[key]
 		assert.True(suite.T(), ok, "Key not found in parsed map: %s", key.String())
 		assert.Equal(suite.T(), value, parsedValue, "Value mismatch for key: %s", key.String())
+	}
+}
+
+// TestYAMLRoundTrip tests that keys can be marshalled to YAML and unmarshalled back.
+func (suite *KeySuite) TestYAMLRoundTrip() {
+	// Create hierarchy of keys.
+	domainKey := helper.Must(NewDomainKey("domain_key"))
+	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain_key"))
+	classKey := helper.Must(NewClassKey(subdomainKey, "class_key"))
+	classKey2 := helper.Must(NewClassKey(subdomainKey, "class_key2"))
+	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
+	useCaseKey := helper.Must(NewUseCaseKey(subdomainKey, "use_case_key"))
+	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "scenario_key"))
+	scenarioStepKey := helper.Must(NewScenarioStepKey(scenarioKey, "0"))
+	actorKey := helper.Must(NewActorKey("actor_key"))
+
+	// State action and transition keys.
+	stateActionKey := helper.Must(NewStateActionKey(stateKey, "entry", "action_key"))
+	transitionKey := helper.Must(NewTransitionKey(classKey, "state_a", "event_key", "guard_key", "action_key", "state_b"))
+
+	// Domain association key.
+	domainKey2 := helper.Must(NewDomainKey("domain_key2"))
+	domainAssocKey := helper.Must(NewDomainAssociationKey(domainKey, domainKey2))
+
+	// Class association key.
+	classAssocKey := helper.Must(NewClassAssociationKey(subdomainKey, classKey, classKey2, "yaml test assoc"))
+
+	tests := []struct {
+		testName string
+		key      Key
+	}{
+		{testName: "domain key", key: domainKey},
+		{testName: "subdomain key", key: subdomainKey},
+		{testName: "class key", key: classKey},
+		{testName: "state key", key: stateKey},
+		{testName: "actor key", key: actorKey},
+		{testName: "use case key", key: useCaseKey},
+		{testName: "scenario key", key: scenarioKey},
+		{testName: "scenario step key", key: scenarioStepKey},
+		{testName: "state action key", key: stateActionKey},
+		{testName: "transition key", key: transitionKey},
+		{testName: "domain association key", key: domainAssocKey},
+		{testName: "class association key", key: classAssocKey},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			// Marshal to YAML.
+			yamlBytes, err := yaml.Marshal(tt.key)
+			assert.NoError(t, err, "Failed to marshal key to YAML")
+
+			// Unmarshal back.
+			var parsedKey Key
+			err = yaml.Unmarshal(yamlBytes, &parsedKey)
+			assert.NoError(t, err, "Failed to unmarshal key from YAML")
+
+			// Verify the parsed key matches the original.
+			assert.Equal(t, tt.key, parsedKey, "Round-trip key mismatch")
+			assert.Equal(t, tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+// TestYAMLUnmarshalEmpty tests that unmarshalling an empty YAML string results in a zero-value Key.
+func (suite *KeySuite) TestYAMLUnmarshalEmpty() {
+	var key Key
+	err := yaml.Unmarshal([]byte(`""`), &key)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Key{}, key)
+}
+
+// TestYAMLUnmarshalInvalid tests that unmarshalling invalid YAML key strings returns errors.
+func (suite *KeySuite) TestYAMLUnmarshalInvalid() {
+	tests := []struct {
+		testName string
+		yamlStr  string
+		errstr   string
+	}{
+		{
+			testName: "invalid key format",
+			yamlStr:  "invalid",
+			errstr:   "invalid key format",
+		},
+		{
+			testName: "unknown key type",
+			yamlStr:  "unknown/something",
+			errstr:   "'KeyType' failed on the 'oneof' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			var key Key
+			err := yaml.Unmarshal([]byte(tt.yamlStr), &key)
+			assert.ErrorContains(t, err, tt.errstr)
+		})
+		if !pass {
+			break
+		}
 	}
 }
