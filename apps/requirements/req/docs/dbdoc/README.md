@@ -42,8 +42,9 @@
 | [public.use_case](public.use_case.md) | 10 | A sequence of steps in the business rules. | BASE TABLE |
 | [public.use_case_actor](public.use_case_actor.md) | 4 | Which actors participate in which use cases. | BASE TABLE |
 | [public.use_case_shared](public.use_case_shared.md) | 5 | Which use cases are used by with other use cases. | BASE TABLE |
-| [public.scenario](public.scenario.md) | 6 | A documented scenario, such as a sequence diagram or activity diagram, for a use case. | BASE TABLE |
+| [public.scenario](public.scenario.md) | 5 | A documented scenario, such as a sequence diagram or activity diagram, for a use case. | BASE TABLE |
 | [public.scenario_object](public.scenario_object.md) | 9 | An object that participates in a scenario. | BASE TABLE |
+| [public.scenario_step](public.scenario_step.md) | 14 | A step of a scenario, all the steps in a scenario form a tree. | BASE TABLE |
 
 ## Enums
 
@@ -53,10 +54,12 @@
 | public.bound_limit_type | closed, open, unconstrained |
 | public.collection_type | atomic, ordered, queue, record, stack, unordered |
 | public.constraint_type | enumeration, object, reference, span, unconstrained |
+| public.leaf_type | delete, event, query, scenario |
 | public.notation | tla_plus |
 | public.scenario_object_name_style | id, name, unnamed |
 | public.share_type | extend, include |
 | public.state_action_when | do, entry, exit |
+| public.step_type | case, leaf, loop, sequence, switch |
 | public.use_case_level | mud, sea, sky |
 
 ## Relations

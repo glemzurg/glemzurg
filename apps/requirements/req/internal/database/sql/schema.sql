@@ -894,7 +894,6 @@ CREATE TABLE scenario (
   name text NOT NULL,
   use_case_key text NOT NULL,
   details text DEFAULT NULL,
-  steps jsonb DEFAULT NULL,
   PRIMARY KEY (model_key, scenario_key),
   CONSTRAINT fk_scenario_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
   CONSTRAINT fk_scenario_use_case FOREIGN KEY (model_key, use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE
@@ -906,7 +905,6 @@ COMMENT ON COLUMN scenario.scenario_key IS 'The internal ID.';
 COMMENT ON COLUMN scenario.name IS 'The name of the scenario.';
 COMMENT ON COLUMN scenario.use_case_key IS 'The use case this scenario is part of.';
 COMMENT ON COLUMN scenario.details IS 'A summary description.';
-COMMENT ON COLUMN scenario.steps IS 'The structured program steps of the scenario as JSON.';
 
 -------------------------------------------------------------
 
@@ -940,3 +938,52 @@ COMMENT ON COLUMN scenario_object.name_style IS 'How the name is displayed in th
 COMMENT ON COLUMN scenario_object.class_key IS 'The class this scenario object is an instance of.';
 COMMENT ON COLUMN scenario_object.multi IS 'If true, this object represents many instances of the class (a collection).';
 COMMENT ON COLUMN scenario_object.uml_comment IS 'A comment that appears in the diagrams.';
+
+-------------------------------------------------------------
+
+CREATE TYPE step_type AS ENUM ('sequence', 'switch', 'case', 'loop', 'leaf');
+COMMENT ON TYPE step_type IS 'The kind of scenario step this is';
+
+CREATE TYPE leaf_type AS ENUM ('event', 'query', 'scenario', 'delete');
+COMMENT ON TYPE leaf_type IS 'If a leaf step, the kind of leaf step this is';
+
+CREATE TABLE scenario_step (
+    model_key text NOT NULL,
+    scenario_step_key text NOT NULL,
+    scenario_key text NOT NULL,
+    parent_step_key text DEFAULT NULL,
+    sort_order int NOT NULL,
+    step_type step_type NOT NULL,           
+    leaf_type leaf_type DEFAULT NULL,           
+    condition text DEFAULT NULL,             
+    description text DEFAULT NULL,           
+    from_object_key text DEFAULT NULL,       
+    to_object_key text DEFAULT NULL,         
+    event_key text DEFAULT NULL,             
+    query_key text DEFAULT NULL,             
+    scenario_ref_key text DEFAULT NULL,
+    PRIMARY KEY (model_key, scenario_step_key),
+    CONSTRAINT fk_step_scenario FOREIGN KEY (model_key, scenario_key) REFERENCES scenario (model_key, scenario_key) ON DELETE CASCADE,
+    CONSTRAINT fk_step_parent FOREIGN KEY (model_key, parent_step_key) REFERENCES scenario_step (model_key, scenario_step_key) ON DELETE CASCADE,
+    CONSTRAINT fk_step_from_object FOREIGN KEY (model_key, from_object_key) REFERENCES scenario_object (model_key, scenario_object_key) ON DELETE CASCADE,
+    CONSTRAINT fk_step_to_object FOREIGN KEY (model_key, to_object_key) REFERENCES scenario_object (model_key, scenario_object_key) ON DELETE CASCADE,
+    CONSTRAINT fk_step_event FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
+    CONSTRAINT fk_step_query FOREIGN KEY (model_key, query_key) REFERENCES query (model_key, query_key) ON DELETE CASCADE,
+    CONSTRAINT fk_step_scenario_ref FOREIGN KEY (model_key, scenario_ref_key) REFERENCES scenario (model_key, scenario_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE scenario_step IS 'A step of a scenario, all the steps in a scenario form a tree.';
+COMMENT ON COLUMN scenario_step.model_key IS 'The model this scenario step is part of.';
+COMMENT ON COLUMN scenario_step.scenario_step_key IS 'The internal ID.';
+COMMENT ON COLUMN scenario_step.scenario_key IS 'The scenario this object is part of.';
+COMMENT ON COLUMN scenario_step.parent_step_key IS 'The parent of this step, null if the single root step.';
+COMMENT ON COLUMN scenario_step.sort_order IS 'The order of this step in the parent.';
+COMMENT ON COLUMN scenario_step.step_type IS 'The kind of step this is.';
+COMMENT ON COLUMN scenario_step.leaf_type IS 'If a leaf step, the kind of leaf this is.';
+COMMENT ON COLUMN scenario_step.condition IS 'The condition for a loop or case step.';
+COMMENT ON COLUMN scenario_step.description IS 'The description of a leaf node.';
+COMMENT ON COLUMN scenario_step.from_object_key IS 'The source of a step.';
+COMMENT ON COLUMN scenario_step.to_object_key IS 'The destination of a step.';
+COMMENT ON COLUMN scenario_step.event_key IS 'A leaf step that changes state.';
+COMMENT ON COLUMN scenario_step.query_key IS 'A leaf step that does not change state.';
+COMMENT ON COLUMN scenario_step.scenario_ref_key IS 'A leaf step that is a another scenario.';

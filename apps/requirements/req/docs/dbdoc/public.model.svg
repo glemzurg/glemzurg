@@ -459,36 +459,33 @@
 <!-- public.scenario -->
 <g id="node13" class="node">
 <title>public.scenario</title>
-<polygon fill="#efefef" stroke="none" points="4382.92,-576.8 4382.92,-612.4 4630.87,-612.4 4630.87,-576.8 4382.92,-576.8"/>
-<polygon fill="none" stroke="black" points="4382.92,-576.8 4382.92,-612.4 4630.87,-612.4 4630.87,-576.8 4382.92,-576.8"/>
-<text text-anchor="start" x="4389.92" y="-590.2" font-family="Arial Bold" font-size="18.00">public.scenario</text>
-<text text-anchor="start" x="4499.38" y="-590.2" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="4530.5" y="-590.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="4382.92,-546 4382.92,-576.8 4630.87,-576.8 4630.87,-546 4382.92,-546"/>
-<text text-anchor="start" x="4389.92" y="-558.2" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="4461.51" y="-558.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="4382.92,-515.2 4382.92,-546 4630.87,-546 4630.87,-515.2 4382.92,-515.2"/>
-<text text-anchor="start" x="4389.92" y="-527.4" font-family="Arial" font-size="14.00">scenario_key </text>
-<text text-anchor="start" x="4476.3" y="-527.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="4382.92,-484.4 4382.92,-515.2 4630.87,-515.2 4630.87,-484.4 4382.92,-484.4"/>
-<text text-anchor="start" x="4389.92" y="-496.6" font-family="Arial" font-size="14.00">name </text>
-<text text-anchor="start" x="4428.83" y="-496.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="4382.92,-453.6 4382.92,-484.4 4630.87,-484.4 4630.87,-453.6 4382.92,-453.6"/>
-<text text-anchor="start" x="4389.92" y="-465.8" font-family="Arial" font-size="14.00">use_case_key </text>
-<text text-anchor="start" x="4483.31" y="-465.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="4382.92,-422.8 4382.92,-453.6 4630.87,-453.6 4630.87,-422.8 4382.92,-422.8"/>
-<text text-anchor="start" x="4389.92" y="-435" font-family="Arial" font-size="14.00">details </text>
-<text text-anchor="start" x="4434.28" y="-435" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="4382.92,-392 4382.92,-422.8 4630.87,-422.8 4630.87,-392 4382.92,-392"/>
-<text text-anchor="start" x="4389.92" y="-404.2" font-family="Arial" font-size="14.00">steps </text>
-<text text-anchor="start" x="4427.27" y="-404.2" font-family="Arial" font-size="14.00" fill="#666666">[jsonb]</text>
+<polygon fill="#efefef" stroke="none" points="4382.92,-561.4 4382.92,-597 4630.87,-597 4630.87,-561.4 4382.92,-561.4"/>
+<polygon fill="none" stroke="black" points="4382.92,-561.4 4382.92,-597 4630.87,-597 4630.87,-561.4 4382.92,-561.4"/>
+<text text-anchor="start" x="4389.92" y="-574.8" font-family="Arial Bold" font-size="18.00">public.scenario</text>
+<text text-anchor="start" x="4499.38" y="-574.8" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="4530.5" y="-574.8" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="4382.92,-530.6 4382.92,-561.4 4630.87,-561.4 4630.87,-530.6 4382.92,-530.6"/>
+<text text-anchor="start" x="4389.92" y="-542.8" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="4461.51" y="-542.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="4382.92,-499.8 4382.92,-530.6 4630.87,-530.6 4630.87,-499.8 4382.92,-499.8"/>
+<text text-anchor="start" x="4389.92" y="-512" font-family="Arial" font-size="14.00">scenario_key </text>
+<text text-anchor="start" x="4476.3" y="-512" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="4382.92,-469 4382.92,-499.8 4630.87,-499.8 4630.87,-469 4382.92,-469"/>
+<text text-anchor="start" x="4389.92" y="-481.2" font-family="Arial" font-size="14.00">name </text>
+<text text-anchor="start" x="4428.83" y="-481.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="4382.92,-438.2 4382.92,-469 4630.87,-469 4630.87,-438.2 4382.92,-438.2"/>
+<text text-anchor="start" x="4389.92" y="-450.4" font-family="Arial" font-size="14.00">use_case_key </text>
+<text text-anchor="start" x="4483.31" y="-450.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="4382.92,-407.4 4382.92,-438.2 4630.87,-438.2 4630.87,-407.4 4382.92,-407.4"/>
+<text text-anchor="start" x="4389.92" y="-419.6" font-family="Arial" font-size="14.00">details </text>
+<text text-anchor="start" x="4434.28" y="-419.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.scenario&#45;&gt;public.model -->
 <g id="edge12" class="edge">
 <title>public.scenario:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M4371.83,-559.16C4320.31,-533.76 4378.72,-300.37 4330.9,-256.4 4197.49,-133.75 2886.6,-123.2 2705.38,-123.2"/>
-<polygon fill="black" stroke="black" points="4371.83,-559.16 4380.62,-565.72 4377.04,-560.31 4381.27,-561.25 4381.27,-561.25 4381.27,-561.25 4377.04,-560.31 4382.57,-556.93 4371.83,-559.16"/>
-<text text-anchor="start" x="4388.92" y="-571.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M4371.54,-545.52C4260.99,-534.67 4424.75,-341.94 4330.9,-256.4 4196.96,-134.33 2886.6,-123.2 2705.38,-123.2"/>
+<polygon fill="black" stroke="black" points="4371.6,-545.52 4381.38,-550.48 4376.93,-545.77 4381.25,-545.97 4381.25,-545.97 4381.25,-545.97 4376.93,-545.77 4381.79,-541.49 4371.6,-545.52"/>
+<text text-anchor="start" x="4388.92" y="-556" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.scenario_object -->
 <g id="node14" class="node">

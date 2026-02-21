@@ -8,12 +8,11 @@ A documented scenario, such as a sequence diagram or activity diagram, for a use
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.scenario_object](public.scenario_object.md) | [public.model](public.model.md) [public.use_case](public.use_case.md) | The model this scenario is part of. |
-| scenario_key | text |  | false | [public.scenario_object](public.scenario_object.md) |  | The internal ID. |
+| model_key | text |  | false | [public.scenario_object](public.scenario_object.md) [public.scenario_step](public.scenario_step.md) | [public.model](public.model.md) [public.use_case](public.use_case.md) | The model this scenario is part of. |
+| scenario_key | text |  | false | [public.scenario_object](public.scenario_object.md) [public.scenario_step](public.scenario_step.md) |  | The internal ID. |
 | name | text |  | false |  |  | The name of the scenario. |
 | use_case_key | text |  | false |  | [public.use_case](public.use_case.md) | The use case this scenario is part of. |
 | details | text |  | true |  |  | A summary description. |
-| steps | jsonb |  | true |  |  | The structured program steps of the scenario as JSON. |
 
 ## Constraints
 

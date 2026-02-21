@@ -5212,12 +5212,6 @@
           "type": "text",
           "nullable": true,
           "comment": "A summary description."
-        },
-        {
-          "name": "steps",
-          "type": "jsonb",
-          "nullable": true,
-          "comment": "The structured program steps of the scenario as JSON."
         }
       ],
       "indexes": [
@@ -5539,6 +5533,276 @@
             "model_key",
             "scenario_key",
             "object_number"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.scenario_step",
+      "type": "BASE TABLE",
+      "comment": "A step of a scenario, all the steps in a scenario form a tree.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this scenario step is part of."
+        },
+        {
+          "name": "scenario_step_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID."
+        },
+        {
+          "name": "scenario_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The scenario this object is part of."
+        },
+        {
+          "name": "parent_step_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "The parent of this step, null if the single root step."
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "The order of this step in the parent."
+        },
+        {
+          "name": "step_type",
+          "type": "step_type",
+          "nullable": false,
+          "comment": "The kind of step this is."
+        },
+        {
+          "name": "leaf_type",
+          "type": "leaf_type",
+          "nullable": true,
+          "comment": "If a leaf step, the kind of leaf this is."
+        },
+        {
+          "name": "condition",
+          "type": "text",
+          "nullable": true,
+          "comment": "The condition for a loop or case step."
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "comment": "The description of a leaf node."
+        },
+        {
+          "name": "from_object_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "The source of a step."
+        },
+        {
+          "name": "to_object_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "The destination of a step."
+        },
+        {
+          "name": "event_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "A leaf step that changes state."
+        },
+        {
+          "name": "query_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "A leaf step that does not change state."
+        },
+        {
+          "name": "scenario_ref_key",
+          "type": "text",
+          "nullable": true,
+          "comment": "A leaf step that is a another scenario."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "scenario_step_pkey",
+          "def": "CREATE UNIQUE INDEX scenario_step_pkey ON public.scenario_step USING btree (model_key, scenario_step_key)",
+          "table": "public.scenario_step",
+          "columns": [
+            "model_key",
+            "scenario_step_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "scenario_step_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.scenario_step",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "scenario_step_scenario_key_not_null",
+          "type": "n",
+          "def": "NOT NULL scenario_key",
+          "table": "public.scenario_step",
+          "referenced_table": "",
+          "columns": [
+            "scenario_key"
+          ]
+        },
+        {
+          "name": "scenario_step_scenario_step_key_not_null",
+          "type": "n",
+          "def": "NOT NULL scenario_step_key",
+          "table": "public.scenario_step",
+          "referenced_table": "",
+          "columns": [
+            "scenario_step_key"
+          ]
+        },
+        {
+          "name": "scenario_step_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL sort_order",
+          "table": "public.scenario_step",
+          "referenced_table": "",
+          "columns": [
+            "sort_order"
+          ]
+        },
+        {
+          "name": "scenario_step_step_type_not_null",
+          "type": "n",
+          "def": "NOT NULL step_type",
+          "table": "public.scenario_step",
+          "referenced_table": "",
+          "columns": [
+            "step_type"
+          ]
+        },
+        {
+          "name": "fk_step_query",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "query",
+          "columns": [
+            "model_key",
+            "query_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "query_key"
+          ]
+        },
+        {
+          "name": "fk_step_event",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "event",
+          "columns": [
+            "model_key",
+            "event_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "event_key"
+          ]
+        },
+        {
+          "name": "fk_step_scenario",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, scenario_key) REFERENCES scenario(model_key, scenario_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "scenario",
+          "columns": [
+            "model_key",
+            "scenario_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "scenario_key"
+          ]
+        },
+        {
+          "name": "fk_step_scenario_ref",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, scenario_ref_key) REFERENCES scenario(model_key, scenario_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "scenario",
+          "columns": [
+            "model_key",
+            "scenario_ref_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "scenario_key"
+          ]
+        },
+        {
+          "name": "fk_step_from_object",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, from_object_key) REFERENCES scenario_object(model_key, scenario_object_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "scenario_object",
+          "columns": [
+            "model_key",
+            "from_object_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "scenario_object_key"
+          ]
+        },
+        {
+          "name": "fk_step_to_object",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, to_object_key) REFERENCES scenario_object(model_key, scenario_object_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "scenario_object",
+          "columns": [
+            "model_key",
+            "to_object_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "scenario_object_key"
+          ]
+        },
+        {
+          "name": "fk_step_parent",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, parent_step_key) REFERENCES scenario_step(model_key, scenario_step_key) ON DELETE CASCADE",
+          "table": "public.scenario_step",
+          "referenced_table": "scenario_step",
+          "columns": [
+            "model_key",
+            "parent_step_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "scenario_step_key"
+          ]
+        },
+        {
+          "name": "scenario_step_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, scenario_step_key)",
+          "table": "public.scenario_step",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "scenario_step_key"
           ]
         }
       ]
@@ -6688,6 +6952,111 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, scenario_key) REFERENCES scenario(model_key, scenario_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "query_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.query",
+      "parent_columns": [
+        "model_key",
+        "query_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, query_key) REFERENCES query(model_key, query_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "event_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.event",
+      "parent_columns": [
+        "model_key",
+        "event_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "scenario_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.scenario",
+      "parent_columns": [
+        "model_key",
+        "scenario_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, scenario_key) REFERENCES scenario(model_key, scenario_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "scenario_ref_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.scenario",
+      "parent_columns": [
+        "model_key",
+        "scenario_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, scenario_ref_key) REFERENCES scenario(model_key, scenario_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "from_object_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.scenario_object",
+      "parent_columns": [
+        "model_key",
+        "scenario_object_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, from_object_key) REFERENCES scenario_object(model_key, scenario_object_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "to_object_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.scenario_object",
+      "parent_columns": [
+        "model_key",
+        "scenario_object_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, to_object_key) REFERENCES scenario_object(model_key, scenario_object_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.scenario_step",
+      "columns": [
+        "model_key",
+        "parent_step_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.scenario_step",
+      "parent_columns": [
+        "model_key",
+        "scenario_step_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, parent_step_key) REFERENCES scenario_step(model_key, scenario_step_key) ON DELETE CASCADE"
     }
   ],
   "enums": [
@@ -6728,6 +7097,15 @@
       ]
     },
     {
+      "name": "public.leaf_type",
+      "values": [
+        "delete",
+        "event",
+        "query",
+        "scenario"
+      ]
+    },
+    {
       "name": "public.notation",
       "values": [
         "tla_plus"
@@ -6754,6 +7132,16 @@
         "do",
         "entry",
         "exit"
+      ]
+    },
+    {
+      "name": "public.step_type",
+      "values": [
+        "case",
+        "leaf",
+        "loop",
+        "sequence",
+        "switch"
       ]
     },
     {
