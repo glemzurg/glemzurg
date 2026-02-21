@@ -2,7 +2,7 @@
 
 ## Description
 
-An global function used to describe simulation and code generation.
+A global function used to describe simulation and code generation.
 
 ## Columns
 

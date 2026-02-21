@@ -12,7 +12,7 @@ An action triggered on entry, exit, or continual do from a state.
 | state_key | text |  | false |  | [public.state](public.state.md) | The state this action is triggered in. |
 | state_action_key | text |  | false |  |  | The internal ID. |
 | action_key | text |  | false |  | [public.action](public.action.md) | The action triggered. |
-| action_when | state_action_when |  | false |  |  | When the triggere takes place. |
+| action_when | state_action_when |  | false |  |  | When the trigger takes place. |
 
 ## Constraints
 

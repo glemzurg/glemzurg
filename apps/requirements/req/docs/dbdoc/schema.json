@@ -16,7 +16,7 @@
           "name": "name",
           "type": "text",
           "nullable": false,
-          "comment": "The unique name of the domain."
+          "comment": "The unique name of the model."
         },
         {
           "name": "details",
@@ -263,7 +263,7 @@
     {
       "name": "public.global_function",
       "type": "BASE TABLE",
-      "comment": "An global function used to describe simulation and code generation.",
+      "comment": "A global function used to describe simulation and code generation.",
       "columns": [
         {
           "name": "model_key",
@@ -429,7 +429,7 @@
         {
           "name": "realized",
           "type": "boolean",
-          "nullable": true,
+          "nullable": false,
           "comment": "A realized domain is one with no semantic model, which is preexisting, and just design and later artifacts."
         },
         {
@@ -479,6 +479,16 @@
           "referenced_table": "",
           "columns": [
             "name"
+          ]
+        },
+        {
+          "name": "domain_realized_not_null",
+          "type": "n",
+          "def": "NOT NULL realized",
+          "table": "public.domain",
+          "referenced_table": "",
+          "columns": [
+            "realized"
           ]
         },
         {
@@ -717,7 +727,7 @@
           ]
         },
         {
-          "name": "fk_association_model",
+          "name": "fk_domain_association_model",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
           "table": "public.domain_association",
@@ -730,7 +740,7 @@
           ]
         },
         {
-          "name": "fk_association_problem",
+          "name": "fk_domain_association_problem",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, problem_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE",
           "table": "public.domain_association",
@@ -745,7 +755,7 @@
           ]
         },
         {
-          "name": "fk_association_solution",
+          "name": "fk_domain_association_solution",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE",
           "table": "public.domain_association",
@@ -891,7 +901,7 @@
     {
       "name": "public.actor",
       "type": "BASE TABLE",
-      "comment": "A role that a person or sytem can take who uses the system. Actors are outside of subdomains.",
+      "comment": "A role that a person or system can take who uses the system. Actors are outside of subdomains.",
       "columns": [
         {
           "name": "model_key",
@@ -1053,7 +1063,7 @@
     {
       "name": "public.data_type",
       "type": "BASE TABLE",
-      "comment": "An data type for use in a class attribute or action parameter.",
+      "comment": "A data type for use in a class attribute or action parameter.",
       "columns": [
         {
           "name": "model_key",
@@ -1083,7 +1093,7 @@
           "name": "collection_min",
           "type": "bigint",
           "nullable": true,
-          "comment": "If a collection and there is a minimum number of items, the minimum. Always set of maximum set."
+          "comment": "If a collection and there is a minimum number of items, the minimum. Always set if maximum set."
         },
         {
           "name": "collection_max",
@@ -1184,7 +1194,7 @@
     {
       "name": "public.data_type_atomic",
       "type": "BASE TABLE",
-      "comment": "An atomic type that backs a data type for eventually use in a class attribute or action parameter.",
+      "comment": "An atomic type that backs a data type for eventual use in a class attribute or action parameter.",
       "columns": [
         {
           "name": "model_key",
@@ -2243,7 +2253,7 @@
     {
       "name": "public.class_index",
       "type": "BASE TABLE",
-      "comment": "A unique identity for a class, may be mulitple attributes together for the identity.",
+      "comment": "A unique identity for a class, may be multiple attributes together for the identity.",
       "columns": [
         {
           "name": "model_key",
@@ -2432,7 +2442,7 @@
           "name": "association_class_key",
           "type": "text",
           "nullable": true,
-          "comment": "If thiere is a class for for this association, what is it."
+          "comment": "If there is a class for this association, what is it."
         },
         {
           "name": "details",
@@ -2623,7 +2633,7 @@
     {
       "name": "public.query",
       "type": "BASE TABLE",
-      "comment": "An business logic query of a class that does not change the state of a class.",
+      "comment": "A business logic query of a class that does not change the state of a class.",
       "columns": [
         {
           "name": "model_key",
@@ -3238,7 +3248,7 @@
     {
       "name": "public.event",
       "type": "BASE TABLE",
-      "comment": "Some occurence that can potentially trigger a change in and instance.",
+      "comment": "Some occurrence that can potentially trigger a change in an instance.",
       "columns": [
         {
           "name": "model_key",
@@ -3750,7 +3760,7 @@
     {
       "name": "public.action_parameter",
       "type": "BASE TABLE",
-      "comment": "A parameter of a action.",
+      "comment": "A parameter of an action.",
       "columns": [
         {
           "name": "model_key",
@@ -4467,7 +4477,7 @@
           "name": "action_when",
           "type": "state_action_when",
           "nullable": false,
-          "comment": "When the triggere takes place."
+          "comment": "When the trigger takes place."
         }
       ],
       "indexes": [
@@ -5627,7 +5637,7 @@
           "name": "scenario_ref_key",
           "type": "text",
           "nullable": true,
-          "comment": "A leaf step that is a another scenario."
+          "comment": "A leaf step that is another scenario."
         }
       ],
       "indexes": [

@@ -10,7 +10,7 @@ CREATE TABLE model (
 
 COMMENT ON TABLE model IS 'A fully distinct semantic model, separate from all others.';
 COMMENT ON COLUMN model.model_key IS 'The internal ID.';
-COMMENT ON COLUMN model.name IS 'The unique name of the domain.';
+COMMENT ON COLUMN model.name IS 'The unique name of the model.';
 COMMENT ON COLUMN model.details IS 'A summary description.';
 
 --------------------------------------------------------------
@@ -61,7 +61,7 @@ CREATE TABLE global_function (
   CONSTRAINT fk_global_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE global_function IS 'An global function used to describe simulation and code generation.';
+COMMENT ON TABLE global_function IS 'A global function used to describe simulation and code generation.';
 COMMENT ON COLUMN global_function.model_key IS 'The model this function is part of.';
 COMMENT ON COLUMN global_function.logic_key IS 'The logic of the function.';
 COMMENT ON COLUMN global_function.name IS 'The name of the function, fitting for the notation of the logic.';
@@ -75,7 +75,7 @@ CREATE TABLE domain (
   model_key text NOT NULL,
   name text NOT NULL,
   details text DEFAULT NULL,
-  realized boolean,
+  realized boolean NOT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, domain_key),
   CONSTRAINT fk_domain_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
@@ -118,9 +118,9 @@ CREATE TABLE domain_association (
   solution_domain_key text NOT NULL,
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, association_key),
-  CONSTRAINT fk_association_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
-  CONSTRAINT fk_association_problem FOREIGN KEY (model_key, problem_domain_key) REFERENCES domain (model_key, domain_key) ON DELETE CASCADE,
-  CONSTRAINT fk_association_solution FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain (model_key, domain_key) ON DELETE CASCADE
+  CONSTRAINT fk_domain_association_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE,
+  CONSTRAINT fk_domain_association_problem FOREIGN KEY (model_key, problem_domain_key) REFERENCES domain (model_key, domain_key) ON DELETE CASCADE,
+  CONSTRAINT fk_domain_association_solution FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain (model_key, domain_key) ON DELETE CASCADE
 );
 
 COMMENT ON TABLE domain_association IS 'A semantic relationship between two domains.';
@@ -173,7 +173,7 @@ CREATE TABLE actor (
   CONSTRAINT fk_actor_subclass FOREIGN KEY (model_key, subclass_of_key) REFERENCES actor_generalization (model_key, generalization_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE actor IS 'A role that a person or sytem can take who uses the system. Actors are outside of subdomains.';
+COMMENT ON TABLE actor IS 'A role that a person or system can take who uses the system. Actors are outside of subdomains.';
 COMMENT ON COLUMN actor.model_key IS 'The model this actor is part of.';
 COMMENT ON COLUMN actor.actor_key IS 'The internal ID.';
 COMMENT ON COLUMN actor.name IS 'The unique name of the actor.';
@@ -207,12 +207,12 @@ CREATE TABLE data_type (
   CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE data_type IS 'An data type for use in a class attribute or action parameter.';
+COMMENT ON TABLE data_type IS 'A data type for use in a class attribute or action parameter.';
 COMMENT ON COLUMN data_type.model_key IS 'The model this data type is part of.';
 COMMENT ON COLUMN data_type.data_type_key IS 'The internal ID.';
 COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic value, and if a collection what kind.';
 COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
-COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set of maximum set.';
+COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set if maximum set.';
 COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
 
 --------------------------------------------------------------
@@ -238,7 +238,7 @@ CREATE TABLE data_type_atomic (
   CONSTRAINT fk_atomic_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE data_type_atomic IS 'An atomic type that backs a data type for eventually use in a class attribute or action parameter.';
+COMMENT ON TABLE data_type_atomic IS 'An atomic type that backs a data type for eventual use in a class attribute or action parameter.';
 COMMENT ON COLUMN data_type_atomic.model_key IS 'The model this data type is part of.';
 COMMENT ON COLUMN data_type_atomic.data_type_key IS 'The internal ID from data_type.';
 COMMENT ON COLUMN data_type_atomic.constraint_type IS 'The constraints on values for this data type.';
@@ -269,7 +269,7 @@ CREATE TYPE bound_limit_type AS ENUM ('closed', 'open', 'unconstrained');
 COMMENT ON TYPE bound_limit_type IS 'How a min and max value is defined in a span.
 
 - Closed. Include the value itself.
-- Open. Do not in clude the value itself.
+- Open. Do not include the value itself.
 - Unconstrained. Undefined what this end of the span is, at least not in requirements.
 ';
 
@@ -426,7 +426,7 @@ CREATE TABLE class_index (
   CONSTRAINT fk_index_attribute FOREIGN KEY (model_key, attribute_key) REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE class_index IS 'A unique identity for a class, may be mulitple attributes together for the identity.';
+COMMENT ON TABLE class_index IS 'A unique identity for a class, may be multiple attributes together for the identity.';
 COMMENT ON COLUMN class_index.model_key IS 'The model the class attribute is part of.';
 COMMENT ON COLUMN class_index.class_key IS 'The class this index is part of.';
 COMMENT ON COLUMN class_index.attribute_key IS 'The attribute that contributes to this index. An attribute can be part of more than one index.';
@@ -464,7 +464,7 @@ COMMENT ON COLUMN association.to_class_key IS 'The toward direction of the assoc
 COMMENT ON COLUMN association.to_multiplicity_lower IS 'The multiplicity of the to end of the relation, lower value, 0 means "any".';
 COMMENT ON COLUMN association.to_multiplicity_higher IS 'The multiplicity of the to end of the relation, higher value, 0 means "any".';
 COMMENT ON COLUMN association.name IS 'The relationship name next to the taco chip.';
-COMMENT ON COLUMN association.association_class_key IS 'If thiere is a class for for this association, what is it.';
+COMMENT ON COLUMN association.association_class_key IS 'If there is a class for this association, what is it.';
 COMMENT ON COLUMN association.details IS 'A summary description.';
 COMMENT ON COLUMN association.uml_comment IS 'A comment that appears in the diagrams.';
 
@@ -480,7 +480,7 @@ CREATE TABLE query (
   CONSTRAINT fk_query_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE query IS 'An business logic query of a class that does not change the state of a class.';
+COMMENT ON TABLE query IS 'A business logic query of a class that does not change the state of a class.';
 COMMENT ON COLUMN query.model_key IS 'The model this state machine is part of.';
 COMMENT ON COLUMN query.class_key IS 'The class this query is part of.';
 COMMENT ON COLUMN query.query_key IS 'The internal ID.';
@@ -580,7 +580,7 @@ CREATE TABLE event (
   CONSTRAINT fk_event_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE event IS 'Some occurence that can potentially trigger a change in and instance.';
+COMMENT ON TABLE event IS 'Some occurrence that can potentially trigger a change in an instance.';
 COMMENT ON COLUMN event.model_key IS 'The model this state machine is part of.';
 COMMENT ON COLUMN event.event_key IS 'The internal ID.';
 COMMENT ON COLUMN event.class_key IS 'The class this event is in.';
@@ -663,7 +663,7 @@ CREATE TABLE action_parameter (
   CONSTRAINT fk_action_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE action_parameter IS 'A parameter of a action.';
+COMMENT ON TABLE action_parameter IS 'A parameter of an action.';
 COMMENT ON COLUMN action_parameter.model_key IS 'The model this action is part of.';
 COMMENT ON COLUMN action_parameter.action_key IS 'The action this parameter is part of.';
 COMMENT ON COLUMN action_parameter.parameter_key IS 'The internal ID, the name but lower case.';
@@ -773,7 +773,7 @@ COMMENT ON COLUMN state_action.model_key IS 'The model this state machine is par
 COMMENT ON COLUMN state_action.state_key IS 'The state this action is triggered in.';
 COMMENT ON COLUMN state_action.state_action_key IS 'The internal ID.';
 COMMENT ON COLUMN state_action.action_key IS 'The action triggered.';
-COMMENT ON COLUMN state_action.action_when IS 'When the triggere takes place.';
+COMMENT ON COLUMN state_action.action_when IS 'When the trigger takes place.';
 
 --------------------------------------------------------------
 
@@ -899,7 +899,7 @@ CREATE TABLE scenario (
   CONSTRAINT fk_scenario_use_case FOREIGN KEY (model_key, use_case_key) REFERENCES use_case (model_key, use_case_key) ON DELETE CASCADE
 );
 
-comment ON TABLE scenario IS 'A documented scenario, such as a sequence diagram or activity diagram, for a use case.';
+COMMENT ON TABLE scenario IS 'A documented scenario, such as a sequence diagram or activity diagram, for a use case.';
 COMMENT ON COLUMN scenario.model_key IS 'The model this scenario is part of.';
 COMMENT ON COLUMN scenario.scenario_key IS 'The internal ID.';
 COMMENT ON COLUMN scenario.name IS 'The name of the scenario.';
@@ -986,4 +986,4 @@ COMMENT ON COLUMN scenario_step.from_object_key IS 'The source of a step.';
 COMMENT ON COLUMN scenario_step.to_object_key IS 'The destination of a step.';
 COMMENT ON COLUMN scenario_step.event_key IS 'A leaf step that changes state.';
 COMMENT ON COLUMN scenario_step.query_key IS 'A leaf step that does not change state.';
-COMMENT ON COLUMN scenario_step.scenario_ref_key IS 'A leaf step that is a another scenario.';
+COMMENT ON COLUMN scenario_step.scenario_ref_key IS 'A leaf step that is another scenario.';

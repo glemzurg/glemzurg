@@ -4,8 +4,6 @@
 todo:
   - examine test coverage of database package
     - specifically foreing key tests
-  - use ai to check comemnts and forieng keys in schema
-    - coverage of tests
   - update the yaml parsing
     - update hte parser ai parsing
       - add the extra structures to parser ai

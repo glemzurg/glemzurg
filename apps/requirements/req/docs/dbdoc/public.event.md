@@ -2,7 +2,7 @@
 
 ## Description
 
-Some occurence that can potentially trigger a change in and instance.
+Some occurrence that can potentially trigger a change in an instance.
 
 ## Columns
 

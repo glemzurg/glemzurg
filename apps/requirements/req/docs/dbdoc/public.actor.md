@@ -2,7 +2,7 @@
 
 ## Description
 
-A role that a person or sytem can take who uses the system. Actors are outside of subdomains.
+A role that a person or system can take who uses the system. Actors are outside of subdomains.
 
 ## Columns
 

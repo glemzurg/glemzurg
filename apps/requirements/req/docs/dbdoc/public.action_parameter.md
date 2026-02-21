@@ -2,7 +2,7 @@
 
 ## Description
 
-A parameter of a action.
+A parameter of an action.
 
 ## Columns
 

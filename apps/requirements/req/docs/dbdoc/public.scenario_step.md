@@ -21,7 +21,7 @@ A step of a scenario, all the steps in a scenario form a tree.
 | to_object_key | text |  | true |  | [public.scenario_object](public.scenario_object.md) | The destination of a step. |
 | event_key | text |  | true |  | [public.event](public.event.md) | A leaf step that changes state. |
 | query_key | text |  | true |  | [public.query](public.query.md) | A leaf step that does not change state. |
-| scenario_ref_key | text |  | true |  | [public.scenario](public.scenario.md) | A leaf step that is a another scenario. |
+| scenario_ref_key | text |  | true |  | [public.scenario](public.scenario.md) | A leaf step that is another scenario. |
 
 ## Constraints
 

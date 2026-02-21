@@ -2,7 +2,7 @@
 
 ## Description
 
-An atomic type that backs a data type for eventually use in a class attribute or action parameter.
+An atomic type that backs a data type for eventual use in a class attribute or action parameter.
 
 ## Columns
 

@@ -2,7 +2,7 @@
 
 ## Description
 
-An business logic query of a class that does not change the state of a class.
+A business logic query of a class that does not change the state of a class.
 
 ## Columns
 
