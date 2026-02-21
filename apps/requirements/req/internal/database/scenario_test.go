@@ -94,8 +94,8 @@ func (suite *ScenarioSuite) TestLoad() {
 	assert.Empty(suite.T(), scenario)
 
 	// Create expected steps
-	expectedSteps := &model_scenario.Node{
-		Statements: []model_scenario.Node{
+	expectedSteps := &model_scenario.Step{
+		Statements: []model_scenario.Step{
 			{
 				Description:   "test step",
 				FromObjectKey: &suite.obj1Key,
@@ -147,8 +147,8 @@ func (suite *ScenarioSuite) TestAdd() {
 		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
-		Steps: &model_scenario.Node{
-			Statements: []model_scenario.Node{
+		Steps: &model_scenario.Step{
+			Statements: []model_scenario.Step{
 				{
 					Description:   "add test step",
 					FromObjectKey: &suite.obj1Key,
@@ -175,8 +175,8 @@ func (suite *ScenarioSuite) TestAdd() {
 
 func (suite *ScenarioSuite) TestUpdate() {
 
-	originalSteps := &model_scenario.Node{
-		Statements: []model_scenario.Node{
+	originalSteps := &model_scenario.Step{
+		Statements: []model_scenario.Step{
 			{
 				Description:   "original step",
 				FromObjectKey: &suite.obj1Key,
@@ -194,8 +194,8 @@ func (suite *ScenarioSuite) TestUpdate() {
 	})
 	assert.Nil(suite.T(), err)
 
-	updatedSteps := &model_scenario.Node{
-		Statements: []model_scenario.Node{
+	updatedSteps := &model_scenario.Step{
+		Statements: []model_scenario.Step{
 			{
 				Description:   "updated step",
 				FromObjectKey: &suite.obj3Key,
@@ -244,8 +244,8 @@ func (suite *ScenarioSuite) TestRemove() {
 
 func (suite *ScenarioSuite) TestQueryScenarios() {
 
-	stepsX := &model_scenario.Node{
-		Statements: []model_scenario.Node{
+	stepsX := &model_scenario.Step{
+		Statements: []model_scenario.Step{
 			{
 				Description:   "step X",
 				FromObjectKey: &suite.obj1Key,
@@ -255,8 +255,8 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 		},
 	}
 
-	steps := &model_scenario.Node{
-		Statements: []model_scenario.Node{
+	steps := &model_scenario.Step{
+		Statements: []model_scenario.Step{
 			{
 				Description:   "step",
 				FromObjectKey: &suite.obj3Key,
@@ -316,7 +316,7 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ide
 	// Extract subdomain key from use case key to create class key, then event key.
 	useCaseKeyStr := useCaseKey.String()
 	// Parse the subdomain key portion (everything before /usecase/).
-	subdomainKey := helper.Must(identity.ParseKey(useCaseKeyStr[:len(useCaseKeyStr)-len("/usecase/"+useCaseKey.SubKey())]))
+	subdomainKey := helper.Must(identity.ParseKey(useCaseKeyStr[:len(useCaseKeyStr)-len("/usecase/"+useCaseKey.SubKey)]))
 	helperClassKey := helper.Must(identity.NewClassKey(subdomainKey, "helper_class"))
 	helperEventKey := helper.Must(identity.NewEventKey(helperClassKey, "helper_event"))
 
@@ -324,8 +324,8 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ide
 		Key:     scenarioKey,
 		Name:    scenarioKey.String(),
 		Details: "",
-		Steps: &model_scenario.Node{
-			Statements: []model_scenario.Node{
+		Steps: &model_scenario.Step{
+			Statements: []model_scenario.Step{
 				{
 					Description:   "helper step",
 					FromObjectKey: &helperFromKey,

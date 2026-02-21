@@ -10,7 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	// "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
@@ -536,6 +536,31 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect scenarios from use cases (must be inserted after use cases due to FK).
+		scenariosMap := make(map[identity.Key][]model_scenario.Scenario)
+		objectsMap := make(map[identity.Key][]model_scenario.Object)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					for _, scenario := range uc.Scenarios {
+						scenariosMap[uc.Key] = append(scenariosMap[uc.Key], scenario)
+						// Collect objects from this scenario.
+						for _, obj := range scenario.Objects {
+							objectsMap[scenario.Key] = append(objectsMap[scenario.Key], obj)
+						}
+					}
+				}
+			}
+		}
+		if err = AddScenarios(tx, modelKey, scenariosMap); err != nil {
+			return err
+		}
+
+		// Bulk insert scenario objects (must be inserted after scenarios due to FK).
+		if err = AddObjects(tx, modelKey, objectsMap); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -659,6 +684,31 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		useCaseSharedsMap, err := QueryUseCaseShareds(tx, modelKey)
 		if err != nil {
 			return err
+		}
+
+		// Scenarios grouped by use case key.
+		scenariosMap, err := QueryScenarios(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Scenario objects grouped by scenario key.
+		scenarioObjectsMap, err := QueryObjects(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch objects onto scenarios.
+		for useCaseKey, scenList := range scenariosMap {
+			for i, scenario := range scenList {
+				if objs, ok := scenarioObjectsMap[scenario.Key]; ok {
+					scenList[i].Objects = make(map[identity.Key]model_scenario.Object, len(objs))
+					for _, obj := range objs {
+						scenList[i].Objects[obj.Key] = obj
+					}
+				}
+			}
+			scenariosMap[useCaseKey] = scenList
 		}
 
 		// Classes grouped by subdomain key.
@@ -946,7 +996,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 							}
 						}
 
-						// Attach use cases to subdomain, stitching actors onto each use case.
+						// Attach use cases to subdomain, stitching actors and scenarios onto each use case.
 						{
 							useCasesForSubdomain := make(map[identity.Key]model_use_case.UseCase)
 							for _, uc := range useCasesSlice {
@@ -954,6 +1004,13 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 									// Stitch actors onto use case.
 									if actors, ok := useCaseActorsMap[uc.Key]; ok {
 										uc.Actors = actors
+									}
+									// Stitch scenarios onto use case.
+									if scenList, ok := scenariosMap[uc.Key]; ok {
+										uc.Scenarios = make(map[identity.Key]model_scenario.Scenario, len(scenList))
+										for _, scenario := range scenList {
+											uc.Scenarios[scenario.Key] = scenario
+										}
 									}
 									useCasesForSubdomain[uc.Key] = uc
 								}

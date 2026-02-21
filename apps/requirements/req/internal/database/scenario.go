@@ -41,7 +41,7 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *identity.Key, scenario *model_
 
 	// Unmarshal the steps JSON if present
 	if len(stepsJSON) > 0 {
-		scenario.Steps = &model_scenario.Node{}
+		scenario.Steps = &model_scenario.Step{}
 		if err = scenario.Steps.FromJSON(string(stepsJSON)); err != nil {
 			return err
 		}

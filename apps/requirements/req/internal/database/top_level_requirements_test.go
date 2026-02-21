@@ -12,6 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 
@@ -73,6 +74,13 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	// Use case keys.
 	useCaseKeyAA := helper.Must(identity.NewUseCaseKey(subdomainKeyAA, "uc_a"))
 	useCaseKeyAAB := helper.Must(identity.NewUseCaseKey(subdomainKeyAA, "uc_b"))
+
+	// Scenario keys.
+	scenarioKeyAA := helper.Must(identity.NewScenarioKey(useCaseKeyAA, "scenario_a"))
+
+	// Scenario object keys.
+	scenarioObjectKey1 := helper.Must(identity.NewScenarioObjectKey(scenarioKeyAA, "obj1"))
+	scenarioObjectKey2 := helper.Must(identity.NewScenarioObjectKey(scenarioKeyAA, "obj2"))
 
 	// Class keys.
 	classKeyAA1 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa1"))
@@ -260,6 +268,33 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								Actors: map[identity.Key]model_use_case.Actor{
 									classKeyAA1: {
 										UmlComment: "UC actor AA1 comment",
+									},
+								},
+								Scenarios: map[identity.Key]model_scenario.Scenario{
+									scenarioKeyAA: {
+										Key:     scenarioKeyAA,
+										Name:    "ScenarioA",
+										Details: "Scenario A details",
+										Objects: map[identity.Key]model_scenario.Object{
+											scenarioObjectKey1: {
+												Key:          scenarioObjectKey1,
+												ObjectNumber: 0,
+												Name:         "Obj1",
+												NameStyle:    "name",
+												ClassKey:     classKeyAA1,
+												Multi:        false,
+												UmlComment:   "Object 1 UML comment",
+											},
+											scenarioObjectKey2: {
+												Key:          scenarioObjectKey2,
+												ObjectNumber: 1,
+												Name:         "Obj2",
+												NameStyle:    "name",
+												ClassKey:     classKeyAA2,
+												Multi:        true,
+												UmlComment:   "Object 2 UML comment",
+											},
+										},
 									},
 								},
 							},
