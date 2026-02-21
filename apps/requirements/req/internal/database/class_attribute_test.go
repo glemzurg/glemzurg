@@ -91,11 +91,11 @@ func (suite *AttributeSuite) TestLoad() {
 				'Name',
 				'Details',
 				'DataTypeRules',
-				$1,
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/key/aderivation/deriv',
 				true,
 				'UmlComment'
 			)
-	`, suite.logic.Key.String())
+	`)
 	assert.Nil(suite.T(), err)
 
 	classKey, attribute, err = LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)

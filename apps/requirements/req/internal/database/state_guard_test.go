@@ -72,11 +72,11 @@ func (suite *GuardSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				$1,
-				$2,
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/guard/key',
 				'Name'
 			)
-	`, suite.class.Key.String(), suite.guardKey.String())
+	`)
 	assert.Nil(suite.T(), err)
 
 	classKey, guard, err = LoadGuard(suite.db, suite.model.Key, suite.guardKey)

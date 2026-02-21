@@ -69,13 +69,13 @@ func (suite *QueryParameterSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				$1,
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key',
 				'amount',
 				'Amount',
 				1,
 				'Nat'
 			)
-	`, suite.queryKey.String())
+	`)
 	assert.Nil(suite.T(), err)
 
 	param, err = LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")

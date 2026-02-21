@@ -69,8 +69,12 @@ func (suite *QueryRequireSuite) TestLoad() {
 		INSERT INTO query_require
 			(model_key, query_key, logic_key)
 		VALUES
-			($1, $2, $3)
-	`, suite.model.Key, suite.queryKey.String(), suite.logicKey.String())
+			(
+				'model_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key/qrequire/req_a'
+			)
+	`)
 	assert.Nil(suite.T(), err)
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)

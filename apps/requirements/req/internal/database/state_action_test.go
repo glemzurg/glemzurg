@@ -69,12 +69,12 @@ func (suite *ActionSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				$1,
-				$2,
+				'domain/domain_key/subdomain/subdomain_key/class/class_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/key',
 				'Name',
 				'Details'
 			)
-	`, suite.class.Key.String(), suite.actionKey.String())
+	`)
 	assert.Nil(suite.T(), err)
 
 	classKey, action, err = LoadAction(suite.db, suite.model.Key, suite.actionKey)

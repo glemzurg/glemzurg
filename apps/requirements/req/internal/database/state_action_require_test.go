@@ -69,8 +69,12 @@ func (suite *ActionRequireSuite) TestLoad() {
 		INSERT INTO action_require
 			(model_key, action_key, logic_key)
 		VALUES
-			($1, $2, $3)
-	`, suite.model.Key, suite.actionKey.String(), suite.logicKey.String())
+			(
+				'model_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key/arequire/req_a'
+			)
+	`)
 	assert.Nil(suite.T(), err)
 
 	key, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)

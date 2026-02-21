@@ -86,7 +86,6 @@ func (suite *StepSuite) TestLoad() {
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert a step directly with raw SQL.
-	stepKey0 := suite.stepKey(0)
 	_, err = dbExec(suite.db, `
 		INSERT INTO scenario_step
 			(
@@ -107,16 +106,22 @@ func (suite *StepSuite) TestLoad() {
 			)
 		VALUES
 			(
-				$1, $2, $3, NULL, 0, 'leaf', 'event', NULL, 'Step description',
-				$4, $5, $6, NULL, NULL
-			)`,
-		suite.model.Key,
-		stepKey0.String(),
-		suite.scenario.Key.String(),
-		suite.fromObj.Key.String(),
-		suite.toObj.Key.String(),
-		suite.event.Key.String(),
-	)
+				'model_key',
+				'domain/domain_key/subdomain/subdomain_key/usecase/use_case_key/scenario/scenario_key/sstep/0',
+				'domain/domain_key/subdomain/subdomain_key/usecase/use_case_key/scenario/scenario_key',
+				NULL,
+				0,
+				'leaf',
+				'event',
+				NULL,
+				'Step description',
+				'domain/domain_key/subdomain/subdomain_key/usecase/use_case_key/scenario/scenario_key/sobject/from_obj',
+				'domain/domain_key/subdomain/subdomain_key/usecase/use_case_key/scenario/scenario_key/sobject/to_obj',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/event/event_key',
+				NULL,
+				NULL
+			)
+	`)
 	assert.Nil(suite.T(), err)
 
 	scenarioKey, parentStepKey, sortOrder, step, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))

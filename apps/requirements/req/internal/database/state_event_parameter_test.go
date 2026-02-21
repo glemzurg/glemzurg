@@ -69,13 +69,13 @@ func (suite *EventParameterSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				$1,
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/event/event_key',
 				'amount',
 				'Amount',
 				1,
 				'Nat'
 			)
-	`, suite.eventKey.String())
+	`)
 	assert.Nil(suite.T(), err)
 
 	param, err = LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")

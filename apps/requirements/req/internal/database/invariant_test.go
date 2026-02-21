@@ -56,8 +56,8 @@ func (suite *InvariantSuite) TestLoad() {
 		INSERT INTO invariant
 			(model_key, logic_key)
 		VALUES
-			($1, $2)
-	`, suite.model.Key, suite.invariantKey.String())
+			('model_key', 'invariant/key')
+	`)
 	assert.Nil(suite.T(), err)
 
 	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)

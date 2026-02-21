@@ -2,7 +2,6 @@
 ---------------------------
 
 todo:
-  - verify keys are correct parent/child correctly
   - update load tests to not use $params
   - examine test coverage of database package
     - specifically foreing key tests
