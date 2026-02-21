@@ -26,7 +26,6 @@ const (
 // Step represents a step in the scenario steps tree.
 type Step struct {
 	Key           identity.Key  `json:"key" yaml:"key"`
-	SortOrder     int           `json:"sort_order" yaml:"sort_order"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
 	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"`             // Only for leaf steps: event, query, scenario, delete.
 	Statements    []Step        `json:"statements,omitempty" yaml:"statements,omitempty"`
@@ -175,22 +174,6 @@ func (s *Step) ValidateWithParent(parent *identity.Key) error {
 	return nil
 }
 
-// SetSortOrders walks the step tree and sets each step's SortOrder
-// to its index within its parent's Statements slice.
-// The root step's SortOrder is set to 0.
-func (s *Step) SetSortOrders() {
-	s.SortOrder = 0
-	setSortOrders(s.Statements)
-}
-
-// setSortOrders recursively sets SortOrder on each step in the slice.
-func setSortOrders(steps []Step) {
-	for i := range steps {
-		steps[i].SortOrder = i
-		setSortOrders(steps[i].Statements)
-	}
-}
-
 // FromJSON parses the JSON string into the Step.
 func (s *Step) FromJSON(jsonStr string) error {
 	return json.Unmarshal([]byte(jsonStr), s)
@@ -218,7 +201,6 @@ func (s Step) ToYAML() (string, error) {
 func (s Step) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m["key"] = s.Key
-	m["sort_order"] = s.SortOrder
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {
 		m["leaf_type"] = *s.LeafType
@@ -255,7 +237,6 @@ func (s Step) MarshalJSON() ([]byte, error) {
 func (s Step) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{})
 	m["key"] = s.Key.String()
-	m["sort_order"] = s.SortOrder
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {
 		m["leaf_type"] = *s.LeafType

@@ -281,13 +281,11 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Name:    "ScenarioA",
 										Details: "Scenario A details",
 										Steps: &model_scenario.Step{
-											Key:       stepKeyRoot,
-											SortOrder: 0,
-											StepType:  model_scenario.STEP_TYPE_SEQUENCE,
+											Key:      stepKeyRoot,
+											StepType: model_scenario.STEP_TYPE_SEQUENCE,
 											Statements: []model_scenario.Step{
 												{
 													Key:           stepKeyChild1,
-													SortOrder:     0,
 													StepType:      model_scenario.STEP_TYPE_LEAF,
 													LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 													Description:   "Send event from Obj1 to Obj2",
@@ -297,7 +295,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												},
 												{
 													Key:           stepKeyChild2,
-													SortOrder:     1,
 													StepType:      model_scenario.STEP_TYPE_LEAF,
 													LeafType:      t_strPtr(model_scenario.LEAF_TYPE_QUERY),
 													Description:   "Query from Obj2 to Obj1",

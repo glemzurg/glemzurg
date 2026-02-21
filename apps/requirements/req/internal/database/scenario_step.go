@@ -13,11 +13,12 @@ import (
 type stepRow struct {
 	scenarioKey   identity.Key
 	parentStepKey *identity.Key
+	sortOrder     int
 	step          model_scenario.Step
 }
 
-// Populate a golang struct from a database row.
-func scanStep(scanner Scanner, scenarioKeyPtr *identity.Key, parentStepKeyPtr **identity.Key, step *model_scenario.Step) (err error) {
+// scanStep scans a database row into a stepRow.
+func scanStep(scanner Scanner) (row stepRow, err error) {
 	var stepKeyStr string
 	var scenarioKeyStr string
 	var parentStepKeyStrPtr *string
@@ -34,8 +35,8 @@ func scanStep(scanner Scanner, scenarioKeyPtr *identity.Key, parentStepKeyPtr **
 		&stepKeyStr,
 		&scenarioKeyStr,
 		&parentStepKeyStrPtr,
-		&step.SortOrder,
-		&step.StepType,
+		&row.sortOrder,
+		&row.step.StepType,
 		&leafTypePtr,
 		&conditionPtr,
 		&descriptionPtr,
@@ -48,90 +49,89 @@ func scanStep(scanner Scanner, scenarioKeyPtr *identity.Key, parentStepKeyPtr **
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
 		}
-		return err // Do not wrap in stack here. It will be wrapped in the database calls.
+		return stepRow{}, err // Do not wrap in stack here. It will be wrapped in the database calls.
 	}
 
 	// Parse the step key string into an identity.Key.
-	step.Key, err = identity.ParseKey(stepKeyStr)
+	row.step.Key, err = identity.ParseKey(stepKeyStr)
 	if err != nil {
-		return err
+		return stepRow{}, err
 	}
 
 	// Parse the scenario key string into an identity.Key.
-	*scenarioKeyPtr, err = identity.ParseKey(scenarioKeyStr)
+	row.scenarioKey, err = identity.ParseKey(scenarioKeyStr)
 	if err != nil {
-		return err
+		return stepRow{}, err
 	}
 
 	// Parse optional parent step key.
 	if parentStepKeyStrPtr != nil {
 		parentKey, err := identity.ParseKey(*parentStepKeyStrPtr)
 		if err != nil {
-			return err
+			return stepRow{}, err
 		}
-		*parentStepKeyPtr = &parentKey
+		row.parentStepKey = &parentKey
 	}
 
 	// Parse optional fields.
 	if leafTypePtr != nil {
-		step.LeafType = leafTypePtr
+		row.step.LeafType = leafTypePtr
 	}
 	if conditionPtr != nil {
-		step.Condition = *conditionPtr
+		row.step.Condition = *conditionPtr
 	}
 	if descriptionPtr != nil {
-		step.Description = *descriptionPtr
+		row.step.Description = *descriptionPtr
 	}
 	if fromObjectKeyPtr != nil {
 		fromKey, err := identity.ParseKey(*fromObjectKeyPtr)
 		if err != nil {
-			return err
+			return stepRow{}, err
 		}
-		step.FromObjectKey = &fromKey
+		row.step.FromObjectKey = &fromKey
 	}
 	if toObjectKeyPtr != nil {
 		toKey, err := identity.ParseKey(*toObjectKeyPtr)
 		if err != nil {
-			return err
+			return stepRow{}, err
 		}
-		step.ToObjectKey = &toKey
+		row.step.ToObjectKey = &toKey
 	}
 	if eventKeyPtr != nil {
 		eventKey, err := identity.ParseKey(*eventKeyPtr)
 		if err != nil {
-			return err
+			return stepRow{}, err
 		}
-		step.EventKey = &eventKey
+		row.step.EventKey = &eventKey
 	}
 	if queryKeyPtr != nil {
 		queryKey, err := identity.ParseKey(*queryKeyPtr)
 		if err != nil {
-			return err
+			return stepRow{}, err
 		}
-		step.QueryKey = &queryKey
+		row.step.QueryKey = &queryKey
 	}
 	if scenarioRefKeyPtr != nil {
 		scenarioRefKey, err := identity.ParseKey(*scenarioRefKeyPtr)
 		if err != nil {
-			return err
+			return stepRow{}, err
 		}
-		step.ScenarioKey = &scenarioRefKey
+		row.step.ScenarioKey = &scenarioRefKey
 	}
 
-	return nil
+	return row, nil
 }
 
 // LoadStep loads a single step from the database.
-func LoadStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (scenarioKey identity.Key, parentStepKey *identity.Key, step model_scenario.Step, err error) {
+func LoadStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (scenarioKey identity.Key, parentStepKey *identity.Key, sortOrder int, step model_scenario.Step, err error) {
 
 	// Query the database.
+	var row stepRow
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanStep(scanner, &scenarioKey, &parentStepKey, &step); err != nil {
-				return err
-			}
-			return nil
+			row, err = scanStep(scanner)
+			return err
 		},
 		`SELECT
 			scenario_step_key,
@@ -156,21 +156,21 @@ func LoadStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (scenarioKey
 		modelKey,
 		stepKey.String())
 	if err != nil {
-		return identity.Key{}, nil, model_scenario.Step{}, errors.WithStack(err)
+		return identity.Key{}, nil, 0, model_scenario.Step{}, errors.WithStack(err)
 	}
 
-	return scenarioKey, parentStepKey, step, nil
+	return row.scenarioKey, row.parentStepKey, row.sortOrder, row.step, nil
 }
 
 // AddStep adds a single step row to the database.
-func AddStep(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, parentStepKey *identity.Key, step model_scenario.Step) (err error) {
+func AddStep(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, parentStepKey *identity.Key, sortOrder int, step model_scenario.Step) (err error) {
 	return AddSteps(dbOrTx, modelKey, []stepRow{
-		{scenarioKey: scenarioKey, parentStepKey: parentStepKey, step: step},
+		{scenarioKey: scenarioKey, parentStepKey: parentStepKey, sortOrder: sortOrder, step: step},
 	})
 }
 
 // UpdateStep updates a step in the database.
-func UpdateStep(dbOrTx DbOrTx, modelKey string, step model_scenario.Step) (err error) {
+func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenario.Step) (err error) {
 
 	// Handle optional key pointers.
 	var leafTypePtr *string
@@ -232,7 +232,7 @@ func UpdateStep(dbOrTx DbOrTx, modelKey string, step model_scenario.Step) (err e
 			scenario_step_key = $2`,
 		modelKey,
 		step.Key.String(),
-		step.SortOrder,
+		sortOrder,
 		step.StepType,
 		leafTypePtr,
 		conditionPtr,
@@ -278,8 +278,8 @@ func QuerySteps(dbOrTx DbOrTx, modelKey string) (steps map[identity.Key]*model_s
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var row stepRow
-			if err = scanStep(scanner, &row.scenarioKey, &row.parentStepKey, &row.step); err != nil {
+			row, err := scanStep(scanner)
+			if err != nil {
 				return errors.WithStack(err)
 			}
 			rows = append(rows, row)
@@ -373,16 +373,15 @@ func rebuildStepTrees(rows []stepRow) map[identity.Key]*model_scenario.Step {
 // flattenSteps walks a step tree and produces flat stepRow slices in topological order (root first).
 func flattenSteps(scenarioKey identity.Key, root *model_scenario.Step) []stepRow {
 	var rows []stepRow
-	flattenStepsRecursive(scenarioKey, nil, root, &rows)
+	flattenStepsRecursive(scenarioKey, nil, root, 0, &rows)
 	return rows
 }
 
 // flattenStepsRecursive recursively flattens a step tree.
-func flattenStepsRecursive(scenarioKey identity.Key, parentKey *identity.Key, step *model_scenario.Step, rows *[]stepRow) {
+func flattenStepsRecursive(scenarioKey identity.Key, parentKey *identity.Key, step *model_scenario.Step, sortOrder int, rows *[]stepRow) {
 	// Add this step (without Statements, which are children in the DB).
 	flatStep := model_scenario.Step{
 		Key:           step.Key,
-		SortOrder:     step.SortOrder,
 		StepType:      step.StepType,
 		LeafType:      step.LeafType,
 		Condition:     step.Condition,
@@ -397,13 +396,14 @@ func flattenStepsRecursive(scenarioKey identity.Key, parentKey *identity.Key, st
 	*rows = append(*rows, stepRow{
 		scenarioKey:   scenarioKey,
 		parentStepKey: parentKey,
+		sortOrder:     sortOrder,
 		step:          flatStep,
 	})
 
 	// Recurse into children.
 	for i := range step.Statements {
 		childParent := step.Key
-		flattenStepsRecursive(scenarioKey, &childParent, &step.Statements[i], rows)
+		flattenStepsRecursive(scenarioKey, &childParent, &step.Statements[i], i, rows)
 	}
 }
 
@@ -476,7 +476,7 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 			row.step.Key.String(),
 			row.scenarioKey.String(),
 			parentStepKeyPtr,
-			row.step.SortOrder,
+			row.sortOrder,
 			row.step.StepType,
 			leafTypePtr,
 			conditionPtr,

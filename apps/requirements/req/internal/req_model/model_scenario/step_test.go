@@ -583,70 +583,6 @@ func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
 }
 
-func (suite *ScenarioStepsSuite) TestSetSortOrders() {
-	// Build a tree: sequence > [leaf, loop > [leaf, leaf], switch > [case > [leaf]]]
-	root := Step{
-		Key:       suite.stepKey(0),
-		SortOrder: 99, // Will be reset to 0.
-		StepType:  STEP_TYPE_SEQUENCE,
-		Statements: []Step{
-			{Key: suite.stepKey(1), SortOrder: 77, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
-			{
-				Key:       suite.stepKey(2),
-				SortOrder: 88,
-				StepType:  STEP_TYPE_LOOP,
-				Condition: "while true",
-				Statements: []Step{
-					{Key: suite.stepKey(3), SortOrder: 55, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
-					{Key: suite.stepKey(4), SortOrder: 66, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
-				},
-			},
-			{
-				Key:       suite.stepKey(5),
-				SortOrder: 44,
-				StepType:  STEP_TYPE_SWITCH,
-				Statements: []Step{
-					{
-						Key:       suite.stepKey(6),
-						SortOrder: 33,
-						StepType:  STEP_TYPE_CASE,
-						Condition: "cond",
-						Statements: []Step{
-							{Key: suite.stepKey(7), SortOrder: 22, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	root.SetSortOrders()
-
-	// Root is always 0.
-	assert.Equal(suite.T(), 0, root.SortOrder)
-	// Direct children of root: indices 0, 1, 2.
-	assert.Equal(suite.T(), 0, root.Statements[0].SortOrder)
-	assert.Equal(suite.T(), 1, root.Statements[1].SortOrder)
-	assert.Equal(suite.T(), 2, root.Statements[2].SortOrder)
-	// Children of loop (index 1): indices 0, 1.
-	assert.Equal(suite.T(), 0, root.Statements[1].Statements[0].SortOrder)
-	assert.Equal(suite.T(), 1, root.Statements[1].Statements[1].SortOrder)
-	// Children of switch (index 2): case at index 0.
-	assert.Equal(suite.T(), 0, root.Statements[2].Statements[0].SortOrder)
-	// Children of case: leaf at index 0.
-	assert.Equal(suite.T(), 0, root.Statements[2].Statements[0].Statements[0].SortOrder)
-
-	// Leaf with no children: SetSortOrders is a no-op on children.
-	leaf := Step{
-		Key:       suite.stepKey(0),
-		SortOrder: 42,
-		StepType:  STEP_TYPE_LEAF,
-		LeafType:  t_strPtr(LEAF_TYPE_EVENT),
-	}
-	leaf.SetSortOrders()
-	assert.Equal(suite.T(), 0, leaf.SortOrder)
-}
-
 func (suite *ScenarioStepsSuite) TestValidateUnknownStepType() {
 	step := Step{
 		Key:      suite.stepKey(0),
@@ -767,35 +703,31 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 }
 
 func (suite *ScenarioStepsSuite) TestJSON() {
-	// Complex structure: sequence > [switch > [case > [leaf], case > [leaf]], loop > [leaf]]
+	// Complex structure: sequence > [switch > [case > [leaf]], loop > [leaf]]
 	root := Step{
-		Key:       suite.stepKey(0),
-		SortOrder: 0,
-		StepType:  STEP_TYPE_SEQUENCE,
+		Key:      suite.stepKey(0),
+		StepType: STEP_TYPE_SEQUENCE,
 		Statements: []Step{
 			{
-				Key:       suite.stepKey(1),
-				SortOrder: 0,
-				StepType:  STEP_TYPE_SWITCH,
+				Key:      suite.stepKey(1),
+				StepType: STEP_TYPE_SWITCH,
 				Statements: []Step{
 					{
 						Key:       suite.stepKey(2),
-						SortOrder: 0,
 						StepType:  STEP_TYPE_CASE,
 						Condition: "if x > 0",
 						Statements: []Step{
-							{Key: suite.stepKey(3), SortOrder: 0, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+							{Key: suite.stepKey(3), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 						},
 					},
 				},
 			},
 			{
 				Key:       suite.stepKey(4),
-				SortOrder: 1,
 				StepType:  STEP_TYPE_LOOP,
 				Condition: "for i in range(10)",
 				Statements: []Step{
-					{Key: suite.stepKey(5), SortOrder: 0, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_SCENARIO), Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
+					{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_SCENARIO), Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
 				},
 			},
 		},
@@ -820,10 +752,6 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 	assert.Len(suite.T(), unmarshaled.Statements, 2)
 	assert.Equal(suite.T(), STEP_TYPE_SWITCH, unmarshaled.Statements[0].StepType)
 	assert.Equal(suite.T(), STEP_TYPE_LOOP, unmarshaled.Statements[1].StepType)
-
-	// Check SortOrder survives round-trip
-	assert.Equal(suite.T(), 0, unmarshaled.Statements[0].SortOrder)
-	assert.Equal(suite.T(), 1, unmarshaled.Statements[1].SortOrder)
 }
 
 func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
@@ -831,12 +759,10 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 	// JSON literal with all structures - using valid identity key formats
 	jsonLiteral := fmt.Sprintf(`{
 		"key": "%[1]s/sstep/0",
-		"sort_order": 0,
 		"step_type": "sequence",
 		"statements": [
 			{
 				"key": "%[1]s/sstep/1",
-				"sort_order": 0,
 				"step_type": "leaf",
 				"leaf_type": "event",
 				"description": "first step",
@@ -846,13 +772,11 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			},
 			{
 				"key": "%[1]s/sstep/2",
-				"sort_order": 1,
 				"step_type": "loop",
 				"condition": "while condition",
 				"statements": [
 					{
 						"key": "%[1]s/sstep/3",
-						"sort_order": 0,
 						"step_type": "leaf",
 						"leaf_type": "scenario",
 						"description": "loop step",
@@ -864,18 +788,15 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			},
 			{
 				"key": "%[1]s/sstep/4",
-				"sort_order": 2,
 				"step_type": "switch",
 				"statements": [
 					{
 						"key": "%[1]s/sstep/5",
-						"sort_order": 0,
 						"step_type": "case",
 						"condition": "case1",
 						"statements": [
 							{
 								"key": "%[1]s/sstep/6",
-								"sort_order": 0,
 								"step_type": "leaf",
 								"leaf_type": "query",
 								"description": "case1 step",
@@ -887,13 +808,11 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 					},
 					{
 						"key": "%[1]s/sstep/7",
-						"sort_order": 1,
 						"step_type": "case",
 						"condition": "case2",
 						"statements": [
 							{
 								"key": "%[1]s/sstep/8",
-								"sort_order": 0,
 								"step_type": "leaf",
 								"leaf_type": "delete",
 								"from_object_key": "%[1]s/sobject/from4"
@@ -922,11 +841,9 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
 	scenarioKeyStr := suite.scenarioKey.String()
 	// YAML literal with all structures - using valid identity key formats
 	yamlLiteral := fmt.Sprintf(`key: %[1]s/sstep/0
-sort_order: 0
 step_type: sequence
 statements:
     - key: %[1]s/sstep/1
-      sort_order: 0
       step_type: leaf
       leaf_type: event
       description: first step
@@ -934,12 +851,10 @@ statements:
       to_object_key: %[1]s/sobject/to1
       event_key: domain/test_domain/subdomain/default/class/test_class/event/ev1
     - key: %[1]s/sstep/2
-      sort_order: 1
       step_type: loop
       condition: while condition
       statements:
         - key: %[1]s/sstep/3
-          sort_order: 0
           step_type: leaf
           leaf_type: scenario
           description: loop step
@@ -947,16 +862,13 @@ statements:
           to_object_key: %[1]s/sobject/to2
           scenario_key: domain/test_domain/subdomain/default/usecase/test_use_case/scenario/sk2
     - key: %[1]s/sstep/4
-      sort_order: 2
       step_type: switch
       statements:
         - key: %[1]s/sstep/5
-          sort_order: 0
           step_type: case
           condition: case1
           statements:
             - key: %[1]s/sstep/6
-              sort_order: 0
               step_type: leaf
               leaf_type: query
               description: case1 step
@@ -964,12 +876,10 @@ statements:
               to_object_key: %[1]s/sobject/to3
               query_key: domain/test_domain/subdomain/default/class/test_class/query/qk4
         - key: %[1]s/sstep/7
-          sort_order: 1
           step_type: case
           condition: case2
           statements:
             - key: %[1]s/sstep/8
-              sort_order: 0
               step_type: leaf
               leaf_type: delete
               from_object_key: %[1]s/sobject/from4

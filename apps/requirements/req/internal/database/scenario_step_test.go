@@ -82,7 +82,7 @@ func t_strPtr(s string) *string { return &s }
 func (suite *StepSuite) TestLoad() {
 
 	// Nothing in database yet.
-	_, _, _, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
+	_, _, _, _, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert a step directly with raw SQL.
@@ -119,13 +119,13 @@ func (suite *StepSuite) TestLoad() {
 	)
 	assert.Nil(suite.T(), err)
 
-	scenarioKey, parentStepKey, step, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
+	scenarioKey, parentStepKey, sortOrder, step, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
 	assert.Nil(suite.T(), parentStepKey)
+	assert.Equal(suite.T(), 0, sortOrder)
 	assert.Equal(suite.T(), model_scenario.Step{
 		Key:           suite.stepKey(0),
-		SortOrder:     0,
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 		Description:   "Step description",
@@ -139,7 +139,6 @@ func (suite *StepSuite) TestAdd() {
 
 	step := model_scenario.Step{
 		Key:           suite.stepKey(0),
-		SortOrder:     0,
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 		Description:   "Event step",
@@ -148,13 +147,14 @@ func (suite *StepSuite) TestAdd() {
 		EventKey:      &suite.event.Key,
 	}
 
-	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, step)
+	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
 	assert.Nil(suite.T(), err)
 
-	scenarioKey, parentStepKey, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
+	scenarioKey, parentStepKey, sortOrder, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
 	assert.Nil(suite.T(), parentStepKey)
+	assert.Equal(suite.T(), 0, sortOrder)
 	assert.Equal(suite.T(), step, loaded)
 }
 
@@ -162,18 +162,16 @@ func (suite *StepSuite) TestAddWithParent() {
 
 	// Add root step.
 	rootStep := model_scenario.Step{
-		Key:       suite.stepKey(0),
-		SortOrder: 0,
-		StepType:  model_scenario.STEP_TYPE_SEQUENCE,
+		Key:      suite.stepKey(0),
+		StepType: model_scenario.STEP_TYPE_SEQUENCE,
 	}
-	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, rootStep)
+	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, rootStep)
 	assert.Nil(suite.T(), err)
 
 	// Add child step with parent.
 	parentKey := suite.stepKey(0)
 	childStep := model_scenario.Step{
 		Key:           suite.stepKey(1),
-		SortOrder:     0,
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 		Description:   "Child event",
@@ -181,14 +179,15 @@ func (suite *StepSuite) TestAddWithParent() {
 		ToObjectKey:   &suite.toObj.Key,
 		EventKey:      &suite.event.Key,
 	}
-	err = AddStep(suite.db, suite.model.Key, suite.scenario.Key, &parentKey, childStep)
+	err = AddStep(suite.db, suite.model.Key, suite.scenario.Key, &parentKey, 0, childStep)
 	assert.Nil(suite.T(), err)
 
-	scenarioKey, loadedParent, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
+	scenarioKey, loadedParent, sortOrder, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
 	assert.NotNil(suite.T(), loadedParent)
 	assert.Equal(suite.T(), suite.stepKey(0), *loadedParent)
+	assert.Equal(suite.T(), 0, sortOrder)
 	assert.Equal(suite.T(), childStep, loaded)
 }
 
@@ -197,7 +196,6 @@ func (suite *StepSuite) TestUpdate() {
 	// Add initial step.
 	step := model_scenario.Step{
 		Key:           suite.stepKey(0),
-		SortOrder:     0,
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 		Description:   "Original",
@@ -205,13 +203,12 @@ func (suite *StepSuite) TestUpdate() {
 		ToObjectKey:   &suite.toObj.Key,
 		EventKey:      &suite.event.Key,
 	}
-	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, step)
+	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
 	assert.Nil(suite.T(), err)
 
 	// Update to a query leaf.
 	updated := model_scenario.Step{
 		Key:           suite.stepKey(0),
-		SortOrder:     0,
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_QUERY),
 		Description:   "Updated",
@@ -219,10 +216,10 @@ func (suite *StepSuite) TestUpdate() {
 		ToObjectKey:   &suite.fromObj.Key,
 		QueryKey:      &suite.query.Key,
 	}
-	err = UpdateStep(suite.db, suite.model.Key, updated)
+	err = UpdateStep(suite.db, suite.model.Key, 0, updated)
 	assert.Nil(suite.T(), err)
 
-	_, _, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
+	_, _, _, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), updated, loaded)
 }
@@ -231,7 +228,6 @@ func (suite *StepSuite) TestRemove() {
 
 	step := model_scenario.Step{
 		Key:           suite.stepKey(0),
-		SortOrder:     0,
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 		Description:   "To be removed",
@@ -239,13 +235,13 @@ func (suite *StepSuite) TestRemove() {
 		ToObjectKey:   &suite.toObj.Key,
 		EventKey:      &suite.event.Key,
 	}
-	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, step)
+	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
 	assert.Nil(suite.T(), err)
 
 	err = RemoveStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.Nil(suite.T(), err)
 
-	_, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
+	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 }
 
@@ -253,13 +249,11 @@ func (suite *StepSuite) TestQuerySteps() {
 
 	// Build a tree: sequence > [event leaf, query leaf]
 	rootStep := model_scenario.Step{
-		Key:       suite.stepKey(0),
-		SortOrder: 0,
-		StepType:  model_scenario.STEP_TYPE_SEQUENCE,
+		Key:      suite.stepKey(0),
+		StepType: model_scenario.STEP_TYPE_SEQUENCE,
 		Statements: []model_scenario.Step{
 			{
 				Key:           suite.stepKey(1),
-				SortOrder:     0,
 				StepType:      model_scenario.STEP_TYPE_LEAF,
 				LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
 				Description:   "Event step",
@@ -269,7 +263,6 @@ func (suite *StepSuite) TestQuerySteps() {
 			},
 			{
 				Key:           suite.stepKey(2),
-				SortOrder:     1,
 				StepType:      model_scenario.STEP_TYPE_LEAF,
 				LeafType:      t_strPtr(model_scenario.LEAF_TYPE_QUERY),
 				Description:   "Query step",
