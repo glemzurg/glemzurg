@@ -583,6 +583,70 @@ func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
 }
 
+func (suite *ScenarioStepsSuite) TestSetSortOrders() {
+	// Build a tree: sequence > [leaf, loop > [leaf, leaf], switch > [case > [leaf]]]
+	root := Step{
+		Key:       suite.stepKey(0),
+		SortOrder: 99, // Will be reset to 0.
+		StepType:  STEP_TYPE_SEQUENCE,
+		Statements: []Step{
+			{Key: suite.stepKey(1), SortOrder: 77, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{
+				Key:       suite.stepKey(2),
+				SortOrder: 88,
+				StepType:  STEP_TYPE_LOOP,
+				Condition: "while true",
+				Statements: []Step{
+					{Key: suite.stepKey(3), SortOrder: 55, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+					{Key: suite.stepKey(4), SortOrder: 66, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+				},
+			},
+			{
+				Key:       suite.stepKey(5),
+				SortOrder: 44,
+				StepType:  STEP_TYPE_SWITCH,
+				Statements: []Step{
+					{
+						Key:       suite.stepKey(6),
+						SortOrder: 33,
+						StepType:  STEP_TYPE_CASE,
+						Condition: "cond",
+						Statements: []Step{
+							{Key: suite.stepKey(7), SortOrder: 22, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	root.SetSortOrders()
+
+	// Root is always 0.
+	assert.Equal(suite.T(), 0, root.SortOrder)
+	// Direct children of root: indices 0, 1, 2.
+	assert.Equal(suite.T(), 0, root.Statements[0].SortOrder)
+	assert.Equal(suite.T(), 1, root.Statements[1].SortOrder)
+	assert.Equal(suite.T(), 2, root.Statements[2].SortOrder)
+	// Children of loop (index 1): indices 0, 1.
+	assert.Equal(suite.T(), 0, root.Statements[1].Statements[0].SortOrder)
+	assert.Equal(suite.T(), 1, root.Statements[1].Statements[1].SortOrder)
+	// Children of switch (index 2): case at index 0.
+	assert.Equal(suite.T(), 0, root.Statements[2].Statements[0].SortOrder)
+	// Children of case: leaf at index 0.
+	assert.Equal(suite.T(), 0, root.Statements[2].Statements[0].Statements[0].SortOrder)
+
+	// Leaf with no children: SetSortOrders is a no-op on children.
+	leaf := Step{
+		Key:       suite.stepKey(0),
+		SortOrder: 42,
+		StepType:  STEP_TYPE_LEAF,
+		LeafType:  t_strPtr(LEAF_TYPE_EVENT),
+	}
+	leaf.SetSortOrders()
+	assert.Equal(suite.T(), 0, leaf.SortOrder)
+}
+
 func (suite *ScenarioStepsSuite) TestValidateUnknownStepType() {
 	step := Step{
 		Key:      suite.stepKey(0),

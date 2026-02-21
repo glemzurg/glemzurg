@@ -175,6 +175,22 @@ func (s *Step) ValidateWithParent(parent *identity.Key) error {
 	return nil
 }
 
+// SetSortOrders walks the step tree and sets each step's SortOrder
+// to its index within its parent's Statements slice.
+// The root step's SortOrder is set to 0.
+func (s *Step) SetSortOrders() {
+	s.SortOrder = 0
+	setSortOrders(s.Statements)
+}
+
+// setSortOrders recursively sets SortOrder on each step in the slice.
+func setSortOrders(steps []Step) {
+	for i := range steps {
+		steps[i].SortOrder = i
+		setSortOrders(steps[i].Statements)
+	}
+}
+
 // FromJSON parses the JSON string into the Step.
 func (s *Step) FromJSON(jsonStr string) error {
 	return json.Unmarshal([]byte(jsonStr), s)
