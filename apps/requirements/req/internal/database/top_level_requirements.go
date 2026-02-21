@@ -561,6 +561,23 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect steps from scenarios and flatten for bulk insert (must be after scenarios and objects due to FK).
+		var allStepRows []stepRow
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					for _, scenario := range uc.Scenarios {
+						if scenario.Steps != nil {
+							allStepRows = append(allStepRows, flattenSteps(scenario.Key, scenario.Steps)...)
+						}
+					}
+				}
+			}
+		}
+		if err = AddSteps(tx, modelKey, allStepRows); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -698,7 +715,13 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Stitch objects onto scenarios.
+		// Steps grouped by scenario key (reconstructed trees).
+		stepsMap, err := QuerySteps(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch objects and steps onto scenarios.
 		for useCaseKey, scenList := range scenariosMap {
 			for i, scenario := range scenList {
 				if objs, ok := scenarioObjectsMap[scenario.Key]; ok {
@@ -706,6 +729,9 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 					for _, obj := range objs {
 						scenList[i].Objects[obj.Key] = obj
 					}
+				}
+				if rootStep, ok := stepsMap[scenario.Key]; ok {
+					scenList[i].Steps = rootStep
 				}
 			}
 			scenariosMap[useCaseKey] = scenList

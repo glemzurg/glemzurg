@@ -82,6 +82,11 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	scenarioObjectKey1 := helper.Must(identity.NewScenarioObjectKey(scenarioKeyAA, "obj1"))
 	scenarioObjectKey2 := helper.Must(identity.NewScenarioObjectKey(scenarioKeyAA, "obj2"))
 
+	// Step keys.
+	stepKeyRoot := helper.Must(identity.NewScenarioStepKey(scenarioKeyAA, "root"))
+	stepKeyChild1 := helper.Must(identity.NewScenarioStepKey(scenarioKeyAA, "child1"))
+	stepKeyChild2 := helper.Must(identity.NewScenarioStepKey(scenarioKeyAA, "child2"))
+
 	// Class keys.
 	classKeyAA1 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa1"))
 	classKeyAA2 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa2"))
@@ -275,6 +280,33 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Key:     scenarioKeyAA,
 										Name:    "ScenarioA",
 										Details: "Scenario A details",
+										Steps: &model_scenario.Step{
+											Key:       stepKeyRoot,
+											SortOrder: 0,
+											StepType:  model_scenario.STEP_TYPE_SEQUENCE,
+											Statements: []model_scenario.Step{
+												{
+													Key:           stepKeyChild1,
+													SortOrder:     0,
+													StepType:      model_scenario.STEP_TYPE_LEAF,
+													LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
+													Description:   "Send event from Obj1 to Obj2",
+													FromObjectKey: &scenarioObjectKey1,
+													ToObjectKey:   &scenarioObjectKey2,
+													EventKey:      &eventKeyAA1A,
+												},
+												{
+													Key:           stepKeyChild2,
+													SortOrder:     1,
+													StepType:      model_scenario.STEP_TYPE_LEAF,
+													LeafType:      t_strPtr(model_scenario.LEAF_TYPE_QUERY),
+													Description:   "Query from Obj2 to Obj1",
+													FromObjectKey: &scenarioObjectKey2,
+													ToObjectKey:   &scenarioObjectKey1,
+													QueryKey:      &queryKeyAA1A,
+												},
+											},
+										},
 										Objects: map[identity.Key]model_scenario.Object{
 											scenarioObjectKey1: {
 												Key:          scenarioObjectKey1,
