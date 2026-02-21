@@ -91,7 +91,7 @@ func (suite *AttributeSuite) TestLoad() {
 				'Name',
 				'Details',
 				'DataTypeRules',
-				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/key/aderivation/deriv',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/key/aderive/deriv',
 				true,
 				'UmlComment'
 			)

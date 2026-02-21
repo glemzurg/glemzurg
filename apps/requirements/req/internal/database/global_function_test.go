@@ -56,7 +56,7 @@ func (suite *GlobalFunctionSuite) TestLoad() {
 		INSERT INTO global_function
 			(model_key, logic_key, name, comment, parameters)
 		VALUES
-			('model_key', 'gfunction/key', '_Max', 'Returns the maximum', '{x,y}')
+			('model_key', 'gfunc/key', '_Max', 'Returns the maximum', '{x,y}')
 	`)
 	assert.Nil(suite.T(), err)
 
