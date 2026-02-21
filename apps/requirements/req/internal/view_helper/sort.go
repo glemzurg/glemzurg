@@ -1,4 +1,4 @@
-package req_flat
+package view_helper
 
 import (
 	"sort"

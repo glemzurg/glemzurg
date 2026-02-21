@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -754,7 +754,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	// Add attributes section.
 	if len(class.Attributes) > 0 {
 		attrsBuilder := NewYamlBuilder()
-		sortedAttrs := req_flat.GetAttributesSorted(class.Attributes)
+		sortedAttrs := view_helper.GetAttributesSorted(class.Attributes)
 		for _, attr := range sortedAttrs {
 			attrBuilder := NewYamlBuilder()
 			attrBuilder.AddField("name", attr.Name)
@@ -959,4 +959,3 @@ func addMultiplicityField(builder *YamlBuilder, key string, m model_class.Multip
 		builder.AddQuotedField(key, s)
 	}
 }
-
