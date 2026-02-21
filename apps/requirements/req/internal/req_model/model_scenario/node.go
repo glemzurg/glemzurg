@@ -10,44 +10,32 @@ import (
 
 const (
 	// Node types.
-	NODE_TYPE_LEAF     = "" // Leaf node has no type.
+	NODE_TYPE_LEAF     = "leaf"
 	NODE_TYPE_SEQUENCE = "sequence"
 	NODE_TYPE_SWITCH   = "switch"
+	NODE_TYPE_CASE     = "case"
 	NODE_TYPE_LOOP     = "loop"
 
 	// Leaf types.
-	LEAF_TYPE_EVENT     = "event"
-	LEAF_TYPE_ATTRIBUTE = "attribute"
-	LEAF_TYPE_SCENARIO  = "scenario"
-	LEAF_TYPE_DELETE    = "delete"
+	LEAF_TYPE_EVENT    = "event"
+	LEAF_TYPE_QUERY    = "query"
+	LEAF_TYPE_SCENARIO = "scenario"
+	LEAF_TYPE_DELETE   = "delete"
 )
 
 // Node represents a node in the scenario steps tree.
 type Node struct {
+	Key           identity.Key  `json:"key" yaml:"key"`
+	NodeType      string        `json:"node_type" yaml:"node_type"`
 	Statements    []Node        `json:"statements,omitempty" yaml:"statements,omitempty"`
-	Cases         []Case        `json:"cases,omitempty" yaml:"cases,omitempty"`
-	Loop          string        `json:"loop,omitempty" yaml:"loop,omitempty"`               // Loop description.
-	Description   string        `json:"description,omitempty" yaml:"description,omitempty"` // Leaf description.
-	FromObjectKey *identity.Key `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"`
-	ToObjectKey   *identity.Key `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`
+	Condition     string        `json:"condition,omitempty" yaml:"condition,omitempty"`             // Used by loop and case nodes.
+	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`         // Leaf description.
+	FromObjectKey *identity.Key `json:"from_object_key,omitempty" yaml:"from_object_key,omitempty"` // Source object.
+	ToObjectKey   *identity.Key `json:"to_object_key,omitempty" yaml:"to_object_key,omitempty"`     // Target object.
 	EventKey      *identity.Key `json:"event_key,omitempty" yaml:"event_key,omitempty"`
+	QueryKey      *identity.Key `json:"query_key,omitempty" yaml:"query_key,omitempty"`
 	ScenarioKey   *identity.Key `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
-	AttributeKey  *identity.Key `json:"attribute_key,omitempty" yaml:"attribute_key,omitempty"`
 	IsDelete      bool          `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
-}
-
-// Inferredtype returns the type of the node based on its fields.
-func (n *Node) Inferredtype() string {
-	if n.Loop != "" {
-		return NODE_TYPE_LOOP
-	}
-	if len(n.Cases) > 0 {
-		return NODE_TYPE_SWITCH
-	}
-	if len(n.Statements) > 0 {
-		return NODE_TYPE_SEQUENCE
-	}
-	return NODE_TYPE_LEAF
 }
 
 // InferredLeafType returns the leaf type of the node based on its fields.
@@ -58,8 +46,8 @@ func (n *Node) InferredLeafType() string {
 	if n.ScenarioKey != nil {
 		return LEAF_TYPE_SCENARIO
 	}
-	if n.AttributeKey != nil {
-		return LEAF_TYPE_ATTRIBUTE
+	if n.QueryKey != nil {
+		return LEAF_TYPE_QUERY
 	}
 	if n.IsDelete {
 		return LEAF_TYPE_DELETE
@@ -67,15 +55,16 @@ func (n *Node) InferredLeafType() string {
 	panic("node is not a leaf")
 }
 
-// Case represents a case in a switch node.
-type Case struct {
-	Condition  string `json:"condition" yaml:"condition"`
-	Statements []Node `json:"statements" yaml:"statements"`
-}
-
 // Validate validates the node and its sub-nodes.
 func (n *Node) Validate() error {
-	switch n.Inferredtype() {
+	// Validate the key.
+	if err := n.Key.Validate(); err != nil {
+		return err
+	}
+	if n.Key.KeyType != identity.KEY_TYPE_SCENARIO_STEP {
+		return errors.Errorf("Key: invalid key type '%s' for scenario step.", n.Key.KeyType)
+	}
+	switch n.NodeType {
 	case NODE_TYPE_SEQUENCE:
 		if len(n.Statements) == 0 {
 			return errors.New("sequence must have at least one statement")
@@ -86,22 +75,29 @@ func (n *Node) Validate() error {
 			}
 		}
 	case NODE_TYPE_SWITCH:
-		if len(n.Cases) == 0 {
+		if len(n.Statements) == 0 {
 			return errors.New("switch must have at least one case")
 		}
-		for _, c := range n.Cases {
-			if c.Condition == "" {
-				return errors.New("switch case must have a conditional description")
+		for _, stmt := range n.Statements {
+			if stmt.NodeType != NODE_TYPE_CASE {
+				return errors.New("switch children must all be case nodes")
 			}
-			for _, stmt := range c.Statements {
-				if err := stmt.Validate(); err != nil {
-					return err
-				}
+			if err := stmt.Validate(); err != nil {
+				return err
+			}
+		}
+	case NODE_TYPE_CASE:
+		if n.Condition == "" {
+			return errors.New("case must have a condition")
+		}
+		for _, stmt := range n.Statements {
+			if err := stmt.Validate(); err != nil {
+				return err
 			}
 		}
 	case NODE_TYPE_LOOP:
-		if n.Loop == "" {
-			return errors.New("loop must have a loop description")
+		if n.Condition == "" {
+			return errors.New("loop must have a condition")
 		}
 		if len(n.Statements) == 0 {
 			return errors.New("loop must have at least one statement")
@@ -119,8 +115,8 @@ func (n *Node) Validate() error {
 			if n.ToObjectKey != nil {
 				return errors.New("delete leaf cannot have a to_object_key")
 			}
-			if n.EventKey != nil || n.ScenarioKey != nil || n.AttributeKey != nil {
-				return errors.New("delete leaf cannot have event_key, scenario_key, or attribute_key")
+			if n.EventKey != nil || n.ScenarioKey != nil || n.QueryKey != nil {
+				return errors.New("delete leaf cannot have event_key, scenario_key, or query_key")
 			}
 		} else {
 			if n.FromObjectKey == nil {
@@ -136,24 +132,37 @@ func (n *Node) Validate() error {
 			if n.ScenarioKey != nil {
 				nonEmptyKeys++
 			}
-			if n.AttributeKey != nil {
+			if n.QueryKey != nil {
 				nonEmptyKeys++
 			}
 			if nonEmptyKeys == 0 {
-				return errors.New("leaf must have one of event_key, scenario_key, or attribute_key")
+				return errors.New("leaf must have one of event_key, scenario_key, or query_key")
 			}
 			if nonEmptyKeys > 1 {
-				return errors.New("leaf cannot have more than one of event_key, scenario_key, or attribute_key")
+				return errors.New("leaf cannot have more than one of event_key, scenario_key, or query_key")
 			}
 		}
+	default:
+		return errors.Errorf("unknown node type '%s'", n.NodeType)
 	}
 	return nil
 }
 
-// ValidateWithParent validates the Node.
-// Node has no key, so parent validation is not applicable.
-func (n *Node) ValidateWithParent() error {
-	return n.Validate()
+// ValidateWithParent validates the Node and its key's parent relationship.
+func (n *Node) ValidateWithParent(parent *identity.Key) error {
+	if err := n.Validate(); err != nil {
+		return err
+	}
+	if err := n.Key.ValidateParent(parent); err != nil {
+		return err
+	}
+	// Validate children with the same parent (all steps are flat under the scenario).
+	for i := range n.Statements {
+		if err := n.Statements[i].ValidateWithParent(parent); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // FromJSON parses the JSON string into the Node.
@@ -178,18 +187,17 @@ func (n Node) ToYAML() (string, error) {
 	return string(data), err
 }
 
-// MarshalJSON custom marshals the Node to include the inferred type.
+// MarshalJSON custom marshals the Node to only include non-empty fields.
 // Uses value receiver so it works with both value and pointer types.
 func (n Node) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
+	m["key"] = n.Key
+	m["node_type"] = n.NodeType
 	if len(n.Statements) > 0 {
 		m["statements"] = n.Statements
 	}
-	if len(n.Cases) > 0 {
-		m["cases"] = n.Cases
-	}
-	if n.Loop != "" {
-		m["loop"] = n.Loop
+	if n.Condition != "" {
+		m["condition"] = n.Condition
 	}
 	if n.Description != "" {
 		m["description"] = n.Description
@@ -203,8 +211,8 @@ func (n Node) MarshalJSON() ([]byte, error) {
 	if n.EventKey != nil {
 		m["event_key"] = n.EventKey
 	}
-	if n.AttributeKey != nil {
-		m["attribute_key"] = n.AttributeKey
+	if n.QueryKey != nil {
+		m["query_key"] = n.QueryKey
 	}
 	if n.ScenarioKey != nil {
 		m["scenario_key"] = n.ScenarioKey
@@ -215,18 +223,17 @@ func (n Node) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m)
 }
 
-// MarshalYAML custom marshals the Node to include the inferred type.
+// MarshalYAML custom marshals the Node to only include non-empty fields.
 // Uses value receiver so it works with both value and pointer types.
 func (n Node) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{})
+	m["key"] = n.Key.String()
+	m["node_type"] = n.NodeType
 	if len(n.Statements) > 0 {
 		m["statements"] = n.Statements
 	}
-	if len(n.Cases) > 0 {
-		m["cases"] = n.Cases
-	}
-	if n.Loop != "" {
-		m["loop"] = n.Loop
+	if n.Condition != "" {
+		m["condition"] = n.Condition
 	}
 	if n.Description != "" {
 		m["description"] = n.Description
@@ -240,8 +247,8 @@ func (n Node) MarshalYAML() (interface{}, error) {
 	if n.EventKey != nil {
 		m["event_key"] = n.EventKey.String()
 	}
-	if n.AttributeKey != nil {
-		m["attribute_key"] = n.AttributeKey.String()
+	if n.QueryKey != nil {
+		m["query_key"] = n.QueryKey.String()
 	}
 	if n.ScenarioKey != nil {
 		m["scenario_key"] = n.ScenarioKey.String()

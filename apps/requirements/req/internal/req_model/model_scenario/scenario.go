@@ -80,7 +80,7 @@ func (s *Scenario) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 	}
 	// Validate Steps if there is content.
 	if s.Steps != nil {
-		if err := s.Steps.ValidateWithParent(); err != nil {
+		if err := s.Steps.ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
 	}
