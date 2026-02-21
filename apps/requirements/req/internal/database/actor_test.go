@@ -22,10 +22,12 @@ func TestActorSuite(t *testing.T) {
 
 type ActorSuite struct {
 	suite.Suite
-	db        *sql.DB
-	model     req_model.Model
-	actorKey  identity.Key
-	actorKeyB identity.Key
+	db                      *sql.DB
+	model                   req_model.Model
+	actorKey                identity.Key
+	actorKeyB               identity.Key
+	actorGeneralizationKey  identity.Key
+	actorGeneralizationKeyB identity.Key
 }
 
 func (suite *ActorSuite) SetupTest() {
@@ -35,6 +37,12 @@ func (suite *ActorSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
+
+	// Create actor generalization rows (must exist before actor references them via FK).
+	suite.actorGeneralizationKey = helper.Must(identity.NewActorGeneralizationKey("agen_a"))
+	suite.actorGeneralizationKeyB = helper.Must(identity.NewActorGeneralizationKey("agen_b"))
+	_ = t_AddActorGeneralization(suite.T(), suite.db, suite.model.Key, suite.actorGeneralizationKey)
+	_ = t_AddActorGeneralization(suite.T(), suite.db, suite.model.Key, suite.actorGeneralizationKeyB)
 
 	// Create the actor keys for reuse.
 	suite.actorKey = helper.Must(identity.NewActorKey("key"))
@@ -56,6 +64,8 @@ func (suite *ActorSuite) TestLoad() {
 				name,
 				details,
 				actor_type,
+				superclass_of_key,
+				subclass_of_key,
 				uml_comment
 			)
 		VALUES
@@ -65,6 +75,8 @@ func (suite *ActorSuite) TestLoad() {
 				'Name',
 				'Details',
 				'person',
+				'ageneralization/agen_a',
+				'ageneralization/agen_b',
 				'UmlComment'
 			)
 	`)
@@ -73,75 +85,152 @@ func (suite *ActorSuite) TestLoad() {
 	actor, err = LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: &suite.actorGeneralizationKey,
+		SubclassOfKey:   &suite.actorGeneralizationKeyB,
+		UmlComment:      "UmlComment",
 	}, actor)
 }
 
 func (suite *ActorSuite) TestAdd() {
 
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: &suite.actorGeneralizationKey,
+		SubclassOfKey:   &suite.actorGeneralizationKeyB,
+		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: &suite.actorGeneralizationKey,
+		SubclassOfKey:   &suite.actorGeneralizationKeyB,
+		UmlComment:      "UmlComment",
+	}, actor)
+}
+
+func (suite *ActorSuite) TestAddNulls() {
+
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "UmlComment",
+	})
+	assert.Nil(suite.T(), err)
+
+	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), model_actor.Actor{
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "UmlComment",
 	}, actor)
 }
 
 func (suite *ActorSuite) TestUpdate() {
 
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: &suite.actorGeneralizationKey,
+		SubclassOfKey:   &suite.actorGeneralizationKeyB,
+		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Type:       "system",
-		UmlComment: "UmlCommentX",
+		Key:             suite.actorKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		Type:            "system",
+		SuperclassOfKey: &suite.actorGeneralizationKeyB,
+		SubclassOfKey:   &suite.actorGeneralizationKey,
+		UmlComment:      "UmlCommentX",
 	})
 	assert.Nil(suite.T(), err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Type:       "system",
-		UmlComment: "UmlCommentX",
+		Key:             suite.actorKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		Type:            "system",
+		SuperclassOfKey: &suite.actorGeneralizationKeyB,
+		SubclassOfKey:   &suite.actorGeneralizationKey,
+		UmlComment:      "UmlCommentX",
+	}, actor)
+}
+
+func (suite *ActorSuite) TestUpdateNulls() {
+
+	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: &suite.actorGeneralizationKey,
+		SubclassOfKey:   &suite.actorGeneralizationKeyB,
+		UmlComment:      "UmlComment",
+	})
+	assert.Nil(suite.T(), err)
+
+	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
+		Key:             suite.actorKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		Type:            "system",
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "UmlCommentX",
+	})
+	assert.Nil(suite.T(), err)
+
+	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), model_actor.Actor{
+		Key:             suite.actorKey,
+		Name:            "NameX",
+		Details:         "DetailsX",
+		Type:            "system",
+		SuperclassOfKey: nil,
+		SubclassOfKey:   nil,
+		UmlComment:      "UmlCommentX",
 	}, actor)
 }
 
 func (suite *ActorSuite) TestRemove() {
 
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
-		Key:        suite.actorKey,
-		Name:       "Name",
-		Details:    "Details",
-		Type:       "person",
-		UmlComment: "UmlComment",
+		Key:             suite.actorKey,
+		Name:            "Name",
+		Details:         "Details",
+		Type:            "person",
+		SuperclassOfKey: &suite.actorGeneralizationKey,
+		SubclassOfKey:   &suite.actorGeneralizationKeyB,
+		UmlComment:      "UmlComment",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -157,18 +246,22 @@ func (suite *ActorSuite) TestQuery() {
 
 	err := AddActors(suite.db, suite.model.Key, []model_actor.Actor{
 		{
-			Key:        suite.actorKeyB,
-			Name:       "NameX",
-			Details:    "DetailsX",
-			Type:       "system",
-			UmlComment: "UmlCommentX",
+			Key:             suite.actorKeyB,
+			Name:            "NameX",
+			Details:         "DetailsX",
+			Type:            "system",
+			SuperclassOfKey: &suite.actorGeneralizationKeyB,
+			SubclassOfKey:   nil,
+			UmlComment:      "UmlCommentX",
 		},
 		{
-			Key:        suite.actorKey,
-			Name:       "Name",
-			Details:    "Details",
-			Type:       "person",
-			UmlComment: "UmlComment",
+			Key:             suite.actorKey,
+			Name:            "Name",
+			Details:         "Details",
+			Type:            "person",
+			SuperclassOfKey: &suite.actorGeneralizationKey,
+			SubclassOfKey:   &suite.actorGeneralizationKeyB,
+			UmlComment:      "UmlComment",
 		},
 	})
 	assert.Nil(suite.T(), err)
@@ -177,18 +270,22 @@ func (suite *ActorSuite) TestQuery() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), []model_actor.Actor{
 		{
-			Key:        suite.actorKey,
-			Name:       "Name",
-			Details:    "Details",
-			Type:       "person",
-			UmlComment: "UmlComment",
+			Key:             suite.actorKey,
+			Name:            "Name",
+			Details:         "Details",
+			Type:            "person",
+			SuperclassOfKey: &suite.actorGeneralizationKey,
+			SubclassOfKey:   &suite.actorGeneralizationKeyB,
+			UmlComment:      "UmlComment",
 		},
 		{
-			Key:        suite.actorKeyB,
-			Name:       "NameX",
-			Details:    "DetailsX",
-			Type:       "system",
-			UmlComment: "UmlCommentX",
+			Key:             suite.actorKeyB,
+			Name:            "NameX",
+			Details:         "DetailsX",
+			Type:            "system",
+			SuperclassOfKey: &suite.actorGeneralizationKeyB,
+			SubclassOfKey:   nil,
+			UmlComment:      "UmlCommentX",
 		},
 	}, actors)
 }
@@ -212,4 +309,16 @@ func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey string, actorKey identity.
 	assert.Nil(t, err)
 
 	return actor
+}
+
+func (suite *ActorSuite) TestVerifyTestObjects() {
+
+	actor := t_AddActor(suite.T(), suite.db, suite.model.Key, suite.actorKey)
+	assert.Equal(suite.T(), model_actor.Actor{
+		Key:        suite.actorKey,
+		Name:       suite.actorKey.String(),
+		Details:    "Details",
+		Type:       "person",
+		UmlComment: "UmlComment",
+	}, actor)
 }

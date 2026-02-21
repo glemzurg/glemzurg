@@ -242,21 +242,25 @@ func (suite *RequirementsSuite) TestWriteRead() {
 			},
 		},
 
-		// Two actors covering fk_actor_model x2, fk_actor_superclass, fk_actor_subclass.
+		// Two actors covering fk_actor_model x2, fk_actor_superclass x2, fk_actor_subclass x2.
 		Actors: map[identity.Key]model_actor.Actor{
 			actorKeyA: {
-				Key:        actorKeyA,
-				Name:       "ActorA",
-				Details:    "Actor A details",
-				Type:       "person",
-				UmlComment: "Actor A UML comment",
+				Key:             actorKeyA,
+				Name:            "ActorA",
+				Details:         "Actor A details",
+				Type:            "person",
+				SuperclassOfKey: &actorGeneralizationKeyA,
+				SubclassOfKey:   &actorGeneralizationKeyB,
+				UmlComment:      "Actor A UML comment",
 			},
 			actorKeyB: {
-				Key:        actorKeyB,
-				Name:       "ActorB",
-				Details:    "Actor B details",
-				Type:       "system",
-				UmlComment: "Actor B UML comment",
+				Key:             actorKeyB,
+				Name:            "ActorB",
+				Details:         "Actor B details",
+				Type:            "system",
+				SuperclassOfKey: &actorGeneralizationKeyB,
+				SubclassOfKey:   &actorGeneralizationKeyA,
+				UmlComment:      "Actor B UML comment",
 			},
 		},
 

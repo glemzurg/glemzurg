@@ -1,4 +1,28 @@
 
+FKs NOT covered (#11, #12)
+The database schema has two columns on the actor table: superclass_of_key and subclass_of_key. These columns have foreign key constraints defined in schema.sql.
+
+However, the Go code that reads and writes actors (actor.go) simply skips those columns. The scanActor function only reads 5 columns (key, name, details, type, uml_comment), and AddActors only writes 6 columns (model_key + those 5). The superclass/subclass columns are never touched.
+
+So when I tried to put superclass/subclass data into the test input, WriteModel never wrote it to the database, and ReadModel never read it back. The round-trip test compares input vs output — if the code ignores a field, there's no way to test it here.
+
+These FK constraints exist in the schema but aren't exercisable until someone updates actor.go to read/write those columns.
+
+Bug found and worked around
+This one is about Go pointers and mutation.
+
+The test builds an input model struct, writes it to the database, reads it back as output, and checks input == output.
+
+The problem: WriteModel internally calls UnpackNested(), which takes a record data type's fields and builds a key for each child data type by concatenating the parent key + "/" + the field name. For example, if the parent key is ".../attr_b" and the field name is "FieldX", it sets the child key to ".../attr_b/FieldX".
+
+The catch is that the child data type is a *DataType pointer. Both the input struct and the UnpackNested code point to the same object in memory. So when UnpackNested writes child.Key = "...attr_b/FieldX", it also changes the key inside input.
+
+Then the database lowercases all keys when storing them (via preenKey), so it stores ".../attr_b/fieldx". When ReadModel loads it back, the output has ".../attr_b/fieldx".
+
+Now the comparison fails: input has ".../attr_b/FieldX" (mutated by WriteModel) but output has ".../attr_b/fieldx" (lowercased by the database).
+
+The workaround: use lowercase field names like "fieldx" so that "...attr_b/" + "fieldx" already matches what the database returns. No case mismatch, test passes.
+
 ---------------------------
 
 todo:

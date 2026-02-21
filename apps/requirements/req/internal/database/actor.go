@@ -12,12 +12,15 @@ import (
 // Populate a golang struct from a database row.
 func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 	var keyStr string
+	var superclassOfKeyPtr, subclassOfKeyPtr *string
 
 	if err = scanner.Scan(
 		&keyStr,
 		&actor.Name,
 		&actor.Details,
 		&actor.Type,
+		&superclassOfKeyPtr,
+		&subclassOfKeyPtr,
 		&actor.UmlComment,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -30,6 +33,22 @@ func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 	actor.Key, err = identity.ParseKey(keyStr)
 	if err != nil {
 		return err
+	}
+
+	// Parse optional key pointers.
+	if superclassOfKeyPtr != nil {
+		superclassOfKey, err := identity.ParseKey(*superclassOfKeyPtr)
+		if err != nil {
+			return err
+		}
+		actor.SuperclassOfKey = &superclassOfKey
+	}
+	if subclassOfKeyPtr != nil {
+		subclassOfKey, err := identity.ParseKey(*subclassOfKeyPtr)
+		if err != nil {
+			return err
+		}
+		actor.SubclassOfKey = &subclassOfKey
 	}
 
 	return nil
@@ -48,10 +67,12 @@ func LoadActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor mod
 			return nil
 		},
 		`SELECT
-			actor_key   ,
-			name        ,
-			details     ,
-			actor_type  ,
+			actor_key         ,
+			name              ,
+			details           ,
+			actor_type        ,
+			superclass_of_key ,
+			subclass_of_key   ,
 			uml_comment
 		FROM
 			actor
@@ -76,15 +97,29 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err erro
 // UpdateActor updates a actor in the database.
 func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
 
+	// We may or may not have optional key pointers.
+	var superclassOfKeyPtr *string
+	if actor.SuperclassOfKey != nil {
+		s := actor.SuperclassOfKey.String()
+		superclassOfKeyPtr = &s
+	}
+	var subclassOfKeyPtr *string
+	if actor.SubclassOfKey != nil {
+		s := actor.SubclassOfKey.String()
+		subclassOfKeyPtr = &s
+	}
+
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
 			actor
 		SET
-			name        = $3 ,
-			details     = $4 ,
-			actor_type  = $5 ,
-			uml_comment = $6
+			name              = $3 ,
+			details           = $4 ,
+			actor_type        = $5 ,
+			superclass_of_key = $6 ,
+			subclass_of_key   = $7 ,
+			uml_comment       = $8
 		WHERE
 			model_key = $1
 		AND
@@ -94,6 +129,8 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 		actor.Name,
 		actor.Details,
 		actor.Type,
+		superclassOfKeyPtr,
+		subclassOfKeyPtr,
 		actor.UmlComment)
 	if err != nil {
 		return errors.WithStack(err)
@@ -137,10 +174,12 @@ func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, er
 			return nil
 		},
 		`SELECT
-				actor_key   ,
-				name        ,
-				details     ,
-				actor_type  ,
+				actor_key         ,
+				name              ,
+				details           ,
+				actor_type        ,
+				superclass_of_key ,
+				subclass_of_key   ,
 				uml_comment
 			FROM
 				actor
@@ -162,15 +201,27 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO actor (model_key, actor_key, name, details, actor_type, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(actors)*6)
+	query := `INSERT INTO actor (model_key, actor_key, name, details, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `
+	args := make([]interface{}, 0, len(actors)*8)
 	for i, actor := range actors {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 6
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
-		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, actor.UmlComment)
+		base := i * 8
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+
+		// Handle optional key pointers.
+		var superclassOfKeyPtr, subclassOfKeyPtr *string
+		if actor.SuperclassOfKey != nil {
+			s := actor.SuperclassOfKey.String()
+			superclassOfKeyPtr = &s
+		}
+		if actor.SubclassOfKey != nil {
+			s := actor.SubclassOfKey.String()
+			subclassOfKeyPtr = &s
+		}
+
+		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, superclassOfKeyPtr, subclassOfKeyPtr, actor.UmlComment)
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)
