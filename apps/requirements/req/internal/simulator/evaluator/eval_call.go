@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
 )
 
 // evalCallExpression evaluates a function call.

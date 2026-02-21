@@ -1,12 +1,12 @@
 {
 // Package parser provides a minimal TLA+ expression parser.
-// This parser directly produces internal/simulator/ast nodes.
+// This parser directly produces internal/notation/ast nodes.
 package parser
 
 import (
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
 )
 
 }

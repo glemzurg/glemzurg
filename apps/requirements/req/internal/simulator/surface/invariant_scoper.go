@@ -1,8 +1,8 @@
 package surface
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 )
 

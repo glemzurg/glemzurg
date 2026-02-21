@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
 	"github.com/stretchr/testify/suite"
 )
 
