@@ -34,9 +34,9 @@ func SortAttributes(attributes []model_class.Attribute) {
 		iDerived := attributes[i].DerivationPolicy
 		jDerived := attributes[j].DerivationPolicy
 		switch {
-		case iDerived == "" && jDerived != "":
+		case iDerived == nil && jDerived != nil:
 			return true // i is first.
-		case jDerived == "" && iDerived != "":
+		case jDerived == nil && iDerived != nil:
 			return false // j is first.
 		}
 
