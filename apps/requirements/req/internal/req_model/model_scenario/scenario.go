@@ -12,7 +12,7 @@ type Scenario struct {
 	Name    string `validate:"required"`
 	Details string // Markdown.
 	// Children
-	Steps   *Node // The "abstract syntax tree" of the scenario.
+	Steps   *Step // The "abstract syntax tree" of the scenario.
 	Objects map[identity.Key]Object
 }
 

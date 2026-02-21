@@ -27,7 +27,7 @@ type ScenarioStepsSuite struct {
 	eventKey     *identity.Key
 	scenarioRef  *identity.Key
 	queryKey     *identity.Key
-	// Step keys for building test nodes.
+	// Step keys for building test steps.
 	stepKeys []identity.Key
 }
 
@@ -78,409 +78,409 @@ func (suite *ScenarioStepsSuite) stepKey(i int) identity.Key {
 
 func (suite *ScenarioStepsSuite) TestInferredLeafType() {
 	// Event leaf
-	node := Node{
+	step := Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 	}
-	assert.Equal(suite.T(), LEAF_TYPE_EVENT, node.InferredLeafType())
+	assert.Equal(suite.T(), LEAF_TYPE_EVENT, step.InferredLeafType())
 
 	// Scenario leaf
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(1),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		ScenarioKey:   suite.scenarioRef,
 	}
-	assert.Equal(suite.T(), LEAF_TYPE_SCENARIO, node.InferredLeafType())
+	assert.Equal(suite.T(), LEAF_TYPE_SCENARIO, step.InferredLeafType())
 
 	// Query leaf
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(2),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		QueryKey:      suite.queryKey,
 	}
-	assert.Equal(suite.T(), LEAF_TYPE_QUERY, node.InferredLeafType())
+	assert.Equal(suite.T(), LEAF_TYPE_QUERY, step.InferredLeafType())
 
 	// Delete leaf
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(3),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		IsDelete:      true,
 	}
-	assert.Equal(suite.T(), LEAF_TYPE_DELETE, node.InferredLeafType())
+	assert.Equal(suite.T(), LEAF_TYPE_DELETE, step.InferredLeafType())
 
 	// Not a leaf (panic)
-	node = Node{
+	step = Step{
 		Key:      suite.stepKey(4),
-		NodeType: NODE_TYPE_SEQUENCE,
-		Statements: []Node{
-			{Key: suite.stepKey(5), NodeType: NODE_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		StepType: STEP_TYPE_SEQUENCE,
+		Statements: []Step{
+			{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
-	assert.Panics(suite.T(), func() { node.InferredLeafType() })
+	assert.Panics(suite.T(), func() { step.InferredLeafType() })
 }
 
 func (suite *ScenarioStepsSuite) TestValidateSequence() {
 	// Valid sequence
-	node := Node{
+	step := Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_SEQUENCE,
-		Statements: []Node{
-			{Key: suite.stepKey(1), NodeType: NODE_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		StepType: STEP_TYPE_SEQUENCE,
+		Statements: []Step{
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
-	err := node.Validate()
+	err := step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Invalid: empty statements
-	node = Node{
+	step = Step{
 		Key:        suite.stepKey(0),
-		NodeType:   NODE_TYPE_SEQUENCE,
-		Statements: []Node{},
+		StepType:   STEP_TYPE_SEQUENCE,
+		Statements: []Step{},
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "sequence must have at least one statement")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 	// Valid switch with case children
-	node := Node{
+	step := Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_SWITCH,
-		Statements: []Node{
+		StepType: STEP_TYPE_SWITCH,
+		Statements: []Step{
 			{
 				Key:       suite.stepKey(1),
-				NodeType:  NODE_TYPE_CASE,
+				StepType:  STEP_TYPE_CASE,
 				Condition: "cond1",
-				Statements: []Node{
-					{Key: suite.stepKey(2), NodeType: NODE_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+				Statements: []Step{
+					{Key: suite.stepKey(2), StepType: STEP_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 				},
 			},
 		},
 	}
-	err := node.Validate()
+	err := step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Invalid: no cases
-	node = Node{
+	step = Step{
 		Key:        suite.stepKey(0),
-		NodeType:   NODE_TYPE_SWITCH,
-		Statements: []Node{},
+		StepType:   STEP_TYPE_SWITCH,
+		Statements: []Step{},
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "switch must have at least one case")
 
 	// Invalid: non-case child
-	node = Node{
+	step = Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_SWITCH,
-		Statements: []Node{
-			{Key: suite.stepKey(1), NodeType: NODE_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		StepType: STEP_TYPE_SWITCH,
+		Statements: []Step{
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
-	err = node.Validate()
-	assert.ErrorContains(suite.T(), err, "switch children must all be case nodes")
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "switch children must all be case steps")
 
 	// Invalid: case without condition
-	node = Node{
+	step = Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_SWITCH,
-		Statements: []Node{
+		StepType: STEP_TYPE_SWITCH,
+		Statements: []Step{
 			{
 				Key:      suite.stepKey(1),
-				NodeType: NODE_TYPE_CASE,
-				Statements: []Node{
-					{Key: suite.stepKey(2), NodeType: NODE_TYPE_LEAF, Description: "step", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+				StepType: STEP_TYPE_CASE,
+				Statements: []Step{
+					{Key: suite.stepKey(2), StepType: STEP_TYPE_LEAF, Description: "step", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 				},
 			},
 		},
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "case must have a condition")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateCase() {
 	// Valid case
-	node := Node{
+	step := Step{
 		Key:       suite.stepKey(0),
-		NodeType:  NODE_TYPE_CASE,
+		StepType:  STEP_TYPE_CASE,
 		Condition: "some condition",
-		Statements: []Node{
-			{Key: suite.stepKey(1), NodeType: NODE_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		Statements: []Step{
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
-	err := node.Validate()
+	err := step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Valid case with no statements (empty case is allowed)
-	node = Node{
+	step = Step{
 		Key:       suite.stepKey(0),
-		NodeType:  NODE_TYPE_CASE,
+		StepType:  STEP_TYPE_CASE,
 		Condition: "some condition",
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Invalid: no condition
-	node = Node{
+	step = Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_CASE,
+		StepType: STEP_TYPE_CASE,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "case must have a condition")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateLoop() {
 	// Valid loop
-	node := Node{
+	step := Step{
 		Key:       suite.stepKey(0),
-		NodeType:  NODE_TYPE_LOOP,
+		StepType:  STEP_TYPE_LOOP,
 		Condition: "while true",
-		Statements: []Node{
-			{Key: suite.stepKey(1), NodeType: NODE_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		Statements: []Step{
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
-	err := node.Validate()
+	err := step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Invalid: no condition
-	node = Node{
+	step = Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_LOOP,
-		Statements: []Node{
-			{Key: suite.stepKey(1), NodeType: NODE_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		StepType: STEP_TYPE_LOOP,
+		Statements: []Step{
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "loop must have a condition")
 
 	// Invalid: no statements
-	node = Node{
+	step = Step{
 		Key:        suite.stepKey(0),
-		NodeType:   NODE_TYPE_LOOP,
+		StepType:   STEP_TYPE_LOOP,
 		Condition:  "while true",
-		Statements: []Node{},
+		Statements: []Step{},
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "loop must have at least one statement")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	// Valid event leaf
-	node := Node{
+	step := Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 	}
-	err := node.Validate()
+	err := step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Valid scenario leaf
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		ScenarioKey:   suite.scenarioRef,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.Nil(suite.T(), err)
 
 	// Valid query leaf
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		QueryKey:      suite.queryKey,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.NoError(suite.T(), err)
 
 	// Invalid: no from object key
-	node = Node{
+	step = Step{
 		Key:         suite.stepKey(0),
-		NodeType:    NODE_TYPE_LEAF,
+		StepType:    STEP_TYPE_LEAF,
 		Description: "desc",
 		ToObjectKey: suite.toObjKey,
 		EventKey:    suite.eventKey,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have a from_object_key")
 
 	// Invalid: no to object key
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		EventKey:      suite.eventKey,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have a to_object_key")
 
 	// Invalid: both event_key and scenario_key
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 		ScenarioKey:   suite.scenarioRef,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or query_key")
 
 	// Invalid: neither event_key nor scenario_key nor query_key
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf must have one of event_key, scenario_key, or query_key")
 
 	// Invalid: event_key and query_key
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 		QueryKey:      suite.queryKey,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or query_key")
 
 	// Valid delete leaf
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		IsDelete:      true,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.NoError(suite.T(), err)
 
 	// Invalid delete: has to_object_key
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		IsDelete:      true,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf cannot have a to_object_key")
 
 	// Invalid delete: has event_key
-	node = Node{
+	step = Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		EventKey:      suite.eventKey,
 		IsDelete:      true,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
 
 	// Invalid delete: no from_object_key
-	node = Node{
+	step = Step{
 		Key:         suite.stepKey(0),
-		NodeType:    NODE_TYPE_LEAF,
+		StepType:    STEP_TYPE_LEAF,
 		Description: "desc",
 		IsDelete:    true,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf must have a from_object_key")
 }
 
-func (suite *ScenarioStepsSuite) TestValidateUnknownNodeType() {
-	node := Node{
+func (suite *ScenarioStepsSuite) TestValidateUnknownStepType() {
+	step := Step{
 		Key:      suite.stepKey(0),
-		NodeType: "bogus",
+		StepType: "bogus",
 	}
-	err := node.Validate()
-	assert.ErrorContains(suite.T(), err, "unknown node type 'bogus'")
+	err := step.Validate()
+	assert.ErrorContains(suite.T(), err, "unknown step type 'bogus'")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
 	// Empty key
-	node := Node{
-		NodeType: NODE_TYPE_LEAF,
+	step := Step{
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 	}
-	err := node.Validate()
+	err := step.Validate()
 	assert.ErrorContains(suite.T(), err, "KeyType")
 
 	// Wrong key type
-	node = Node{
+	step = Step{
 		Key:           suite.domainKey,
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 	}
-	err = node.Validate()
+	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "invalid key type 'domain' for scenario step")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 	// Valid: correct parent
-	node := Node{
+	step := Step{
 		Key:           suite.stepKey(0),
-		NodeType:      NODE_TYPE_LEAF,
+		StepType:      STEP_TYPE_LEAF,
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
 	}
-	err := node.ValidateWithParent(&suite.scenarioKey)
+	err := step.ValidateWithParent(&suite.scenarioKey)
 	assert.NoError(suite.T(), err)
 
 	// Invalid: wrong parent
 	otherScenarioKey, err := identity.NewScenarioKey(suite.useCaseKey, "other_scenario")
 	require.NoError(suite.T(), err)
-	err = node.ValidateWithParent(&otherScenarioKey)
+	err = step.ValidateWithParent(&otherScenarioKey)
 	assert.ErrorContains(suite.T(), err, "does not match expected parent")
 
 	// Validate calls Validate (propagates validation error)
-	badNode := Node{
+	badStep := Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_LEAF,
+		StepType: STEP_TYPE_LEAF,
 		// Missing from_object_key
 		ToObjectKey: suite.toObjKey,
 		EventKey:    suite.eventKey,
 	}
-	err = badNode.ValidateWithParent(&suite.scenarioKey)
+	err = badStep.ValidateWithParent(&suite.scenarioKey)
 	assert.ErrorContains(suite.T(), err, "leaf must have a from_object_key")
 
 	// ValidateWithParent recurses into children
-	root := Node{
+	root := Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_SEQUENCE,
-		Statements: []Node{
-			{Key: suite.stepKey(1), NodeType: NODE_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+		StepType: STEP_TYPE_SEQUENCE,
+		Statements: []Step{
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err = root.ValidateWithParent(&suite.scenarioKey)
@@ -489,30 +489,30 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 
 func (suite *ScenarioStepsSuite) TestJSON() {
 	// Complex structure: sequence > [switch > [case > [leaf], case > [leaf]], loop > [leaf]]
-	root := Node{
+	root := Step{
 		Key:      suite.stepKey(0),
-		NodeType: NODE_TYPE_SEQUENCE,
-		Statements: []Node{
+		StepType: STEP_TYPE_SEQUENCE,
+		Statements: []Step{
 			{
 				Key:      suite.stepKey(1),
-				NodeType: NODE_TYPE_SWITCH,
-				Statements: []Node{
+				StepType: STEP_TYPE_SWITCH,
+				Statements: []Step{
 					{
 						Key:       suite.stepKey(2),
-						NodeType:  NODE_TYPE_CASE,
+						StepType:  STEP_TYPE_CASE,
 						Condition: "if x > 0",
-						Statements: []Node{
-							{Key: suite.stepKey(3), NodeType: NODE_TYPE_LEAF, Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+						Statements: []Step{
+							{Key: suite.stepKey(3), StepType: STEP_TYPE_LEAF, Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 						},
 					},
 				},
 			},
 			{
 				Key:       suite.stepKey(4),
-				NodeType:  NODE_TYPE_LOOP,
+				StepType:  STEP_TYPE_LOOP,
 				Condition: "for i in range(10)",
-				Statements: []Node{
-					{Key: suite.stepKey(5), NodeType: NODE_TYPE_LEAF, Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
+				Statements: []Step{
+					{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
 				},
 			},
 		},
@@ -524,7 +524,7 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 	assert.NotEmpty(suite.T(), data)
 
 	// Unmarshal back
-	var unmarshaled Node
+	var unmarshaled Step
 	err = json.Unmarshal(data, &unmarshaled)
 	assert.Nil(suite.T(), err)
 
@@ -533,10 +533,10 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 	assert.Nil(suite.T(), err)
 
 	// Check structure
-	assert.Equal(suite.T(), NODE_TYPE_SEQUENCE, unmarshaled.NodeType)
+	assert.Equal(suite.T(), STEP_TYPE_SEQUENCE, unmarshaled.StepType)
 	assert.Len(suite.T(), unmarshaled.Statements, 2)
-	assert.Equal(suite.T(), NODE_TYPE_SWITCH, unmarshaled.Statements[0].NodeType)
-	assert.Equal(suite.T(), NODE_TYPE_LOOP, unmarshaled.Statements[1].NodeType)
+	assert.Equal(suite.T(), STEP_TYPE_SWITCH, unmarshaled.Statements[0].StepType)
+	assert.Equal(suite.T(), STEP_TYPE_LOOP, unmarshaled.Statements[1].StepType)
 }
 
 func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
@@ -544,11 +544,11 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 	// JSON literal with all structures - using valid identity key formats
 	jsonLiteral := fmt.Sprintf(`{
 		"key": "%[1]s/sstep/0",
-		"node_type": "sequence",
+		"step_type": "sequence",
 		"statements": [
 			{
 				"key": "%[1]s/sstep/1",
-				"node_type": "leaf",
+				"step_type": "leaf",
 				"description": "first step",
 				"from_object_key": "%[1]s/sobject/from1",
 				"to_object_key": "%[1]s/sobject/to1",
@@ -556,12 +556,12 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			},
 			{
 				"key": "%[1]s/sstep/2",
-				"node_type": "loop",
+				"step_type": "loop",
 				"condition": "while condition",
 				"statements": [
 					{
 						"key": "%[1]s/sstep/3",
-						"node_type": "leaf",
+						"step_type": "leaf",
 						"description": "loop step",
 						"from_object_key": "%[1]s/sobject/from2",
 						"to_object_key": "%[1]s/sobject/to2",
@@ -571,16 +571,16 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			},
 			{
 				"key": "%[1]s/sstep/4",
-				"node_type": "switch",
+				"step_type": "switch",
 				"statements": [
 					{
 						"key": "%[1]s/sstep/5",
-						"node_type": "case",
+						"step_type": "case",
 						"condition": "case1",
 						"statements": [
 							{
 								"key": "%[1]s/sstep/6",
-								"node_type": "leaf",
+								"step_type": "leaf",
 								"description": "case1 step",
 								"from_object_key": "%[1]s/sobject/from3",
 								"to_object_key": "%[1]s/sobject/to3",
@@ -590,12 +590,12 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 					},
 					{
 						"key": "%[1]s/sstep/7",
-						"node_type": "case",
+						"step_type": "case",
 						"condition": "case2",
 						"statements": [
 							{
 								"key": "%[1]s/sstep/8",
-								"node_type": "leaf",
+								"step_type": "leaf",
 								"from_object_key": "%[1]s/sobject/from4",
 								"is_delete": true
 							}
@@ -607,12 +607,12 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 	}`, scenarioKeyStr)
 
 	// Parse into structure
-	var node Node
-	err := node.FromJSON(jsonLiteral)
+	var step Step
+	err := step.FromJSON(jsonLiteral)
 	assert.Nil(suite.T(), err)
 
 	// Export back to JSON
-	jsonStr, err := node.ToJSON()
+	jsonStr, err := step.ToJSON()
 	assert.Nil(suite.T(), err)
 
 	// Compare values are the same
@@ -623,64 +623,64 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
 	scenarioKeyStr := suite.scenarioKey.String()
 	// YAML literal with all structures - using valid identity key formats
 	yamlLiteral := fmt.Sprintf(`key: %[1]s/sstep/0
-node_type: sequence
+step_type: sequence
 statements:
     - key: %[1]s/sstep/1
-      node_type: leaf
+      step_type: leaf
       description: first step
       from_object_key: %[1]s/sobject/from1
       to_object_key: %[1]s/sobject/to1
       event_key: domain/test_domain/subdomain/default/class/test_class/event/ev1
     - key: %[1]s/sstep/2
-      node_type: loop
+      step_type: loop
       condition: while condition
       statements:
         - key: %[1]s/sstep/3
-          node_type: leaf
+          step_type: leaf
           description: loop step
           from_object_key: %[1]s/sobject/from2
           to_object_key: %[1]s/sobject/to2
           scenario_key: domain/test_domain/subdomain/default/usecase/test_use_case/scenario/sk2
     - key: %[1]s/sstep/4
-      node_type: switch
+      step_type: switch
       statements:
         - key: %[1]s/sstep/5
-          node_type: case
+          step_type: case
           condition: case1
           statements:
             - key: %[1]s/sstep/6
-              node_type: leaf
+              step_type: leaf
               description: case1 step
               from_object_key: %[1]s/sobject/from3
               to_object_key: %[1]s/sobject/to3
               query_key: domain/test_domain/subdomain/default/class/test_class/query/qk4
         - key: %[1]s/sstep/7
-          node_type: case
+          step_type: case
           condition: case2
           statements:
             - key: %[1]s/sstep/8
-              node_type: leaf
+              step_type: leaf
               from_object_key: %[1]s/sobject/from4
               is_delete: true
 `, scenarioKeyStr)
 
 	// Parse into structure
-	var node Node
-	err := node.FromYAML(yamlLiteral)
+	var step Step
+	err := step.FromYAML(yamlLiteral)
 	assert.Nil(suite.T(), err)
 
 	// Export back to YAML
-	yamlStr, err := node.ToYAML()
+	yamlStr, err := step.ToYAML()
 	assert.Nil(suite.T(), err)
 
 	// Parse the exported YAML back into a second struct for comparison
 	// (This avoids string comparison issues with YAML key ordering)
-	var node2 Node
-	err = node2.FromYAML(yamlStr)
+	var step2 Step
+	err = step2.FromYAML(yamlStr)
 	assert.Nil(suite.T(), err)
 
 	// Compare the two structures
-	assert.Equal(suite.T(), node, node2)
+	assert.Equal(suite.T(), step, step2)
 }
 
 func t_OrderedJson(value string) (sorted string) {
