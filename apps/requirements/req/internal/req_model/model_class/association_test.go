@@ -131,6 +131,20 @@ func (suite *AssociationSuite) TestValidate() {
 			},
 			errstr: "AssociationClassKey cannot be the same as ToClassKey",
 		},
+		{
+			testName: "error AssociationClassKey wrong key type",
+			association: func() Association {
+				wrongKey := domainKey
+				return Association{
+					Key:                 validKey,
+					Name:                "Name",
+					FromClassKey:        fromClassKey,
+					ToClassKey:          toClassKey,
+					AssociationClassKey: &wrongKey,
+				}
+			}(),
+			errstr: "AssociationClassKey: invalid key type 'domain' for class",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {

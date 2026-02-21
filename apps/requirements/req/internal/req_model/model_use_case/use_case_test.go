@@ -121,6 +121,32 @@ func (suite *UseCaseSuite) TestValidate() {
 			},
 			errstr: "SuperclassOfKey and SubclassOfKey cannot be the same",
 		},
+		{
+			testName: "error SuperclassOfKey wrong key type",
+			useCase: func() UseCase {
+				wrongKey := domainKey
+				return UseCase{
+					Key:             validKey,
+					Name:            "Name",
+					Level:           _USE_CASE_LEVEL_SEA,
+					SuperclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SuperclassOfKey: invalid key type 'domain' for use case generalization",
+		},
+		{
+			testName: "error SubclassOfKey wrong key type",
+			useCase: func() UseCase {
+				wrongKey := domainKey
+				return UseCase{
+					Key:           validKey,
+					Name:          "Name",
+					Level:         _USE_CASE_LEVEL_SEA,
+					SubclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SubclassOfKey: invalid key type 'domain' for use case generalization",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {

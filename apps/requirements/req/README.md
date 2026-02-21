@@ -2,10 +2,6 @@
 ---------------------------
 
 todo:
-  - save objects to database:
-    - logic
-    - model
-    - ... next ...
   - verify keys are correct parent/child correctly
   - update load tests to not use $params
   - examine test coverage of database package

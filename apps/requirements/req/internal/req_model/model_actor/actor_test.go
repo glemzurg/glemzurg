@@ -110,6 +110,32 @@ func (suite *ActorSuite) TestValidate() {
 			},
 			errstr: "SuperclassOfKey and SubclassOfKey cannot be the same",
 		},
+		{
+			testName: "error SuperclassOfKey wrong key type",
+			actor: func() Actor {
+				wrongKey := helper.Must(identity.NewDomainKey("domain1"))
+				return Actor{
+					Key:             validKey,
+					Name:            "Name",
+					Type:            _USER_TYPE_PERSON,
+					SuperclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SuperclassOfKey: invalid key type 'domain' for actor generalization",
+		},
+		{
+			testName: "error SubclassOfKey wrong key type",
+			actor: func() Actor {
+				wrongKey := helper.Must(identity.NewDomainKey("domain1"))
+				return Actor{
+					Key:           validKey,
+					Name:          "Name",
+					Type:          _USER_TYPE_PERSON,
+					SubclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SubclassOfKey: invalid key type 'domain' for actor generalization",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {

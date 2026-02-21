@@ -528,6 +528,81 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
 }
 
+func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
+	// Use domainKey as a wrong key type for all FK fields.
+	wrongKey := &suite.domainKey
+
+	// FromObjectKey with wrong key type.
+	step := Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: wrongKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+	}
+	err := step.Validate()
+	assert.ErrorContains(suite.T(), err, "FromObjectKey: invalid key type 'domain' for scenario object")
+
+	// ToObjectKey with wrong key type.
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   wrongKey,
+		EventKey:      suite.eventKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "ToObjectKey: invalid key type 'domain' for scenario object")
+
+	// EventKey with wrong key type.
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      wrongKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "EventKey: invalid key type 'domain' for event")
+
+	// QueryKey with wrong key type.
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_QUERY),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		QueryKey:      wrongKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "QueryKey: invalid key type 'domain' for query")
+
+	// ScenarioKey with wrong key type.
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   wrongKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "ScenarioKey: invalid key type 'domain' for scenario")
+
+	// FromObjectKey with wrong key type on delete leaf.
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
+		FromObjectKey: wrongKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "FromObjectKey: invalid key type 'domain' for scenario object")
+}
+
 func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 	// A bad child inside a sequence propagates the error.
 	badChild := Step{

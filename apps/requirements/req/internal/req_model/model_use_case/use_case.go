@@ -60,6 +60,24 @@ func (uc *UseCase) Validate() error {
 	if err := _validate.Struct(uc); err != nil {
 		return err
 	}
+	// Validate FK key types.
+	if uc.SuperclassOfKey != nil {
+		if err := uc.SuperclassOfKey.Validate(); err != nil {
+			return errors.Wrap(err, "SuperclassOfKey")
+		}
+		if uc.SuperclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
+			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for use case generalization", uc.SuperclassOfKey.KeyType)
+		}
+	}
+	if uc.SubclassOfKey != nil {
+		if err := uc.SubclassOfKey.Validate(); err != nil {
+			return errors.Wrap(err, "SubclassOfKey")
+		}
+		if uc.SubclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
+			return errors.Errorf("SubclassOfKey: invalid key type '%s' for use case generalization", uc.SubclassOfKey.KeyType)
+		}
+	}
+
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if uc.SuperclassOfKey != nil && uc.SubclassOfKey != nil && *uc.SuperclassOfKey == *uc.SubclassOfKey {
 		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")

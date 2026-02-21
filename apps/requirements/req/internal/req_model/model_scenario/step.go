@@ -147,6 +147,47 @@ func (s *Step) Validate() error {
 		default:
 			return errors.Errorf("unknown leaf type '%s'", *s.LeafType)
 		}
+		// Validate key types of all non-nil reference keys.
+		if s.FromObjectKey != nil {
+			if err := s.FromObjectKey.Validate(); err != nil {
+				return errors.Wrap(err, "FromObjectKey")
+			}
+			if s.FromObjectKey.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
+				return errors.Errorf("FromObjectKey: invalid key type '%s' for scenario object", s.FromObjectKey.KeyType)
+			}
+		}
+		if s.ToObjectKey != nil {
+			if err := s.ToObjectKey.Validate(); err != nil {
+				return errors.Wrap(err, "ToObjectKey")
+			}
+			if s.ToObjectKey.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
+				return errors.Errorf("ToObjectKey: invalid key type '%s' for scenario object", s.ToObjectKey.KeyType)
+			}
+		}
+		if s.EventKey != nil {
+			if err := s.EventKey.Validate(); err != nil {
+				return errors.Wrap(err, "EventKey")
+			}
+			if s.EventKey.KeyType != identity.KEY_TYPE_EVENT {
+				return errors.Errorf("EventKey: invalid key type '%s' for event", s.EventKey.KeyType)
+			}
+		}
+		if s.QueryKey != nil {
+			if err := s.QueryKey.Validate(); err != nil {
+				return errors.Wrap(err, "QueryKey")
+			}
+			if s.QueryKey.KeyType != identity.KEY_TYPE_QUERY {
+				return errors.Errorf("QueryKey: invalid key type '%s' for query", s.QueryKey.KeyType)
+			}
+		}
+		if s.ScenarioKey != nil {
+			if err := s.ScenarioKey.Validate(); err != nil {
+				return errors.Wrap(err, "ScenarioKey")
+			}
+			if s.ScenarioKey.KeyType != identity.KEY_TYPE_SCENARIO {
+				return errors.Errorf("ScenarioKey: invalid key type '%s' for scenario", s.ScenarioKey.KeyType)
+			}
+		}
 	default:
 		return errors.Errorf("unknown step type '%s'", s.StepType)
 	}

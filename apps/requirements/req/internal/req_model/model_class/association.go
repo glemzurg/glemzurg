@@ -78,8 +78,14 @@ func (a *Association) Validate() error {
 	if err := a.ToMultiplicity.Validate(); err != nil {
 		return err
 	}
-	// AssociationClassKey cannot match FromClassKey or ToClassKey.
+	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {
+		if err := a.AssociationClassKey.Validate(); err != nil {
+			return errors.Wrap(err, "AssociationClassKey")
+		}
+		if a.AssociationClassKey.KeyType != identity.KEY_TYPE_CLASS {
+			return errors.Errorf("AssociationClassKey: invalid key type '%s' for class", a.AssociationClassKey.KeyType)
+		}
 		if *a.AssociationClassKey == a.FromClassKey {
 			return errors.New("AssociationClassKey cannot be the same as FromClassKey")
 		}

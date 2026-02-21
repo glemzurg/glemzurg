@@ -59,6 +59,24 @@ func (a *Actor) Validate() error {
 		return err
 	}
 
+	// Validate FK key types.
+	if a.SuperclassOfKey != nil {
+		if err := a.SuperclassOfKey.Validate(); err != nil {
+			return errors.Wrap(err, "SuperclassOfKey")
+		}
+		if a.SuperclassOfKey.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
+			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for actor generalization", a.SuperclassOfKey.KeyType)
+		}
+	}
+	if a.SubclassOfKey != nil {
+		if err := a.SubclassOfKey.Validate(); err != nil {
+			return errors.Wrap(err, "SubclassOfKey")
+		}
+		if a.SubclassOfKey.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
+			return errors.Errorf("SubclassOfKey: invalid key type '%s' for actor generalization", a.SubclassOfKey.KeyType)
+		}
+	}
+
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if a.SuperclassOfKey != nil && a.SubclassOfKey != nil && *a.SuperclassOfKey == *a.SubclassOfKey {
 		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")

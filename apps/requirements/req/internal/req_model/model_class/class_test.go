@@ -83,6 +83,42 @@ func (suite *ClassSuite) TestValidate() {
 				SuperclassOfKey: &genKey,
 			},
 		},
+		{
+			testName: "error ActorKey wrong key type",
+			class: func() Class {
+				wrongKey := domainKey
+				return Class{
+					Key:      validKey,
+					Name:     "Name",
+					ActorKey: &wrongKey,
+				}
+			}(),
+			errstr: "ActorKey: invalid key type 'domain' for actor",
+		},
+		{
+			testName: "error SuperclassOfKey wrong key type",
+			class: func() Class {
+				wrongKey := domainKey
+				return Class{
+					Key:             validKey,
+					Name:            "Name",
+					SuperclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SuperclassOfKey: invalid key type 'domain' for class generalization",
+		},
+		{
+			testName: "error SubclassOfKey wrong key type",
+			class: func() Class {
+				wrongKey := domainKey
+				return Class{
+					Key:           validKey,
+					Name:          "Name",
+					SubclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SubclassOfKey: invalid key type 'domain' for class generalization",
+		},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.testName, func(t *testing.T) {
