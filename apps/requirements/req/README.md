@@ -12,6 +12,8 @@ todo:
     - model and database code
   - verify keys are correct parent/child correctly
   - update load tests to not use $params
+  - examine test coverage of database package
+    - specifically foreing key tests
   - use ai to check comemnts and forieng keys in schema
     - coverage of tests
   - update the yaml parsing
@@ -28,6 +30,8 @@ feb (in parallel)
   - create complete model
     - add TLA+ parsing to create complete model
     - move parameters to actions and parsed into database
+    - remvoe the json markup in req_model tree, and any json handling code
+      - move to the parser_ai package
   - prepare the md output to be complete
     - update the scenarios to use the logic
     - update the use cases if needed

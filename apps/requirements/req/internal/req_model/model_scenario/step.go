@@ -27,6 +27,7 @@ const (
 type Step struct {
 	Key           identity.Key  `json:"key" yaml:"key"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
+	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"`             // Only for leaf steps: event, query, scenario, delete.
 	Statements    []Step        `json:"statements,omitempty" yaml:"statements,omitempty"`
 	Condition     string        `json:"condition,omitempty" yaml:"condition,omitempty"`             // Used by loop and case steps.
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`         // Leaf description.
@@ -36,23 +37,6 @@ type Step struct {
 	QueryKey      *identity.Key `json:"query_key,omitempty" yaml:"query_key,omitempty"`
 	ScenarioKey   *identity.Key `json:"scenario_key,omitempty" yaml:"scenario_key,omitempty"`
 	IsDelete      bool          `json:"is_delete,omitempty" yaml:"is_delete,omitempty"`
-}
-
-// InferredLeafType returns the leaf type of the step based on its fields.
-func (s *Step) InferredLeafType() string {
-	if s.EventKey != nil {
-		return LEAF_TYPE_EVENT
-	}
-	if s.ScenarioKey != nil {
-		return LEAF_TYPE_SCENARIO
-	}
-	if s.QueryKey != nil {
-		return LEAF_TYPE_QUERY
-	}
-	if s.IsDelete {
-		return LEAF_TYPE_DELETE
-	}
-	panic("step is not a leaf")
 }
 
 // Validate validates the step and its sub-steps.
@@ -108,7 +92,11 @@ func (s *Step) Validate() error {
 			}
 		}
 	case STEP_TYPE_LEAF:
-		if s.IsDelete {
+		if s.LeafType == nil {
+			return errors.New("leaf must have a leaf_type")
+		}
+		switch *s.LeafType {
+		case LEAF_TYPE_DELETE:
 			if s.FromObjectKey == nil {
 				return errors.New("delete leaf must have a from_object_key")
 			}
@@ -118,29 +106,38 @@ func (s *Step) Validate() error {
 			if s.EventKey != nil || s.ScenarioKey != nil || s.QueryKey != nil {
 				return errors.New("delete leaf cannot have event_key, scenario_key, or query_key")
 			}
-		} else {
+		case LEAF_TYPE_EVENT:
 			if s.FromObjectKey == nil {
-				return errors.New("leaf must have a from_object_key")
+				return errors.New("event leaf must have a from_object_key")
 			}
 			if s.ToObjectKey == nil {
-				return errors.New("leaf must have a to_object_key")
+				return errors.New("event leaf must have a to_object_key")
 			}
-			nonEmptyKeys := 0
-			if s.EventKey != nil {
-				nonEmptyKeys++
+			if s.EventKey == nil {
+				return errors.New("event leaf must have an event_key")
 			}
-			if s.ScenarioKey != nil {
-				nonEmptyKeys++
+		case LEAF_TYPE_QUERY:
+			if s.FromObjectKey == nil {
+				return errors.New("query leaf must have a from_object_key")
 			}
-			if s.QueryKey != nil {
-				nonEmptyKeys++
+			if s.ToObjectKey == nil {
+				return errors.New("query leaf must have a to_object_key")
 			}
-			if nonEmptyKeys == 0 {
-				return errors.New("leaf must have one of event_key, scenario_key, or query_key")
+			if s.QueryKey == nil {
+				return errors.New("query leaf must have a query_key")
 			}
-			if nonEmptyKeys > 1 {
-				return errors.New("leaf cannot have more than one of event_key, scenario_key, or query_key")
+		case LEAF_TYPE_SCENARIO:
+			if s.FromObjectKey == nil {
+				return errors.New("scenario leaf must have a from_object_key")
 			}
+			if s.ToObjectKey == nil {
+				return errors.New("scenario leaf must have a to_object_key")
+			}
+			if s.ScenarioKey == nil {
+				return errors.New("scenario leaf must have a scenario_key")
+			}
+		default:
+			return errors.Errorf("unknown leaf type '%s'", *s.LeafType)
 		}
 	default:
 		return errors.Errorf("unknown step type '%s'", s.StepType)
@@ -193,6 +190,9 @@ func (s Step) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m["key"] = s.Key
 	m["step_type"] = s.StepType
+	if s.LeafType != nil {
+		m["leaf_type"] = *s.LeafType
+	}
 	if len(s.Statements) > 0 {
 		m["statements"] = s.Statements
 	}
@@ -229,6 +229,9 @@ func (s Step) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{})
 	m["key"] = s.Key.String()
 	m["step_type"] = s.StepType
+	if s.LeafType != nil {
+		m["leaf_type"] = *s.LeafType
+	}
 	if len(s.Statements) > 0 {
 		m["statements"] = s.Statements
 	}

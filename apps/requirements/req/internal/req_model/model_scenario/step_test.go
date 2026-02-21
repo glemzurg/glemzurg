@@ -14,6 +14,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+// t_strPtr returns a pointer to the given string.
+func t_strPtr(s string) *string { return &s }
+
 type ScenarioStepsSuite struct {
 	suite.Suite
 	// Test keys created once for the suite
@@ -76,64 +79,13 @@ func (suite *ScenarioStepsSuite) stepKey(i int) identity.Key {
 	return suite.stepKeys[i]
 }
 
-func (suite *ScenarioStepsSuite) TestInferredLeafType() {
-	// Event leaf
-	step := Step{
-		Key:           suite.stepKey(0),
-		StepType:      STEP_TYPE_LEAF,
-		FromObjectKey: suite.fromObjKey,
-		ToObjectKey:   suite.toObjKey,
-		EventKey:      suite.eventKey,
-	}
-	assert.Equal(suite.T(), LEAF_TYPE_EVENT, step.InferredLeafType())
-
-	// Scenario leaf
-	step = Step{
-		Key:           suite.stepKey(1),
-		StepType:      STEP_TYPE_LEAF,
-		FromObjectKey: suite.fromObjKey,
-		ToObjectKey:   suite.toObjKey,
-		ScenarioKey:   suite.scenarioRef,
-	}
-	assert.Equal(suite.T(), LEAF_TYPE_SCENARIO, step.InferredLeafType())
-
-	// Query leaf
-	step = Step{
-		Key:           suite.stepKey(2),
-		StepType:      STEP_TYPE_LEAF,
-		FromObjectKey: suite.fromObjKey,
-		ToObjectKey:   suite.toObjKey,
-		QueryKey:      suite.queryKey,
-	}
-	assert.Equal(suite.T(), LEAF_TYPE_QUERY, step.InferredLeafType())
-
-	// Delete leaf
-	step = Step{
-		Key:           suite.stepKey(3),
-		StepType:      STEP_TYPE_LEAF,
-		FromObjectKey: suite.fromObjKey,
-		IsDelete:      true,
-	}
-	assert.Equal(suite.T(), LEAF_TYPE_DELETE, step.InferredLeafType())
-
-	// Not a leaf (panic)
-	step = Step{
-		Key:      suite.stepKey(4),
-		StepType: STEP_TYPE_SEQUENCE,
-		Statements: []Step{
-			{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
-		},
-	}
-	assert.Panics(suite.T(), func() { step.InferredLeafType() })
-}
-
 func (suite *ScenarioStepsSuite) TestValidateSequence() {
 	// Valid sequence
 	step := Step{
 		Key:      suite.stepKey(0),
 		StepType: STEP_TYPE_SEQUENCE,
 		Statements: []Step{
-			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err := step.Validate()
@@ -160,7 +112,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 				StepType:  STEP_TYPE_CASE,
 				Condition: "cond1",
 				Statements: []Step{
-					{Key: suite.stepKey(2), StepType: STEP_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+					{Key: suite.stepKey(2), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 				},
 			},
 		},
@@ -182,7 +134,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 		Key:      suite.stepKey(0),
 		StepType: STEP_TYPE_SWITCH,
 		Statements: []Step{
-			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err = step.Validate()
@@ -197,7 +149,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 				Key:      suite.stepKey(1),
 				StepType: STEP_TYPE_CASE,
 				Statements: []Step{
-					{Key: suite.stepKey(2), StepType: STEP_TYPE_LEAF, Description: "step", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+					{Key: suite.stepKey(2), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "step", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 				},
 			},
 		},
@@ -213,7 +165,7 @@ func (suite *ScenarioStepsSuite) TestValidateCase() {
 		StepType:  STEP_TYPE_CASE,
 		Condition: "some condition",
 		Statements: []Step{
-			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err := step.Validate()
@@ -244,7 +196,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 		StepType:  STEP_TYPE_LOOP,
 		Condition: "while true",
 		Statements: []Step{
-			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "step1", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err := step.Validate()
@@ -255,7 +207,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 		Key:      suite.stepKey(0),
 		StepType: STEP_TYPE_LOOP,
 		Statements: []Step{
-			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err = step.Validate()
@@ -277,6 +229,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	step := Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
@@ -289,6 +242,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
@@ -301,6 +255,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_QUERY),
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
@@ -308,85 +263,102 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	}
 	err = step.Validate()
 	assert.NoError(suite.T(), err)
-
-	// Invalid: no from object key
-	step = Step{
-		Key:         suite.stepKey(0),
-		StepType:    STEP_TYPE_LEAF,
-		Description: "desc",
-		ToObjectKey: suite.toObjKey,
-		EventKey:    suite.eventKey,
-	}
-	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf must have a from_object_key")
-
-	// Invalid: no to object key
-	step = Step{
-		Key:           suite.stepKey(0),
-		StepType:      STEP_TYPE_LEAF,
-		Description:   "desc",
-		FromObjectKey: suite.fromObjKey,
-		EventKey:      suite.eventKey,
-	}
-	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf must have a to_object_key")
-
-	// Invalid: both event_key and scenario_key
-	step = Step{
-		Key:           suite.stepKey(0),
-		StepType:      STEP_TYPE_LEAF,
-		Description:   "desc",
-		FromObjectKey: suite.fromObjKey,
-		ToObjectKey:   suite.toObjKey,
-		EventKey:      suite.eventKey,
-		ScenarioKey:   suite.scenarioRef,
-	}
-	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or query_key")
-
-	// Invalid: neither event_key nor scenario_key nor query_key
-	step = Step{
-		Key:           suite.stepKey(0),
-		StepType:      STEP_TYPE_LEAF,
-		Description:   "desc",
-		FromObjectKey: suite.fromObjKey,
-		ToObjectKey:   suite.toObjKey,
-	}
-	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf must have one of event_key, scenario_key, or query_key")
-
-	// Invalid: event_key and query_key
-	step = Step{
-		Key:           suite.stepKey(0),
-		StepType:      STEP_TYPE_LEAF,
-		Description:   "desc",
-		FromObjectKey: suite.fromObjKey,
-		ToObjectKey:   suite.toObjKey,
-		EventKey:      suite.eventKey,
-		QueryKey:      suite.queryKey,
-	}
-	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf cannot have more than one of event_key, scenario_key, or query_key")
 
 	// Valid delete leaf
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
 		Description:   "desc",
 		FromObjectKey: suite.fromObjKey,
-		IsDelete:      true,
 	}
 	err = step.Validate()
 	assert.NoError(suite.T(), err)
+
+	// Invalid: missing leaf_type
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		EventKey:      suite.eventKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "leaf must have a leaf_type")
+
+	// Invalid: unknown leaf_type
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr("bogus"),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "unknown leaf type 'bogus'")
+
+	// Invalid event: no from_object_key
+	step = Step{
+		Key:         suite.stepKey(0),
+		StepType:    STEP_TYPE_LEAF,
+		LeafType:    t_strPtr(LEAF_TYPE_EVENT),
+		ToObjectKey: suite.toObjKey,
+		EventKey:    suite.eventKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+
+	// Invalid event: no to_object_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		EventKey:      suite.eventKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have a to_object_key")
+
+	// Invalid event: no event_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "event leaf must have an event_key")
+
+	// Invalid query: no query_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_QUERY),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "query leaf must have a query_key")
+
+	// Invalid scenario: no scenario_key
+	step = Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+	}
+	err = step.Validate()
+	assert.ErrorContains(suite.T(), err, "scenario leaf must have a scenario_key")
 
 	// Invalid delete: has to_object_key
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		Description:   "desc",
+		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
-		IsDelete:      true,
 	}
 	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf cannot have a to_object_key")
@@ -395,20 +367,18 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 	step = Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
-		Description:   "desc",
+		LeafType:      t_strPtr(LEAF_TYPE_DELETE),
 		FromObjectKey: suite.fromObjKey,
 		EventKey:      suite.eventKey,
-		IsDelete:      true,
 	}
 	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
 
 	// Invalid delete: no from_object_key
 	step = Step{
-		Key:         suite.stepKey(0),
-		StepType:    STEP_TYPE_LEAF,
-		Description: "desc",
-		IsDelete:    true,
+		Key:      suite.stepKey(0),
+		StepType: STEP_TYPE_LEAF,
+		LeafType: t_strPtr(LEAF_TYPE_DELETE),
 	}
 	err = step.Validate()
 	assert.ErrorContains(suite.T(), err, "delete leaf must have a from_object_key")
@@ -427,6 +397,7 @@ func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
 	// Empty key
 	step := Step{
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
@@ -438,6 +409,7 @@ func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
 	step = Step{
 		Key:           suite.domainKey,
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
@@ -451,6 +423,7 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 	step := Step{
 		Key:           suite.stepKey(0),
 		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_EVENT),
 		FromObjectKey: suite.fromObjKey,
 		ToObjectKey:   suite.toObjKey,
 		EventKey:      suite.eventKey,
@@ -468,19 +441,20 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 	badStep := Step{
 		Key:      suite.stepKey(0),
 		StepType: STEP_TYPE_LEAF,
+		LeafType: t_strPtr(LEAF_TYPE_EVENT),
 		// Missing from_object_key
 		ToObjectKey: suite.toObjKey,
 		EventKey:    suite.eventKey,
 	}
 	err = badStep.ValidateWithParent(&suite.scenarioKey)
-	assert.ErrorContains(suite.T(), err, "leaf must have a from_object_key")
+	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
 
 	// ValidateWithParent recurses into children
 	root := Step{
 		Key:      suite.stepKey(0),
 		StepType: STEP_TYPE_SEQUENCE,
 		Statements: []Step{
-			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+			{Key: suite.stepKey(1), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 		},
 	}
 	err = root.ValidateWithParent(&suite.scenarioKey)
@@ -502,7 +476,7 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 						StepType:  STEP_TYPE_CASE,
 						Condition: "if x > 0",
 						Statements: []Step{
-							{Key: suite.stepKey(3), StepType: STEP_TYPE_LEAF, Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+							{Key: suite.stepKey(3), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 						},
 					},
 				},
@@ -512,7 +486,7 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 				StepType:  STEP_TYPE_LOOP,
 				Condition: "for i in range(10)",
 				Statements: []Step{
-					{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
+					{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_SCENARIO), Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
 				},
 			},
 		},
@@ -549,6 +523,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			{
 				"key": "%[1]s/sstep/1",
 				"step_type": "leaf",
+				"leaf_type": "event",
 				"description": "first step",
 				"from_object_key": "%[1]s/sobject/from1",
 				"to_object_key": "%[1]s/sobject/to1",
@@ -562,6 +537,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 					{
 						"key": "%[1]s/sstep/3",
 						"step_type": "leaf",
+						"leaf_type": "scenario",
 						"description": "loop step",
 						"from_object_key": "%[1]s/sobject/from2",
 						"to_object_key": "%[1]s/sobject/to2",
@@ -581,6 +557,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 							{
 								"key": "%[1]s/sstep/6",
 								"step_type": "leaf",
+								"leaf_type": "query",
 								"description": "case1 step",
 								"from_object_key": "%[1]s/sobject/from3",
 								"to_object_key": "%[1]s/sobject/to3",
@@ -596,6 +573,7 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 							{
 								"key": "%[1]s/sstep/8",
 								"step_type": "leaf",
+								"leaf_type": "delete",
 								"from_object_key": "%[1]s/sobject/from4",
 								"is_delete": true
 							}
@@ -627,6 +605,7 @@ step_type: sequence
 statements:
     - key: %[1]s/sstep/1
       step_type: leaf
+      leaf_type: event
       description: first step
       from_object_key: %[1]s/sobject/from1
       to_object_key: %[1]s/sobject/to1
@@ -637,6 +616,7 @@ statements:
       statements:
         - key: %[1]s/sstep/3
           step_type: leaf
+          leaf_type: scenario
           description: loop step
           from_object_key: %[1]s/sobject/from2
           to_object_key: %[1]s/sobject/to2
@@ -650,6 +630,7 @@ statements:
           statements:
             - key: %[1]s/sstep/6
               step_type: leaf
+              leaf_type: query
               description: case1 step
               from_object_key: %[1]s/sobject/from3
               to_object_key: %[1]s/sobject/to3
@@ -660,6 +641,7 @@ statements:
           statements:
             - key: %[1]s/sstep/8
               step_type: leaf
+              leaf_type: delete
               from_object_key: %[1]s/sobject/from4
               is_delete: true
 `, scenarioKeyStr)
