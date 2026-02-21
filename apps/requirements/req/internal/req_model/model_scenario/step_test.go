@@ -658,34 +658,80 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 	}
 	err = root.ValidateWithParent(&suite.scenarioKey)
 	assert.NoError(suite.T(), err)
+
+	// Invalid: scenario leaf references its own scenario (self-referencing)
+	selfRefStep := Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   &suite.scenarioKey,
+	}
+	err = selfRefStep.ValidateWithParent(&suite.scenarioKey)
+	assert.ErrorContains(suite.T(), err, "scenario leaf cannot reference its own scenario")
+
+	// Valid: scenario leaf references a different scenario (not self-referencing)
+	validRefStep := Step{
+		Key:           suite.stepKey(0),
+		StepType:      STEP_TYPE_LEAF,
+		LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+		FromObjectKey: suite.fromObjKey,
+		ToObjectKey:   suite.toObjKey,
+		ScenarioKey:   suite.scenarioRef,
+	}
+	err = validRefStep.ValidateWithParent(&suite.scenarioKey)
+	assert.NoError(suite.T(), err)
+
+	// Invalid: self-referencing scenario leaf nested inside a sequence
+	selfRefRoot := Step{
+		Key:      suite.stepKey(0),
+		StepType: STEP_TYPE_SEQUENCE,
+		Statements: []Step{
+			{
+				Key:           suite.stepKey(1),
+				StepType:      STEP_TYPE_LEAF,
+				LeafType:      t_strPtr(LEAF_TYPE_SCENARIO),
+				FromObjectKey: suite.fromObjKey,
+				ToObjectKey:   suite.toObjKey,
+				ScenarioKey:   &suite.scenarioKey,
+			},
+		},
+	}
+	err = selfRefRoot.ValidateWithParent(&suite.scenarioKey)
+	assert.ErrorContains(suite.T(), err, "scenario leaf cannot reference its own scenario")
 }
 
 func (suite *ScenarioStepsSuite) TestJSON() {
 	// Complex structure: sequence > [switch > [case > [leaf], case > [leaf]], loop > [leaf]]
 	root := Step{
-		Key:      suite.stepKey(0),
-		StepType: STEP_TYPE_SEQUENCE,
+		Key:       suite.stepKey(0),
+		SortOrder: 0,
+		StepType:  STEP_TYPE_SEQUENCE,
 		Statements: []Step{
 			{
-				Key:      suite.stepKey(1),
-				StepType: STEP_TYPE_SWITCH,
+				Key:       suite.stepKey(1),
+				SortOrder: 0,
+				StepType:  STEP_TYPE_SWITCH,
 				Statements: []Step{
 					{
 						Key:       suite.stepKey(2),
+						SortOrder: 0,
 						StepType:  STEP_TYPE_CASE,
 						Condition: "if x > 0",
 						Statements: []Step{
-							{Key: suite.stepKey(3), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
+							{Key: suite.stepKey(3), SortOrder: 0, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_EVENT), Description: "positive", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, EventKey: suite.eventKey},
 						},
 					},
 				},
 			},
 			{
 				Key:       suite.stepKey(4),
+				SortOrder: 1,
 				StepType:  STEP_TYPE_LOOP,
 				Condition: "for i in range(10)",
 				Statements: []Step{
-					{Key: suite.stepKey(5), StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_SCENARIO), Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
+					{Key: suite.stepKey(5), SortOrder: 0, StepType: STEP_TYPE_LEAF, LeafType: t_strPtr(LEAF_TYPE_SCENARIO), Description: "loop body", FromObjectKey: suite.fromObjKey, ToObjectKey: suite.toObjKey, ScenarioKey: suite.scenarioRef},
 				},
 			},
 		},
@@ -710,6 +756,10 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 	assert.Len(suite.T(), unmarshaled.Statements, 2)
 	assert.Equal(suite.T(), STEP_TYPE_SWITCH, unmarshaled.Statements[0].StepType)
 	assert.Equal(suite.T(), STEP_TYPE_LOOP, unmarshaled.Statements[1].StepType)
+
+	// Check SortOrder survives round-trip
+	assert.Equal(suite.T(), 0, unmarshaled.Statements[0].SortOrder)
+	assert.Equal(suite.T(), 1, unmarshaled.Statements[1].SortOrder)
 }
 
 func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
@@ -717,10 +767,12 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 	// JSON literal with all structures - using valid identity key formats
 	jsonLiteral := fmt.Sprintf(`{
 		"key": "%[1]s/sstep/0",
+		"sort_order": 0,
 		"step_type": "sequence",
 		"statements": [
 			{
 				"key": "%[1]s/sstep/1",
+				"sort_order": 0,
 				"step_type": "leaf",
 				"leaf_type": "event",
 				"description": "first step",
@@ -730,11 +782,13 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			},
 			{
 				"key": "%[1]s/sstep/2",
+				"sort_order": 1,
 				"step_type": "loop",
 				"condition": "while condition",
 				"statements": [
 					{
 						"key": "%[1]s/sstep/3",
+						"sort_order": 0,
 						"step_type": "leaf",
 						"leaf_type": "scenario",
 						"description": "loop step",
@@ -746,15 +800,18 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 			},
 			{
 				"key": "%[1]s/sstep/4",
+				"sort_order": 2,
 				"step_type": "switch",
 				"statements": [
 					{
 						"key": "%[1]s/sstep/5",
+						"sort_order": 0,
 						"step_type": "case",
 						"condition": "case1",
 						"statements": [
 							{
 								"key": "%[1]s/sstep/6",
+								"sort_order": 0,
 								"step_type": "leaf",
 								"leaf_type": "query",
 								"description": "case1 step",
@@ -766,11 +823,13 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 					},
 					{
 						"key": "%[1]s/sstep/7",
+						"sort_order": 1,
 						"step_type": "case",
 						"condition": "case2",
 						"statements": [
 							{
 								"key": "%[1]s/sstep/8",
+								"sort_order": 0,
 								"step_type": "leaf",
 								"leaf_type": "delete",
 								"from_object_key": "%[1]s/sobject/from4"
@@ -799,9 +858,11 @@ func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
 	scenarioKeyStr := suite.scenarioKey.String()
 	// YAML literal with all structures - using valid identity key formats
 	yamlLiteral := fmt.Sprintf(`key: %[1]s/sstep/0
+sort_order: 0
 step_type: sequence
 statements:
     - key: %[1]s/sstep/1
+      sort_order: 0
       step_type: leaf
       leaf_type: event
       description: first step
@@ -809,10 +870,12 @@ statements:
       to_object_key: %[1]s/sobject/to1
       event_key: domain/test_domain/subdomain/default/class/test_class/event/ev1
     - key: %[1]s/sstep/2
+      sort_order: 1
       step_type: loop
       condition: while condition
       statements:
         - key: %[1]s/sstep/3
+          sort_order: 0
           step_type: leaf
           leaf_type: scenario
           description: loop step
@@ -820,13 +883,16 @@ statements:
           to_object_key: %[1]s/sobject/to2
           scenario_key: domain/test_domain/subdomain/default/usecase/test_use_case/scenario/sk2
     - key: %[1]s/sstep/4
+      sort_order: 2
       step_type: switch
       statements:
         - key: %[1]s/sstep/5
+          sort_order: 0
           step_type: case
           condition: case1
           statements:
             - key: %[1]s/sstep/6
+              sort_order: 0
               step_type: leaf
               leaf_type: query
               description: case1 step
@@ -834,10 +900,12 @@ statements:
               to_object_key: %[1]s/sobject/to3
               query_key: domain/test_domain/subdomain/default/class/test_class/query/qk4
         - key: %[1]s/sstep/7
+          sort_order: 1
           step_type: case
           condition: case2
           statements:
             - key: %[1]s/sstep/8
+              sort_order: 0
               step_type: leaf
               leaf_type: delete
               from_object_key: %[1]s/sobject/from4

@@ -26,6 +26,7 @@ const (
 // Step represents a step in the scenario steps tree.
 type Step struct {
 	Key           identity.Key  `json:"key" yaml:"key"`
+	SortOrder     int           `json:"sort_order" yaml:"sort_order"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
 	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"`             // Only for leaf steps: event, query, scenario, delete.
 	Statements    []Step        `json:"statements,omitempty" yaml:"statements,omitempty"`
@@ -161,6 +162,10 @@ func (s *Step) ValidateWithParent(parent *identity.Key) error {
 	if err := s.Key.ValidateParent(parent); err != nil {
 		return err
 	}
+	// A scenario leaf cannot reference the scenario that contains it.
+	if s.ScenarioKey != nil && parent != nil && *s.ScenarioKey == *parent {
+		return errors.New("scenario leaf cannot reference its own scenario")
+	}
 	// Validate children with the same parent (all steps are flat under the scenario).
 	for i := range s.Statements {
 		if err := s.Statements[i].ValidateWithParent(parent); err != nil {
@@ -197,6 +202,7 @@ func (s Step) ToYAML() (string, error) {
 func (s Step) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	m["key"] = s.Key
+	m["sort_order"] = s.SortOrder
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {
 		m["leaf_type"] = *s.LeafType
@@ -233,6 +239,7 @@ func (s Step) MarshalJSON() ([]byte, error) {
 func (s Step) MarshalYAML() (interface{}, error) {
 	m := make(map[string]interface{})
 	m["key"] = s.Key.String()
+	m["sort_order"] = s.SortOrder
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {
 		m["leaf_type"] = *s.LeafType
