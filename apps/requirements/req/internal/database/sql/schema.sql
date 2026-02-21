@@ -44,9 +44,9 @@ CREATE TABLE invariant (
   CONSTRAINT fk_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE logic IS 'An invariant that is forever true in the model.';
-COMMENT ON COLUMN logic.model_key IS 'The model this invariant is part of.';
-COMMENT ON COLUMN logic.logic_key IS 'The logic of the invariant.';
+COMMENT ON TABLE invariant IS 'An invariant that is forever true in the model.';
+COMMENT ON COLUMN invariant.model_key IS 'The model this invariant is part of.';
+COMMENT ON COLUMN invariant.logic_key IS 'The logic of the invariant.';
 
 --------------------------------------------------------------
 
@@ -398,7 +398,7 @@ CREATE TABLE attribute (
   uml_comment text DEFAULT NULL,
   PRIMARY KEY (model_key, attribute_key),
   CONSTRAINT fk_attribute_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE,
-  CONSTRAINT fk_global_logic FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE,
+  CONSTRAINT fk_attribute_derivation_logic FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE,
   CONSTRAINT fk_attribute_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
@@ -598,7 +598,7 @@ CREATE TABLE event_parameter (
   data_type_rules text DEFAULT NULL,
   data_type_key text DEFAULT NULL,
   PRIMARY KEY (model_key, event_key, parameter_key),
-  CONSTRAINT fk_event_parameter_query FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
+  CONSTRAINT fk_event_parameter_event FOREIGN KEY (model_key, event_key) REFERENCES event (model_key, event_key) ON DELETE CASCADE,
   CONSTRAINT fk_event_parameter_data_type FOREIGN KEY (model_key, data_type_key) REFERENCES data_type (model_key, data_type_key) ON DELETE CASCADE
 );
 
@@ -862,7 +862,7 @@ COMMENT ON COLUMN use_case_actor.uml_comment IS 'A comment that appears in the d
 --------------------------------------------------------------
 
 CREATE TYPE share_type AS ENUM ('include', 'extend');
-COMMENT ON TYPE use_case_level IS 'Mud-level use cases can have two releationships to sea level use cases.
+COMMENT ON TYPE share_type IS 'Mud-level use cases can have two relationships to sea level use cases.
 
 - Include. This is a shared bit of sequence in multiple sea-level use cases.
 - Extend. This is a optional continuation of a sea-level use case into a common sequence.

@@ -71,19 +71,19 @@
     {
       "name": "public.logic",
       "type": "BASE TABLE",
-      "comment": "An invariant that is forever true in the model.",
+      "comment": "A bit of business logic.",
       "columns": [
         {
           "name": "logic_key",
           "type": "text",
           "nullable": false,
-          "comment": "The logic of the invariant."
+          "comment": "The internal ID."
         },
         {
           "name": "model_key",
           "type": "text",
           "nullable": false,
-          "comment": "The model this invariant is part of."
+          "comment": "The model this logic is part of."
         },
         {
           "name": "description",
@@ -185,16 +185,19 @@
     {
       "name": "public.invariant",
       "type": "BASE TABLE",
+      "comment": "An invariant that is forever true in the model.",
       "columns": [
         {
           "name": "model_key",
           "type": "text",
-          "nullable": false
+          "nullable": false,
+          "comment": "The model this invariant is part of."
         },
         {
           "name": "logic_key",
           "type": "text",
-          "nullable": false
+          "nullable": false,
+          "comment": "The logic of the invariant."
         }
       ],
       "indexes": [
@@ -2180,7 +2183,7 @@
           ]
         },
         {
-          "name": "fk_global_logic",
+          "name": "fk_attribute_derivation_logic",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
           "table": "public.attribute",
@@ -3475,7 +3478,7 @@
           ]
         },
         {
-          "name": "fk_event_parameter_query",
+          "name": "fk_event_parameter_event",
           "type": "FOREIGN KEY",
           "def": "FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE",
           "table": "public.event_parameter",

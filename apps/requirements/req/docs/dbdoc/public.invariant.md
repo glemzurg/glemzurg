@@ -2,12 +2,14 @@
 
 ## Description
 
+An invariant that is forever true in the model.
+
 ## Columns
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.logic](public.logic.md) |  |
-| logic_key | text |  | false |  | [public.logic](public.logic.md) |  |
+| model_key | text |  | false |  | [public.logic](public.logic.md) | The model this invariant is part of. |
+| logic_key | text |  | false |  | [public.logic](public.logic.md) | The logic of the invariant. |
 
 ## Constraints
 

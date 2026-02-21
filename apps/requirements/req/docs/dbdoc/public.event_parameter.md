@@ -26,7 +26,7 @@ A parameter of an event.
 | event_parameter_parameter_key_not_null | n | NOT NULL parameter_key |
 | event_parameter_sort_order_not_null | n | NOT NULL sort_order |
 | fk_event_parameter_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
-| fk_event_parameter_query | FOREIGN KEY | FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE |
+| fk_event_parameter_event | FOREIGN KEY | FOREIGN KEY (model_key, event_key) REFERENCES event(model_key, event_key) ON DELETE CASCADE |
 | event_parameter_pkey | PRIMARY KEY | PRIMARY KEY (model_key, event_key, parameter_key) |
 
 ## Indexes

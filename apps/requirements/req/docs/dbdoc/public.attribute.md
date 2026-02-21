@@ -28,7 +28,7 @@ An attribute of a class.
 | attribute_model_key_not_null | n | NOT NULL model_key |
 | attribute_name_not_null | n | NOT NULL name |
 | attribute_nullable_not_null | n | NOT NULL nullable |
-| fk_global_logic | FOREIGN KEY | FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
+| fk_attribute_derivation_logic | FOREIGN KEY | FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
 | fk_attribute_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_attribute_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | attribute_pkey | PRIMARY KEY | PRIMARY KEY (model_key, attribute_key) |

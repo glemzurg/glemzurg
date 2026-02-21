@@ -2,7 +2,6 @@
 ---------------------------
 
 todo:
-  - update load tests to not use $params
   - examine test coverage of database package
     - specifically foreing key tests
   - use ai to check comemnts and forieng keys in schema
