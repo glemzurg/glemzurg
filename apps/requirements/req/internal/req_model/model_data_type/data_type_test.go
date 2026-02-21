@@ -900,7 +900,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
-				Name:          "Name",
+				Name:          "name",
 				FieldDataType: &DataType{Key: "field_type"},
 			},
 		},
@@ -913,7 +913,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	assert.Equal(suite.T(), map[string][]Field{
 		"record_key": {
 			{
-				Name:          "Name",
+				Name:          "name",
 				FieldDataType: &DataType{Key: "field_type"},
 			},
 		},
@@ -962,7 +962,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	fieldMap := map[string][]Field{
 		"record_key": {
 			{
-				Name:          "Name",
+				Name:          "name",
 				FieldDataType: &DataType{Key: "field_type"},
 			},
 		},
@@ -1028,7 +1028,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 			CollectionType: "record",
 			RecordFields: []Field{
 				{
-					Name:          "Name",
+					Name:          "name",
 					FieldDataType: &DataType{Key: "field_type"},
 				},
 			},
@@ -1091,7 +1091,7 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
-				Name:          "child field",
+				Name:          "other_child_field",
 				FieldDataType: &child2,
 			},
 		},
