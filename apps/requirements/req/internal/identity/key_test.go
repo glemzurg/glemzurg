@@ -566,6 +566,7 @@ func (suite *KeySuite) TestValidateParent() {
 	generalizationKey := helper.Must(NewGeneralizationKey(subdomainKey, "testgen"))
 	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "testscenario"))
 	scenarioObjectKey := helper.Must(NewScenarioObjectKey(scenarioKey, "testsobject"))
+	scenarioStepKey := helper.Must(NewScenarioStepKey(scenarioKey, "0"))
 	stateKey := helper.Must(NewStateKey(classKey, "teststate"))
 	eventKey := helper.Must(NewEventKey(classKey, "testevent"))
 	guardKey := helper.Must(NewGuardKey(classKey, "testguard"))
@@ -822,6 +823,25 @@ func (suite *KeySuite) TestValidateParent() {
 		{
 			testName: "error scenario object wrong parent type",
 			key:      scenarioObjectKey,
+			parent:   &useCaseKey,
+			errstr:   "requires parent of type 'scenario', but got 'usecase'",
+		},
+
+		// ScenarioStep requires scenario parent.
+		{
+			testName: "ok scenario step with scenario parent",
+			key:      scenarioStepKey,
+			parent:   &scenarioKey,
+		},
+		{
+			testName: "error scenario step nil parent",
+			key:      scenarioStepKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'scenario'",
+		},
+		{
+			testName: "error scenario step wrong parent type",
+			key:      scenarioStepKey,
 			parent:   &useCaseKey,
 			errstr:   "requires parent of type 'scenario', but got 'usecase'",
 		},
@@ -1364,6 +1384,7 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
 	useCaseKey := helper.Must(NewUseCaseKey(subdomainKey, "use_case_key"))
 	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "scenario_key"))
+	scenarioStepKey := helper.Must(NewScenarioStepKey(scenarioKey, "0"))
 	actorKey := helper.Must(NewActorKey("actor_key"))
 
 	// State action and transition keys.
@@ -1388,6 +1409,7 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 		{testName: "actor key", key: actorKey},
 		{testName: "use case key", key: useCaseKey},
 		{testName: "scenario key", key: scenarioKey},
+		{testName: "scenario step key", key: scenarioStepKey},
 		{testName: "state action key", key: stateActionKey},
 		{testName: "transition key", key: transitionKey},
 		{testName: "domain association key", key: domainAssocKey},
@@ -1473,6 +1495,7 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 	stateKey := helper.Must(NewStateKey(classKey, "state_key"))
 	useCaseKey := helper.Must(NewUseCaseKey(subdomainKey, "use_case_key"))
 	scenarioKey := helper.Must(NewScenarioKey(useCaseKey, "scenario_key"))
+	scenarioStepKey := helper.Must(NewScenarioStepKey(scenarioKey, "0"))
 	actorKey := helper.Must(NewActorKey("actor_key"))
 
 	// State action and transition keys.
@@ -1497,6 +1520,7 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 		{testName: "actor key", key: actorKey},
 		{testName: "use case key", key: useCaseKey},
 		{testName: "scenario key", key: scenarioKey},
+		{testName: "scenario step key", key: scenarioStepKey},
 		{testName: "state action key", key: stateActionKey},
 		{testName: "transition key", key: transitionKey},
 		{testName: "domain association key", key: domainAssocKey},

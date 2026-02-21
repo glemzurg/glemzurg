@@ -1096,6 +1096,72 @@ func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
+	assert.NoError(suite.T(), err)
+
+	scenarioKey, err := NewScenarioKey(useCaseKey, "scenario1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName    string
+		scenarioKey Key
+		subKey      string
+		expected    Key
+		errstr      string
+	}{
+		// OK.
+		{
+			testName:    "ok",
+			scenarioKey: scenarioKey,
+			subKey:      "0",
+			expected:    helper.Must(newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_STEP, "0")),
+		},
+
+		// Errors.
+		{
+			testName:    "error empty parent",
+			scenarioKey: Key{},
+			subKey:      "0",
+			errstr:      "parent key cannot be of type '' for 'sstep' key",
+		},
+		{
+			testName:    "error wrong parent type",
+			scenarioKey: helper.Must(NewActorKey("actor1")),
+			subKey:      "0",
+			errstr:      "parent key cannot be of type 'actor' for 'sstep' key",
+		},
+		{
+			testName:    "error blank subKey",
+			scenarioKey: scenarioKey,
+			subKey:      "",
+			errstr:      "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewScenarioStepKey(tt.scenarioKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewStateKey() {
 
 	domainKey, err := NewDomainKey("domain1")

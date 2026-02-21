@@ -60,6 +60,7 @@ const (
 
 	// Keys with scenario parents.
 	KEY_TYPE_SCENARIO_OBJECT = "sobject"
+	KEY_TYPE_SCENARIO_STEP   = "sstep"
 )
 
 func NewActorKey(subKey string) (key Key, err error) {
@@ -148,6 +149,14 @@ func NewScenarioObjectKey(scenarioKey Key, subKey string) (key Key, err error) {
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'sobject' key", scenarioKey.GetKeyType())
 	}
 	return newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_OBJECT, subKey)
+}
+
+func NewScenarioStepKey(scenarioKey Key, subKey string) (key Key, err error) {
+	// The parent must be a scenario.
+	if scenarioKey.GetKeyType() != KEY_TYPE_SCENARIO {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'sstep' key", scenarioKey.GetKeyType())
+	}
+	return newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_STEP, subKey)
 }
 
 func NewStateKey(classKey Key, subKey string) (key Key, err error) {
