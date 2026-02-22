@@ -62,9 +62,12 @@ func Write(model req_model.Model, outputPath string) error {
 	// Build a lookup of domain associations by domain key.
 	domainAssocsByDomain := buildDomainAssociationsLookup(model.DomainAssociations)
 
+	// Build a lookup of all class associations (from all levels) by from-class key.
+	classAssocsByClass := buildClassAssociationsLookup(model.GetClassAssociations())
+
 	// Write domains.
 	for _, domain := range model.Domains {
-		if err := writeDomain(outputPath, domain, domainAssocsByDomain, model.ClassAssociations); err != nil {
+		if err := writeDomain(outputPath, domain, domainAssocsByDomain, classAssocsByClass); err != nil {
 			return err
 		}
 	}
@@ -83,7 +86,7 @@ func buildDomainAssociationsLookup(associations map[identity.Key]model_domain.As
 }
 
 // writeDomain writes a domain and its contents to the filesystem.
-func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDomain map[string][]model_domain.Association, modelClassAssociations map[identity.Key]model_class.Association) error {
+func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDomain map[string][]model_domain.Association, classAssocsByClass map[string][]model_class.Association) error {
 
 	// Create the domain directory using the domain's subkey.
 	domainDir := filepath.Join(outputPath, domain.Key.SubKey)
@@ -101,20 +104,16 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 		return errors.Wrapf(err, "failed to write domain file: %s", domain.Key.SubKey)
 	}
 
-	// Merge domain-level and model-level class associations for writing into class files.
-	// These are written alongside subdomain-level associations in each class's file.
-	mergedHigherAssocs := mergeClassAssociations(domain.ClassAssociations, modelClassAssociations)
-
 	// Process subdomains.
 	for _, subdomain := range domain.Subdomains {
 		if subdomain.Key.SubKey == "default" {
 			// Default subdomain: write contents directly under domain directory (backward compatible).
-			if err := writeSubdomainContents(domainDir, subdomain, mergedHigherAssocs); err != nil {
+			if err := writeSubdomainContents(domainDir, subdomain, classAssocsByClass); err != nil {
 				return err
 			}
 		} else {
 			// Explicit subdomain: create subdomain directory with this.subdomain file.
-			if err := writeExplicitSubdomain(domainDir, subdomain, mergedHigherAssocs); err != nil {
+			if err := writeExplicitSubdomain(domainDir, subdomain, classAssocsByClass); err != nil {
 				return err
 			}
 		}
@@ -125,7 +124,7 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 
 // writeExplicitSubdomain writes an explicit (non-default) subdomain as a separate directory
 // with a this.subdomain file and its contents.
-func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, higherAssocs map[identity.Key]model_class.Association) error {
+func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, classAssocsByClass map[string][]model_class.Association) error {
 	// Create subdomain directory.
 	subdomainDir := filepath.Join(domainDir, subdomain.Key.SubKey)
 	if err := os.MkdirAll(subdomainDir, 0755); err != nil {
@@ -140,7 +139,7 @@ func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, 
 	}
 
 	// Write contents under subdomain directory.
-	if err := writeSubdomainContents(subdomainDir, subdomain, higherAssocs); err != nil {
+	if err := writeSubdomainContents(subdomainDir, subdomain, classAssocsByClass); err != nil {
 		return err
 	}
 
@@ -150,21 +149,8 @@ func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, 
 // writeSubdomainContents writes the contents of a subdomain (classes, generalizations, use cases).
 // For default subdomains, the baseDir is the domain directory.
 // For explicit subdomains, the baseDir is the subdomain directory.
-// higherAssocs contains domain-level and model-level class associations that may reference classes in this subdomain.
-func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, higherAssocs map[identity.Key]model_class.Association) error {
-
-	// Build a lookup of class associations by from class key.
-	// Include subdomain-level associations plus any higher-level associations
-	// whose from-class is in this subdomain.
-	classAssocsByClass := buildClassAssociationsLookup(subdomain.ClassAssociations)
-	for _, assoc := range higherAssocs {
-		for classKey := range subdomain.Classes {
-			if assoc.FromClassKey == classKey {
-				classKeyStr := classKey.String()
-				classAssocsByClass[classKeyStr] = append(classAssocsByClass[classKeyStr], assoc)
-			}
-		}
-	}
+// classAssocsByClass is a pre-built lookup of all class associations (from all levels) grouped by from-class key.
+func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, classAssocsByClass map[string][]model_class.Association) error {
 
 	// Write classes and generalizations to classes/ directory if there are any.
 	if len(subdomain.Classes) > 0 || len(subdomain.Generalizations) > 0 {
@@ -210,17 +196,6 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, hi
 	}
 
 	return nil
-}
-
-// mergeClassAssociations combines multiple association maps into one.
-func mergeClassAssociations(maps ...map[identity.Key]model_class.Association) map[identity.Key]model_class.Association {
-	merged := make(map[identity.Key]model_class.Association)
-	for _, m := range maps {
-		for k, v := range m {
-			merged[k] = v
-		}
-	}
-	return merged
 }
 
 // buildClassAssociationsLookup creates a map of class associations grouped by from class key.
