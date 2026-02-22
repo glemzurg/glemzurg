@@ -100,21 +100,92 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	classOrder.SetActions(map[identity.Key]model_state.Action{})
 	classOrder.SetTransitions(map[identity.Key]model_state.Transition{})
 
+	// Add a second class "line_item" in the fulfillment subdomain (for subdomain-level association).
+	classKeyLineItem, err := identity.NewClassKey(explicitSubKey, "line_item")
+	assert.Nil(suite.T(), err)
+	classLineItem, err := model_class.NewClass(classKeyLineItem, "Line Item", "## Line Item\n\nA line item in an order.", nil, nil, nil, "")
+	assert.Nil(suite.T(), err)
+	classLineItem.SetAttributes(map[identity.Key]model_class.Attribute{})
+	classLineItem.SetStates(map[identity.Key]model_state.State{})
+	classLineItem.SetEvents(map[identity.Key]model_state.Event{})
+	classLineItem.SetGuards(map[identity.Key]model_state.Guard{})
+	classLineItem.SetActions(map[identity.Key]model_state.Action{})
+	classLineItem.SetTransitions(map[identity.Key]model_state.Transition{})
+
 	explicitSub.Classes = map[identity.Key]model_class.Class{
-		classKeyOrder: classOrder,
+		classKeyOrder:    classOrder,
+		classKeyLineItem: classLineItem,
 	}
-	explicitSub.ClassAssociations = map[identity.Key]model_class.Association{}
+
+	// Add a class "customer" in the default subdomain of ordering (for domain-level association).
+	classKeyCustomer, err := identity.NewClassKey(defaultSubKeyA, "customer")
+	assert.Nil(suite.T(), err)
+	classCustomer, err := model_class.NewClass(classKeyCustomer, "Customer", "## Customer\n\nA customer who places orders.", nil, nil, nil, "")
+	assert.Nil(suite.T(), err)
+	classCustomer.SetAttributes(map[identity.Key]model_class.Attribute{})
+	classCustomer.SetStates(map[identity.Key]model_state.State{})
+	classCustomer.SetEvents(map[identity.Key]model_state.Event{})
+	classCustomer.SetGuards(map[identity.Key]model_state.Guard{})
+	classCustomer.SetActions(map[identity.Key]model_state.Action{})
+	classCustomer.SetTransitions(map[identity.Key]model_state.Transition{})
+
+	defaultSubA.Classes = map[identity.Key]model_class.Class{
+		classKeyCustomer: classCustomer,
+	}
 
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		defaultSubKeyA: defaultSubA,
 		explicitSubKey: explicitSub,
 	}
 
+	// Add a class "shipment" in the default subdomain of shipping (for model-level association).
 	defaultSubKeyB, err := identity.NewSubdomainKey(domainKeyB, "default")
 	assert.Nil(suite.T(), err)
 	defaultSubB, err := model_domain.NewSubdomain(defaultSubKeyB, "Default", "", "")
 	assert.Nil(suite.T(), err)
+
+	classKeyShipment, err := identity.NewClassKey(defaultSubKeyB, "shipment")
+	assert.Nil(suite.T(), err)
+	classShipment, err := model_class.NewClass(classKeyShipment, "Shipment", "## Shipment\n\nA shipment for an order.", nil, nil, nil, "")
+	assert.Nil(suite.T(), err)
+	classShipment.SetAttributes(map[identity.Key]model_class.Attribute{})
+	classShipment.SetStates(map[identity.Key]model_state.State{})
+	classShipment.SetEvents(map[identity.Key]model_state.Event{})
+	classShipment.SetGuards(map[identity.Key]model_state.Guard{})
+	classShipment.SetActions(map[identity.Key]model_state.Action{})
+	classShipment.SetTransitions(map[identity.Key]model_state.Transition{})
+
+	defaultSubB.Classes = map[identity.Key]model_class.Class{
+		classKeyShipment: classShipment,
+	}
+
 	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{defaultSubKeyB: defaultSubB}
+
+	// -- Class associations at all three levels --
+	// Subdomain-level: order -> line_item (both in fulfillment subdomain).
+	multOne, err := model_class.NewMultiplicity("1")
+	assert.Nil(suite.T(), err)
+	multMany, err := model_class.NewMultiplicity("1..many")
+	assert.Nil(suite.T(), err)
+	multOptional, err := model_class.NewMultiplicity("0..1")
+	assert.Nil(suite.T(), err)
+
+	subdomainAssocKey, err := identity.NewClassAssociationKey(explicitSubKey, classKeyOrder, classKeyLineItem, "contains")
+	assert.Nil(suite.T(), err)
+	subdomainAssoc, err := model_class.NewAssociation(subdomainAssocKey, "Contains", "Order contains line items.", classKeyOrder, multOne, classKeyLineItem, multMany, nil, "")
+	assert.Nil(suite.T(), err)
+
+	// Domain-level: order -> customer (different subdomains in ordering domain).
+	domainClassAssocKey, err := identity.NewClassAssociationKey(domainKeyA, classKeyOrder, classKeyCustomer, "placed by")
+	assert.Nil(suite.T(), err)
+	domainClassAssoc, err := model_class.NewAssociation(domainClassAssocKey, "Placed By", "Order placed by a customer.", classKeyOrder, multMany, classKeyCustomer, multOne, nil, "uml comment for placed by")
+	assert.Nil(suite.T(), err)
+
+	// Model-level: order -> shipment (different domains).
+	modelClassAssocKey, err := identity.NewClassAssociationKey(identity.Key{}, classKeyOrder, classKeyShipment, "ships via")
+	assert.Nil(suite.T(), err)
+	modelClassAssoc, err := model_class.NewAssociation(modelClassAssocKey, "Ships Via", "", classKeyOrder, multOptional, classKeyShipment, multOne, nil, "")
+	assert.Nil(suite.T(), err)
 
 	// -- Domain associations --
 	// Ordering is the problem domain, shipping is the solution domain.
@@ -143,8 +214,16 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 		DomainAssociations: map[identity.Key]model_domain.Association{
 			domainAssocKey: domainAssoc,
 		},
-		ClassAssociations: map[identity.Key]model_class.Association{},
 	}
+
+	// Use SetClassAssociations to automatically distribute associations to the correct level.
+	allClassAssocs := map[identity.Key]model_class.Association{
+		subdomainAssocKey:   subdomainAssoc,
+		domainClassAssocKey: domainClassAssoc,
+		modelClassAssocKey:  modelClassAssoc,
+	}
+	err = input.SetClassAssociations(allClassAssocs)
+	assert.Nil(suite.T(), err, "setting class associations should succeed")
 
 	// Validate the model before writing.
 	err = input.Validate()

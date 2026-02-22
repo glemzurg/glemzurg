@@ -98,6 +98,9 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 	// Track subdomains by their composite path key (domain/subdomain) for lookup.
 	subdomainKeysByPath := map[string]identity.Key{}
 
+	// Collect all class associations from all classes, then distribute after all classes are parsed.
+	allClassAssociations := map[identity.Key]model_class.Association{}
+
 	// Now, parse each file according to its type.
 
 	for _, toParseFile := range filesToParse {
@@ -258,12 +261,9 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				return req_model.Model{}, err
 			}
 
-			// Add associations to subdomain level.
-			if subdomain.ClassAssociations == nil {
-				subdomain.ClassAssociations = make(map[identity.Key]model_class.Association)
-			}
+			// Collect associations for distribution after all classes are parsed.
 			for _, assoc := range associations {
-				subdomain.ClassAssociations[assoc.Key] = assoc
+				allClassAssociations[assoc.Key] = assoc
 			}
 
 			// Add the class to the subdomain.
@@ -317,6 +317,13 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 
 		default:
 			return req_model.Model{}, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
+		}
+	}
+
+	// Distribute class associations to the correct level (model, domain, subdomain).
+	if len(allClassAssociations) > 0 {
+		if err := model.SetClassAssociations(allClassAssociations); err != nil {
+			return req_model.Model{}, errors.Wrap(err, "failed to set class associations")
 		}
 	}
 
