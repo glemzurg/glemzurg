@@ -267,3 +267,20 @@ render with mermaid.js
 
 docker version of:
     https://github.com/mermaid-js/mermaid-cli
+
+
+================================
+
+Code line count
+
+find . -type f -name '*.go' -print0 |   xargs -0 awk '
+    FNR==1 {print FILENAME ":"}
+    $0 ~ /[^[:space:]]/ {n++}
+    END {print "  → " n " non-blank lines\n"}
+  '
+
+find . -type f -name '*.go' -not -name '*_test.go' -print0 |   xargs -0 awk '
+    FNR==1 {print FILENAME ":"}
+    $0 ~ /[^[:space:]]/ {n++}
+    END {print "  → " n " non-blank lines\n"}
+  '

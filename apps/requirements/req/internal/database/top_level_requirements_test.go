@@ -107,6 +107,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	classKeyAA1 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa1"))
 	classKeyAA2 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa2"))
 	classKeyAA3 := helper.Must(identity.NewClassKey(subdomainKeyAA, "class_aa3"))
+	classKeyAB1 := helper.Must(identity.NewClassKey(subdomainKeyAB, "class_ab1"))
 	classKeyBA1 := helper.Must(identity.NewClassKey(subdomainKeyBA, "class_ba1"))
 
 	// Attribute keys.
@@ -117,9 +118,15 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	derivationKeyAA1A := helper.Must(identity.NewAttributeDerivationKey(attributeKeyAA1A, "deriv"))
 	derivationKeyAA1B := helper.Must(identity.NewAttributeDerivationKey(attributeKeyAA1B, "deriv"))
 
-	// Class association keys (within subdomain AA).
+	// Class association keys — subdomain level (within subdomain AA).
 	classAssociationKeyAA := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA1, classKeyAA2, "assoc_aa"))
 	classAssociationKeyAB := helper.Must(identity.NewClassAssociationKey(subdomainKeyAA, classKeyAA2, classKeyAA1, "assoc_ab"))
+
+	// Class association keys — domain level (cross-subdomain within domainA).
+	classAssociationKeyDomain := helper.Must(identity.NewClassAssociationKey(domainKeyA, classKeyAA1, classKeyAB1, "assoc_domain"))
+
+	// Class association keys — model level (cross-domain).
+	classAssociationKeyModel := helper.Must(identity.NewClassAssociationKey(identity.Key{}, classKeyAA1, classKeyBA1, "assoc_model"))
 
 	// Guard keys.
 	guardKeyAA1A := helper.Must(identity.NewGuardKey(classKeyAA1, "guard_a"))
@@ -477,31 +484,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 								},
 							},
 						},
-						// Two class associations cover fk_association_model x2, fk_association_from x2,
-						// fk_association_to x2. Second has AssociationClassKey covering fk_association_class.
-						ClassAssociations: map[identity.Key]model_class.Association{
-							classAssociationKeyAA: {
-								Key:              classAssociationKeyAA,
-								Name:             "AssociationAA",
-								Details:          "Association AA details",
-								FromClassKey:     classKeyAA1,
-								FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
-								ToClassKey:       classKeyAA2,
-								ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 5},
-								UmlComment:       "Association AA UML comment",
-							},
-							classAssociationKeyAB: {
-								Key:                 classAssociationKeyAB,
-								Name:                "AssociationAB",
-								Details:             "Association AB details",
-								FromClassKey:        classKeyAA2,
-								FromMultiplicity:    model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-								ToClassKey:          classKeyAA1,
-								ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 3},
-								AssociationClassKey: &classKeyAA3, // Covers fk_association_class.
-								UmlComment:          "Association AB UML comment",
-							},
-						},
+						// Class associations are set via SetClassAssociations after model construction.
 						Classes: map[identity.Key]model_class.Class{
 							classKeyAA1: {
 								Key:             classKeyAA1,
@@ -874,6 +857,13 @@ func (suite *RequirementsSuite) TestWriteRead() {
 						Name:       "SubdomainAB",
 						Details:    "Subdomain AB details",
 						UmlComment: "Subdomain AB UML comment",
+						Classes: map[identity.Key]model_class.Class{
+							classKeyAB1: {
+								Key:     classKeyAB1,
+								Name:    "ClassAB1",
+								Details: "Class AB1 details",
+							},
+						},
 					},
 				},
 			},
@@ -928,8 +918,60 @@ func (suite *RequirementsSuite) TestWriteRead() {
 		},
 	}
 
+	// Use SetClassAssociations to add domain-level and model-level class associations.
+	// The subdomain-level associations are already set inline above.
+	// SetClassAssociations redistributes all associations to the correct level.
+	allClassAssocs := map[identity.Key]model_class.Association{
+		// Subdomain-level (already inline, but must be included for redistribution).
+		classAssociationKeyAA: {
+			Key:              classAssociationKeyAA,
+			Name:             "AssociationAA",
+			Details:          "Association AA details",
+			FromClassKey:     classKeyAA1,
+			FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+			ToClassKey:       classKeyAA2,
+			ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 5},
+			UmlComment:       "Association AA UML comment",
+		},
+		classAssociationKeyAB: {
+			Key:                 classAssociationKeyAB,
+			Name:                "AssociationAB",
+			Details:             "Association AB details",
+			FromClassKey:        classKeyAA2,
+			FromMultiplicity:    model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+			ToClassKey:          classKeyAA1,
+			ToMultiplicity:      model_class.Multiplicity{LowerBound: 0, HigherBound: 3},
+			AssociationClassKey: &classKeyAA3,
+			UmlComment:          "Association AB UML comment",
+		},
+		// Domain-level: cross-subdomain within domainA.
+		classAssociationKeyDomain: {
+			Key:              classAssociationKeyDomain,
+			Name:             "AssociationDomain",
+			Details:          "Domain-level association details",
+			FromClassKey:     classKeyAA1,
+			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
+			ToClassKey:       classKeyAB1,
+			ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0},
+			UmlComment:       "Domain association UML comment",
+		},
+		// Model-level: cross-domain.
+		classAssociationKeyModel: {
+			Key:              classAssociationKeyModel,
+			Name:             "AssociationModel",
+			Details:          "Model-level association details",
+			FromClassKey:     classKeyAA1,
+			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 0},
+			ToClassKey:       classKeyBA1,
+			ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 1},
+			UmlComment:       "Model association UML comment",
+		},
+	}
+	err := input.SetClassAssociations(allClassAssocs)
+	assert.Nil(suite.T(), err, "setting class associations should succeed")
+
 	// Validate the model tree before testing.
-	err := input.Validate()
+	err = input.Validate()
 	assert.Nil(suite.T(), err, "input model should be valid")
 
 	// Nothing in database yet.
