@@ -155,12 +155,12 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 	}
 
 	query := `INSERT INTO global_function (model_key, logic_key, name, parameters) VALUES `
-	args := make([]interface{}, 0, len(gfs)*5)
+	args := make([]interface{}, 0, len(gfs)*4)
 	for i, gf := range gfs {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 5
+		base := i * 4
 		query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
 		args = append(args,
 			modelKey,

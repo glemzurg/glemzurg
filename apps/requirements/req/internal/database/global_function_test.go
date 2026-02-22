@@ -208,7 +208,7 @@ func (suite *GlobalFunctionSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddGlobalFunction(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key, name string, comment string, parameters []string) model_logic.GlobalFunction {
+func t_AddGlobalFunction(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key, name string, parameters []string) model_logic.GlobalFunction {
 
 	err := AddGlobalFunction(dbOrTx, modelKey, model_logic.GlobalFunction{
 		Key:        logicKey,
