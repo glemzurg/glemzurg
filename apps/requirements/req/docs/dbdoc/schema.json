@@ -284,13 +284,6 @@
           "comment": "The name of the function, fitting for the notation of the logic."
         },
         {
-          "name": "comment",
-          "type": "text",
-          "nullable": false,
-          "default": "''::text",
-          "comment": "A descriptive comment about the function."
-        },
-        {
           "name": "parameters",
           "type": "text[]",
           "nullable": true,
@@ -318,16 +311,6 @@
         }
       ],
       "constraints": [
-        {
-          "name": "global_function_comment_not_null",
-          "type": "n",
-          "def": "NOT NULL comment",
-          "table": "public.global_function",
-          "referenced_table": "",
-          "columns": [
-            "comment"
-          ]
-        },
         {
           "name": "global_function_logic_key_not_null",
           "type": "n",

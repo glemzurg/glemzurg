@@ -61,7 +61,7 @@ func (suite *ModelSuite) TestValidate() {
 						Key:        gfKey,
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
-						Specification: model_logic.Logic{
+						Logic: model_logic.Logic{
 							Key:           gfKey,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
@@ -84,7 +84,7 @@ func (suite *ModelSuite) TestValidate() {
 						Key:        gfKey,
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
-						Specification: model_logic.Logic{
+						Logic: model_logic.Logic{
 							Key:           gfKey,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
@@ -141,7 +141,7 @@ func (suite *ModelSuite) TestValidate() {
 					gfKey1: {
 						Key:  gfKey1,
 						Name: "Some", // Missing underscore
-						Specification: model_logic.Logic{
+						Logic: model_logic.Logic{
 							Key:         gfKey1,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
@@ -160,7 +160,7 @@ func (suite *ModelSuite) TestValidate() {
 					gfKey: { // Map key is gfKey ("_max")
 						Key:  gfKey1, // But struct Key is gfKey1 ("_some")
 						Name: "_Some",
-						Specification: model_logic.Logic{
+						Logic: model_logic.Logic{
 							Key:         gfKey1,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
@@ -194,7 +194,7 @@ func (suite *ModelSuite) TestNew() {
 			Key:        gfKey,
 			Name:       "_Max",
 			Parameters: []string{"x", "y"},
-			Specification: model_logic.Logic{
+			Logic: model_logic.Logic{
 				Key:           gfKey,
 				Description:   "Max of two values.",
 				Notation:      model_logic.NotationTLAPlus,

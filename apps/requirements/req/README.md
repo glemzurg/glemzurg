@@ -3,7 +3,7 @@
 todo:
   - update the yaml parsing
     -verify final round trip test has a fully developed req_model
-- update hte parser ai parsing
+  - update hte parser ai parsing
       - add the extra structures to parser ai
   - update the md file output
     - include tla+

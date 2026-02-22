@@ -19,21 +19,19 @@ import (
 // All global definitions must have a leading underscore to distinguish them
 // from class-scoped actions.
 type GlobalFunction struct {
-	Key           identity.Key
-	Name          string   `validate:"required,startswith=_"` // The definition name (e.g., _Max, _SetOfValues). Must start with underscore.
-	Comment       string   // Optional human-readable description of this definition.
-	Parameters    []string // The parameter names (e.g., ["x", "y"] for _Max(x, y)).
-	Specification Logic    `validate:"required"`
+	Key        identity.Key
+	Name       string   `validate:"required,startswith=_"` // The definition name (e.g., _Max, _SetOfValues). Must start with underscore.
+	Parameters []string // The parameter names (e.g., ["x", "y"] for _Max(x, y)).
+	Logic      Logic    `validate:"required"`
 }
 
 // NewGlobalFunction creates a new GlobalFunction and validates it.
-func NewGlobalFunction(key identity.Key, name, comment string, parameters []string, specification Logic) (gf GlobalFunction, err error) {
+func NewGlobalFunction(key identity.Key, name string, parameters []string, logic Logic) (gf GlobalFunction, err error) {
 	gf = GlobalFunction{
-		Key:           key,
-		Name:          name,
-		Comment:       comment,
-		Parameters:    parameters,
-		Specification: specification,
+		Key:        key,
+		Name:       name,
+		Parameters: parameters,
+		Logic:      logic,
 	}
 
 	if err = gf.Validate(); err != nil {
@@ -54,13 +52,13 @@ func (gf *GlobalFunction) Validate() error {
 	}
 
 	// Validate the specification logic.
-	if err := gf.Specification.Validate(); err != nil {
+	if err := gf.Logic.Validate(); err != nil {
 		return fmt.Errorf("specification: %w", err)
 	}
 
-	// Specification logic must use the global function's exact key.
-	if gf.Specification.Key != gf.Key {
-		return errors.Errorf("specification key '%s' does not match global function key '%s'", gf.Specification.Key.String(), gf.Key.String())
+	// Logic must use the global function's exact key.
+	if gf.Logic.Key != gf.Key {
+		return errors.Errorf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String())
 	}
 
 	if err := _validate.Struct(gf); err != nil {
@@ -86,9 +84,9 @@ func (gf *GlobalFunction) ValidateWithParent() error {
 	if err := gf.Key.ValidateParent(nil); err != nil {
 		return err
 	}
-	// Validate the specification logic's key parent relationship.
+	// Validate the logic's key parent relationship.
 	// The spec shares the global function's exact key (root-level, nil parent).
-	if err := gf.Specification.ValidateWithParent(nil); err != nil {
+	if err := gf.Logic.ValidateWithParent(nil); err != nil {
 		return errors.Wrap(err, "specification")
 	}
 	return nil

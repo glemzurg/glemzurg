@@ -54,7 +54,6 @@ CREATE TABLE global_function (
   model_key text NOT NULL,
   logic_key text NOT NULL,
   name text NOT NULL,
-  comment text NOT NULL DEFAULT '',
   parameters text[],
   PRIMARY KEY (model_key, logic_key),
   UNIQUE (model_key, name),
@@ -65,7 +64,6 @@ COMMENT ON TABLE global_function IS 'A global function used to describe simulati
 COMMENT ON COLUMN global_function.model_key IS 'The model this function is part of.';
 COMMENT ON COLUMN global_function.logic_key IS 'The logic of the function.';
 COMMENT ON COLUMN global_function.name IS 'The name of the function, fitting for the notation of the logic.';
-COMMENT ON COLUMN global_function.comment IS 'A descriptive comment about the function.';
 COMMENT ON COLUMN global_function.parameters IS 'The parameters of the function, fitting for the notation of the logic.';
 
 --------------------------------------------------------------
