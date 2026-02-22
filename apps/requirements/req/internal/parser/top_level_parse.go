@@ -121,6 +121,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			// Initialize maps.
 			model.Actors = make(map[identity.Key]model_actor.Actor)
+			model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
 			model.Domains = make(map[identity.Key]model_domain.Domain)
 			model.DomainAssociations = make(map[identity.Key]model_domain.Association)
 			model.ClassAssociations = make(map[identity.Key]model_class.Association)
@@ -133,37 +134,49 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			model.Actors[actor.Key] = actor
 
 		case _EXT_GENERALIZATION:
-			// Need to find the domain for this generalization.
-			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
-			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
-			}
-			domain := model.Domains[domainKey]
+			if toParseFile.Domain == "" {
+				// Actor generalization (under actors/ directory).
+				actorGen, err := parseActorGeneralization(toParseFile.Generalization, toParseFile.PathRel, contents)
+				if err != nil {
+					return req_model.Model{}, err
+				}
+				if model.ActorGeneralizations == nil {
+					model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
+				}
+				model.ActorGeneralizations[actorGen.Key] = actorGen
+			} else {
+				// Class generalization (under domain/subdomain directory).
+				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+				}
+				domain := model.Domains[domainKey]
 
-			// Determine which subdomain to use (explicit or default).
-			subdomainName := toParseFile.Subdomain
-			if subdomainName == "" {
-				subdomainName = "default"
-			}
-			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
-			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
-			}
-			subdomain, ok := domain.Subdomains[subdomainKey]
-			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
-			}
+				// Determine which subdomain to use (explicit or default).
+				subdomainName := toParseFile.Subdomain
+				if subdomainName == "" {
+					subdomainName = "default"
+				}
+				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
+				subdomain, ok := domain.Subdomains[subdomainKey]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
 
-			generalization, err := parseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
-			if err != nil {
-				return req_model.Model{}, err
+				generalization, err := parseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+				if err != nil {
+					return req_model.Model{}, err
+				}
+				if subdomain.Generalizations == nil {
+					subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
+				}
+				subdomain.Generalizations[generalization.Key] = generalization
+				domain.Subdomains[subdomainKey] = subdomain
+				model.Domains[domainKey] = domain
 			}
-			if subdomain.Generalizations == nil {
-				subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
-			}
-			subdomain.Generalizations[generalization.Key] = generalization
-			domain.Subdomains[subdomainKey] = subdomain
-			model.Domains[domainKey] = domain
 
 		case _EXT_DOMAIN:
 			domain, associations, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)

@@ -1,5 +1,5 @@
 {
-    "Key": "domain/test_domain/subdomain/test_subdomain/generalization/generalization_key",
+    "Key": "ageneralization/generalization_key",
     "Name": "A Basic Generalization",
     "Details": "## A Basic Generalization\n\nHere we have markdown details.\n\nAnd even more.",
     "IsComplete": false,

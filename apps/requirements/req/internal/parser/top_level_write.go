@@ -35,8 +35,8 @@ func Write(model req_model.Model, outputPath string) error {
 		return errors.Wrap(err, "failed to write model file")
 	}
 
-	// Write actors.
-	if len(model.Actors) > 0 {
+	// Write actors and actor generalizations.
+	if len(model.Actors) > 0 || len(model.ActorGeneralizations) > 0 {
 		actorsDir := filepath.Join(outputPath, _PATH_ACTORS)
 		if err := os.MkdirAll(actorsDir, 0755); err != nil {
 			return errors.Wrap(err, "failed to create actors directory")
@@ -47,6 +47,14 @@ func Write(model req_model.Model, outputPath string) error {
 			actorPath := filepath.Join(actorsDir, actor.Key.SubKey+_EXT_ACTOR)
 			if err := os.WriteFile(actorPath, []byte(actorContent), 0644); err != nil {
 				return errors.Wrapf(err, "failed to write actor file: %s", actor.Key.SubKey)
+			}
+		}
+
+		for _, actorGen := range model.ActorGeneralizations {
+			genContent := generateActorGeneralizationContent(actorGen)
+			genPath := filepath.Join(actorsDir, actorGen.Key.SubKey+_EXT_GENERALIZATION)
+			if err := os.WriteFile(genPath, []byte(genContent), 0644); err != nil {
+				return errors.Wrapf(err, "failed to write actor generalization file: %s", actorGen.Key.SubKey)
 			}
 		}
 	}
