@@ -166,7 +166,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
 				}
 
-				generalization, err := parseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+				generalization, err := parseClassGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
 				if err != nil {
 					return req_model.Model{}, err
 				}

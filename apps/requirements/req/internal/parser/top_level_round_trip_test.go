@@ -70,6 +70,16 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	explicitSub, err := model_domain.NewSubdomain(explicitSubKey, "Fulfillment", "# Fulfillment\n\nOrder fulfillment subdomain.", "uml comment for fulfillment")
 	assert.Nil(suite.T(), err)
 
+	// -- Class generalizations --
+	// Add a class generalization to the fulfillment subdomain.
+	classGenKey, err := identity.NewGeneralizationKey(explicitSubKey, "order_type")
+	assert.Nil(suite.T(), err)
+	classGen, err := model_class.NewGeneralization(classGenKey, "Order Type", "## Order Type\n\nGeneralization of order types.", false, true, "")
+	assert.Nil(suite.T(), err)
+	explicitSub.Generalizations = map[identity.Key]model_class.Generalization{
+		classGenKey: classGen,
+	}
+
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		defaultSubKeyA: defaultSubA,
 		explicitSubKey: explicitSub,
