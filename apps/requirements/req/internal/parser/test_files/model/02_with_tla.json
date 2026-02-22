@@ -6,7 +6,7 @@
         {
             "Description": "all instances of a given class must have a value",
             "Notation": "tla_plus",
-            "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
+            "Specification": "_Bags!SetToBag(set1) \\sqsubseteq _Bags!SetToBag(set2)"
         },
         {
             "Description": "with no specification",
@@ -22,6 +22,7 @@
                 "y"
             ],
             "Logic": {
+                "Key": "gfunc/_max",
                 "Description": "A comment about a global functions.",
                 "Notation": "tla_plus",
                 "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
