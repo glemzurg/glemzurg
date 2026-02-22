@@ -1,0 +1,9 @@
+{
+    "Key": "actor/actor_key",
+    "Name": "A Basic Actor",
+    "Details": "# A Basic Actor\n\nHere we have markdown details.\n\nAnd even more.",
+    "Type": "person",
+    "SuperclassOfKey": "ageneralization/superclass_key",
+    "SubclassOfKey": "ageneralization/subclass_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more."
+}
