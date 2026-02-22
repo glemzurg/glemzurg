@@ -23,9 +23,3 @@ states:
 actions:
     ProcessLog:
         details: Appears in data dictionary.
-        requires:
-            - userid (with details)
-            - username (e.g. bob)
-        guarantees:
-            - userid (with details)
-            - username (e.g. bob)

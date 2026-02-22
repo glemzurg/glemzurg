@@ -10,7 +10,7 @@
             "Name": "Power",
             "Details": "Appears in data dictionary.",
             "DataTypeRules": "string that is 3-28 chars long",
-            "DerivationPolicy": "the joining of other values",
+            "DerivationPolicy": null,
             "Nullable": true,
             "UmlComment": "very import to users",
             "IndexNums": [1, 2]
@@ -20,7 +20,7 @@
             "Name": "Speed",
             "Details": "",
             "DataTypeRules": "unconstrained",
-            "DerivationPolicy": "",
+            "DerivationPolicy": null,
             "Nullable": false,
             "UmlComment": "",
             "IndexNums": null,

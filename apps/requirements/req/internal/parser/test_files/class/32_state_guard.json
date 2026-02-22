@@ -11,12 +11,22 @@
         "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/firstlogin": {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/firstlogin",
             "Name": "FirstLogin",
-            "Details": "login count < 1"
+            "Logic": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/firstlogin",
+                "Description": "login count < 1",
+                "Notation": "tla_plus",
+                "Specification": ""
+            }
         },
         "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/priorlogin": {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/priorlogin",
             "Name": "PriorLogin",
-            "Details": "login count >= 1"
+            "Logic": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/priorlogin",
+                "Description": "login count >= 1",
+                "Notation": "tla_plus",
+                "Specification": ""
+            }
         }
     },
     "Actions": {},

@@ -26,15 +26,7 @@
         "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog": {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog",
             "Name": "ProcessLog",
-            "Details": "Appears in data dictionary.",
-            "Requires": [
-                "userid (with details)",
-                "username (e.g. bob)"
-            ],
-            "Guarantees": [
-                "userid (with details)",
-                "username (e.g. bob)"
-            ]
+            "Details": "Appears in data dictionary."
         }
     },
     "Transitions": {}

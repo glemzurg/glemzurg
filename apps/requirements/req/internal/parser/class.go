@@ -536,6 +536,7 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 	// TODO: Parse guard logic properly once the YAML format is defined.
 	// NewGuard now takes a model_logic.Logic instead of a details string.
 	logic := model_logic.Logic{
+		Key:         guardKey,
 		Description: details,
 		Notation:    "tla_plus",
 	}

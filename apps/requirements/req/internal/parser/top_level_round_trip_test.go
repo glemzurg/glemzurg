@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -79,6 +80,30 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	explicitSub.Generalizations = map[identity.Key]model_class.Generalization{
 		classGenKey: classGen,
 	}
+
+	// -- Classes --
+	// Add a class to the fulfillment subdomain, referencing an actor and generalization.
+	classKeyOrder, err := identity.NewClassKey(explicitSubKey, "order")
+	assert.Nil(suite.T(), err)
+	classOrder, err := model_class.NewClass(classKeyOrder, "Order", "## Order\n\nAn order placed by a customer.", &actorKeyA, nil, &classGenKey, "uml comment for order")
+	assert.Nil(suite.T(), err)
+
+	// Add an attribute to the order class.
+	attrKeyStatus, err := identity.NewAttributeKey(classKeyOrder, "status")
+	assert.Nil(suite.T(), err)
+	attrStatus, err := model_class.NewAttribute(attrKeyStatus, "Status", "Current order status.", "string that is 3-20 chars long", nil, false, "", nil)
+	assert.Nil(suite.T(), err)
+	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{attrKeyStatus: attrStatus})
+	classOrder.SetStates(map[identity.Key]model_state.State{})
+	classOrder.SetEvents(map[identity.Key]model_state.Event{})
+	classOrder.SetGuards(map[identity.Key]model_state.Guard{})
+	classOrder.SetActions(map[identity.Key]model_state.Action{})
+	classOrder.SetTransitions(map[identity.Key]model_state.Transition{})
+
+	explicitSub.Classes = map[identity.Key]model_class.Class{
+		classKeyOrder: classOrder,
+	}
+	explicitSub.ClassAssociations = map[identity.Key]model_class.Association{}
 
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		defaultSubKeyA: defaultSubA,

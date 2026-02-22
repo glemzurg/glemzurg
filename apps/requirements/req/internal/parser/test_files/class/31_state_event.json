@@ -11,10 +11,7 @@
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/event/login",
             "Name": "LogIn",
             "Details": "Appears in data dictionary.",
-            "Parameters": [
-                {"Name": "userid", "Source": "this comes from x"},
-                {"Name": "username", "Source": "this comes from y"}
-            ]
+            "Parameters": null
         },
         "domain/test_domain/subdomain/test_subdomain/class/class_key/event/logout": {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/event/logout",
