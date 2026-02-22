@@ -63,7 +63,17 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	assert.Nil(suite.T(), err)
 	defaultSubA, err := model_domain.NewSubdomain(defaultSubKeyA, "Default", "", "")
 	assert.Nil(suite.T(), err)
-	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{defaultSubKeyA: defaultSubA}
+
+	// Add an explicit subdomain to the ordering domain.
+	explicitSubKey, err := identity.NewSubdomainKey(domainKeyA, "fulfillment")
+	assert.Nil(suite.T(), err)
+	explicitSub, err := model_domain.NewSubdomain(explicitSubKey, "Fulfillment", "# Fulfillment\n\nOrder fulfillment subdomain.", "uml comment for fulfillment")
+	assert.Nil(suite.T(), err)
+
+	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
+		defaultSubKeyA: defaultSubA,
+		explicitSubKey: explicitSub,
+	}
 
 	defaultSubKeyB, err := identity.NewSubdomainKey(domainKeyB, "default")
 	assert.Nil(suite.T(), err)
