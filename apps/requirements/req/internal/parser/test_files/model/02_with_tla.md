@@ -12,9 +12,7 @@ invariants:
     - description: with no specification
 
 global_functions:
-    _Max:
-        parameters: ["x", "y"]
-        comment: A comment about a global functions.
-        logic:
-            description: all instances of a given class must have a value
-            specification: "_Bags!SetToBag(set1) \sqsubseteq _Bags!SetToBag(set2)"
+    - name: _Max:
+      parameters: ["x", "y"]
+      description: A comment about a global functions.
+      specification: "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"

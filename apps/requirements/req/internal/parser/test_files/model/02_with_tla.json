@@ -1,5 +1,31 @@
 {
     "Key": "model_key",
     "Name": "A Basic Model",
-    "Details": "# A Basic Model\n\nHere we have markdown details.\n\nAnd even more."
+    "Details": "# A Basic Model\n\nHere we have markdown details.\n\nAnd even more.",
+    "Invariants": [
+        {
+            "Description": "all instances of a given class must have a value",
+            "Notation": "tla_plus",
+            "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
+        },
+        {
+            "Description": "with no specification",
+            "Notation": "tla_plus"
+        }
+    ],
+    "GlobalFunctions": {
+        "gfunc/_max": {
+            "Key": "gfunc/_max",
+            "Name": "_Max",
+            "Parameters": [
+                "x",
+                "y"
+            ],
+            "Logic": {
+                "Description": "A comment about a global functions.",
+                "Notation": "tla_plus",
+                "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
+            }
+        }
+    }
 }
