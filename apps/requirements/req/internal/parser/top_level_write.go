@@ -44,9 +44,9 @@ func Write(model req_model.Model, outputPath string) error {
 
 		for _, actor := range model.Actors {
 			actorContent := generateActorContent(actor)
-			actorPath := filepath.Join(actorsDir, actor.Key.SubKey()+_EXT_ACTOR)
+			actorPath := filepath.Join(actorsDir, actor.Key.SubKey+_EXT_ACTOR)
 			if err := os.WriteFile(actorPath, []byte(actorContent), 0644); err != nil {
-				return errors.Wrapf(err, "failed to write actor file: %s", actor.Key.SubKey())
+				return errors.Wrapf(err, "failed to write actor file: %s", actor.Key.SubKey)
 			}
 		}
 	}
@@ -78,9 +78,9 @@ func buildDomainAssociationsLookup(associations map[identity.Key]model_domain.As
 func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDomain map[string][]model_domain.Association, classAssociations map[identity.Key]model_class.Association) error {
 
 	// Create the domain directory using the domain's subkey.
-	domainDir := filepath.Join(outputPath, domain.Key.SubKey())
+	domainDir := filepath.Join(outputPath, domain.Key.SubKey)
 	if err := os.MkdirAll(domainDir, 0755); err != nil {
-		return errors.Wrapf(err, "failed to create domain directory: %s", domain.Key.SubKey())
+		return errors.Wrapf(err, "failed to create domain directory: %s", domain.Key.SubKey)
 	}
 
 	// Get associations for this domain.
@@ -90,12 +90,12 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 	domainContent := generateDomainContent(domain, associations)
 	domainPath := filepath.Join(domainDir, "this"+_EXT_DOMAIN)
 	if err := os.WriteFile(domainPath, []byte(domainContent), 0644); err != nil {
-		return errors.Wrapf(err, "failed to write domain file: %s", domain.Key.SubKey())
+		return errors.Wrapf(err, "failed to write domain file: %s", domain.Key.SubKey)
 	}
 
 	// Process subdomains.
 	for _, subdomain := range domain.Subdomains {
-		if subdomain.Key.SubKey() == "default" {
+		if subdomain.Key.SubKey == "default" {
 			// Default subdomain: write contents directly under domain directory (backward compatible).
 			if err := writeSubdomainContents(domainDir, subdomain, classAssociations); err != nil {
 				return err
@@ -115,16 +115,16 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 // with a this.subdomain file and its contents.
 func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, classAssociations map[identity.Key]model_class.Association) error {
 	// Create subdomain directory.
-	subdomainDir := filepath.Join(domainDir, subdomain.Key.SubKey())
+	subdomainDir := filepath.Join(domainDir, subdomain.Key.SubKey)
 	if err := os.MkdirAll(subdomainDir, 0755); err != nil {
-		return errors.Wrapf(err, "failed to create subdomain directory: %s", subdomain.Key.SubKey())
+		return errors.Wrapf(err, "failed to create subdomain directory: %s", subdomain.Key.SubKey)
 	}
 
 	// Write this.subdomain file.
 	subdomainContent := generateSubdomainContent(subdomain)
 	subdomainPath := filepath.Join(subdomainDir, "this"+_EXT_SUBDOMAIN)
 	if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0644); err != nil {
-		return errors.Wrapf(err, "failed to write subdomain file: %s", subdomain.Key.SubKey())
+		return errors.Wrapf(err, "failed to write subdomain file: %s", subdomain.Key.SubKey)
 	}
 
 	// Write contents under subdomain directory.
@@ -153,9 +153,9 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 		// Write generalizations.
 		for _, gen := range subdomain.Generalizations {
 			genContent := generateGeneralizationContent(gen)
-			genPath := filepath.Join(classesDir, gen.Key.SubKey()+_EXT_GENERALIZATION)
+			genPath := filepath.Join(classesDir, gen.Key.SubKey+_EXT_GENERALIZATION)
 			if err := os.WriteFile(genPath, []byte(genContent), 0644); err != nil {
-				return errors.Wrapf(err, "failed to write generalization file: %s", gen.Key.SubKey())
+				return errors.Wrapf(err, "failed to write generalization file: %s", gen.Key.SubKey)
 			}
 		}
 
@@ -163,9 +163,9 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 		for _, class := range subdomain.Classes {
 			associations := classAssocsByClass[class.Key.String()]
 			classContent := generateClassContent(class, associations)
-			classPath := filepath.Join(classesDir, class.Key.SubKey()+_EXT_CLASS)
+			classPath := filepath.Join(classesDir, class.Key.SubKey+_EXT_CLASS)
 			if err := os.WriteFile(classPath, []byte(classContent), 0644); err != nil {
-				return errors.Wrapf(err, "failed to write class file: %s", class.Key.SubKey())
+				return errors.Wrapf(err, "failed to write class file: %s", class.Key.SubKey)
 			}
 		}
 	}
@@ -179,9 +179,9 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 
 		for _, useCase := range subdomain.UseCases {
 			useCaseContent := generateUseCaseContent(useCase)
-			useCasePath := filepath.Join(useCasesDir, useCase.Key.SubKey()+_EXT_USE_CASE)
+			useCasePath := filepath.Join(useCasesDir, useCase.Key.SubKey+_EXT_USE_CASE)
 			if err := os.WriteFile(useCasePath, []byte(useCaseContent), 0644); err != nil {
-				return errors.Wrapf(err, "failed to write use case file: %s", useCase.Key.SubKey())
+				return errors.Wrapf(err, "failed to write use case file: %s", useCase.Key.SubKey)
 			}
 		}
 	}

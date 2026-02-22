@@ -24,7 +24,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 		markdown += "\n\n" + parsedFile.Data
 	}
 
-	model, err = req_model.NewModel(key, parsedFile.Title, markdown)
+	model, err = req_model.NewModel(key, parsedFile.Title, markdown, nil, nil)
 	if err != nil {
 		return req_model.Model{}, err
 	}

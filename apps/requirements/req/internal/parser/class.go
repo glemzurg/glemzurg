@@ -7,6 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
 
@@ -243,11 +244,13 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			dataTypeRules = dataTypeRulesAny.(string)
 		}
 
-		derivationPolicy := ""
-		derivationPolicyAny, found := attributeData["derivation"]
-		if found {
-			derivationPolicy = derivationPolicyAny.(string)
-		}
+		// TODO: Parse derivation policy as *model_logic.Logic once the YAML format is defined.
+		// For now, derivationPolicy is not parsed from the file format.
+		// derivationPolicyStr := ""
+		// derivationPolicyAny, found := attributeData["derivation"]
+		// if found {
+		// 	derivationPolicyStr = derivationPolicyAny.(string)
+		// }
 
 		nullable := false
 		nullableAny, found := attributeData["nullable"]
@@ -282,7 +285,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			name,
 			details,
 			dataTypeRules,
-			derivationPolicy,
+			nil, // TODO: derivationPolicy - parse as *model_logic.Logic
 			nullable,
 			umlComment,
 			indexNums)
@@ -487,54 +490,24 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 		return model_state.Event{}, errors.WithStack(err)
 	}
 
-	var params []model_state.EventParameter
 	details := ""
 
 	eventData, ok := eventAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
 		detailsAny, found := eventData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
 
-		paramsAny, found := eventData["parameters"]
-		if found {
-			paramsAny := paramsAny.([]any)
-			for _, paramAny := range paramsAny {
-				paramData, ok := paramAny.(map[string]any)
-				if ok {
-
-					name := ""
-					nameAny, found := paramData["name"]
-					if found {
-						name = nameAny.(string)
-					}
-
-					source := ""
-					sourceAny, found := paramData["source"]
-					if found {
-						source = sourceAny.(string)
-					}
-
-					param, err := model_state.NewEventParameter(name, source)
-					if err != nil {
-						return model_state.Event{}, err
-					}
-
-					params = append(params, param)
-				}
-			}
-		}
+		// TODO: Parse event parameters as []model_state.Parameter once the YAML format is defined.
+		// The old EventParameter type no longer exists; events now use the generic Parameter type.
 	}
 
 	event, err = model_state.NewEvent(
 		eventKey,
 		name,
 		details,
-		params)
+		nil)
 	if err != nil {
 		return model_state.Event{}, err
 	}
@@ -554,19 +527,23 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 
 	guardData, ok := guardAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
 		detailsAny, found := guardData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
 	}
 
+	// TODO: Parse guard logic properly once the YAML format is defined.
+	// NewGuard now takes a model_logic.Logic instead of a details string.
+	logic := model_logic.Logic{
+		Description: details,
+		Notation:    "tla_plus",
+	}
+
 	guard, err = model_state.NewGuard(
 		guardKey,
 		name,
-		details)
+		logic)
 	if err != nil {
 		return model_state.Guard{}, err
 	}
@@ -583,42 +560,26 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 	}
 
 	details := ""
-	var requires []string
-	var guarantees []string
 
 	actionData, ok := actionAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
 		detailsAny, found := actionData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
 
-		requiresAny, found := actionData["requires"]
-		if found {
-			requiresAny := requiresAny.([]any)
-			for _, requireAny := range requiresAny {
-				requires = append(requires, requireAny.(string))
-			}
-		}
-
-		guaranteesAny, found := actionData["guarantees"]
-		if found {
-			guaranteesAny := guaranteesAny.([]any)
-			for _, guaranteeAny := range guaranteesAny {
-				guarantees = append(guarantees, guaranteeAny.(string))
-			}
-		}
+		// TODO: Parse requires, guarantees, safetyRules as []model_logic.Logic
+		// and parameters as []model_state.Parameter once the YAML format is defined.
 	}
 
 	action, err = model_state.NewAction(
 		actionKey,
 		name,
 		details,
-		requires,
-		guarantees)
+		nil, // requires
+		nil, // guarantees
+		nil, // safetyRules
+		nil) // parameters
 	if err != nil {
 		return model_state.Action{}, err
 	}
@@ -742,13 +703,13 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 
 	// Add top-level fields.
 	if class.ActorKey != nil {
-		builder.AddField("actor_key", class.ActorKey.SubKey())
+		builder.AddField("actor_key", class.ActorKey.SubKey)
 	}
 	if class.SuperclassOfKey != nil {
-		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey())
+		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey)
 	}
 	if class.SubclassOfKey != nil {
-		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey())
+		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
 	}
 
 	// Add attributes section.
@@ -760,7 +721,8 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			attrBuilder.AddField("name", attr.Name)
 			attrBuilder.AddField("details", attr.Details)
 			attrBuilder.AddField("rules", attr.DataTypeRules)
-			attrBuilder.AddField("derivation", attr.DerivationPolicy)
+			// TODO: Serialize derivation policy as *model_logic.Logic once format is defined.
+			// attrBuilder.AddField("derivation", attr.DerivationPolicy)
 			attrBuilder.AddBoolField("nullable", attr.Nullable)
 			attrBuilder.AddField("uml_comment", attr.UmlComment)
 			// Convert []uint to []int for index_nums.
@@ -771,7 +733,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 				}
 				attrBuilder.AddIntSliceField("index_nums", intNums)
 			}
-			attrsBuilder.AddMappingField(attr.Key.SubKey(), attrBuilder)
+			attrsBuilder.AddMappingField(attr.Key.SubKey, attrBuilder)
 		}
 		builder.AddMappingField("attributes", attrsBuilder)
 	}
@@ -784,10 +746,10 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			assocBuilder.AddField("name", assoc.Name)
 			assocBuilder.AddField("details", assoc.Details)
 			addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
-			assocBuilder.AddField("to_class_key", assoc.ToClassKey.SubKey())
+			assocBuilder.AddField("to_class_key", assoc.ToClassKey.SubKey)
 			addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
 			if assoc.AssociationClassKey != nil {
-				assocBuilder.AddField("association_class_key", assoc.AssociationClassKey.SubKey())
+				assocBuilder.AddField("association_class_key", assoc.AssociationClassKey.SubKey)
 			}
 			assocBuilder.AddField("uml_comment", assoc.UmlComment)
 			assocBuilders = append(assocBuilders, assocBuilder)
@@ -855,16 +817,11 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			event := class.Events[key]
 			eventBuilder := NewYamlBuilder()
 			eventBuilder.AddField("details", event.Details)
-			if len(event.Parameters) > 0 {
-				var paramBuilders []*YamlBuilder
-				for _, param := range event.Parameters {
-					paramBuilder := NewYamlBuilder()
-					paramBuilder.AddField("name", param.Name)
-					paramBuilder.AddField("source", param.Source)
-					paramBuilders = append(paramBuilders, paramBuilder)
-				}
-				eventBuilder.AddSequenceOfMappings("parameters", paramBuilders)
-			}
+			// TODO: Serialize event parameters once the YAML format for Parameter is defined.
+			// Event parameters now use the generic Parameter type (Name, DataTypeRules).
+			// if len(event.Parameters) > 0 {
+			// 	...
+			// }
 			eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 		}
 		builder.AddMappingField("events", eventsBuilder)
@@ -901,8 +858,9 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			action := class.Actions[key]
 			actionBuilder := NewYamlBuilder()
 			actionBuilder.AddField("details", action.Details)
-			actionBuilder.AddSequenceField("requires", action.Requires)
-			actionBuilder.AddSequenceField("guarantees", action.Guarantees)
+			// TODO: Serialize requires/guarantees as []model_logic.Logic once format is defined.
+			// actionBuilder.AddSequenceField("requires", action.Requires)
+			// actionBuilder.AddSequenceField("guarantees", action.Guarantees)
 			actionsBuilder.AddMappingField(action.Name, actionBuilder)
 		}
 		builder.AddMappingField("actions", actionsBuilder)
