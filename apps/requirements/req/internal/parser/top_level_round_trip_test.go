@@ -47,6 +47,37 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	actorB, err := model_actor.NewActor(actorKeyB, "Bob", "# Bob\n\nA system actor.", "system", &genKeyB, &genKeyA, "uml comment for bob")
 	assert.Nil(suite.T(), err)
 
+	// -- Domains --
+	domainKeyA, err := identity.NewDomainKey("ordering")
+	assert.Nil(suite.T(), err)
+	domainKeyB, err := identity.NewDomainKey("shipping")
+	assert.Nil(suite.T(), err)
+
+	domainA, err := model_domain.NewDomain(domainKeyA, "Ordering", "# Ordering\n\nThe ordering domain.", true, "")
+	assert.Nil(suite.T(), err)
+	domainB, err := model_domain.NewDomain(domainKeyB, "Shipping", "# Shipping\n\nThe shipping domain.", false, "uml comment for shipping")
+	assert.Nil(suite.T(), err)
+
+	// Each domain gets a default subdomain (the parser creates this automatically).
+	defaultSubKeyA, err := identity.NewSubdomainKey(domainKeyA, "default")
+	assert.Nil(suite.T(), err)
+	defaultSubA, err := model_domain.NewSubdomain(defaultSubKeyA, "Default", "", "")
+	assert.Nil(suite.T(), err)
+	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{defaultSubKeyA: defaultSubA}
+
+	defaultSubKeyB, err := identity.NewSubdomainKey(domainKeyB, "default")
+	assert.Nil(suite.T(), err)
+	defaultSubB, err := model_domain.NewSubdomain(defaultSubKeyB, "Default", "", "")
+	assert.Nil(suite.T(), err)
+	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{defaultSubKeyB: defaultSubB}
+
+	// -- Domain associations --
+	// Ordering is the problem domain, shipping is the solution domain.
+	domainAssocKey, err := identity.NewDomainAssociationKey(domainKeyA, domainKeyB)
+	assert.Nil(suite.T(), err)
+	domainAssoc, err := model_domain.NewAssociation(domainAssocKey, domainKeyA, domainKeyB, "shipping solves ordering")
+	assert.Nil(suite.T(), err)
+
 	// -- Model --
 	input := req_model.Model{
 		Key:     "test_model",
@@ -60,9 +91,14 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 			genKeyA: genA,
 			genKeyB: genB,
 		},
-		Domains:            map[identity.Key]model_domain.Domain{},
-		DomainAssociations: map[identity.Key]model_domain.Association{},
-		ClassAssociations:  map[identity.Key]model_class.Association{},
+		Domains: map[identity.Key]model_domain.Domain{
+			domainKeyA: domainA,
+			domainKeyB: domainB,
+		},
+		DomainAssociations: map[identity.Key]model_domain.Association{
+			domainAssocKey: domainAssoc,
+		},
+		ClassAssociations: map[identity.Key]model_class.Association{},
 	}
 
 	// Validate the model before writing.
