@@ -54,9 +54,9 @@ func (suite *GlobalFunctionSuite) TestLoad() {
 	// Insert the global function row with raw SQL.
 	_, err = dbExec(suite.db, `
 		INSERT INTO global_function
-			(model_key, logic_key, name, comment, parameters)
+			(model_key, logic_key, name, parameters)
 		VALUES
-			('model_key', 'gfunc/key', '_Max', 'Returns the maximum', '{x,y}')
+			('model_key', 'gfunc/key', '_Max', '{x,y}')
 	`)
 	assert.Nil(suite.T(), err)
 
@@ -65,7 +65,6 @@ func (suite *GlobalFunctionSuite) TestLoad() {
 	assert.Equal(suite.T(), model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	}, gf)
 }
@@ -75,7 +74,6 @@ func (suite *GlobalFunctionSuite) TestAdd() {
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
@@ -85,7 +83,6 @@ func (suite *GlobalFunctionSuite) TestAdd() {
 	assert.Equal(suite.T(), model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	}, gf)
 }
@@ -95,7 +92,6 @@ func (suite *GlobalFunctionSuite) TestAddNulls() {
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "",
 		Parameters: nil,
 	})
 	assert.Nil(suite.T(), err)
@@ -105,7 +101,6 @@ func (suite *GlobalFunctionSuite) TestAddNulls() {
 	assert.Equal(suite.T(), model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "",
 		Parameters: nil,
 	}, gf)
 }
@@ -115,7 +110,6 @@ func (suite *GlobalFunctionSuite) TestUpdate() {
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
@@ -123,7 +117,6 @@ func (suite *GlobalFunctionSuite) TestUpdate() {
 	err = UpdateGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
-		Comment:    "Returns the minimum",
 		Parameters: []string{"a", "b"},
 	})
 	assert.Nil(suite.T(), err)
@@ -133,7 +126,6 @@ func (suite *GlobalFunctionSuite) TestUpdate() {
 	assert.Equal(suite.T(), model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
-		Comment:    "Returns the minimum",
 		Parameters: []string{"a", "b"},
 	}, gf)
 }
@@ -143,7 +135,6 @@ func (suite *GlobalFunctionSuite) TestUpdateNulls() {
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
@@ -151,7 +142,6 @@ func (suite *GlobalFunctionSuite) TestUpdateNulls() {
 	err = UpdateGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
-		Comment:    "",
 		Parameters: nil,
 	})
 	assert.Nil(suite.T(), err)
@@ -161,7 +151,6 @@ func (suite *GlobalFunctionSuite) TestUpdateNulls() {
 	assert.Equal(suite.T(), model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
-		Comment:    "",
 		Parameters: nil,
 	}, gf)
 }
@@ -171,7 +160,6 @@ func (suite *GlobalFunctionSuite) TestRemove() {
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
-		Comment:    "Returns the maximum",
 		Parameters: []string{"x", "y"},
 	})
 	assert.Nil(suite.T(), err)
@@ -190,13 +178,11 @@ func (suite *GlobalFunctionSuite) TestQuery() {
 		{
 			Key:        suite.gfKeyB,
 			Name:       "_Min",
-			Comment:    "Returns the minimum",
 			Parameters: []string{"a", "b"},
 		},
 		{
 			Key:        suite.gfKey,
 			Name:       "_Max",
-			Comment:    "Returns the maximum",
 			Parameters: []string{"x", "y"},
 		},
 	})
@@ -208,13 +194,11 @@ func (suite *GlobalFunctionSuite) TestQuery() {
 		{
 			Key:        suite.gfKey,
 			Name:       "_Max",
-			Comment:    "Returns the maximum",
 			Parameters: []string{"x", "y"},
 		},
 		{
 			Key:        suite.gfKeyB,
 			Name:       "_Min",
-			Comment:    "Returns the minimum",
 			Parameters: []string{"a", "b"},
 		},
 	}, gfs)
@@ -229,7 +213,6 @@ func t_AddGlobalFunction(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey 
 	err := AddGlobalFunction(dbOrTx, modelKey, model_logic.GlobalFunction{
 		Key:        logicKey,
 		Name:       name,
-		Comment:    comment,
 		Parameters: parameters,
 	})
 	assert.Nil(t, err)

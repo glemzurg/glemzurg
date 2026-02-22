@@ -17,7 +17,6 @@ func scanGlobalFunction(scanner Scanner, gf *model_logic.GlobalFunction) (err er
 	if err = scanner.Scan(
 		&logicKeyStr,
 		&gf.Name,
-		&gf.Comment,
 		pq.Array(&gf.Parameters),
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
@@ -51,7 +50,6 @@ func LoadGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (
 		`SELECT
 			logic_key  ,
 			name       ,
-			comment    ,
 			parameters
 		FROM
 			global_function
@@ -82,8 +80,7 @@ func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalF
 			global_function
 		SET
 			name       = $3 ,
-			comment    = $4 ,
-			parameters = $5
+			parameters = $4
 		WHERE
 			model_key = $1
 		AND
@@ -91,7 +88,6 @@ func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalF
 		modelKey,
 		gf.Key.String(),
 		gf.Name,
-		gf.Comment,
 		pq.Array(gf.Parameters))
 	if err != nil {
 		return errors.WithStack(err)
@@ -137,7 +133,6 @@ func QueryGlobalFunctions(dbOrTx DbOrTx, modelKey string) (gfs []model_logic.Glo
 		`SELECT
 			logic_key  ,
 			name       ,
-			comment    ,
 			parameters
 		FROM
 			global_function
@@ -159,19 +154,18 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 		return nil
 	}
 
-	query := `INSERT INTO global_function (model_key, logic_key, name, comment, parameters) VALUES `
+	query := `INSERT INTO global_function (model_key, logic_key, name, parameters) VALUES `
 	args := make([]interface{}, 0, len(gfs)*5)
 	for i, gf := range gfs {
 		if i > 0 {
 			query += ", "
 		}
 		base := i * 5
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
 		args = append(args,
 			modelKey,
 			gf.Key.String(),
 			gf.Name,
-			gf.Comment,
 			pq.Array(gf.Parameters))
 	}
 

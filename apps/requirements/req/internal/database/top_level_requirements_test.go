@@ -199,9 +199,8 @@ func (suite *RequirementsSuite) TestWriteRead() {
 			globalFunctionKeyA: {
 				Key:        globalFunctionKeyA,
 				Name:       "_Max",
-				Comment:    "Returns the maximum",
 				Parameters: []string{"x", "y"},
-				Specification: model_logic.Logic{
+				Logic: model_logic.Logic{
 					Key:           globalFunctionKeyA,
 					Description:   "Max specification",
 					Notation:      "tla_plus",
@@ -211,9 +210,8 @@ func (suite *RequirementsSuite) TestWriteRead() {
 			globalFunctionKeyB: {
 				Key:        globalFunctionKeyB,
 				Name:       "_Min",
-				Comment:    "Returns the minimum",
 				Parameters: []string{"a", "b"},
-				Specification: model_logic.Logic{
+				Logic: model_logic.Logic{
 					Key:           globalFunctionKeyB,
 					Description:   "Min specification",
 					Notation:      "tla_plus",
@@ -557,8 +555,8 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												},
 											},
 											{
-												Name:          "Currency",
-												SortOrder:     1,
+												Name:      "Currency",
+												SortOrder: 1,
 												// Covers fk_enum_atomic via enumeration data type.
 												DataTypeRules: "enum of USD, EUR, GBP",
 												DataType: &model_data_type.DataType{
@@ -673,8 +671,8 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												},
 											},
 											{
-												Name:          "Timestamp",
-												SortOrder:     1,
+												Name:      "Timestamp",
+												SortOrder: 1,
 												// Covers fk_span_atomic via span data type.
 												DataTypeRules: "[0 .. 999] at 1 seconds",
 												DataType: &model_data_type.DataType{

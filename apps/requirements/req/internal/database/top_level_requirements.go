@@ -7,9 +7,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -41,7 +41,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		allLogics := make([]model_logic.Logic, 0, len(model.Invariants)+len(model.GlobalFunctions))
 		allLogics = append(allLogics, model.Invariants...)
 		for _, gf := range model.GlobalFunctions {
-			allLogics = append(allLogics, gf.Specification)
+			allLogics = append(allLogics, gf.Logic)
 		}
 		// Collect derivation policy logics from attributes.
 		for _, domain := range model.Domains {
@@ -626,7 +626,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		if len(gfs) > 0 {
 			model.GlobalFunctions = make(map[identity.Key]model_logic.GlobalFunction, len(gfs))
 			for _, gf := range gfs {
-				gf.Specification = logicsByKey[gf.Key]
+				gf.Logic = logicsByKey[gf.Key]
 				model.GlobalFunctions[gf.Key] = gf
 			}
 		}
