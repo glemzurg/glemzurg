@@ -244,13 +244,32 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			dataTypeRules = dataTypeRulesAny.(string)
 		}
 
-		// TODO: Parse derivation policy as *model_logic.Logic once the YAML format is defined.
-		// For now, derivationPolicy is not parsed from the file format.
-		// derivationPolicyStr := ""
-		// derivationPolicyAny, found := attributeData["derivation"]
-		// if found {
-		// 	derivationPolicyStr = derivationPolicyAny.(string)
-		// }
+		// Parse derivation policy as *model_logic.Logic.
+		var derivationPolicy *model_logic.Logic
+		derivationAny, found := attributeData["derivation"]
+		if found {
+			derivationMap, ok := derivationAny.(map[string]any)
+			if ok {
+				description := ""
+				if descAny, ok := derivationMap["description"]; ok {
+					description = descAny.(string)
+				}
+				specification := ""
+				if specAny, ok := derivationMap["specification"]; ok {
+					specification = specAny.(string)
+				}
+				// Construct the attribute key first so we can use it for the logic key.
+				logicKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+				if err != nil {
+					return model_class.Attribute{}, errors.WithStack(err)
+				}
+				logic, err := model_logic.NewLogic(logicKey, description, "tla_plus", specification)
+				if err != nil {
+					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
+				}
+				derivationPolicy = &logic
+			}
+		}
 
 		nullable := false
 		nullableAny, found := attributeData["nullable"]
@@ -285,7 +304,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			name,
 			details,
 			dataTypeRules,
-			nil, // TODO: derivationPolicy - parse as *model_logic.Logic
+			derivationPolicy,
 			nullable,
 			umlComment,
 			indexNums)
@@ -778,9 +797,13 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			attrBuilder.AddField("name", attr.Name)
 			attrBuilder.AddField("details", attr.Details)
 			attrBuilder.AddField("rules", attr.DataTypeRules)
-			// TODO: Serialize derivation policy as *model_logic.Logic once format is defined.
-			// attrBuilder.AddField("derivation", attr.DerivationPolicy)
 			attrBuilder.AddBoolField("nullable", attr.Nullable)
+			if attr.DerivationPolicy != nil {
+				derivBuilder := NewYamlBuilder()
+				derivBuilder.AddField("description", attr.DerivationPolicy.Description)
+				derivBuilder.AddQuotedField("specification", attr.DerivationPolicy.Specification)
+				attrBuilder.AddMappingField("derivation", derivBuilder)
+			}
 			attrBuilder.AddField("uml_comment", attr.UmlComment)
 			// Convert []uint to []int for index_nums.
 			if len(attr.IndexNums) > 0 {
