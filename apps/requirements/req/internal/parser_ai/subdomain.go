@@ -17,7 +17,7 @@ type inputSubdomain struct {
 	// Children (not from JSON, populated during directory traversal)
 	Classes                  map[string]*inputClass                          `json:"-"`
 	Generalizations          map[string]*inputClassGeneralization                 `json:"-"`
-	Associations             map[string]*inputAssociation                    `json:"-"`
+	ClassAssociations        map[string]*inputClassAssociation                    `json:"-"`
 	UseCases                 map[string]*inputUseCase                        `json:"-"`
 	UseCaseGeneralizations   map[string]*inputUseCaseGeneralization          `json:"-"`
 	UseCaseShares            map[string]map[string]*inputUseCaseShared       `json:"-"`

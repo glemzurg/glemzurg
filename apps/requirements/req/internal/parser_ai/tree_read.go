@@ -22,7 +22,7 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 	// Initialize child maps
 	model.Actors = make(map[string]*inputActor)
 	model.Domains = make(map[string]*inputDomain)
-	model.Associations = make(map[string]*inputAssociation)
+	model.ClassAssociations = make(map[string]*inputClassAssociation)
 
 	// Read actors
 	actorsDir := filepath.Join(modelDir, "actors")
@@ -82,7 +82,7 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 			if err != nil {
 				return nil, err
 			}
-			model.Associations[key] = assoc
+			model.ClassAssociations[key] = assoc
 		}
 	}
 
@@ -136,7 +136,7 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 
 	// Initialize child maps
 	domain.Subdomains = make(map[string]*inputSubdomain)
-	domain.Associations = make(map[string]*inputAssociation)
+	domain.ClassAssociations = make(map[string]*inputClassAssociation)
 
 	// Read domain-level associations
 	assocDir := filepath.Join(domainDir, "associations")
@@ -165,7 +165,7 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 			if err != nil {
 				return nil, err
 			}
-			domain.Associations[key] = assoc
+			domain.ClassAssociations[key] = assoc
 		}
 	}
 
@@ -210,7 +210,7 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 	// Initialize child maps
 	subdomain.Classes = make(map[string]*inputClass)
 	subdomain.Generalizations = make(map[string]*inputClassGeneralization)
-	subdomain.Associations = make(map[string]*inputAssociation)
+	subdomain.ClassAssociations = make(map[string]*inputClassAssociation)
 
 	// Read subdomain-level associations
 	assocDir := filepath.Join(subdomainDir, "associations")
@@ -239,7 +239,7 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 			if err != nil {
 				return nil, err
 			}
-			subdomain.Associations[key] = assoc
+			subdomain.ClassAssociations[key] = assoc
 		}
 	}
 

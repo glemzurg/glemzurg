@@ -18,7 +18,7 @@ func validateModelTree(model *inputModel) error {
 	}
 
 	// Validate model-level associations
-	for assocKey, assoc := range model.Associations {
+	for assocKey, assoc := range model.ClassAssociations {
 		if err := validateModelAssociation(model, assocKey, assoc); err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *in
 	}
 
 	// Check subdomain has at least one association
-	if len(subdomain.Associations) == 0 {
+	if len(subdomain.ClassAssociations) == 0 {
 		return NewParseError(
 			ErrTreeSubdomainNoAssociations,
 			fmt.Sprintf("subdomain '%s' must have at least one association defined - associations describe how classes relate to each other; create association files under 'domains/%s/subdomains/%s/associations/' with '.assoc.json' extension",
@@ -216,7 +216,7 @@ func validateDomainTree(model *inputModel, domainKey string, domain *inputDomain
 	}
 
 	// Validate domain-level associations
-	for assocKey, assoc := range domain.Associations {
+	for assocKey, assoc := range domain.ClassAssociations {
 		if err := validateDomainAssociation(model, domainKey, domain, assocKey, assoc); err != nil {
 			return err
 		}
@@ -242,7 +242,7 @@ func validateSubdomainTree(model *inputModel, domainKey, subdomainKey string, su
 	}
 
 	// Validate subdomain-level associations
-	for assocKey, assoc := range subdomain.Associations {
+	for assocKey, assoc := range subdomain.ClassAssociations {
 		if err := validateSubdomainAssociation(subdomain, domainKey, subdomainKey, assocKey, assoc); err != nil {
 			return err
 		}
@@ -497,7 +497,7 @@ func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdo
 
 // validateSubdomainAssociation validates an association at the subdomain level.
 // Keys are scoped to the subdomain (just class names).
-func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomainKey, assocKey string, assoc *inputAssociation) error {
+func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomainKey, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/subdomains/%s/associations/%s.assoc.json", domainKey, subdomainKey, assocKey)
 
 	// Validate from_class_key
@@ -573,7 +573,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 
 // validateDomainAssociation validates an association at the domain level.
 // Keys include subdomain to disambiguate (subdomain/class).
-func validateDomainAssociation(model *inputModel, domainKey string, domain *inputDomain, assocKey string, assoc *inputAssociation) error {
+func validateDomainAssociation(model *inputModel, domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/associations/%s.assoc.json", domainKey, assocKey)
 
 	// Parse from_class_key (subdomain/class format)
@@ -713,7 +713,7 @@ func validateDomainAssociation(model *inputModel, domainKey string, domain *inpu
 
 // validateModelAssociation validates an association at the model level.
 // Keys include domain and subdomain (domain/subdomain/class).
-func validateModelAssociation(model *inputModel, assocKey string, assoc *inputAssociation) error {
+func validateModelAssociation(model *inputModel, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("associations/%s.assoc.json", assocKey)
 
 	// Parse from_class_key (domain/subdomain/class format)

@@ -43,7 +43,7 @@ func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	assert.Equal(t, "Model details", input.Details)
 	assert.Empty(t, input.Actors)
 	assert.Empty(t, input.Domains)
-	assert.Empty(t, input.Associations)
+	assert.Empty(t, input.ClassAssociations)
 }
 
 // TestConvertToModelMinimal tests converting a minimal inputModel to req_model.Model.
@@ -55,7 +55,7 @@ func (suite *ConvertSuite) TestConvertToModelMinimal() {
 		Details:      "Model details",
 		Actors:       make(map[string]*inputActor),
 		Domains:      make(map[string]*inputDomain),
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -108,7 +108,7 @@ func (suite *ConvertSuite) TestConvertToModelWithActor() {
 			},
 		},
 		Domains:      make(map[string]*inputDomain),
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -225,13 +225,13 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 							},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -401,13 +401,13 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 							},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -525,13 +525,13 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 							},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -649,13 +649,13 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 								SubclassKeys:  []string{"book"},
 							},
 						},
-						Associations: make(map[string]*inputAssociation),
+						ClassAssociations: make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -744,9 +744,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	require.NoError(t, err)
 
 	subdomain := input.Domains["orders"].Subdomains["default"]
-	require.Contains(t, subdomain.Associations, "order_lines")
+	require.Contains(t, subdomain.ClassAssociations, "order_lines")
 
-	assoc := subdomain.Associations["order_lines"]
+	assoc := subdomain.ClassAssociations["order_lines"]
 	assert.Equal(t, "Order Lines", assoc.Name)
 	assert.Equal(t, "order", assoc.FromClassKey)
 	assert.Equal(t, "1", assoc.FromMultiplicity)
@@ -772,7 +772,7 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 							"line_item": {Name: "Line Item", Attributes: make(map[string]*inputAttribute)},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations: map[string]*inputAssociation{
+						ClassAssociations: map[string]*inputClassAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
 								FromClassKey:     "order",
@@ -783,10 +783,10 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 						},
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -823,7 +823,7 @@ func (suite *ConvertSuite) TestRoundTripMinimal() {
 		Details:      "Model details",
 		Actors:       make(map[string]*inputActor),
 		Domains:      make(map[string]*inputDomain),
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	// Convert to req_model
@@ -917,7 +917,7 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 								SubclassKeys:  []string{"book"},
 							},
 						},
-						Associations: map[string]*inputAssociation{
+						ClassAssociations: map[string]*inputClassAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
 								FromClassKey:     "order",
@@ -928,10 +928,10 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 						},
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	// Convert to req_model
@@ -982,8 +982,8 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 	assert.Equal(t, "product", gen.SuperclassKey)
 
 	// Verify association
-	require.Contains(t, subdomain.Associations, "order_lines")
-	assoc := subdomain.Associations["order_lines"]
+	require.Contains(t, subdomain.ClassAssociations, "order_lines")
+	assoc := subdomain.ClassAssociations["order_lines"]
 	assert.Equal(t, "order", assoc.FromClassKey)
 	assert.Equal(t, "1..*", assoc.ToMultiplicity)
 }
@@ -1028,13 +1028,13 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 							},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	_, err := ConvertToModel(input, "testmodel")
@@ -1091,9 +1091,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	require.NoError(t, err)
 
 	domain := input.Domains["orders"]
-	require.Contains(t, domain.Associations, "order_shipments")
+	require.Contains(t, domain.ClassAssociations, "order_shipments")
 
-	assoc := domain.Associations["order_shipments"]
+	assoc := domain.ClassAssociations["order_shipments"]
 	assert.Equal(t, "Order Shipments", assoc.Name)
 	assert.Equal(t, "core/order", assoc.FromClassKey)
 	assert.Equal(t, "shipping/shipment", assoc.ToClassKey)
@@ -1116,7 +1116,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 					"shipping": {
 						Name: "Shipping",
@@ -1124,10 +1124,10 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 							"shipment": {Name: "Shipment", Attributes: make(map[string]*inputAttribute)},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: map[string]*inputAssociation{
+				ClassAssociations: map[string]*inputClassAssociation{
 					"order_shipments": {
 						Name:             "Order Shipments",
 						FromClassKey:     "core/order",
@@ -1138,7 +1138,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 				},
 			},
 		},
-		Associations: make(map[string]*inputAssociation),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
@@ -1217,9 +1217,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
 
-	require.Contains(t, input.Associations, "order_products")
+	require.Contains(t, input.ClassAssociations, "order_products")
 
-	assoc := input.Associations["order_products"]
+	assoc := input.ClassAssociations["order_products"]
 	assert.Equal(t, "Order Products", assoc.Name)
 	assert.Equal(t, "orders/core/order", assoc.FromClassKey)
 	assert.Equal(t, "inventory/products/product", assoc.ToClassKey)
@@ -1242,10 +1242,10 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 			"inventory": {
 				Name: "Inventory",
@@ -1256,13 +1256,13 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
 						},
 						Generalizations: make(map[string]*inputClassGeneralization),
-						Associations:    make(map[string]*inputAssociation),
+						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
-				Associations: make(map[string]*inputAssociation),
+				ClassAssociations: make(map[string]*inputClassAssociation),
 			},
 		},
-		Associations: map[string]*inputAssociation{
+		ClassAssociations: map[string]*inputClassAssociation{
 			"order_products": {
 				Name:             "Order Products",
 				FromClassKey:     "orders/core/order",

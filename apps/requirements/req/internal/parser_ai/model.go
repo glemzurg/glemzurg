@@ -20,7 +20,7 @@ type inputModel struct {
 	GlobalFunctions       map[string]*inputGlobalFunction       `json:"-"`
 	Domains               map[string]*inputDomain               `json:"-"`
 	DomainAssociations    map[string]*inputDomainAssociation    `json:"-"`
-	Associations          map[string]*inputAssociation          `json:"-"`
+	ClassAssociations     map[string]*inputClassAssociation          `json:"-"`
 }
 
 // modelSchema is the compiled JSON schema for model.json.

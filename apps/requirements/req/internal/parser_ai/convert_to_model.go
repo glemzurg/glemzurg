@@ -81,7 +81,7 @@ func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error
 	}
 
 	// Convert model-level class associations
-	for key, assoc := range input.Associations {
+	for key, assoc := range input.ClassAssociations {
 		converted, err := convertModelAssociationToModel(key, assoc, result.Domains)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert model-level association '%s'", key)
@@ -239,7 +239,7 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 	}
 
 	// Convert domain-level class associations
-	for key, assoc := range domain.Associations {
+	for key, assoc := range domain.ClassAssociations {
 		converted, err := convertDomainClassAssociationToModel(key, assoc, domainKey, result.Subdomains)
 		if err != nil {
 			return model_domain.Domain{}, errors.Wrapf(err, "failed to convert domain-level association '%s'", key)
@@ -331,7 +331,7 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 	}
 
 	// Convert subdomain-level class associations
-	for key, assoc := range subdomain.Associations {
+	for key, assoc := range subdomain.ClassAssociations {
 		converted, err := convertSubdomainAssociationToModel(key, assoc, subdomainKey, result.Classes)
 		if err != nil {
 			return model_domain.Subdomain{}, errors.Wrapf(err, "failed to convert subdomain-level association '%s'", key)
@@ -934,8 +934,8 @@ func convertClassGeneralizationToModel(keyStr string, gen *inputClassGeneralizat
 	}, nil
 }
 
-// convertSubdomainAssociationToModel converts an inputAssociation at subdomain level to a model_class.Association.
-func convertSubdomainAssociationToModel(keyStr string, assoc *inputAssociation, subdomainKey identity.Key, classes map[identity.Key]model_class.Class) (model_class.Association, error) {
+// convertSubdomainAssociationToModel converts an inputClassAssociation at subdomain level to a model_class.Association.
+func convertSubdomainAssociationToModel(keyStr string, assoc *inputClassAssociation, subdomainKey identity.Key, classes map[identity.Key]model_class.Class) (model_class.Association, error) {
 	// Find the class keys
 	var fromClassKey, toClassKey identity.Key
 	for key := range classes {
@@ -993,8 +993,8 @@ func convertSubdomainAssociationToModel(keyStr string, assoc *inputAssociation, 
 	return result, nil
 }
 
-// convertDomainClassAssociationToModel converts an inputAssociation at domain level to a model_class.Association.
-func convertDomainClassAssociationToModel(keyStr string, assoc *inputAssociation, domainKey identity.Key, subdomains map[identity.Key]model_domain.Subdomain) (model_class.Association, error) {
+// convertDomainClassAssociationToModel converts an inputClassAssociation at domain level to a model_class.Association.
+func convertDomainClassAssociationToModel(keyStr string, assoc *inputClassAssociation, domainKey identity.Key, subdomains map[identity.Key]model_domain.Subdomain) (model_class.Association, error) {
 	// Parse subdomain/class format
 	fromSubdomain, fromClass, err := parseDomainScopedKey(assoc.FromClassKey)
 	if err != nil {
@@ -1062,8 +1062,8 @@ func convertDomainClassAssociationToModel(keyStr string, assoc *inputAssociation
 	return result, nil
 }
 
-// convertModelAssociationToModel converts an inputAssociation at model level to a model_class.Association.
-func convertModelAssociationToModel(keyStr string, assoc *inputAssociation, domains map[identity.Key]model_domain.Domain) (model_class.Association, error) {
+// convertModelAssociationToModel converts an inputClassAssociation at model level to a model_class.Association.
+func convertModelAssociationToModel(keyStr string, assoc *inputClassAssociation, domains map[identity.Key]model_domain.Domain) (model_class.Association, error) {
 	// Parse domain/subdomain/class format
 	fromDomain, fromSubdomain, fromClass, err := parseModelScopedKey(assoc.FromClassKey)
 	if err != nil {

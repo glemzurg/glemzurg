@@ -33,12 +33,12 @@ func WriteModelTree(model *inputModel, modelDir string) error {
 	}
 
 	// Write model-level associations
-	if len(model.Associations) > 0 {
+	if len(model.ClassAssociations) > 0 {
 		assocDir := filepath.Join(modelDir, "associations")
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for key, assoc := range model.Associations {
+		for key, assoc := range model.ClassAssociations {
 			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
 				return err
 			}
@@ -74,12 +74,12 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 	}
 
 	// Write domain-level associations
-	if len(domain.Associations) > 0 {
+	if len(domain.ClassAssociations) > 0 {
 		assocDir := filepath.Join(domainDir, "associations")
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for key, assoc := range domain.Associations {
+		for key, assoc := range domain.ClassAssociations {
 			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
 				return err
 			}
@@ -115,12 +115,12 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 	}
 
 	// Write subdomain-level associations
-	if len(subdomain.Associations) > 0 {
+	if len(subdomain.ClassAssociations) > 0 {
 		assocDir := filepath.Join(subdomainDir, "associations")
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for key, assoc := range subdomain.Associations {
+		for key, assoc := range subdomain.ClassAssociations {
 			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
 				return err
 			}

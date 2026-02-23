@@ -30,7 +30,7 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 		GlobalFunctions:      make(map[string]*inputGlobalFunction),
 		Domains:              make(map[string]*inputDomain),
 		DomainAssociations:   make(map[string]*inputDomainAssociation),
-		Associations:         make(map[string]*inputAssociation),
+		ClassAssociations:    make(map[string]*inputClassAssociation),
 	}
 
 	// Convert actors
@@ -69,7 +69,7 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 	// Convert model-level class associations
 	for key, assoc := range model.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, "")
-		result.Associations[key.SubKey3] = converted
+		result.ClassAssociations[key.SubKey3] = converted
 	}
 
 	return result, nil
@@ -143,8 +143,8 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 		Details:      domain.Details,
 		Realized:     domain.Realized,
 		UMLComment:   domain.UmlComment,
-		Subdomains:   make(map[string]*inputSubdomain),
-		Associations: make(map[string]*inputAssociation),
+		Subdomains:        make(map[string]*inputSubdomain),
+		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
 	// Convert subdomains
@@ -159,7 +159,7 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 	// Convert domain-level class associations
 	for key, assoc := range domain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_DOMAIN)
-		result.Associations[key.SubKey3] = converted
+		result.ClassAssociations[key.SubKey3] = converted
 	}
 
 	return result, nil
@@ -173,7 +173,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 		UMLComment:             subdomain.UmlComment,
 		Classes:                make(map[string]*inputClass),
 		Generalizations:        make(map[string]*inputClassGeneralization),
-		Associations:           make(map[string]*inputAssociation),
+		ClassAssociations:      make(map[string]*inputClassAssociation),
 		UseCases:               make(map[string]*inputUseCase),
 		UseCaseGeneralizations: make(map[string]*inputUseCaseGeneralization),
 		UseCaseShares:          make(map[string]map[string]*inputUseCaseShared),
@@ -221,7 +221,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 	// Convert subdomain-level class associations
 	for key, assoc := range subdomain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_SUBDOMAIN)
-		result.Associations[key.SubKey3] = converted
+		result.ClassAssociations[key.SubKey3] = converted
 	}
 
 	return result, nil
@@ -636,10 +636,10 @@ func convertClassGeneralizationFromModel(gen *model_class.Generalization, classe
 	return result
 }
 
-// convertAssociationFromModel converts a model_class.Association to an inputAssociation.
+// convertAssociationFromModel converts a model_class.Association to an inputClassAssociation.
 // The parentType indicates the scope level: "", "domain", or "subdomain".
-func convertAssociationFromModel(assoc *model_class.Association, parentType string) *inputAssociation {
-	result := &inputAssociation{
+func convertAssociationFromModel(assoc *model_class.Association, parentType string) *inputClassAssociation {
+	result := &inputClassAssociation{
 		Name:             assoc.Name,
 		Details:          assoc.Details,
 		FromMultiplicity: assoc.FromMultiplicity.String(),

@@ -8,8 +8,8 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
-// inputAssociation represents an association JSON file.
-type inputAssociation struct {
+// inputClassAssociation represents an association JSON file.
+type inputClassAssociation struct {
 	Name                string  `json:"name"`
 	Details             string  `json:"details,omitempty"`
 	FromClassKey        string  `json:"from_class_key"`
@@ -40,8 +40,8 @@ func init() {
 }
 
 // parseAssociation parses and validates an association JSON file.
-func parseAssociation(content []byte, filename string) (*inputAssociation, error) {
-	var assoc inputAssociation
+func parseAssociation(content []byte, filename string) (*inputClassAssociation, error) {
+	var assoc inputClassAssociation
 	if err := json.Unmarshal(content, &assoc); err != nil {
 		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON: "+err.Error(), filename)
 	}
@@ -63,7 +63,7 @@ func parseAssociation(content []byte, filename string) (*inputAssociation, error
 }
 
 // validateAssociation performs custom validation beyond JSON schema.
-func validateAssociation(assoc *inputAssociation, filename string) error {
+func validateAssociation(assoc *inputClassAssociation, filename string) error {
 	// Validate name
 	if assoc.Name == "" {
 		return NewParseError(ErrAssocNameRequired, "association name is required, got ''", filename).WithField("name")
