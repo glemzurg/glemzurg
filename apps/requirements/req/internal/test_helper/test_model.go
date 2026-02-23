@@ -1,6 +1,8 @@
 package testhelper
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
@@ -12,8 +14,110 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
+// testKeys holds all identity keys used throughout the test model.
+type testKeys struct {
+	// Domains.
+	domainA, domainB, domainC identity.Key
+
+	// Subdomains.
+	subdomainA, subdomainB, subdomainC, subdomainD identity.Key
+
+	// Actors (root-level).
+	actorPerson, actorSystem, actorVip identity.Key
+
+	// Actor generalizations (root-level).
+	actorGen1, actorGen2, actorGen3 identity.Key
+
+	// Classes in subdomain A.
+	classOrder, classProduct, classLineItem identity.Key
+	classCustomer, classVehicle, classCar    identity.Key
+
+	// Classes in subdomain B.
+	classWarehouse, classShelf, classAisle identity.Key
+
+	// Classes in subdomain C (domain B).
+	classSupplier, classShipment, classRoute identity.Key
+
+	// Class generalizations.
+	classGen1, classGen2, classGen3 identity.Key
+
+	// Attributes.
+	attrOrderDate, attrTotal, attrStatus identity.Key
+	attrProductName                      identity.Key
+
+	// States.
+	stateNew, stateProcessing, stateComplete identity.Key
+
+	// Events.
+	eventSubmit, eventFulfill, eventCancel identity.Key
+
+	// Guards.
+	guardHasItems, guardIsValid, guardInStock identity.Key
+
+	// Actions.
+	actionProcess, actionShip, actionNotify identity.Key
+
+	// Queries.
+	queryStatus, queryCount, queryHistory identity.Key
+
+	// Transitions.
+	transitionSubmit, transitionFulfill, transitionInitial, transitionFinal identity.Key
+
+	// State action keys.
+	stateActionEntry, stateActionExit, stateActionDo identity.Key
+
+	// Logic keys for actions.
+	actionRequire1, actionRequire2, actionRequire3       identity.Key
+	actionGuarantee1, actionGuarantee2, actionGuarantee3 identity.Key
+	actionSafety1, actionSafety2, actionSafety3          identity.Key
+
+	// Logic keys for queries.
+	queryRequire1, queryRequire2, queryRequire3       identity.Key
+	queryGuarantee1, queryGuarantee2, queryGuarantee3 identity.Key
+
+	// Logic keys for guard.
+	guardLogic1, guardLogic2, guardLogic3 identity.Key
+
+	// Invariant keys.
+	invariant1, invariant2, invariant3 identity.Key
+
+	// Derivation key.
+	derivation1 identity.Key
+
+	// Global function keys.
+	globalFunc1, globalFunc2, globalFunc3 identity.Key
+
+	// Use case keys.
+	ucPlaceOrder, ucViewOrder, ucManageOrder, ucCancelOrder identity.Key
+
+	// Use case generalization keys.
+	ucGen1, ucGen2, ucGen3 identity.Key
+
+	// Scenario keys.
+	scenarioHappy, scenarioError, scenarioAlt identity.Key
+	scenarioView                              identity.Key
+
+	// Scenario object keys.
+	objCustomer, objOrder, objProduct identity.Key
+
+	// Scenario step keys.
+	stepRoot                                        identity.Key
+	step1, step2, step3, step4, step5               identity.Key
+	step6, step7, step8, step9, step10              identity.Key
+	step11, step12, step13                          identity.Key
+
+	// Domain association keys.
+	domainAssoc1, domainAssoc2, domainAssoc3 identity.Key
+
+	// Class association keys.
+	subdomainAssoc1, subdomainAssoc2, subdomainAssoc3 identity.Key
+	domainClassAssoc1, domainClassAssoc2, domainClassAssoc3 identity.Key
+	modelClassAssoc1, modelClassAssoc2, modelClassAssoc3    identity.Key
+}
+
 // Create a very elaborate model that can be used for testing in various packages around the system.
 // Every single class in req_model is represented, and every kind of relationship.
+// Each parent has 3 of each kind of child, except one parent of each type has no children.
 func GetTestModel() req_model.Model {
 	model, err := buildTestModel()
 	if err != nil {
@@ -26,1263 +130,1840 @@ func GetTestModel() req_model.Model {
 }
 
 func buildTestModel() (req_model.Model, error) {
-
-	// =========================================================================
-	// Identity keys
-	// =========================================================================
-
-	// Domains.
-	domainAKey, err := identity.NewDomainKey("domain_a")
+	k, err := buildKeys()
 	if err != nil {
 		return req_model.Model{}, err
 	}
-	domainBKey, err := identity.NewDomainKey("domain_b")
+
+	logic, err := buildLogic(k)
 	if err != nil {
 		return req_model.Model{}, err
+	}
+
+	globalFuncs, err := buildGlobalFunctions(k, logic)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	params, err := buildParameters()
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	sm, err := buildStateMachine(k, logic, params)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	attrs, err := buildAttributes(k, logic)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	classes, err := buildClasses(k, attrs, sm)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	gens, err := buildClassGeneralizations(k)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	assocs, err := buildAssociations(k)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	scenarios, err := buildScenarios(k)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	useCases, err := buildUseCases(k, scenarios)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	actors, actorGens, err := buildActors(k)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	domainAssocs, err := buildDomainAssociations(k)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	subdomains, err := buildSubdomains(k, classes, gens, useCases, assocs)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	domains, err := buildDomains(k, subdomains)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Assemble the model.
+	model, err := req_model.NewModel(
+		"test_model",
+		"Test Model",
+		"A comprehensive test model with every type represented.",
+		logic.invariants,
+		globalFuncs,
+	)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	model.Actors = actors
+	model.ActorGeneralizations = actorGens
+	model.Domains = domains
+	model.DomainAssociations = domainAssocs
+
+	// Set class associations — routes them to the appropriate level (model/domain/subdomain).
+	if err := model.SetClassAssociations(assocs.all); err != nil {
+		return req_model.Model{}, err
+	}
+
+	return model, nil
+}
+
+// =========================================================================
+// Keys
+// =========================================================================
+
+func buildKeys() (testKeys, error) {
+	var k testKeys
+	var err error
+
+	// Domains.
+	k.domainA, err = identity.NewDomainKey("domain_a")
+	if err != nil {
+		return k, err
+	}
+	k.domainB, err = identity.NewDomainKey("domain_b")
+	if err != nil {
+		return k, err
+	}
+	k.domainC, err = identity.NewDomainKey("domain_c")
+	if err != nil {
+		return k, err
 	}
 
 	// Subdomains.
-	subdomainAKey, err := identity.NewSubdomainKey(domainAKey, "subdomain_a")
+	k.subdomainA, err = identity.NewSubdomainKey(k.domainA, "subdomain_a")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	subdomainBKey, err := identity.NewSubdomainKey(domainAKey, "subdomain_b")
+	k.subdomainB, err = identity.NewSubdomainKey(k.domainA, "subdomain_b")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	subdomainCKey, err := identity.NewSubdomainKey(domainBKey, "subdomain_c")
+	k.subdomainC, err = identity.NewSubdomainKey(k.domainB, "subdomain_c")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-
-	// Actor keys (root-level).
-	actorPersonKey, err := identity.NewActorKey("customer")
+	k.subdomainD, err = identity.NewSubdomainKey(k.domainA, "subdomain_d")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-	actorSystemKey, err := identity.NewActorKey("payment_gateway")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	actorSubclassKey, err := identity.NewActorKey("vip_customer")
-	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Actor generalization key (root-level).
-	actorGenKey, err := identity.NewActorGeneralizationKey("customer_types")
+	// Actors.
+	k.actorPerson, err = identity.NewActorKey("customer")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.actorSystem, err = identity.NewActorKey("payment_gateway")
+	if err != nil {
+		return k, err
+	}
+	k.actorVip, err = identity.NewActorKey("vip_customer")
+	if err != nil {
+		return k, err
+	}
+
+	// Actor generalizations.
+	k.actorGen1, err = identity.NewActorGeneralizationKey("customer_types")
+	if err != nil {
+		return k, err
+	}
+	k.actorGen2, err = identity.NewActorGeneralizationKey("user_types")
+	if err != nil {
+		return k, err
+	}
+	k.actorGen3, err = identity.NewActorGeneralizationKey("system_types")
+	if err != nil {
+		return k, err
 	}
 
 	// Classes in subdomain A.
-	classOrderKey, err := identity.NewClassKey(subdomainAKey, "order")
+	k.classOrder, err = identity.NewClassKey(k.subdomainA, "order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	classProductKey, err := identity.NewClassKey(subdomainAKey, "product")
+	k.classProduct, err = identity.NewClassKey(k.subdomainA, "product")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	classLineItemKey, err := identity.NewClassKey(subdomainAKey, "line_item")
+	k.classLineItem, err = identity.NewClassKey(k.subdomainA, "line_item")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// A class that is an actor.
-	classCustomerKey, err := identity.NewClassKey(subdomainAKey, "customer_class")
+	k.classCustomer, err = identity.NewClassKey(k.subdomainA, "customer_class")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Classes for generalization.
-	classVehicleKey, err := identity.NewClassKey(subdomainAKey, "vehicle")
+	k.classVehicle, err = identity.NewClassKey(k.subdomainA, "vehicle")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	classCarKey, err := identity.NewClassKey(subdomainAKey, "car")
+	k.classCar, err = identity.NewClassKey(k.subdomainA, "car")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Class in subdomain B (for domain-level association).
-	classWarehouseKey, err := identity.NewClassKey(subdomainBKey, "warehouse")
+	// Classes in subdomain B.
+	k.classWarehouse, err = identity.NewClassKey(k.subdomainB, "warehouse")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.classShelf, err = identity.NewClassKey(k.subdomainB, "shelf")
+	if err != nil {
+		return k, err
+	}
+	k.classAisle, err = identity.NewClassKey(k.subdomainB, "aisle")
+	if err != nil {
+		return k, err
 	}
 
-	// Class in subdomain C / domain B (for model-level association).
-	classSupplierKey, err := identity.NewClassKey(subdomainCKey, "supplier")
+	// Classes in subdomain C (domain B).
+	k.classSupplier, err = identity.NewClassKey(k.subdomainC, "supplier")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.classShipment, err = identity.NewClassKey(k.subdomainC, "shipment")
+	if err != nil {
+		return k, err
+	}
+	k.classRoute, err = identity.NewClassKey(k.subdomainC, "route")
+	if err != nil {
+		return k, err
 	}
 
-	// Class generalization keys.
-	classGenKey, err := identity.NewGeneralizationKey(subdomainAKey, "vehicle_types")
+	// Class generalizations (all in subdomain A).
+	k.classGen1, err = identity.NewGeneralizationKey(k.subdomainA, "vehicle_types")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Second generalization with IsComplete=false, IsStatic=false (pairwise: (F,F) combo).
-	classGen2Key, err := identity.NewGeneralizationKey(subdomainAKey, "product_types")
+	k.classGen2, err = identity.NewGeneralizationKey(k.subdomainA, "product_types")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.classGen3, err = identity.NewGeneralizationKey(k.subdomainA, "order_types")
+	if err != nil {
+		return k, err
 	}
 
 	// Attributes.
-	attrOrderDateKey, err := identity.NewAttributeKey(classOrderKey, "order_date")
+	k.attrOrderDate, err = identity.NewAttributeKey(k.classOrder, "order_date")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	attrTotalKey, err := identity.NewAttributeKey(classOrderKey, "total")
+	k.attrTotal, err = identity.NewAttributeKey(k.classOrder, "total")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	attrProductNameKey, err := identity.NewAttributeKey(classProductKey, "name")
+	k.attrStatus, err = identity.NewAttributeKey(k.classOrder, "status")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.attrProductName, err = identity.NewAttributeKey(k.classProduct, "name")
+	if err != nil {
+		return k, err
 	}
 
 	// States.
-	stateNewKey, err := identity.NewStateKey(classOrderKey, "new")
+	k.stateNew, err = identity.NewStateKey(k.classOrder, "new")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	stateProcessingKey, err := identity.NewStateKey(classOrderKey, "processing")
+	k.stateProcessing, err = identity.NewStateKey(k.classOrder, "processing")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	stateCompleteKey, err := identity.NewStateKey(classOrderKey, "complete")
+	k.stateComplete, err = identity.NewStateKey(k.classOrder, "complete")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
 	// Events.
-	eventSubmitKey, err := identity.NewEventKey(classOrderKey, "submit")
+	k.eventSubmit, err = identity.NewEventKey(k.classOrder, "submit")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	eventFulfillKey, err := identity.NewEventKey(classOrderKey, "fulfill")
+	k.eventFulfill, err = identity.NewEventKey(k.classOrder, "fulfill")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Event with nil parameters (pairwise: Event.Parameters nil vs populated).
-	eventCancelKey, err := identity.NewEventKey(classOrderKey, "cancel")
+	k.eventCancel, err = identity.NewEventKey(k.classOrder, "cancel")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
 	// Guards.
-	guardHasItemsKey, err := identity.NewGuardKey(classOrderKey, "has_items")
+	k.guardHasItems, err = identity.NewGuardKey(k.classOrder, "has_items")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.guardIsValid, err = identity.NewGuardKey(k.classOrder, "is_valid")
+	if err != nil {
+		return k, err
+	}
+	k.guardInStock, err = identity.NewGuardKey(k.classOrder, "in_stock")
+	if err != nil {
+		return k, err
 	}
 
 	// Actions.
-	actionProcessKey, err := identity.NewActionKey(classOrderKey, "process_order")
+	k.actionProcess, err = identity.NewActionKey(k.classOrder, "process_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	actionShipKey, err := identity.NewActionKey(classOrderKey, "ship_order")
+	k.actionShip, err = identity.NewActionKey(k.classOrder, "ship_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.actionNotify, err = identity.NewActionKey(k.classOrder, "notify_customer")
+	if err != nil {
+		return k, err
 	}
 
 	// Queries.
-	queryStatusKey, err := identity.NewQueryKey(classOrderKey, "get_status")
+	k.queryStatus, err = identity.NewQueryKey(k.classOrder, "get_status")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Query with nil parameters/requires/guarantees (pairwise: Query slices nil vs populated).
-	queryCountKey, err := identity.NewQueryKey(classOrderKey, "get_count")
+	k.queryCount, err = identity.NewQueryKey(k.classOrder, "get_count")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.queryHistory, err = identity.NewQueryKey(k.classOrder, "get_history")
+	if err != nil {
+		return k, err
 	}
 
 	// Transitions.
-	transitionSubmitKey, err := identity.NewTransitionKey(classOrderKey, "new", "submit", "has_items", "process_order", "processing")
+	k.transitionSubmit, err = identity.NewTransitionKey(k.classOrder, "new", "submit", "has_items", "process_order", "processing")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	transitionFulfillKey, err := identity.NewTransitionKey(classOrderKey, "processing", "fulfill", "", "ship_order", "complete")
+	k.transitionFulfill, err = identity.NewTransitionKey(k.classOrder, "processing", "fulfill", "", "ship_order", "complete")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Initial transition: nil FromStateKey (pairwise: FromStateKey nil vs set).
-	transitionInitialKey, err := identity.NewTransitionKey(classOrderKey, "", "cancel", "", "", "new")
+	k.transitionInitial, err = identity.NewTransitionKey(k.classOrder, "", "cancel", "", "", "new")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Final transition: nil ToStateKey, nil ActionKey (pairwise: ToStateKey nil, ActionKey nil).
-	transitionFinalKey, err := identity.NewTransitionKey(classOrderKey, "complete", "cancel", "", "", "")
+	k.transitionFinal, err = identity.NewTransitionKey(k.classOrder, "complete", "cancel", "", "", "")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// State action keys (pairwise: When = entry, exit, do).
-	stateActionEntryKey, err := identity.NewStateActionKey(stateProcessingKey, "entry", "process_order")
+	// State actions (all on stateNew: entry + exit + do).
+	k.stateActionEntry, err = identity.NewStateActionKey(k.stateNew, "entry", "process_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	stateActionExitKey, err := identity.NewStateActionKey(stateNewKey, "exit", "process_order")
+	k.stateActionExit, err = identity.NewStateActionKey(k.stateNew, "exit", "ship_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	stateActionDoKey, err := identity.NewStateActionKey(stateCompleteKey, "do", "ship_order")
+	k.stateActionDo, err = identity.NewStateActionKey(k.stateNew, "do", "notify_customer")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-
-	// Logic keys for actions/queries/guards/invariants.
-	guardLogicKey, err := identity.NewGuardKey(classOrderKey, "has_items")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	_ = guardLogicKey // Used indirectly via guard construction.
-
-	actionRequire1Key, err := identity.NewActionRequireKey(actionProcessKey, "order_exists")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	actionGuarantee1Key, err := identity.NewActionGuaranteeKey(actionProcessKey, "order_processed")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	actionSafety1Key, err := identity.NewActionSafetyKey(actionProcessKey, "no_double_process")
-	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	queryRequire1Key, err := identity.NewQueryRequireKey(queryStatusKey, "order_exists")
+	// Action logic keys.
+	k.actionRequire1, err = identity.NewActionRequireKey(k.actionProcess, "order_exists")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	queryGuarantee1Key, err := identity.NewQueryGuaranteeKey(queryStatusKey, "returns_status")
+	k.actionRequire2, err = identity.NewActionRequireKey(k.actionProcess, "quantity_positive")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-
-	// Second action require/guarantee keys (for multiple Logic per slice).
-	actionRequire2Key, err := identity.NewActionRequireKey(actionProcessKey, "quantity_positive")
+	k.actionRequire3, err = identity.NewActionRequireKey(k.actionProcess, "customer_active")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	actionGuarantee2Key, err := identity.NewActionGuaranteeKey(actionProcessKey, "inventory_decremented")
+	k.actionGuarantee1, err = identity.NewActionGuaranteeKey(k.actionProcess, "order_processed")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-
-	// Second query guarantee key.
-	queryGuarantee2Key, err := identity.NewQueryGuaranteeKey(queryStatusKey, "returns_timestamp")
+	k.actionGuarantee2, err = identity.NewActionGuaranteeKey(k.actionProcess, "inventory_decremented")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-
-	invariantKey, err := identity.NewInvariantKey("total_non_negative")
+	k.actionGuarantee3, err = identity.NewActionGuaranteeKey(k.actionProcess, "status_updated")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-
-	globalFuncKey, err := identity.NewGlobalFunctionKey("_max")
+	k.actionSafety1, err = identity.NewActionSafetyKey(k.actionProcess, "no_double_process")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Second global function with nil parameters and empty specification (pairwise).
-	globalFunc2Key, err := identity.NewGlobalFunctionKey("_identity")
+	k.actionSafety2, err = identity.NewActionSafetyKey(k.actionProcess, "no_negative_inventory")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.actionSafety3, err = identity.NewActionSafetyKey(k.actionProcess, "no_closed_order_change")
+	if err != nil {
+		return k, err
 	}
 
-	// Derivation key for derived attribute.
-	derivationKey, err := identity.NewAttributeDerivationKey(attrTotalKey, "sum_line_items")
+	// Query logic keys.
+	k.queryRequire1, err = identity.NewQueryRequireKey(k.queryStatus, "order_exists")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.queryRequire2, err = identity.NewQueryRequireKey(k.queryStatus, "user_authorized")
+	if err != nil {
+		return k, err
+	}
+	k.queryRequire3, err = identity.NewQueryRequireKey(k.queryStatus, "order_not_deleted")
+	if err != nil {
+		return k, err
+	}
+	k.queryGuarantee1, err = identity.NewQueryGuaranteeKey(k.queryStatus, "returns_status")
+	if err != nil {
+		return k, err
+	}
+	k.queryGuarantee2, err = identity.NewQueryGuaranteeKey(k.queryStatus, "returns_timestamp")
+	if err != nil {
+		return k, err
+	}
+	k.queryGuarantee3, err = identity.NewQueryGuaranteeKey(k.queryStatus, "returns_details")
+	if err != nil {
+		return k, err
 	}
 
-	// Use case keys.
-	useCasePlaceOrderKey, err := identity.NewUseCaseKey(subdomainAKey, "place_order")
+	// Guard logic keys (guard key IS the logic key for guards).
+	k.guardLogic1 = k.guardHasItems
+	k.guardLogic2 = k.guardIsValid
+	k.guardLogic3 = k.guardInStock
+
+	// Invariants.
+	k.invariant1, err = identity.NewInvariantKey("total_non_negative")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	useCaseViewOrderKey, err := identity.NewUseCaseKey(subdomainAKey, "view_order")
+	k.invariant2, err = identity.NewInvariantKey("order_has_customer")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	useCaseSuperKey, err := identity.NewUseCaseKey(subdomainAKey, "manage_order")
+	k.invariant3, err = identity.NewInvariantKey("unique_order_ids")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-	// Second mud-level use case (pairwise: UseCaseShared extend).
-	useCaseCancelOrderKey, err := identity.NewUseCaseKey(subdomainAKey, "cancel_order")
-	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Use case generalization key.
-	ucGenKey, err := identity.NewUseCaseGeneralizationKey(subdomainAKey, "order_management_types")
+	// Derivation.
+	k.derivation1, err = identity.NewAttributeDerivationKey(k.attrTotal, "sum_line_items")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Scenario keys.
-	scenarioHappyKey, err := identity.NewScenarioKey(useCasePlaceOrderKey, "happy_path")
+	// Global functions.
+	k.globalFunc1, err = identity.NewGlobalFunctionKey("_max")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	scenarioErrorKey, err := identity.NewScenarioKey(useCasePlaceOrderKey, "error_path")
+	k.globalFunc2, err = identity.NewGlobalFunctionKey("_identity")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Scenario in view_order use case (for cross-use-case scenario reference).
-	scenarioViewKey, err := identity.NewScenarioKey(useCaseViewOrderKey, "view_details")
+	k.globalFunc3, err = identity.NewGlobalFunctionKey("_count")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-
-	// Scenario object keys.
-	objCustomerKey, err := identity.NewScenarioObjectKey(scenarioHappyKey, "the_customer")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	objOrderKey, err := identity.NewScenarioObjectKey(scenarioHappyKey, "the_order")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	objProductKey, err := identity.NewScenarioObjectKey(scenarioHappyKey, "the_product")
-	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Scenario step keys.
-	stepRootKey, err := identity.NewScenarioStepKey(scenarioHappyKey, "0")
+	// Use cases.
+	k.ucPlaceOrder, err = identity.NewUseCaseKey(k.subdomainA, "place_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	step1Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "1")
+	k.ucViewOrder, err = identity.NewUseCaseKey(k.subdomainA, "view_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	step2Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "2")
+	k.ucManageOrder, err = identity.NewUseCaseKey(k.subdomainA, "manage_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	step3Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "3")
+	k.ucCancelOrder, err = identity.NewUseCaseKey(k.subdomainA, "cancel_order")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-	step4Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "4")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step5Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "5")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step6Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "6")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step7Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "7")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step8Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "8")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step9Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "9")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step10Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "10")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	// Additional steps for diverse from/to combos and cross-use-case scenario ref.
-	step11Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "11")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step12Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "12")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	step13Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "13")
-	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Domain association key.
-	domainAssocKey, err := identity.NewDomainAssociationKey(domainAKey, domainBKey)
+	// Use case generalizations.
+	k.ucGen1, err = identity.NewUseCaseGeneralizationKey(k.subdomainA, "order_management_types")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.ucGen2, err = identity.NewUseCaseGeneralizationKey(k.subdomainA, "order_view_types")
+	if err != nil {
+		return k, err
+	}
+	k.ucGen3, err = identity.NewUseCaseGeneralizationKey(k.subdomainA, "order_cancel_types")
+	if err != nil {
+		return k, err
 	}
 
-	// Class association keys at different levels.
-	// Subdomain-level: order <-> product (same subdomain).
-	subdomainAssocKey, err := identity.NewClassAssociationKey(subdomainAKey, classOrderKey, classProductKey, "order contains products")
+	// Scenarios.
+	k.scenarioHappy, err = identity.NewScenarioKey(k.ucPlaceOrder, "happy_path")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Domain-level: order <-> warehouse (different subdomains, same domain).
-	domainClassAssocKey, err := identity.NewClassAssociationKey(domainAKey, classOrderKey, classWarehouseKey, "order ships from warehouse")
+	k.scenarioError, err = identity.NewScenarioKey(k.ucPlaceOrder, "error_path")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	// Model-level: product <-> supplier (different domains).
-	modelClassAssocKey, err := identity.NewClassAssociationKey(identity.Key{}, classProductKey, classSupplierKey, "product from supplier")
+	k.scenarioAlt, err = identity.NewScenarioKey(k.ucPlaceOrder, "alt_path")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-
-	// =========================================================================
-	// Logic objects
-	// =========================================================================
-
-	guardLogic, err := model_logic.NewLogic(guardHasItemsKey, "Order has at least one line item", "tla_plus", "Len(order.lineItems) > 0")
+	k.scenarioView, err = identity.NewScenarioKey(k.ucViewOrder, "view_details")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	actionRequire1, err := model_logic.NewLogic(actionRequire1Key, "Order must exist", "tla_plus", "order \\in Orders")
+	// Scenario objects.
+	k.objCustomer, err = identity.NewScenarioObjectKey(k.scenarioHappy, "the_customer")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	actionGuarantee1, err := model_logic.NewLogic(actionGuarantee1Key, "Order state becomes processing", "tla_plus", "order'.state = \"processing\"")
+	k.objOrder, err = identity.NewScenarioObjectKey(k.scenarioHappy, "the_order")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	actionSafety1, err := model_logic.NewLogic(actionSafety1Key, "Cannot process already processing order", "tla_plus", "order.state /= \"processing\"")
+	k.objProduct, err = identity.NewScenarioObjectKey(k.scenarioHappy, "the_product")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-
-	queryRequire1, err := model_logic.NewLogic(queryRequire1Key, "Order must exist for status query", "tla_plus", "order \\in Orders")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	queryGuarantee1, err := model_logic.NewLogic(queryGuarantee1Key, "Returns the current order status", "tla_plus", "result = order.state")
-	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
 
-	// Second action require/guarantee logic (multiple Logic per slice).
-	actionRequire2, err := model_logic.NewLogic(actionRequire2Key, "Quantity must be positive", "tla_plus", "quantity > 0")
+	// Scenario steps.
+	k.stepRoot, err = identity.NewScenarioStepKey(k.scenarioHappy, "0")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
 	}
-	actionGuarantee2, err := model_logic.NewLogic(actionGuarantee2Key, "Inventory is decremented by quantity", "tla_plus", "inventory' = inventory - quantity")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-
-	// Second query guarantee logic.
-	queryGuarantee2, err := model_logic.NewLogic(queryGuarantee2Key, "Returns the last update timestamp", "tla_plus", "result.timestamp = order.updatedAt")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-
-	invariantLogic, err := model_logic.NewLogic(invariantKey, "Order total must be non-negative", "tla_plus", "\\A o \\in Orders : o.total >= 0")
-	if err != nil {
-		return req_model.Model{}, err
+	for i, dest := range []*identity.Key{
+		&k.step1, &k.step2, &k.step3, &k.step4, &k.step5,
+		&k.step6, &k.step7, &k.step8, &k.step9, &k.step10,
+		&k.step11, &k.step12, &k.step13,
+	} {
+		*dest, err = identity.NewScenarioStepKey(k.scenarioHappy, fmt.Sprintf("%d", i+1))
+		if err != nil {
+			return k, err
+		}
 	}
 
-	derivationLogic, err := model_logic.NewLogic(derivationKey, "Sum of line item prices", "tla_plus", "SUM(lineItems.price)")
+	// Domain associations.
+	k.domainAssoc1, err = identity.NewDomainAssociationKey(k.domainA, k.domainB)
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.domainAssoc2, err = identity.NewDomainAssociationKey(k.domainA, k.domainC)
+	if err != nil {
+		return k, err
+	}
+	k.domainAssoc3, err = identity.NewDomainAssociationKey(k.domainB, k.domainC)
+	if err != nil {
+		return k, err
 	}
 
-	globalFuncLogic, err := model_logic.NewLogic(globalFuncKey, "Returns maximum of two values", "tla_plus", "IF x > y THEN x ELSE y")
+	// Class association keys — subdomain level (same subdomain A).
+	k.subdomainAssoc1, err = identity.NewClassAssociationKey(k.subdomainA, k.classOrder, k.classProduct, "order contains products")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.subdomainAssoc2, err = identity.NewClassAssociationKey(k.subdomainA, k.classOrder, k.classCustomer, "order belongs to customer")
+	if err != nil {
+		return k, err
+	}
+	k.subdomainAssoc3, err = identity.NewClassAssociationKey(k.subdomainA, k.classProduct, k.classLineItem, "product has line items")
+	if err != nil {
+		return k, err
 	}
 
-	// Logic with empty Specification (pairwise: Specification empty vs populated).
-	globalFunc2Logic, err := model_logic.NewLogic(globalFunc2Key, "Returns the input unchanged", "tla_plus", "")
+	// Class association keys — domain level (different subdomains, same domain A).
+	k.domainClassAssoc1, err = identity.NewClassAssociationKey(k.domainA, k.classOrder, k.classWarehouse, "order ships from warehouse")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.domainClassAssoc2, err = identity.NewClassAssociationKey(k.domainA, k.classProduct, k.classShelf, "product stored on shelf")
+	if err != nil {
+		return k, err
+	}
+	k.domainClassAssoc3, err = identity.NewClassAssociationKey(k.domainA, k.classCustomer, k.classAisle, "customer visits aisle")
+	if err != nil {
+		return k, err
 	}
 
-	// =========================================================================
-	// Global functions
-	// =========================================================================
-
-	globalFunc, err := model_logic.NewGlobalFunction(globalFuncKey, "_Max", []string{"x", "y"}, globalFuncLogic)
+	// Class association keys — model level (different domains).
+	k.modelClassAssoc1, err = identity.NewClassAssociationKey(identity.Key{}, k.classProduct, k.classSupplier, "product from supplier")
 	if err != nil {
-		return req_model.Model{}, err
+		return k, err
+	}
+	k.modelClassAssoc2, err = identity.NewClassAssociationKey(identity.Key{}, k.classOrder, k.classShipment, "order has shipment")
+	if err != nil {
+		return k, err
+	}
+	k.modelClassAssoc3, err = identity.NewClassAssociationKey(identity.Key{}, k.classWarehouse, k.classRoute, "warehouse on route")
+	if err != nil {
+		return k, err
 	}
 
-	// Global function with nil parameters (pairwise: GlobalFunction.Parameters nil vs populated).
-	globalFunc2, err := model_logic.NewGlobalFunction(globalFunc2Key, "_Identity", nil, globalFunc2Logic)
+	return k, nil
+}
+
+// =========================================================================
+// Logic
+// =========================================================================
+
+type testLogic struct {
+	// Guard logic.
+	guard1, guard2, guard3 model_logic.Logic
+
+	// Action logic.
+	actionRequire1, actionRequire2, actionRequire3       model_logic.Logic
+	actionGuarantee1, actionGuarantee2, actionGuarantee3 model_logic.Logic
+	actionSafety1, actionSafety2, actionSafety3          model_logic.Logic
+
+	// Query logic.
+	queryRequire1, queryRequire2, queryRequire3       model_logic.Logic
+	queryGuarantee1, queryGuarantee2, queryGuarantee3 model_logic.Logic
+
+	// Model-level.
+	invariants     []model_logic.Logic
+	derivation     model_logic.Logic
+	globalFunc1Log model_logic.Logic
+	globalFunc2Log model_logic.Logic
+	globalFunc3Log model_logic.Logic
+}
+
+func buildLogic(k testKeys) (testLogic, error) {
+	var l testLogic
+	var err error
+
+	// Guard logic.
+	l.guard1, err = model_logic.NewLogic(k.guardLogic1, "Order has at least one line item", "tla_plus", "Len(order.lineItems) > 0")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
+	}
+	l.guard2, err = model_logic.NewLogic(k.guardLogic2, "Order passes validation rules", "tla_plus", "order.isValid = TRUE")
+	if err != nil {
+		return l, err
+	}
+	l.guard3, err = model_logic.NewLogic(k.guardLogic3, "All items are in stock", "tla_plus", "\\A item \\in order.items : item.inStock")
+	if err != nil {
+		return l, err
 	}
 
-	// =========================================================================
-	// Parameters
-	// =========================================================================
-
-	// Diverse parseable DataTypeRules for pairwise coverage.
-	paramQuantity, err := model_state.NewParameter("quantity", "[1 .. 10000] at 1 unit")
+	// Action requires (3).
+	l.actionRequire1, err = model_logic.NewLogic(k.actionRequire1, "Order must exist", "tla_plus", "order \\in Orders")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
-	paramProductId, err := model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
+	l.actionRequire2, err = model_logic.NewLogic(k.actionRequire2, "Quantity must be positive", "tla_plus", "quantity > 0")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
-	paramReason, err := model_state.NewParameter("reason", "enum of out_of_stock, changed_mind, defective")
+	l.actionRequire3, err = model_logic.NewLogic(k.actionRequire3, "Customer must be active", "tla_plus", "customer.active = TRUE")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-	paramPriority, err := model_state.NewParameter("priority", "ordered enum of low, medium, high, critical")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	paramTags, err := model_state.NewParameter("tags", "unique unordered of unconstrained")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	paramItems, err := model_state.NewParameter("items", "1-100 ordered of obj of some_class")
-	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
 
-	// =========================================================================
-	// State machine elements
-	// =========================================================================
-
-	// States.
-	stateNew, err := model_state.NewState(stateNewKey, "New", "A newly created order.", "initial state")
+	// Action guarantees (3).
+	l.actionGuarantee1, err = model_logic.NewLogic(k.actionGuarantee1, "Order state becomes processing", "tla_plus", "order'.state = \"processing\"")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
+	}
+	l.actionGuarantee2, err = model_logic.NewLogic(k.actionGuarantee2, "Inventory is decremented", "tla_plus", "inventory' = inventory - quantity")
+	if err != nil {
+		return l, err
+	}
+	l.actionGuarantee3, err = model_logic.NewLogic(k.actionGuarantee3, "Status field is updated", "tla_plus", "order'.statusUpdatedAt = Now")
+	if err != nil {
+		return l, err
 	}
 
-	stateProcessing, err := model_state.NewState(stateProcessingKey, "Processing", "Order is being processed.", "")
+	// Action safety rules (3).
+	l.actionSafety1, err = model_logic.NewLogic(k.actionSafety1, "Cannot process already processing order", "tla_plus", "order.state /= \"processing\"")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
-	// Add entry state action.
-	stateActionEntry, err := model_state.NewStateAction(stateActionEntryKey, actionProcessKey, "entry")
+	l.actionSafety2, err = model_logic.NewLogic(k.actionSafety2, "Inventory cannot go negative", "tla_plus", "inventory' >= 0")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
-	stateProcessing.SetActions([]model_state.StateAction{stateActionEntry})
-
-	stateComplete, err := model_state.NewState(stateCompleteKey, "Complete", "Order has been fulfilled.", "final state")
+	l.actionSafety3, err = model_logic.NewLogic(k.actionSafety3, "Closed orders cannot change", "tla_plus", "order.state /= \"closed\"")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
 
-	// Add exit state action to stateNew (pairwise: When = exit).
-	stateActionExit, err := model_state.NewStateAction(stateActionExitKey, actionProcessKey, "exit")
+	// Query requires (3).
+	l.queryRequire1, err = model_logic.NewLogic(k.queryRequire1, "Order must exist for query", "tla_plus", "order \\in Orders")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
-	stateNew.SetActions([]model_state.StateAction{stateActionExit})
-
-	// Add do state action to stateComplete (pairwise: When = do).
-	stateActionDo, err := model_state.NewStateAction(stateActionDoKey, actionShipKey, "do")
+	l.queryRequire2, err = model_logic.NewLogic(k.queryRequire2, "User must be authorized", "tla_plus", "user.hasPermission(\"read\")")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
-	stateComplete.SetActions([]model_state.StateAction{stateActionDo})
-
-	// Events.
-	eventSubmit, err := model_state.NewEvent(eventSubmitKey, "Submit", "Customer submits the order.", []model_state.Parameter{paramQuantity, paramProductId})
+	l.queryRequire3, err = model_logic.NewLogic(k.queryRequire3, "Order must not be deleted", "tla_plus", "order.deleted = FALSE")
 	if err != nil {
-		return req_model.Model{}, err
-	}
-	eventFulfill, err := model_state.NewEvent(eventFulfillKey, "Fulfill", "Order is fulfilled.", []model_state.Parameter{paramReason})
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	// Event with nil parameters (pairwise: Event.Parameters nil vs populated).
-	eventCancel, err := model_state.NewEvent(eventCancelKey, "Cancel", "Order is cancelled.", nil)
-	if err != nil {
-		return req_model.Model{}, err
+		return l, err
 	}
 
-	// Guard.
-	guardHasItems, err := model_state.NewGuard(guardHasItemsKey, "has_items", guardLogic)
+	// Query guarantees (3).
+	l.queryGuarantee1, err = model_logic.NewLogic(k.queryGuarantee1, "Returns current status", "tla_plus", "result = order.state")
 	if err != nil {
-		return req_model.Model{}, err
+		return l, err
+	}
+	l.queryGuarantee2, err = model_logic.NewLogic(k.queryGuarantee2, "Returns last update timestamp", "tla_plus", "result.timestamp = order.updatedAt")
+	if err != nil {
+		return l, err
+	}
+	l.queryGuarantee3, err = model_logic.NewLogic(k.queryGuarantee3, "Returns full order details", "tla_plus", "result.details = order.toJSON()")
+	if err != nil {
+		return l, err
 	}
 
-	// Actions.
+	// Invariants (3).
+	inv1, err := model_logic.NewLogic(k.invariant1, "Order total must be non-negative", "tla_plus", "\\A o \\in Orders : o.total >= 0")
+	if err != nil {
+		return l, err
+	}
+	inv2, err := model_logic.NewLogic(k.invariant2, "Every order has a customer", "tla_plus", "\\A o \\in Orders : o.customer /= NULL")
+	if err != nil {
+		return l, err
+	}
+	inv3, err := model_logic.NewLogic(k.invariant3, "Order IDs are unique", "tla_plus", "\\A o1, o2 \\in Orders : o1 /= o2 => o1.id /= o2.id")
+	if err != nil {
+		return l, err
+	}
+	l.invariants = []model_logic.Logic{inv1, inv2, inv3}
+
+	// Derivation.
+	l.derivation, err = model_logic.NewLogic(k.derivation1, "Sum of line item prices", "tla_plus", "SUM(lineItems.price)")
+	if err != nil {
+		return l, err
+	}
+
+	// Global function logic.
+	l.globalFunc1Log, err = model_logic.NewLogic(k.globalFunc1, "Returns maximum of two values", "tla_plus", "IF x > y THEN x ELSE y")
+	if err != nil {
+		return l, err
+	}
+	l.globalFunc2Log, err = model_logic.NewLogic(k.globalFunc2, "Returns the input unchanged", "tla_plus", "")
+	if err != nil {
+		return l, err
+	}
+	l.globalFunc3Log, err = model_logic.NewLogic(k.globalFunc3, "Counts elements in a set", "tla_plus", "Cardinality(s)")
+	if err != nil {
+		return l, err
+	}
+
+	return l, nil
+}
+
+// =========================================================================
+// Global functions
+// =========================================================================
+
+func buildGlobalFunctions(k testKeys, l testLogic) (map[identity.Key]model_logic.GlobalFunction, error) {
+	gf1, err := model_logic.NewGlobalFunction(k.globalFunc1, "_Max", []string{"x", "y", "z"}, l.globalFunc1Log)
+	if err != nil {
+		return nil, err
+	}
+
+	// Empty parameters (pairwise: nil vs populated).
+	gf2, err := model_logic.NewGlobalFunction(k.globalFunc2, "_Identity", nil, l.globalFunc2Log)
+	if err != nil {
+		return nil, err
+	}
+
+	gf3, err := model_logic.NewGlobalFunction(k.globalFunc3, "_Count", []string{"s"}, l.globalFunc3Log)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[identity.Key]model_logic.GlobalFunction{
+		k.globalFunc1: gf1,
+		k.globalFunc2: gf2,
+		k.globalFunc3: gf3,
+	}, nil
+}
+
+// =========================================================================
+// Parameters
+// =========================================================================
+
+type testParams struct {
+	quantity, productId, reason   model_state.Parameter
+	priority, tags, items        model_state.Parameter
+	format                       model_state.Parameter
+}
+
+func buildParameters() (testParams, error) {
+	var p testParams
+	var err error
+
+	// Diverse parseable DataTypeRules.
+	p.quantity, err = model_state.NewParameter("quantity", "[1 .. 10000] at 1 unit")
+	if err != nil {
+		return p, err
+	}
+	p.productId, err = model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
+	if err != nil {
+		return p, err
+	}
+	p.reason, err = model_state.NewParameter("reason", "enum of out_of_stock, changed_mind, defective")
+	if err != nil {
+		return p, err
+	}
+	p.priority, err = model_state.NewParameter("priority", "ordered enum of low, medium, high, critical")
+	if err != nil {
+		return p, err
+	}
+	p.tags, err = model_state.NewParameter("tags", "unique unordered of unconstrained")
+	if err != nil {
+		return p, err
+	}
+	p.items, err = model_state.NewParameter("items", "1-100 ordered of obj of some_class")
+	if err != nil {
+		return p, err
+	}
+	p.format, err = model_state.NewParameter("format", "unconstrained")
+	if err != nil {
+		return p, err
+	}
+
+	return p, nil
+}
+
+// =========================================================================
+// State machine
+// =========================================================================
+
+type testStateMachine struct {
+	states      map[identity.Key]model_state.State
+	events      map[identity.Key]model_state.Event
+	guards      map[identity.Key]model_state.Guard
+	actions     map[identity.Key]model_state.Action
+	queries     map[identity.Key]model_state.Query
+	transitions map[identity.Key]model_state.Transition
+}
+
+func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine, error) {
+	var sm testStateMachine
+	var err error
+
+	// --- States ---
+
+	// stateNew gets all 3 StateActions (entry + exit + do). Rich parent.
+	stateNew, err := model_state.NewState(k.stateNew, "New", "A newly created order.", "initial state")
+	if err != nil {
+		return sm, err
+	}
+	saEntry, err := model_state.NewStateAction(k.stateActionEntry, k.actionProcess, "entry")
+	if err != nil {
+		return sm, err
+	}
+	saExit, err := model_state.NewStateAction(k.stateActionExit, k.actionShip, "exit")
+	if err != nil {
+		return sm, err
+	}
+	saDo, err := model_state.NewStateAction(k.stateActionDo, k.actionNotify, "do")
+	if err != nil {
+		return sm, err
+	}
+	stateNew.SetActions([]model_state.StateAction{saEntry, saExit, saDo})
+
+	// stateProcessing: empty parent (0 StateActions).
+	stateProcessing, err := model_state.NewState(k.stateProcessing, "Processing", "Order is being processed.", "")
+	if err != nil {
+		return sm, err
+	}
+
+	// stateComplete: empty parent (0 StateActions).
+	stateComplete, err := model_state.NewState(k.stateComplete, "Complete", "Order has been fulfilled.", "final state")
+	if err != nil {
+		return sm, err
+	}
+
+	sm.states = map[identity.Key]model_state.State{
+		k.stateNew:        stateNew,
+		k.stateProcessing: stateProcessing,
+		k.stateComplete:   stateComplete,
+	}
+
+	// --- Events ---
+
+	// eventSubmit: rich (3 parameters).
+	eventSubmit, err := model_state.NewEvent(k.eventSubmit, "Submit", "Customer submits the order.",
+		[]model_state.Parameter{p.quantity, p.productId, p.reason})
+	if err != nil {
+		return sm, err
+	}
+
+	eventFulfill, err := model_state.NewEvent(k.eventFulfill, "Fulfill", "Order is fulfilled.",
+		[]model_state.Parameter{p.reason})
+	if err != nil {
+		return sm, err
+	}
+
+	// eventCancel: empty parent (nil parameters).
+	eventCancel, err := model_state.NewEvent(k.eventCancel, "Cancel", "Order is cancelled.", nil)
+	if err != nil {
+		return sm, err
+	}
+
+	sm.events = map[identity.Key]model_state.Event{
+		k.eventSubmit:  eventSubmit,
+		k.eventFulfill: eventFulfill,
+		k.eventCancel:  eventCancel,
+	}
+
+	// --- Guards (3) ---
+
+	guardHasItems, err := model_state.NewGuard(k.guardHasItems, "has_items", l.guard1)
+	if err != nil {
+		return sm, err
+	}
+	guardIsValid, err := model_state.NewGuard(k.guardIsValid, "is_valid", l.guard2)
+	if err != nil {
+		return sm, err
+	}
+	guardInStock, err := model_state.NewGuard(k.guardInStock, "in_stock", l.guard3)
+	if err != nil {
+		return sm, err
+	}
+
+	sm.guards = map[identity.Key]model_state.Guard{
+		k.guardHasItems: guardHasItems,
+		k.guardIsValid:  guardIsValid,
+		k.guardInStock:  guardInStock,
+	}
+
+	// --- Actions ---
+
+	// actionProcess: rich (3 requires, 3 guarantees, 3 safety, 3 params).
 	actionProcess, err := model_state.NewAction(
-		actionProcessKey, "Process Order", "Processes the order for fulfillment.",
-		[]model_logic.Logic{actionRequire1, actionRequire2},
-		[]model_logic.Logic{actionGuarantee1, actionGuarantee2},
-		[]model_logic.Logic{actionSafety1},
-		[]model_state.Parameter{paramQuantity, paramPriority, paramTags},
+		k.actionProcess, "Process Order", "Processes the order for fulfillment.",
+		[]model_logic.Logic{l.actionRequire1, l.actionRequire2, l.actionRequire3},
+		[]model_logic.Logic{l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
+		[]model_logic.Logic{l.actionSafety1, l.actionSafety2, l.actionSafety3},
+		[]model_state.Parameter{p.quantity, p.priority, p.tags},
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
+
+	// actionShip: empty parent (nil for all slices).
 	actionShip, err := model_state.NewAction(
-		actionShipKey, "Ship Order", "Ships the order to the customer.",
+		k.actionShip, "Ship Order", "Ships the order to the customer.",
 		nil, nil, nil, nil,
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
 
-	// Queries.
-	queryStatus, err := model_state.NewQuery(
-		queryStatusKey, "Get Status", "Returns the current status of the order.",
-		[]model_logic.Logic{queryRequire1},
-		[]model_logic.Logic{queryGuarantee1, queryGuarantee2},
-		[]model_state.Parameter{paramProductId, paramItems},
+	actionNotify, err := model_state.NewAction(
+		k.actionNotify, "Notify Customer", "Sends notification to customer.",
+		nil, nil, nil, []model_state.Parameter{p.format},
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
-	// Query with nil parameters/requires/guarantees (pairwise: Query slices nil vs populated).
+
+	sm.actions = map[identity.Key]model_state.Action{
+		k.actionProcess: actionProcess,
+		k.actionShip:    actionShip,
+		k.actionNotify:  actionNotify,
+	}
+
+	// --- Queries ---
+
+	// queryStatus: rich (3 requires, 3 guarantees, 3 params).
+	queryStatus, err := model_state.NewQuery(
+		k.queryStatus, "Get Status", "Returns the current status of the order.",
+		[]model_logic.Logic{l.queryRequire1, l.queryRequire2, l.queryRequire3},
+		[]model_logic.Logic{l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
+		[]model_state.Parameter{p.productId, p.items, p.format},
+	)
+	if err != nil {
+		return sm, err
+	}
+
+	// queryCount: empty parent (nil for all slices).
 	queryCount, err := model_state.NewQuery(
-		queryCountKey, "Get Count", "Returns the number of orders.",
+		k.queryCount, "Get Count", "Returns the number of orders.",
 		nil, nil, nil,
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
 
-	// Transitions.
+	queryHistory, err := model_state.NewQuery(
+		k.queryHistory, "Get History", "Returns order history.",
+		nil, nil, []model_state.Parameter{p.format},
+	)
+	if err != nil {
+		return sm, err
+	}
+
+	sm.queries = map[identity.Key]model_state.Query{
+		k.queryStatus:  queryStatus,
+		k.queryCount:   queryCount,
+		k.queryHistory: queryHistory,
+	}
+
+	// --- Transitions ---
+
 	transitionSubmit, err := model_state.NewTransition(
-		transitionSubmitKey,
-		&stateNewKey,        // from
-		eventSubmitKey,      // event (required)
-		&guardHasItemsKey,   // guard
-		&actionProcessKey,   // action
-		&stateProcessingKey, // to
+		k.transitionSubmit,
+		&k.stateNew, k.eventSubmit, &k.guardHasItems, &k.actionProcess, &k.stateProcessing,
 		"submit order transition",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
+
 	transitionFulfill, err := model_state.NewTransition(
-		transitionFulfillKey,
-		&stateProcessingKey, // from
-		eventFulfillKey,     // event
-		nil,                 // no guard
-		&actionShipKey,      // action
-		&stateCompleteKey,   // to
+		k.transitionFulfill,
+		&k.stateProcessing, k.eventFulfill, nil, &k.actionShip, &k.stateComplete,
 		"",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
-	// Initial transition: nil FromStateKey (pairwise: FromStateKey nil vs set).
+
+	// Initial transition: nil FromStateKey.
 	transitionInitial, err := model_state.NewTransition(
-		transitionInitialKey,
-		nil,             // from: initial pseudo-state
-		eventCancelKey,  // event
-		nil,             // no guard
-		nil,             // no action (pairwise: ActionKey nil vs set)
-		&stateNewKey,    // to
+		k.transitionInitial,
+		nil, k.eventCancel, nil, nil, &k.stateNew,
 		"initial transition",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
-	// Final transition: nil ToStateKey (pairwise: ToStateKey nil vs set).
+
+	// Final transition: nil ToStateKey.
 	transitionFinal, err := model_state.NewTransition(
-		transitionFinalKey,
-		&stateCompleteKey, // from
-		eventCancelKey,    // event
-		nil,               // no guard
-		nil,               // no action
-		nil,               // to: final pseudo-state
+		k.transitionFinal,
+		&k.stateComplete, k.eventCancel, nil, nil, nil,
 		"",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return sm, err
 	}
 
-	// =========================================================================
-	// Attributes
-	// =========================================================================
+	sm.transitions = map[identity.Key]model_state.Transition{
+		k.transitionSubmit:  transitionSubmit,
+		k.transitionFulfill: transitionFulfill,
+		k.transitionInitial: transitionInitial,
+		k.transitionFinal:   transitionFinal,
+	}
 
-	attrOrderDate, err := model_class.NewAttribute(
-		attrOrderDateKey, "Order Date", "When the order was placed.",
+	return sm, nil
+}
+
+// =========================================================================
+// Attributes
+// =========================================================================
+
+type testAttrs struct {
+	orderDate, total, status model_class.Attribute
+	productName              model_class.Attribute
+}
+
+func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
+	var a testAttrs
+	var err error
+
+	a.orderDate, err = model_class.NewAttribute(
+		k.attrOrderDate, "Order Date", "When the order was placed.",
 		"3+ ordered of unconstrained", nil, false, "the date", nil,
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return a, err
 	}
 
-	// Derived attribute with derivation policy. Uses span type.
-	attrTotal, err := model_class.NewAttribute(
-		attrTotalKey, "Total", "Total amount for the order.",
-		"(0 .. 1000000] at 0.01 dollar", &derivationLogic, true, "", []uint{1},
+	// Derived attribute with derivation policy.
+	a.total, err = model_class.NewAttribute(
+		k.attrTotal, "Total", "Total amount for the order.",
+		"(0 .. 1000000] at 0.01 dollar", &l.derivation, true, "", []uint{1},
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return a, err
 	}
 
-	attrProductName, err := model_class.NewAttribute(
-		attrProductNameKey, "Product Name", "Name of the product.",
+	a.status, err = model_class.NewAttribute(
+		k.attrStatus, "Status", "Current order status.",
+		"enum of new, processing, complete", nil, false, "", nil,
+	)
+	if err != nil {
+		return a, err
+	}
+
+	a.productName, err = model_class.NewAttribute(
+		k.attrProductName, "Product Name", "Name of the product.",
 		"unconstrained", nil, false, "", nil,
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return a, err
 	}
 
-	// =========================================================================
-	// Classes
-	// =========================================================================
+	return a, nil
+}
 
-	// Order class: full state machine.
-	classOrder, err := model_class.NewClass(classOrderKey, "Order", "An order placed by a customer.", nil, nil, nil, "the order class")
+// =========================================================================
+// Classes
+// =========================================================================
+
+type testClasses struct {
+	all map[identity.Key]model_class.Class
+}
+
+func buildClasses(k testKeys, a testAttrs, sm testStateMachine) (testClasses, error) {
+	var c testClasses
+	c.all = make(map[identity.Key]model_class.Class)
+
+	// Order class: rich, full state machine, 3 attributes.
+	classOrder, err := model_class.NewClass(k.classOrder, "Order", "An order placed by a customer.", nil, nil, nil, "the order class")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
 	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrOrderDateKey: attrOrderDate,
-		attrTotalKey:     attrTotal,
+		k.attrOrderDate: a.orderDate,
+		k.attrTotal:     a.total,
+		k.attrStatus:    a.status,
 	})
-	classOrder.SetStates(map[identity.Key]model_state.State{
-		stateNewKey:        stateNew,
-		stateProcessingKey: stateProcessing,
-		stateCompleteKey:   stateComplete,
-	})
-	classOrder.SetEvents(map[identity.Key]model_state.Event{
-		eventSubmitKey:  eventSubmit,
-		eventFulfillKey: eventFulfill,
-		eventCancelKey:  eventCancel,
-	})
-	classOrder.SetGuards(map[identity.Key]model_state.Guard{
-		guardHasItemsKey: guardHasItems,
-	})
-	classOrder.SetActions(map[identity.Key]model_state.Action{
-		actionProcessKey: actionProcess,
-		actionShipKey:    actionShip,
-	})
-	classOrder.SetQueries(map[identity.Key]model_state.Query{
-		queryStatusKey: queryStatus,
-		queryCountKey:  queryCount,
-	})
-	classOrder.SetTransitions(map[identity.Key]model_state.Transition{
-		transitionSubmitKey:   transitionSubmit,
-		transitionFulfillKey:  transitionFulfill,
-		transitionInitialKey: transitionInitial,
-		transitionFinalKey:   transitionFinal,
-	})
+	classOrder.SetStates(sm.states)
+	classOrder.SetEvents(sm.events)
+	classOrder.SetGuards(sm.guards)
+	classOrder.SetActions(sm.actions)
+	classOrder.SetQueries(sm.queries)
+	classOrder.SetTransitions(sm.transitions)
+	c.all[k.classOrder] = classOrder
 
-	// Product class: superclass in product_types generalization, with one attribute.
-	classProduct, err := model_class.NewClass(classProductKey, "Product", "A product for sale.", nil, &classGen2Key, nil, "")
+	// Product class: empty parent for state machine (has attribute only).
+	// Superclass in product_types generalization. Linked to actorSystem.
+	classProduct, err := model_class.NewClass(k.classProduct, "Product", "A product for sale.", &k.actorSystem, &k.classGen2, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
 	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
-		attrProductNameKey: attrProductName,
+		k.attrProductName: a.productName,
 	})
+	c.all[k.classProduct] = classProduct
 
 	// Line item: association class AND subclass in product_types generalization.
-	classLineItem, err := model_class.NewClass(classLineItemKey, "Line Item", "A line item in an order.", nil, nil, &classGen2Key, "")
+	classLineItem, err := model_class.NewClass(k.classLineItem, "Line Item", "A line item in an order.", nil, nil, &k.classGen2, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classLineItem] = classLineItem
 
 	// Customer class: linked to actor.
-	classCustomer, err := model_class.NewClass(classCustomerKey, "Customer", "A customer in the system.", &actorPersonKey, nil, nil, "")
+	classCustomer, err := model_class.NewClass(k.classCustomer, "Customer", "A customer in the system.", &k.actorPerson, nil, &k.classGen3, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classCustomer] = classCustomer
 
-	// Vehicle class: superclass in generalization.
-	classVehicle, err := model_class.NewClass(classVehicleKey, "Vehicle", "A vehicle.", nil, &classGenKey, nil, "")
+	// Vehicle: superclass in vehicle_types generalization. Linked to actorVip.
+	classVehicle, err := model_class.NewClass(k.classVehicle, "Vehicle", "A vehicle.", &k.actorVip, &k.classGen1, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classVehicle] = classVehicle
 
-	// Car class: subclass in generalization.
-	classCar, err := model_class.NewClass(classCarKey, "Car", "A car is a type of vehicle.", nil, nil, &classGenKey, "")
+	// Car: subclass in vehicle_types generalization. Superclass in order_types generalization.
+	classCar, err := model_class.NewClass(k.classCar, "Car", "A car is a type of vehicle.", nil, &k.classGen3, &k.classGen1, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classCar] = classCar
 
-	// Warehouse class (subdomain B).
-	classWarehouse, err := model_class.NewClass(classWarehouseKey, "Warehouse", "A warehouse for storing products.", nil, nil, nil, "")
+	// Warehouse (subdomain B).
+	classWarehouse, err := model_class.NewClass(k.classWarehouse, "Warehouse", "A warehouse for storing products.", nil, nil, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classWarehouse] = classWarehouse
 
-	// Supplier class (subdomain C / domain B).
-	classSupplier, err := model_class.NewClass(classSupplierKey, "Supplier", "A supplier of products.", nil, nil, nil, "")
+	// Shelf (subdomain B).
+	classShelf, err := model_class.NewClass(k.classShelf, "Shelf", "A shelf in a warehouse.", nil, nil, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classShelf] = classShelf
 
-	// =========================================================================
-	// Class generalization
-	// =========================================================================
-
-	classGen, err := model_class.NewGeneralization(classGenKey, "Vehicle Types", "Specialization of vehicles.", true, false, "vehicle hierarchy")
+	// Aisle (subdomain B).
+	classAisle, err := model_class.NewClass(k.classAisle, "Aisle", "An aisle in a warehouse.", nil, nil, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classAisle] = classAisle
 
-	// Second generalization: (IsComplete=false, IsStatic=false) pairwise combo.
-	classGen2, err := model_class.NewGeneralization(classGen2Key, "Product Types", "Specialization of products.", false, false, "")
+	// Supplier (subdomain C / domain B).
+	classSupplier, err := model_class.NewClass(k.classSupplier, "Supplier", "A supplier of products.", nil, nil, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
+	c.all[k.classSupplier] = classSupplier
 
-	// =========================================================================
-	// Class associations (subdomain-level with association class)
-	// =========================================================================
-
-	multFrom, err := model_class.NewMultiplicity("1")
+	// Shipment (subdomain C / domain B).
+	classShipment, err := model_class.NewClass(k.classShipment, "Shipment", "A shipment of goods.", nil, nil, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
 	}
-	multTo, err := model_class.NewMultiplicity("1..many")
+	c.all[k.classShipment] = classShipment
+
+	// Route (subdomain C / domain B).
+	classRoute, err := model_class.NewClass(k.classRoute, "Route", "A delivery route.", nil, nil, nil, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return c, err
+	}
+	c.all[k.classRoute] = classRoute
+
+	return c, nil
+}
+
+// =========================================================================
+// Class generalizations
+// =========================================================================
+
+type testGeneralizations struct {
+	all map[identity.Key]model_class.Generalization
+}
+
+func buildClassGeneralizations(k testKeys) (testGeneralizations, error) {
+	var g testGeneralizations
+	g.all = make(map[identity.Key]model_class.Generalization)
+
+	// Pairwise: (T, F).
+	gen1, err := model_class.NewGeneralization(k.classGen1, "Vehicle Types", "Specialization of vehicles.", true, false, "vehicle hierarchy")
+	if err != nil {
+		return g, err
+	}
+	g.all[k.classGen1] = gen1
+
+	// Pairwise: (F, F).
+	gen2, err := model_class.NewGeneralization(k.classGen2, "Product Types", "Specialization of products.", false, false, "")
+	if err != nil {
+		return g, err
+	}
+	g.all[k.classGen2] = gen2
+
+	// Pairwise: (F, T).
+	gen3, err := model_class.NewGeneralization(k.classGen3, "Order Types", "Specialization of orders.", false, true, "")
+	if err != nil {
+		return g, err
+	}
+	g.all[k.classGen3] = gen3
+
+	return g, nil
+}
+
+// =========================================================================
+// Class associations
+// =========================================================================
+
+type testAssociations struct {
+	// All associations for SetClassAssociations routing.
+	all map[identity.Key]model_class.Association
+
+	// By level for subdomain/domain wiring.
+	subdomain map[identity.Key]model_class.Association
+	domain    map[identity.Key]model_class.Association
+	model     map[identity.Key]model_class.Association
+}
+
+func buildAssociations(k testKeys) (testAssociations, error) {
+	var ta testAssociations
+	ta.all = make(map[identity.Key]model_class.Association)
+	ta.subdomain = make(map[identity.Key]model_class.Association)
+	ta.domain = make(map[identity.Key]model_class.Association)
+	ta.model = make(map[identity.Key]model_class.Association)
+
+	mult1, err := model_class.NewMultiplicity("1")
+	if err != nil {
+		return ta, err
+	}
+	multMany, err := model_class.NewMultiplicity("1..many")
+	if err != nil {
+		return ta, err
 	}
 	multAny, err := model_class.NewMultiplicity("any")
 	if err != nil {
-		return req_model.Model{}, err
+		return ta, err
 	}
-	multOptional, err := model_class.NewMultiplicity("0..1")
+	multOpt, err := model_class.NewMultiplicity("0..1")
 	if err != nil {
-		return req_model.Model{}, err
+		return ta, err
 	}
 
-	subdomainAssoc, err := model_class.NewAssociation(
-		subdomainAssocKey, "order contains products", "Order-Product association.",
-		classOrderKey, multFrom,
-		classProductKey, multTo,
-		&classLineItemKey, // association class
-		"association with line item",
+	// Subdomain-level (3).
+	a1, err := model_class.NewAssociation(
+		k.subdomainAssoc1, "order contains products", "Order-Product association.",
+		k.classOrder, mult1, k.classProduct, multMany, &k.classLineItem, "with line item",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return ta, err
 	}
+	ta.subdomain[k.subdomainAssoc1] = a1
+	ta.all[k.subdomainAssoc1] = a1
 
-	// Domain-level association (different subdomains, same domain).
-	domainClassAssoc, err := model_class.NewAssociation(
-		domainClassAssocKey, "order ships from warehouse", "Order-Warehouse relationship.",
-		classOrderKey, multAny,
-		classWarehouseKey, multOptional,
-		nil,
-		"",
+	a2, err := model_class.NewAssociation(
+		k.subdomainAssoc2, "order belongs to customer", "Order-Customer association.",
+		k.classOrder, multMany, k.classCustomer, mult1, nil, "",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return ta, err
 	}
+	ta.subdomain[k.subdomainAssoc2] = a2
+	ta.all[k.subdomainAssoc2] = a2
 
-	// Model-level association (different domains).
-	modelClassAssoc, err := model_class.NewAssociation(
-		modelClassAssocKey, "product from supplier", "Product-Supplier relationship.",
-		classProductKey, multTo,
-		classSupplierKey, multFrom,
-		nil,
-		"cross-domain",
+	a3, err := model_class.NewAssociation(
+		k.subdomainAssoc3, "product has line items", "Product-LineItem association.",
+		k.classProduct, mult1, k.classLineItem, multMany, nil, "",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return ta, err
+	}
+	ta.subdomain[k.subdomainAssoc3] = a3
+	ta.all[k.subdomainAssoc3] = a3
+
+	// Domain-level (3).
+	d1, err := model_class.NewAssociation(
+		k.domainClassAssoc1, "order ships from warehouse", "Order-Warehouse relationship.",
+		k.classOrder, multAny, k.classWarehouse, multOpt, nil, "",
+	)
+	if err != nil {
+		return ta, err
+	}
+	ta.domain[k.domainClassAssoc1] = d1
+	ta.all[k.domainClassAssoc1] = d1
+
+	d2, err := model_class.NewAssociation(
+		k.domainClassAssoc2, "product stored on shelf", "Product-Shelf relationship.",
+		k.classProduct, multMany, k.classShelf, mult1, nil, "",
+	)
+	if err != nil {
+		return ta, err
+	}
+	ta.domain[k.domainClassAssoc2] = d2
+	ta.all[k.domainClassAssoc2] = d2
+
+	d3, err := model_class.NewAssociation(
+		k.domainClassAssoc3, "customer visits aisle", "Customer-Aisle relationship.",
+		k.classCustomer, multAny, k.classAisle, multAny, nil, "",
+	)
+	if err != nil {
+		return ta, err
+	}
+	ta.domain[k.domainClassAssoc3] = d3
+	ta.all[k.domainClassAssoc3] = d3
+
+	// Model-level (3).
+	m1, err := model_class.NewAssociation(
+		k.modelClassAssoc1, "product from supplier", "Product-Supplier relationship.",
+		k.classProduct, multMany, k.classSupplier, mult1, nil, "cross-domain",
+	)
+	if err != nil {
+		return ta, err
+	}
+	ta.model[k.modelClassAssoc1] = m1
+	ta.all[k.modelClassAssoc1] = m1
+
+	m2, err := model_class.NewAssociation(
+		k.modelClassAssoc2, "order has shipment", "Order-Shipment relationship.",
+		k.classOrder, mult1, k.classShipment, multOpt, nil, "",
+	)
+	if err != nil {
+		return ta, err
+	}
+	ta.model[k.modelClassAssoc2] = m2
+	ta.all[k.modelClassAssoc2] = m2
+
+	m3, err := model_class.NewAssociation(
+		k.modelClassAssoc3, "warehouse on route", "Warehouse-Route relationship.",
+		k.classWarehouse, multMany, k.classRoute, multMany, nil, "",
+	)
+	if err != nil {
+		return ta, err
+	}
+	ta.model[k.modelClassAssoc3] = m3
+	ta.all[k.modelClassAssoc3] = m3
+
+	return ta, nil
+}
+
+// =========================================================================
+// Scenarios
+// =========================================================================
+
+type testScenarios struct {
+	placeOrderScenarios map[identity.Key]model_scenario.Scenario
+	viewOrderScenarios  map[identity.Key]model_scenario.Scenario
+}
+
+func buildScenarios(k testKeys) (testScenarios, error) {
+	var s testScenarios
+
+	// Scenario objects (3).
+	objCustomer, err := model_scenario.NewObject(k.objCustomer, 1, "Alice", "name", k.classCustomer, false, "the customer")
+	if err != nil {
+		return s, err
+	}
+	objOrder, err := model_scenario.NewObject(k.objOrder, 2, "42", "id", k.classOrder, false, "")
+	if err != nil {
+		return s, err
+	}
+	objProduct, err := model_scenario.NewObject(k.objProduct, 3, "", "unnamed", k.classProduct, true, "")
+	if err != nil {
+		return s, err
 	}
 
-	// =========================================================================
-	// Scenarios
-	// =========================================================================
-
-	// Scenario objects.
-	objCustomer, err := model_scenario.NewObject(objCustomerKey, 1, "Alice", "name", classCustomerKey, false, "the customer")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	objOrder, err := model_scenario.NewObject(objOrderKey, 2, "42", "id", classOrderKey, false, "")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	objProduct, err := model_scenario.NewObject(objProductKey, 3, "", "unnamed", classProductKey, true, "")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-
-	// Step tree: sequence containing all leaf types + loop + switch/case.
+	// Step tree.
 	leafEvent := "event"
 	leafQuery := "query"
 	leafScenario := "scenario"
 	leafDelete := "delete"
 
 	steps := model_scenario.Step{
-		Key:      stepRootKey,
+		Key:      k.stepRoot,
 		StepType: "sequence",
 		Statements: []model_scenario.Step{
 			{
-				// Leaf: event
-				Key:           step1Key,
-				StepType:      "leaf",
-				LeafType:      &leafEvent,
-				Description:   "Customer submits order",
-				FromObjectKey: &objCustomerKey,
-				ToObjectKey:   &objOrderKey,
-				EventKey:      &eventSubmitKey,
+				Key: k.step1, StepType: "leaf", LeafType: &leafEvent,
+				Description: "Customer submits order",
+				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
+				EventKey: &k.eventSubmit,
 			},
 			{
-				// Leaf: query
-				Key:           step2Key,
-				StepType:      "leaf",
-				LeafType:      &leafQuery,
-				Description:   "Check order status",
-				FromObjectKey: &objCustomerKey,
-				ToObjectKey:   &objOrderKey,
-				QueryKey:      &queryStatusKey,
+				Key: k.step2, StepType: "leaf", LeafType: &leafQuery,
+				Description: "Check order status",
+				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
+				QueryKey: &k.queryStatus,
 			},
 			{
-				// Loop with a leaf inside
-				Key:       step3Key,
-				StepType:  "loop",
-				Condition: "while items remain",
+				Key: k.step3, StepType: "loop", Condition: "while items remain",
 				Statements: []model_scenario.Step{
 					{
-						// Leaf: scenario (references error_path in same use case)
-						Key:           step4Key,
-						StepType:      "leaf",
-						LeafType:      &leafScenario,
-						Description:   "Handle item",
-						FromObjectKey: &objOrderKey,
-						ToObjectKey:   &objProductKey,
-						ScenarioKey:   &scenarioErrorKey,
+						Key: k.step4, StepType: "leaf", LeafType: &leafScenario,
+						Description: "Handle item",
+						FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
+						ScenarioKey: &k.scenarioError,
 					},
 				},
 			},
 			{
-				// Switch with two cases
-				Key:      step5Key,
-				StepType: "switch",
+				Key: k.step5, StepType: "switch",
 				Statements: []model_scenario.Step{
 					{
-						// Case 1
-						Key:       step6Key,
-						StepType:  "case",
-						Condition: "order is valid",
+						Key: k.step6, StepType: "case", Condition: "order is valid",
 						Statements: []model_scenario.Step{
 							{
-								// Leaf: event
-								Key:           step7Key,
-								StepType:      "leaf",
-								LeafType:      &leafEvent,
-								Description:   "Process order",
-								FromObjectKey: &objCustomerKey,
-								ToObjectKey:   &objOrderKey,
-								EventKey:      &eventFulfillKey,
+								Key: k.step7, StepType: "leaf", LeafType: &leafEvent,
+								Description: "Process order",
+								FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
+								EventKey: &k.eventFulfill,
 							},
 						},
 					},
 					{
-						// Case 2
-						Key:       step8Key,
-						StepType:  "case",
-						Condition: "order is invalid",
+						Key: k.step8, StepType: "case", Condition: "order is invalid",
 						Statements: []model_scenario.Step{
 							{
-								// Leaf: query
-								Key:           step9Key,
-								StepType:      "leaf",
-								LeafType:      &leafQuery,
-								Description:   "Get error details",
-								FromObjectKey: &objOrderKey,
-								ToObjectKey:   &objCustomerKey,
-								QueryKey:      &queryStatusKey,
+								Key: k.step9, StepType: "leaf", LeafType: &leafQuery,
+								Description: "Get error details",
+								FromObjectKey: &k.objOrder, ToObjectKey: &k.objCustomer,
+								QueryKey: &k.queryStatus,
 							},
 							{
-								// Leaf: delete
-								Key:           step10Key,
-								StepType:      "leaf",
-								LeafType:      &leafDelete,
-								FromObjectKey: &objOrderKey,
+								Key: k.step10, StepType: "leaf", LeafType: &leafDelete,
+								FromObjectKey: &k.objOrder,
 							},
 						},
 					},
 				},
 			},
 			{
-				// Leaf: event with product→order direction (diverse from/to).
-				Key:           step11Key,
-				StepType:      "leaf",
-				LeafType:      &leafEvent,
-				Description:   "Product triggers order update",
-				FromObjectKey: &objProductKey,
-				ToObjectKey:   &objOrderKey,
-				EventKey:      &eventCancelKey,
+				Key: k.step11, StepType: "leaf", LeafType: &leafEvent,
+				Description: "Product triggers order update",
+				FromObjectKey: &k.objProduct, ToObjectKey: &k.objOrder,
+				EventKey: &k.eventCancel,
 			},
 			{
-				// Leaf: query with order→product direction (diverse from/to).
-				Key:           step12Key,
-				StepType:      "leaf",
-				LeafType:      &leafQuery,
-				Description:   "Order queries product details",
-				FromObjectKey: &objOrderKey,
-				ToObjectKey:   &objProductKey,
-				QueryKey:      &queryCountKey,
+				Key: k.step12, StepType: "leaf", LeafType: &leafQuery,
+				Description: "Order queries product details",
+				FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
+				QueryKey: &k.queryCount,
 			},
 			{
-				// Leaf: cross-use-case scenario reference (references scenario in view_order).
-				Key:           step13Key,
-				StepType:      "leaf",
-				LeafType:      &leafScenario,
-				Description:   "View the order details",
-				FromObjectKey: &objCustomerKey,
-				ToObjectKey:   &objOrderKey,
-				ScenarioKey:   &scenarioViewKey,
+				Key: k.step13, StepType: "leaf", LeafType: &leafScenario,
+				Description: "View the order details",
+				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
+				ScenarioKey: &k.scenarioView,
 			},
 		},
 	}
 
-	// Scenarios.
-	scenarioHappy, err := model_scenario.NewScenario(scenarioHappyKey, "Happy Path", "The order is placed successfully.")
+	// scenarioHappy: rich (3 objects, steps).
+	scenarioHappy, err := model_scenario.NewScenario(k.scenarioHappy, "Happy Path", "The order is placed successfully.")
 	if err != nil {
-		return req_model.Model{}, err
+		return s, err
 	}
 	scenarioHappy.SetObjects(map[identity.Key]model_scenario.Object{
-		objCustomerKey: objCustomer,
-		objOrderKey:    objOrder,
-		objProductKey:  objProduct,
+		k.objCustomer: objCustomer,
+		k.objOrder:    objOrder,
+		k.objProduct:  objProduct,
 	})
 	scenarioHappy.Steps = &steps
 
-	scenarioError, err := model_scenario.NewScenario(scenarioErrorKey, "Error Path", "The order fails validation.")
+	// scenarioError: empty parent (0 objects, nil steps).
+	scenarioError, err := model_scenario.NewScenario(k.scenarioError, "Error Path", "The order fails validation.")
 	if err != nil {
-		return req_model.Model{}, err
+		return s, err
 	}
 
-	// Scenario in view_order use case (cross-use-case scenario reference target).
-	scenarioView, err := model_scenario.NewScenario(scenarioViewKey, "View Details", "View the order details.")
+	// scenarioAlt: third scenario in place_order.
+	scenarioAlt, err := model_scenario.NewScenario(k.scenarioAlt, "Alt Path", "Alternative order flow.")
 	if err != nil {
-		return req_model.Model{}, err
+		return s, err
 	}
 
-	// =========================================================================
-	// Use cases
-	// =========================================================================
-
-	// Use case actors (use case-level actors referencing class keys).
-	ucActorCustomer, err := model_use_case.NewActor("customer interaction")
-	if err != nil {
-		return req_model.Model{}, err
+	s.placeOrderScenarios = map[identity.Key]model_scenario.Scenario{
+		k.scenarioHappy: scenarioHappy,
+		k.scenarioError: scenarioError,
+		k.scenarioAlt:   scenarioAlt,
 	}
 
-	// Place Order use case (sea level, subclass of manage_order).
-	useCasePlaceOrder, err := model_use_case.NewUseCase(
-		useCasePlaceOrderKey, "Place Order", "Customer places an order.",
-		"sea", false, nil, &ucGenKey, "place order",
+	// Scenario in view_order (cross-use-case scenario reference target).
+	scenarioView, err := model_scenario.NewScenario(k.scenarioView, "View Details", "View the order details.")
+	if err != nil {
+		return s, err
+	}
+	s.viewOrderScenarios = map[identity.Key]model_scenario.Scenario{
+		k.scenarioView: scenarioView,
+	}
+
+	return s, nil
+}
+
+// =========================================================================
+// Use cases
+// =========================================================================
+
+type testUseCases struct {
+	useCases                map[identity.Key]model_use_case.UseCase
+	useCaseGens             map[identity.Key]model_use_case.Generalization
+	useCaseShares           map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
+}
+
+func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
+	var u testUseCases
+
+	// Use case actors.
+	ucActor1, err := model_use_case.NewActor("customer interaction")
+	if err != nil {
+		return u, err
+	}
+	ucActor2, err := model_use_case.NewActor("payment processing")
+	if err != nil {
+		return u, err
+	}
+	ucActor3, err := model_use_case.NewActor("vip handling")
+	if err != nil {
+		return u, err
+	}
+
+	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
+	ucPlaceOrder, err := model_use_case.NewUseCase(
+		k.ucPlaceOrder, "Place Order", "Customer places an order.",
+		"sea", false, nil, &k.ucGen1, "place order",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
 	}
-	useCasePlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
-		classCustomerKey: ucActorCustomer,
+	ucPlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
+		k.classCustomer: ucActor1,
+		k.classProduct:  ucActor2,
+		k.classVehicle:  ucActor3,
 	})
-	useCasePlaceOrder.SetScenarios(map[identity.Key]model_scenario.Scenario{
-		scenarioHappyKey: scenarioHappy,
-		scenarioErrorKey: scenarioError,
-	})
+	ucPlaceOrder.SetScenarios(sc.placeOrderScenarios)
 
-	// View Order use case (mud level, read-only).
-	useCaseViewOrder, err := model_use_case.NewUseCase(
-		useCaseViewOrderKey, "View Order", "View order details.",
+	// View Order: mud level, read-only, has 1 scenario.
+	ucViewOrder, err := model_use_case.NewUseCase(
+		k.ucViewOrder, "View Order", "View order details.",
 		"mud", true, nil, nil, "",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
 	}
-	useCaseViewOrder.SetScenarios(map[identity.Key]model_scenario.Scenario{
-		scenarioViewKey: scenarioView,
-	})
+	ucViewOrder.SetScenarios(sc.viewOrderScenarios)
 
-	// Manage Order use case (sky level, superclass).
-	useCaseManageOrder, err := model_use_case.NewUseCase(
-		useCaseSuperKey, "Manage Order", "Manage orders.",
-		"sky", false, &ucGenKey, nil, "",
+	// Manage Order: sky level, superclass.
+	ucManageOrder, err := model_use_case.NewUseCase(
+		k.ucManageOrder, "Manage Order", "Manage orders.",
+		"sky", false, &k.ucGen1, nil, "",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
 	}
 
-	// Cancel Order use case (mud level, for extend share).
-	useCaseCancelOrder, err := model_use_case.NewUseCase(
-		useCaseCancelOrderKey, "Cancel Order", "Customer cancels an order.",
+	// Cancel Order: empty parent (0 actors, 0 scenarios).
+	ucCancelOrder, err := model_use_case.NewUseCase(
+		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
 		"mud", false, nil, nil, "",
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
 	}
 
-	// Use case generalization.
-	ucGen, err := model_use_case.NewGeneralization(ucGenKey, "Order Management Types", "Types of order management.", false, true, "")
+	u.useCases = map[identity.Key]model_use_case.UseCase{
+		k.ucPlaceOrder:  ucPlaceOrder,
+		k.ucViewOrder:   ucViewOrder,
+		k.ucManageOrder: ucManageOrder,
+		k.ucCancelOrder: ucCancelOrder,
+	}
+
+	// Use case generalizations (3).
+	ucGen1, err := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", false, true, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
 	}
-
-	// Use case share: place_order includes view_order.
-	ucShare, err := model_use_case.NewUseCaseShared("include", "includes viewing")
+	ucGen2, err := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", true, false, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
+	}
+	ucGen3, err := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", true, true, "")
+	if err != nil {
+		return u, err
+	}
+	u.useCaseGens = map[identity.Key]model_use_case.Generalization{
+		k.ucGen1: ucGen1,
+		k.ucGen2: ucGen2,
+		k.ucGen3: ucGen3,
 	}
 
-	// Use case share: place_order extends cancel_order (pairwise: extend vs include).
+	// Use case shares (3 entries in outer map).
+	ucShareInclude, err := model_use_case.NewUseCaseShared("include", "includes viewing")
+	if err != nil {
+		return u, err
+	}
 	ucShareExtend, err := model_use_case.NewUseCaseShared("extend", "optional cancellation")
 	if err != nil {
-		return req_model.Model{}, err
+		return u, err
+	}
+	ucShareInclude2, err := model_use_case.NewUseCaseShared("include", "includes cancel check")
+	if err != nil {
+		return u, err
 	}
 
-	// =========================================================================
-	// Actor generalization
-	// =========================================================================
-
-	actorGen, err := model_actor.NewGeneralization(actorGenKey, "Customer Types", "Types of customers.", true, true, "customer hierarchy")
-	if err != nil {
-		return req_model.Model{}, err
+	u.useCaseShares = map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
+		k.ucPlaceOrder: {
+			k.ucViewOrder:   ucShareInclude,
+			k.ucCancelOrder: ucShareExtend,
+		},
+		k.ucManageOrder: {
+			k.ucViewOrder: ucShareInclude2,
+		},
 	}
 
-	// =========================================================================
-	// Actors
-	// =========================================================================
+	return u, nil
+}
 
-	actorPerson, err := model_actor.NewActor(actorPersonKey, "Customer", "A person who buys things.", "person", &actorGenKey, nil, "main actor")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	actorSystem, err := model_actor.NewActor(actorSystemKey, "Payment Gateway", "External payment system.", "system", nil, nil, "")
-	if err != nil {
-		return req_model.Model{}, err
-	}
-	actorSubclass, err := model_actor.NewActor(actorSubclassKey, "VIP Customer", "A premium customer.", "person", nil, &actorGenKey, "")
-	if err != nil {
-		return req_model.Model{}, err
-	}
+// =========================================================================
+// Actors
+// =========================================================================
 
-	// =========================================================================
-	// Domain association
-	// =========================================================================
-
-	domainAssoc, err := model_domain.NewAssociation(domainAssocKey, domainAKey, domainBKey, "domain link")
+func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization, error) {
+	// Actors (3).
+	actorPerson, err := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen1, nil, "main actor")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, nil, err
+	}
+	actorSystem, err := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", nil, nil, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	actorVip, err := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen1, "")
+	if err != nil {
+		return nil, nil, err
 	}
 
-	// =========================================================================
-	// Subdomains
-	// =========================================================================
+	actors := map[identity.Key]model_actor.Actor{
+		k.actorPerson: actorPerson,
+		k.actorSystem: actorSystem,
+		k.actorVip:    actorVip,
+	}
 
-	subdomainA, err := model_domain.NewSubdomain(subdomainAKey, "Order Management", "Handles orders.", "order subdomain")
+	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
+	actorGen1, err := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", true, true, "customer hierarchy")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, nil, err
+	}
+	actorGen2, err := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", false, false, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	actorGen3, err := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", true, false, "")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	actorGens := map[identity.Key]model_actor.Generalization{
+		k.actorGen1: actorGen1,
+		k.actorGen2: actorGen2,
+		k.actorGen3: actorGen3,
+	}
+
+	return actors, actorGens, nil
+}
+
+// =========================================================================
+// Domain associations
+// =========================================================================
+
+func buildDomainAssociations(k testKeys) (map[identity.Key]model_domain.Association, error) {
+	da1, err := model_domain.NewAssociation(k.domainAssoc1, k.domainA, k.domainB, "domain link")
+	if err != nil {
+		return nil, err
+	}
+	da2, err := model_domain.NewAssociation(k.domainAssoc2, k.domainA, k.domainC, "commerce to external")
+	if err != nil {
+		return nil, err
+	}
+	da3, err := model_domain.NewAssociation(k.domainAssoc3, k.domainB, k.domainC, "logistics to external")
+	if err != nil {
+		return nil, err
+	}
+
+	return map[identity.Key]model_domain.Association{
+		k.domainAssoc1: da1,
+		k.domainAssoc2: da2,
+		k.domainAssoc3: da3,
+	}, nil
+}
+
+// =========================================================================
+// Subdomains
+// =========================================================================
+
+func buildSubdomains(
+	k testKeys,
+	classes testClasses,
+	gens testGeneralizations,
+	uc testUseCases,
+	assocs testAssociations,
+) (map[identity.Key]model_domain.Subdomain, error) {
+
+	// Subdomain A: rich (3+ classes, 3 generalizations, 4 use cases, 3 uc gens, 3 class assocs, 3 shares).
+	subdomainA, err := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "order subdomain")
+	if err != nil {
+		return nil, err
 	}
 	subdomainA.Classes = map[identity.Key]model_class.Class{
-		classOrderKey:    classOrder,
-		classProductKey:  classProduct,
-		classLineItemKey: classLineItem,
-		classCustomerKey: classCustomer,
-		classVehicleKey:  classVehicle,
-		classCarKey:      classCar,
+		k.classOrder:    classes.all[k.classOrder],
+		k.classProduct:  classes.all[k.classProduct],
+		k.classLineItem: classes.all[k.classLineItem],
+		k.classCustomer: classes.all[k.classCustomer],
+		k.classVehicle:  classes.all[k.classVehicle],
+		k.classCar:      classes.all[k.classCar],
 	}
-	subdomainA.Generalizations = map[identity.Key]model_class.Generalization{
-		classGenKey:  classGen,
-		classGen2Key: classGen2,
-	}
-	subdomainA.UseCases = map[identity.Key]model_use_case.UseCase{
-		useCasePlaceOrderKey:  useCasePlaceOrder,
-		useCaseViewOrderKey:   useCaseViewOrder,
-		useCaseSuperKey:       useCaseManageOrder,
-		useCaseCancelOrderKey: useCaseCancelOrder,
-	}
-	subdomainA.UseCaseGeneralizations = map[identity.Key]model_use_case.Generalization{
-		ucGenKey: ucGen,
-	}
-	subdomainA.ClassAssociations = map[identity.Key]model_class.Association{
-		subdomainAssocKey: subdomainAssoc,
-	}
-	// UseCaseShares: sea-level place_order includes mud-level view_order and extends cancel_order.
-	subdomainA.UseCaseShares = map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
-		useCasePlaceOrderKey: {
-			useCaseViewOrderKey:   ucShare,
-			useCaseCancelOrderKey: ucShareExtend,
-		},
-	}
+	subdomainA.Generalizations = gens.all
+	subdomainA.UseCases = uc.useCases
+	subdomainA.UseCaseGeneralizations = uc.useCaseGens
+	subdomainA.ClassAssociations = assocs.subdomain
+	subdomainA.UseCaseShares = uc.useCaseShares
 
-	subdomainB, err := model_domain.NewSubdomain(subdomainBKey, "Warehousing", "Warehouse management.", "")
+	// Subdomain B: has 3 classes (for domain-level associations).
+	subdomainB, err := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, err
 	}
 	subdomainB.Classes = map[identity.Key]model_class.Class{
-		classWarehouseKey: classWarehouse,
+		k.classWarehouse: classes.all[k.classWarehouse],
+		k.classShelf:     classes.all[k.classShelf],
+		k.classAisle:     classes.all[k.classAisle],
 	}
 
-	subdomainC, err := model_domain.NewSubdomain(subdomainCKey, "Supply Chain", "Supply chain management.", "")
+	// Subdomain C (domain B): has 3 classes (for model-level associations).
+	subdomainC, err := model_domain.NewSubdomain(k.subdomainC, "Supply Chain", "Supply chain management.", "")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, err
 	}
 	subdomainC.Classes = map[identity.Key]model_class.Class{
-		classSupplierKey: classSupplier,
+		k.classSupplier: classes.all[k.classSupplier],
+		k.classShipment: classes.all[k.classShipment],
+		k.classRoute:    classes.all[k.classRoute],
 	}
 
-	// =========================================================================
-	// Domains
-	// =========================================================================
-
-	domainA, err := model_domain.NewDomain(domainAKey, "Commerce", "Core commerce domain.", false, "main domain")
+	// Subdomain D: empty parent (0 classes, 0 everything).
+	subdomainD, err := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, err
+	}
+
+	return map[identity.Key]model_domain.Subdomain{
+		k.subdomainA: subdomainA,
+		k.subdomainB: subdomainB,
+		k.subdomainC: subdomainC,
+		k.subdomainD: subdomainD,
+	}, nil
+}
+
+// =========================================================================
+// Domains
+// =========================================================================
+
+func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain) (map[identity.Key]model_domain.Domain, error) {
+	// Domain A: rich (3 subdomains: A, B, D).
+	domainA, err := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", false, "main domain")
+	if err != nil {
+		return nil, err
 	}
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
-		subdomainAKey: subdomainA,
-		subdomainBKey: subdomainB,
+		k.subdomainA: subdomains[k.subdomainA],
+		k.subdomainB: subdomains[k.subdomainB],
+		k.subdomainD: subdomains[k.subdomainD],
 	}
 
-	domainB, err := model_domain.NewDomain(domainBKey, "Logistics", "Logistics domain.", true, "")
+	// Domain B: single subdomain (special case).
+	domainB, err := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", true, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, err
 	}
 	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{
-		subdomainCKey: subdomainC,
+		k.subdomainC: subdomains[k.subdomainC],
 	}
 
-	// =========================================================================
-	// Model
-	// =========================================================================
-
-	model, err := req_model.NewModel(
-		"test_model",
-		"Test Model",
-		"A comprehensive test model with every type represented.",
-		[]model_logic.Logic{invariantLogic},
-		map[identity.Key]model_logic.GlobalFunction{
-			globalFuncKey:  globalFunc,
-			globalFunc2Key: globalFunc2,
-		},
-	)
+	// Domain C: empty parent (0 subdomains).
+	domainC, err := model_domain.NewDomain(k.domainC, "External", "External integrations.", false, "")
 	if err != nil {
-		return req_model.Model{}, err
+		return nil, err
 	}
 
-	model.Actors = map[identity.Key]model_actor.Actor{
-		actorPersonKey:   actorPerson,
-		actorSystemKey:   actorSystem,
-		actorSubclassKey: actorSubclass,
-	}
-	model.ActorGeneralizations = map[identity.Key]model_actor.Generalization{
-		actorGenKey: actorGen,
-	}
-	model.Domains = map[identity.Key]model_domain.Domain{
-		domainAKey: domainA,
-		domainBKey: domainB,
-	}
-	model.DomainAssociations = map[identity.Key]model_domain.Association{
-		domainAssocKey: domainAssoc,
-	}
-
-	// Set class associations — routes them to the appropriate level (model/domain/subdomain).
-	allAssociations := map[identity.Key]model_class.Association{
-		subdomainAssocKey:   subdomainAssoc,
-		domainClassAssocKey: domainClassAssoc,
-		modelClassAssocKey:  modelClassAssoc,
-	}
-	if err := model.SetClassAssociations(allAssociations); err != nil {
-		return req_model.Model{}, err
-	}
-
-	return model, nil
+	return map[identity.Key]model_domain.Domain{
+		k.domainA: domainA,
+		k.domainB: domainB,
+		k.domainC: domainC,
+	}, nil
 }
