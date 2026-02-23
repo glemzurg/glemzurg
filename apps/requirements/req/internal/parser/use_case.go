@@ -139,13 +139,14 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 			if found {
 				stepsData := stepsAny.([]any)
 
-				// Wrap in outer sequence node.
+				// Wrap in outer sequence step with key "0".
 				nodeData := map[string]any{
+					"key":        "0",
+					"step_type":  "sequence",
 					"statements": stepsData,
 				}
 
-				// Scope object and attribute keys before parsing into Node objects.
-				// This ensures Node objects are always well-formed with complete keys.
+				// Scope compact keys to fully qualified keys before parsing into Step objects.
 				if err = scopeObjectKeys(scenarioKey, subdomainKey, nodeData); err != nil {
 					return model_use_case.UseCase{}, err
 				}
@@ -347,11 +348,10 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 					yaml += formatYamlField("uml_comment", obj.UmlComment, 14)
 				}
 			}
-			// TODO: Re-enable step generation once generateSteps is updated for the Step struct.
-			// if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
-			// 	yaml += "        steps:\n"
-			// 	yaml += generateSteps(scenario.Steps.Statements, "            ")
-			// }
+			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
+				yaml += "        steps:\n"
+				yaml += generateSteps(scenario.Steps.Statements, "            ")
+			}
 		}
 	}
 
@@ -366,44 +366,72 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	return strings.TrimSpace(content)
 }
 
-// TODO: Re-enable these functions once updated for the Step struct (formerly Node).
-// generateSteps, shortEventKey, shortScenarioKey, and generateNode reference
-// old Node fields (Loop, Cases, IsDelete) that no longer exist on Step.
+func generateSteps(steps []model_scenario.Step, indent string) string {
+	s := ""
+	for _, step := range steps {
+		s += generateStep(step, indent)
+	}
+	return s
+}
 
-// func generateSteps(nodes []model_scenario.Step, indent string) string {
-// 	s := ""
-// 	for _, node := range nodes {
-// 		s += generateNode(node, indent)
-// 	}
-// 	return s
-// }
+func generateStep(step model_scenario.Step, indent string) string {
+	s := indent + "- key: \"" + step.Key.SubKey + "\"\n"
+	s += indent + "  step_type: " + step.StepType + "\n"
 
-// func shortEventKey(key *identity.Key) string {
-// 	if key == nil {
-// 		return ""
-// 	}
-// 	parentKey, err := identity.ParseKey(key.ParentKey)
-// 	if err != nil {
-// 		return key.String()
-// 	}
-// 	classSubKey := parentKey.SubKey
-// 	eventSubKey := key.SubKey
-// 	return classSubKey + "/event/" + eventSubKey
-// }
+	if step.LeafType != nil {
+		s += indent + "  leaf_type: " + *step.LeafType + "\n"
+	}
+	if step.Condition != "" {
+		s += indent + "  condition: " + step.Condition + "\n"
+	}
+	if step.Description != "" {
+		s += indent + "  description: " + step.Description + "\n"
+	}
+	if step.FromObjectKey != nil {
+		s += indent + "  from_object_key: " + step.FromObjectKey.SubKey + "\n"
+	}
+	if step.ToObjectKey != nil {
+		s += indent + "  to_object_key: " + step.ToObjectKey.SubKey + "\n"
+	}
+	if step.EventKey != nil {
+		s += indent + "  event_key: " + shortEventKey(step.EventKey) + "\n"
+	}
+	if step.QueryKey != nil {
+		s += indent + "  query_key: " + shortQueryKey(step.QueryKey) + "\n"
+	}
+	if step.ScenarioKey != nil {
+		s += indent + "  scenario_key: " + shortScenarioKey(step.ScenarioKey) + "\n"
+	}
+	if len(step.Statements) > 0 {
+		s += indent + "  statements:\n"
+		s += generateSteps(step.Statements, indent+"      ")
+	}
+	return s
+}
 
-// func shortScenarioKey(key *identity.Key) string {
-// 	if key == nil {
-// 		return ""
-// 	}
-// 	parentKey, err := identity.ParseKey(key.ParentKey)
-// 	if err != nil {
-// 		return key.String()
-// 	}
-// 	useCaseSubKey := parentKey.SubKey
-// 	scenarioSubKey := key.SubKey
-// 	return useCaseSubKey + "/scenario/" + scenarioSubKey
-// }
+// shortEventKey returns the compact form of an event key: "classSubKey/event/eventSubKey".
+func shortEventKey(key *identity.Key) string {
+	parentKey, err := identity.ParseKey(key.ParentKey)
+	if err != nil {
+		return key.String()
+	}
+	return parentKey.SubKey + "/event/" + key.SubKey
+}
 
-// func generateNode(node model_scenario.Step, indent string) string {
-// 	...
-// }
+// shortQueryKey returns the compact form of a query key: "classSubKey/query/querySubKey".
+func shortQueryKey(key *identity.Key) string {
+	parentKey, err := identity.ParseKey(key.ParentKey)
+	if err != nil {
+		return key.String()
+	}
+	return parentKey.SubKey + "/query/" + key.SubKey
+}
+
+// shortScenarioKey returns the compact form of a scenario key: "useCaseSubKey/scenario/scenarioSubKey".
+func shortScenarioKey(key *identity.Key) string {
+	parentKey, err := identity.ParseKey(key.ParentKey)
+	if err != nil {
+		return key.String()
+	}
+	return parentKey.SubKey + "/scenario/" + key.SubKey
+}

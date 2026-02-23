@@ -18,6 +18,17 @@ func scopeObjectKeys(scenarioKey identity.Key, subdomainKey identity.Key, data m
 }
 
 func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Key, data map[string]any) error {
+	// Handle key (step key) - compact format is just the sub-key (e.g. "1")
+	if keyVal, ok := data["key"]; ok {
+		if keyStr, ok := keyVal.(string); ok {
+			fullKey, err := identity.NewScenarioStepKey(scenarioKey, keyStr)
+			if err != nil {
+				return err
+			}
+			data["key"] = fullKey.String()
+		}
+	}
+
 	// Handle from_object_key
 	if fromKey, ok := data["from_object_key"]; ok {
 		if fromKeyStr, ok := fromKey.(string); ok {
@@ -62,6 +73,17 @@ func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Ke
 		}
 	}
 
+	// Handle query_key (format: "class/query/queryname" or "domainFolder/class/query/queryname")
+	if queryKey, ok := data["query_key"]; ok {
+		if queryKeyStr, ok := queryKey.(string); ok {
+			fullKey, err := expandQueryKey(subdomainKey, queryKeyStr)
+			if err != nil {
+				return err
+			}
+			data["query_key"] = fullKey.String()
+		}
+	}
+
 	// Handle scenario_key (format: "domainFolder/useCase/scenario/scenarioName")
 	if scenarioKeyVal, ok := data["scenario_key"]; ok {
 		if scenarioKeyStr, ok := scenarioKeyVal.(string); ok {
@@ -80,28 +102,6 @@ func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Ke
 				if stmtMap, ok := stmt.(map[string]any); ok {
 					if err := scopeObjectKeysRecursive(scenarioKey, subdomainKey, stmtMap); err != nil {
 						return err
-					}
-				}
-			}
-		}
-	}
-
-	// Recursively process cases
-	if cases, ok := data["cases"]; ok {
-		if casesSlice, ok := cases.([]any); ok {
-			for _, c := range casesSlice {
-				if caseMap, ok := c.(map[string]any); ok {
-					// Process statements within each case
-					if statements, ok := caseMap["statements"]; ok {
-						if stmtSlice, ok := statements.([]any); ok {
-							for _, stmt := range stmtSlice {
-								if stmtMap, ok := stmt.(map[string]any); ok {
-									if err := scopeObjectKeysRecursive(scenarioKey, subdomainKey, stmtMap); err != nil {
-										return err
-									}
-								}
-							}
-						}
 					}
 				}
 			}
@@ -225,5 +225,44 @@ func expandEventKey(subdomainKey identity.Key, shortKey string) (identity.Key, e
 
 	default:
 		return identity.Key{}, errors.Errorf("invalid event key format '%s': expected 'class/event/eventname' or 'subdomain/class/event/eventname'", shortKey)
+	}
+}
+
+// expandQueryKey converts a short query key format to a full identity key.
+// Supported formats:
+// - "class/query/queryname" - uses the provided subdomain
+// - "domainFolder/class/query/queryname" - the domainFolder is ignored, uses the current subdomain
+func expandQueryKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
+	parts := strings.Split(shortKey, "/")
+
+	switch len(parts) {
+	case 3:
+		// Format: "class/query/queryname"
+		classSubKey := parts[0]
+		// parts[1] should be "query"
+		querySubKey := parts[2]
+
+		classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
+		if err != nil {
+			return identity.Key{}, errors.Wrapf(err, "failed to create class key for query: %s", shortKey)
+		}
+		return identity.NewQueryKey(classKey, querySubKey)
+
+	case 4:
+		// Format: "domainFolder/class/query/queryname"
+		// The domainFolder prefix is informational only - we use the current subdomain.
+		// domainFolder := parts[0] // Ignored
+		classSubKey := parts[1]
+		// parts[2] should be "query"
+		querySubKey := parts[3]
+
+		classKey, err := identity.NewClassKey(subdomainKey, classSubKey)
+		if err != nil {
+			return identity.Key{}, errors.Wrapf(err, "failed to create class key for query: %s", shortKey)
+		}
+		return identity.NewQueryKey(classKey, querySubKey)
+
+	default:
+		return identity.Key{}, errors.Errorf("invalid query key format '%s': expected 'class/query/queryname' or 'domainFolder/class/query/queryname'", shortKey)
 	}
 }

@@ -2,7 +2,6 @@ package parser
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -39,11 +38,6 @@ func (suite *UseCaseFileSuite) TestParseUseCaseFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-
-		// TODO: Skip scenario tests until generateSteps is re-enabled for the Step struct.
-		if strings.Contains(testName, "scenario") {
-			continue
-		}
 
 		var expected, actual model_use_case.UseCase
 

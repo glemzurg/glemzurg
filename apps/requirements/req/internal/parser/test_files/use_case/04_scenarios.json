@@ -41,17 +41,27 @@
                 }
             },
             "Steps": {
+                "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/0",
+                "step_type": "sequence",
                 "statements": [
                     {
+                        "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/1",
+                        "step_type": "leaf",
+                        "leaf_type": "event",
                         "description": "first step",
                         "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
                         "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                         "event_key": "domain/test_domain/subdomain/test_subdomain/class/class_key/event/processlog"
                     },
                     {
-                        "loop": "while condition",
+                        "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/2",
+                        "step_type": "loop",
+                        "condition": "while condition",
                         "statements": [
                             {
+                                "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/3",
+                                "step_type": "leaf",
+                                "leaf_type": "scenario",
                                 "description": "loop step",
                                 "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
                                 "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
@@ -60,11 +70,18 @@
                         ]
                     },
                     {
-                        "cases": [
+                        "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/4",
+                        "step_type": "switch",
+                        "statements": [
                             {
+                                "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/5",
+                                "step_type": "case",
                                 "condition": "case1",
                                 "statements": [
                                     {
+                                        "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/6",
+                                        "step_type": "leaf",
+                                        "leaf_type": "event",
                                         "description": "case1 step",
                                         "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/bob",
                                         "to_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
@@ -73,11 +90,15 @@
                                 ]
                             },
                             {
+                                "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/7",
+                                "step_type": "case",
                                 "condition": "case2",
                                 "statements": [
                                     {
-                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book",
-                                        "is_delete": true
+                                        "key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sstep/8",
+                                        "step_type": "leaf",
+                                        "leaf_type": "delete",
+                                        "from_object_key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_a_key/sobject/book"
                                     }
                                 ]
                             }
