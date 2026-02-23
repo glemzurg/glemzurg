@@ -18,17 +18,6 @@ func scopeObjectKeys(scenarioKey identity.Key, subdomainKey identity.Key, data m
 }
 
 func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Key, data map[string]any) error {
-	// Handle key (step key) - compact format is just the sub-key (e.g. "1")
-	if keyVal, ok := data["key"]; ok {
-		if keyStr, ok := keyVal.(string); ok {
-			fullKey, err := identity.NewScenarioStepKey(scenarioKey, keyStr)
-			if err != nil {
-				return err
-			}
-			data["key"] = fullKey.String()
-		}
-	}
-
 	// Handle from_object_key
 	if fromKey, ok := data["from_object_key"]; ok {
 		if fromKeyStr, ok := fromKey.(string); ok {

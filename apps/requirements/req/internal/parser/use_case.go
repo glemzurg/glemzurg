@@ -139,9 +139,8 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 			if found {
 				stepsData := stepsAny.([]any)
 
-				// Wrap in outer sequence step with key "0".
+				// Wrap in outer sequence step.
 				nodeData := map[string]any{
-					"key":        "0",
 					"step_type":  "sequence",
 					"statements": stepsData,
 				}
@@ -161,6 +160,9 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 				if err = node.FromYAML(string(nodeYaml)); err != nil {
 					return model_use_case.UseCase{}, err
 				}
+
+				// Auto-assign step keys from tree position.
+				assignStepKeys(&node, scenarioKey)
 
 				scenario.Steps = &node
 			}
@@ -375,8 +377,7 @@ func generateSteps(steps []model_scenario.Step, indent string) string {
 }
 
 func generateStep(step model_scenario.Step, indent string) string {
-	s := indent + "- key: \"" + step.Key.SubKey + "\"\n"
-	s += indent + "  step_type: " + step.StepType + "\n"
+	s := indent + "- step_type: " + step.StepType + "\n"
 
 	if step.LeafType != nil {
 		s += indent + "  leaf_type: " + *step.LeafType + "\n"
@@ -407,6 +408,21 @@ func generateStep(step model_scenario.Step, indent string) string {
 		s += generateSteps(step.Statements, indent+"      ")
 	}
 	return s
+}
+
+// assignStepKeys walks the Step tree and assigns keys using a sequential counter.
+func assignStepKeys(step *model_scenario.Step, scenarioKey identity.Key) {
+	counter := 0
+	assignStepKeysRecursive(step, scenarioKey, &counter)
+}
+
+func assignStepKeysRecursive(step *model_scenario.Step, scenarioKey identity.Key, counter *int) {
+	key, _ := identity.NewScenarioStepKey(scenarioKey, strconv.Itoa(*counter))
+	step.Key = key
+	*counter++
+	for i := range step.Statements {
+		assignStepKeysRecursive(&step.Statements[i], scenarioKey, counter)
+	}
 }
 
 // shortEventKey returns the compact form of an event key: "classSubKey/event/eventSubKey".

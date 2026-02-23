@@ -35,44 +35,36 @@ scenarios:
               multi: true
               uml_comment: the book of greatness
         steps:
-            - key: "1"
-              step_type: leaf
+            - step_type: leaf
               leaf_type: event
               description: first step
               from_object_key: bob
               to_object_key: book
               event_key: class_key/event/processlog
-            - key: "2"
-              step_type: loop
+            - step_type: loop
               condition: while condition
               statements:
-                  - key: "3"
-                    step_type: leaf
+                  - step_type: leaf
                     leaf_type: scenario
                     description: loop step
                     from_object_key: book
                     to_object_key: bob
                     scenario_key: use_case_key/scenario/scenario_b_key
-            - key: "4"
-              step_type: switch
+            - step_type: switch
               statements:
-                  - key: "5"
-                    step_type: case
+                  - step_type: case
                     condition: case1
                     statements:
-                        - key: "6"
-                          step_type: leaf
+                        - step_type: leaf
                           leaf_type: event
                           description: case1 step
                           from_object_key: bob
                           to_object_key: book
                           event_key: class_key/event/processlog
-                  - key: "7"
-                    step_type: case
+                  - step_type: case
                     condition: case2
                     statements:
-                        - key: "8"
-                          step_type: leaf
+                        - step_type: leaf
                           leaf_type: delete
                           from_object_key: book
 
