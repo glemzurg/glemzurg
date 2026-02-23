@@ -666,6 +666,11 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 
 	details := ""
 
+	var parameters []model_state.Parameter
+	var requires []model_logic.Logic
+	var guarantees []model_logic.Logic
+	var safetyRules []model_logic.Logic
+
 	actionData, ok := actionAny.(map[string]any)
 	if ok {
 		detailsAny, found := actionData["details"]
@@ -673,23 +678,94 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 			details = detailsAny.(string)
 		}
 
-		// TODO: Parse requires, guarantees, safetyRules as []model_logic.Logic
-		// and parameters as []model_state.Parameter once the YAML format is defined.
+		// Parse parameters.
+		parametersAny, found := actionData["parameters"]
+		if found {
+			paramsList, ok := parametersAny.([]any)
+			if !ok {
+				return model_state.Action{}, errors.Errorf("action '%s': parameters must be a sequence", name)
+			}
+			for _, paramAny := range paramsList {
+				paramMap, ok := paramAny.(map[string]any)
+				if !ok {
+					return model_state.Action{}, errors.Errorf("action '%s': each parameter must be a mapping", name)
+				}
+				paramName, _ := paramMap["name"].(string)
+				paramRules, _ := paramMap["rules"].(string)
+				param, err := model_state.NewParameter(paramName, paramRules)
+				if err != nil {
+					return model_state.Action{}, errors.Wrapf(err, "action '%s' parameter '%s'", name, paramName)
+				}
+				parameters = append(parameters, param)
+			}
+		}
+
+		// Parse requires.
+		requires, err = logicListFromYamlData(actionData, "requires", actionKey, identity.NewActionRequireKey)
+		if err != nil {
+			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
+		}
+
+		// Parse guarantees.
+		guarantees, err = logicListFromYamlData(actionData, "guarantees", actionKey, identity.NewActionGuaranteeKey)
+		if err != nil {
+			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
+		}
+
+		// Parse safety rules.
+		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", actionKey, identity.NewActionSafetyKey)
+		if err != nil {
+			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
+		}
 	}
 
 	action, err = model_state.NewAction(
 		actionKey,
 		name,
 		details,
-		nil, // requires
-		nil, // guarantees
-		nil, // safetyRules
-		nil) // parameters
+		requires,
+		guarantees,
+		safetyRules,
+		parameters)
 	if err != nil {
 		return model_state.Action{}, err
 	}
 
 	return action, nil
+}
+
+// logicListFromYamlData parses a YAML sequence of logic mappings (details + optional specification).
+func logicListFromYamlData(data map[string]any, field string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
+	listAny, found := data[field]
+	if !found {
+		return nil, nil
+	}
+	list, ok := listAny.([]any)
+	if !ok {
+		return nil, errors.Errorf("%s must be a sequence", field)
+	}
+	var logics []model_logic.Logic
+	for i, itemAny := range list {
+		itemMap, ok := itemAny.(map[string]any)
+		if !ok {
+			return nil, errors.Errorf("%s[%d] must be a mapping", field, i)
+		}
+		details, _ := itemMap["details"].(string)
+		specification, _ := itemMap["specification"].(string)
+
+		key, err := newKey(parentKey, strconv.Itoa(i))
+		if err != nil {
+			return nil, errors.Wrapf(err, "%s[%d]", field, i)
+		}
+
+		logics = append(logics, model_logic.Logic{
+			Key:           key,
+			Description:   details,
+			Notation:      "tla_plus",
+			Specification: specification,
+		})
+	}
+	return logics, nil
 }
 
 func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup map[string]identity.Key, classKey identity.Key, index int, transitionAny any) (transition model_state.Transition, err error) {
@@ -926,16 +1002,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			event := class.Events[key]
 			eventBuilder := NewYamlBuilder()
 			eventBuilder.AddField("details", event.Details)
-			if len(event.Parameters) > 0 {
-				paramItems := make([]*YamlBuilder, 0, len(event.Parameters))
-				for _, param := range event.Parameters {
-					paramBuilder := NewYamlBuilder()
-					paramBuilder.AddField("name", param.Name)
-					paramBuilder.AddField("rules", param.DataTypeRules)
-					paramItems = append(paramItems, paramBuilder)
-				}
-				eventBuilder.AddSequenceOfMappings("parameters", paramItems)
-			}
+			generateParameterSequence(eventBuilder, event.Parameters)
 			eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 		}
 		builder.AddMappingField("events", eventsBuilder)
@@ -973,9 +1040,10 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			action := class.Actions[key]
 			actionBuilder := NewYamlBuilder()
 			actionBuilder.AddField("details", action.Details)
-			// TODO: Serialize requires/guarantees as []model_logic.Logic once format is defined.
-			// actionBuilder.AddSequenceField("requires", action.Requires)
-			// actionBuilder.AddSequenceField("guarantees", action.Guarantees)
+			generateParameterSequence(actionBuilder, action.Parameters)
+			generateLogicSequence(actionBuilder, "requires", action.Requires)
+			generateLogicSequence(actionBuilder, "guarantees", action.Guarantees)
+			generateLogicSequence(actionBuilder, "safety_rules", action.SafetyRules)
 			actionsBuilder.AddMappingField(action.Name, actionBuilder)
 		}
 		builder.AddMappingField("actions", actionsBuilder)
@@ -1020,6 +1088,36 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 
 	yamlStr, _ := builder.Build()
 	return generateFileContent(class.Details, class.UmlComment, yamlStr)
+}
+
+// generateParameterSequence adds a parameters sequence of mappings to the builder.
+func generateParameterSequence(builder *YamlBuilder, params []model_state.Parameter) {
+	if len(params) == 0 {
+		return
+	}
+	items := make([]*YamlBuilder, 0, len(params))
+	for _, param := range params {
+		paramBuilder := NewYamlBuilder()
+		paramBuilder.AddField("name", param.Name)
+		paramBuilder.AddField("rules", param.DataTypeRules)
+		items = append(items, paramBuilder)
+	}
+	builder.AddSequenceOfMappings("parameters", items)
+}
+
+// generateLogicSequence adds a logic sequence of mappings to the builder.
+func generateLogicSequence(builder *YamlBuilder, field string, logics []model_logic.Logic) {
+	if len(logics) == 0 {
+		return
+	}
+	items := make([]*YamlBuilder, 0, len(logics))
+	for _, logic := range logics {
+		logicBuilder := NewYamlBuilder()
+		logicBuilder.AddField("details", logic.Description)
+		logicBuilder.AddField("specification", logic.Specification)
+		items = append(items, logicBuilder)
+	}
+	builder.AddSequenceOfMappings(field, items)
 }
 
 // classAssociationRelativeKey returns the shortest relative key string for a target class key
