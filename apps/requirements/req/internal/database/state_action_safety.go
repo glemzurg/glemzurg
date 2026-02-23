@@ -115,13 +115,15 @@ func QueryActionSafeties(dbOrTx DbOrTx, modelKey string) (safeties map[identity.
 			return nil
 		},
 		`SELECT
-			action_key,
-			logic_key
+			asf.action_key,
+			asf.logic_key
 		FROM
-			action_safety
+			action_safety asf
+		JOIN
+			logic l ON l.model_key = asf.model_key AND l.logic_key = asf.logic_key
 		WHERE
-			model_key = $1
-		ORDER BY action_key, logic_key`,
+			asf.model_key = $1
+		ORDER BY asf.action_key, l.sort_order`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

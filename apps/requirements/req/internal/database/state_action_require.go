@@ -115,13 +115,15 @@ func QueryActionRequires(dbOrTx DbOrTx, modelKey string) (requires map[identity.
 			return nil
 		},
 		`SELECT
-			action_key,
-			logic_key
+			ar.action_key,
+			ar.logic_key
 		FROM
-			action_require
+			action_require ar
+		JOIN
+			logic l ON l.model_key = ar.model_key AND l.logic_key = ar.logic_key
 		WHERE
-			model_key = $1
-		ORDER BY action_key, logic_key`,
+			ar.model_key = $1
+		ORDER BY ar.action_key, l.sort_order`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

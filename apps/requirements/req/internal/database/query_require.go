@@ -115,13 +115,15 @@ func QueryQueryRequires(dbOrTx DbOrTx, modelKey string) (requires map[identity.K
 			return nil
 		},
 		`SELECT
-			query_key,
-			logic_key
+			qr.query_key,
+			qr.logic_key
 		FROM
-			query_require
+			query_require qr
+		JOIN
+			logic l ON l.model_key = qr.model_key AND l.logic_key = qr.logic_key
 		WHERE
-			model_key = $1
-		ORDER BY query_key, logic_key`,
+			qr.model_key = $1
+		ORDER BY qr.query_key, l.sort_order`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

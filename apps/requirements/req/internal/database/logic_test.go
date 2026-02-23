@@ -55,7 +55,8 @@ func (suite *LogicSuite) TestLoad() {
 				logic_key,
 				description,
 				notation,
-				specification
+				specification,
+				sort_order
 			)
 		VALUES
 			(
@@ -63,7 +64,8 @@ func (suite *LogicSuite) TestLoad() {
 				'invariant/key',
 				'Description',
 				'tla_plus',
-				'Specification'
+				'Specification',
+				0
 			)
 	`)
 	assert.Nil(suite.T(), err)
@@ -133,7 +135,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Description:   "DescriptionX",
 		Notation:      "tla_plus",
 		Specification: "SpecificationX",
-	})
+	}, 0)
 	assert.Nil(suite.T(), err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
@@ -161,7 +163,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Description:   "DescriptionX",
 		Notation:      "tla_plus",
 		Specification: "",
-	})
+	}, 0)
 	assert.Nil(suite.T(), err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
@@ -207,6 +209,9 @@ func (suite *LogicSuite) TestQuery() {
 			Notation:      "tla_plus",
 			Specification: "Specification",
 		},
+	}, map[string]int{
+		suite.logicKeyB.String(): 0,
+		suite.logicKey.String():  1,
 	})
 	assert.Nil(suite.T(), err)
 

@@ -88,12 +88,14 @@ func QueryInvariants(dbOrTx DbOrTx, modelKey string) (keys []identity.Key, err e
 			return nil
 		},
 		`SELECT
-			logic_key
+			i.logic_key
 		FROM
-			invariant
+			invariant i
+		JOIN
+			logic l ON l.model_key = i.model_key AND l.logic_key = i.logic_key
 		WHERE
-			model_key = $1
-		ORDER BY logic_key`,
+			i.model_key = $1
+		ORDER BY l.sort_order`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

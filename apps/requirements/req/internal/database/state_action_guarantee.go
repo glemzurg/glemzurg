@@ -115,13 +115,15 @@ func QueryActionGuarantees(dbOrTx DbOrTx, modelKey string) (guarantees map[ident
 			return nil
 		},
 		`SELECT
-			action_key,
-			logic_key
+			ag.action_key,
+			ag.logic_key
 		FROM
-			action_guarantee
+			action_guarantee ag
+		JOIN
+			logic l ON l.model_key = ag.model_key AND l.logic_key = ag.logic_key
 		WHERE
-			model_key = $1
-		ORDER BY action_key, logic_key`,
+			ag.model_key = $1
+		ORDER BY ag.action_key, l.sort_order`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -66,13 +66,14 @@ func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic mod
 	return logic, nil
 }
 
-// AddLogic adds a logic to the database.
+// AddLogic adds a logic to the database with sort_order = 0.
 func AddLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err error) {
-	return AddLogics(dbOrTx, modelKey, []model_logic.Logic{logic})
+	sortOrders := map[string]int{logic.Key.String(): 0}
+	return AddLogics(dbOrTx, modelKey, []model_logic.Logic{logic}, sortOrders)
 }
 
 // UpdateLogic updates a logic in the database.
-func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err error) {
+func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOrder int) (err error) {
 
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
@@ -81,7 +82,8 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err e
 		SET
 			description   = $3 ,
 			notation      = $4 ,
-			specification = $5
+			specification = $5 ,
+			sort_order    = $6
 		WHERE
 			model_key = $1
 		AND
@@ -90,7 +92,8 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err e
 		logic.Key.String(),
 		logic.Description,
 		logic.Notation,
-		logic.Specification)
+		logic.Specification,
+		sortOrder)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -151,21 +154,22 @@ func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, er
 }
 
 // AddLogics adds multiple logics to the database in a single insert.
-func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic) (err error) {
+// sortOrders maps logic_key string to the sort_order value for that logic.
+func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortOrders map[string]int) (err error) {
 	if len(logics) == 0 {
 		return nil
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO logic (model_key, logic_key, description, notation, specification) VALUES `
-	args := make([]interface{}, 0, len(logics)*5)
+	query := `INSERT INTO logic (model_key, logic_key, description, notation, specification, sort_order) VALUES `
+	args := make([]interface{}, 0, len(logics)*6)
 	for i, logic := range logics {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 5
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
-		args = append(args, modelKey, logic.Key.String(), logic.Description, logic.Notation, logic.Specification)
+		base := i * 6
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+		args = append(args, modelKey, logic.Key.String(), logic.Description, logic.Notation, logic.Specification, sortOrders[logic.Key.String()])
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

@@ -37,39 +37,59 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Collect all logic rows to insert.
+		// Collect all logic rows to insert, tracking sort_order for each.
 		allLogics := make([]model_logic.Logic, 0, len(model.Invariants)+len(model.GlobalFunctions))
+		sortOrders := make(map[string]int)
+
+		// Invariants: sort_order = index within the invariants slice.
+		for i, inv := range model.Invariants {
+			sortOrders[inv.Key.String()] = i
+		}
 		allLogics = append(allLogics, model.Invariants...)
+
+		// Global functions: single logic each, sort_order = 0.
 		for _, gf := range model.GlobalFunctions {
+			sortOrders[gf.Logic.Key.String()] = 0
 			allLogics = append(allLogics, gf.Logic)
 		}
-		// Collect derivation policy logics from attributes.
+		// Collect derivation policy logics from attributes (single logic each, sort_order = 0).
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
 				for _, class := range subdomain.Classes {
 					for _, attr := range class.Attributes {
 						if attr.DerivationPolicy != nil {
+							sortOrders[attr.DerivationPolicy.Key.String()] = 0
 							allLogics = append(allLogics, *attr.DerivationPolicy)
 						}
 					}
 				}
 			}
 		}
-		// Collect guard logics (guard key is also the logic key).
+		// Collect guard logics (single logic each, sort_order = 0).
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
 				for _, class := range subdomain.Classes {
 					for _, guard := range class.Guards {
+						sortOrders[guard.Logic.Key.String()] = 0
 						allLogics = append(allLogics, guard.Logic)
 					}
 				}
 			}
 		}
-		// Collect action require, guarantee, and safety logics.
+		// Collect action require, guarantee, and safety logics with sort_order = slice index.
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
 				for _, class := range subdomain.Classes {
 					for _, action := range class.Actions {
+						for i, req := range action.Requires {
+							sortOrders[req.Key.String()] = i
+						}
+						for i, guar := range action.Guarantees {
+							sortOrders[guar.Key.String()] = i
+						}
+						for i, rule := range action.SafetyRules {
+							sortOrders[rule.Key.String()] = i
+						}
 						allLogics = append(allLogics, action.Requires...)
 						allLogics = append(allLogics, action.Guarantees...)
 						allLogics = append(allLogics, action.SafetyRules...)
@@ -77,18 +97,24 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
-		// Collect query require and guarantee logics.
+		// Collect query require and guarantee logics with sort_order = slice index.
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
 				for _, class := range subdomain.Classes {
 					for _, query := range class.Queries {
+						for i, req := range query.Requires {
+							sortOrders[req.Key.String()] = i
+						}
+						for i, guar := range query.Guarantees {
+							sortOrders[guar.Key.String()] = i
+						}
 						allLogics = append(allLogics, query.Requires...)
 						allLogics = append(allLogics, query.Guarantees...)
 					}
 				}
 			}
 		}
-		if err = AddLogics(tx, modelKey, allLogics); err != nil {
+		if err = AddLogics(tx, modelKey, allLogics, sortOrders); err != nil {
 			return err
 		}
 
