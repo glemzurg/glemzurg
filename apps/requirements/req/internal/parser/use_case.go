@@ -37,13 +37,31 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 	// If the title of the use case ends with "?" it is read-only.
 	readOnly := strings.HasSuffix(parsedFile.Title, "?")
 
+	// Parse optional superclass/subclass generalization keys.
+	var superclassOfKey *identity.Key
+	if s, ok := yamlData["superclass_of_key"]; ok {
+		k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
+		if err != nil {
+			return model_use_case.UseCase{}, errors.WithStack(err)
+		}
+		superclassOfKey = &k
+	}
+	var subclassOfKey *identity.Key
+	if s, ok := yamlData["subclass_of_key"]; ok {
+		k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
+		if err != nil {
+			return model_use_case.UseCase{}, errors.WithStack(err)
+		}
+		subclassOfKey = &k
+	}
+
 	// Construct the identity key for this use case.
 	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, useCaseSubKey)
 	if err != nil {
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, parsedFile.Markdown, level, readOnly, nil, nil, parsedFile.UmlComment)
+	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, parsedFile.Markdown, level, readOnly, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	if err != nil {
 		return model_use_case.UseCase{}, err
 	}
@@ -259,6 +277,12 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	yaml := ""
 	if useCase.Level != "sea" {
 		yaml += "level: " + useCase.Level + "\n"
+	}
+	if useCase.SuperclassOfKey != nil {
+		yaml += "superclass_of_key: " + useCase.SuperclassOfKey.SubKey + "\n"
+	}
+	if useCase.SubclassOfKey != nil {
+		yaml += "subclass_of_key: " + useCase.SubclassOfKey.SubKey + "\n"
 	}
 
 	if len(useCase.Actors) > 0 {
