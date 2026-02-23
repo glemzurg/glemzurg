@@ -856,8 +856,8 @@ func buildLogic(k testKeys) (testLogic, error) {
 	}
 	l.invariants = []model_logic.Logic{inv1, inv2, inv3}
 
-	// Derivation.
-	l.derivation, err = model_logic.NewLogic(k.derivation1, "Sum of line item prices", "tla_plus", "SUM(lineItems.price)")
+	// Derivation with empty specification (tests empty spec path).
+	l.derivation, err = model_logic.NewLogic(k.derivation1, "Sum of line item prices", "tla_plus", "")
 	if err != nil {
 		return l, err
 	}
@@ -912,9 +912,11 @@ func buildGlobalFunctions(k testKeys, l testLogic) (map[identity.Key]model_logic
 // =========================================================================
 
 type testParams struct {
-	quantity, productId, reason   model_state.Parameter
-	priority, tags, items        model_state.Parameter
-	format                       model_state.Parameter
+	quantity, productId, reason       model_state.Parameter
+	priority, tags, items            model_state.Parameter
+	format                           model_state.Parameter
+	unparseable                      model_state.Parameter
+	unconstrainedBound               model_state.Parameter
 }
 
 func buildParameters() (testParams, error) {
@@ -947,6 +949,18 @@ func buildParameters() (testParams, error) {
 		return p, err
 	}
 	p.format, err = model_state.NewParameter("format", "unconstrained")
+	if err != nil {
+		return p, err
+	}
+
+	// Unparseable DataTypeRules: results in nil DataType (CannotParseError silently swallowed).
+	p.unparseable, err = model_state.NewParameter("unparseable_field", "Int")
+	if err != nil {
+		return p, err
+	}
+
+	// Span with unconstrained lower bound.
+	p.unconstrainedBound, err = model_state.NewParameter("unconstrained_bound", "(unconstrained .. 100] at 1 unit")
 	if err != nil {
 		return p, err
 	}
@@ -1020,7 +1034,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 	}
 
 	eventFulfill, err := model_state.NewEvent(k.eventFulfill, "Fulfill", "Order is fulfilled.",
-		[]model_state.Parameter{p.reason})
+		[]model_state.Parameter{p.reason, p.unparseable})
 	if err != nil {
 		return sm, err
 	}
@@ -1083,7 +1097,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 
 	actionNotify, err := model_state.NewAction(
 		k.actionNotify, "Notify Customer", "Sends notification to customer.",
-		nil, nil, nil, []model_state.Parameter{p.format},
+		nil, nil, nil, []model_state.Parameter{p.format, p.unconstrainedBound},
 	)
 	if err != nil {
 		return sm, err
@@ -1205,7 +1219,7 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	// Derived attribute with derivation policy.
 	a.total, err = model_class.NewAttribute(
 		k.attrTotal, "Total", "Total amount for the order.",
-		"(0 .. 1000000] at 0.01 dollar", &l.derivation, true, "", []uint{1},
+		"(0 .. 1000000] at 0.01 dollar", &l.derivation, true, "", []uint{1, 2},
 	)
 	if err != nil {
 		return a, err
@@ -1800,7 +1814,8 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	if err != nil {
 		return nil, nil, err
 	}
-	actorSystem, err := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", nil, nil, "")
+	// actorSystem: has BOTH SuperclassOfKey AND SubclassOfKey (different generalizations).
+	actorSystem, err := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", &k.actorGen2, &k.actorGen3, "")
 	if err != nil {
 		return nil, nil, err
 	}
