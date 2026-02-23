@@ -41,7 +41,7 @@ func parseActorGeneralization(generalizationSubKey, filename, contents string) (
 		return model_actor.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization, err = model_actor.NewGeneralization(generalizationKey, parsedFile.Title, parsedFile.Markdown, isComplete, isStatic, parsedFile.UmlComment)
+	generalization, err = model_actor.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
 	if err != nil {
 		return model_actor.Generalization{}, err
 	}
@@ -56,5 +56,5 @@ func generateActorGeneralizationContent(generalization model_actor.Generalizatio
 	if generalization.IsStatic != true {
 		yamlStr += "is_static: " + strconv.FormatBool(generalization.IsStatic) + "\n"
 	}
-	return generateFileContent(generalization.Details, generalization.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownSubtitle(generalization.Name, generalization.Details), generalization.UmlComment, yamlStr)
 }

@@ -41,7 +41,7 @@ func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey,
 		return model_use_case.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization, err = model_use_case.NewGeneralization(generalizationKey, parsedFile.Title, parsedFile.Markdown, isComplete, isStatic, parsedFile.UmlComment)
+	generalization, err = model_use_case.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
 	if err != nil {
 		return model_use_case.Generalization{}, err
 	}
@@ -56,5 +56,5 @@ func generateUseCaseGeneralizationContent(generalization model_use_case.Generali
 	if generalization.IsStatic != true {
 		yamlStr += "is_static: " + strconv.FormatBool(generalization.IsStatic) + "\n"
 	}
-	return generateFileContent(generalization.Details, generalization.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownSubtitle(generalization.Name, generalization.Details), generalization.UmlComment, yamlStr)
 }

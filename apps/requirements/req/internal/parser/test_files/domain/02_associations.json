@@ -1,7 +1,7 @@
 {
     "Key": "domain/domain_key",
     "Name": "A Basic Domain",
-    "Details": "# A Basic Domain\n\nHere we have markdown details.\n\nAnd even more.",
+    "Details": "Here we have markdown details.\n\nAnd even more.",
     "Realized": true,
     "UmlComment": "Here we have a UML comment.\n\nAnd even more."
 }

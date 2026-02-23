@@ -28,7 +28,7 @@ func parseSubdomain(domainKey identity.Key, subdomainSubKey, filename, contents 
 		return model_domain.Subdomain{}, errors.WithStack(err)
 	}
 
-	subdomain, err = model_domain.NewSubdomain(subdomainKey, parsedFile.Title, markdown, parsedFile.UmlComment)
+	subdomain, err = model_domain.NewSubdomain(subdomainKey, parsedFile.Title, stripMarkdownTitle(markdown), parsedFile.UmlComment)
 	if err != nil {
 		return model_domain.Subdomain{}, err
 	}
@@ -36,5 +36,5 @@ func parseSubdomain(domainKey identity.Key, subdomainSubKey, filename, contents 
 }
 
 func generateSubdomainContent(subdomain model_domain.Subdomain) string {
-	return generateFileContent(subdomain.Details, subdomain.UmlComment, "")
+	return generateFileContent(prependMarkdownTitle(subdomain.Name, subdomain.Details), subdomain.UmlComment, "")
 }

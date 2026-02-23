@@ -41,7 +41,7 @@ func parseClassGeneralization(subdomainKey identity.Key, generalizationSubKey, f
 		return model_class.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization, err = model_class.NewGeneralization(generalizationKey, parsedFile.Title, parsedFile.Markdown, isComplete, isStatic, parsedFile.UmlComment)
+	generalization, err = model_class.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
 	if err != nil {
 		return model_class.Generalization{}, err
 	}
@@ -56,5 +56,5 @@ func generateGeneralizationContent(generalization model_class.Generalization) st
 	if generalization.IsStatic != true {
 		yamlStr += "is_static: " + strconv.FormatBool(generalization.IsStatic) + "\n"
 	}
-	return generateFileContent(generalization.Details, generalization.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownSubtitle(generalization.Name, generalization.Details), generalization.UmlComment, yamlStr)
 }

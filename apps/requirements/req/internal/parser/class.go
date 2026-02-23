@@ -86,7 +86,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, errors.WithStack(err)
 	}
 
-	class, err = model_class.NewClass(classKey, parsedFile.Title, parsedFile.Markdown, actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	class, err = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	if err != nil {
 		return model_class.Class{}, nil, err
 	}
@@ -1194,7 +1194,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	}
 
 	yamlStr, _ := builder.Build()
-	return generateFileContent(class.Details, class.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UmlComment, yamlStr)
 }
 
 // generateParameterSequence adds a parameters sequence of mappings to the builder.

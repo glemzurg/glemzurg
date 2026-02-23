@@ -135,7 +135,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 	}
 
 	// There is no uml comment for a "model" entity (it is not displayed).
-	markdown := parsedFile.Markdown
+	markdown := stripMarkdownTitle(parsedFile.Markdown)
 
 	if parsedFile.UmlComment != "" {
 		markdown += "\n\n" + parsedFile.UmlComment
@@ -205,7 +205,7 @@ func generateModelContent(model req_model.Model) string {
 		}
 	}
 
-	return generateFileContent(model.Details, "", dataStr)
+	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), "", dataStr)
 }
 
 // yamlQuote wraps a string in appropriate YAML quotes.

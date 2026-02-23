@@ -352,6 +352,22 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		}
 	}
 
+	// Remove empty default subdomains that have no content.
+	// The parser unconditionally creates a default subdomain for each domain,
+	// but if it was never populated, it should be removed.
+	for domainKey, domain := range model.Domains {
+		for subdomainKey, subdomain := range domain.Subdomains {
+			if subdomainKey.SubKey == "default" && isEmptySubdomain(subdomain) {
+				delete(domain.Subdomains, subdomainKey)
+			}
+		}
+		// If domain has no subdomains left, set to nil for consistency.
+		if len(domain.Subdomains) == 0 {
+			domain.Subdomains = nil
+		}
+		model.Domains[domainKey] = domain
+	}
+
 	// Distribute class associations to the correct level (model, domain, subdomain).
 	if len(allClassAssociations) > 0 {
 		if err := model.SetClassAssociations(allClassAssociations); err != nil {
@@ -360,4 +376,15 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 	}
 
 	return model, nil
+}
+
+// isEmptySubdomain returns true if the subdomain has no classes, generalizations,
+// use cases, use case generalizations, class associations, or use case shares.
+func isEmptySubdomain(subdomain model_domain.Subdomain) bool {
+	return len(subdomain.Classes) == 0 &&
+		len(subdomain.Generalizations) == 0 &&
+		len(subdomain.UseCases) == 0 &&
+		len(subdomain.UseCaseGeneralizations) == 0 &&
+		len(subdomain.ClassAssociations) == 0 &&
+		len(subdomain.UseCaseShares) == 0
 }

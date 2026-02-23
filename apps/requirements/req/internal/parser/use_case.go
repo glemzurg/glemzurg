@@ -61,7 +61,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, parsedFile.Markdown, level, readOnly, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), level, readOnly, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	if err != nil {
 		return model_use_case.UseCase{}, err
 	}
@@ -361,7 +361,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	if yamlStr == "" {
 		yamlStr = "\n"
 	}
-	content := useCase.Details + "\n\n◆\n\n" + useCase.UmlComment + "\n\n◇"
+	content := prependMarkdownTitle(useCase.Name, useCase.Details) + "\n\n◆\n\n" + useCase.UmlComment + "\n\n◇"
 	if yamlStr != "" {
 		content += "\n\n" + yamlStr
 	}

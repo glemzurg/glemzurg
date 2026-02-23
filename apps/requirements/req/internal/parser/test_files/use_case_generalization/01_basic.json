@@ -1,7 +1,7 @@
 {
     "Key": "domain/test_domain/subdomain/test_subdomain/ucgeneralization/generalization_key",
     "Name": "A Basic Generalization",
-    "Details": "## A Basic Generalization\n\nHere we have markdown details.\n\nAnd even more.",
+    "Details": "Here we have markdown details.\n\nAnd even more.",
     "IsComplete": false,
     "IsStatic": false,
     "UmlComment": "Here we have a UML comment.\n\nAnd even more."
