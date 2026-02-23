@@ -10,10 +10,12 @@ import (
 
 // inputAction represents an action JSON file.
 type inputAction struct {
-	Name       string   `json:"name"`
-	Details    string   `json:"details,omitempty"`
-	Requires   []string `json:"requires,omitempty"`
-	Guarantees []string `json:"guarantees,omitempty"`
+	Name        string           `json:"name"`
+	Details     string           `json:"details,omitempty"`
+	Parameters  []inputParameter `json:"parameters,omitempty"`
+	Requires    []inputLogic     `json:"requires,omitempty"`
+	Guarantees  []inputLogic     `json:"guarantees,omitempty"`
+	SafetyRules []inputLogic     `json:"safety_rules,omitempty"`
 }
 
 // actionSchema is the compiled JSON schema for action files.

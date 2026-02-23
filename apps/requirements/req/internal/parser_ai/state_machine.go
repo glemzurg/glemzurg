@@ -23,23 +23,17 @@ type inputState struct {
 	Actions    []inputStateAction `json:"actions,omitempty"`
 }
 
-// inputEventParameter represents a parameter for an event.
-type inputEventParameter struct {
-	Name   string `json:"name"`
-	Source string `json:"source"`
-}
-
 // inputEvent represents an event in a state machine.
 type inputEvent struct {
-	Name       string                `json:"name"`
-	Details    string                `json:"details,omitempty"`
-	Parameters []inputEventParameter `json:"parameters,omitempty"`
+	Name       string           `json:"name"`
+	Details    string           `json:"details,omitempty"`
+	Parameters []inputParameter `json:"parameters,omitempty"`
 }
 
 // inputGuard represents a guard condition in a state machine.
 type inputGuard struct {
-	Name    string `json:"name"`
-	Details string `json:"details"`
+	Name  string     `json:"name"`
+	Logic inputLogic `json:"logic"`
 }
 
 // inputTransition represents a transition in a state machine.
@@ -224,24 +218,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 					filename,
 				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i))
 			}
-
-			// Parameter source is required (schema enforces this)
-			if param.Source == "" {
-				return NewParseError(
-					ErrEventParamSourceRequired,
-					fmt.Sprintf("event '%s' parameter[%d] source is required", eventKey, i),
-					filename,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].source", eventKey, i))
-			}
-
-			// Parameter source cannot be only whitespace
-			if strings.TrimSpace(param.Source) == "" {
-				return NewParseError(
-					ErrEventParamSourceRequired,
-					fmt.Sprintf("event '%s' parameter[%d] source cannot be whitespace only, got '%s'", eventKey, i, param.Source),
-					filename,
-				).WithField(fmt.Sprintf("events.%s.parameters[%d].source", eventKey, i))
-			}
 		}
 	}
 
@@ -265,22 +241,22 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 			).WithField("guards." + guardKey + ".name")
 		}
 
-		// Guard details is required (schema enforces this)
-		if guard.Details == "" {
+		// Guard logic description is required
+		if guard.Logic.Description == "" {
 			return NewParseError(
 				ErrGuardDetailsRequired,
-				fmt.Sprintf("guard '%s' details is required, got ''", guardKey),
+				fmt.Sprintf("guard '%s' logic description is required, got ''", guardKey),
 				filename,
-			).WithField("guards." + guardKey + ".details")
+			).WithField("guards." + guardKey + ".logic.description")
 		}
 
-		// Guard details cannot be only whitespace
-		if strings.TrimSpace(guard.Details) == "" {
+		// Guard logic description cannot be only whitespace
+		if strings.TrimSpace(guard.Logic.Description) == "" {
 			return NewParseError(
 				ErrGuardDetailsRequired,
-				fmt.Sprintf("guard '%s' details cannot be empty or whitespace only, got '%s'", guardKey, guard.Details),
+				fmt.Sprintf("guard '%s' logic description cannot be empty or whitespace only, got '%s'", guardKey, guard.Logic.Description),
 				filename,
-			).WithField("guards." + guardKey + ".details")
+			).WithField("guards." + guardKey + ".logic.description")
 		}
 	}
 

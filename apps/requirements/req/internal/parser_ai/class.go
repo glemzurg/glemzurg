@@ -11,12 +11,12 @@ import (
 
 // inputAttribute represents an attribute within a class.
 type inputAttribute struct {
-	Name             string `json:"name"`
-	DataTypeRules    string `json:"data_type_rules,omitempty"`
-	Details          string `json:"details,omitempty"`
-	DerivationPolicy string `json:"derivation_policy,omitempty"`
-	Nullable         bool   `json:"nullable,omitempty"`
-	UMLComment       string `json:"uml_comment,omitempty"`
+	Name             string      `json:"name"`
+	DataTypeRules    string      `json:"data_type_rules,omitempty"`
+	Details          string      `json:"details,omitempty"`
+	DerivationPolicy *inputLogic `json:"derivation_policy,omitempty"`
+	Nullable         bool        `json:"nullable,omitempty"`
+	UMLComment       string      `json:"uml_comment,omitempty"`
 }
 
 // inputClass represents a class JSON file.

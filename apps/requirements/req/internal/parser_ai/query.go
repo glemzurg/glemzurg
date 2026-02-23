@@ -10,10 +10,11 @@ import (
 
 // inputQuery represents a query JSON file.
 type inputQuery struct {
-	Name       string   `json:"name"`
-	Details    string   `json:"details,omitempty"`
-	Requires   []string `json:"requires,omitempty"`
-	Guarantees []string `json:"guarantees,omitempty"`
+	Name       string           `json:"name"`
+	Details    string           `json:"details,omitempty"`
+	Parameters []inputParameter `json:"parameters,omitempty"`
+	Requires   []inputLogic     `json:"requires,omitempty"`
+	Guarantees []inputLogic     `json:"guarantees,omitempty"`
 }
 
 var querySchema *jsonschema.Schema
