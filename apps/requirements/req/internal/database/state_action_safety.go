@@ -123,7 +123,7 @@ func QueryActionSafeties(dbOrTx DbOrTx, modelKey string) (safeties map[identity.
 			logic l ON l.model_key = asf.model_key AND l.logic_key = asf.logic_key
 		WHERE
 			asf.model_key = $1
-		ORDER BY asf.action_key, l.sort_order`,
+		ORDER BY asf.action_key, l.sort_order, asf.logic_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

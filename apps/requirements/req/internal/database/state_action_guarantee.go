@@ -123,7 +123,7 @@ func QueryActionGuarantees(dbOrTx DbOrTx, modelKey string) (guarantees map[ident
 			logic l ON l.model_key = ag.model_key AND l.logic_key = ag.logic_key
 		WHERE
 			ag.model_key = $1
-		ORDER BY ag.action_key, l.sort_order`,
+		ORDER BY ag.action_key, l.sort_order, ag.logic_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)

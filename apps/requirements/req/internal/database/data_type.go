@@ -9,6 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// collectionMinForDB maps CollectionMin=0 to nil (SQL NULL) to satisfy CHECK (collection_min > 0).
+func collectionMinForDB(min *int) *int {
+	if min != nil && *min == 0 {
+		return nil
+	}
+	return min
+}
+
 // Populate a golang struct from a database row.
 func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err error) {
 
@@ -108,7 +116,7 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 		dataTypeKey,
 		dataType.CollectionType,
 		dataType.CollectionUnique,
-		dataType.CollectionMin,
+		collectionMinForDB(dataType.CollectionMin),
 		dataType.CollectionMax)
 	if err != nil {
 		return errors.WithStack(err)
@@ -146,7 +154,7 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 		dataTypeKey,
 		dataType.CollectionType,
 		dataType.CollectionUnique,
-		dataType.CollectionMin,
+		collectionMinForDB(dataType.CollectionMin),
 		dataType.CollectionMax)
 	if err != nil {
 		return errors.WithStack(err)
@@ -244,7 +252,7 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 		if err != nil {
 			return err
 		}
-		args = append(args, modelKey, dataTypeKey, dt.CollectionType, dt.CollectionUnique, dt.CollectionMin, dt.CollectionMax)
+		args = append(args, modelKey, dataTypeKey, dt.CollectionType, dt.CollectionUnique, collectionMinForDB(dt.CollectionMin), dt.CollectionMax)
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
 	}
 

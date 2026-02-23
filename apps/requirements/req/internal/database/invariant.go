@@ -95,7 +95,7 @@ func QueryInvariants(dbOrTx DbOrTx, modelKey string) (keys []identity.Key, err e
 			logic l ON l.model_key = i.model_key AND l.logic_key = i.logic_key
 		WHERE
 			i.model_key = $1
-		ORDER BY l.sort_order`,
+		ORDER BY l.sort_order, i.logic_key`,
 		modelKey)
 	if err != nil {
 		return nil, errors.WithStack(err)
