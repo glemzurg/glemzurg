@@ -26,11 +26,28 @@
             "Parameters": [
                 {
                     "Name": "Thing",
-                    "DataTypeRules": "string that is 3-28 chars long"
+                    "DataTypeRules": "string that is 3-28 chars long",
+                    "DataType": null
                 },
                 {
                     "Name": "Another",
-                    "DataTypeRules": "unconstrained"
+                    "DataTypeRules": "unconstrained",
+                    "DataType": {
+                        "Key": "Another",
+                        "CollectionType": "atomic",
+                        "CollectionUnique": null,
+                        "CollectionMin": null,
+                        "CollectionMax": null,
+                        "Atomic": {
+                            "ConstraintType": "unconstrained",
+                            "Span": null,
+                            "Reference": null,
+                            "EnumOrdered": null,
+                            "Enums": null,
+                            "ObjectClassKey": null
+                        },
+                        "RecordFields": null
+                    }
                 }
             ]
         }

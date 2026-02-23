@@ -570,6 +570,7 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 	}
 
 	details := ""
+	var parameters []model_state.Parameter
 
 	eventData, ok := eventAny.(map[string]any)
 	if ok {
@@ -578,15 +579,34 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 			details = detailsAny.(string)
 		}
 
-		// TODO: Parse event parameters as []model_state.Parameter once the YAML format is defined.
-		// The old EventParameter type no longer exists; events now use the generic Parameter type.
+		// Parse event parameters.
+		parametersAny, found := eventData["parameters"]
+		if found {
+			paramsList, ok := parametersAny.([]any)
+			if !ok {
+				return model_state.Event{}, errors.Errorf("event '%s': parameters must be a sequence", name)
+			}
+			for _, paramAny := range paramsList {
+				paramMap, ok := paramAny.(map[string]any)
+				if !ok {
+					return model_state.Event{}, errors.Errorf("event '%s': each parameter must be a mapping", name)
+				}
+				paramName, _ := paramMap["name"].(string)
+				paramRules, _ := paramMap["rules"].(string)
+				param, err := model_state.NewParameter(paramName, paramRules)
+				if err != nil {
+					return model_state.Event{}, errors.Wrapf(err, "event '%s' parameter '%s'", name, paramName)
+				}
+				parameters = append(parameters, param)
+			}
+		}
 	}
 
 	event, err = model_state.NewEvent(
 		eventKey,
 		name,
 		details,
-		nil)
+		parameters)
 	if err != nil {
 		return model_state.Event{}, err
 	}
@@ -901,11 +921,16 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			event := class.Events[key]
 			eventBuilder := NewYamlBuilder()
 			eventBuilder.AddField("details", event.Details)
-			// TODO: Serialize event parameters once the YAML format for Parameter is defined.
-			// Event parameters now use the generic Parameter type (Name, DataTypeRules).
-			// if len(event.Parameters) > 0 {
-			// 	...
-			// }
+			if len(event.Parameters) > 0 {
+				paramItems := make([]*YamlBuilder, 0, len(event.Parameters))
+				for _, param := range event.Parameters {
+					paramBuilder := NewYamlBuilder()
+					paramBuilder.AddField("name", param.Name)
+					paramBuilder.AddField("rules", param.DataTypeRules)
+					paramItems = append(paramItems, paramBuilder)
+				}
+				eventBuilder.AddSequenceOfMappings("parameters", paramItems)
+			}
 			eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 		}
 		builder.AddMappingField("events", eventsBuilder)

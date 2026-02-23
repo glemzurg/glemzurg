@@ -21,6 +21,6 @@ events:
         details: Appears in data dictionary.
         parameters:
             - name: Thing
-              rules: string that is 3-28 chars long  
+              rules: string that is 3-28 chars long
             - name: Another
-              rules: unconstrained  
+              rules: unconstrained
