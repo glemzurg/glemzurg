@@ -3,4 +3,6 @@ package testhelper
 import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 
 // Create a very elaborate model that can be used for testing in various packages around the system.
-var TestModel = req_model.Model{}
+func GetTestModel() req_model.Model {
+	return req_model.Model{}
+}

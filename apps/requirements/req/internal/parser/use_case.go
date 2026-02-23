@@ -352,7 +352,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 			}
 			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
 				yaml += "        steps:\n"
-				yaml += generateSteps(scenario.Steps.Statements, "            ")
+				yaml += generateSteps(scenario.Steps.Statements, "            ", useCase.Key)
 			}
 		}
 	}
@@ -368,15 +368,15 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	return strings.TrimSpace(content)
 }
 
-func generateSteps(steps []model_scenario.Step, indent string) string {
+func generateSteps(steps []model_scenario.Step, indent string, useCaseKey identity.Key) string {
 	s := ""
 	for _, step := range steps {
-		s += generateStep(step, indent)
+		s += generateStep(step, indent, useCaseKey)
 	}
 	return s
 }
 
-func generateStep(step model_scenario.Step, indent string) string {
+func generateStep(step model_scenario.Step, indent string, useCaseKey identity.Key) string {
 	s := indent + "- step_type: " + step.StepType + "\n"
 
 	if step.LeafType != nil {
@@ -401,11 +401,11 @@ func generateStep(step model_scenario.Step, indent string) string {
 		s += indent + "  query_key: " + shortQueryKey(step.QueryKey) + "\n"
 	}
 	if step.ScenarioKey != nil {
-		s += indent + "  scenario_key: " + shortScenarioKey(step.ScenarioKey) + "\n"
+		s += indent + "  scenario_key: " + shortScenarioKey(step.ScenarioKey, useCaseKey) + "\n"
 	}
 	if len(step.Statements) > 0 {
 		s += indent + "  statements:\n"
-		s += generateSteps(step.Statements, indent+"      ")
+		s += generateSteps(step.Statements, indent+"      ", useCaseKey)
 	}
 	return s
 }
@@ -425,29 +425,34 @@ func assignStepKeysRecursive(step *model_scenario.Step, scenarioKey identity.Key
 	}
 }
 
-// shortEventKey returns the compact form of an event key: "classSubKey/event/eventSubKey".
+// shortEventKey returns the compact form of an event key: "classSubKey/eventSubKey".
 func shortEventKey(key *identity.Key) string {
 	parentKey, err := identity.ParseKey(key.ParentKey)
 	if err != nil {
 		return key.String()
 	}
-	return parentKey.SubKey + "/event/" + key.SubKey
+	return parentKey.SubKey + "/" + key.SubKey
 }
 
-// shortQueryKey returns the compact form of a query key: "classSubKey/query/querySubKey".
+// shortQueryKey returns the compact form of a query key: "classSubKey/querySubKey".
 func shortQueryKey(key *identity.Key) string {
 	parentKey, err := identity.ParseKey(key.ParentKey)
 	if err != nil {
 		return key.String()
 	}
-	return parentKey.SubKey + "/query/" + key.SubKey
+	return parentKey.SubKey + "/" + key.SubKey
 }
 
-// shortScenarioKey returns the compact form of a scenario key: "useCaseSubKey/scenario/scenarioSubKey".
-func shortScenarioKey(key *identity.Key) string {
+// shortScenarioKey returns the compact form of a scenario key.
+// If the scenario is in the same use case as the step's scenario, returns just "scenarioSubKey".
+// Otherwise returns "useCaseSubKey/scenario/scenarioSubKey".
+func shortScenarioKey(key *identity.Key, useCaseKey identity.Key) string {
 	parentKey, err := identity.ParseKey(key.ParentKey)
 	if err != nil {
 		return key.String()
+	}
+	if parentKey == useCaseKey {
+		return key.SubKey
 	}
 	return parentKey.SubKey + "/scenario/" + key.SubKey
 }
