@@ -11,5 +11,6 @@
     "Events": {},
     "Guards": {},
     "Actions": {},
+    "Queries": {},
     "Transitions": {}
 }

@@ -199,6 +199,23 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	}
 	class.SetGuards(guards)
 
+	// Add any queries we found.
+	var queriesData map[string]any
+	queriesAny, found := yamlData["queries"]
+	if found {
+		queriesData = queriesAny.(map[string]any)
+	}
+
+	queries := make(map[identity.Key]model_state.Query)
+	for name, queryAny := range queriesData {
+		query, err := queryFromYamlData(classKey, name, queryAny)
+		if err != nil {
+			return model_class.Class{}, nil, err
+		}
+		queries[query.Key] = query
+	}
+	class.SetQueries(queries)
+
 	// Add any transitions we found.
 	var transitionsData []any
 	transitionsAny, found := yamlData["transitions"]
@@ -734,6 +751,75 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 	return action, nil
 }
 
+func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query model_state.Query, err error) {
+
+	// Construct the query key.
+	queryKey, err := identity.NewQueryKey(classKey, strings.ToLower(name))
+	if err != nil {
+		return model_state.Query{}, errors.WithStack(err)
+	}
+
+	details := ""
+	var parameters []model_state.Parameter
+	var requires []model_logic.Logic
+	var guarantees []model_logic.Logic
+
+	queryData, ok := queryAny.(map[string]any)
+	if ok {
+		detailsAny, found := queryData["details"]
+		if found {
+			details = detailsAny.(string)
+		}
+
+		// Parse parameters.
+		parametersAny, found := queryData["parameters"]
+		if found {
+			paramsList, ok := parametersAny.([]any)
+			if !ok {
+				return model_state.Query{}, errors.Errorf("query '%s': parameters must be a sequence", name)
+			}
+			for _, paramAny := range paramsList {
+				paramMap, ok := paramAny.(map[string]any)
+				if !ok {
+					return model_state.Query{}, errors.Errorf("query '%s': each parameter must be a mapping", name)
+				}
+				paramName, _ := paramMap["name"].(string)
+				paramRules, _ := paramMap["rules"].(string)
+				param, err := model_state.NewParameter(paramName, paramRules)
+				if err != nil {
+					return model_state.Query{}, errors.Wrapf(err, "query '%s' parameter '%s'", name, paramName)
+				}
+				parameters = append(parameters, param)
+			}
+		}
+
+		// Parse requires.
+		requires, err = logicListFromYamlData(queryData, "requires", queryKey, identity.NewQueryRequireKey)
+		if err != nil {
+			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
+		}
+
+		// Parse guarantees.
+		guarantees, err = logicListFromYamlData(queryData, "guarantees", queryKey, identity.NewQueryGuaranteeKey)
+		if err != nil {
+			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
+		}
+	}
+
+	query, err = model_state.NewQuery(
+		queryKey,
+		name,
+		details,
+		requires,
+		guarantees,
+		parameters)
+	if err != nil {
+		return model_state.Query{}, err
+	}
+
+	return query, nil
+}
+
 // logicListFromYamlData parses a YAML sequence of logic mappings (details + optional specification).
 func logicListFromYamlData(data map[string]any, field string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
 	listAny, found := data[field]
@@ -1047,6 +1133,27 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			actionsBuilder.AddMappingField(action.Name, actionBuilder)
 		}
 		builder.AddMappingField("actions", actionsBuilder)
+	}
+
+	// Add queries section.
+	if len(class.Queries) > 0 {
+		queriesBuilder := NewYamlBuilder()
+		queryKeys := make([]string, 0, len(class.Queries))
+		for k := range class.Queries {
+			queryKeys = append(queryKeys, k.String())
+		}
+		sort.Strings(queryKeys)
+		for _, keyStr := range queryKeys {
+			key, _ := identity.ParseKey(keyStr)
+			query := class.Queries[key]
+			queryBuilder := NewYamlBuilder()
+			queryBuilder.AddField("details", query.Details)
+			generateParameterSequence(queryBuilder, query.Parameters)
+			generateLogicSequence(queryBuilder, "requires", query.Requires)
+			generateLogicSequence(queryBuilder, "guarantees", query.Guarantees)
+			queriesBuilder.AddMappingField(query.Name, queryBuilder)
+		}
+		builder.AddMappingField("queries", queriesBuilder)
 	}
 
 	// Add transitions section.

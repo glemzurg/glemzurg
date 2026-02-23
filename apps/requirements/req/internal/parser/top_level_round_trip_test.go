@@ -125,6 +125,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	classOrder.SetEvents(map[identity.Key]model_state.Event{})
 	classOrder.SetGuards(map[identity.Key]model_state.Guard{})
 	classOrder.SetActions(map[identity.Key]model_state.Action{})
+	classOrder.SetQueries(map[identity.Key]model_state.Query{})
 	classOrder.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	// Add a second class "line_item" in the fulfillment subdomain (for subdomain-level association).
@@ -137,6 +138,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	classLineItem.SetEvents(map[identity.Key]model_state.Event{})
 	classLineItem.SetGuards(map[identity.Key]model_state.Guard{})
 	classLineItem.SetActions(map[identity.Key]model_state.Action{})
+	classLineItem.SetQueries(map[identity.Key]model_state.Query{})
 	classLineItem.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	explicitSub.Classes = map[identity.Key]model_class.Class{
@@ -154,6 +156,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	classCustomer.SetEvents(map[identity.Key]model_state.Event{})
 	classCustomer.SetGuards(map[identity.Key]model_state.Guard{})
 	classCustomer.SetActions(map[identity.Key]model_state.Action{})
+	classCustomer.SetQueries(map[identity.Key]model_state.Query{})
 	classCustomer.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	defaultSubA.Classes = map[identity.Key]model_class.Class{
@@ -180,6 +183,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	classShipment.SetEvents(map[identity.Key]model_state.Event{})
 	classShipment.SetGuards(map[identity.Key]model_state.Guard{})
 	classShipment.SetActions(map[identity.Key]model_state.Action{})
+	classShipment.SetQueries(map[identity.Key]model_state.Query{})
 	classShipment.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	defaultSubB.Classes = map[identity.Key]model_class.Class{

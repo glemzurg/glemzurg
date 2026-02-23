@@ -70,6 +70,7 @@
             "Details": "Appears in data dictionary."
         }
     },
+    "Queries": {},
     "Transitions": {
         "domain/test_domain/subdomain/test_subdomain/class/class_key/transition/started/login/firstlogin/processlog/stopped": {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/transition/started/login/firstlogin/processlog/stopped",
