@@ -207,6 +207,32 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		}
 	}
 
+	// Write use case generalizations
+	if len(subdomain.UseCaseGeneralizations) > 0 {
+		genDir := filepath.Join(subdomainDir, "use_case_generalizations")
+		if err := os.MkdirAll(genDir, 0755); err != nil {
+			return err
+		}
+		for key, gen := range subdomain.UseCaseGeneralizations {
+			if err := writeJSON(filepath.Join(genDir, key+".ucgen.json"), gen); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write use cases
+	if len(subdomain.UseCases) > 0 {
+		useCasesDir := filepath.Join(subdomainDir, "use_cases")
+		if err := os.MkdirAll(useCasesDir, 0755); err != nil {
+			return err
+		}
+		for useCaseKey, useCase := range subdomain.UseCases {
+			if err := writeUseCaseTree(useCase, filepath.Join(useCasesDir, useCaseKey)); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -250,6 +276,34 @@ func writeClassTree(class *inputClass, classDir string) error {
 		}
 		for key, query := range class.Queries {
 			if err := writeJSON(filepath.Join(queriesDir, key+".json"), query); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// writeUseCaseTree writes a use case and its children to the filesystem.
+func writeUseCaseTree(useCase *inputUseCase, useCaseDir string) error {
+	// Create use case directory
+	if err := os.MkdirAll(useCaseDir, 0755); err != nil {
+		return err
+	}
+
+	// Write use_case.json
+	if err := writeJSON(filepath.Join(useCaseDir, "use_case.json"), useCase); err != nil {
+		return err
+	}
+
+	// Write scenarios
+	if len(useCase.Scenarios) > 0 {
+		scenariosDir := filepath.Join(useCaseDir, "scenarios")
+		if err := os.MkdirAll(scenariosDir, 0755); err != nil {
+			return err
+		}
+		for key, scenario := range useCase.Scenarios {
+			if err := writeJSON(filepath.Join(scenariosDir, key+".scenario.json"), scenario); err != nil {
 				return err
 			}
 		}

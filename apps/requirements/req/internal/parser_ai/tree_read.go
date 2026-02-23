@@ -332,6 +332,9 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 	subdomain.Classes = make(map[string]*inputClass)
 	subdomain.ClassGeneralizations = make(map[string]*inputClassGeneralization)
 	subdomain.ClassAssociations = make(map[string]*inputClassAssociation)
+	subdomain.UseCases = make(map[string]*inputUseCase)
+	subdomain.UseCaseGeneralizations = make(map[string]*inputUseCaseGeneralization)
+	subdomain.UseCaseShares = make(map[string]map[string]*inputUseCaseShared)
 
 	// Read subdomain-level class associations
 	assocDir := filepath.Join(subdomainDir, "class_associations")
@@ -395,6 +398,37 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 		}
 	}
 
+	// Read use case generalizations
+	ucgDir := filepath.Join(subdomainDir, "use_case_generalizations")
+	if entries, err := os.ReadDir(ucgDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".ucgen.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".ucgen.json")
+			filePath := filepath.Join(ucgDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "use_case_generalization_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			gen, err := parseUseCaseGeneralization(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			subdomain.UseCaseGeneralizations[key] = gen
+		}
+	}
+
 	// Read classes
 	classesDir := filepath.Join(subdomainDir, "classes")
 	if entries, err := os.ReadDir(classesDir); err == nil {
@@ -415,6 +449,29 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 				return nil, err
 			}
 			subdomain.Classes[classKey] = class
+		}
+	}
+
+	// Read use cases
+	useCasesDir := filepath.Join(subdomainDir, "use_cases")
+	if entries, err := os.ReadDir(useCasesDir); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			useCaseKey := entry.Name()
+			useCaseDir := filepath.Join(useCasesDir, useCaseKey)
+
+			// Validate key format
+			if err := ValidateKey(useCaseKey, "use_case_key", filepath.Join(useCaseDir, "use_case.json")); err != nil {
+				return nil, err
+			}
+
+			useCase, err := readUseCaseTree(useCaseDir)
+			if err != nil {
+				return nil, err
+			}
+			subdomain.UseCases[useCaseKey] = useCase
 		}
 	}
 
@@ -510,4 +567,53 @@ func readClassTree(classDir string) (*inputClass, error) {
 	}
 
 	return class, nil
+}
+
+// readUseCaseTree reads a use case and its children from the filesystem.
+func readUseCaseTree(useCaseDir string) (*inputUseCase, error) {
+	// Read use_case.json
+	useCaseContent, err := os.ReadFile(filepath.Join(useCaseDir, "use_case.json"))
+	if err != nil {
+		return nil, err
+	}
+	useCase, err := parseUseCase(useCaseContent, filepath.Join(useCaseDir, "use_case.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize child maps
+	useCase.Scenarios = make(map[string]*inputScenario)
+
+	// Read scenarios
+	scenariosDir := filepath.Join(useCaseDir, "scenarios")
+	if entries, err := os.ReadDir(scenariosDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".scenario.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".scenario.json")
+			filePath := filepath.Join(scenariosDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "scenario_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			scenario, err := parseScenario(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			useCase.Scenarios[key] = scenario
+		}
+	}
+
+	return useCase, nil
 }
