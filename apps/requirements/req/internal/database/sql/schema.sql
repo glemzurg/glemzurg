@@ -21,6 +21,7 @@ COMMENT ON TYPE notation IS 'The notation used for a logic specification.';
 CREATE TABLE logic (
   logic_key text NOT NULL,
   model_key text NOT NULL,
+  sort_order int NOT NULL,
   description text NOT NULL,
   notation notation NOT NULL,
   specification text DEFAULT NULL,
@@ -31,6 +32,7 @@ CREATE TABLE logic (
 COMMENT ON TABLE logic IS 'A bit of business logic.';
 COMMENT ON COLUMN logic.logic_key IS 'The internal ID.';
 COMMENT ON COLUMN logic.model_key IS 'The model this logic is part of.';
+COMMENT ON COLUMN logic.sort_order IS 'Often part of a list of logics that are sorted.';
 COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
 COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';

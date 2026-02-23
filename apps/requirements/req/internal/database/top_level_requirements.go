@@ -836,7 +836,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		for classKey, states := range statesMap {
 			for i, state := range states {
 				if stateActions, ok := stateActionsMap[state.Key]; ok {
-					states[i].Actions = stateActions
+					states[i].SetActions(stateActions)
 				}
 			}
 			statesMap[classKey] = states

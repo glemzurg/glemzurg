@@ -38,7 +38,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	assert.Nil(suite.T(), err, "input model should be valid")
 
 	// Nothing in database yet.
-	output, err := ReadModel(suite.db, "model_key")
+	output, err := ReadModel(suite.db, input.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), output)
 
@@ -51,7 +51,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 	assert.Nil(suite.T(), err)
 
 	// Read model from the database.
-	output, err = ReadModel(suite.db, "model_key")
+	output, err = ReadModel(suite.db, input.Key)
 	assert.Nil(suite.T(), err)
 
 	// Compare the entire model tree.
