@@ -20,20 +20,20 @@ type inputClassAssociation struct {
 	UmlComment          string  `json:"uml_comment,omitempty"`
 }
 
-var associationSchema *jsonschema.Schema
-var associationSchemaContent string
+var classAssociationSchema *jsonschema.Schema
+var classAssociationSchemaContent string
 
 func init() {
 	compiler := jsonschema.NewCompiler()
-	schemaBytes, err := json_schemas.Schemas.ReadFile("association.schema.json")
+	schemaBytes, err := json_schemas.Schemas.ReadFile("class_association.schema.json")
 	if err != nil {
 		panic("failed to read association.schema.json: " + err.Error())
 	}
-	associationSchemaContent = string(schemaBytes)
-	if err := compiler.AddResource("association.schema.json", strings.NewReader(associationSchemaContent)); err != nil {
+	classAssociationSchemaContent = string(schemaBytes)
+	if err := compiler.AddResource("association.schema.json", strings.NewReader(classAssociationSchemaContent)); err != nil {
 		panic("failed to add association schema resource: " + err.Error())
 	}
-	associationSchema, err = compiler.Compile("association.schema.json")
+	classAssociationSchema, err = compiler.Compile("association.schema.json")
 	if err != nil {
 		panic("failed to compile association.schema.json: " + err.Error())
 	}
@@ -51,8 +51,8 @@ func parseAssociation(content []byte, filename string) (*inputClassAssociation, 
 		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON for schema validation: "+err.Error(), filename)
 	}
 
-	if err := associationSchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithSchema(associationSchemaContent)
+	if err := classAssociationSchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithSchema(classAssociationSchemaContent)
 	}
 
 	if err := validateAssociation(&assoc, filename); err != nil {
