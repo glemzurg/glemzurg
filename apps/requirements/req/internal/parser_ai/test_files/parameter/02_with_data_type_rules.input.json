@@ -1,0 +1,4 @@
+{
+    "name": "email_address",
+    "data_type_rules": "valid email address"
+}

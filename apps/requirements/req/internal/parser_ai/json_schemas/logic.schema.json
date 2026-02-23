@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "logic.schema.json",
+  "title": "Logic",
+  "description": "Schema for a logic specification object. Logic objects represent formal or informal specifications used for preconditions (requires), postconditions (guarantees), safety rules, invariants, guards, and derivation policies. A logic object must have a description and may optionally include a formal notation and specification. If validation fails, verify 'description' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "A human-readable description of the logic specification (e.g., 'Order total must be positive', 'User must be authenticated'). This is required and must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "notation": {
+      "type": "string",
+      "description": "Optional formal notation system used for the specification (e.g., 'tla_plus', 'alloy', 'z_notation'). When present, the specification field should contain a formal expression in this notation."
+    },
+    "specification": {
+      "type": "string",
+      "description": "Optional formal specification in the given notation. This is a machine-readable expression that formally defines the logic (e.g., 'self.total > 0', 'user.authenticated = TRUE'). Should only be present when notation is also specified."
+    }
+  },
+  "required": ["description"],
+  "additionalProperties": false
+}

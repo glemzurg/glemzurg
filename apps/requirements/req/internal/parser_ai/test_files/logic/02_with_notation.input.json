@@ -1,0 +1,5 @@
+{
+    "description": "User must be authenticated",
+    "notation": "tla_plus",
+    "specification": "user.authenticated = TRUE"
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "parameter.schema.json",
+  "title": "Parameter",
+  "description": "Schema for a parameter object. Parameters represent typed inputs to actions, queries, and events. A parameter must have a name and may optionally include data type rules describing the expected value type. If validation fails, verify 'name' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the parameter (e.g., 'amount', 'user_id', 'email_address'). This is the identifier used to reference the parameter in specifications and implementations. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "data_type_rules": {
+      "type": "string",
+      "description": "Optional data type rules describing the expected value type and constraints for the parameter (e.g., 'positive integer', 'non-empty string', 'valid email address'). Helps implementers understand the expected input format."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

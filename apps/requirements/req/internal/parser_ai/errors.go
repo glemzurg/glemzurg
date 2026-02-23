@@ -139,6 +139,18 @@ const (
 	ErrUseCaseGenSubclassesRequired = 13006
 	ErrUseCaseGenSubclassesEmpty    = 13007
 
+	// Logic errors (14xxx)
+	ErrLogicDescriptionRequired = 14001
+	ErrLogicDescriptionEmpty    = 14002
+	ErrLogicInvalidJSON         = 14003
+	ErrLogicSchemaViolation     = 14004
+
+	// Parameter errors (15xxx)
+	ErrParamNameRequired    = 15001
+	ErrParamNameEmpty       = 15002
+	ErrParamInvalidJSON     = 15003
+	ErrParamSchemaViolation = 15004
+
 	// Tree validation errors (11xxx) - cross-reference and structural integrity
 	ErrTreeClassActorNotFound             = 11001 // Class references an actor that doesn't exist
 	ErrTreeAssocFromClassNotFound         = 11002 // Association from_class_key not found

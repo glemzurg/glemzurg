@@ -1,0 +1,6 @@
+{
+    "code": 15004,
+    "message_prefix": "parameter JSON does not match schema:",
+    "error_file": "15004_parameter_schema_violation.md",
+    "has_schema": true
+}

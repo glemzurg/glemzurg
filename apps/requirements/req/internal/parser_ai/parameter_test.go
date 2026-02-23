@@ -9,28 +9,28 @@ import (
 )
 
 const (
-	t_LOGIC_PATH_OK  = "test_files/logic"
-	t_LOGIC_PATH_ERR = t_LOGIC_PATH_OK + "/err"
+	t_PARAMETER_PATH_OK  = "test_files/parameter"
+	t_PARAMETER_PATH_ERR = t_PARAMETER_PATH_OK + "/err"
 )
 
-func TestLogicSuite(t *testing.T) {
-	suite.Run(t, new(LogicSuite))
+func TestParameterSuite(t *testing.T) {
+	suite.Run(t, new(ParameterSuite))
 }
 
-type LogicSuite struct {
+type ParameterSuite struct {
 	suite.Suite
 }
 
-func (suite *LogicSuite) TestParseLogicFiles() {
-	testDataFiles, err := t_ContentsForAllJSONFiles(t_LOGIC_PATH_OK)
+func (suite *ParameterSuite) TestParseParameterFiles() {
+	testDataFiles, err := t_ContentsForAllJSONFiles(t_PARAMETER_PATH_OK)
 	assert.Nil(suite.T(), err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.T().Run(testName, func(t *testing.T) {
-			var expected inputLogic
+			var expected inputParameter
 
-			actual, err := parseLogic([]byte(testData.InputJSON), testData.Filename)
+			actual, err := parseParameter([]byte(testData.InputJSON), testData.Filename)
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
@@ -44,8 +44,8 @@ func (suite *LogicSuite) TestParseLogicFiles() {
 	}
 }
 
-func (suite *LogicSuite) TestParseLogicErrors() {
-	testDataFiles, err := t_ContentsForAllErrorJSONFiles(t_LOGIC_PATH_ERR)
+func (suite *ParameterSuite) TestParseParameterErrors() {
+	testDataFiles, err := t_ContentsForAllErrorJSONFiles(t_PARAMETER_PATH_ERR)
 	if err != nil {
 		suite.T().Fatalf("Failed to read error test files: %v", err)
 	}
@@ -57,7 +57,7 @@ func (suite *LogicSuite) TestParseLogicErrors() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
-			_, err := parseLogic([]byte(testData.InputJSON), testData.Filename)
+			_, err := parseParameter([]byte(testData.InputJSON), testData.Filename)
 			assert.NotNil(t, err, testName+" should return an error")
 
 			parseErr, ok := err.(*ParseError)

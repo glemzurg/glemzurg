@@ -1,0 +1,7 @@
+{
+    "code": 15002,
+    "message": "parameter name cannot be empty or whitespace only, got '   '",
+    "error_file": "15002_parameter_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

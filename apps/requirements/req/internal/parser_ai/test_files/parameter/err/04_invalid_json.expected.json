@@ -1,0 +1,6 @@
+{
+    "code": 15003,
+    "message_prefix": "failed to parse parameter JSON:",
+    "error_file": "15003_parameter_invalid_json.md",
+    "has_schema": false
+}
