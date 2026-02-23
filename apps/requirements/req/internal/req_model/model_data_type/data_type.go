@@ -122,22 +122,40 @@ func (d DataType) Validate() error {
 		}
 	}
 
-	// CollectionMin: required for collection types; must be >= 0.
-	if d.CollectionType == _COLLECTION_TYPE_STACK || d.CollectionType == _COLLECTION_TYPE_UNORDERED || d.CollectionType == _COLLECTION_TYPE_ORDERED || d.CollectionType == _COLLECTION_TYPE_QUEUE {
-		if d.CollectionMin == nil {
-			return fmt.Errorf("CollectionMin: cannot be blank.")
-		}
-		if *d.CollectionMin < 0 {
-			return fmt.Errorf("CollectionMin: must be no less than 0.")
-		}
-	}
-	if d.CollectionMin != nil && *d.CollectionMin < 0 {
-		return fmt.Errorf("CollectionMin: must be no less than 0.")
-	}
+	// Collection field rules.
+	isCollection := d.CollectionType == _COLLECTION_TYPE_STACK ||
+		d.CollectionType == _COLLECTION_TYPE_UNORDERED ||
+		d.CollectionType == _COLLECTION_TYPE_ORDERED ||
+		d.CollectionType == _COLLECTION_TYPE_QUEUE
 
-	// CollectionMax: must be >= 0.
-	if d.CollectionMax != nil && *d.CollectionMax < 0 {
-		return fmt.Errorf("CollectionMax: must be no less than 0.")
+	if isCollection {
+		// CollectionUnique is required for collections.
+		if d.CollectionUnique == nil {
+			return fmt.Errorf("CollectionUnique: cannot be blank.")
+		}
+		// CollectionMin if set must be >= 1.
+		if d.CollectionMin != nil && *d.CollectionMin < 1 {
+			return fmt.Errorf("CollectionMin: must be no less than 1.")
+		}
+		// CollectionMax if set must be >= 1.
+		if d.CollectionMax != nil && *d.CollectionMax < 1 {
+			return fmt.Errorf("CollectionMax: must be no less than 1.")
+		}
+		// If both defined, max >= min.
+		if d.CollectionMin != nil && d.CollectionMax != nil && *d.CollectionMax < *d.CollectionMin {
+			return fmt.Errorf("CollectionMax: must be no less than CollectionMin.")
+		}
+	} else {
+		// Non-collections must not have collection fields.
+		if d.CollectionUnique != nil {
+			return fmt.Errorf("CollectionUnique: must be blank.")
+		}
+		if d.CollectionMin != nil {
+			return fmt.Errorf("CollectionMin: must be blank.")
+		}
+		if d.CollectionMax != nil {
+			return fmt.Errorf("CollectionMax: must be blank.")
+		}
 	}
 
 	return nil
@@ -163,8 +181,12 @@ func (d DataType) String() string {
 		if d.CollectionUnique != nil && *d.CollectionUnique {
 			name += "unique "
 		}
-		if d.CollectionMin != nil && (*d.CollectionMin != 0 || d.CollectionMax != nil) {
-			name += strconv.Itoa(*d.CollectionMin)
+		if d.CollectionMin != nil || d.CollectionMax != nil {
+			if d.CollectionMin != nil {
+				name += strconv.Itoa(*d.CollectionMin)
+			} else {
+				name += "0"
+			}
 			if d.CollectionMax != nil {
 				name += "-" + strconv.Itoa(*d.CollectionMax)
 			} else {
