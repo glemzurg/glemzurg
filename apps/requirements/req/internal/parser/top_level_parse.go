@@ -147,8 +147,40 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 					model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
 				}
 				model.ActorGeneralizations[actorGen.Key] = actorGen
+			} else if isUnderUseCases(toParseFile.PathRel) {
+				// Use case generalization (under use_cases/ directory).
+				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("domain '%s' not found for use case generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+				}
+				domain := model.Domains[domainKey]
+
+				// Determine which subdomain to use (explicit or default).
+				subdomainName := toParseFile.Subdomain
+				if subdomainName == "" {
+					subdomainName = "default"
+				}
+				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
+				subdomain, ok := domain.Subdomains[subdomainKey]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
+
+				generalization, err := parseUseCaseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+				if err != nil {
+					return req_model.Model{}, err
+				}
+				if subdomain.UseCaseGeneralizations == nil {
+					subdomain.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
+				}
+				subdomain.UseCaseGeneralizations[generalization.Key] = generalization
+				domain.Subdomains[subdomainKey] = subdomain
+				model.Domains[domainKey] = domain
 			} else {
-				// Class generalization (under domain/subdomain directory).
+				// Class generalization (under classes/ or domain/subdomain directory).
 				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 				if !ok {
 					return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)

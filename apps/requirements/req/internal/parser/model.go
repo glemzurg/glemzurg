@@ -42,6 +42,17 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 					return req_model.Model{}, errors.Errorf("each invariant must be a map")
 				}
 
+				name := ""
+				if n, ok := invMap["name"]; ok {
+					name = n.(string)
+				}
+
+				// Build the key from the name.
+				invKey, err := identity.NewInvariantKey(strings.ToLower(name))
+				if err != nil {
+					return req_model.Model{}, errors.WithStack(err)
+				}
+
 				description := ""
 				if d, ok := invMap["description"]; ok {
 					description = d.(string)
@@ -52,6 +63,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 				}
 
 				inv := model_logic.Logic{
+					Key:           invKey,
 					Description:   description,
 					Notation:      model_logic.NotationTLAPlus,
 					Specification: specification,
@@ -150,7 +162,8 @@ func generateModelContent(model req_model.Model) string {
 	if len(model.Invariants) > 0 {
 		dataStr += "invariants:\n"
 		for _, inv := range model.Invariants {
-			dataStr += "    - description: " + inv.Description + "\n"
+			dataStr += "    - name: " + inv.Key.SubKey + "\n"
+			dataStr += "      description: " + inv.Description + "\n"
 			if inv.Specification != "" {
 				dataStr += "      specification: " + yamlQuote(inv.Specification) + "\n"
 			}

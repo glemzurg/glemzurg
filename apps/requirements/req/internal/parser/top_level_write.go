@@ -179,11 +179,20 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 		}
 	}
 
-	// Write use cases to use_cases/ directory if there are any.
-	if len(subdomain.UseCases) > 0 {
+	// Write use cases and use case generalizations to use_cases/ directory if there are any.
+	if len(subdomain.UseCases) > 0 || len(subdomain.UseCaseGeneralizations) > 0 {
 		useCasesDir := filepath.Join(baseDir, "use_cases")
 		if err := os.MkdirAll(useCasesDir, 0755); err != nil {
 			return errors.Wrap(err, "failed to create use_cases directory")
+		}
+
+		// Write use case generalizations.
+		for _, gen := range subdomain.UseCaseGeneralizations {
+			genContent := generateUseCaseGeneralizationContent(gen)
+			genPath := filepath.Join(useCasesDir, gen.Key.SubKey+_EXT_GENERALIZATION)
+			if err := os.WriteFile(genPath, []byte(genContent), 0644); err != nil {
+				return errors.Wrapf(err, "failed to write use case generalization file: %s", gen.Key.SubKey)
+			}
 		}
 
 		for _, useCase := range subdomain.UseCases {

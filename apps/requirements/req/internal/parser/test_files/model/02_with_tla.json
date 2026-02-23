@@ -4,11 +4,13 @@
     "Details": "# A Basic Model\n\nHere we have markdown details.\n\nAnd even more.",
     "Invariants": [
         {
+            "Key": "invariant/class_instances_have_value",
             "Description": "all instances of a given class must have a value",
             "Notation": "tla_plus",
             "Specification": "_Bags!SetToBag(set1) \\sqsubseteq _Bags!SetToBag(set2)"
         },
         {
+            "Key": "invariant/no_spec_invariant",
             "Description": "with no specification",
             "Notation": "tla_plus"
         }

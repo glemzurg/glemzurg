@@ -1,12 +1,8 @@
 package parser
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
 
 	"github.com/stretchr/testify/assert"
@@ -19,45 +15,6 @@ func TestRoundTripSuite(t *testing.T) {
 
 type RoundTripSuite struct {
 	suite.Suite
-}
-
-// compareScenarios compares each scenario individually between input and output models.
-// This provides more targeted error messages than comparing the entire model tree at once.
-func compareScenarios(t *testing.T, input, output req_model.Model) {
-	for domainKey, inputDomain := range input.Domains {
-		outputDomain, ok := output.Domains[domainKey]
-		if !assert.True(t, ok, fmt.Sprintf("domain %q missing from output", domainKey)) {
-			continue
-		}
-		for subdomainKey, inputSubdomain := range inputDomain.Subdomains {
-			outputSubdomain, ok := outputDomain.Subdomains[subdomainKey]
-			if !assert.True(t, ok, fmt.Sprintf("subdomain %q missing from output", subdomainKey)) {
-				continue
-			}
-			for useCaseKey, inputUseCase := range inputSubdomain.UseCases {
-				outputUseCase, ok := outputSubdomain.UseCases[useCaseKey]
-				if !assert.True(t, ok, fmt.Sprintf("use case %q missing from output", useCaseKey)) {
-					continue
-				}
-				compareUseCaseScenarios(t, domainKey, subdomainKey, useCaseKey, inputUseCase.Scenarios, outputUseCase.Scenarios)
-			}
-		}
-	}
-}
-
-// compareUseCaseScenarios compares each scenario in a use case between input and output.
-func compareUseCaseScenarios(t *testing.T, domainKey, subdomainKey, useCaseKey identity.Key, inputScenarios, outputScenarios map[identity.Key]model_scenario.Scenario) {
-	path := fmt.Sprintf("domain %q > subdomain %q > use case %q", domainKey, subdomainKey, useCaseKey)
-
-	assert.Equal(t, len(inputScenarios), len(outputScenarios), fmt.Sprintf("%s: scenario count mismatch", path))
-
-	for scenarioKey, inputScenario := range inputScenarios {
-		outputScenario, ok := outputScenarios[scenarioKey]
-		if !assert.True(t, ok, fmt.Sprintf("%s: scenario %q missing from output", path, scenarioKey)) {
-			continue
-		}
-		assert.Equal(t, inputScenario, outputScenario, fmt.Sprintf("%s > scenario %q does not match", path, scenarioKey))
-	}
 }
 
 func (suite *RoundTripSuite) TestRoundTrip() {
@@ -81,10 +38,53 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	// Overwrite it for comparison since the parser uses the modelPath as the key.
 	output.Key = input.Key
 
-	// Compare scenarios individually for better error diagnostics.
-	compareScenarios(suite.T(), input, output)
+	// Compare progressively larger slices of the model tree to isolate mismatches.
+	// Each check focuses on a specific layer so failures point to the right area.
 
-	// Compare the entire model tree.
-	// If input and output model do not match, to explore this very deep tree of data, prune back to just the model and then iterate by layering in children one tier at a time  until the full tree exists again.
-	assert.Equal(suite.T(), input, output, `Input and output model do not match, to explore this very deep tree of data, prune back to just the model and then iterate by layering in children one tier at a time until the full tree exists again`)
+	// 1. Model + direct children only (no class associations).
+	assert.Equal(suite.T(),
+		test_helper.PruneToModelOnly(input),
+		test_helper.PruneToModelOnly(output),
+		"PruneToModelOnly: model with direct children does not match")
+
+	// 2. Add subdomains, classes with attributes, class generalizations (no associations, no states, no use cases).
+	assert.Equal(suite.T(),
+		test_helper.PruneToClassAttributes(input),
+		test_helper.PruneToClassAttributes(output),
+		"PruneToClassAttributes: classes and attributes do not match")
+
+	// 3. Add class associations at all levels.
+	assert.Equal(suite.T(),
+		test_helper.PruneToClassAssociations(input),
+		test_helper.PruneToClassAssociations(output),
+		"PruneToClassAssociations: class associations do not match")
+
+	// 4. Add states and all state machine sub-parts.
+	assert.Equal(suite.T(),
+		test_helper.PruneToStateMachine(input),
+		test_helper.PruneToStateMachine(output),
+		"PruneToStateMachine: state machine does not match")
+
+	// 5. Full model except steps (scenarios with Steps=nil).
+	assert.Equal(suite.T(),
+		test_helper.PruneToNoSteps(input),
+		test_helper.PruneToNoSteps(output),
+		"PruneToNoSteps: model without steps does not match")
+
+	// 6. Compare scenarios individually for better error diagnostics on steps.
+	inputScenarios := test_helper.ExtractScenarios(input)
+	outputScenarios := test_helper.ExtractScenarios(output)
+	assert.Equal(suite.T(), len(inputScenarios), len(outputScenarios), "scenario count mismatch")
+	for i := range inputScenarios {
+		if i >= len(outputScenarios) {
+			break
+		}
+		assert.Equal(suite.T(), inputScenarios[i].Path, outputScenarios[i].Path,
+			"scenario path mismatch at index %d", i)
+		assert.Equal(suite.T(), inputScenarios[i].Scenario, outputScenarios[i].Scenario,
+			"scenario %q does not match", inputScenarios[i].Path)
+	}
+
+	// 7. Compare the entire model tree.
+	assert.Equal(suite.T(), input, output, "Full model does not match")
 }
