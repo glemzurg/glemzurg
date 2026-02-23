@@ -259,6 +259,22 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	// Second action require/guarantee keys (for multiple Logic per slice).
+	actionRequire2Key, err := identity.NewActionRequireKey(actionProcessKey, "quantity_positive")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	actionGuarantee2Key, err := identity.NewActionGuaranteeKey(actionProcessKey, "inventory_decremented")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Second query guarantee key.
+	queryGuarantee2Key, err := identity.NewQueryGuaranteeKey(queryStatusKey, "returns_timestamp")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
 	invariantKey, err := identity.NewInvariantKey("total_non_negative")
 	if err != nil {
 		return req_model.Model{}, err
@@ -311,6 +327,11 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 	scenarioErrorKey, err := identity.NewScenarioKey(useCasePlaceOrderKey, "error_path")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Scenario in view_order use case (for cross-use-case scenario reference).
+	scenarioViewKey, err := identity.NewScenarioKey(useCaseViewOrderKey, "view_details")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -374,6 +395,19 @@ func buildTestModel() (req_model.Model, error) {
 	if err != nil {
 		return req_model.Model{}, err
 	}
+	// Additional steps for diverse from/to combos and cross-use-case scenario ref.
+	step11Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "11")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	step12Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "12")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	step13Key, err := identity.NewScenarioStepKey(scenarioHappyKey, "13")
+	if err != nil {
+		return req_model.Model{}, err
+	}
 
 	// Domain association key.
 	domainAssocKey, err := identity.NewDomainAssociationKey(domainAKey, domainBKey)
@@ -429,6 +463,22 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	// Second action require/guarantee logic (multiple Logic per slice).
+	actionRequire2, err := model_logic.NewLogic(actionRequire2Key, "Quantity must be positive", "tla_plus", "quantity > 0")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	actionGuarantee2, err := model_logic.NewLogic(actionGuarantee2Key, "Inventory is decremented by quantity", "tla_plus", "inventory' = inventory - quantity")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Second query guarantee logic.
+	queryGuarantee2, err := model_logic.NewLogic(queryGuarantee2Key, "Returns the last update timestamp", "tla_plus", "result.timestamp = order.updatedAt")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
 	invariantLogic, err := model_logic.NewLogic(invariantKey, "Order total must be non-negative", "tla_plus", "\\A o \\in Orders : o.total >= 0")
 	if err != nil {
 		return req_model.Model{}, err
@@ -469,15 +519,28 @@ func buildTestModel() (req_model.Model, error) {
 	// Parameters
 	// =========================================================================
 
-	paramQuantity, err := model_state.NewParameter("quantity", "integer")
+	// Diverse parseable DataTypeRules for pairwise coverage.
+	paramQuantity, err := model_state.NewParameter("quantity", "[1 .. 10000] at 1 unit")
 	if err != nil {
 		return req_model.Model{}, err
 	}
-	paramProductId, err := model_state.NewParameter("product_id", "text")
+	paramProductId, err := model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
 	if err != nil {
 		return req_model.Model{}, err
 	}
-	paramReason, err := model_state.NewParameter("reason", "text")
+	paramReason, err := model_state.NewParameter("reason", "enum of out_of_stock, changed_mind, defective")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	paramPriority, err := model_state.NewParameter("priority", "ordered enum of low, medium, high, critical")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	paramTags, err := model_state.NewParameter("tags", "unique unordered of unconstrained")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	paramItems, err := model_state.NewParameter("items", "1-100 ordered of obj of some_class")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -546,10 +609,10 @@ func buildTestModel() (req_model.Model, error) {
 	// Actions.
 	actionProcess, err := model_state.NewAction(
 		actionProcessKey, "Process Order", "Processes the order for fulfillment.",
-		[]model_logic.Logic{actionRequire1},
-		[]model_logic.Logic{actionGuarantee1},
+		[]model_logic.Logic{actionRequire1, actionRequire2},
+		[]model_logic.Logic{actionGuarantee1, actionGuarantee2},
 		[]model_logic.Logic{actionSafety1},
-		[]model_state.Parameter{paramQuantity},
+		[]model_state.Parameter{paramQuantity, paramPriority, paramTags},
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -566,8 +629,8 @@ func buildTestModel() (req_model.Model, error) {
 	queryStatus, err := model_state.NewQuery(
 		queryStatusKey, "Get Status", "Returns the current status of the order.",
 		[]model_logic.Logic{queryRequire1},
-		[]model_logic.Logic{queryGuarantee1},
-		[]model_state.Parameter{paramProductId},
+		[]model_logic.Logic{queryGuarantee1, queryGuarantee2},
+		[]model_state.Parameter{paramProductId, paramItems},
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -639,16 +702,16 @@ func buildTestModel() (req_model.Model, error) {
 
 	attrOrderDate, err := model_class.NewAttribute(
 		attrOrderDateKey, "Order Date", "When the order was placed.",
-		"text", nil, false, "the date", nil,
+		"3+ ordered of unconstrained", nil, false, "the date", nil,
 	)
 	if err != nil {
 		return req_model.Model{}, err
 	}
 
-	// Derived attribute with derivation policy.
+	// Derived attribute with derivation policy. Uses span type.
 	attrTotal, err := model_class.NewAttribute(
 		attrTotalKey, "Total", "Total amount for the order.",
-		"integer", &derivationLogic, true, "", []uint{1},
+		"(0 .. 1000000] at 0.01 dollar", &derivationLogic, true, "", []uint{1},
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -656,7 +719,7 @@ func buildTestModel() (req_model.Model, error) {
 
 	attrProductName, err := model_class.NewAttribute(
 		attrProductNameKey, "Product Name", "Name of the product.",
-		"text", nil, false, "", nil,
+		"unconstrained", nil, false, "", nil,
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -683,6 +746,7 @@ func buildTestModel() (req_model.Model, error) {
 	classOrder.SetEvents(map[identity.Key]model_state.Event{
 		eventSubmitKey:  eventSubmit,
 		eventFulfillKey: eventFulfill,
+		eventCancelKey:  eventCancel,
 	})
 	classOrder.SetGuards(map[identity.Key]model_state.Guard{
 		guardHasItemsKey: guardHasItems,
@@ -693,14 +757,17 @@ func buildTestModel() (req_model.Model, error) {
 	})
 	classOrder.SetQueries(map[identity.Key]model_state.Query{
 		queryStatusKey: queryStatus,
+		queryCountKey:  queryCount,
 	})
 	classOrder.SetTransitions(map[identity.Key]model_state.Transition{
-		transitionSubmitKey:  transitionSubmit,
-		transitionFulfillKey: transitionFulfill,
+		transitionSubmitKey:   transitionSubmit,
+		transitionFulfillKey:  transitionFulfill,
+		transitionInitialKey: transitionInitial,
+		transitionFinalKey:   transitionFinal,
 	})
 
-	// Product class: simple with one attribute.
-	classProduct, err := model_class.NewClass(classProductKey, "Product", "A product for sale.", nil, nil, nil, "")
+	// Product class: superclass in product_types generalization, with one attribute.
+	classProduct, err := model_class.NewClass(classProductKey, "Product", "A product for sale.", nil, &classGen2Key, nil, "")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -708,8 +775,8 @@ func buildTestModel() (req_model.Model, error) {
 		attrProductNameKey: attrProductName,
 	})
 
-	// Line item: association class (will be referenced by a class association).
-	classLineItem, err := model_class.NewClass(classLineItemKey, "Line Item", "A line item in an order.", nil, nil, nil, "")
+	// Line item: association class AND subclass in product_types generalization.
+	classLineItem, err := model_class.NewClass(classLineItemKey, "Line Item", "A line item in an order.", nil, nil, &classGen2Key, "")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -749,6 +816,12 @@ func buildTestModel() (req_model.Model, error) {
 	// =========================================================================
 
 	classGen, err := model_class.NewGeneralization(classGenKey, "Vehicle Types", "Specialization of vehicles.", true, false, "vehicle hierarchy")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Second generalization: (IsComplete=false, IsStatic=false) pairwise combo.
+	classGen2, err := model_class.NewGeneralization(classGen2Key, "Product Types", "Specialization of products.", false, false, "")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -925,6 +998,36 @@ func buildTestModel() (req_model.Model, error) {
 					},
 				},
 			},
+			{
+				// Leaf: event with product→order direction (diverse from/to).
+				Key:           step11Key,
+				StepType:      "leaf",
+				LeafType:      &leafEvent,
+				Description:   "Product triggers order update",
+				FromObjectKey: &objProductKey,
+				ToObjectKey:   &objOrderKey,
+				EventKey:      &eventCancelKey,
+			},
+			{
+				// Leaf: query with order→product direction (diverse from/to).
+				Key:           step12Key,
+				StepType:      "leaf",
+				LeafType:      &leafQuery,
+				Description:   "Order queries product details",
+				FromObjectKey: &objOrderKey,
+				ToObjectKey:   &objProductKey,
+				QueryKey:      &queryCountKey,
+			},
+			{
+				// Leaf: cross-use-case scenario reference (references scenario in view_order).
+				Key:           step13Key,
+				StepType:      "leaf",
+				LeafType:      &leafScenario,
+				Description:   "View the order details",
+				FromObjectKey: &objCustomerKey,
+				ToObjectKey:   &objOrderKey,
+				ScenarioKey:   &scenarioViewKey,
+			},
 		},
 	}
 
@@ -941,6 +1044,12 @@ func buildTestModel() (req_model.Model, error) {
 	scenarioHappy.Steps = &steps
 
 	scenarioError, err := model_scenario.NewScenario(scenarioErrorKey, "Error Path", "The order fails validation.")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Scenario in view_order use case (cross-use-case scenario reference target).
+	scenarioView, err := model_scenario.NewScenario(scenarioViewKey, "View Details", "View the order details.")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -979,11 +1088,23 @@ func buildTestModel() (req_model.Model, error) {
 	if err != nil {
 		return req_model.Model{}, err
 	}
+	useCaseViewOrder.SetScenarios(map[identity.Key]model_scenario.Scenario{
+		scenarioViewKey: scenarioView,
+	})
 
 	// Manage Order use case (sky level, superclass).
 	useCaseManageOrder, err := model_use_case.NewUseCase(
 		useCaseSuperKey, "Manage Order", "Manage orders.",
 		"sky", false, &ucGenKey, nil, "",
+	)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Cancel Order use case (mud level, for extend share).
+	useCaseCancelOrder, err := model_use_case.NewUseCase(
+		useCaseCancelOrderKey, "Cancel Order", "Customer cancels an order.",
+		"mud", false, nil, nil, "",
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -997,6 +1118,12 @@ func buildTestModel() (req_model.Model, error) {
 
 	// Use case share: place_order includes view_order.
 	ucShare, err := model_use_case.NewUseCaseShared("include", "includes viewing")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Use case share: place_order extends cancel_order (pairwise: extend vs include).
+	ucShareExtend, err := model_use_case.NewUseCaseShared("extend", "optional cancellation")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -1053,12 +1180,14 @@ func buildTestModel() (req_model.Model, error) {
 		classCarKey:      classCar,
 	}
 	subdomainA.Generalizations = map[identity.Key]model_class.Generalization{
-		classGenKey: classGen,
+		classGenKey:  classGen,
+		classGen2Key: classGen2,
 	}
 	subdomainA.UseCases = map[identity.Key]model_use_case.UseCase{
-		useCasePlaceOrderKey: useCasePlaceOrder,
-		useCaseViewOrderKey:  useCaseViewOrder,
-		useCaseSuperKey:      useCaseManageOrder,
+		useCasePlaceOrderKey:  useCasePlaceOrder,
+		useCaseViewOrderKey:   useCaseViewOrder,
+		useCaseSuperKey:       useCaseManageOrder,
+		useCaseCancelOrderKey: useCaseCancelOrder,
 	}
 	subdomainA.UseCaseGeneralizations = map[identity.Key]model_use_case.Generalization{
 		ucGenKey: ucGen,
@@ -1066,10 +1195,11 @@ func buildTestModel() (req_model.Model, error) {
 	subdomainA.ClassAssociations = map[identity.Key]model_class.Association{
 		subdomainAssocKey: subdomainAssoc,
 	}
-	// UseCaseShares: sea-level place_order includes mud-level view_order.
+	// UseCaseShares: sea-level place_order includes mud-level view_order and extends cancel_order.
 	subdomainA.UseCaseShares = map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 		useCasePlaceOrderKey: {
-			useCaseViewOrderKey: ucShare,
+			useCaseViewOrderKey:   ucShare,
+			useCaseCancelOrderKey: ucShareExtend,
 		},
 	}
 
@@ -1120,7 +1250,8 @@ func buildTestModel() (req_model.Model, error) {
 		"A comprehensive test model with every type represented.",
 		[]model_logic.Logic{invariantLogic},
 		map[identity.Key]model_logic.GlobalFunction{
-			globalFuncKey: globalFunc,
+			globalFuncKey:  globalFunc,
+			globalFunc2Key: globalFunc2,
 		},
 	)
 	if err != nil {
