@@ -12,7 +12,7 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanEventParameter(scanner Scanner, eventKeyPtr *identity.Key, param *model_state.Parameter) (err error) {
+func scanEventParameter(scanner Scanner, eventKeyPtr *identity.Key, param *model_state.Parameter, sortOrder *int) (err error) {
 	var eventKeyStr string
 	var parameterKeyStr string // Read but not used on the struct (it's derived from Name via preenKey).
 	var dataTypeRules sql.NullString
@@ -22,7 +22,7 @@ func scanEventParameter(scanner Scanner, eventKeyPtr *identity.Key, param *model
 		&eventKeyStr,
 		&parameterKeyStr,
 		&param.Name,
-		&param.SortOrder,
+		sortOrder,
 		&dataTypeRules,
 		&dataTypeKey,
 	); err != nil {
@@ -56,12 +56,13 @@ func scanEventParameter(scanner Scanner, eventKeyPtr *identity.Key, param *model
 func LoadEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, parameterKey string) (param model_state.Parameter, err error) {
 
 	var loadedEventKey identity.Key
+	var sortOrder int
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanEventParameter(scanner, &loadedEventKey, &param); err != nil {
+			if err = scanEventParameter(scanner, &loadedEventKey, &param, &sortOrder); err != nil {
 				return err
 			}
 			return nil
@@ -99,7 +100,7 @@ func AddEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, pa
 }
 
 // UpdateEventParameter updates an event parameter in the database.
-func UpdateEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, param model_state.Parameter) (err error) {
+func UpdateEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
 
 	paramKey, err := preenKey(param.Name)
 	if err != nil {
@@ -125,7 +126,7 @@ func UpdateEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key,
 		eventKey.String(),
 		paramKey,
 		param.Name,
-		param.SortOrder,
+		sortOrder,
 		param.DataTypeRules,
 		parameterDataTypeKey(param))
 	if err != nil {
@@ -167,7 +168,8 @@ func QueryEventParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.K
 		func(scanner Scanner) (err error) {
 			var eventKey identity.Key
 			var param model_state.Parameter
-			if err = scanEventParameter(scanner, &eventKey, &param); err != nil {
+			var sortOrder int
+			if err = scanEventParameter(scanner, &eventKey, &param, &sortOrder); err != nil {
 				return errors.WithStack(err)
 			}
 			if params == nil {
@@ -214,7 +216,7 @@ func AddEventParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 	args := make([]interface{}, 0, count*7)
 	i := 0
 	for eventKey, paramList := range params {
-		for _, param := range paramList {
+		for paramIdx, param := range paramList {
 			if i > 0 {
 				sqlQuery += ", "
 			}
@@ -226,7 +228,7 @@ func AddEventParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 
 			base := i * 7
 			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-			args = append(args, modelKey, eventKey.String(), paramKey, param.Name, param.SortOrder, param.DataTypeRules, parameterDataTypeKey(param))
+			args = append(args, modelKey, eventKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
 			i++
 		}
 	}

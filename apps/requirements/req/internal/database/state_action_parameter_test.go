@@ -82,7 +82,6 @@ func (suite *ActionParameterSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	}, param)
 }
@@ -91,7 +90,6 @@ func (suite *ActionParameterSuite) TestAdd() {
 
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
@@ -100,7 +98,6 @@ func (suite *ActionParameterSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	}, param)
 }
@@ -109,14 +106,12 @@ func (suite *ActionParameterSuite) TestUpdate() {
 
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
+	err = UpdateActionParameter(suite.db, suite.model.Key, suite.actionKey, 2, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     2,
 		DataTypeRules: "Int",
 	})
 	assert.Nil(suite.T(), err)
@@ -125,7 +120,6 @@ func (suite *ActionParameterSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     2,
 		DataTypeRules: "Int",
 	}, param)
 }
@@ -134,7 +128,6 @@ func (suite *ActionParameterSuite) TestRemove() {
 
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
@@ -152,14 +145,12 @@ func (suite *ActionParameterSuite) TestQuery() {
 	err := AddActionParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.actionKey: {
 			{
-				Name:          "Bravo",
-				SortOrder:     1,
-				DataTypeRules: "Int",
+				Name:          "Alpha",
+				DataTypeRules: "Nat",
 			},
 			{
-				Name:          "Alpha",
-				SortOrder:     0,
-				DataTypeRules: "Nat",
+				Name:          "Bravo",
+				DataTypeRules: "Int",
 			},
 		},
 	})
@@ -171,12 +162,10 @@ func (suite *ActionParameterSuite) TestQuery() {
 		suite.actionKey: {
 			{
 				Name:          "Alpha",
-				SortOrder:     0,
 				DataTypeRules: "Nat",
 			},
 			{
 				Name:          "Bravo",
-				SortOrder:     1,
 				DataTypeRules: "Int",
 			},
 		},
@@ -194,7 +183,6 @@ func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKe
 
 	err = AddActionParameter(dbOrTx, modelKey, actionKey, model_state.Parameter{
 		Name:          name,
-		SortOrder:     sortOrder,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(t, err)
@@ -210,7 +198,6 @@ func (suite *ActionParameterSuite) TestVerifyTestObjects() {
 	param := t_AddActionParameter(suite.T(), suite.db, suite.model.Key, suite.actionKey, "Amount", 0)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     0,
 		DataTypeRules: "Nat",
 	}, param)
 }

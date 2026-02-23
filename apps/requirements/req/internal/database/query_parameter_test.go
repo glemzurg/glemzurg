@@ -82,7 +82,6 @@ func (suite *QueryParameterSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	}, param)
 }
@@ -91,7 +90,6 @@ func (suite *QueryParameterSuite) TestAdd() {
 
 	err := AddQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
@@ -100,7 +98,6 @@ func (suite *QueryParameterSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	}, param)
 }
@@ -109,14 +106,12 @@ func (suite *QueryParameterSuite) TestUpdate() {
 
 	err := AddQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
+	err = UpdateQueryParameter(suite.db, suite.model.Key, suite.queryKey, 2, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     2,
 		DataTypeRules: "Int",
 	})
 	assert.Nil(suite.T(), err)
@@ -125,7 +120,6 @@ func (suite *QueryParameterSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     2,
 		DataTypeRules: "Int",
 	}, param)
 }
@@ -134,7 +128,6 @@ func (suite *QueryParameterSuite) TestRemove() {
 
 	err := AddQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
@@ -152,14 +145,12 @@ func (suite *QueryParameterSuite) TestQuery() {
 	err := AddQueryParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.queryKey: {
 			{
-				Name:          "Bravo",
-				SortOrder:     1,
-				DataTypeRules: "Int",
+				Name:          "Alpha",
+				DataTypeRules: "Nat",
 			},
 			{
-				Name:          "Alpha",
-				SortOrder:     0,
-				DataTypeRules: "Nat",
+				Name:          "Bravo",
+				DataTypeRules: "Int",
 			},
 		},
 	})
@@ -171,12 +162,10 @@ func (suite *QueryParameterSuite) TestQuery() {
 		suite.queryKey: {
 			{
 				Name:          "Alpha",
-				SortOrder:     0,
 				DataTypeRules: "Nat",
 			},
 			{
 				Name:          "Bravo",
-				SortOrder:     1,
 				DataTypeRules: "Int",
 			},
 		},
@@ -194,7 +183,6 @@ func t_AddQueryParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey 
 
 	err = AddQueryParameter(dbOrTx, modelKey, queryKey, model_state.Parameter{
 		Name:          name,
-		SortOrder:     sortOrder,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(t, err)
@@ -210,7 +198,6 @@ func (suite *QueryParameterSuite) TestVerifyTestObjects() {
 	param := t_AddQueryParameter(suite.T(), suite.db, suite.model.Key, suite.queryKey, "Amount", 0)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     0,
 		DataTypeRules: "Nat",
 	}, param)
 }

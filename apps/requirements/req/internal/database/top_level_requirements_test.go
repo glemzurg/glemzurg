@@ -527,7 +527,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Parameters: []model_state.Parameter{
 											{
 												Name:          "Amount",
-												SortOrder:     0,
 												DataTypeRules: "unconstrained",
 												DataType: &model_data_type.DataType{
 													Key:            "amount",
@@ -538,8 +537,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												},
 											},
 											{
-												Name:      "Currency",
-												SortOrder: 1,
+												Name: "Currency",
 												// Covers fk_enum_atomic via enumeration data type.
 												DataTypeRules: "enum of USD, EUR, GBP",
 												DataType: &model_data_type.DataType{
@@ -643,7 +641,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Parameters: []model_state.Parameter{
 											{
 												Name:          "Payload",
-												SortOrder:     0,
 												DataTypeRules: "unconstrained",
 												DataType: &model_data_type.DataType{
 													Key:            "payload",
@@ -654,8 +651,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 												},
 											},
 											{
-												Name:      "Timestamp",
-												SortOrder: 1,
+												Name: "Timestamp",
 												// Covers fk_span_atomic via span data type.
 												DataTypeRules: "[0 .. 999] at 1 seconds",
 												DataType: &model_data_type.DataType{
@@ -693,7 +689,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 										Parameters: []model_state.Parameter{
 											{
 												Name:          "Limit",
-												SortOrder:     0,
 												DataTypeRules: "unconstrained",
 												DataType: &model_data_type.DataType{
 													Key:            "limit",
@@ -705,7 +700,6 @@ func (suite *RequirementsSuite) TestWriteRead() {
 											},
 											{
 												Name:          "Offset",
-												SortOrder:     1,
 												DataTypeRules: "Int",
 											},
 										},

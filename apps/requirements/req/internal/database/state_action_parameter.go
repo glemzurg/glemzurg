@@ -12,7 +12,7 @@ import (
 )
 
 // Populate a golang struct from a database row.
-func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *model_state.Parameter) (err error) {
+func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *model_state.Parameter, sortOrder *int) (err error) {
 	var actionKeyStr string
 	var parameterKeyStr string // Read but not used on the struct (it's derived from Name via preenKey).
 	var dataTypeRules sql.NullString
@@ -22,7 +22,7 @@ func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *mod
 		&actionKeyStr,
 		&parameterKeyStr,
 		&param.Name,
-		&param.SortOrder,
+		sortOrder,
 		&dataTypeRules,
 		&dataTypeKey,
 	); err != nil {
@@ -56,12 +56,13 @@ func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *mod
 func LoadActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, parameterKey string) (param model_state.Parameter, err error) {
 
 	var loadedActionKey identity.Key
+	var sortOrder int
 
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			if err = scanActionParameter(scanner, &loadedActionKey, &param); err != nil {
+			if err = scanActionParameter(scanner, &loadedActionKey, &param, &sortOrder); err != nil {
 				return err
 			}
 			return nil
@@ -99,7 +100,7 @@ func AddActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, 
 }
 
 // UpdateActionParameter updates an action parameter in the database.
-func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, param model_state.Parameter) (err error) {
+func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
 
 	paramKey, err := preenKey(param.Name)
 	if err != nil {
@@ -125,7 +126,7 @@ func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Ke
 		actionKey.String(),
 		paramKey,
 		param.Name,
-		param.SortOrder,
+		sortOrder,
 		param.DataTypeRules,
 		parameterDataTypeKey(param))
 	if err != nil {
@@ -167,7 +168,8 @@ func QueryActionParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.
 		func(scanner Scanner) (err error) {
 			var actionKey identity.Key
 			var param model_state.Parameter
-			if err = scanActionParameter(scanner, &actionKey, &param); err != nil {
+			var sortOrder int
+			if err = scanActionParameter(scanner, &actionKey, &param, &sortOrder); err != nil {
 				return errors.WithStack(err)
 			}
 			if params == nil {
@@ -214,7 +216,7 @@ func AddActionParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key
 	args := make([]interface{}, 0, count*7)
 	i := 0
 	for actionKey, paramList := range params {
-		for _, param := range paramList {
+		for paramIdx, param := range paramList {
 			if i > 0 {
 				sqlQuery += ", "
 			}
@@ -226,7 +228,7 @@ func AddActionParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key
 
 			base := i * 7
 			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
-			args = append(args, modelKey, actionKey.String(), paramKey, param.Name, param.SortOrder, param.DataTypeRules, parameterDataTypeKey(param))
+			args = append(args, modelKey, actionKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
 			i++
 		}
 	}

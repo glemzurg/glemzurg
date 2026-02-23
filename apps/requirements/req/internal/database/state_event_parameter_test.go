@@ -82,7 +82,6 @@ func (suite *EventParameterSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	}, param)
 }
@@ -91,7 +90,6 @@ func (suite *EventParameterSuite) TestAdd() {
 
 	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
@@ -100,7 +98,6 @@ func (suite *EventParameterSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	}, param)
 }
@@ -109,14 +106,12 @@ func (suite *EventParameterSuite) TestUpdate() {
 
 	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
 
-	err = UpdateEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
+	err = UpdateEventParameter(suite.db, suite.model.Key, suite.eventKey, 2, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     2,
 		DataTypeRules: "Int",
 	})
 	assert.Nil(suite.T(), err)
@@ -125,7 +120,6 @@ func (suite *EventParameterSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     2,
 		DataTypeRules: "Int",
 	}, param)
 }
@@ -134,7 +128,6 @@ func (suite *EventParameterSuite) TestRemove() {
 
 	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     1,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(suite.T(), err)
@@ -152,14 +145,12 @@ func (suite *EventParameterSuite) TestQuery() {
 	err := AddEventParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.eventKey: {
 			{
-				Name:          "Bravo",
-				SortOrder:     1,
-				DataTypeRules: "Int",
+				Name:          "Alpha",
+				DataTypeRules: "Nat",
 			},
 			{
-				Name:          "Alpha",
-				SortOrder:     0,
-				DataTypeRules: "Nat",
+				Name:          "Bravo",
+				DataTypeRules: "Int",
 			},
 		},
 	})
@@ -171,12 +162,10 @@ func (suite *EventParameterSuite) TestQuery() {
 		suite.eventKey: {
 			{
 				Name:          "Alpha",
-				SortOrder:     0,
 				DataTypeRules: "Nat",
 			},
 			{
 				Name:          "Bravo",
-				SortOrder:     1,
 				DataTypeRules: "Int",
 			},
 		},
@@ -194,7 +183,6 @@ func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey 
 
 	err = AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
 		Name:          name,
-		SortOrder:     sortOrder,
 		DataTypeRules: "Nat",
 	})
 	assert.Nil(t, err)
@@ -210,7 +198,6 @@ func (suite *EventParameterSuite) TestVerifyTestObjects() {
 	param := t_AddEventParameter(suite.T(), suite.db, suite.model.Key, suite.eventKey, "Amount", 0)
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
-		SortOrder:     0,
 		DataTypeRules: "Nat",
 	}, param)
 }
