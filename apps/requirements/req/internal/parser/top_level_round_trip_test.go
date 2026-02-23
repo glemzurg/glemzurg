@@ -274,5 +274,6 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	output.Key = input.Key
 
 	// Compare the model values.
-	assert.Equal(suite.T(), input, output)
+	// If input and output model do not match, to explore this very deep tree of data, prune back to just the model and then iterate by layering in children one tier at a time  until the full tree exists again.
+	assert.Equal(suite.T(), input, output, `Input and output model do not match, to explore this very deep tree of data, prune back to just the model and then iterate by layering in children one tier at a time until the full tree exists again`)
 }
