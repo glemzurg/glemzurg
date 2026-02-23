@@ -83,14 +83,6 @@ func convertActorFromModel(actor *model_actor.Actor) *inputActor {
 		Details:    actor.Details,
 		UMLComment: actor.UmlComment,
 	}
-	if actor.SuperclassOfKey != nil {
-		key := actor.SuperclassOfKey.SubKey
-		result.SuperclassOfKey = &key
-	}
-	if actor.SubclassOfKey != nil {
-		key := actor.SubclassOfKey.SubKey
-		result.SubclassOfKey = &key
-	}
 	return result
 }
 
