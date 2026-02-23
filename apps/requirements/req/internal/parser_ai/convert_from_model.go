@@ -7,7 +7,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 	"github.com/pkg/errors"
 )
 
@@ -20,17 +22,33 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 	}
 
 	result := &inputModel{
-		Name:         model.Name,
-		Details:      model.Details,
-		Actors:       make(map[string]*inputActor),
-		Domains:      make(map[string]*inputDomain),
-		Associations: make(map[string]*inputAssociation),
+		Name:                 model.Name,
+		Details:              model.Details,
+		Invariants:           convertLogicsFromModel(model.Invariants),
+		Actors:               make(map[string]*inputActor),
+		ActorGeneralizations: make(map[string]*inputActorGeneralization),
+		GlobalFunctions:      make(map[string]*inputGlobalFunction),
+		Domains:              make(map[string]*inputDomain),
+		DomainAssociations:   make(map[string]*inputDomainAssociation),
+		Associations:         make(map[string]*inputAssociation),
 	}
 
 	// Convert actors
 	for key, actor := range model.Actors {
 		converted := convertActorFromModel(&actor)
 		result.Actors[key.SubKey] = converted
+	}
+
+	// Convert actor generalizations
+	for key, gen := range model.ActorGeneralizations {
+		converted := convertActorGeneralizationFromModel(&gen, model.Actors)
+		result.ActorGeneralizations[key.SubKey] = converted
+	}
+
+	// Convert global functions
+	for key, gf := range model.GlobalFunctions {
+		converted := convertGlobalFunctionFromModel(&gf)
+		result.GlobalFunctions[key.SubKey] = converted
 	}
 
 	// Convert domains
@@ -40,6 +58,12 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 			return nil, errors.Wrapf(err, "failed to convert domain '%s'", key.SubKey)
 		}
 		result.Domains[key.SubKey] = converted
+	}
+
+	// Convert domain associations
+	for key, assoc := range model.DomainAssociations {
+		converted := convertDomainAssocFromModel(&assoc)
+		result.DomainAssociations[key.SubKey] = converted
 	}
 
 	// Convert model-level class associations
@@ -53,11 +77,62 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 
 // convertActorFromModel converts a model_actor.Actor to an inputActor.
 func convertActorFromModel(actor *model_actor.Actor) *inputActor {
-	return &inputActor{
+	result := &inputActor{
 		Name:       actor.Name,
 		Type:       actor.Type,
 		Details:    actor.Details,
 		UMLComment: actor.UmlComment,
+	}
+	if actor.SuperclassOfKey != nil {
+		key := actor.SuperclassOfKey.SubKey
+		result.SuperclassOfKey = &key
+	}
+	if actor.SubclassOfKey != nil {
+		key := actor.SubclassOfKey.SubKey
+		result.SubclassOfKey = &key
+	}
+	return result
+}
+
+// convertActorGeneralizationFromModel converts a model_actor.Generalization to an inputActorGeneralization.
+func convertActorGeneralizationFromModel(gen *model_actor.Generalization, actors map[identity.Key]model_actor.Actor) *inputActorGeneralization {
+	result := &inputActorGeneralization{
+		Name:         gen.Name,
+		Details:      gen.Details,
+		IsComplete:   gen.IsComplete,
+		IsStatic:     gen.IsStatic,
+		UMLComment:   gen.UmlComment,
+		SubclassKeys: []string{},
+	}
+
+	// Find superclass and subclasses by examining actor references
+	for key, actor := range actors {
+		if actor.SuperclassOfKey != nil && actor.SuperclassOfKey.SubKey == gen.Key.SubKey {
+			result.SuperclassKey = key.SubKey
+		}
+		if actor.SubclassOfKey != nil && actor.SubclassOfKey.SubKey == gen.Key.SubKey {
+			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
+		}
+	}
+
+	return result
+}
+
+// convertGlobalFunctionFromModel converts a model_logic.GlobalFunction to an inputGlobalFunction.
+func convertGlobalFunctionFromModel(gf *model_logic.GlobalFunction) *inputGlobalFunction {
+	return &inputGlobalFunction{
+		Name:       gf.Name,
+		Parameters: gf.Parameters,
+		Logic:      convertLogicFromModel(&gf.Logic),
+	}
+}
+
+// convertDomainAssocFromModel converts a model_domain.Association to an inputDomainAssociation.
+func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAssociation {
+	return &inputDomainAssociation{
+		ProblemDomainKey:  assoc.ProblemDomainKey.SubKey,
+		SolutionDomainKey: assoc.SolutionDomainKey.SubKey,
+		UmlComment:        assoc.UmlComment,
 	}
 }
 
@@ -93,12 +168,15 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 // convertSubdomainFromModel converts a model_domain.Subdomain to an inputSubdomain.
 func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey identity.Key) (*inputSubdomain, error) {
 	result := &inputSubdomain{
-		Name:            subdomain.Name,
-		Details:         subdomain.Details,
-		UMLComment:      subdomain.UmlComment,
-		Classes:         make(map[string]*inputClass),
-		Generalizations: make(map[string]*inputGeneralization),
-		Associations:    make(map[string]*inputAssociation),
+		Name:                   subdomain.Name,
+		Details:                subdomain.Details,
+		UMLComment:             subdomain.UmlComment,
+		Classes:                make(map[string]*inputClass),
+		Generalizations:        make(map[string]*inputGeneralization),
+		Associations:           make(map[string]*inputAssociation),
+		UseCases:               make(map[string]*inputUseCase),
+		UseCaseGeneralizations: make(map[string]*inputUseCaseGeneralization),
+		UseCaseShares:          make(map[string]map[string]*inputUseCaseShared),
 	}
 
 	// Convert classes
@@ -116,6 +194,30 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 		result.Generalizations[key.SubKey] = converted
 	}
 
+	// Convert use case generalizations
+	for key, gen := range subdomain.UseCaseGeneralizations {
+		converted := convertUseCaseGeneralizationFromModel(&gen, subdomain.UseCases)
+		result.UseCaseGeneralizations[key.SubKey] = converted
+	}
+
+	// Convert use cases
+	for key, useCase := range subdomain.UseCases {
+		converted := convertUseCaseFromModel(&useCase)
+		result.UseCases[key.SubKey] = converted
+	}
+
+	// Convert use case shares
+	for seaKey, mudMap := range subdomain.UseCaseShares {
+		innerMap := make(map[string]*inputUseCaseShared)
+		for mudKey, shared := range mudMap {
+			innerMap[mudKey.SubKey] = &inputUseCaseShared{
+				ShareType:  shared.ShareType,
+				UmlComment: shared.UmlComment,
+			}
+		}
+		result.UseCaseShares[seaKey.SubKey] = innerMap
+	}
+
 	// Convert subdomain-level class associations
 	for key, assoc := range subdomain.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, identity.KEY_TYPE_SUBDOMAIN)
@@ -123,6 +225,129 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 	}
 
 	return result, nil
+}
+
+// convertUseCaseFromModel converts a model_use_case.UseCase to an inputUseCase.
+func convertUseCaseFromModel(uc *model_use_case.UseCase) *inputUseCase {
+	result := &inputUseCase{
+		Name:       uc.Name,
+		Details:    uc.Details,
+		Level:      uc.Level,
+		ReadOnly:   uc.ReadOnly,
+		UMLComment: uc.UmlComment,
+		Actors:     make(map[string]*inputUseCaseActor),
+		Scenarios:  make(map[string]*inputScenario),
+	}
+
+	// Convert actors (keyed by class key)
+	for classKey, actor := range uc.Actors {
+		result.Actors[classKey.SubKey] = &inputUseCaseActor{
+			UmlComment: actor.UmlComment,
+		}
+	}
+
+	// Convert scenarios
+	for key, scenario := range uc.Scenarios {
+		result.Scenarios[key.SubKey] = convertScenarioFromModel(&scenario)
+	}
+
+	return result
+}
+
+// convertScenarioFromModel converts a model_scenario.Scenario to an inputScenario.
+func convertScenarioFromModel(scenario *model_scenario.Scenario) *inputScenario {
+	result := &inputScenario{
+		Name:    scenario.Name,
+		Details: scenario.Details,
+		Objects: make(map[string]*inputObject),
+	}
+
+	// Convert objects
+	for key, obj := range scenario.Objects {
+		result.Objects[key.SubKey] = convertScenarioObjectFromModel(&obj)
+	}
+
+	// Convert steps
+	if scenario.Steps != nil {
+		step := convertStepFromModel(scenario.Steps)
+		result.Steps = &step
+	}
+
+	return result
+}
+
+// convertScenarioObjectFromModel converts a model_scenario.Object to an inputObject.
+func convertScenarioObjectFromModel(obj *model_scenario.Object) *inputObject {
+	return &inputObject{
+		ObjectNumber: obj.ObjectNumber,
+		Name:         obj.Name,
+		NameStyle:    obj.NameStyle,
+		ClassKey:     obj.ClassKey.SubKey,
+		Multi:        obj.Multi,
+		UmlComment:   obj.UmlComment,
+	}
+}
+
+// convertStepFromModel recursively converts a model_scenario.Step to an inputStep.
+func convertStepFromModel(step *model_scenario.Step) inputStep {
+	result := inputStep{
+		StepType:    step.StepType,
+		LeafType:    step.LeafType,
+		Condition:   step.Condition,
+		Description: step.Description,
+	}
+
+	if step.FromObjectKey != nil {
+		key := step.FromObjectKey.SubKey
+		result.FromObjectKey = &key
+	}
+	if step.ToObjectKey != nil {
+		key := step.ToObjectKey.SubKey
+		result.ToObjectKey = &key
+	}
+	if step.EventKey != nil {
+		key := step.EventKey.SubKey
+		result.EventKey = &key
+	}
+	if step.QueryKey != nil {
+		key := step.QueryKey.SubKey
+		result.QueryKey = &key
+	}
+	if step.ScenarioKey != nil {
+		key := step.ScenarioKey.SubKey
+		result.ScenarioKey = &key
+	}
+
+	// Convert sub-statements
+	for _, subStep := range step.Statements {
+		result.Statements = append(result.Statements, convertStepFromModel(&subStep))
+	}
+
+	return result
+}
+
+// convertUseCaseGeneralizationFromModel converts a model_use_case.Generalization to an inputUseCaseGeneralization.
+func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, useCases map[identity.Key]model_use_case.UseCase) *inputUseCaseGeneralization {
+	result := &inputUseCaseGeneralization{
+		Name:         gen.Name,
+		Details:      gen.Details,
+		IsComplete:   gen.IsComplete,
+		IsStatic:     gen.IsStatic,
+		UMLComment:   gen.UmlComment,
+		SubclassKeys: []string{},
+	}
+
+	// Find superclass and subclasses by examining use case references
+	for key, uc := range useCases {
+		if uc.SuperclassOfKey != nil && uc.SuperclassOfKey.SubKey == gen.Key.SubKey {
+			result.SuperclassKey = key.SubKey
+		}
+		if uc.SubclassOfKey != nil && uc.SubclassOfKey.SubKey == gen.Key.SubKey {
+			result.SubclassKeys = append(result.SubclassKeys, key.SubKey)
+		}
+	}
+
+	return result
 }
 
 // convertClassFromModel converts a model_class.Class to an inputClass.

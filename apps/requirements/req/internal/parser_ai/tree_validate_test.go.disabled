@@ -1354,7 +1354,7 @@ func t_buildValidModelTree() *inputModel {
 										"confirm": {Name: "confirm"},
 									},
 									Guards: map[string]*inputGuard{
-										"has_items": {Name: "hasItems", Details: "Order has items"},
+										"has_items": {Name: "hasItems", Logic: inputLogic{Description: "Order has items", Notation: "tla_plus"}},
 									},
 									Transitions: []inputTransition{
 										{

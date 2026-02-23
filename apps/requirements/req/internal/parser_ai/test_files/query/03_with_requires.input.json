@@ -1,7 +1,7 @@
 {
     "name": "Find Pending Orders",
     "requires": [
-        "User must be authenticated",
-        "User must have read access to orders"
+        {"description": "User must be authenticated"},
+        {"description": "User must have read access to orders"}
     ]
 }

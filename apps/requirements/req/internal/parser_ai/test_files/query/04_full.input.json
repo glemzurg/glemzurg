@@ -2,13 +2,13 @@
     "name": "Calculate Shipping Cost",
     "details": "Calculates the shipping cost based on order weight, destination, and selected shipping method",
     "requires": [
-        "Order must have at least one item",
-        "Shipping address must be valid",
-        "Shipping method must be selected"
+        {"description": "Order must have at least one item"},
+        {"description": "Shipping address must be valid"},
+        {"description": "Shipping method must be selected"}
     ],
     "guarantees": [
-        "Returns the shipping cost in the order currency",
-        "Returns zero if free shipping applies",
-        "Returns an error if shipping is not available to destination"
+        {"description": "Returns the shipping cost in the order currency"},
+        {"description": "Returns zero if free shipping applies"},
+        {"description": "Returns an error if shipping is not available to destination"}
     ]
 }

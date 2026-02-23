@@ -42,8 +42,25 @@
             "description": "Optional detailed description of the attribute. Explain the attribute's purpose, business meaning, and any rules governing its values. Include examples if helpful."
           },
           "derivation_policy": {
-            "type": "string",
-            "description": "Policy for deriving the attribute value if it's computed rather than stored. Describe the formula or logic used to calculate this attribute from other attributes or associations. If not specified, the attribute is assumed to be stored directly."
+            "type": "object",
+            "description": "Policy for deriving the attribute value if it's computed rather than stored. Contains a logic specification describing the formula or logic used to calculate this attribute.",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "Description of the derivation formula or logic.",
+                "minLength": 1
+              },
+              "notation": {
+                "type": "string",
+                "description": "Optional formal notation system (e.g., 'tla_plus')."
+              },
+              "specification": {
+                "type": "string",
+                "description": "Optional formal specification in the given notation."
+              }
+            },
+            "required": ["description"],
+            "additionalProperties": false
           },
           "nullable": {
             "type": "boolean",

@@ -76,13 +76,12 @@
                   "description": "The name of the parameter (e.g., 'amount', 'reason', 'user_id'). This is used to reference the parameter in guards and actions. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
                   "minLength": 1
                 },
-                "source": {
+                "data_type_rules": {
                   "type": "string",
-                  "description": "The source or type of the parameter value. Describe where the value comes from or its data type (e.g., 'User input', 'System timestamp', 'decimal currency amount'). Must be non-empty. If validation fails: ensure this is a string with at least one character.",
-                  "minLength": 1
+                  "description": "Data type rules for the parameter value."
                 }
               },
-              "required": ["name", "source"],
+              "required": ["name"],
               "additionalProperties": false
             }
           }
@@ -93,7 +92,7 @@
     },
     "guards": {
       "type": "object",
-      "description": "Map of guard keys to guard definitions. Each key in this object becomes the guard's identifier and is referenced by transitions. Keys should be lowercase with underscores (e.g., 'is_paid', 'has_inventory'). Guards are boolean conditions that must be true for a transition to fire. If validation fails: check that each guard has valid 'name' and 'details' fields.",
+      "description": "Map of guard keys to guard definitions. Each key in this object becomes the guard's identifier and is referenced by transitions. Keys should be lowercase with underscores (e.g., 'is_paid', 'has_inventory'). Guards are boolean conditions that must be true for a transition to fire. If validation fails: check that each guard has valid 'name' and 'logic' fields.",
       "additionalProperties": {
         "type": "object",
         "properties": {
@@ -102,13 +101,29 @@
             "description": "The display name of the guard (e.g., 'Is Paid', 'Has Inventory'). This is the human-readable name shown in brackets on transition arrows (e.g., [Is Paid]). Must be non-empty. If validation fails: ensure this is a string with at least one character.",
             "minLength": 1
           },
-          "details": {
-            "type": "string",
-            "description": "Description of the guard condition. Explain the boolean expression or business rule that determines when this guard is true. Be specific enough for implementation. Must be non-empty. If validation fails: ensure this describes the condition clearly.",
-            "minLength": 1
+          "logic": {
+            "type": "object",
+            "description": "The logic specification for this guard condition. The description explains the boolean expression or business rule.",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "Description of the guard condition. Explain the boolean expression or business rule that determines when this guard is true. Must be non-empty.",
+                "minLength": 1
+              },
+              "notation": {
+                "type": "string",
+                "description": "Optional formal notation system (e.g., 'tla_plus')."
+              },
+              "specification": {
+                "type": "string",
+                "description": "Optional formal specification in the given notation."
+              }
+            },
+            "required": ["description"],
+            "additionalProperties": false
           }
         },
-        "required": ["name", "details"],
+        "required": ["name", "logic"],
         "additionalProperties": false
       }
     },

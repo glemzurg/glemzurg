@@ -5,7 +5,7 @@
             "parameters": [
                 {
                     "name": "   ",
-                    "source": "User input"
+                    "data_type_rules": "User input"
                 }
             ]
         }

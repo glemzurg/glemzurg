@@ -1,7 +1,7 @@
 {
     "code": 7016,
-    "message_prefix": "guard 'is_valid' details cannot be empty or whitespace only",
+    "message_prefix": "guard 'is_valid' logic description cannot be empty or whitespace only",
     "error_file": "7016_guard_details_required.md",
     "has_schema": false,
-    "field": "guards.is_valid.details"
+    "field": "guards.is_valid.logic.description"
 }

@@ -1,7 +1,7 @@
 {
     "guards": {
         "is_valid": {
-            "details": "Checks validity"
+            "logic": {"description": "Checks validity"}
         }
     }
 }

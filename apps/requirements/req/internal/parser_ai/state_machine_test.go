@@ -64,7 +64,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 					assert.Equal(t, len(expectedEvent.Parameters), len(actualEvent.Parameters), testName+" event '"+key+"' parameters count")
 					for i, expectedParam := range expectedEvent.Parameters {
 						assert.Equal(t, expectedParam.Name, actualEvent.Parameters[i].Name, testName+" event '"+key+"' param["+string(rune('0'+i))+"] name")
-						assert.Equal(t, expectedParam.Source, actualEvent.Parameters[i].Source, testName+" event '"+key+"' param["+string(rune('0'+i))+"] source")
+						assert.Equal(t, expectedParam.DataTypeRules, actualEvent.Parameters[i].DataTypeRules, testName+" event '"+key+"' param["+string(rune('0'+i))+"] data_type_rules")
 					}
 				}
 			}
@@ -76,7 +76,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 				assert.True(t, exists, testName+" guard '"+key+"' should exist")
 				if exists {
 					assert.Equal(t, expectedGuard.Name, actualGuard.Name, testName+" guard '"+key+"' name")
-					assert.Equal(t, expectedGuard.Details, actualGuard.Details, testName+" guard '"+key+"' details")
+					assert.Equal(t, expectedGuard.Logic.Description, actualGuard.Logic.Description, testName+" guard '"+key+"' logic description")
 				}
 			}
 

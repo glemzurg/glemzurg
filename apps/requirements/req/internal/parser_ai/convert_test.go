@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -117,7 +118,7 @@ func (suite *ConvertSuite) TestConvertToModelWithActor() {
 	// Find the actor by checking the key's SubKey
 	var foundActor model_actor.Actor
 	for key, actor := range model.Actors {
-		if key.SubKey() == "customer" {
+		if key.SubKey == "customer" {
 			foundActor = actor
 			break
 		}
@@ -239,7 +240,7 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 	// Find domain
 	var domain model_domain.Domain
 	for key, d := range model.Domains {
-		if key.SubKey() == "orders" {
+		if key.SubKey == "orders" {
 			domain = d
 			break
 		}
@@ -249,7 +250,7 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 	// Find subdomain
 	var subdomain model_domain.Subdomain
 	for key, s := range domain.Subdomains {
-		if key.SubKey() == "default" {
+		if key.SubKey == "default" {
 			subdomain = s
 			break
 		}
@@ -259,7 +260,7 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 	// Find class
 	var class model_class.Class
 	for key, c := range subdomain.Classes {
-		if key.SubKey() == "order" {
+		if key.SubKey == "order" {
 			class = c
 			break
 		}
@@ -307,7 +308,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 									eventKey: {Key: eventKey, Name: "confirm"},
 								},
 								Guards: map[identity.Key]model_state.Guard{
-									guardKey: {Key: guardKey, Name: "has_items", Details: "Check if order has items"},
+									guardKey: {Key: guardKey, Name: "has_items", Logic: model_logic.Logic{Key: guardKey, Description: "Check if order has items", Notation: model_logic.NotationTLAPlus}},
 								},
 								Transitions: map[identity.Key]model_state.Transition{
 									transitionKey: {
@@ -382,7 +383,7 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 										"confirm": {Name: "confirm"},
 									},
 									Guards: map[string]*inputGuard{
-										"has_items": {Name: "has_items", Details: "Check if order has items"},
+										"has_items": {Name: "has_items", Logic: inputLogic{Description: "Check if order has items", Notation: model_logic.NotationTLAPlus}},
 									},
 									Transitions: []inputTransition{
 										{
@@ -417,7 +418,7 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for key, c := range subdomain.Classes {
-				if key.SubKey() == "order" {
+				if key.SubKey == "order" {
 					class = c
 					break
 				}
@@ -458,11 +459,15 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 								Attributes: make(map[identity.Key]model_class.Attribute),
 								Queries: map[identity.Key]model_state.Query{
 									queryKey: {
-										Key:        queryKey,
-										Name:       "Get Total",
-										Details:    "Get order total",
-										Requires:   []string{"order must exist"},
-										Guarantees: []string{"returns total amount"},
+										Key:     queryKey,
+										Name:    "Get Total",
+										Details: "Get order total",
+										Requires: []model_logic.Logic{
+											{Key: helper.Must(identity.NewQueryRequireKey(queryKey, "0")), Description: "order must exist", Notation: model_logic.NotationTLAPlus},
+										},
+										Guarantees: []model_logic.Logic{
+											{Key: helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")), Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
+										},
 									},
 								},
 							},
@@ -482,8 +487,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	query := class.Queries["get_total"]
 	assert.Equal(t, "Get Total", query.Name)
 	assert.Equal(t, "Get order total", query.Details)
-	assert.Equal(t, []string{"order must exist"}, query.Requires)
-	assert.Equal(t, []string{"returns total amount"}, query.Guarantees)
+	require.Len(t, query.Requires, 1)
+	assert.Equal(t, "order must exist", query.Requires[0].Description)
+	require.Len(t, query.Guarantees, 1)
+	assert.Equal(t, "returns total amount", query.Guarantees[0].Description)
 }
 
 // TestConvertToModelWithQueries tests converting queries.
@@ -505,10 +512,14 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 								Attributes: make(map[string]*inputAttribute),
 								Queries: map[string]*inputQuery{
 									"get_total": {
-										Name:       "Get Total",
-										Details:    "Get order total",
-										Requires:   []string{"order must exist"},
-										Guarantees: []string{"returns total amount"},
+										Name:    "Get Total",
+										Details: "Get order total",
+										Requires: []inputLogic{
+											{Description: "order must exist", Notation: model_logic.NotationTLAPlus},
+										},
+										Guarantees: []inputLogic{
+											{Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
+										},
 									},
 								},
 							},
@@ -531,7 +542,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for key, c := range subdomain.Classes {
-				if key.SubKey() == "order" {
+				if key.SubKey == "order" {
 					class = c
 					break
 				}
@@ -547,8 +558,10 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 	}
 	assert.Equal(t, "Get Total", query.Name)
 	assert.Equal(t, "Get order total", query.Details)
-	assert.Equal(t, []string{"order must exist"}, query.Requires)
-	assert.Equal(t, []string{"returns total amount"}, query.Guarantees)
+	require.Len(t, query.Requires, 1)
+	assert.Equal(t, "order must exist", query.Requires[0].Description)
+	require.Len(t, query.Guarantees, 1)
+	assert.Equal(t, "returns total amount", query.Guarantees[0].Description)
 }
 
 // TestConvertFromModelWithGeneralization tests converting a generalization.
@@ -652,7 +665,7 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 	var subdomain model_domain.Subdomain
 	for _, domain := range model.Domains {
 		for key, s := range domain.Subdomains {
-			if key.SubKey() == "default" {
+			if key.SubKey == "default" {
 				subdomain = s
 				break
 			}
@@ -670,10 +683,10 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 	// In req_model, classes have back-references to their generalization
 	var productClass, bookClass model_class.Class
 	for key, c := range subdomain.Classes {
-		if key.SubKey() == "product" {
+		if key.SubKey == "product" {
 			productClass = c
 		}
-		if key.SubKey() == "book" {
+		if key.SubKey == "book" {
 			bookClass = c
 		}
 	}
@@ -783,7 +796,7 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 	var subdomain model_domain.Subdomain
 	for _, domain := range model.Domains {
 		for key, s := range domain.Subdomains {
-			if key.SubKey() == "default" {
+			if key.SubKey == "default" {
 				subdomain = s
 				break
 			}
@@ -797,8 +810,8 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 		break
 	}
 	assert.Equal(t, "Order Lines", assoc.Name)
-	assert.Equal(t, "order", assoc.FromClassKey.SubKey())
-	assert.Equal(t, "line_item", assoc.ToClassKey.SubKey())
+	assert.Equal(t, "order", assoc.FromClassKey.SubKey)
+	assert.Equal(t, "line_item", assoc.ToClassKey.SubKey)
 }
 
 // TestRoundTripMinimal tests that a minimal model survives roundtrip conversion.
@@ -867,7 +880,7 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 										"confirm": {Name: "confirm"},
 									},
 									Guards: map[string]*inputGuard{
-										"has_items": {Name: "has_items", Details: "Order has items"},
+										"has_items": {Name: "has_items", Logic: inputLogic{Description: "Order has items", Notation: model_logic.NotationTLAPlus}},
 									},
 									Transitions: []inputTransition{
 										{
@@ -1134,7 +1147,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 	// Find the domain-level association
 	var domain model_domain.Domain
 	for key, d := range model.Domains {
-		if key.SubKey() == "orders" {
+		if key.SubKey == "orders" {
 			domain = d
 			break
 		}

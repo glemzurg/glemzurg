@@ -10,13 +10,17 @@ import (
 
 // inputModel represents the model.json file.
 type inputModel struct {
-	Name    string `json:"name"`
-	Details string `json:"details,omitempty"`
+	Name       string       `json:"name"`
+	Details    string       `json:"details,omitempty"`
+	Invariants []inputLogic `json:"invariants,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
-	Actors       map[string]*inputActor       `json:"-"`
-	Domains      map[string]*inputDomain      `json:"-"`
-	Associations map[string]*inputAssociation `json:"-"`
+	Actors                map[string]*inputActor                `json:"-"`
+	ActorGeneralizations  map[string]*inputActorGeneralization  `json:"-"`
+	GlobalFunctions       map[string]*inputGlobalFunction       `json:"-"`
+	Domains               map[string]*inputDomain               `json:"-"`
+	DomainAssociations    map[string]*inputDomainAssociation    `json:"-"`
+	Associations          map[string]*inputAssociation          `json:"-"`
 }
 
 // modelSchema is the compiled JSON schema for model.json.

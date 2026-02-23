@@ -45,11 +45,11 @@
             "parameters": [
                 {
                     "name": "approver_id",
-                    "source": "User ID of the approving manager"
+                    "data_type_rules": "User ID of the approving manager"
                 },
                 {
                     "name": "notes",
-                    "source": "Optional approval notes"
+                    "data_type_rules": "Optional approval notes"
                 }
             ]
         },
@@ -58,7 +58,7 @@
             "parameters": [
                 {
                     "name": "reason",
-                    "source": "Rejection reason text"
+                    "data_type_rules": "Rejection reason text"
                 }
             ]
         }
@@ -66,11 +66,11 @@
     "guards": {
         "is_valid": {
             "name": "Is Valid",
-            "details": "Order passes all validation rules: total > 0, has items, valid addresses"
+            "logic": {"description": "Order passes all validation rules: total > 0, has items, valid addresses"}
         },
         "under_limit": {
             "name": "Under Limit",
-            "details": "Order total is under the auto-approval limit of $1000"
+            "logic": {"description": "Order total is under the auto-approval limit of $1000"}
         }
     },
     "transitions": [

@@ -15,11 +15,11 @@
     "guards": {
         "is_valid": {
             "name": "Is Valid",
-            "details": "The request passes all validation rules"
+            "logic": {"description": "The request passes all validation rules"}
         },
         "has_budget": {
             "name": "Has Budget",
-            "details": "Sufficient budget is available for the request"
+            "logic": {"description": "Sufficient budget is available for the request"}
         }
     }
 }
