@@ -10,6 +10,7 @@ import (
 )
 
 // collectionMinForDB maps CollectionMin=0 to nil (SQL NULL) to satisfy CHECK (collection_min > 0).
+// A zero minimum means "no minimum" and is stored as NULL in the database.
 func collectionMinForDB(min *int) *int {
 	if min != nil && *min == 0 {
 		return nil

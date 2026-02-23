@@ -207,7 +207,6 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 		},
 
 		// Unique unordered collection of unconstrained (unique unordered of unconstrained).
-		// CollectionMin=intPtr(0) → stored as NULL → loaded as nil.
 		"unordered_collection_type": {
 			Key:              "unordered_collection_type",
 			CollectionType:   "unordered",
@@ -247,7 +246,6 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 	assert.NoError(suite.T(), err)
 
 	// Verify that loaded matches original.
-	// Note: CollectionMin=0 is stored as NULL, so it loads back as nil.
 	assert.Equal(suite.T(), map[string]model_data_type.DataType{
 
 		"enum_type": {
@@ -408,7 +406,7 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 
-		// CollectionMin=0 was written → stored as NULL → loaded as nil.
+		// CollectionMin=0 is written as NULL (0 means "no minimum"), loaded back as nil.
 		"unordered_collection_type": {
 			Key:              "unordered_collection_type",
 			CollectionType:   "unordered",
