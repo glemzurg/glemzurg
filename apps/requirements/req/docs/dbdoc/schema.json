@@ -86,6 +86,12 @@
           "comment": "The model this logic is part of."
         },
         {
+          "name": "sort_order",
+          "type": "integer",
+          "nullable": false,
+          "comment": "Often part of a list of logics that are sorted."
+        },
+        {
           "name": "description",
           "type": "text",
           "nullable": false,
@@ -154,6 +160,16 @@
           "referenced_table": "",
           "columns": [
             "notation"
+          ]
+        },
+        {
+          "name": "logic_sort_order_not_null",
+          "type": "n",
+          "def": "NOT NULL sort_order",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "sort_order"
           ]
         },
         {
@@ -1098,14 +1114,13 @@
       ],
       "constraints": [
         {
-          "name": "data_type_check",
+          "name": "data_type_collection_max_check",
           "type": "CHECK",
-          "def": "CHECK ((collection_max \u003e= collection_min))",
+          "def": "CHECK ((collection_max \u003e 0))",
           "table": "public.data_type",
           "referenced_table": "",
           "columns": [
-            "collection_max",
-            "collection_min"
+            "collection_max"
           ]
         },
         {

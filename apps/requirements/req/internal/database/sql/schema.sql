@@ -202,7 +202,7 @@ CREATE TABLE data_type (
   collection_type collection_type NOT NULL,
   collection_unique boolean DEFAULT NULL,
   collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
-  collection_max bigint CHECK (collection_max >= collection_min) DEFAULT NULL,
+  collection_max bigint CHECK (collection_max > 0) DEFAULT NULL,
   PRIMARY KEY (model_key, data_type_key),
   CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );

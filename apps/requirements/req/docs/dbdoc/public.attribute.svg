@@ -52,32 +52,35 @@
 <!-- public.logic -->
 <g id="node2" class="node">
 <title>public.logic</title>
-<polygon fill="#efefef" stroke="none" points="216.62,-258.8 216.62,-294.4 440.59,-294.4 440.59,-258.8 216.62,-258.8"/>
-<polygon fill="none" stroke="black" points="216.62,-258.8 216.62,-294.4 440.59,-294.4 440.59,-258.8 216.62,-258.8"/>
-<text text-anchor="start" x="223.62" y="-272.2" font-family="Arial Bold" font-size="18.00">public.logic</text>
-<text text-anchor="start" x="309.1" y="-272.2" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="340.22" y="-272.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="216.62,-228 216.62,-258.8 440.59,-258.8 440.59,-228 216.62,-228"/>
-<text text-anchor="start" x="223.62" y="-240.2" font-family="Arial" font-size="14.00">logic_key </text>
-<text text-anchor="start" x="285.87" y="-240.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="216.62,-197.2 216.62,-228 440.59,-228 440.59,-197.2 216.62,-197.2"/>
-<text text-anchor="start" x="223.62" y="-209.4" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="295.21" y="-209.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="216.62,-166.4 216.62,-197.2 440.59,-197.2 440.59,-166.4 216.62,-166.4"/>
-<text text-anchor="start" x="223.62" y="-178.6" font-family="Arial" font-size="14.00">description </text>
-<text text-anchor="start" x="295.21" y="-178.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="216.62,-135.6 216.62,-166.4 440.59,-166.4 440.59,-135.6 216.62,-135.6"/>
-<text text-anchor="start" x="223.62" y="-147.8" font-family="Arial" font-size="14.00">notation </text>
-<text text-anchor="start" x="277.33" y="-147.8" font-family="Arial" font-size="14.00" fill="#666666">[notation]</text>
-<polygon fill="none" stroke="black" points="216.62,-104.8 216.62,-135.6 440.59,-135.6 440.59,-104.8 216.62,-104.8"/>
-<text text-anchor="start" x="223.62" y="-117" font-family="Arial" font-size="14.00">specification </text>
-<text text-anchor="start" x="304.55" y="-117" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="216.62,-274.2 216.62,-309.8 440.59,-309.8 440.59,-274.2 216.62,-274.2"/>
+<polygon fill="none" stroke="black" points="216.62,-274.2 216.62,-309.8 440.59,-309.8 440.59,-274.2 216.62,-274.2"/>
+<text text-anchor="start" x="223.62" y="-287.6" font-family="Arial Bold" font-size="18.00">public.logic</text>
+<text text-anchor="start" x="309.1" y="-287.6" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="340.22" y="-287.6" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="216.62,-243.4 216.62,-274.2 440.59,-274.2 440.59,-243.4 216.62,-243.4"/>
+<text text-anchor="start" x="223.62" y="-255.6" font-family="Arial" font-size="14.00">logic_key </text>
+<text text-anchor="start" x="285.87" y="-255.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="216.62,-212.6 216.62,-243.4 440.59,-243.4 440.59,-212.6 216.62,-212.6"/>
+<text text-anchor="start" x="223.62" y="-224.8" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="295.21" y="-224.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="216.62,-181.8 216.62,-212.6 440.59,-212.6 440.59,-181.8 216.62,-181.8"/>
+<text text-anchor="start" x="223.62" y="-194" font-family="Arial" font-size="14.00">sort_order </text>
+<text text-anchor="start" x="291.31" y="-194" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="216.62,-151 216.62,-181.8 440.59,-181.8 440.59,-151 216.62,-151"/>
+<text text-anchor="start" x="223.62" y="-163.2" font-family="Arial" font-size="14.00">description </text>
+<text text-anchor="start" x="295.21" y="-163.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="216.62,-120.2 216.62,-151 440.59,-151 440.59,-120.2 216.62,-120.2"/>
+<text text-anchor="start" x="223.62" y="-132.4" font-family="Arial" font-size="14.00">notation </text>
+<text text-anchor="start" x="277.33" y="-132.4" font-family="Arial" font-size="14.00" fill="#666666">[notation]</text>
+<polygon fill="none" stroke="black" points="216.62,-89.4 216.62,-120.2 440.59,-120.2 440.59,-89.4 216.62,-89.4"/>
+<text text-anchor="start" x="223.62" y="-101.6" font-family="Arial" font-size="14.00">specification </text>
+<text text-anchor="start" x="304.55" y="-101.6" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.attribute&#45;&gt;public.logic -->
 <g id="edge1" class="edge">
 <title>public.attribute:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M539.25,-769.48C487,-716.35 501.74,-212.6 441.59,-212.6"/>
-<polygon fill="black" stroke="black" points="539.31,-769.51 546.37,-777.91 544.12,-771.83 548.02,-773.71 548.02,-773.71 548.02,-773.71 544.12,-771.83 550.28,-769.8 539.31,-769.51"/>
+<path fill="none" stroke="black" d="M539.47,-769.61C488.34,-717.93 500.15,-228 441.59,-228"/>
+<polygon fill="black" stroke="black" points="539.31,-769.53 546.37,-777.91 544.12,-771.83 548.02,-773.71 548.02,-773.71 548.02,-773.71 544.12,-771.83 550.27,-769.8 539.31,-769.53"/>
 <text text-anchor="start" x="7" y="-784" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.data_type -->
