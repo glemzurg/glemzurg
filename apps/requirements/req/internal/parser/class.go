@@ -624,20 +624,25 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 
 	details := ""
 
+	specification := ""
+
 	guardData, ok := guardAny.(map[string]any)
 	if ok {
 		detailsAny, found := guardData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
+		specAny, found := guardData["specification"]
+		if found {
+			specification = specAny.(string)
+		}
 	}
 
-	// TODO: Parse guard logic properly once the YAML format is defined.
-	// NewGuard now takes a model_logic.Logic instead of a details string.
 	logic := model_logic.Logic{
-		Key:         guardKey,
-		Description: details,
-		Notation:    "tla_plus",
+		Key:           guardKey,
+		Description:   details,
+		Notation:      "tla_plus",
+		Specification: specification,
 	}
 
 	guard, err = model_state.NewGuard(
@@ -949,6 +954,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			guard := class.Guards[key]
 			guardBuilder := NewYamlBuilder()
 			guardBuilder.AddField("details", guard.Logic.Description)
+			guardBuilder.AddField("specification", guard.Logic.Specification)
 			guardsBuilder.AddMappingField(guard.Name, guardBuilder)
 		}
 		builder.AddMappingField("guards", guardsBuilder)
