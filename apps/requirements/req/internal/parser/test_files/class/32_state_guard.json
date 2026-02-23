@@ -15,7 +15,7 @@
                 "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/firstlogin",
                 "Description": "login count < 1",
                 "Notation": "tla_plus",
-                "Specification": ""
+                "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
             }
         },
         "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/priorlogin": {
