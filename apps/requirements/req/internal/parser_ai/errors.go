@@ -151,6 +151,15 @@ const (
 	ErrParamInvalidJSON     = 15003
 	ErrParamSchemaViolation = 15004
 
+	// Global function errors (16xxx)
+	ErrGlobalFuncNameRequired       = 16001
+	ErrGlobalFuncNameEmpty          = 16002
+	ErrGlobalFuncInvalidJSON        = 16003
+	ErrGlobalFuncSchemaViolation    = 16004
+	ErrGlobalFuncNameNoUnderscore   = 16005
+	ErrGlobalFuncParamEmpty         = 16006
+	ErrGlobalFuncLogicRequired      = 16007
+
 	// Tree validation errors (11xxx) - cross-reference and structural integrity
 	ErrTreeClassActorNotFound             = 11001 // Class references an actor that doesn't exist
 	ErrTreeAssocFromClassNotFound         = 11002 // Association from_class_key not found

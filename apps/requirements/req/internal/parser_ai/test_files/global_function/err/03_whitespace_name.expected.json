@@ -1,0 +1,7 @@
+{
+    "code": 16002,
+    "message": "global function name cannot be empty or whitespace only, got '   '",
+    "error_file": "16002_global_function_name_empty.md",
+    "has_schema": false,
+    "field": "name"
+}

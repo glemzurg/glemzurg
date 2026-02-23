@@ -1,0 +1,9 @@
+{
+    "name": "_Clamp",
+    "parameters": ["value", "min", "max"],
+    "logic": {
+        "description": "Clamps a value between min and max",
+        "notation": "tla_plus",
+        "specification": "IF value < min THEN min ELSE IF value > max THEN max ELSE value"
+    }
+}

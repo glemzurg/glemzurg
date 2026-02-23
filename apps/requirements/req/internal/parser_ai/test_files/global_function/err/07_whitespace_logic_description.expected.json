@@ -1,0 +1,7 @@
+{
+    "code": 16007,
+    "message": "global function logic description cannot be empty or whitespace only, got '   '",
+    "error_file": "16007_global_function_logic_required.md",
+    "has_schema": false,
+    "field": "logic.description"
+}

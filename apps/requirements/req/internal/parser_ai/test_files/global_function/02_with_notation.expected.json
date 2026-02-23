@@ -1,0 +1,9 @@
+{
+    "name": "_Max",
+    "parameters": ["x", "y"],
+    "logic": {
+        "description": "Returns the maximum of two values",
+        "notation": "tla_plus",
+        "specification": "IF x > y THEN x ELSE y"
+    }
+}

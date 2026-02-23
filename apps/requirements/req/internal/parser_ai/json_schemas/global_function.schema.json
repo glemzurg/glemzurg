@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "global_function.schema.json",
+  "title": "Global Function",
+  "description": "Schema for a global function object. Global functions are reusable named definitions referenced from expressions throughout the model. A global function must have a name starting with underscore (e.g., '_Max', '_SetOfValues') and a logic object with a description. Parameters are optional. If validation fails, verify 'name' starts with underscore and 'logic' has a 'description'.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the global function. Must start with an underscore (e.g., '_Max', '_SetOfValues'). This is required and must be non-empty.",
+      "minLength": 1
+    },
+    "parameters": {
+      "type": "array",
+      "description": "Optional list of parameter names for the function (e.g., ['x', 'y']). Each parameter must be a non-empty string.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "logic": {
+      "type": "object",
+      "description": "The logic specification for this global function. Must contain at least a description.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "A human-readable description of the function logic.",
+          "minLength": 1
+        },
+        "notation": {
+          "type": "string",
+          "description": "Optional formal notation system used for the specification."
+        },
+        "specification": {
+          "type": "string",
+          "description": "Optional formal specification in the given notation."
+        }
+      },
+      "required": ["description"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["name", "logic"],
+  "additionalProperties": false
+}

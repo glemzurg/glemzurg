@@ -1,0 +1,6 @@
+{
+    "code": 16003,
+    "message_prefix": "failed to parse global function JSON:",
+    "error_file": "16003_global_function_invalid_json.md",
+    "has_schema": false
+}

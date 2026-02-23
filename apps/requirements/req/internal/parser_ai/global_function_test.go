@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	t_GLOBAL_FUNCTION_PATH_OK  = "test_files/global_function"
+	t_GLOBAL_FUNCTION_PATH_ERR = t_GLOBAL_FUNCTION_PATH_OK + "/err"
+)
+
 func TestGlobalFunctionSuite(t *testing.T) {
 	suite.Run(t, new(GlobalFunctionSuite))
 }
@@ -16,48 +21,75 @@ type GlobalFunctionSuite struct {
 	suite.Suite
 }
 
-func (suite *GlobalFunctionSuite) TestMarshalUnmarshal() {
-	tests := []struct {
-		name     string
-		input    inputGlobalFunction
-		expected string
-	}{
-		{
-			name: "basic global function",
-			input: inputGlobalFunction{
-				Name: "_Max",
-				Parameters: []string{"x", "y"},
-				Logic: inputLogic{
-					Description: "Returns the maximum of two values",
-					Notation:    "tla_plus",
-					Specification: "IF x > y THEN x ELSE y",
-				},
-			},
-		},
-		{
-			name: "global function without parameters",
-			input: inputGlobalFunction{
-				Name: "_SetOfValues",
-				Logic: inputLogic{
-					Description: "A set of valid values",
-					Notation:    "tla_plus",
-				},
-			},
-		},
+func (suite *GlobalFunctionSuite) TestParseGlobalFunctionFiles() {
+	testDataFiles, err := t_ContentsForAllJSONFiles(t_GLOBAL_FUNCTION_PATH_OK)
+	assert.Nil(suite.T(), err)
+
+	for _, testData := range testDataFiles {
+		testName := testData.Filename
+		pass := suite.T().Run(testName, func(t *testing.T) {
+			var expected inputGlobalFunction
+
+			actual, err := parseGlobalFunction([]byte(testData.InputJSON), testData.Filename)
+			assert.Nil(t, err, testName)
+
+			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
+			assert.Nil(t, err, testName)
+
+			assert.Equal(t, expected, *actual, testName)
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *GlobalFunctionSuite) TestParseGlobalFunctionErrors() {
+	testDataFiles, err := t_ContentsForAllErrorJSONFiles(t_GLOBAL_FUNCTION_PATH_ERR)
+	if err != nil {
+		suite.T().Fatalf("Failed to read error test files: %v", err)
 	}
 
-	for _, tc := range tests {
-		suite.T().Run(tc.name, func(t *testing.T) {
-			// Marshal to JSON
-			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+	if len(testDataFiles) == 0 {
+		return
+	}
 
-			// Unmarshal back
-			var result inputGlobalFunction
-			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+	for _, testData := range testDataFiles {
+		testName := testData.Filename
+		suite.T().Run(testName, func(t *testing.T) {
+			_, err := parseGlobalFunction([]byte(testData.InputJSON), testData.Filename)
+			assert.NotNil(t, err, testName+" should return an error")
 
-			assert.Equal(t, tc.input, result)
+			parseErr, ok := err.(*ParseError)
+			assert.True(t, ok, testName+" should return a ParseError")
+			if !ok {
+				return
+			}
+
+			expected := testData.ExpectedError
+			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
+			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+
+			if expected.Message != "" {
+				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+			} else if expected.MessagePrefix != "" {
+				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
+					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
+			}
+
+			if expected.HasSchema {
+				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+			} else {
+				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+			}
+
+			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+
+			if expected.Field != "" {
+				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+			}
 		})
 	}
 }
