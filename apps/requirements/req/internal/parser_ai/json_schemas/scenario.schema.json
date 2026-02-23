@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scenario.schema.json",
+  "title": "Scenario",
+  "description": "Schema for scenario JSON files that define specific flows through a use case. Scenario files are located in the 'scenarios/' directory under a use case (e.g., 'use_cases/manage_order/scenarios/happy_path.json'). Scenarios document sequence diagrams with objects and steps. If validation fails, verify 'name' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the scenario (e.g., 'Happy Path', 'Error Handling'). Must be non-empty.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the scenario."
+    },
+    "objects": {
+      "type": "object",
+      "description": "Map of object keys to objects participating in this scenario.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "object_number": {
+            "type": "integer",
+            "description": "The display order number of the object.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional display name for the object."
+          },
+          "name_style": {
+            "type": "string",
+            "description": "The style for displaying the object name."
+          },
+          "class_key": {
+            "type": "string",
+            "description": "The key of the class this object represents."
+          },
+          "multi": {
+            "type": "boolean",
+            "description": "Whether this object represents multiple instances."
+          },
+          "uml_comment": {
+            "type": "string",
+            "description": "Optional UML comment for this object."
+          }
+        },
+        "required": ["object_number", "name_style", "class_key"],
+        "additionalProperties": false
+      }
+    },
+    "steps": {
+      "$ref": "#/$defs/step",
+      "description": "The root step tree representing the scenario flow."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false,
+  "$defs": {
+    "step": {
+      "type": "object",
+      "properties": {
+        "step_type": {
+          "type": "string",
+          "description": "The type of step (e.g., 'sequence', 'alt', 'loop', 'leaf')."
+        },
+        "leaf_type": {
+          "type": "string",
+          "description": "For leaf steps, the type of leaf (e.g., 'event', 'query', 'call')."
+        },
+        "statements": {
+          "type": "array",
+          "description": "Child steps for compound step types.",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "condition": {
+          "type": "string",
+          "description": "Condition expression for alt/loop steps."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the step."
+        },
+        "from_object_key": {
+          "type": "string",
+          "description": "Key of the source object for this step."
+        },
+        "to_object_key": {
+          "type": "string",
+          "description": "Key of the target object for this step."
+        },
+        "event_key": {
+          "type": "string",
+          "description": "Key of the event for event-type leaf steps."
+        },
+        "query_key": {
+          "type": "string",
+          "description": "Key of the query for query-type leaf steps."
+        },
+        "scenario_key": {
+          "type": "string",
+          "description": "Key of the referenced scenario for call-type leaf steps."
+        }
+      },
+      "required": ["step_type"],
+      "additionalProperties": false
+    }
+  }
+}

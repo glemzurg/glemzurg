@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "use_case_shared.schema.json",
+  "title": "Use Case Shared",
+  "description": "Schema for use case shared JSON files that define how a mud-level use case relates to a sea-level use case. Files are located in the 'use_case_shares/' directory under a subdomain (e.g., 'use_case_shares/mud_uc.sea_uc.ucshare.json'). If validation fails, verify 'share_type' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "share_type": {
+      "type": "string",
+      "description": "The type of sharing relationship (e.g., 'include', 'extend').",
+      "minLength": 1
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations."
+    }
+  },
+  "required": ["share_type"],
+  "additionalProperties": false
+}

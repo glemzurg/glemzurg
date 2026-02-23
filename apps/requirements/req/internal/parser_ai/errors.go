@@ -206,6 +206,26 @@ const (
 	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
 
 	// Subdomain naming errors (11030+)
-	ErrTreeSingleSubdomainNotDefault   = 11030 // Single subdomain must be named "default"
+	ErrTreeSingleSubdomainNotDefault    = 11030 // Single subdomain must be named "default"
 	ErrTreeMultipleSubdomainsHasDefault = 11031 // Multiple subdomains cannot include one named "default"
+
+	// Use case errors (18xxx)
+	ErrUseCaseNameRequired    = 18001
+	ErrUseCaseNameEmpty       = 18002
+	ErrUseCaseInvalidJSON     = 18003
+	ErrUseCaseSchemaViolation = 18004
+	ErrUseCaseLevelRequired   = 18005
+	ErrUseCaseLevelInvalid    = 18006
+
+	// Scenario errors (19xxx)
+	ErrScenarioNameRequired    = 19001
+	ErrScenarioNameEmpty       = 19002
+	ErrScenarioInvalidJSON     = 19003
+	ErrScenarioSchemaViolation = 19004
+
+	// Use case shared errors (20xxx)
+	ErrUseCaseSharedShareTypeRequired = 20001
+	ErrUseCaseSharedShareTypeEmpty    = 20002
+	ErrUseCaseSharedInvalidJSON       = 20003
+	ErrUseCaseSharedSchemaViolation   = 20004
 )
