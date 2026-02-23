@@ -10,7 +10,12 @@
             "Name": "Power",
             "Details": "Appears in data dictionary.",
             "DataTypeRules": "string that is 3-28 chars long",
-            "DerivationPolicy": null,
+            "DerivationPolicy": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/power",
+                "Description": "Human readable derivation rules.",
+                "Notation": "tla_plus",
+                "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
+            },
             "Nullable": true,
             "UmlComment": "very import to users",
             "IndexNums": [1, 2]
@@ -20,7 +25,11 @@
             "Name": "Speed",
             "Details": "",
             "DataTypeRules": "unconstrained",
-            "DerivationPolicy": null,
+            "DerivationPolicy": {
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/speed",
+                "Description": "No specification yet.",
+                "Notation": "tla_plus"
+            },
             "Nullable": false,
             "UmlComment": "",
             "IndexNums": null,
