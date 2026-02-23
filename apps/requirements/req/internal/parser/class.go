@@ -258,12 +258,16 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if specAny, ok := derivationMap["specification"]; ok {
 					specification = specAny.(string)
 				}
-				// Construct the attribute key first so we can use it for the logic key.
-				logicKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+				// Construct the derivation key as a child of the attribute key.
+				attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				logic, err := model_logic.NewLogic(logicKey, description, "tla_plus", specification)
+				derivKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
+				if err != nil {
+					return model_class.Attribute{}, errors.WithStack(err)
+				}
+				logic, err := model_logic.NewLogic(derivKey, description, "tla_plus", specification)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}

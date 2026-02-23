@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 
 	"github.com/stretchr/testify/assert"
@@ -88,12 +89,26 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	classOrder, err := model_class.NewClass(classKeyOrder, "Order", "## Order\n\nAn order placed by a customer.", &actorKeyA, nil, &classGenKey, "uml comment for order")
 	assert.Nil(suite.T(), err)
 
-	// Add an attribute to the order class.
+	// Add attributes to the order class.
 	attrKeyStatus, err := identity.NewAttributeKey(classKeyOrder, "status")
 	assert.Nil(suite.T(), err)
-	attrStatus, err := model_class.NewAttribute(attrKeyStatus, "Status", "Current order status.", "string that is 3-20 chars long", nil, false, "", nil)
+	statusDerivKey, err := identity.NewAttributeDerivationKey(attrKeyStatus, "derivation")
 	assert.Nil(suite.T(), err)
-	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{attrKeyStatus: attrStatus})
+	statusDerivation, err := model_logic.NewLogic(statusDerivKey, "Derived from state machine.", "tla_plus", "")
+	assert.Nil(suite.T(), err)
+	attrStatus, err := model_class.NewAttribute(attrKeyStatus, "Status", "Current order status.", "string that is 3-20 chars long", &statusDerivation, false, "", nil)
+	assert.Nil(suite.T(), err)
+
+	attrKeyTotalPrice, err := identity.NewAttributeKey(classKeyOrder, "total_price")
+	assert.Nil(suite.T(), err)
+	totalPriceDerivKey, err := identity.NewAttributeDerivationKey(attrKeyTotalPrice, "derivation")
+	assert.Nil(suite.T(), err)
+	totalPriceDerivation, err := model_logic.NewLogic(totalPriceDerivKey, "Sum of line item prices.", "tla_plus", "SUM(line_items.price)")
+	assert.Nil(suite.T(), err)
+	attrTotalPrice, err := model_class.NewAttribute(attrKeyTotalPrice, "Total Price", "", "unconstrained", &totalPriceDerivation, true, "important for invoicing", nil)
+	assert.Nil(suite.T(), err)
+
+	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{attrKeyStatus: attrStatus, attrKeyTotalPrice: attrTotalPrice})
 	classOrder.SetStates(map[identity.Key]model_state.State{})
 	classOrder.SetEvents(map[identity.Key]model_state.Event{})
 	classOrder.SetGuards(map[identity.Key]model_state.Guard{})

@@ -11,7 +11,7 @@
             "Details": "Appears in data dictionary.",
             "DataTypeRules": "string that is 3-28 chars long",
             "DerivationPolicy": {
-                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/power",
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/power/aderive/derivation",
                 "Description": "Human readable derivation rules.",
                 "Notation": "tla_plus",
                 "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
@@ -26,7 +26,7 @@
             "Details": "",
             "DataTypeRules": "unconstrained",
             "DerivationPolicy": {
-                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/speed",
+                "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/attribute/speed/aderive/derivation",
                 "Description": "No specification yet.",
                 "Notation": "tla_plus"
             },
