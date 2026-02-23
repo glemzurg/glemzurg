@@ -273,9 +273,9 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 	// Convert class generalizations first to get the key mappings
 	genKeyMap := make(map[string]identity.Key)
 	for key, gen := range subdomain.Generalizations {
-		converted, err := convertGeneralizationToModel(key, gen, subdomainKey)
+		converted, err := convertClassGeneralizationToModel(key, gen, subdomainKey)
 		if err != nil {
-			return model_domain.Subdomain{}, errors.Wrapf(err, "failed to convert generalization '%s'", key)
+			return model_domain.Subdomain{}, errors.Wrapf(err, "failed to convert class generalization '%s'", key)
 		}
 		result.Generalizations[converted.Key] = converted
 		genKeyMap[key] = converted.Key
@@ -553,7 +553,7 @@ func convertUseCaseGeneralizationToModel(keyStr string, gen *inputUseCaseGeneral
 }
 
 // convertClassToModel converts an inputClass to a model_class.Class.
-func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity.Key, generalizations map[string]*inputGeneralization, genKeyMap map[string]identity.Key) (model_class.Class, error) {
+func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity.Key, generalizations map[string]*inputClassGeneralization, genKeyMap map[string]identity.Key) (model_class.Class, error) {
 	classKey, err := identity.NewClassKey(subdomainKey, keyStr)
 	if err != nil {
 		return model_class.Class{}, errors.Wrap(err, "failed to create class key")
@@ -917,11 +917,11 @@ func convertParametersToModel(params []inputParameter) []model_state.Parameter {
 	return result
 }
 
-// convertGeneralizationToModel converts an inputGeneralization to a model_class.Generalization.
-func convertGeneralizationToModel(keyStr string, gen *inputGeneralization, subdomainKey identity.Key) (model_class.Generalization, error) {
+// convertClassGeneralizationToModel converts an inputClassGeneralization to a model_class.Generalization.
+func convertClassGeneralizationToModel(keyStr string, gen *inputClassGeneralization, subdomainKey identity.Key) (model_class.Generalization, error) {
 	genKey, err := identity.NewGeneralizationKey(subdomainKey, keyStr)
 	if err != nil {
-		return model_class.Generalization{}, errors.Wrap(err, "failed to create generalization key")
+		return model_class.Generalization{}, errors.Wrap(err, "failed to create class generalization key")
 	}
 
 	return model_class.Generalization{

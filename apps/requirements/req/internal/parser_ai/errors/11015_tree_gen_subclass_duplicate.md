@@ -1,10 +1,10 @@
-# Generalization Subclass Duplicate (E11015)
+# Class Generalization Subclass Duplicate (E11015)
 
-A generalization lists the same class multiple times in its subclasses.
+A class generalization lists the same class multiple times in its subclasses.
 
 ## What Went Wrong
 
-A generalization file has the same class key appearing more than once in the `subclass_keys` array. Each subclass should only be listed once.
+A class generalization file has the same class key appearing more than once in the `subclass_keys` array. Each subclass should only be listed once.
 
 ## Example of the Error
 

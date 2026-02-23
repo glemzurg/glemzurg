@@ -1,14 +1,14 @@
-# Generalization Subclasses Required (E10006)
+# Class Generalization Subclasses Required (E10006)
 
-The generalization JSON file is missing the `subclass_keys` field or it is empty.
+The class generalization JSON file is missing the `subclass_keys` field or it is empty.
 
 ## What Went Wrong
 
-Every generalization must specify at least one subclass (child class). The `subclass_keys` field must be an array containing at least one valid class key.
+Every class generalization must specify at least one subclass (child class). The `subclass_keys` field must be an array containing at least one valid class key.
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `generalizations/` directory:
 
 ```
 your_model/
@@ -77,7 +77,7 @@ Provide an array with at least one class key for the `subclass_keys` field:
 
 ## Why At Least One Subclass?
 
-A generalization defines an inheritance relationship. Without subclasses, there is no inheritance:
+A class generalization defines an inheritance relationship. Without subclasses, there is no inheritance:
 
 ```
         Payment (superclass)
@@ -87,7 +87,7 @@ A generalization defines an inheritance relationship. Without subclasses, there 
 CreditCard   BankTransfer (subclasses - at least one required!)
 ```
 
-If a class has no subclasses, it doesn't need a generalization — it's just a regular class.
+If a class has no subclasses, it doesn't need a class generalization — it's just a regular class.
 
 ## Understanding Class Keys
 
@@ -128,7 +128,7 @@ ls billing/bank_transfer.class.json
 
 ## Related Errors
 
-- **E10001**: Generalization name is missing
+- **E10001**: Class generalization name is missing
 - **E10004**: Schema violation (general)
 - **E10005**: Superclass key is missing or empty
 - **E10007**: A subclass key entry is empty

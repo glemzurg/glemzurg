@@ -1,14 +1,14 @@
-# Generalization Name Required (E10001)
+# Class Generalization Name Required (E10001)
 
-The generalization JSON file is missing the required `name` field.
+The class generalization JSON file is missing the required `name` field.
 
 ## What Went Wrong
 
-The parser found a generalization file but it does not contain a `name` property. Every generalization must have a name that identifies the inheritance relationship.
+The parser found a class generalization file but it does not contain a `name` property. Every class generalization must have a name that identifies the inheritance relationship.
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory at the model root:
+Class generalization files are located in the `generalizations/` directory at the model root:
 
 ```
 your_model/
@@ -22,7 +22,7 @@ your_model/
 
 ## How to Fix
 
-Add a `name` field to your generalization file:
+Add a `name` field to your class generalization file:
 
 ```json
 {
@@ -34,11 +34,11 @@ Add a `name` field to your generalization file:
 
 ## Complete Schema
 
-The generalization file accepts these fields:
+The class generalization file accepts these fields:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | **Yes** | Human-readable name for the generalization |
+| `name` | string | **Yes** | Human-readable name for the class generalization |
 | `superclass_key` | string | **Yes** | Key of the parent class |
 | `subclass_keys` | string[] | **Yes** | Keys of the child classes (at least one) |
 | `details` | string | No | Extended description |
@@ -48,11 +48,11 @@ The generalization file accepts these fields:
 
 ## Why This Field is Required
 
-The generalization name is used throughout the system:
+The class generalization name is used throughout the system:
 
 - **Generated documentation**: The name appears in inheritance diagrams
-- **UML diagrams**: The generalization triangle is labeled with this name
-- **Error messages**: Errors reference the generalization name for context
+- **UML diagrams**: The class generalization triangle is labeled with this name
+- **Error messages**: Errors reference the class generalization name for context
 
 ## Troubleshooting Checklist
 
@@ -81,14 +81,14 @@ The generalization name is used throughout the system:
 ## Valid Examples
 
 ```json
-// Minimal valid generalization
+// Minimal valid class generalization
 {
     "name": "Payment Types",
     "superclass_key": "billing.payment",
     "subclass_keys": ["billing.credit_card"]
 }
 
-// Full generalization with all fields
+// Full class generalization with all fields
 {
     "name": "Media Format",
     "details": "Different formats a book can be published in.",
@@ -102,7 +102,7 @@ The generalization name is used throughout the system:
 
 ## Related Errors
 
-- **E10002**: Generalization name is present but empty
+- **E10002**: Class generalization name is present but empty
 - **E10003**: Invalid JSON syntax
 - **E10004**: Schema violation
 - **E10005**: Superclass key is missing or empty

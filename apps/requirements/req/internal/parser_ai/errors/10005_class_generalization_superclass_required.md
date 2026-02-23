@@ -1,14 +1,14 @@
-# Generalization Superclass Required (E10005)
+# Class Generalization Superclass Required (E10005)
 
-The generalization JSON file has a `superclass_key` field that is missing, empty, or contains only whitespace.
+The class generalization JSON file has a `superclass_key` field that is missing, empty, or contains only whitespace.
 
 ## What Went Wrong
 
-Every generalization must specify a superclass (parent class) that the subclasses inherit from. The `superclass_key` field must contain a valid, non-empty class key.
+Every class generalization must specify a superclass (parent class) that the subclasses inherit from. The `superclass_key` field must contain a valid, non-empty class key.
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `generalizations/` directory:
 
 ```
 your_model/
@@ -94,7 +94,7 @@ Or for nested subdomains:
 
 ## What is a Superclass?
 
-In a generalization (inheritance) relationship:
+In a class generalization (inheritance) relationship:
 
 - **Superclass** (parent): The general category that defines common attributes
 - **Subclasses** (children): Specialized types that inherit from and extend the superclass
@@ -143,7 +143,7 @@ ls billing/methods/card.class.json
 
 ## Related Errors
 
-- **E10001**: Generalization name is missing
+- **E10001**: Class generalization name is missing
 - **E10004**: Schema violation (general)
 - **E10006**: Subclass keys is missing
 - **E10007**: A subclass key is empty

@@ -1,14 +1,14 @@
-# Generalization Invalid JSON (E10003)
+# Class Generalization Invalid JSON (E10003)
 
-The generalization JSON file contains invalid JSON syntax and cannot be parsed.
+The class generalization JSON file contains invalid JSON syntax and cannot be parsed.
 
 ## What Went Wrong
 
-The parser attempted to read your generalization file but encountered a JSON syntax error. The file contents are not valid JSON.
+The parser attempted to read your class generalization file but encountered a JSON syntax error. The file contents are not valid JSON.
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `generalizations/` directory:
 
 ```
 your_model/
@@ -19,7 +19,7 @@ your_model/
 
 ## How to Fix
 
-Ensure your generalization file contains valid JSON. A minimal valid file looks like:
+Ensure your class generalization file contains valid JSON. A minimal valid file looks like:
 
 ```json
 {
@@ -139,11 +139,11 @@ jq . generalizations/payment_types.gen.json
 python3 -m json.tool generalizations/payment_types.gen.json
 ```
 
-## Valid Generalization Template
+## Valid Class Generalization Template
 
 ```json
 {
-    "name": "Your Generalization Name",
+    "name": "Your Class Generalization Name",
     "superclass_key": "domain.superclass",
     "subclass_keys": ["domain.subclass1", "domain.subclass2"]
 }

@@ -209,7 +209,7 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 
 	// Initialize child maps
 	subdomain.Classes = make(map[string]*inputClass)
-	subdomain.Generalizations = make(map[string]*inputGeneralization)
+	subdomain.Generalizations = make(map[string]*inputClassGeneralization)
 	subdomain.Associations = make(map[string]*inputAssociation)
 
 	// Read subdomain-level associations
@@ -266,7 +266,7 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 			if err != nil {
 				return nil, err
 			}
-			gen, err := parseGeneralization(content, filePath)
+			gen, err := parseClassGeneralization(content, filePath)
 			if err != nil {
 				return nil, err
 			}

@@ -172,7 +172,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 		Details:                subdomain.Details,
 		UMLComment:             subdomain.UmlComment,
 		Classes:                make(map[string]*inputClass),
-		Generalizations:        make(map[string]*inputGeneralization),
+		Generalizations:        make(map[string]*inputClassGeneralization),
 		Associations:           make(map[string]*inputAssociation),
 		UseCases:               make(map[string]*inputUseCase),
 		UseCaseGeneralizations: make(map[string]*inputUseCaseGeneralization),
@@ -190,7 +190,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 
 	// Convert generalizations
 	for key, gen := range subdomain.Generalizations {
-		converted := convertGeneralizationFromModel(&gen, subdomain.Classes)
+		converted := convertClassGeneralizationFromModel(&gen, subdomain.Classes)
 		result.Generalizations[key.SubKey] = converted
 	}
 
@@ -609,10 +609,10 @@ func convertParametersFromModel(params []model_state.Parameter) []inputParameter
 	return result
 }
 
-// convertGeneralizationFromModel converts a model_class.Generalization to an inputGeneralization.
-// It needs the classes map to find which classes reference this generalization.
-func convertGeneralizationFromModel(gen *model_class.Generalization, classes map[identity.Key]model_class.Class) *inputGeneralization {
-	result := &inputGeneralization{
+// convertClassGeneralizationFromModel converts a model_class.Generalization to an inputClassGeneralization.
+// It needs the classes map to find which classes reference this class generalization.
+func convertClassGeneralizationFromModel(gen *model_class.Generalization, classes map[identity.Key]model_class.Class) *inputClassGeneralization {
+	result := &inputClassGeneralization{
 		Name:         gen.Name,
 		Details:      gen.Details,
 		IsComplete:   gen.IsComplete,

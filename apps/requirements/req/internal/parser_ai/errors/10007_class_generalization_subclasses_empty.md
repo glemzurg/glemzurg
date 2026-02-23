@@ -1,4 +1,4 @@
-# Generalization Subclass Key Empty (E10007)
+# Class Generalization Subclass Key Empty (E10007)
 
 A subclass key in the `subclass_keys` array is empty or contains only whitespace.
 
@@ -8,7 +8,7 @@ The `subclass_keys` array contains an entry that is either an empty string (`""`
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `generalizations/` directory:
 
 ```
 your_model/

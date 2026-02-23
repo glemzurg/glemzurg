@@ -233,4 +233,4 @@ Example: `order_fulfillment.default.book_order_line--inventory.default.inventory
 - **E6013**: Association filename invalid
 - **E8006**: Action filename invalid
 - **E9006**: Query filename invalid
-- **E10011**: Generalization filename invalid
+- **E10011**: Class generalization filename invalid

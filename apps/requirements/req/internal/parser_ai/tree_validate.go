@@ -234,9 +234,9 @@ func validateSubdomainTree(model *inputModel, domainKey, subdomainKey string, su
 		}
 	}
 
-	// Validate generalizations
+	// Validate class generalizations
 	for genKey, gen := range subdomain.Generalizations {
-		if err := validateGeneralizationTree(subdomain, domainKey, subdomainKey, genKey, gen); err != nil {
+		if err := validateClassGeneralizationTree(subdomain, domainKey, subdomainKey, genKey, gen); err != nil {
 			return err
 		}
 	}
@@ -444,15 +444,15 @@ func validateActionsReferenced(class *inputClass, domainKey, subdomainKey, class
 	return nil
 }
 
-// validateGeneralizationTree validates a generalization's cross-references.
-func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainKey, genKey string, gen *inputGeneralization) error {
+// validateClassGeneralizationTree validates a class generalization's cross-references.
+func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainKey, genKey string, gen *inputClassGeneralization) error {
 	genPath := fmt.Sprintf("domains/%s/subdomains/%s/generalizations/%s.gen.json", domainKey, subdomainKey, genKey)
 
 	// Validate superclass_key exists
 	if _, ok := subdomain.Classes[gen.SuperclassKey]; !ok {
 		return NewParseError(
-			ErrTreeGenSuperclassNotFound,
-			fmt.Sprintf("generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
+			ErrTreeClassGenSuperclassNotFound,
+			fmt.Sprintf("class generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
 				genKey, gen.SuperclassKey, subdomainKey),
 			genPath,
 		).WithField("superclass_key")
@@ -464,8 +464,8 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 		// Check for duplicates
 		if seen[subclassKey] {
 			return NewParseError(
-				ErrTreeGenSubclassDuplicate,
-				fmt.Sprintf("generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
+				ErrTreeClassGenSubclassDuplicate,
+				fmt.Sprintf("class generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
 		}
@@ -474,8 +474,8 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 		// Check that the subclass exists
 		if _, ok := subdomain.Classes[subclassKey]; !ok {
 			return NewParseError(
-				ErrTreeGenSubclassNotFound,
-				fmt.Sprintf("generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
+				ErrTreeClassGenSubclassNotFound,
+				fmt.Sprintf("class generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
 					genKey, subclassKey, subdomainKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
@@ -484,8 +484,8 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 		// Check that superclass is not also a subclass
 		if subclassKey == gen.SuperclassKey {
 			return NewParseError(
-				ErrTreeGenSuperclassIsSubclass,
-				fmt.Sprintf("generalization '%s' superclass '%s' cannot also be a subclass",
+				ErrTreeClassGenSuperclassIsSubclass,
+				fmt.Sprintf("class generalization '%s' superclass '%s' cannot also be a subclass",
 					genKey, gen.SuperclassKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i))

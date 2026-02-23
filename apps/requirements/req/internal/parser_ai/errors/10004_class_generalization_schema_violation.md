@@ -1,10 +1,10 @@
-# Generalization Schema Violation (E10004)
+# Class Generalization Schema Violation (E10004)
 
-The generalization JSON file contains valid JSON but does not conform to the expected schema.
+The class generalization JSON file contains valid JSON but does not conform to the expected schema.
 
 ## What Went Wrong
 
-The parser successfully read your generalization file as valid JSON, but its structure or content violates the schema rules. This typically means:
+The parser successfully read your class generalization file as valid JSON, but its structure or content violates the schema rules. This typically means:
 
 - A required field is missing (`name`, `superclass_key`, or `subclass_keys`)
 - A field has the wrong type
@@ -13,7 +13,7 @@ The parser successfully read your generalization file as valid JSON, but its str
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `generalizations/` directory:
 
 ```
 your_model/
@@ -28,7 +28,7 @@ your_model/
 
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| `name` | string | `minLength: 1` | Display name for the generalization |
+| `name` | string | `minLength: 1` | Display name for the class generalization |
 | `superclass_key` | string | `minLength: 1` | Key of the parent class |
 | `subclass_keys` | string[] | `minItems: 1`, each `minLength: 1` | Keys of child classes |
 
@@ -196,7 +196,7 @@ billing/
 }
 ```
 
-## How Generalizations Connect Classes
+## How Class Generalizations Connect Classes
 
 ```
 generalizations/payment_types.gen.json
@@ -210,7 +210,7 @@ generalizations/payment_types.gen.json
 }
 ```
 
-The generalization creates an inheritance relationship:
+The class generalization creates an inheritance relationship:
 - `Payment` is the superclass (parent)
 - `CreditCard` and `BankTransfer` are subclasses (children)
 - Subclasses inherit attributes from the superclass

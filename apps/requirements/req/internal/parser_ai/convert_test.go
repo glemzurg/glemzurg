@@ -224,7 +224,7 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 								Indexes: [][]string{{"id"}},
 							},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},
@@ -400,7 +400,7 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 								},
 							},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},
@@ -524,7 +524,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 								},
 							},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},
@@ -642,7 +642,7 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
 							"book":    {Name: "Book", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: map[string]*inputGeneralization{
+						Generalizations: map[string]*inputClassGeneralization{
 							"product_types": {
 								Name:          "Product Types",
 								SuperclassKey: "product",
@@ -771,7 +771,7 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 							"order":     {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 							"line_item": {Name: "Line Item", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations: map[string]*inputAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
@@ -910,7 +910,7 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 								Attributes: make(map[string]*inputAttribute),
 							},
 						},
-						Generalizations: map[string]*inputGeneralization{
+						Generalizations: map[string]*inputClassGeneralization{
 							"product_types": {
 								Name:          "Product Types",
 								SuperclassKey: "product",
@@ -1027,7 +1027,7 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 								Attributes: make(map[string]*inputAttribute),
 							},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},
@@ -1115,7 +1115,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 						Classes: map[string]*inputClass{
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 					"shipping": {
@@ -1123,7 +1123,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 						Classes: map[string]*inputClass{
 							"shipment": {Name: "Shipment", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},
@@ -1241,7 +1241,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 						Classes: map[string]*inputClass{
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},
@@ -1255,7 +1255,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 						Classes: map[string]*inputClass{
 							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputGeneralization),
+						Generalizations: make(map[string]*inputClassGeneralization),
 						Associations:    make(map[string]*inputAssociation),
 					},
 				},

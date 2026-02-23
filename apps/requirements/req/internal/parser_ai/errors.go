@@ -106,20 +106,20 @@ const (
 	ErrQueryDuplicateKey    = 9005
 	ErrQueryFilenameInvalid = 9006
 
-	// Generalization errors (10xxx)
-	ErrGenNameRequired         = 10001
-	ErrGenNameEmpty            = 10002
-	ErrGenInvalidJSON          = 10003
-	ErrGenSchemaViolation      = 10004
-	ErrGenSuperclassRequired   = 10005
-	ErrGenSubclassesRequired   = 10006
-	ErrGenSubclassesEmpty      = 10007
-	ErrGenSuperclassNotFound   = 10008
-	ErrGenSubclassNotFound     = 10009
-	ErrGenDuplicateKey         = 10010
-	ErrGenFilenameInvalid      = 10011
-	ErrGenSubclassDuplicate    = 10012
-	ErrGenSuperclassIsSubclass = 10013
+	// Class generalization errors (10xxx)
+	ErrClassGenNameRequired         = 10001
+	ErrClassGenNameEmpty            = 10002
+	ErrClassGenInvalidJSON          = 10003
+	ErrClassGenSchemaViolation      = 10004
+	ErrClassGenSuperclassRequired   = 10005
+	ErrClassGenSubclassesRequired   = 10006
+	ErrClassGenSubclassesEmpty      = 10007
+	ErrClassGenSuperclassNotFound   = 10008
+	ErrClassGenSubclassNotFound     = 10009
+	ErrClassGenDuplicateKey         = 10010
+	ErrClassGenFilenameInvalid      = 10011
+	ErrClassGenSubclassDuplicate    = 10012
+	ErrClassGenSuperclassIsSubclass = 10013
 
 	// Actor generalization errors (12xxx)
 	ErrActorGenNameRequired       = 12001
@@ -156,8 +156,8 @@ const (
 	ErrTreeAssocFromClassNotFound         = 11002 // Association from_class_key not found
 	ErrTreeAssocToClassNotFound           = 11003 // Association to_class_key not found
 	ErrTreeAssocClassNotFound             = 11004 // Association association_class_key not found
-	ErrTreeGenSuperclassNotFound          = 11005 // Generalization superclass_key not found
-	ErrTreeGenSubclassNotFound            = 11006 // Generalization subclass_key not found
+	ErrTreeClassGenSuperclassNotFound     = 11005 // Class generalization superclass_key not found
+	ErrTreeClassGenSubclassNotFound       = 11006 // Class generalization subclass_key not found
 	ErrTreeClassIndexAttrNotFound         = 11007 // Class index references attribute that doesn't exist
 	ErrTreeStateMachineStateNotFound      = 11008 // Transition references state that doesn't exist
 	ErrTreeStateMachineEventNotFound      = 11009 // Transition references event that doesn't exist
@@ -165,8 +165,8 @@ const (
 	ErrTreeStateMachineActionNotFound     = 11011 // Transition or state action references action that doesn't exist
 	ErrTreeTransitionNoStates             = 11012 // Transition has neither from_state_key nor to_state_key
 	ErrTreeTransitionInitialToFinal       = 11013 // Transition is both initial and final (invalid)
-	ErrTreeGenSuperclassIsSubclass        = 11014 // Superclass cannot also be a subclass
-	ErrTreeGenSubclassDuplicate           = 11015 // Same class listed multiple times in subclass_keys
+	ErrTreeClassGenSuperclassIsSubclass   = 11014 // Superclass cannot also be a subclass
+	ErrTreeClassGenSubclassDuplicate      = 11015 // Same class listed multiple times in subclass_keys
 	ErrTreeAssocMultiplicityInvalid       = 11016 // Invalid multiplicity format
 	ErrTreeAssocClassSameAsEndpoint       = 11025 // Association class cannot be the same as from or to class
 

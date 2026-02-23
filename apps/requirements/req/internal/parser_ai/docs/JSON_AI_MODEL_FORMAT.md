@@ -930,7 +930,7 @@ Each JSON file type will have a corresponding JSON Schema for validation:
 - `state_machine.schema.json`
 - `action.schema.json`
 - `query.schema.json`
-- `generalization.schema.json`
+- `class_generalization.schema.json`
 
 These schemas provide:
 - Early validation before Go parsing

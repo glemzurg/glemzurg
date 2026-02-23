@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "generalization.schema.json",
-  "title": "Generalization",
-  "description": "Schema for generalization JSON files that define inheritance relationships between classes. Generalization files are located in the 'generalizations/' directory at the model root (e.g., 'generalizations/payment_types.gen.json'). A generalization defines a superclass and its subclasses, modeling an 'is-a' relationship. If validation fails, verify 'name', 'superclass_key', and 'subclass_keys' are all present and that the class keys reference existing classes.",
+  "$id": "class_generalization.schema.json",
+  "title": "Class Generalization",
+  "description": "Schema for class generalization JSON files that define inheritance relationships between classes. Class generalization files are located in the 'generalizations/' directory at the model root (e.g., 'generalizations/payment_types.gen.json'). A class generalization defines a superclass and its subclasses, modeling an 'is-a' relationship. If validation fails, verify 'name', 'superclass_key', and 'subclass_keys' are all present and that the class keys reference existing classes.",
   "type": "object",
   "properties": {
     "name": {

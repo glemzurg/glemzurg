@@ -9,28 +9,28 @@ import (
 )
 
 const (
-	t_GENERALIZATION_PATH_OK  = "test_files/generalization"
-	t_GENERALIZATION_PATH_ERR = t_GENERALIZATION_PATH_OK + "/err"
+	t_CLASS_GENERALIZATION_PATH_OK  = "test_files/class_generalization"
+	t_CLASS_GENERALIZATION_PATH_ERR = t_CLASS_GENERALIZATION_PATH_OK + "/err"
 )
 
-func TestGeneralizationSuite(t *testing.T) {
-	suite.Run(t, new(GeneralizationSuite))
+func TestClassGeneralizationSuite(t *testing.T) {
+	suite.Run(t, new(ClassGeneralizationSuite))
 }
 
-type GeneralizationSuite struct {
+type ClassGeneralizationSuite struct {
 	suite.Suite
 }
 
-func (suite *GeneralizationSuite) TestParseGeneralizationFiles() {
-	testDataFiles, err := t_ContentsForAllJSONFiles(t_GENERALIZATION_PATH_OK)
+func (suite *ClassGeneralizationSuite) TestParseClassGeneralizationFiles() {
+	testDataFiles, err := t_ContentsForAllJSONFiles(t_CLASS_GENERALIZATION_PATH_OK)
 	assert.Nil(suite.T(), err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.T().Run(testName, func(t *testing.T) {
-			var expected inputGeneralization
+			var expected inputClassGeneralization
 
-			actual, err := parseGeneralization([]byte(testData.InputJSON), testData.Filename)
+			actual, err := parseClassGeneralization([]byte(testData.InputJSON), testData.Filename)
 			assert.Nil(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
@@ -45,8 +45,8 @@ func (suite *GeneralizationSuite) TestParseGeneralizationFiles() {
 	}
 }
 
-func (suite *GeneralizationSuite) TestParseGeneralizationErrors() {
-	testDataFiles, err := t_ContentsForAllErrorJSONFiles(t_GENERALIZATION_PATH_ERR)
+func (suite *ClassGeneralizationSuite) TestParseClassGeneralizationErrors() {
+	testDataFiles, err := t_ContentsForAllErrorJSONFiles(t_CLASS_GENERALIZATION_PATH_ERR)
 	if err != nil {
 		suite.T().Fatalf("Failed to read error test files: %v", err)
 	}
@@ -59,7 +59,7 @@ func (suite *GeneralizationSuite) TestParseGeneralizationErrors() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
-			_, err := parseGeneralization([]byte(testData.InputJSON), testData.Filename)
+			_, err := parseClassGeneralization([]byte(testData.InputJSON), testData.Filename)
 			assert.NotNil(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.

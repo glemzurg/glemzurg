@@ -1,14 +1,14 @@
-# Generalization Name Empty (E10002)
+# Class Generalization Name Empty (E10002)
 
-The generalization JSON file has a `name` field that is empty or contains only whitespace.
+The class generalization JSON file has a `name` field that is empty or contains only whitespace.
 
 ## What Went Wrong
 
-The parser found a `name` field in your generalization file, but its value is either an empty string (`""`) or contains only whitespace characters. The generalization name must contain at least one visible character.
+The parser found a `name` field in your class generalization file, but its value is either an empty string (`""`) or contains only whitespace characters. The class generalization name must contain at least one visible character.
 
 ## File Location
 
-Generalization files are located in the `generalizations/` directory:
+Class generalization files are located in the `generalizations/` directory:
 
 ```
 your_model/
@@ -19,7 +19,7 @@ your_model/
 
 ## How to Fix
 
-Provide a meaningful, non-empty name for your generalization:
+Provide a meaningful, non-empty name for your class generalization:
 
 ```json
 {
@@ -49,9 +49,9 @@ The name must contain at least one non-whitespace character:
 {"name": "Media Format"}          // Classification name
 ```
 
-## Choosing a Good Generalization Name
+## Choosing a Good Class Generalization Name
 
-A good generalization name should:
+A good class generalization name should:
 
 1. **Describe the classification**: What distinguishes the subclasses?
 2. **Be concise**: Aim for 2-4 words
@@ -81,6 +81,6 @@ A good generalization name should:
 
 ## Related Errors
 
-- **E10001**: Generalization name field is missing entirely
+- **E10001**: Class generalization name field is missing entirely
 - **E10003**: Invalid JSON syntax
 - **E10004**: Schema violation

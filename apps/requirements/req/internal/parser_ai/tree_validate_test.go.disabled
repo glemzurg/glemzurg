@@ -445,7 +445,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.Generalizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "missing_class",
@@ -458,7 +458,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSuperclassNotFound, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSuperclassNotFound, parseErr.Code)
 	assert.Equal(t, "superclass_key", parseErr.Field)
 }
 
@@ -469,7 +469,7 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.Generalizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -482,7 +482,7 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSubclassNotFound, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSubclassNotFound, parseErr.Code)
 	assert.Equal(t, "subclass_keys[0]", parseErr.Field)
 }
 
@@ -494,7 +494,7 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.Generalizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -507,7 +507,7 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSubclassDuplicate, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSubclassDuplicate, parseErr.Code)
 	assert.Equal(t, "subclass_keys[1]", parseErr.Field)
 }
 
@@ -519,7 +519,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.Generalizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -532,7 +532,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSuperclassIsSubclass, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSuperclassIsSubclass, parseErr.Code)
 }
 
 // TestSubdomainAssocFromClassNotFound verifies error when subdomain association from_class_key doesn't exist.
@@ -706,7 +706,7 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	model.Domains["domain1"].Subdomains["subdomain2"] = &inputSubdomain{
 		Name:            "Subdomain 2",
 		Classes:         map[string]*inputClass{"class2": {Name: "Class 2"}},
-		Generalizations: map[string]*inputGeneralization{},
+		Generalizations: map[string]*inputClassGeneralization{},
 		Associations:    map[string]*inputAssociation{},
 	}
 	model.Domains["domain1"].Associations = map[string]*inputAssociation{
@@ -763,7 +763,7 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 			"subdomain1": {
 				Name:            "Subdomain 1",
 				Classes:         map[string]*inputClass{"class1": {Name: "Class 1"}},
-				Generalizations: map[string]*inputGeneralization{},
+				Generalizations: map[string]*inputClassGeneralization{},
 				Associations:    map[string]*inputAssociation{},
 			},
 		},
@@ -799,7 +799,7 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 			"subdomain1": {
 				Name:            "Subdomain 1",
 				Classes:         map[string]*inputClass{},
-				Generalizations: map[string]*inputGeneralization{},
+				Generalizations: map[string]*inputClassGeneralization{},
 				Associations:    map[string]*inputAssociation{},
 			},
 		},
@@ -1307,7 +1307,7 @@ func t_buildMinimalModelTree() *inputModel {
 								Attributes: map[string]*inputAttribute{},
 							},
 						},
-						Generalizations: map[string]*inputGeneralization{},
+						Generalizations: map[string]*inputClassGeneralization{},
 						Associations:    map[string]*inputAssociation{},
 					},
 				},
@@ -1384,7 +1384,7 @@ func t_buildValidModelTree() *inputModel {
 								Attributes: map[string]*inputAttribute{},
 							},
 						},
-						Generalizations: map[string]*inputGeneralization{
+						Generalizations: map[string]*inputClassGeneralization{
 							"product_type": {
 								Name:          "Product Type",
 								SuperclassKey: "product",
@@ -1427,7 +1427,7 @@ func t_buildCompleteModelTree() *inputModel {
 							"order":     t_buildCompleteClass(),
 							"line_item": t_buildCompleteClass(),
 						},
-						Generalizations: map[string]*inputGeneralization{},
+						Generalizations: map[string]*inputClassGeneralization{},
 						Associations: map[string]*inputAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
