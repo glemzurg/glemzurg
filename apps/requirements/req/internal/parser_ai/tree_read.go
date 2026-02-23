@@ -56,7 +56,7 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 		}
 	}
 
-	// Read actors and actor generalizations
+	// Read actors
 	actorsDir := filepath.Join(modelDir, "actors")
 	if entries, err := os.ReadDir(actorsDir); err == nil {
 		for _, entry := range entries {
@@ -64,48 +64,55 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 				continue
 			}
 			name := entry.Name()
-
-			// Actor generalizations
-			if strings.HasSuffix(name, ".generalization.json") {
-				key := strings.TrimSuffix(name, ".generalization.json")
-				filePath := filepath.Join(actorsDir, name)
-
-				if err := ValidateKey(key, "actor_generalization_key", filePath); err != nil {
-					return nil, err
-				}
-
-				content, err := os.ReadFile(filePath)
-				if err != nil {
-					return nil, err
-				}
-				gen, err := parseActorGeneralization(content, filePath)
-				if err != nil {
-					return nil, err
-				}
-				model.ActorGeneralizations[key] = gen
+			if !strings.HasSuffix(name, ".actor.json") {
 				continue
 			}
+			key := strings.TrimSuffix(name, ".actor.json")
+			filePath := filepath.Join(actorsDir, name)
 
-			// Actors
-			if strings.HasSuffix(name, ".actor.json") {
-				key := strings.TrimSuffix(name, ".actor.json")
-				filePath := filepath.Join(actorsDir, name)
+			if err := ValidateKey(key, "actor_key", filePath); err != nil {
+				return nil, err
+			}
 
-				if err := ValidateKey(key, "actor_key", filePath); err != nil {
-					return nil, err
-				}
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			actor, err := parseActor(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.Actors[key] = actor
+		}
+	}
 
-				content, err := os.ReadFile(filePath)
-				if err != nil {
-					return nil, err
-				}
-				actor, err := parseActor(content, filePath)
-				if err != nil {
-					return nil, err
-				}
-				model.Actors[key] = actor
+	// Read actor generalizations
+	agDir := filepath.Join(modelDir, "actor_generalizations")
+	if entries, err := os.ReadDir(agDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
 				continue
 			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".agen.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".agen.json")
+			filePath := filepath.Join(agDir, name)
+
+			if err := ValidateKey(key, "actor_generalization_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			gen, err := parseActorGeneralization(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.ActorGeneralizations[key] = gen
 		}
 	}
 
@@ -358,17 +365,17 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 	}
 
 	// Read generalizations
-	genDir := filepath.Join(subdomainDir, "generalizations")
+	genDir := filepath.Join(subdomainDir, "class_generalizations")
 	if entries, err := os.ReadDir(genDir); err == nil {
 		for _, entry := range entries {
 			if entry.IsDir() {
 				continue
 			}
 			name := entry.Name()
-			if !strings.HasSuffix(name, ".gen.json") {
+			if !strings.HasSuffix(name, ".cgen.json") {
 				continue
 			}
-			key := strings.TrimSuffix(name, ".gen.json")
+			key := strings.TrimSuffix(name, ".cgen.json")
 			filePath := filepath.Join(genDir, name)
 
 			// Validate key format

@@ -34,8 +34,8 @@ func WriteModelTree(model *inputModel, modelDir string) error {
 		}
 	}
 
-	// Write actors and actor generalizations
-	if len(model.Actors) > 0 || len(model.ActorGeneralizations) > 0 {
+	// Write actors
+	if len(model.Actors) > 0 {
 		actorsDir := filepath.Join(modelDir, "actors")
 		if err := os.MkdirAll(actorsDir, 0755); err != nil {
 			return err
@@ -45,8 +45,16 @@ func WriteModelTree(model *inputModel, modelDir string) error {
 				return err
 			}
 		}
+	}
+
+	// Write actor generalizations
+	if len(model.ActorGeneralizations) > 0 {
+		agDir := filepath.Join(modelDir, "actor_generalizations")
+		if err := os.MkdirAll(agDir, 0755); err != nil {
+			return err
+		}
 		for key, gen := range model.ActorGeneralizations {
-			if err := writeJSON(filepath.Join(actorsDir, key+".generalization.json"), gen); err != nil {
+			if err := writeJSON(filepath.Join(agDir, key+".agen.json"), gen); err != nil {
 				return err
 			}
 		}
@@ -175,12 +183,12 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 
 	// Write class generalizations
 	if len(subdomain.ClassGeneralizations) > 0 {
-		genDir := filepath.Join(subdomainDir, "generalizations")
+		genDir := filepath.Join(subdomainDir, "class_generalizations")
 		if err := os.MkdirAll(genDir, 0755); err != nil {
 			return err
 		}
 		for key, gen := range subdomain.ClassGeneralizations {
-			if err := writeJSON(filepath.Join(genDir, key+".gen.json"), gen); err != nil {
+			if err := writeJSON(filepath.Join(genDir, key+".cgen.json"), gen); err != nil {
 				return err
 			}
 		}
