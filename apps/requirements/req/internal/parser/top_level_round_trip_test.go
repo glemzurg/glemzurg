@@ -109,7 +109,19 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	assert.Nil(suite.T(), err)
 
 	classOrder.SetAttributes(map[identity.Key]model_class.Attribute{attrKeyStatus: attrStatus, attrKeyTotalPrice: attrTotalPrice})
-	classOrder.SetStates(map[identity.Key]model_state.State{})
+
+	// Add states to the order class.
+	stateKeyPending, err := identity.NewStateKey(classKeyOrder, "pending")
+	assert.Nil(suite.T(), err)
+	statePending, err := model_state.NewState(stateKeyPending, "Pending", "Order has been placed but not yet processed.", "awaiting processing")
+	assert.Nil(suite.T(), err)
+
+	stateKeyShipped, err := identity.NewStateKey(classKeyOrder, "shipped")
+	assert.Nil(suite.T(), err)
+	stateShipped, err := model_state.NewState(stateKeyShipped, "Shipped", "", "")
+	assert.Nil(suite.T(), err)
+
+	classOrder.SetStates(map[identity.Key]model_state.State{stateKeyPending: statePending, stateKeyShipped: stateShipped})
 	classOrder.SetEvents(map[identity.Key]model_state.Event{})
 	classOrder.SetGuards(map[identity.Key]model_state.Guard{})
 	classOrder.SetActions(map[identity.Key]model_state.Action{})
