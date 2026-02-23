@@ -1,4 +1,4 @@
-package testhelper
+package test_helper
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ type testKeys struct {
 
 	// Classes in subdomain A.
 	classOrder, classProduct, classLineItem identity.Key
-	classCustomer, classVehicle, classCar    identity.Key
+	classCustomer, classVehicle, classCar   identity.Key
 
 	// Classes in subdomain B.
 	classWarehouse, classShelf, classAisle identity.Key
@@ -101,16 +101,16 @@ type testKeys struct {
 	objCustomer, objOrder, objProduct identity.Key
 
 	// Scenario step keys.
-	stepRoot                                        identity.Key
-	step1, step2, step3, step4, step5               identity.Key
-	step6, step7, step8, step9, step10              identity.Key
-	step11, step12, step13                          identity.Key
+	stepRoot                           identity.Key
+	step1, step2, step3, step4, step5  identity.Key
+	step6, step7, step8, step9, step10 identity.Key
+	step11, step12, step13             identity.Key
 
 	// Domain association keys.
 	domainAssoc1, domainAssoc2, domainAssoc3 identity.Key
 
 	// Class association keys.
-	subdomainAssoc1, subdomainAssoc2, subdomainAssoc3 identity.Key
+	subdomainAssoc1, subdomainAssoc2, subdomainAssoc3       identity.Key
 	domainClassAssoc1, domainClassAssoc2, domainClassAssoc3 identity.Key
 	modelClassAssoc1, modelClassAssoc2, modelClassAssoc3    identity.Key
 }
@@ -912,11 +912,11 @@ func buildGlobalFunctions(k testKeys, l testLogic) (map[identity.Key]model_logic
 // =========================================================================
 
 type testParams struct {
-	quantity, productId, reason       model_state.Parameter
-	priority, tags, items            model_state.Parameter
-	format                           model_state.Parameter
-	unparseable                      model_state.Parameter
-	unconstrainedBound               model_state.Parameter
+	quantity, productId, reason model_state.Parameter
+	priority, tags, items       model_state.Parameter
+	format                      model_state.Parameter
+	unparseable                 model_state.Parameter
+	unconstrainedBound          model_state.Parameter
 }
 
 func buildParameters() (testParams, error) {
@@ -1566,13 +1566,13 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 		Statements: []model_scenario.Step{
 			{
 				Key: k.step1, StepType: "leaf", LeafType: &leafEvent,
-				Description: "Customer submits order",
+				Description:   "Customer submits order",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				EventKey: &k.eventSubmit,
 			},
 			{
 				Key: k.step2, StepType: "leaf", LeafType: &leafQuery,
-				Description: "Check order status",
+				Description:   "Check order status",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				QueryKey: &k.queryStatus,
 			},
@@ -1581,7 +1581,7 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 				Statements: []model_scenario.Step{
 					{
 						Key: k.step4, StepType: "leaf", LeafType: &leafScenario,
-						Description: "Handle item",
+						Description:   "Handle item",
 						FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
 						ScenarioKey: &k.scenarioError,
 					},
@@ -1595,7 +1595,7 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 						Statements: []model_scenario.Step{
 							{
 								Key: k.step7, StepType: "leaf", LeafType: &leafEvent,
-								Description: "Process order",
+								Description:   "Process order",
 								FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 								EventKey: &k.eventFulfill,
 							},
@@ -1606,7 +1606,7 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 						Statements: []model_scenario.Step{
 							{
 								Key: k.step9, StepType: "leaf", LeafType: &leafQuery,
-								Description: "Get error details",
+								Description:   "Get error details",
 								FromObjectKey: &k.objOrder, ToObjectKey: &k.objCustomer,
 								QueryKey: &k.queryStatus,
 							},
@@ -1620,19 +1620,19 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 			},
 			{
 				Key: k.step11, StepType: "leaf", LeafType: &leafEvent,
-				Description: "Product triggers order update",
+				Description:   "Product triggers order update",
 				FromObjectKey: &k.objProduct, ToObjectKey: &k.objOrder,
 				EventKey: &k.eventCancel,
 			},
 			{
 				Key: k.step12, StepType: "leaf", LeafType: &leafQuery,
-				Description: "Order queries product details",
+				Description:   "Order queries product details",
 				FromObjectKey: &k.objOrder, ToObjectKey: &k.objProduct,
 				QueryKey: &k.queryCount,
 			},
 			{
 				Key: k.step13, StepType: "leaf", LeafType: &leafScenario,
-				Description: "View the order details",
+				Description:   "View the order details",
 				FromObjectKey: &k.objCustomer, ToObjectKey: &k.objOrder,
 				ScenarioKey: &k.scenarioView,
 			},
@@ -1686,9 +1686,9 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 // =========================================================================
 
 type testUseCases struct {
-	useCases                map[identity.Key]model_use_case.UseCase
-	useCaseGens             map[identity.Key]model_use_case.Generalization
-	useCaseShares           map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
+	useCases      map[identity.Key]model_use_case.UseCase
+	useCaseGens   map[identity.Key]model_use_case.Generalization
+	useCaseShares map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
 }
 
 func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
