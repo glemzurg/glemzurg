@@ -1,0 +1,24 @@
+package parser_ai
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestDumpTestModel(t *testing.T) {
+	model := test_helper.GetTestModel()
+
+	// Convert to input model.
+	input, err := ConvertFromModel(&model)
+	assert.NoError(t, err, "ConvertFromModel should succeed")
+
+	// Write to a fixed directory that won't be cleaned up.
+	outputDir := "/workspaces/glemzurg/test_model_dump"
+	err = WriteModelTree(input, outputDir)
+	assert.NoError(t, err, "WriteModelTree should succeed")
+
+	fmt.Printf("Model written to: %s\n", outputDir)
+}

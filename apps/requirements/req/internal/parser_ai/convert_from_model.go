@@ -63,7 +63,7 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 	// Convert domain associations
 	for key, assoc := range model.DomainAssociations {
 		converted := convertDomainAssocFromModel(&assoc)
-		result.DomainAssociations[key.SubKey] = converted
+		result.DomainAssociations[key.SubKey+"."+key.SubKey2] = converted
 	}
 
 	// Convert model-level class associations
