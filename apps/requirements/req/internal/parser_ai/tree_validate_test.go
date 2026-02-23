@@ -706,7 +706,7 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	model.Domains["domain1"].Subdomains["subdomain2"] = &inputSubdomain{
 		Name:            "Subdomain 2",
 		Classes:         map[string]*inputClass{"class2": {Name: "Class 2"}},
-		Generalizations: map[string]*inputClassGeneralization{},
+		ClassGeneralizations: map[string]*inputClassGeneralization{},
 		ClassAssociations:    map[string]*inputClassAssociation{},
 	}
 	model.Domains["domain1"].ClassAssociations = map[string]*inputClassAssociation{
@@ -763,7 +763,7 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 			"subdomain1": {
 				Name:            "Subdomain 1",
 				Classes:         map[string]*inputClass{"class1": {Name: "Class 1"}},
-				Generalizations: map[string]*inputClassGeneralization{},
+				ClassGeneralizations: map[string]*inputClassGeneralization{},
 				ClassAssociations:    map[string]*inputClassAssociation{},
 			},
 		},
@@ -799,7 +799,7 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 			"subdomain1": {
 				Name:            "Subdomain 1",
 				Classes:         map[string]*inputClass{},
-				Generalizations: map[string]*inputClassGeneralization{},
+				ClassGeneralizations: map[string]*inputClassGeneralization{},
 				ClassAssociations:    map[string]*inputClassAssociation{},
 			},
 		},
@@ -1307,7 +1307,7 @@ func t_buildMinimalModelTree() *inputModel {
 								Attributes: map[string]*inputAttribute{},
 							},
 						},
-						Generalizations: map[string]*inputClassGeneralization{},
+						ClassGeneralizations: map[string]*inputClassGeneralization{},
 						ClassAssociations:    map[string]*inputClassAssociation{},
 					},
 				},
@@ -1384,7 +1384,7 @@ func t_buildValidModelTree() *inputModel {
 								Attributes: map[string]*inputAttribute{},
 							},
 						},
-						Generalizations: map[string]*inputClassGeneralization{
+						ClassGeneralizations: map[string]*inputClassGeneralization{
 							"product_type": {
 								Name:          "Product Type",
 								SuperclassKey: "product",
@@ -1427,7 +1427,7 @@ func t_buildCompleteModelTree() *inputModel {
 							"order":     t_buildCompleteClass(),
 							"line_item": t_buildCompleteClass(),
 						},
-						Generalizations: map[string]*inputClassGeneralization{},
+						ClassGeneralizations: map[string]*inputClassGeneralization{},
 						ClassAssociations: map[string]*inputClassAssociation{
 							"order_lines": {
 								Name:             "Order Lines",

@@ -9,6 +9,9 @@ import (
 )
 
 func TestDumpTestModel(t *testing.T) {
+
+	t.Skip("DumpTestModel is a utility for dumping the test model to a directory for manual inspection; not a real test")
+
 	model := test_helper.GetTestModel()
 
 	// Convert to input model.
