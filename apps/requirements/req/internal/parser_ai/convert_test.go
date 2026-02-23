@@ -51,10 +51,10 @@ func (suite *ConvertSuite) TestConvertToModelMinimal() {
 	t := suite.T()
 
 	input := &inputModel{
-		Name:         "Test Model",
-		Details:      "Model details",
-		Actors:       make(map[string]*inputActor),
-		Domains:      make(map[string]*inputDomain),
+		Name:              "Test Model",
+		Details:           "Model details",
+		Actors:            make(map[string]*inputActor),
+		Domains:           make(map[string]*inputDomain),
 		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
@@ -73,8 +73,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithActor() {
 
 	actorKey := helper.Must(identity.NewActorKey("customer"))
 	model := &req_model.Model{
-		Key:     "testmodel",
-		Name:    "Test Model",
+		Key:  "testmodel",
+		Name: "Test Model",
 		Actors: map[identity.Key]model_actor.Actor{
 			actorKey: {
 				Key:     actorKey,
@@ -107,7 +107,7 @@ func (suite *ConvertSuite) TestConvertToModelWithActor() {
 				Details: "Customer details",
 			},
 		},
-		Domains:      make(map[string]*inputDomain),
+		Domains:           make(map[string]*inputDomain),
 		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
@@ -224,7 +224,7 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 								Indexes: [][]string{{"id"}},
 							},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
@@ -400,7 +400,7 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 								},
 							},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
@@ -524,7 +524,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 								},
 							},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
@@ -617,9 +617,9 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	require.NoError(t, err)
 
 	subdomain := input.Domains["products"].Subdomains["default"]
-	require.Contains(t, subdomain.Generalizations, "product_types")
+	require.Contains(t, subdomain.ClassGeneralizations, "product_types")
 
-	gen := subdomain.Generalizations["product_types"]
+	gen := subdomain.ClassGeneralizations["product_types"]
 	assert.Equal(t, "Product Types", gen.Name)
 	assert.Equal(t, "product", gen.SuperclassKey)
 	assert.Equal(t, []string{"book"}, gen.SubclassKeys)
@@ -642,7 +642,7 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
 							"book":    {Name: "Book", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: map[string]*inputClassGeneralization{
+						ClassGeneralizations: map[string]*inputClassGeneralization{
 							"product_types": {
 								Name:          "Product Types",
 								SuperclassKey: "product",
@@ -771,7 +771,7 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 							"order":     {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 							"line_item": {Name: "Line Item", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations: map[string]*inputClassAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
@@ -819,10 +819,10 @@ func (suite *ConvertSuite) TestRoundTripMinimal() {
 	t := suite.T()
 
 	original := &inputModel{
-		Name:         "Test Model",
-		Details:      "Model details",
-		Actors:       make(map[string]*inputActor),
-		Domains:      make(map[string]*inputDomain),
+		Name:              "Test Model",
+		Details:           "Model details",
+		Actors:            make(map[string]*inputActor),
+		Domains:           make(map[string]*inputDomain),
 		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
 
@@ -910,7 +910,7 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 								Attributes: make(map[string]*inputAttribute),
 							},
 						},
-						Generalizations: map[string]*inputClassGeneralization{
+						ClassGeneralizations: map[string]*inputClassGeneralization{
 							"product_types": {
 								Name:          "Product Types",
 								SuperclassKey: "product",
@@ -977,8 +977,8 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 	require.Contains(t, class.StateMachine.Events, "confirm")
 
 	// Verify generalization
-	require.Contains(t, subdomain.Generalizations, "product_types")
-	gen := subdomain.Generalizations["product_types"]
+	require.Contains(t, subdomain.ClassGeneralizations, "product_types")
+	gen := subdomain.ClassGeneralizations["product_types"]
 	assert.Equal(t, "product", gen.SuperclassKey)
 
 	// Verify association
@@ -1027,7 +1027,7 @@ func (suite *ConvertSuite) TestConvertToModelValidationError() {
 								Attributes: make(map[string]*inputAttribute),
 							},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
@@ -1115,7 +1115,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 						Classes: map[string]*inputClass{
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 					"shipping": {
@@ -1123,7 +1123,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 						Classes: map[string]*inputClass{
 							"shipment": {Name: "Shipment", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
@@ -1241,7 +1241,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 						Classes: map[string]*inputClass{
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},
@@ -1255,7 +1255,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 						Classes: map[string]*inputClass{
 							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
 						},
-						Generalizations: make(map[string]*inputClassGeneralization),
+						ClassGeneralizations: make(map[string]*inputClassGeneralization),
 						ClassAssociations:    make(map[string]*inputClassAssociation),
 					},
 				},

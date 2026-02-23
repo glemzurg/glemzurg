@@ -445,7 +445,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputClassGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "missing_class",
@@ -469,7 +469,7 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
-	subdomain.Generalizations = map[string]*inputClassGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -494,7 +494,7 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputClassGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -519,7 +519,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputClassGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",

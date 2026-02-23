@@ -235,7 +235,7 @@ func validateSubdomainTree(model *inputModel, domainKey, subdomainKey string, su
 	}
 
 	// Validate class generalizations
-	for genKey, gen := range subdomain.Generalizations {
+	for genKey, gen := range subdomain.ClassGeneralizations {
 		if err := validateClassGeneralizationTree(subdomain, domainKey, subdomainKey, genKey, gen); err != nil {
 			return err
 		}

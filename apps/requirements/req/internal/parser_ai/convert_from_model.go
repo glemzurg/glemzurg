@@ -139,10 +139,10 @@ func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAs
 // convertDomainFromModel converts a model_domain.Domain to an inputDomain.
 func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 	result := &inputDomain{
-		Name:         domain.Name,
-		Details:      domain.Details,
-		Realized:     domain.Realized,
-		UMLComment:   domain.UmlComment,
+		Name:              domain.Name,
+		Details:           domain.Details,
+		Realized:          domain.Realized,
+		UMLComment:        domain.UmlComment,
 		Subdomains:        make(map[string]*inputSubdomain),
 		ClassAssociations: make(map[string]*inputClassAssociation),
 	}
@@ -172,7 +172,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 		Details:                subdomain.Details,
 		UMLComment:             subdomain.UmlComment,
 		Classes:                make(map[string]*inputClass),
-		Generalizations:        make(map[string]*inputClassGeneralization),
+		ClassGeneralizations:   make(map[string]*inputClassGeneralization),
 		ClassAssociations:      make(map[string]*inputClassAssociation),
 		UseCases:               make(map[string]*inputUseCase),
 		UseCaseGeneralizations: make(map[string]*inputUseCaseGeneralization),
@@ -191,7 +191,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 	// Convert generalizations
 	for key, gen := range subdomain.Generalizations {
 		converted := convertClassGeneralizationFromModel(&gen, subdomain.Classes)
-		result.Generalizations[key.SubKey] = converted
+		result.ClassGeneralizations[key.SubKey] = converted
 	}
 
 	// Convert use case generalizations

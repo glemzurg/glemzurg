@@ -21,15 +21,15 @@ import (
 // This function performs the conversion and validates the resulting req_model.Model.
 func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error) {
 	result := &req_model.Model{
-		Key:                strings.TrimSpace(strings.ToLower(modelKey)),
-		Name:               input.Name,
-		Details:            input.Details,
-		Actors:             make(map[identity.Key]model_actor.Actor),
+		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
+		Name:                 input.Name,
+		Details:              input.Details,
+		Actors:               make(map[identity.Key]model_actor.Actor),
 		ActorGeneralizations: make(map[identity.Key]model_actor.Generalization),
-		GlobalFunctions:    make(map[identity.Key]model_logic.GlobalFunction),
-		Domains:            make(map[identity.Key]model_domain.Domain),
-		DomainAssociations: make(map[identity.Key]model_domain.Association),
-		ClassAssociations:  make(map[identity.Key]model_class.Association),
+		GlobalFunctions:      make(map[identity.Key]model_logic.GlobalFunction),
+		Domains:              make(map[identity.Key]model_domain.Domain),
+		DomainAssociations:   make(map[identity.Key]model_domain.Association),
+		ClassAssociations:    make(map[identity.Key]model_class.Association),
 	}
 
 	// Convert invariants
@@ -272,7 +272,7 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 
 	// Convert class generalizations first to get the key mappings
 	genKeyMap := make(map[string]identity.Key)
-	for key, gen := range subdomain.Generalizations {
+	for key, gen := range subdomain.ClassGeneralizations {
 		converted, err := convertClassGeneralizationToModel(key, gen, subdomainKey)
 		if err != nil {
 			return model_domain.Subdomain{}, errors.Wrapf(err, "failed to convert class generalization '%s'", key)
@@ -283,7 +283,7 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 
 	// Convert classes
 	for key, class := range subdomain.Classes {
-		converted, err := convertClassToModel(key, class, subdomainKey, subdomain.Generalizations, genKeyMap)
+		converted, err := convertClassToModel(key, class, subdomainKey, subdomain.ClassGeneralizations, genKeyMap)
 		if err != nil {
 			return model_domain.Subdomain{}, errors.Wrapf(err, "failed to convert class '%s'", key)
 		}

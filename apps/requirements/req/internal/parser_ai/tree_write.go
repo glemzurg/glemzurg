@@ -128,12 +128,12 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 	}
 
 	// Write generalizations
-	if len(subdomain.Generalizations) > 0 {
+	if len(subdomain.ClassGeneralizations) > 0 {
 		genDir := filepath.Join(subdomainDir, "generalizations")
 		if err := os.MkdirAll(genDir, 0755); err != nil {
 			return err
 		}
-		for key, gen := range subdomain.Generalizations {
+		for key, gen := range subdomain.ClassGeneralizations {
 			if err := writeJSON(filepath.Join(genDir, key+".gen.json"), gen); err != nil {
 				return err
 			}
