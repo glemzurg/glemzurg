@@ -30,9 +30,6 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []mod
 		Parameters: parameters,
 	}
 
-	// Compute sort order from slice index.
-	setSortOrder(query.Parameters)
-
 	if err = query.Validate(); err != nil {
 		return Query{}, err
 	}

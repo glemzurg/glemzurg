@@ -31,9 +31,6 @@ func NewAction(key identity.Key, name, details string, requires, guarantees, saf
 		Parameters:  parameters,
 	}
 
-	// Compute sort order from slice index.
-	setSortOrder(action.Parameters)
-
 	if err = action.Validate(); err != nil {
 		return Action{}, err
 	}

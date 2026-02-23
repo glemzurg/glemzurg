@@ -7,7 +7,6 @@ import (
 // Parameter is a typed parameter for actions and queries.
 type Parameter struct {
 	Name          string `validate:"required"`
-	SortOrder     int
 	DataTypeRules string                    `validate:"required"` // What are the bounds of this data type.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
@@ -52,13 +51,6 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 		return true
 	}
 	return false
-}
-
-// setSortOrder sets the SortOrder field on each parameter based on its index in the slice.
-func setSortOrder(params []Parameter) {
-	for i := range params {
-		params[i].SortOrder = i
-	}
 }
 
 // Validate validates the Parameter struct.

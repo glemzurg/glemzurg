@@ -191,7 +191,7 @@ func (suite *ActionSuite) TestNew() {
 		{Key: safetyKey, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "tla_safety"},
 	}
 
-	// Test all parameters are mapped correctly and SortOrder is computed.
+	// Test all parameters are mapped correctly.
 	params := []Parameter{
 		{Name: "ParamA", DataTypeRules: "Nat"},
 		{Name: "ParamB", DataTypeRules: "Int"},
@@ -207,8 +207,8 @@ func (suite *ActionSuite) TestNew() {
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
 		Parameters: []Parameter{
-			{Name: "ParamA", SortOrder: 0, DataTypeRules: "Nat"},
-			{Name: "ParamB", SortOrder: 1, DataTypeRules: "Int"},
+			{Name: "ParamA", DataTypeRules: "Nat"},
+			{Name: "ParamB", DataTypeRules: "Int"},
 		},
 	}, action)
 

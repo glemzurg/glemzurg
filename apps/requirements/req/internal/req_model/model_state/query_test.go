@@ -162,7 +162,7 @@ func (suite *QuerySuite) TestNew() {
 		{Key: guarKey, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
 	}
 
-	// Test all parameters are mapped correctly and SortOrder is computed.
+	// Test all parameters are mapped correctly.
 	params := []Parameter{
 		{Name: "ParamA", DataTypeRules: "Nat"},
 		{Name: "ParamB", DataTypeRules: "Int"},
@@ -177,8 +177,8 @@ func (suite *QuerySuite) TestNew() {
 		Requires:   requires,
 		Guarantees: guarantees,
 		Parameters: []Parameter{
-			{Name: "ParamA", SortOrder: 0, DataTypeRules: "Nat"},
-			{Name: "ParamB", SortOrder: 1, DataTypeRules: "Int"},
+			{Name: "ParamA", DataTypeRules: "Nat"},
+			{Name: "ParamB", DataTypeRules: "Int"},
 		},
 	}, query)
 
