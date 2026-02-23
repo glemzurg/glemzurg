@@ -1,0 +1,5 @@
+{
+    "name": "",
+    "superclass_key": "user",
+    "subclass_keys": ["admin"]
+}

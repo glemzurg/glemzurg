@@ -1,0 +1,6 @@
+{
+    "code": 13004,
+    "message_prefix": "use case generalization JSON does not match schema:",
+    "error_file": "13004_use_case_generalization_schema_violation.md",
+    "has_schema": true
+}

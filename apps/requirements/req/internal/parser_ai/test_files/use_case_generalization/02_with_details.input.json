@@ -1,0 +1,6 @@
+{
+    "name": "Payment Workflows",
+    "details": "All payment-related use cases that handle financial transactions",
+    "superclass_key": "process_payment",
+    "subclass_keys": ["charge_credit_card", "process_refund"]
+}

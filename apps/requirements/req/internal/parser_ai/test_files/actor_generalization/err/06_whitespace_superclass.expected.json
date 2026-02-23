@@ -1,0 +1,7 @@
+{
+    "code": 12005,
+    "message": "actor generalization superclass_key cannot be empty or whitespace only, got '   '",
+    "error_file": "12005_actor_generalization_superclass_required.md",
+    "has_schema": false,
+    "field": "superclass_key"
+}

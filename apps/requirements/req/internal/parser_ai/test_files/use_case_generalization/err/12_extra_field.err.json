@@ -1,0 +1,6 @@
+{
+    "name": "Order Operations",
+    "superclass_key": "manage_order",
+    "subclass_keys": ["create_order"],
+    "unknown_field": "should cause schema violation"
+}

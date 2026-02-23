@@ -1,0 +1,5 @@
+{
+    "name": "Operator Types",
+    "superclass_key": "operator",
+    "subclass_keys": ["manual_operator"]
+}

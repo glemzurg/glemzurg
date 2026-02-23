@@ -121,6 +121,24 @@ const (
 	ErrGenSubclassDuplicate    = 10012
 	ErrGenSuperclassIsSubclass = 10013
 
+	// Actor generalization errors (12xxx)
+	ErrActorGenNameRequired       = 12001
+	ErrActorGenNameEmpty          = 12002
+	ErrActorGenInvalidJSON        = 12003
+	ErrActorGenSchemaViolation    = 12004
+	ErrActorGenSuperclassRequired = 12005
+	ErrActorGenSubclassesRequired = 12006
+	ErrActorGenSubclassesEmpty    = 12007
+
+	// Use case generalization errors (13xxx)
+	ErrUseCaseGenNameRequired       = 13001
+	ErrUseCaseGenNameEmpty          = 13002
+	ErrUseCaseGenInvalidJSON        = 13003
+	ErrUseCaseGenSchemaViolation    = 13004
+	ErrUseCaseGenSuperclassRequired = 13005
+	ErrUseCaseGenSubclassesRequired = 13006
+	ErrUseCaseGenSubclassesEmpty    = 13007
+
 	// Tree validation errors (11xxx) - cross-reference and structural integrity
 	ErrTreeClassActorNotFound             = 11001 // Class references an actor that doesn't exist
 	ErrTreeAssocFromClassNotFound         = 11002 // Association from_class_key not found

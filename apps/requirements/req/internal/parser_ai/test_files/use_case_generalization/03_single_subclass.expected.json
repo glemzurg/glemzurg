@@ -1,0 +1,5 @@
+{
+    "name": "Report Generation",
+    "superclass_key": "generate_report",
+    "subclass_keys": ["generate_sales_report"]
+}

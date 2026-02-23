@@ -1,0 +1,6 @@
+{
+    "code": 13003,
+    "message_prefix": "failed to parse use case generalization JSON:",
+    "error_file": "13003_use_case_generalization_invalid_json.md",
+    "has_schema": false
+}

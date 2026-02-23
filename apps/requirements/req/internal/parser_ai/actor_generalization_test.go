@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	t_ACTOR_GENERALIZATION_PATH_OK  = "test_files/actor_generalization"
+	t_ACTOR_GENERALIZATION_PATH_ERR = t_ACTOR_GENERALIZATION_PATH_OK + "/err"
+)
+
 func TestActorGeneralizationSuite(t *testing.T) {
 	suite.Run(t, new(ActorGeneralizationSuite))
 }
@@ -16,43 +21,75 @@ type ActorGeneralizationSuite struct {
 	suite.Suite
 }
 
-func (suite *ActorGeneralizationSuite) TestMarshalUnmarshal() {
-	tests := []struct {
-		name  string
-		input inputActorGeneralization
-	}{
-		{
-			name: "basic actor generalization",
-			input: inputActorGeneralization{
-				Name:          "User Types",
-				SuperclassKey: "user",
-				SubclassKeys:  []string{"admin", "customer"},
-			},
-		},
-		{
-			name: "full actor generalization",
-			input: inputActorGeneralization{
-				Name:          "User Types",
-				Details:       "Categorizes system users",
-				SuperclassKey: "user",
-				SubclassKeys:  []string{"admin", "customer", "guest"},
-				IsComplete:    true,
-				IsStatic:      true,
-				UMLComment:    "note on generalization",
-			},
-		},
+func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationFiles() {
+	testDataFiles, err := t_ContentsForAllJSONFiles(t_ACTOR_GENERALIZATION_PATH_OK)
+	assert.Nil(suite.T(), err)
+
+	for _, testData := range testDataFiles {
+		testName := testData.Filename
+		pass := suite.T().Run(testName, func(t *testing.T) {
+			var expected inputActorGeneralization
+
+			actual, err := parseActorGeneralization([]byte(testData.InputJSON), testData.Filename)
+			assert.Nil(t, err, testName)
+
+			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
+			assert.Nil(t, err, testName)
+
+			assert.Equal(t, expected, *actual, testName)
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationErrors() {
+	testDataFiles, err := t_ContentsForAllErrorJSONFiles(t_ACTOR_GENERALIZATION_PATH_ERR)
+	if err != nil {
+		suite.T().Fatalf("Failed to read error test files: %v", err)
 	}
 
-	for _, tc := range tests {
-		suite.T().Run(tc.name, func(t *testing.T) {
-			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+	if len(testDataFiles) == 0 {
+		return
+	}
 
-			var result inputActorGeneralization
-			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+	for _, testData := range testDataFiles {
+		testName := testData.Filename
+		suite.T().Run(testName, func(t *testing.T) {
+			_, err := parseActorGeneralization([]byte(testData.InputJSON), testData.Filename)
+			assert.NotNil(t, err, testName+" should return an error")
 
-			assert.Equal(t, tc.input, result)
+			parseErr, ok := err.(*ParseError)
+			assert.True(t, ok, testName+" should return a ParseError")
+			if !ok {
+				return
+			}
+
+			expected := testData.ExpectedError
+			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
+			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+
+			if expected.Message != "" {
+				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+			} else if expected.MessagePrefix != "" {
+				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
+					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
+			}
+
+			if expected.HasSchema {
+				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+			} else {
+				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+			}
+
+			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+
+			if expected.Field != "" {
+				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+			}
 		})
 	}
 }

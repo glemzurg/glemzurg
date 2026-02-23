@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "actor_generalization.schema.json",
+  "title": "Actor Generalization",
+  "description": "Schema for actor generalization JSON files that define inheritance relationships between actors. Actor generalization files are located in the 'actor_generalizations/' directory at the model root (e.g., 'actor_generalizations/user_types.actor_gen.json'). An actor generalization defines a superclass actor and its subclass actors, modeling an 'is-a' relationship. If validation fails, verify 'name', 'superclass_key', and 'subclass_keys' are all present and that the actor keys reference existing actors.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the actor generalization (e.g., 'User Types', 'System Actor Hierarchy'). This is the human-readable name shown in diagrams and documentation. Use a noun phrase that describes the classification. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the actor generalization. Describe the inheritance hierarchy, the discriminator criteria (what distinguishes subclass actors), and any polymorphic behavior. Helps readers understand the actor classification system."
+    },
+    "superclass_key": {
+      "type": "string",
+      "description": "Key referencing the superclass (parent actor) in the actor generalization. The actor key matches the actor filename without extension: for an actor at 'actors/user.actor.json', the key is 'user'. The superclass is the general actor that the subclass actors specialize. If validation fails: verify the actor file exists at the expected path and the key matches the filename pattern exactly.",
+      "minLength": 1
+    },
+    "subclass_keys": {
+      "type": "array",
+      "description": "Keys referencing the subclass (child actors) that inherit from the superclass actor. Each key matches the actor filename without extension. There must be at least one subclass. If validation fails: verify each actor file exists and keys are correctly formatted.",
+      "items": {
+        "type": "string",
+        "description": "An actor key referencing a subclass actor. Must match an actor file using the filename pattern (e.g., 'admin', 'customer'). If validation fails: verify the actor file exists at 'actors/{key}.actor.json'.",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "is_complete": {
+      "type": "boolean",
+      "description": "Whether the actor generalization is complete (all possible subclass actors are listed). Set to true if no other subclass actors can exist beyond those listed. Set to false or omit if additional subclass actors may be added in the future. If validation fails: ensure this is a boolean (true or false), not a string."
+    },
+    "is_static": {
+      "type": "boolean",
+      "description": "Whether actor instances cannot change their subclass type at runtime. Set to true if once an actor is assigned a specific subclass type, it cannot become a different subclass type. Set to false or omit if actors can change their classification over their lifetime. If validation fails: ensure this is a boolean (true or false), not a string."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the actor generalization in generated UML diagrams. Use for diagram-specific clarifications about the actor inheritance relationship."
+    }
+  },
+  "required": ["name", "superclass_key", "subclass_keys"],
+  "additionalProperties": false
+}
