@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "domain_association.schema.json",
+  "title": "Domain Association",
+  "description": "Schema for a domain association JSON file. Domain associations describe constraint relationships between domains where a problem domain enforces requirements on a solution domain. If validation fails, verify 'problem_domain_key' and 'solution_domain_key' are both present and non-empty.",
+  "type": "object",
+  "properties": {
+    "problem_domain_key": {
+      "type": "string",
+      "description": "The key of the problem domain that enforces requirements. Must be a non-empty string matching an existing domain key.",
+      "minLength": 1
+    },
+    "solution_domain_key": {
+      "type": "string",
+      "description": "The key of the solution domain that satisfies the requirements. Must be a non-empty string matching an existing domain key.",
+      "minLength": 1
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for this domain association."
+    }
+  },
+  "required": ["problem_domain_key", "solution_domain_key"],
+  "additionalProperties": false
+}

@@ -1,0 +1,6 @@
+{
+    "code": 17005,
+    "message_prefix": "failed to parse domain association JSON:",
+    "error_file": "17005_domain_association_invalid_json.md",
+    "has_schema": false
+}

@@ -160,6 +160,14 @@ const (
 	ErrGlobalFuncParamEmpty         = 16006
 	ErrGlobalFuncLogicRequired      = 16007
 
+	// Domain association errors (17xxx)
+	ErrDomainAssocProblemKeyRequired  = 17001
+	ErrDomainAssocProblemKeyEmpty     = 17002
+	ErrDomainAssocSolutionKeyRequired = 17003
+	ErrDomainAssocSolutionKeyEmpty    = 17004
+	ErrDomainAssocInvalidJSON         = 17005
+	ErrDomainAssocSchemaViolation     = 17006
+
 	// Tree validation errors (11xxx) - cross-reference and structural integrity
 	ErrTreeClassActorNotFound             = 11001 // Class references an actor that doesn't exist
 	ErrTreeAssocFromClassNotFound         = 11002 // Association from_class_key not found
