@@ -24,6 +24,20 @@ func validateModelTree(model *inputModel) error {
 		}
 	}
 
+	// Validate domain associations (cross-domain references)
+	for daKey, da := range model.DomainAssociations {
+		if err := validateModelDomainAssociation(model, daKey, da); err != nil {
+			return err
+		}
+	}
+
+	// Validate actor generalizations reference real actors
+	for agKey, ag := range model.ActorGeneralizations {
+		if err := validateActorGeneralizationTree(model, agKey, ag); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -509,6 +523,75 @@ func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdo
 	return nil
 }
 
+// validateModelDomainAssociation validates that a parsed domain association refers to existing domains.
+func validateModelDomainAssociation(model *inputModel, key string, da *inputDomainAssociation) error {
+	assocPath := fmt.Sprintf("domain_associations/%s.domain_assoc.json", key)
+
+	if _, ok := model.Domains[da.ProblemDomainKey]; !ok {
+		return NewParseError(
+			ErrTreeDomainAssocDomainNotFound,
+			fmt.Sprintf("domain association '%s' problem_domain_key '%s' references domain which does not exist",
+				key, da.ProblemDomainKey),
+			assocPath,
+		).WithField("problem_domain_key")
+	}
+	if _, ok := model.Domains[da.SolutionDomainKey]; !ok {
+		return NewParseError(
+			ErrTreeDomainAssocDomainNotFound,
+			fmt.Sprintf("domain association '%s' solution_domain_key '%s' references domain which does not exist",
+				key, da.SolutionDomainKey),
+			assocPath,
+		).WithField("solution_domain_key")
+	}
+	return nil
+}
+
+// validateActorGeneralizationTree validates that actor generalizations reference real actors
+func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inputActorGeneralization) error {
+	genPath := fmt.Sprintf("actor_generalizations/%s.agen.json", genKey)
+
+	if _, ok := model.Actors[gen.SuperclassKey]; !ok {
+		return NewParseError(
+			ErrTreeActorGenActorNotFound,
+			fmt.Sprintf("actor generalization '%s' superclass_key '%s' does not exist",
+				genKey, gen.SuperclassKey),
+			genPath,
+		).WithField("superclass_key")
+	}
+
+	seen := make(map[string]bool)
+	for i, subclassKey := range gen.SubclassKeys {
+		if seen[subclassKey] {
+			// reuse existing actor gen duplicate error code if present
+			return NewParseError(
+				ErrActorGenSubclassesEmpty,
+				fmt.Sprintf("actor generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+		seen[subclassKey] = true
+
+		if _, ok := model.Actors[subclassKey]; !ok {
+			return NewParseError(
+				ErrTreeActorGenActorNotFound,
+				fmt.Sprintf("actor generalization '%s' subclass_key '%s' does not exist",
+					genKey, subclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+
+		if subclassKey == gen.SuperclassKey {
+			return NewParseError(
+				ErrTreeActorGenActorNotFound,
+				fmt.Sprintf("actor generalization '%s' superclass '%s' cannot also be a subclass",
+					genKey, gen.SuperclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+	}
+	return nil
+}
+
 // validateSubdomainAssociation validates an association at the subdomain level.
 // Keys are scoped to the subdomain (just class names).
 func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomainKey, assocKey string, assoc *inputClassAssociation) error {
@@ -988,7 +1071,120 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 		}
 	}
 
-	// TODO: Validate step references to objects, events, queries, etc.
+	// Validate steps recursively
+	if scenario.Steps != nil {
+		var walk func(step inputStep, path string) error
+		walk = func(step inputStep, path string) error {
+			// Validate referenced objects
+			if step.FromObjectKey != nil {
+				if _, ok := scenario.Objects[*step.FromObjectKey]; !ok {
+					return NewParseError(
+						ErrTreeScenarioStepObjectNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references from_object_key '%s' which does not exist",
+							scenarioKey, path, *step.FromObjectKey),
+						scenarioPath,
+					).WithField(path + ".from_object_key")
+				}
+			}
+			if step.ToObjectKey != nil {
+				if _, ok := scenario.Objects[*step.ToObjectKey]; !ok {
+					return NewParseError(
+						ErrTreeScenarioStepObjectNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references to_object_key '%s' which does not exist",
+							scenarioKey, path, *step.ToObjectKey),
+						scenarioPath,
+					).WithField(path + ".to_object_key")
+				}
+			}
+
+			// Validate event references (resolve class from referenced object if present)
+			if step.EventKey != nil {
+				// prefer from_object then to_object
+				var objKey *string
+				if step.FromObjectKey != nil {
+					objKey = step.FromObjectKey
+				} else if step.ToObjectKey != nil {
+					objKey = step.ToObjectKey
+				}
+				if objKey == nil {
+					return NewParseError(
+						ErrTreeScenarioStepEventNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but no object is specified to resolve the class",
+							scenarioKey, path, *step.EventKey),
+						scenarioPath,
+					).WithField(path + ".event_key")
+				}
+				obj := scenario.Objects[*objKey]
+				classKey := obj.ClassKey
+				class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[classKey]
+				if class == nil || class.StateMachine == nil {
+					return NewParseError(
+						ErrTreeScenarioStepEventNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but class '%s' has no state machine",
+							scenarioKey, path, *step.EventKey, classKey),
+						scenarioPath,
+					).WithField(path + ".event_key")
+				}
+				if _, ok := class.StateMachine.Events[*step.EventKey]; !ok {
+					return NewParseError(
+						ErrTreeScenarioStepEventNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on class '%s'",
+							scenarioKey, path, *step.EventKey, classKey),
+						scenarioPath,
+					).WithField(path + ".event_key")
+				}
+			}
+
+			// Validate query references (resolve class from object)
+			if step.QueryKey != nil {
+				var objKey *string
+				if step.FromObjectKey != nil {
+					objKey = step.FromObjectKey
+				} else if step.ToObjectKey != nil {
+					objKey = step.ToObjectKey
+				}
+				if objKey == nil {
+					return NewParseError(
+						ErrTreeScenarioStepQueryNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but no object is specified to resolve the class",
+							scenarioKey, path, *step.QueryKey),
+						scenarioPath,
+					).WithField(path + ".query_key")
+				}
+				obj := scenario.Objects[*objKey]
+				classKey := obj.ClassKey
+				class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[classKey]
+				if class == nil {
+					return NewParseError(
+						ErrTreeScenarioStepQueryNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but class '%s' does not exist",
+							scenarioKey, path, *step.QueryKey, classKey),
+						scenarioPath,
+					).WithField(path + ".query_key")
+				}
+				if _, ok := class.Queries[*step.QueryKey]; !ok {
+					return NewParseError(
+						ErrTreeScenarioStepQueryNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on class '%s'",
+							scenarioKey, path, *step.QueryKey, classKey),
+						scenarioPath,
+					).WithField(path + ".query_key")
+				}
+			}
+
+			// Recurse into nested statements
+			for i, st := range step.Statements {
+				if err := walk(st, fmt.Sprintf("%s.statements[%d]", path, i)); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := walk(*scenario.Steps, "steps"); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

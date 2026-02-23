@@ -236,8 +236,8 @@ func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 		States: map[string]*inputState{
 			"pending": {Name: "Pending"},
 		},
-		Events:      map[string]*inputEvent{},
-		Guards:      map[string]*inputGuard{},
+		Events: map[string]*inputEvent{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -308,7 +308,7 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -343,7 +343,7 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -388,7 +388,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -420,7 +420,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -704,8 +704,8 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	model := t_buildMinimalModelTree()
 	// Add another subdomain with a class
 	model.Domains["domain1"].Subdomains["subdomain2"] = &inputSubdomain{
-		Name:            "Subdomain 2",
-		Classes:         map[string]*inputClass{"class2": {Name: "Class 2"}},
+		Name:                 "Subdomain 2",
+		Classes:              map[string]*inputClass{"class2": {Name: "Class 2"}},
 		ClassGeneralizations: map[string]*inputClassGeneralization{},
 		ClassAssociations:    map[string]*inputClassAssociation{},
 	}
@@ -761,8 +761,8 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 		Name: "Domain 2",
 		Subdomains: map[string]*inputSubdomain{
 			"subdomain1": {
-				Name:            "Subdomain 1",
-				Classes:         map[string]*inputClass{"class1": {Name: "Class 1"}},
+				Name:                 "Subdomain 1",
+				Classes:              map[string]*inputClass{"class1": {Name: "Class 1"}},
 				ClassGeneralizations: map[string]*inputClassGeneralization{},
 				ClassAssociations:    map[string]*inputClassAssociation{},
 			},
@@ -797,8 +797,8 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 		Name: "Domain 2",
 		Subdomains: map[string]*inputSubdomain{
 			"subdomain1": {
-				Name:            "Subdomain 1",
-				Classes:         map[string]*inputClass{},
+				Name:                 "Subdomain 1",
+				Classes:              map[string]*inputClass{},
 				ClassGeneralizations: map[string]*inputClassGeneralization{},
 				ClassAssociations:    map[string]*inputClassAssociation{},
 			},
@@ -1145,10 +1145,10 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 
 	// Test each error type and verify it contains actionable guidance
 	tests := []struct {
-		name            string
-		buildModel      func() *inputModel
-		expectedCode    int
-		shouldContain   []string
+		name          string
+		buildModel    func() *inputModel
+		expectedCode  int
+		shouldContain []string
 	}{
 		{
 			name: "no_actors",
@@ -1289,6 +1289,127 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 		})
 	}
 }
+
+// New tests for tree-level validations added in tree_validate.go
+func (suite *TreeValidateSuite) TestModelDomainAssocDomainNotFound() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	model.DomainAssociations = map[string]*inputDomainAssociation{
+		"bad_da": {
+			ProblemDomainKey:  "missing_domain",
+			SolutionDomainKey: "domain1",
+		},
+	}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeDomainAssocDomainNotFound, parseErr.Code)
+	assert.Equal(t, "problem_domain_key", parseErr.Field)
+}
+
+func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	model.ActorGeneralizations = map[string]*inputActorGeneralization{
+		"ag1": {
+			Name:          "AG1",
+			SuperclassKey: "missing_actor",
+			SubclassKeys:  []string{"sub_a"},
+		},
+	}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeActorGenActorNotFound, parseErr.Code)
+	assert.Equal(t, "superclass_key", parseErr.Field)
+}
+
+func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
+	t := suite.T()
+
+	model := t_buildValidModelTree()
+
+	// Prepare use case and scenario containers
+	sub := model.Domains["orders"].Subdomains["default"]
+	if sub.UseCases == nil {
+		sub.UseCases = make(map[string]*inputUseCase)
+	}
+
+	// 1) object missing
+	scMissingObj := &inputScenario{
+		Name:    "ScMissingObj",
+		Objects: map[string]*inputObject{},
+		Steps: &inputStep{
+			StepType:      "action",
+			FromObjectKey: ptrString("missing_obj"),
+		},
+	}
+	uc1 := &inputUseCase{Name: "UC1", Level: "mud", Scenarios: map[string]*inputScenario{"sc1": scMissingObj}}
+	sub.UseCases = map[string]*inputUseCase{"uc_missing_obj": uc1}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeScenarioStepObjectNotFound, parseErr.Code)
+	assert.Equal(t, "steps.from_object_key", parseErr.Field)
+
+	// 2) event missing on class
+	// reuse same model but add a scenario with an object referencing class 'order'
+	scEvent := &inputScenario{
+		Name: "ScEvent",
+		Objects: map[string]*inputObject{
+			"o1": {ObjectNumber: 1, Name: "O1", ClassKey: "order"},
+		},
+		Steps: &inputStep{
+			StepType:      "action",
+			FromObjectKey: ptrString("o1"),
+			EventKey:      ptrString("missing_event"),
+		},
+	}
+	uc2 := &inputUseCase{Name: "UC2", Level: "mud", Scenarios: map[string]*inputScenario{"sc_event": scEvent}}
+	sub.UseCases = map[string]*inputUseCase{"uc_event": uc2}
+
+	err = validateModelTree(model)
+	require.Error(t, err)
+	parseErr, ok = err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeScenarioStepEventNotFound, parseErr.Code)
+	assert.Equal(t, "steps.event_key", parseErr.Field)
+
+	// 3) query missing on class
+	scQuery := &inputScenario{
+		Name: "ScQuery",
+		Objects: map[string]*inputObject{
+			"o1": {ObjectNumber: 1, Name: "O1", ClassKey: "order"},
+		},
+		Steps: &inputStep{
+			StepType:      "action",
+			FromObjectKey: ptrString("o1"),
+			QueryKey:      ptrString("missing_query"),
+		},
+	}
+	uc3 := &inputUseCase{Name: "UC3", Level: "mud", Scenarios: map[string]*inputScenario{"sc_query": scQuery}}
+	sub.UseCases = map[string]*inputUseCase{"uc_query": uc3}
+
+	err = validateModelTree(model)
+	require.Error(t, err)
+	parseErr, ok = err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeScenarioStepQueryNotFound, parseErr.Code)
+	assert.Equal(t, "steps.query_key", parseErr.Field)
+}
+
+// helper to get *string
+func ptrString(s string) *string { return &s }
 
 // t_buildMinimalModelTree creates a minimal valid model tree for testing.
 func t_buildMinimalModelTree() *inputModel {
@@ -1461,7 +1582,7 @@ func t_buildCompleteClass() *inputClass {
 			Events: map[string]*inputEvent{
 				"create": {Name: "create"},
 			},
-			Guards:      map[string]*inputGuard{},
+			Guards: map[string]*inputGuard{},
 			Transitions: []inputTransition{
 				{
 					FromStateKey: nil, // Initial transition

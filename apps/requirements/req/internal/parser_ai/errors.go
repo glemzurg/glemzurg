@@ -209,6 +209,18 @@ const (
 	ErrTreeSingleSubdomainNotDefault    = 11030 // Single subdomain must be named "default"
 	ErrTreeMultipleSubdomainsHasDefault = 11031 // Multiple subdomains cannot include one named "default"
 
+	// Additional tree-level errors (11032+)
+	// Domain association tree errors
+	ErrTreeDomainAssocDomainNotFound = 11032 // Domain association references a domain that doesn't exist
+
+	// Actor generalization tree errors
+	ErrTreeActorGenActorNotFound = 11033 // Actor generalization references an actor that doesn't exist
+
+	// Scenario/step tree errors
+	ErrTreeScenarioStepObjectNotFound = 11034 // Scenario step references an object key that doesn't exist
+	ErrTreeScenarioStepEventNotFound  = 11035 // Scenario step references an event that doesn't exist on the referenced class
+	ErrTreeScenarioStepQueryNotFound  = 11036 // Scenario step references a query that doesn't exist on the referenced class
+
 	// Use case errors (18xxx)
 	ErrUseCaseNameRequired    = 18001
 	ErrUseCaseNameEmpty       = 18002
