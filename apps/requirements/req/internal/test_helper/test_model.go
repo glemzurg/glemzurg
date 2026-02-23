@@ -115,8 +115,13 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
-	// Class generalization key.
+	// Class generalization keys.
 	classGenKey, err := identity.NewGeneralizationKey(subdomainAKey, "vehicle_types")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Second generalization with IsComplete=false, IsStatic=false (pairwise: (F,F) combo).
+	classGen2Key, err := identity.NewGeneralizationKey(subdomainAKey, "product_types")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -158,6 +163,11 @@ func buildTestModel() (req_model.Model, error) {
 	if err != nil {
 		return req_model.Model{}, err
 	}
+	// Event with nil parameters (pairwise: Event.Parameters nil vs populated).
+	eventCancelKey, err := identity.NewEventKey(classOrderKey, "cancel")
+	if err != nil {
+		return req_model.Model{}, err
+	}
 
 	// Guards.
 	guardHasItemsKey, err := identity.NewGuardKey(classOrderKey, "has_items")
@@ -180,6 +190,11 @@ func buildTestModel() (req_model.Model, error) {
 	if err != nil {
 		return req_model.Model{}, err
 	}
+	// Query with nil parameters/requires/guarantees (pairwise: Query slices nil vs populated).
+	queryCountKey, err := identity.NewQueryKey(classOrderKey, "get_count")
+	if err != nil {
+		return req_model.Model{}, err
+	}
 
 	// Transitions.
 	transitionSubmitKey, err := identity.NewTransitionKey(classOrderKey, "new", "submit", "has_items", "process_order", "processing")
@@ -190,9 +205,27 @@ func buildTestModel() (req_model.Model, error) {
 	if err != nil {
 		return req_model.Model{}, err
 	}
+	// Initial transition: nil FromStateKey (pairwise: FromStateKey nil vs set).
+	transitionInitialKey, err := identity.NewTransitionKey(classOrderKey, "", "cancel", "", "", "new")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Final transition: nil ToStateKey, nil ActionKey (pairwise: ToStateKey nil, ActionKey nil).
+	transitionFinalKey, err := identity.NewTransitionKey(classOrderKey, "complete", "cancel", "", "", "")
+	if err != nil {
+		return req_model.Model{}, err
+	}
 
-	// State action key.
+	// State action keys (pairwise: When = entry, exit, do).
 	stateActionEntryKey, err := identity.NewStateActionKey(stateProcessingKey, "entry", "process_order")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	stateActionExitKey, err := identity.NewStateActionKey(stateNewKey, "exit", "process_order")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	stateActionDoKey, err := identity.NewStateActionKey(stateCompleteKey, "do", "ship_order")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -235,6 +268,11 @@ func buildTestModel() (req_model.Model, error) {
 	if err != nil {
 		return req_model.Model{}, err
 	}
+	// Second global function with nil parameters and empty specification (pairwise).
+	globalFunc2Key, err := identity.NewGlobalFunctionKey("_identity")
+	if err != nil {
+		return req_model.Model{}, err
+	}
 
 	// Derivation key for derived attribute.
 	derivationKey, err := identity.NewAttributeDerivationKey(attrTotalKey, "sum_line_items")
@@ -252,6 +290,11 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 	useCaseSuperKey, err := identity.NewUseCaseKey(subdomainAKey, "manage_order")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Second mud-level use case (pairwise: UseCaseShared extend).
+	useCaseCancelOrderKey, err := identity.NewUseCaseKey(subdomainAKey, "cancel_order")
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -401,11 +444,23 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	// Logic with empty Specification (pairwise: Specification empty vs populated).
+	globalFunc2Logic, err := model_logic.NewLogic(globalFunc2Key, "Returns the input unchanged", "tla_plus", "")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
 	// =========================================================================
-	// Global function
+	// Global functions
 	// =========================================================================
 
 	globalFunc, err := model_logic.NewGlobalFunction(globalFuncKey, "_Max", []string{"x", "y"}, globalFuncLogic)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	// Global function with nil parameters (pairwise: GlobalFunction.Parameters nil vs populated).
+	globalFunc2, err := model_logic.NewGlobalFunction(globalFunc2Key, "_Identity", nil, globalFunc2Logic)
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -453,12 +508,31 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	// Add exit state action to stateNew (pairwise: When = exit).
+	stateActionExit, err := model_state.NewStateAction(stateActionExitKey, actionProcessKey, "exit")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	stateNew.SetActions([]model_state.StateAction{stateActionExit})
+
+	// Add do state action to stateComplete (pairwise: When = do).
+	stateActionDo, err := model_state.NewStateAction(stateActionDoKey, actionShipKey, "do")
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	stateComplete.SetActions([]model_state.StateAction{stateActionDo})
+
 	// Events.
 	eventSubmit, err := model_state.NewEvent(eventSubmitKey, "Submit", "Customer submits the order.", []model_state.Parameter{paramQuantity, paramProductId})
 	if err != nil {
 		return req_model.Model{}, err
 	}
 	eventFulfill, err := model_state.NewEvent(eventFulfillKey, "Fulfill", "Order is fulfilled.", []model_state.Parameter{paramReason})
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Event with nil parameters (pairwise: Event.Parameters nil vs populated).
+	eventCancel, err := model_state.NewEvent(eventCancelKey, "Cancel", "Order is cancelled.", nil)
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -488,12 +562,20 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
-	// Query.
+	// Queries.
 	queryStatus, err := model_state.NewQuery(
 		queryStatusKey, "Get Status", "Returns the current status of the order.",
 		[]model_logic.Logic{queryRequire1},
 		[]model_logic.Logic{queryGuarantee1},
 		[]model_state.Parameter{paramProductId},
+	)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Query with nil parameters/requires/guarantees (pairwise: Query slices nil vs populated).
+	queryCount, err := model_state.NewQuery(
+		queryCountKey, "Get Count", "Returns the number of orders.",
+		nil, nil, nil,
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -519,6 +601,32 @@ func buildTestModel() (req_model.Model, error) {
 		nil,                 // no guard
 		&actionShipKey,      // action
 		&stateCompleteKey,   // to
+		"",
+	)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Initial transition: nil FromStateKey (pairwise: FromStateKey nil vs set).
+	transitionInitial, err := model_state.NewTransition(
+		transitionInitialKey,
+		nil,             // from: initial pseudo-state
+		eventCancelKey,  // event
+		nil,             // no guard
+		nil,             // no action (pairwise: ActionKey nil vs set)
+		&stateNewKey,    // to
+		"initial transition",
+	)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+	// Final transition: nil ToStateKey (pairwise: ToStateKey nil vs set).
+	transitionFinal, err := model_state.NewTransition(
+		transitionFinalKey,
+		&stateCompleteKey, // from
+		eventCancelKey,    // event
+		nil,               // no guard
+		nil,               // no action
+		nil,               // to: final pseudo-state
 		"",
 	)
 	if err != nil {
