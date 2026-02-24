@@ -15,12 +15,12 @@ type Subdomain struct {
 	Details    string // Markdown.
 	UmlComment string
 	// Children
-	Generalizations        map[identity.Key]model_class.Generalization                       // Generalizations for the classes in this subdomain.
-	UseCaseGeneralizations map[identity.Key]model_use_case.Generalization                    // Generalizations for the use cases in this subdomain.
-	Classes                map[identity.Key]model_class.Class                                // Classes in this subdomain.
-	UseCases               map[identity.Key]model_use_case.UseCase                           // Use cases in this subdomain.
-	ClassAssociations      map[identity.Key]model_class.Association                          // Associations between classes in this subdomain.
-	UseCaseShares          map[identity.Key]map[identity.Key]model_use_case.UseCaseShared    // Outer key is sea-level use case, inner key is mud-level use case.
+	Generalizations        map[identity.Key]model_class.Generalization                    // Generalizations for the classes in this subdomain.
+	UseCaseGeneralizations map[identity.Key]model_use_case.Generalization                 // Generalizations for the use cases in this subdomain.
+	Classes                map[identity.Key]model_class.Class                             // Classes in this subdomain.
+	UseCases               map[identity.Key]model_use_case.UseCase                        // Use cases in this subdomain.
+	ClassAssociations      map[identity.Key]model_class.Association                       // Associations between classes in this subdomain.
+	UseCaseShares          map[identity.Key]map[identity.Key]model_use_case.UseCaseShared // Outer key is sea-level use case, inner key is mud-level use case.
 }
 
 func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain Subdomain, err error) {
@@ -124,12 +124,52 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return err
 		}
 	}
+
+	// Check that each class generalization is in use by exactly one superclass and at least one subclass.
+	for _, gen := range s.Generalizations {
+		superCount := 0
+		subCount := 0
+		for _, class := range s.Classes {
+			if class.SuperclassOfKey != nil && *class.SuperclassOfKey == gen.Key {
+				superCount++
+			}
+			if class.SubclassOfKey != nil && *class.SubclassOfKey == gen.Key {
+				subCount++
+			}
+		}
+		if superCount != 1 {
+			return errors.Errorf("class generalization '%s' must have exactly one superclass, found %d", gen.Key.String(), superCount)
+		}
+		if subCount < 1 {
+			return errors.Errorf("class generalization '%s' must have at least one subclass, found %d", gen.Key.String(), subCount)
+		}
+	}
 	for _, useCase := range s.UseCases {
 		if err := useCase.ValidateWithParentAndClasses(&s.Key, subdomainClassKeys, actorClassKeys); err != nil {
 			return err
 		}
 		if err := useCase.ValidateReferences(useCaseGeneralizationKeys); err != nil {
 			return err
+		}
+	}
+
+	// Check that each use case generalization is in use by exactly one superclass and at least one subclass.
+	for _, ucGen := range s.UseCaseGeneralizations {
+		superCount := 0
+		subCount := 0
+		for _, useCase := range s.UseCases {
+			if useCase.SuperclassOfKey != nil && *useCase.SuperclassOfKey == ucGen.Key {
+				superCount++
+			}
+			if useCase.SubclassOfKey != nil && *useCase.SubclassOfKey == ucGen.Key {
+				subCount++
+			}
+		}
+		if superCount != 1 {
+			return errors.Errorf("use case generalization '%s' must have exactly one superclass, found %d", ucGen.Key.String(), superCount)
+		}
+		if subCount < 1 {
+			return errors.Errorf("use case generalization '%s' must have at least one subclass, found %d", ucGen.Key.String(), subCount)
 		}
 	}
 	for _, classAssoc := range s.ClassAssociations {
