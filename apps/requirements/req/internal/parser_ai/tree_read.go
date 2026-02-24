@@ -5,11 +5,30 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
 
-// ReadModelTree reads a complete model tree from the filesystem.
+func ReadModel(inputModelPath string) (model req_model.Model, err error) {
+
+	modelKey := filepath.Base(inputModelPath)
+
+	inputModel, err := readModelTree(inputModelPath)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	modelPtr, err := ConvertToModel(inputModel, modelKey)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	return *modelPtr, nil
+}
+
+// readModelTree reads a complete model tree from the filesystem.
 // The modelDir is the root directory where the model is stored.
-func ReadModelTree(modelDir string) (*inputModel, error) {
+func readModelTree(modelDir string) (*inputModel, error) {
 	// Read model.json
 	modelContent, err := os.ReadFile(filepath.Join(modelDir, "model.json"))
 	if err != nil {

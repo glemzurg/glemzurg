@@ -1004,7 +1004,7 @@ func (suite *ConvertSuite) TestConvertFromModelValidationError() {
 
 // TestConvertToModelValidationError tests that req_model validation catches errors
 // when there are issues not caught by tree validation (safety net).
-// Note: Since tree validation now runs in ReadModelTree before ConvertToModel is called,
+// Note: Since tree validation now runs in readModelTree before ConvertToModel is called,
 // the error here comes from req_model.Validate() as a safety net.
 func (suite *ConvertSuite) TestConvertToModelValidationError() {
 	t := suite.T()

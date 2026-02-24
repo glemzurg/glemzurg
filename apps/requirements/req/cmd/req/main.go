@@ -152,7 +152,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 
 	case InputFormatAIJSON:
 		fmt.Println("Reading model from ai/json format...")
-		inputModel, err := parser_ai.ReadModelTree(sourcePath)
+		inputModel, err := parser_ai.readModelTree(sourcePath)
 		if err != nil {
 			return fmt.Errorf("failed to read ai/json model: %w", err)
 		}
@@ -205,7 +205,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
-		if err := parser_ai.WriteModelTree(inputModel, outputPath); err != nil {
+		if err := parser_ai.writeModelTree(inputModel, outputPath); err != nil {
 			return fmt.Errorf("failed to write ai/json model: %w", err)
 		}
 		fmt.Printf("Model written to: %s\n", outputPath)

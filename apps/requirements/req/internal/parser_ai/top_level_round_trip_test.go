@@ -25,13 +25,13 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	err := input.Validate()
 	assert.Nil(suite.T(), err, "input model should be valid")
 
-	// Write to a temporary folder.
+	// Write using the top-level parser (original round-trip behavior).
 	tempDir := suite.T().TempDir()
-	err = Write(input, tempDir)
+	err = WriteModel(input, tempDir)
 	assert.Nil(suite.T(), err, "writing model should succeed")
 
 	// Read from the temporary folder.
-	output, err := Parse(tempDir)
+	output, err := ReadModel(tempDir)
 	assert.Nil(suite.T(), err, "parsing model should succeed")
 
 	// The parsed model's Key will be the tempDir path, not our original key.

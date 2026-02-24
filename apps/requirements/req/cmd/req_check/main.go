@@ -63,7 +63,7 @@ func validateModel(modelPath, model string) error {
 	var parsedModel *req_model.Model
 
 	fmt.Println("Reading and validating model from ai/json format...")
-	inputModel, err := parser_ai.ReadModelTree(modelPath)
+	inputModel, err := parser_ai.readModelTree(modelPath)
 	if err != nil {
 		return fmt.Errorf("failed to read/validate ai/json model: %w", err)
 	}

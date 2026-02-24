@@ -5,11 +5,27 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
 
-// WriteModelTree writes a complete model tree to the filesystem.
+func WriteModel(model req_model.Model, outputModelPath string) error {
+
+	inputModel, err := ConvertFromModel(&model)
+	if err != nil {
+		return err
+	}
+
+	if err := writeModelTree(inputModel, outputModelPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// writeModelTree writes a complete model tree to the filesystem.
 // The modelDir is the root directory where the model will be written.
-func WriteModelTree(model *inputModel, modelDir string) error {
+func writeModelTree(model *inputModel, modelDir string) error {
 	// Create model directory
 	if err := os.MkdirAll(modelDir, 0755); err != nil {
 		return err

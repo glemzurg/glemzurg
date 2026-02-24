@@ -20,8 +20,8 @@ func TestDumpTestModel(t *testing.T) {
 
 	// Write to a fixed directory that won't be cleaned up.
 	outputDir := "/workspaces/glemzurg/test_model_dump"
-	err = WriteModelTree(input, outputDir)
-	assert.NoError(t, err, "WriteModelTree should succeed")
+	err = writeModelTree(input, outputDir)
+	assert.NoError(t, err, "writeModelTree should succeed")
 
 	fmt.Printf("Model written to: %s\n", outputDir)
 }
