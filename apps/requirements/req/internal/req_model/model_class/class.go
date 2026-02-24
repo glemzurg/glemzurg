@@ -137,6 +137,10 @@ func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations
 	return nil
 }
 
+func (c *Class) SetInvariants(invariants []model_logic.Logic) {
+	c.Invariants = invariants
+}
+
 func (c *Class) SetAttributes(attributes map[identity.Key]Attribute) {
 	c.Attributes = attributes
 }
@@ -196,6 +200,11 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 	}
 
 	// Validate all children.
+	for i, inv := range c.Invariants {
+		if err := inv.ValidateWithParent(&c.Key); err != nil {
+			return errors.Wrapf(err, "invariant %d", i)
+		}
+	}
 	for _, attr := range c.Attributes {
 		if err := attr.ValidateWithParent(&c.Key); err != nil {
 			return err

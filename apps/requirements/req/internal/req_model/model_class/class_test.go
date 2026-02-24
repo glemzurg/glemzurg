@@ -186,6 +186,30 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	err = class.ValidateWithParent(&subdomainKey)
 	assert.NoError(suite.T(), err)
 
+	// Test child Invariant validation propagates error.
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Invariants: []model_logic.Logic{
+			{Key: identity.Key{}, Description: "Desc.", Notation: model_logic.NotationTLAPlus}, // Invalid: empty key
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "invariant 0", "Should validate child Invariants")
+
+	// Test child Invariant with wrong parent key is caught.
+	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+	wrongInvKey := helper.Must(identity.NewClassInvariantKey(otherClassKey, "0"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Invariants: []model_logic.Logic{
+			{Key: wrongInvKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "invariant 0", "Should catch invariant with wrong parent key")
+
 	// Test child Attribute validation propagates error.
 	attrKey := helper.Must(identity.NewAttributeKey(validKey, "attr1"))
 	class = Class{
@@ -271,6 +295,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	assert.Error(suite.T(), err, "Should validate child Transitions")
 
 	// Test valid class with all child types.
+	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
+	validInvariant := model_logic.Logic{Key: invKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
 	validLogic := model_logic.Logic{Key: guardKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
 	validAction := model_state.Action{Key: actionKey, Name: "Action"}
 	validEvent := model_state.Event{Key: eventKey, Name: "Event"}
@@ -287,6 +313,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
+		Invariants:  []model_logic.Logic{validInvariant},
 		Attributes:  map[identity.Key]Attribute{attrKey: validAttr},
 		States:      map[identity.Key]model_state.State{stateKey: validState},
 		Events:      map[identity.Key]model_state.Event{eventKey: validEvent},
@@ -372,6 +399,11 @@ func (suite *ClassSuite) TestSetters() {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
 	queryKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
 	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state1"))
+
+	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
+	invariants := []model_logic.Logic{{Key: invKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}}
+	class.SetInvariants(invariants)
+	assert.Equal(suite.T(), invariants, class.Invariants)
 
 	attrs := map[identity.Key]Attribute{attrKey: {Key: attrKey, Name: "Attr"}}
 	class.SetAttributes(attrs)
