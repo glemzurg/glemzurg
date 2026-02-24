@@ -146,19 +146,12 @@ func (sw *SourceWatcher) updateModel() error {
 
 // updateModelFromJSON parses a model from parser_ai JSON format.
 func (sw *SourceWatcher) updateModelFromJSON() error {
-	// Read the model tree from the directory
-	inputModel, err := parser_ai.readModelTree(sw.modelPath)
+	parsedModel, err := parser_ai.ReadModel(sw.modelPath)
 	if err != nil {
 		return err
 	}
 
-	// Convert to req_model.Model
-	parsedModel, err := parser_ai.ConvertToModel(inputModel, sw.modelName)
-	if err != nil {
-		return err
-	}
-
-	err = sw.store.SetModel(sw.modelName, parsedModel)
+	err = sw.store.SetModel(sw.modelName, &parsedModel)
 	if err != nil {
 		return err
 	}

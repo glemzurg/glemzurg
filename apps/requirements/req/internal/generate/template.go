@@ -315,7 +315,7 @@ var _funcMap = template.FuncMap{
 	},
 	"state_action_state": func(reqs *req_flat.Requirements, stateActionKey identity.Key) (state model_state.State) {
 		// StateAction's key's parent is the State key.
-		stateKeyStr := stateActionKey.ParentKey()
+		stateKeyStr := stateActionKey.GetParentKey()
 		lookup := reqs.StateLookup()
 		return lookup[stateKeyStr]
 	},

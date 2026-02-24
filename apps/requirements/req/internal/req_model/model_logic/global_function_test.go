@@ -92,7 +92,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		{
 			testName: "error wrong key type",
 			gf: GlobalFunction{
-				Key:        helper.Must(identity.NewInvariantKey("inv_1")),
+				Key:        helper.Must(identity.NewInvariantKey("0")),
 				Name:       "_Max",
 				Parameters: []string{"x"},
 				Logic:      validSpec,

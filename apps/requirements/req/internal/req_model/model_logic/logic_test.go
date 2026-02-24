@@ -19,9 +19,9 @@ func TestLogicSuite(t *testing.T) {
 
 // TestValidate tests all validation rules for Logic.
 func (s *LogicTestSuite) TestValidate() {
-	validKey := helper.Must(identity.NewInvariantKey("inv_1"))
-	validKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
-	validKey3 := helper.Must(identity.NewInvariantKey("inv_3"))
+	validKey := helper.Must(identity.NewInvariantKey("0"))
+	validKey2 := helper.Must(identity.NewInvariantKey("1"))
+	validKey3 := helper.Must(identity.NewInvariantKey("2"))
 
 	tests := []struct {
 		testName string
@@ -135,8 +135,8 @@ func (s *LogicTestSuite) TestValidate() {
 
 // TestNew tests that NewLogic maps parameters correctly and calls Validate.
 func (s *LogicTestSuite) TestNew() {
-	validKey := helper.Must(identity.NewInvariantKey("inv_1"))
-	validKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
+	validKey := helper.Must(identity.NewInvariantKey("0"))
+	validKey2 := helper.Must(identity.NewInvariantKey("1"))
 
 	// Test all parameters are mapped correctly.
 	logic, err := NewLogic(validKey, "Stock is never negative.", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
@@ -170,7 +170,7 @@ func (s *LogicTestSuite) TestNew() {
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
 func (s *LogicTestSuite) TestValidateWithParent() {
-	validKey := helper.Must(identity.NewInvariantKey("inv_1"))
+	validKey := helper.Must(identity.NewInvariantKey("0"))
 
 	// Test valid case - invariant keys have nil parent.
 	logic := Logic{

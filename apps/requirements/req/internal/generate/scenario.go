@@ -60,14 +60,18 @@ func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_sce
 	return contents, nil
 }
 
-func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence, statements []model_scenario.Node, scenarioLookup map[string]model_scenario.Scenario, objectLookup map[string]model_scenario.Object, classLookup map[string]model_class.Class) error {
+func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence, statements []model_scenario.Step, scenarioLookup map[string]model_scenario.Scenario, objectLookup map[string]model_scenario.Object, classLookup map[string]model_class.Class) error {
 	for _, stmt := range statements {
-		switch stmt.Inferredtype() {
-		case model_scenario.NODE_TYPE_LEAF:
+		switch stmt.StepType {
+		case model_scenario.STEP_TYPE_LEAF:
 
-			switch {
+			if stmt.LeafType == nil {
+				return errors.Errorf("leaf step missing leaf_type: '%+v'", stmt)
+			}
 
-			case stmt.EventKey != nil, stmt.AttributeKey != nil:
+			switch *stmt.LeafType {
+
+			case model_scenario.LEAF_TYPE_EVENT:
 
 				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
 				if !found {
@@ -115,7 +119,34 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 					Text:   text,
 				})
 
-			case stmt.ScenarioKey != nil:
+			case model_scenario.LEAF_TYPE_QUERY:
+
+				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
+				if !found {
+					return errors.Errorf("unknown from object key: '%s'", stmt.FromObjectKey.String())
+				}
+				toObject, found := objectLookup[stmt.ToObjectKey.String()]
+				if !found {
+					return errors.Errorf("unknown to object key: '%s'", stmt.ToObjectKey.String())
+				}
+
+				// Get the classes for the objects.
+				fromClass, found := classLookup[fromObject.ClassKey.String()]
+				if !found {
+					return errors.Errorf("unknown from class key: '%s'", fromObject.ClassKey.String())
+				}
+				toClass, found := classLookup[toObject.ClassKey.String()]
+				if !found {
+					return errors.Errorf("unknown to class key: '%s'", toObject.ClassKey.String())
+				}
+
+				s.AddStep(svgsequence.Step{
+					Source: fromObject.GetName(fromClass),
+					Target: toObject.GetName(toClass),
+					Text:   stmt.Description,
+				})
+
+			case model_scenario.LEAF_TYPE_SCENARIO:
 
 				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
 				if !found {
@@ -139,7 +170,7 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				// This is a call to another scenario.
 				calledScenario, found := scenarioLookup[stmt.ScenarioKey.String()]
 				if !found {
-					return errors.Errorf("unknown called scenario object key: '%s'", stmt.ToObjectKey.String())
+					return errors.Errorf("unknown called scenario key: '%s'", stmt.ScenarioKey.String())
 				}
 				s.AddStep(svgsequence.Step{
 					Source: fromObject.GetName(fromClass),
@@ -147,7 +178,7 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 					Text:   "Scenario: " + calledScenario.Name,
 				})
 
-			case stmt.IsDelete:
+			case model_scenario.LEAF_TYPE_DELETE:
 				// This is a delete operation.
 				fromObject, found := objectLookup[stmt.FromObjectKey.String()]
 				if !found {
@@ -167,23 +198,24 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				})
 
 			default:
-				return errors.Errorf("leaf node must have one of event_key, scenario_key, attribute_key, or is_delete: '%+v'", stmt)
+				return errors.Errorf("unsupported leaf type in scenario SVG generation: '%s'", *stmt.LeafType)
 			}
 
-		case model_scenario.NODE_TYPE_SEQUENCE:
+		case model_scenario.STEP_TYPE_SEQUENCE:
 			err := addSteps(eventLookup, s, stmt.Statements, scenarioLookup, objectLookup, classLookup)
 			if err != nil {
 				return err
 			}
 
-		case model_scenario.NODE_TYPE_SWITCH:
+		case model_scenario.STEP_TYPE_SWITCH:
 
+			// Cases are child statements with STEP_TYPE_CASE.
 			sectionLabel := "(Opt)"
-			if len(stmt.Cases) > 1 {
+			if len(stmt.Statements) > 1 {
 				sectionLabel = "(Alt)"
 			}
 
-			for _, c := range stmt.Cases {
+			for _, c := range stmt.Statements {
 				s.OpenSection(sectionLabel+" ["+c.Condition+"]", "")
 
 				err := addSteps(eventLookup, s, c.Statements, scenarioLookup, objectLookup, classLookup)
@@ -194,8 +226,8 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 				s.CloseSection()
 			}
 
-		case model_scenario.NODE_TYPE_LOOP:
-			s.OpenSection("(Loop) ["+stmt.Loop+"]", "")
+		case model_scenario.STEP_TYPE_LOOP:
+			s.OpenSection("(Loop) ["+stmt.Condition+"]", "")
 
 			err := addSteps(eventLookup, s, stmt.Statements, scenarioLookup, objectLookup, classLookup)
 			if err != nil {
@@ -205,7 +237,7 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 			s.CloseSection()
 
 		default:
-			return errors.Errorf("unsupported node type in scenario SVG generation: '%s'", stmt.Inferredtype())
+			return errors.Errorf("unsupported step type in scenario SVG generation: '%s'", stmt.StepType)
 		}
 	}
 	return nil

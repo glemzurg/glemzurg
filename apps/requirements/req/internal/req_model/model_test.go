@@ -23,8 +23,8 @@ type ModelSuite struct {
 
 // TestValidate tests all validation rules for Model.
 func (suite *ModelSuite) TestValidate() {
-	invKey1 := helper.Must(identity.NewInvariantKey("inv_1"))
-	invKey2 := helper.Must(identity.NewInvariantKey("inv_2"))
+	invKey1 := helper.Must(identity.NewInvariantKey("0"))
+	invKey2 := helper.Must(identity.NewInvariantKey("1"))
 	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
 	gfKey1 := helper.Must(identity.NewGlobalFunctionKey("_some"))
 
@@ -185,7 +185,7 @@ func (suite *ModelSuite) TestValidate() {
 
 // TestNew tests that NewModel maps parameters correctly and calls Validate.
 func (suite *ModelSuite) TestNew() {
-	invKey1 := helper.Must(identity.NewInvariantKey("inv_1"))
+	invKey1 := helper.Must(identity.NewInvariantKey("0"))
 	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
 
 	// Test all parameters are mapped correctly (key is normalized to lowercase and trimmed).
