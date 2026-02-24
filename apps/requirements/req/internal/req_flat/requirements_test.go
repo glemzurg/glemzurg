@@ -57,9 +57,11 @@ var (
 
 	tGlobalFuncKey = helper.Must(identity.NewGlobalFunctionKey("_Max"))
 
-	tActionGuaranteeKey = helper.Must(identity.NewActionGuaranteeKey(tActionKey, "0"))
-	tQueryGuaranteeKey  = helper.Must(identity.NewQueryGuaranteeKey(tQueryKey, "0"))
-	tInvariantKey       = helper.Must(identity.NewInvariantKey("0"))
+	tActionGuaranteeKey  = helper.Must(identity.NewActionGuaranteeKey(tActionKey, "0"))
+	tQueryGuaranteeKey   = helper.Must(identity.NewQueryGuaranteeKey(tQueryKey, "0"))
+	tInvariantKey        = helper.Must(identity.NewInvariantKey("0"))
+	tClassInvariantKey   = helper.Must(identity.NewClassInvariantKey(tClassKey, "0"))
+	tClassInvariant2Key  = helper.Must(identity.NewClassInvariantKey(tClassKey, "1"))
 )
 
 // ============================================================
@@ -128,6 +130,9 @@ func buildTestModel() req_model.Model {
 			ToStateKey:   &tStateClosedKey,
 		},
 	}
+	classInv1 := helper.Must(model_logic.NewLogic(tClassInvariantKey, "Order total matches.", model_logic.NotationTLAPlus, "self.total > 0"))
+	classInv2 := helper.Must(model_logic.NewLogic(tClassInvariant2Key, "Order has items.", model_logic.NotationTLAPlus, "Len(self.items) > 0"))
+	class.SetInvariants([]model_logic.Logic{classInv1, classInv2})
 
 	// Second class (minimal).
 	class2 := helper.Must(model_class.NewClass(tClass2Key, "Item", "", nil, nil, nil, ""))
@@ -383,9 +388,43 @@ func (s *RequirementsSuite) TestFlattenModel_Objects() {
 	s.Equal("order1", reqs.Objects[tObjectKey].Name)
 }
 
+func (s *RequirementsSuite) TestFlattenModel_Invariants() {
+	reqs := NewRequirements(buildTestModel())
+	s.Len(reqs.Invariants, 1)
+	s.Contains(reqs.Invariants, tInvariantKey)
+	s.Equal("Always true.", reqs.Invariants[tInvariantKey].Description)
+}
+
+func (s *RequirementsSuite) TestFlattenModel_ClassInvariants() {
+	reqs := NewRequirements(buildTestModel())
+	s.Len(reqs.ClassInvariants, 2)
+	s.Contains(reqs.ClassInvariants, tClassInvariantKey)
+	s.Equal("Order total matches.", reqs.ClassInvariants[tClassInvariantKey].Description)
+	s.Contains(reqs.ClassInvariants, tClassInvariant2Key)
+	s.Equal("Order has items.", reqs.ClassInvariants[tClassInvariant2Key].Description)
+}
+
 // ============================================================
 // Simple Lookup Tests
 // ============================================================
+
+func (s *RequirementsSuite) TestInvariantLookup() {
+	reqs := NewRequirements(buildTestModel())
+	lookup := reqs.InvariantLookup()
+	s.Len(lookup, 1)
+	s.Contains(lookup, tInvariantKey.String())
+	s.Equal("Always true.", lookup[tInvariantKey.String()].Description)
+}
+
+func (s *RequirementsSuite) TestClassInvariantLookup() {
+	reqs := NewRequirements(buildTestModel())
+	lookup := reqs.ClassInvariantLookup()
+	s.Len(lookup, 2)
+	s.Contains(lookup, tClassInvariantKey.String())
+	s.Equal("Order total matches.", lookup[tClassInvariantKey.String()].Description)
+	s.Contains(lookup, tClassInvariant2Key.String())
+	s.Equal("Order has items.", lookup[tClassInvariant2Key.String()].Description)
+}
 
 func (s *RequirementsSuite) TestActorLookup() {
 	reqs := NewRequirements(buildTestModel())
@@ -730,6 +769,8 @@ func (s *RequirementsSuite) TestFlattenModel_EmptyModel() {
 	s.Empty(reqs.Classes)
 	s.Empty(reqs.Attributes)
 	s.Empty(reqs.ClassAssociations)
+	s.Empty(reqs.Invariants)
+	s.Empty(reqs.ClassInvariants)
 	s.Empty(reqs.States)
 	s.Empty(reqs.Events)
 	s.Empty(reqs.Guards)

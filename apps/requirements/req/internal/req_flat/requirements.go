@@ -22,27 +22,29 @@ type Requirements struct {
 	Model req_model.Model
 
 	// Flat lookups by key - populated from Model tree.
-	Actors                map[identity.Key]model_actor.Actor
-	ActorGeneralizations  map[identity.Key]model_actor.Generalization
-	Domains               map[identity.Key]model_domain.Domain
-	Subdomains            map[identity.Key]model_domain.Subdomain
-	DomainAssociations    map[identity.Key]model_domain.Association
-	Generalizations       map[identity.Key]model_class.Generalization
-	Classes               map[identity.Key]model_class.Class
-	Attributes            map[identity.Key]model_class.Attribute
-	ClassAssociations     map[identity.Key]model_class.Association
-	States                map[identity.Key]model_state.State
-	Events                map[identity.Key]model_state.Event
-	Guards                map[identity.Key]model_state.Guard
-	Actions               map[identity.Key]model_state.Action
-	Queries               map[identity.Key]model_state.Query
-	Transitions           map[identity.Key]model_state.Transition
-	StateActions          map[identity.Key]model_state.StateAction
-	GlobalFunctions       map[identity.Key]model_logic.GlobalFunction
-	UseCases              map[identity.Key]model_use_case.UseCase
+	Actors                 map[identity.Key]model_actor.Actor
+	ActorGeneralizations   map[identity.Key]model_actor.Generalization
+	Domains                map[identity.Key]model_domain.Domain
+	Subdomains             map[identity.Key]model_domain.Subdomain
+	DomainAssociations     map[identity.Key]model_domain.Association
+	Generalizations        map[identity.Key]model_class.Generalization
+	Classes                map[identity.Key]model_class.Class
+	Attributes             map[identity.Key]model_class.Attribute
+	ClassAssociations      map[identity.Key]model_class.Association
+	Invariants             map[identity.Key]model_logic.Logic // Model-level invariants.
+	ClassInvariants        map[identity.Key]model_logic.Logic // Class-level invariants (from all classes).
+	States                 map[identity.Key]model_state.State
+	Events                 map[identity.Key]model_state.Event
+	Guards                 map[identity.Key]model_state.Guard
+	Actions                map[identity.Key]model_state.Action
+	Queries                map[identity.Key]model_state.Query
+	Transitions            map[identity.Key]model_state.Transition
+	StateActions           map[identity.Key]model_state.StateAction
+	GlobalFunctions        map[identity.Key]model_logic.GlobalFunction
+	UseCases               map[identity.Key]model_use_case.UseCase
 	UseCaseGeneralizations map[identity.Key]model_use_case.Generalization
-	Scenarios             map[identity.Key]model_scenario.Scenario
-	Objects               map[identity.Key]model_scenario.Object
+	Scenarios              map[identity.Key]model_scenario.Scenario
+	Objects                map[identity.Key]model_scenario.Object
 
 	// Prepared flag to avoid re-processing.
 	prepared bool
@@ -69,6 +71,8 @@ func (r *Requirements) flattenModel() {
 	r.Classes = make(map[identity.Key]model_class.Class)
 	r.Attributes = make(map[identity.Key]model_class.Attribute)
 	r.ClassAssociations = make(map[identity.Key]model_class.Association)
+	r.Invariants = make(map[identity.Key]model_logic.Logic)
+	r.ClassInvariants = make(map[identity.Key]model_logic.Logic)
 	r.States = make(map[identity.Key]model_state.State)
 	r.Events = make(map[identity.Key]model_state.Event)
 	r.Guards = make(map[identity.Key]model_state.Guard)
@@ -107,6 +111,11 @@ func (r *Requirements) flattenModel() {
 		r.ClassAssociations[key] = assoc
 	}
 
+	// Model-level invariants (slice, not map).
+	for _, inv := range r.Model.Invariants {
+		r.Invariants[inv.Key] = inv
+	}
+
 	// Walk domains.
 	for domainKey, domain := range r.Model.Domains {
 		r.Domains[domainKey] = domain
@@ -142,6 +151,11 @@ func (r *Requirements) flattenModel() {
 				// Attributes.
 				for key, attr := range class.Attributes {
 					r.Attributes[key] = attr
+				}
+
+				// Class invariants (slice, not map).
+				for _, inv := range class.Invariants {
+					r.ClassInvariants[inv.Key] = inv
 				}
 
 				// States.
@@ -588,6 +602,26 @@ func (r *Requirements) GlobalFunctionLookup() map[string]model_logic.GlobalFunct
 	lookup := make(map[string]model_logic.GlobalFunction)
 	for key, gf := range r.GlobalFunctions {
 		lookup[key.String()] = gf
+	}
+	return lookup
+}
+
+// InvariantLookup returns model-level invariants by key (as string for template use).
+func (r *Requirements) InvariantLookup() map[string]model_logic.Logic {
+	r.PrepLookups()
+	lookup := make(map[string]model_logic.Logic)
+	for key, inv := range r.Invariants {
+		lookup[key.String()] = inv
+	}
+	return lookup
+}
+
+// ClassInvariantLookup returns class-level invariants by key (as string for template use).
+func (r *Requirements) ClassInvariantLookup() map[string]model_logic.Logic {
+	r.PrepLookups()
+	lookup := make(map[string]model_logic.Logic)
+	for key, inv := range r.ClassInvariants {
+		lookup[key.String()] = inv
 	}
 	return lookup
 }
