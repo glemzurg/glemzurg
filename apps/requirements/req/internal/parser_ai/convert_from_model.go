@@ -45,10 +45,10 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 		result.ActorGeneralizations[key.SubKey] = converted
 	}
 
-	// Convert global functions
+	// Convert global functions (SubKey has underscore stripped, add it back)
 	for key, gf := range model.GlobalFunctions {
 		converted := convertGlobalFunctionFromModel(&gf)
-		result.GlobalFunctions[key.SubKey] = converted
+		result.GlobalFunctions["_"+key.SubKey] = converted
 	}
 
 	// Convert domains

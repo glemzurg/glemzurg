@@ -433,7 +433,7 @@ func convertScenarioToModel(keyStr string, scenario *inputScenario, useCaseKey, 
 
 	// Convert steps
 	if scenario.Steps != nil {
-		converted, err := convertStepToModel(scenario.Steps, scenarioKey, subdomainKey, 0)
+		converted, err := convertStepToModel(scenario.Steps, scenarioKey, useCaseKey, subdomainKey, scenario.Objects, 0)
 		if err != nil {
 			return model_scenario.Scenario{}, errors.Wrap(err, "failed to convert scenario steps")
 		}
@@ -467,7 +467,7 @@ func convertScenarioObjectToModel(keyStr string, obj *inputObject, scenarioKey, 
 }
 
 // convertStepToModel recursively converts an inputStep to a model_scenario.Step.
-func convertStepToModel(step *inputStep, scenarioKey, subdomainKey identity.Key, stepIndex int) (*model_scenario.Step, error) {
+func convertStepToModel(step *inputStep, scenarioKey, useCaseKey, subdomainKey identity.Key, objects map[string]*inputObject, stepIndex int) (*model_scenario.Step, error) {
 	stepKey, err := identity.NewScenarioStepKey(scenarioKey, fmt.Sprintf("step_%d", stepIndex))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create scenario step key")
@@ -497,25 +497,31 @@ func convertStepToModel(step *inputStep, scenarioKey, subdomainKey identity.Key,
 		result.ToObjectKey = &objKey
 	}
 	if step.EventKey != nil {
-		// Event keys reference class events - they need the class key context.
-		// For scenarios, event keys are stored as simple strings referencing the event within a class.
-		// We need to build the full identity key. The class context comes from the object's class.
-		// For now, we'll create a minimal event key with the subdomain as parent placeholder.
-		eventKey, err := identity.NewEventKey(subdomainKey, *step.EventKey)
+		// Resolve the class key from the to_object (receiver) or from_object.
+		classKey, err := resolveClassKeyFromStep(step, objects, subdomainKey)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve class for event key '%s'", *step.EventKey)
+		}
+		eventKey, err := identity.NewEventKey(classKey, *step.EventKey)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create event key '%s'", *step.EventKey)
 		}
 		result.EventKey = &eventKey
 	}
 	if step.QueryKey != nil {
-		queryKey, err := identity.NewQueryKey(subdomainKey, *step.QueryKey)
+		// Resolve the class key from the to_object (target) or from_object.
+		classKey, err := resolveClassKeyFromStep(step, objects, subdomainKey)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve class for query key '%s'", *step.QueryKey)
+		}
+		queryKey, err := identity.NewQueryKey(classKey, *step.QueryKey)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create query key '%s'", *step.QueryKey)
 		}
 		result.QueryKey = &queryKey
 	}
 	if step.ScenarioKey != nil {
-		scenKey, err := identity.NewScenarioKey(scenarioKey, *step.ScenarioKey)
+		scenKey, err := identity.NewScenarioKey(useCaseKey, *step.ScenarioKey)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to create scenario key '%s'", *step.ScenarioKey)
 		}
@@ -525,7 +531,7 @@ func convertStepToModel(step *inputStep, scenarioKey, subdomainKey identity.Key,
 	// Convert sub-statements
 	for i, subStep := range step.Statements {
 		subStepCopy := subStep
-		converted, err := convertStepToModel(&subStepCopy, scenarioKey, subdomainKey, stepIndex*100+i+1)
+		converted, err := convertStepToModel(&subStepCopy, scenarioKey, useCaseKey, subdomainKey, objects, stepIndex*100+i+1)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to convert sub-step %d", i)
 		}
@@ -533,6 +539,26 @@ func convertStepToModel(step *inputStep, scenarioKey, subdomainKey identity.Key,
 	}
 
 	return result, nil
+}
+
+// resolveClassKeyFromStep resolves the class identity.Key from a step's object references.
+// It checks to_object first (receiver/target), then from_object.
+func resolveClassKeyFromStep(step *inputStep, objects map[string]*inputObject, subdomainKey identity.Key) (identity.Key, error) {
+	var classKeyStr string
+	if step.ToObjectKey != nil {
+		if obj, ok := objects[*step.ToObjectKey]; ok {
+			classKeyStr = obj.ClassKey
+		}
+	}
+	if classKeyStr == "" && step.FromObjectKey != nil {
+		if obj, ok := objects[*step.FromObjectKey]; ok {
+			classKeyStr = obj.ClassKey
+		}
+	}
+	if classKeyStr == "" {
+		return identity.Key{}, errors.Errorf("no object reference to resolve class key")
+	}
+	return identity.NewClassKey(subdomainKey, classKeyStr)
 }
 
 // convertUseCaseGeneralizationToModel converts an inputUseCaseGeneralization to a model_use_case.Generalization.

@@ -1168,8 +1168,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 
 	domain1Key := helper.Must(identity.NewDomainKey("orders"))
 	domain2Key := helper.Must(identity.NewDomainKey("inventory"))
-	subdomain1Key := helper.Must(identity.NewSubdomainKey(domain1Key, "core"))
-	subdomain2Key := helper.Must(identity.NewSubdomainKey(domain2Key, "products"))
+	subdomain1Key := helper.Must(identity.NewSubdomainKey(domain1Key, "default"))
+	subdomain2Key := helper.Must(identity.NewSubdomainKey(domain2Key, "default"))
 	orderKey := helper.Must(identity.NewClassKey(subdomain1Key, "order"))
 	productKey := helper.Must(identity.NewClassKey(subdomain2Key, "product"))
 	assocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, orderKey, productKey, "order_products"))
@@ -1221,8 +1221,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 
 	assoc := input.ClassAssociations["order_products"]
 	assert.Equal(t, "Order Products", assoc.Name)
-	assert.Equal(t, "orders/core/order", assoc.FromClassKey)
-	assert.Equal(t, "inventory/products/product", assoc.ToClassKey)
+	assert.Equal(t, "orders/default/order", assoc.FromClassKey)
+	assert.Equal(t, "inventory/default/product", assoc.ToClassKey)
 }
 
 // TestConvertToModelWithModelAssociation tests converting a model-level association.
@@ -1236,7 +1236,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 			"orders": {
 				Name: "Orders",
 				Subdomains: map[string]*inputSubdomain{
-					"core": {
+					"default": {
 						Name: "Core",
 						Classes: map[string]*inputClass{
 							"order": {Name: "Order", Attributes: make(map[string]*inputAttribute)},
@@ -1250,7 +1250,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 			"inventory": {
 				Name: "Inventory",
 				Subdomains: map[string]*inputSubdomain{
-					"products": {
+					"default": {
 						Name: "Products",
 						Classes: map[string]*inputClass{
 							"product": {Name: "Product", Attributes: make(map[string]*inputAttribute)},
@@ -1265,9 +1265,9 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 		ClassAssociations: map[string]*inputClassAssociation{
 			"order_products": {
 				Name:             "Order Products",
-				FromClassKey:     "orders/core/order",
+				FromClassKey:     "orders/default/order",
 				FromMultiplicity: "1",
-				ToClassKey:       "inventory/products/product",
+				ToClassKey:       "inventory/default/product",
 				ToMultiplicity:   "*",
 			},
 		},

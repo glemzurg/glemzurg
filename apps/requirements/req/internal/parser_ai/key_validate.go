@@ -68,6 +68,9 @@ import (
 //   - $          : End of string
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 
+// globalFunctionKeyPattern validates that a global function key starts with underscore followed by valid snake_case.
+var globalFunctionKeyPattern = regexp.MustCompile(`^_[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
+
 // ValidateKey checks if a key follows the required snake_case format.
 // Returns nil if valid, or a ParseError if invalid.
 func ValidateKey(key, keyType, filePath string) error {
@@ -82,6 +85,12 @@ func ValidateKey(key, keyType, filePath string) error {
 	if keyType == "domain_association_key" {
 		dotPattern := regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*\.[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 		if dotPattern.MatchString(key) {
+			return nil
+		}
+	}
+	// Global function keys must start with an underscore followed by a valid key.
+	if keyType == "global_function_key" {
+		if globalFunctionKeyPattern.MatchString(key) {
 			return nil
 		}
 	}

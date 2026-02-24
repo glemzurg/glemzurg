@@ -137,6 +137,22 @@ func GetStrictTestModel() req_model.Model {
 
 	// Ensure every class has at least one attribute by adding a dummy if needed.
 	for domainKey, domain := range model.Domains {
+		// Ensure every domain has at least one subdomain.
+		if len(domain.Subdomains) == 0 {
+			defaultSubdomainKey, err := identity.NewSubdomainKey(domainKey, "default")
+			if err != nil {
+				panic(fmt.Sprintf("failed to create default subdomain key: %v", err))
+			}
+			defaultSubdomain, err := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "")
+			if err != nil {
+				panic(fmt.Sprintf("failed to create default subdomain: %v", err))
+			}
+			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+				defaultSubdomainKey: defaultSubdomain,
+			}
+			model.Domains[domainKey] = domain
+		}
+
 		for subdomainKey, subdomain := range domain.Subdomains {
 			// Ensure every subdomain has at least 2 classes.
 			if len(subdomain.Classes) < 2 {
@@ -720,15 +736,15 @@ func buildKeys() (testKeys, error) {
 	k.guardLogic3 = k.guardInStock
 
 	// Invariants.
-	k.invariant1, err = identity.NewInvariantKey("total_non_negative")
+	k.invariant1, err = identity.NewInvariantKey("invariant_0")
 	if err != nil {
 		return k, err
 	}
-	k.invariant2, err = identity.NewInvariantKey("order_has_customer")
+	k.invariant2, err = identity.NewInvariantKey("invariant_1")
 	if err != nil {
 		return k, err
 	}
-	k.invariant3, err = identity.NewInvariantKey("unique_order_ids")
+	k.invariant3, err = identity.NewInvariantKey("invariant_2")
 	if err != nil {
 		return k, err
 	}

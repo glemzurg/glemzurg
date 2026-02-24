@@ -1035,12 +1035,13 @@ func validateMultiplicity(mult string) error {
 func validateUseCaseTree(model *inputModel, domainKey, subdomainKey, useCaseKey string, useCase *inputUseCase) error {
 	useCasePath := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/use_case.json", domainKey, subdomainKey, useCaseKey)
 
-	// Validate actor keys if present
+	// Validate actor keys if present (actors reference classes in the same subdomain)
+	subdomain := model.Domains[domainKey].Subdomains[subdomainKey]
 	for actorKey := range useCase.Actors {
-		if _, ok := model.Actors[actorKey]; !ok {
+		if _, ok := subdomain.Classes[actorKey]; !ok {
 			return NewParseError(
-				ErrTreeClassActorNotFound, // reusing error code, could add specific one
-				fmt.Sprintf("use case '%s' references actor '%s' which does not exist", useCaseKey, actorKey),
+				ErrTreeClassActorNotFound,
+				fmt.Sprintf("use case '%s' references actor class '%s' which does not exist in subdomain '%s/%s'", useCaseKey, actorKey, domainKey, subdomainKey),
 				useCasePath,
 			).WithField("actors")
 		}
@@ -1097,16 +1098,9 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 				}
 			}
 
-			// Validate event references (resolve class from referenced object if present)
+			// Validate event references (check both from and to objects for the event)
 			if step.EventKey != nil {
-				// prefer from_object then to_object
-				var objKey *string
-				if step.FromObjectKey != nil {
-					objKey = step.FromObjectKey
-				} else if step.ToObjectKey != nil {
-					objKey = step.ToObjectKey
-				}
-				if objKey == nil {
+				if step.FromObjectKey == nil && step.ToObjectKey == nil {
 					return NewParseError(
 						ErrTreeScenarioStepEventNotFound,
 						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but no object is specified to resolve the class",
@@ -1114,36 +1108,39 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 						scenarioPath,
 					).WithField(path + ".event_key")
 				}
-				obj := scenario.Objects[*objKey]
-				classKey := obj.ClassKey
-				class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[classKey]
-				if class == nil || class.StateMachine == nil {
-					return NewParseError(
-						ErrTreeScenarioStepEventNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but class '%s' has no state machine",
-							scenarioKey, path, *step.EventKey, classKey),
-						scenarioPath,
-					).WithField(path + ".event_key")
+				found := false
+				for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+					if objKey == nil {
+						continue
+					}
+					obj := scenario.Objects[*objKey]
+					class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[obj.ClassKey]
+					if class != nil && class.StateMachine != nil {
+						if _, ok := class.StateMachine.Events[*step.EventKey]; ok {
+							found = true
+							break
+						}
+					}
 				}
-				if _, ok := class.StateMachine.Events[*step.EventKey]; !ok {
+				if !found {
+					var classNames []string
+					for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+						if objKey != nil {
+							classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
+						}
+					}
 					return NewParseError(
 						ErrTreeScenarioStepEventNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on class '%s'",
-							scenarioKey, path, *step.EventKey, classKey),
+						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on classes %v",
+							scenarioKey, path, *step.EventKey, classNames),
 						scenarioPath,
 					).WithField(path + ".event_key")
 				}
 			}
 
-			// Validate query references (resolve class from object)
+			// Validate query references (check both from and to objects for the query)
 			if step.QueryKey != nil {
-				var objKey *string
-				if step.FromObjectKey != nil {
-					objKey = step.FromObjectKey
-				} else if step.ToObjectKey != nil {
-					objKey = step.ToObjectKey
-				}
-				if objKey == nil {
+				if step.FromObjectKey == nil && step.ToObjectKey == nil {
 					return NewParseError(
 						ErrTreeScenarioStepQueryNotFound,
 						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but no object is specified to resolve the class",
@@ -1151,22 +1148,31 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 						scenarioPath,
 					).WithField(path + ".query_key")
 				}
-				obj := scenario.Objects[*objKey]
-				classKey := obj.ClassKey
-				class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[classKey]
-				if class == nil {
-					return NewParseError(
-						ErrTreeScenarioStepQueryNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but class '%s' does not exist",
-							scenarioKey, path, *step.QueryKey, classKey),
-						scenarioPath,
-					).WithField(path + ".query_key")
+				found := false
+				for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+					if objKey == nil {
+						continue
+					}
+					obj := scenario.Objects[*objKey]
+					class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[obj.ClassKey]
+					if class != nil {
+						if _, ok := class.Queries[*step.QueryKey]; ok {
+							found = true
+							break
+						}
+					}
 				}
-				if _, ok := class.Queries[*step.QueryKey]; !ok {
+				if !found {
+					var classNames []string
+					for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+						if objKey != nil {
+							classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
+						}
+					}
 					return NewParseError(
 						ErrTreeScenarioStepQueryNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on class '%s'",
-							scenarioKey, path, *step.QueryKey, classKey),
+						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on classes %v",
+							scenarioKey, path, *step.QueryKey, classNames),
 						scenarioPath,
 					).WithField(path + ".query_key")
 				}
