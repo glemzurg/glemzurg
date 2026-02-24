@@ -4,19 +4,21 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
 // Class is a thing in the system.
 type Class struct {
 	Key             identity.Key
-	Name            string `validate:"required"`
+	Name            string        `validate:"required"`
 	Details         string        // Markdown.
 	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this class is part of a generalization as a subclass.
 	UmlComment      string
 	// Children
+	Invariants  []model_logic.Logic        // Invariants that must be true for all objects of this class.
 	Attributes  map[identity.Key]Attribute // The attributes of a class.
 	States      map[identity.Key]model_state.State
 	Events      map[identity.Key]model_state.Event

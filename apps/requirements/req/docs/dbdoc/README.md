@@ -22,6 +22,7 @@
 | [public.class](public.class.md) | 9 | A set of objects that share the same semantics. | BASE TABLE |
 | [public.attribute](public.attribute.md) | 10 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be multiple attributes together for the identity. | BASE TABLE |
+| [public.class_invariant](public.class_invariant.md) | 3 | An invariant that is forever true objects of a class. | BASE TABLE |
 | [public.association](public.association.md) | 12 | A semantic relationship between typed instances. | BASE TABLE |
 | [public.query](public.query.md) | 5 | A business logic query of a class that does not change the state of a class. | BASE TABLE |
 | [public.query_parameter](public.query_parameter.md) | 7 | A parameter of a query. | BASE TABLE |

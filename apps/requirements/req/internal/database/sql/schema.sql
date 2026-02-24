@@ -434,6 +434,22 @@ COMMENT ON COLUMN class_index.index_num IS 'The specific index this attribute is
 
 --------------------------------------------------------------
 
+CREATE TABLE class_invariant (
+  model_key text NOT NULL,
+  class_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, class_key, logic_key),
+  CONSTRAINT fk_invariant_class FOREIGN KEY (model_key, class_key) REFERENCES class (model_key, class_key) ON DELETE CASCADE,
+  CONSTRAINT fk_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE class_invariant IS 'An invariant that is forever true objects of a class.';
+COMMENT ON COLUMN class_invariant.model_key IS 'The model this invariant is part of.';
+COMMENT ON COLUMN class_invariant.class_key IS 'The class this invariant is part of.';
+COMMENT ON COLUMN class_invariant.logic_key IS 'The logic of the invariant.';
+
+--------------------------------------------------------------
+
 CREATE TABLE association (
   model_key text NOT NULL,
   association_key text NOT NULL,

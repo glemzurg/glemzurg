@@ -2378,6 +2378,117 @@
       ]
     },
     {
+      "name": "public.class_invariant",
+      "type": "BASE TABLE",
+      "comment": "An invariant that is forever true objects of a class.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this invariant is part of."
+        },
+        {
+          "name": "class_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The class this invariant is part of."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic of the invariant."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "class_invariant_pkey",
+          "def": "CREATE UNIQUE INDEX class_invariant_pkey ON public.class_invariant USING btree (model_key, class_key, logic_key)",
+          "table": "public.class_invariant",
+          "columns": [
+            "model_key",
+            "class_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "class_invariant_class_key_not_null",
+          "type": "n",
+          "def": "NOT NULL class_key",
+          "table": "public.class_invariant",
+          "referenced_table": "",
+          "columns": [
+            "class_key"
+          ]
+        },
+        {
+          "name": "class_invariant_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.class_invariant",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "class_invariant_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.class_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_invariant_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.class_invariant",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_invariant_class",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE",
+          "table": "public.class_invariant",
+          "referenced_table": "class",
+          "columns": [
+            "model_key",
+            "class_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "class_key"
+          ]
+        },
+        {
+          "name": "class_invariant_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, class_key, logic_key)",
+          "table": "public.class_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "class_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
       "name": "public.association",
       "type": "BASE TABLE",
       "comment": "A semantic relationship between typed instances.",
@@ -6253,6 +6364,36 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.class_invariant",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.class_invariant",
+      "columns": [
+        "model_key",
+        "class_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.class",
+      "parent_columns": [
+        "model_key",
+        "class_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
     },
     {
       "table": "public.association",
