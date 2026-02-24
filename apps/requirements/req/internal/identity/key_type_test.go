@@ -239,10 +239,15 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 		{
 			testName: "ok",
 			subKey:   "_max",
-			expected: helper.Must(newRootKey(KEY_TYPE_GLOBAL_FUNCTION, "_max")),
+			expected: helper.Must(newRootKey(KEY_TYPE_GLOBAL_FUNCTION, "max")),
 		},
 
 		// Errors.
+		{
+			testName: "non-underscored",
+			subKey:   "max",
+			errstr:   "global function key must start with an underscore",
+		},
 		{
 			testName: "error blank",
 			subKey:   "",

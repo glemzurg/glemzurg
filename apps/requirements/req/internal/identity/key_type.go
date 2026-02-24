@@ -23,10 +23,10 @@ const (
 	KEY_TYPE_SUBDOMAIN = "subdomain"
 
 	// Keys with subdomain parents.
-	KEY_TYPE_USE_CASE                 = "usecase"
-	KEY_TYPE_USE_CASE_GENERALIZATION  = "ucgeneralization"
-	KEY_TYPE_CLASS                    = "class"
-	KEY_TYPE_CLASS_GENERALIZATION     = "cgeneralization"
+	KEY_TYPE_USE_CASE                = "usecase"
+	KEY_TYPE_USE_CASE_GENERALIZATION = "ucgeneralization"
+	KEY_TYPE_CLASS                   = "class"
+	KEY_TYPE_CLASS_GENERALIZATION    = "cgeneralization"
 
 	// Keys with model, domain, subdomain parents.
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
@@ -76,6 +76,15 @@ func NewDomainKey(subKey string) (key Key, err error) {
 }
 
 func NewGlobalFunctionKey(subKey string) (key Key, err error) {
+
+	// The subKey is the function name that must start with an underscore, but the key type is just "gfunc" without the underscore.
+	if subKey != "" {
+		if !strings.HasPrefix(subKey, "_") {
+			return Key{}, errors.Errorf("global function key must start with an underscore")
+		}
+		subKey = strings.TrimPrefix(subKey, "_")
+	}
+
 	return newRootKey(KEY_TYPE_GLOBAL_FUNCTION, subKey)
 }
 
