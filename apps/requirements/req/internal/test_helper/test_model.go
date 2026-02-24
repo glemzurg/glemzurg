@@ -138,6 +138,23 @@ func GetStrictTestModel() req_model.Model {
 	// Ensure every class has at least one attribute by adding a dummy if needed.
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {
+			// Ensure every subdomain has at least 2 classes.
+			if len(subdomain.Classes) < 2 {
+				if subdomain.Classes == nil {
+					subdomain.Classes = make(map[identity.Key]model_class.Class)
+				}
+				for i := 1; len(subdomain.Classes) < 2; i++ {
+					dummyClassKey, err := identity.NewClassKey(subdomainKey, fmt.Sprintf("dummy_class_%d", i))
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
+					}
+					dummyClass, err := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", nil, nil, nil, "")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy class: %v", err))
+					}
+					subdomain.Classes[dummyClassKey] = dummyClass
+				}
+			}
 			for classKey, class := range subdomain.Classes {
 				if len(class.Attributes) == 0 {
 					// Create dummy attribute key.
