@@ -7,12 +7,12 @@
   "properties": {
     "problem_domain_key": {
       "type": "string",
-      "description": "The key of the problem domain that enforces requirements. Must be a non-empty string matching an existing domain key.",
+      "description": "The key of the problem domain that enforces requirements. Must match the directory name of an existing domain (e.g., 'order_management'). The domain directory must exist in the model root. If validation fails: verify the domain directory exists and the key matches the directory name exactly.",
       "minLength": 1
     },
     "solution_domain_key": {
       "type": "string",
-      "description": "The key of the solution domain that satisfies the requirements. Must be a non-empty string matching an existing domain key.",
+      "description": "The key of the solution domain that satisfies the requirements. Must match the directory name of an existing domain (e.g., 'inventory'). Must be different from problem_domain_key. If validation fails: verify the domain directory exists and the key matches the directory name exactly.",
       "minLength": 1
     },
     "uml_comment": {

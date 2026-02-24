@@ -240,4 +240,14 @@ const (
 	ErrUseCaseSharedShareTypeEmpty    = 20002
 	ErrUseCaseSharedInvalidJSON       = 20003
 	ErrUseCaseSharedSchemaViolation   = 20004
+
+	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion
+	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
+	ErrConvModelValidation       = 21002 // Model validation failed after conversion
+	ErrConvMultiplicityInvalid   = 21003 // Multiplicity parsing failed during conversion
+	ErrConvClassNotFound         = 21004 // Class key not found during association conversion
+	ErrConvAssocKeyConstruction  = 21005 // Class association key construction failed during conversion
+	ErrConvScopedKeyInvalid      = 21006 // Scoped key format invalid during conversion (domain/subdomain/class)
+	ErrConvObjectResolveFailed   = 21007 // Failed to resolve object reference during scenario conversion
+	ErrConvSourceModelValidation = 21008 // Source model validation failed before ConvertFromModel
 )

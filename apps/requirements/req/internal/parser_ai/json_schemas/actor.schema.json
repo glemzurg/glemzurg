@@ -12,8 +12,8 @@
     },
     "type": {
       "type": "string",
-      "description": "The type of actor. Common values: 'human' (a person interacting with the system), 'system' (an external software system), 'device' (hardware that interacts with the system). Must be non-empty. If validation fails: ensure this is a non-empty string describing the actor category.",
-      "minLength": 1
+      "description": "The type of actor. Must be one of: 'person' (a human user interacting with the system) or 'system' (an external software system that interacts with the system). If validation fails: ensure this is exactly 'person' or 'system'.",
+      "enum": ["person", "system"]
     },
     "details": {
       "type": "string",

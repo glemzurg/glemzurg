@@ -112,7 +112,8 @@
               },
               "notation": {
                 "type": "string",
-                "description": "Optional formal notation system (e.g., 'tla_plus')."
+                "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+                "enum": ["tla_plus"]
               },
               "specification": {
                 "type": "string",

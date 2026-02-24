@@ -1,6 +1,8 @@
 package parser_ai
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
@@ -10,15 +12,19 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
-	"github.com/pkg/errors"
 )
+
 
 // ConvertFromModel converts a req_model.Model to an inputModel.
 // It first validates the source model, then performs the conversion.
 func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 	// Validate the source model
 	if err := model.Validate(); err != nil {
-		return nil, errors.Wrap(err, "source model validation failed")
+		return nil, convErr(
+			ErrConvSourceModelValidation,
+			fmt.Sprintf("source model validation failed: %s", err.Error()),
+			"model.json",
+		)
 	}
 
 	result := &inputModel{
@@ -55,7 +61,11 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 	for key, domain := range model.Domains {
 		converted, err := convertDomainFromModel(&domain)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert domain '%s'", key.SubKey)
+			return nil, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to convert domain '%s': %s", key.SubKey, err.Error()),
+				fmt.Sprintf("domains/%s/domain.json", key.SubKey),
+			)
 		}
 		result.Domains[key.SubKey] = converted
 	}
@@ -143,7 +153,11 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 	for key, subdomain := range domain.Subdomains {
 		converted, err := convertSubdomainFromModel(&subdomain, domain.Key)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert subdomain '%s'", key.SubKey)
+			return nil, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to convert subdomain '%s': %s", key.SubKey, err.Error()),
+				fmt.Sprintf("domains/%s/subdomains/%s/subdomain.json", domain.Key.SubKey, key.SubKey),
+			)
 		}
 		result.Subdomains[key.SubKey] = converted
 	}
@@ -175,7 +189,11 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 	for key, class := range subdomain.Classes {
 		converted, err := convertClassFromModel(&class)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to convert class '%s'", key.SubKey)
+			return nil, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to convert class '%s': %s", key.SubKey, err.Error()),
+				fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey.SubKey, subdomain.Key.SubKey, key.SubKey),
+			)
 		}
 		result.Classes[key.SubKey] = converted
 	}

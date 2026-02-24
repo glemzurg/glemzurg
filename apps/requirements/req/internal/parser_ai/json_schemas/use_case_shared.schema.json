@@ -7,8 +7,8 @@
   "properties": {
     "share_type": {
       "type": "string",
-      "description": "The type of sharing relationship (e.g., 'include', 'extend').",
-      "minLength": 1
+      "description": "The type of sharing relationship between use cases. Must be one of: 'include' (a shared sequence used by multiple sea-level use cases) or 'extend' (an optional continuation of a sea-level use case into a common sequence). If validation fails: ensure this is exactly 'include' or 'extend'.",
+      "enum": ["include", "extend"]
     },
     "uml_comment": {
       "type": "string",

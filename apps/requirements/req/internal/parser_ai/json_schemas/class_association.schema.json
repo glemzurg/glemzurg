@@ -21,7 +21,7 @@
     },
     "from_multiplicity": {
       "type": "string",
-      "description": "Multiplicity at the source (from) end of the association. Standard UML notation: '1' (exactly one), '0..1' (zero or one), '*' (zero or more), '1..*' (one or more), or specific ranges like '2..5'. This indicates how many instances of the from_class can be associated with one instance of the to_class. If validation fails: ensure this is a valid multiplicity string.",
+      "description": "Multiplicity at the source (from) end of the association. Format is either a single number (e.g., '1', '2') or a range 'lower..upper'. Use '*' for unbounded (converted internally to 'any' or 'many'). Common values: '1' (exactly one), '0..1' (zero or one), '*' or 'any' (zero or more), '1..*' or '1..many' (one or more), or specific ranges like '2..5'. The upper bound must be >= the lower bound. This indicates how many instances of the from_class can be associated with one instance of the to_class. If validation fails: ensure this follows the format 'N', 'N..M', 'N..*', or 'N..many' where N and M are non-negative integers.",
       "minLength": 1
     },
     "to_class_key": {
@@ -31,7 +31,7 @@
     },
     "to_multiplicity": {
       "type": "string",
-      "description": "Multiplicity at the target (to) end of the association. Standard UML notation: '1' (exactly one), '0..1' (zero or one), '*' (zero or more), '1..*' (one or more), or specific ranges like '2..5'. This indicates how many instances of the to_class can be associated with one instance of the from_class. If validation fails: ensure this is a valid multiplicity string.",
+      "description": "Multiplicity at the target (to) end of the association. Format is either a single number (e.g., '1', '2') or a range 'lower..upper'. Use '*' for unbounded (converted internally to 'any' or 'many'). Common values: '1' (exactly one), '0..1' (zero or one), '*' or 'any' (zero or more), '1..*' or '1..many' (one or more), or specific ranges like '2..5'. The upper bound must be >= the lower bound. This indicates how many instances of the to_class can be associated with one instance of the from_class. If validation fails: ensure this follows the format 'N', 'N..M', 'N..*', or 'N..many' where N and M are non-negative integers.",
       "minLength": 1
     },
     "association_class_key": {

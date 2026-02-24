@@ -7,8 +7,9 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "The name of the global function. Must start with an underscore (e.g., '_Max', '_SetOfValues'). This is required and must be non-empty.",
-      "minLength": 1
+      "description": "The name of the global function. Must start with an underscore (e.g., '_Max', '_SetOfValues'). This is required and must be non-empty. If validation fails: ensure the name starts with '_' and has at least one character after it.",
+      "minLength": 1,
+      "pattern": "^_"
     },
     "parameters": {
       "type": "array",
@@ -29,7 +30,8 @@
         },
         "notation": {
           "type": "string",
-          "description": "Optional formal notation system used for the specification."
+          "description": "Optional formal notation system used for the specification. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+          "enum": ["tla_plus"]
         },
         "specification": {
           "type": "string",

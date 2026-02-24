@@ -16,7 +16,7 @@
     },
     "level": {
       "type": "string",
-      "description": "The level of the use case: 'sky' (high-level), 'sea' (mid-level), or 'mud' (detailed).",
+      "description": "The level of the use case. Must be one of: 'sky' (a high-level organizational user story), 'sea' (a straightforward user story), or 'mud' (a small, reusable part of another user story, e.g., a login flow). Mud-level use cases can be shared with sea-level use cases via use_case_shared files. If validation fails: ensure this is exactly 'sky', 'sea', or 'mud'.",
       "enum": ["sky", "sea", "mud"]
     },
     "read_only": {
@@ -29,7 +29,7 @@
     },
     "actors": {
       "type": "object",
-      "description": "Map of actor keys to actor references for this use case.",
+      "description": "Map of actor keys to actor references for this use case. Each key must match the filename (without extension) of an actor file in the 'actors/' directory (e.g., 'customer' for 'actors/customer.actor.json'). If validation fails: verify the actor file exists.",
       "additionalProperties": {
         "type": "object",
         "properties": {
