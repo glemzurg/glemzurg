@@ -37,8 +37,8 @@ func (suite *LogicSuite) SetupTest() {
 	suite.model = t_AddModel(suite.T(), suite.db)
 
 	// Create the keys for reuse.
-	suite.logicKey = helper.Must(identity.NewInvariantKey("key"))
-	suite.logicKeyB = helper.Must(identity.NewInvariantKey("key_b"))
+	suite.logicKey = helper.Must(identity.NewInvariantKey("0"))
+	suite.logicKeyB = helper.Must(identity.NewInvariantKey("1"))
 }
 
 func (suite *LogicSuite) TestLoad() {
@@ -61,7 +61,7 @@ func (suite *LogicSuite) TestLoad() {
 		VALUES
 			(
 				'model_key',
-				'invariant/key',
+				'invariant/0',
 				'Description',
 				'tla_plus',
 				'Specification',

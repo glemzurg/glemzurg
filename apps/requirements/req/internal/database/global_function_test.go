@@ -37,8 +37,8 @@ func (suite *GlobalFunctionSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("key")))
-	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("key_b")))
+	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("_key")))
+	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGlobalFunctionKey("_key_b")))
 
 	// Create the keys for reuse.
 	suite.gfKey = suite.logic.Key

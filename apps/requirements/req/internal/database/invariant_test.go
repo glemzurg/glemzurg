@@ -37,8 +37,8 @@ func (suite *InvariantSuite) SetupTest() {
 
 	// Add any objects needed for tests.
 	suite.model = t_AddModel(suite.T(), suite.db)
-	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key")))
-	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("key_b")))
+	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("0")))
+	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewInvariantKey("1")))
 
 	// Create the keys for reuse.
 	suite.invariantKey = suite.logic.Key
@@ -56,7 +56,7 @@ func (suite *InvariantSuite) TestLoad() {
 		INSERT INTO invariant
 			(model_key, logic_key)
 		VALUES
-			('model_key', 'invariant/key')
+			('model_key', 'invariant/0')
 	`)
 	assert.Nil(suite.T(), err)
 

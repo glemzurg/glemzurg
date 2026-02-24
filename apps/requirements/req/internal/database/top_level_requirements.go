@@ -114,6 +114,17 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
+		// Collect class invariant logics with sort_order = slice index.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for i, inv := range class.Invariants {
+						sortOrders[inv.Key.String()] = i
+					}
+					allLogics = append(allLogics, class.Invariants...)
+				}
+			}
+		}
 		if err = AddLogics(tx, modelKey, allLogics, sortOrders); err != nil {
 			return err
 		}
@@ -243,6 +254,21 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 		// Bulk insert classes.
 		if err = AddClasses(tx, modelKey, classesMap); err != nil {
+			return err
+		}
+
+		// Collect class invariant join rows from classes (must be inserted after classes due to FK).
+		classInvariantsMap := make(map[identity.Key][]identity.Key)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, inv := range class.Invariants {
+						classInvariantsMap[class.Key] = append(classInvariantsMap[class.Key], inv.Key)
+					}
+				}
+			}
+		}
+		if err = AddClassInvariants(tx, modelKey, classInvariantsMap); err != nil {
 			return err
 		}
 
@@ -763,6 +789,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Class invariants grouped by class key.
+		classInvariantsMap, err := QueryClassInvariants(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
 		// Attributes grouped by class key.
 		attributesMap, err := QueryAttributes(tx, modelKey)
 		if err != nil {
@@ -1084,6 +1116,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 							subdomain.Classes = make(map[identity.Key]model_class.Class)
 							for _, class := range classes {
 								classKey := class.Key
+
+								// Attach class invariants to class.
+								if invKeys, ok := classInvariantsMap[classKey]; ok {
+									class.Invariants = make([]model_logic.Logic, len(invKeys))
+									for j, key := range invKeys {
+										class.Invariants[j] = logicsByKey[key]
+									}
+								}
 
 								// Attach attributes to class.
 								if attributes, ok := attributesMap[classKey]; ok {

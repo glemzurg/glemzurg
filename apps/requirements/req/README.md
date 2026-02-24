@@ -1,4 +1,25 @@
+
+There are actually four kinds of logics each with their own constraints.
+
+- A true false assessment.
+- A state change where a class data member changes.
+- A query where newly defined temporary named returned value are populated.
+- A safety rule where it must be a true false assessment that includes values from the prior state and the new state
+- A single unnamed value (this is used in glboal funcitons)
+
+Whare are possible ways to design that? 
+
+The current model Logic is here: 
+
+- apps/requirements/req/internal/req_model/model_logic
+
+
 ---------------------------
+
+
+
+
+
 
 
 
@@ -11,7 +32,8 @@ todo:
     - database
     - yaml
     - parse ai
-  - update the md file output
+    - md - flat - generate
+- update the md file output
     - include tla+
     - prepare the md output to be complete
       - update the scenarios to use the logic
