@@ -129,6 +129,17 @@ func GetTestModel() req_model.Model {
 	return model
 }
 
+func GetStrictTestModel() req_model.Model {
+	// Add any data so that there are no incomplete parts of the model.
+	// For example the ai input package forces all classes to have attributes, 
+	// but that is not needed by other parts of the system.
+	model := GetStrictTestModel()
+
+	... ensure every class has at least one attribute ...
+
+	return model
+}
+
 func buildTestModel() (req_model.Model, error) {
 	k, err := buildKeys()
 	if err != nil {
