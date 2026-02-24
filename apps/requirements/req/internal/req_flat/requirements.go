@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -21,23 +22,27 @@ type Requirements struct {
 	Model req_model.Model
 
 	// Flat lookups by key - populated from Model tree.
-	Actors             map[identity.Key]model_actor.Actor
-	Domains            map[identity.Key]model_domain.Domain
-	Subdomains         map[identity.Key]model_domain.Subdomain
-	DomainAssociations map[identity.Key]model_domain.Association
-	Generalizations    map[identity.Key]model_class.Generalization
-	Classes            map[identity.Key]model_class.Class
-	Attributes         map[identity.Key]model_class.Attribute
-	ClassAssociations  map[identity.Key]model_class.Association
-	States             map[identity.Key]model_state.State
-	Events             map[identity.Key]model_state.Event
-	Guards             map[identity.Key]model_state.Guard
-	Actions            map[identity.Key]model_state.Action
-	Transitions        map[identity.Key]model_state.Transition
-	StateActions       map[identity.Key]model_state.StateAction
-	UseCases           map[identity.Key]model_use_case.UseCase
-	Scenarios          map[identity.Key]model_scenario.Scenario
-	Objects            map[identity.Key]model_scenario.Object
+	Actors                map[identity.Key]model_actor.Actor
+	ActorGeneralizations  map[identity.Key]model_actor.Generalization
+	Domains               map[identity.Key]model_domain.Domain
+	Subdomains            map[identity.Key]model_domain.Subdomain
+	DomainAssociations    map[identity.Key]model_domain.Association
+	Generalizations       map[identity.Key]model_class.Generalization
+	Classes               map[identity.Key]model_class.Class
+	Attributes            map[identity.Key]model_class.Attribute
+	ClassAssociations     map[identity.Key]model_class.Association
+	States                map[identity.Key]model_state.State
+	Events                map[identity.Key]model_state.Event
+	Guards                map[identity.Key]model_state.Guard
+	Actions               map[identity.Key]model_state.Action
+	Queries               map[identity.Key]model_state.Query
+	Transitions           map[identity.Key]model_state.Transition
+	StateActions          map[identity.Key]model_state.StateAction
+	GlobalFunctions       map[identity.Key]model_logic.GlobalFunction
+	UseCases              map[identity.Key]model_use_case.UseCase
+	UseCaseGeneralizations map[identity.Key]model_use_case.Generalization
+	Scenarios             map[identity.Key]model_scenario.Scenario
+	Objects               map[identity.Key]model_scenario.Object
 
 	// Prepared flag to avoid re-processing.
 	prepared bool
@@ -56,6 +61,7 @@ func NewRequirements(model req_model.Model) *Requirements {
 func (r *Requirements) flattenModel() {
 	// Initialize all maps.
 	r.Actors = make(map[identity.Key]model_actor.Actor)
+	r.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
 	r.Domains = make(map[identity.Key]model_domain.Domain)
 	r.Subdomains = make(map[identity.Key]model_domain.Subdomain)
 	r.DomainAssociations = make(map[identity.Key]model_domain.Association)
@@ -67,15 +73,28 @@ func (r *Requirements) flattenModel() {
 	r.Events = make(map[identity.Key]model_state.Event)
 	r.Guards = make(map[identity.Key]model_state.Guard)
 	r.Actions = make(map[identity.Key]model_state.Action)
+	r.Queries = make(map[identity.Key]model_state.Query)
 	r.Transitions = make(map[identity.Key]model_state.Transition)
 	r.StateActions = make(map[identity.Key]model_state.StateAction)
+	r.GlobalFunctions = make(map[identity.Key]model_logic.GlobalFunction)
 	r.UseCases = make(map[identity.Key]model_use_case.UseCase)
+	r.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
 	r.Scenarios = make(map[identity.Key]model_scenario.Scenario)
 	r.Objects = make(map[identity.Key]model_scenario.Object)
 
 	// Actors from model.
 	for key, actor := range r.Model.Actors {
 		r.Actors[key] = actor
+	}
+
+	// Actor generalizations from model.
+	for key, ag := range r.Model.ActorGeneralizations {
+		r.ActorGeneralizations[key] = ag
+	}
+
+	// Global functions from model.
+	for key, gf := range r.Model.GlobalFunctions {
+		r.GlobalFunctions[key] = gf
 	}
 
 	// Domain associations from model.
@@ -104,6 +123,11 @@ func (r *Requirements) flattenModel() {
 			// Generalizations.
 			for key, gen := range subdomain.Generalizations {
 				r.Generalizations[key] = gen
+			}
+
+			// Use case generalizations.
+			for key, ucGen := range subdomain.UseCaseGeneralizations {
+				r.UseCaseGeneralizations[key] = ucGen
 			}
 
 			// Subdomain-level class associations.
@@ -143,6 +167,11 @@ func (r *Requirements) flattenModel() {
 				// Actions.
 				for key, action := range class.Actions {
 					r.Actions[key] = action
+				}
+
+				// Queries.
+				for key, query := range class.Queries {
+					r.Queries[key] = query
 				}
 
 				// Transitions.
@@ -348,7 +377,7 @@ func (r *Requirements) DomainHasMultipleSubdomains(domainKey identity.Key) bool 
 	}
 	// If there's exactly one subdomain, check if it's not the default
 	for _, subdomain := range domain.Subdomains {
-		if subdomain.Key.SubKey() != "default" {
+		if subdomain.Key.SubKey != "default" {
 			return true
 		}
 	}
@@ -538,6 +567,138 @@ func (r *Requirements) ActionStateActionsLookup() map[string][]model_state.State
 			return stateActions[i].Key.String() < stateActions[j].Key.String()
 		})
 		lookup[actionKey] = stateActions
+	}
+
+	return lookup
+}
+
+// QueryLookup returns queries by key.
+func (r *Requirements) QueryLookup() map[string]model_state.Query {
+	r.PrepLookups()
+	lookup := make(map[string]model_state.Query)
+	for key, query := range r.Queries {
+		lookup[key.String()] = query
+	}
+	return lookup
+}
+
+// GlobalFunctionLookup returns global functions by key.
+func (r *Requirements) GlobalFunctionLookup() map[string]model_logic.GlobalFunction {
+	r.PrepLookups()
+	lookup := make(map[string]model_logic.GlobalFunction)
+	for key, gf := range r.GlobalFunctions {
+		lookup[key.String()] = gf
+	}
+	return lookup
+}
+
+// ActorGeneralizationLookup returns actor generalizations by key.
+func (r *Requirements) ActorGeneralizationLookup() map[string]model_actor.Generalization {
+	r.PrepLookups()
+	lookup := make(map[string]model_actor.Generalization)
+	for key, ag := range r.ActorGeneralizations {
+		lookup[key.String()] = ag
+	}
+	return lookup
+}
+
+// ActorGeneralizationSuperclassLookup returns a map of actor generalization key to the superclass actor.
+// The superclass is the actor that has SuperclassOfKey pointing to the generalization.
+func (r *Requirements) ActorGeneralizationSuperclassLookup() map[string]model_actor.Actor {
+	r.PrepLookups()
+	lookup := make(map[string]model_actor.Actor)
+
+	for _, actor := range r.Actors {
+		if actor.SuperclassOfKey != nil {
+			lookup[actor.SuperclassOfKey.String()] = actor
+		}
+	}
+
+	return lookup
+}
+
+// ActorGeneralizationSubclassesLookup returns a map of actor generalization key to its subclass actors.
+// Subclasses are actors that have SubclassOfKey pointing to the generalization.
+func (r *Requirements) ActorGeneralizationSubclassesLookup() map[string][]model_actor.Actor {
+	r.PrepLookups()
+	lookup := make(map[string][]model_actor.Actor)
+
+	// Initialize with empty slices for all actor generalizations.
+	for agKey := range r.ActorGeneralizations {
+		lookup[agKey.String()] = []model_actor.Actor{}
+	}
+
+	// Find all actors that are subclasses of a generalization.
+	for _, actor := range r.Actors {
+		if actor.SubclassOfKey != nil {
+			agKeyStr := actor.SubclassOfKey.String()
+			lookup[agKeyStr] = append(lookup[agKeyStr], actor)
+		}
+	}
+
+	// Sort subclasses by key for consistent output.
+	for agKey := range lookup {
+		actors := lookup[agKey]
+		sort.Slice(actors, func(i, j int) bool {
+			return actors[i].Key.String() < actors[j].Key.String()
+		})
+		lookup[agKey] = actors
+	}
+
+	return lookup
+}
+
+// UseCaseGeneralizationLookup returns use case generalizations by key.
+func (r *Requirements) UseCaseGeneralizationLookup() map[string]model_use_case.Generalization {
+	r.PrepLookups()
+	lookup := make(map[string]model_use_case.Generalization)
+	for key, ucGen := range r.UseCaseGeneralizations {
+		lookup[key.String()] = ucGen
+	}
+	return lookup
+}
+
+// UseCaseGeneralizationSuperclassLookup returns a map of use case generalization key to the superclass use case.
+// The superclass is the use case that has SuperclassOfKey pointing to the generalization.
+func (r *Requirements) UseCaseGeneralizationSuperclassLookup() map[string]model_use_case.UseCase {
+	r.PrepLookups()
+	lookup := make(map[string]model_use_case.UseCase)
+
+	for _, useCase := range r.UseCases {
+		if useCase.SuperclassOfKey != nil {
+			lookup[useCase.SuperclassOfKey.String()] = useCase
+		}
+	}
+
+	return lookup
+}
+
+// UseCaseGeneralizationSubclassesLookup returns a map of use case generalization key to its subclass use cases.
+// Subclasses are use cases that have SubclassOfKey pointing to the generalization.
+func (r *Requirements) UseCaseGeneralizationSubclassesLookup() map[string][]model_use_case.UseCase {
+	r.PrepLookups()
+	lookup := make(map[string][]model_use_case.UseCase)
+
+	// Initialize with empty slices for all use case generalizations.
+	for ucGenKey := range r.UseCaseGeneralizations {
+		lookup[ucGenKey.String()] = []model_use_case.UseCase{}
+	}
+
+	// Find all use cases that are subclasses of a generalization.
+	for _, useCase := range r.UseCases {
+		if useCase.SubclassOfKey != nil {
+			ucGenKeyStr := useCase.SubclassOfKey.String()
+			lookup[ucGenKeyStr] = append(lookup[ucGenKeyStr], useCase)
+		}
+	}
+
+	// Sort subclasses by key for consistent output.
+	for ucGenKey := range lookup {
+		useCases := lookup[ucGenKey]
+		sort.Slice(useCases, func(i, j int) bool {
+			return useCases[i].Key.String() < useCases[j].Key.String()
+		})
+		lookup[ucGenKey] = useCases
 	}
 
 	return lookup
