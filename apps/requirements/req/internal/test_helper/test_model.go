@@ -23,7 +23,7 @@ type testKeys struct {
 	subdomainA, subdomainB, subdomainC, subdomainD identity.Key
 
 	// Actors (root-level).
-	actorPerson, actorSystem, actorVip identity.Key
+	actorPerson, actorSystem, actorVip, actor4, actor5 identity.Key
 
 	// Actor generalizations (root-level).
 	actorGen1, actorGen2, actorGen3 identity.Key
@@ -88,7 +88,7 @@ type testKeys struct {
 	globalFunc1, globalFunc2, globalFunc3 identity.Key
 
 	// Use case keys.
-	ucPlaceOrder, ucViewOrder, ucManageOrder, ucCancelOrder identity.Key
+	ucPlaceOrder, ucViewOrder, ucManageOrder, ucCancelOrder, uc5, uc6 identity.Key
 
 	// Use case generalization keys.
 	ucGen1, ucGen2, ucGen3 identity.Key
@@ -280,6 +280,14 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.actorVip, err = identity.NewActorKey("vip_customer")
+	if err != nil {
+		return k, err
+	}
+	k.actor4, err = identity.NewActorKey("regular_customer")
+	if err != nil {
+		return k, err
+	}
+	k.actor5, err = identity.NewActorKey("another_customer")
 	if err != nil {
 		return k, err
 	}
@@ -603,6 +611,14 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.ucCancelOrder, err = identity.NewUseCaseKey(k.subdomainA, "cancel_order")
+	if err != nil {
+		return k, err
+	}
+	k.uc5, err = identity.NewUseCaseKey(k.subdomainA, "view_orders")
+	if err != nil {
+		return k, err
+	}
+	k.uc6, err = identity.NewUseCaseKey(k.subdomainA, "cancel_orders")
 	if err != nil {
 		return k, err
 	}
@@ -1726,7 +1742,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// View Order: mud level, read-only, has 1 scenario.
 	ucViewOrder, err := model_use_case.NewUseCase(
 		k.ucViewOrder, "View Order", "View order details.",
-		"mud", true, nil, nil, "",
+		"mud", true, nil, &k.ucGen2, "",
 	)
 	if err != nil {
 		return u, err
@@ -1745,7 +1761,25 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
 	ucCancelOrder, err := model_use_case.NewUseCase(
 		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
-		"mud", false, nil, nil, "",
+		"mud", false, nil, &k.ucGen3, "",
+	)
+	if err != nil {
+		return u, err
+	}
+
+	// View Orders: sky level, superclass for ucGen2.
+	uc5, err := model_use_case.NewUseCase(
+		k.uc5, "View Orders", "View multiple orders.",
+		"sky", true, &k.ucGen2, nil, "",
+	)
+	if err != nil {
+		return u, err
+	}
+
+	// Cancel Orders: sky level, superclass for ucGen3.
+	uc6, err := model_use_case.NewUseCase(
+		k.uc6, "Cancel Orders", "Cancel multiple orders.",
+		"sky", false, &k.ucGen3, nil, "",
 	)
 	if err != nil {
 		return u, err
@@ -1756,6 +1790,8 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 		k.ucViewOrder:   ucViewOrder,
 		k.ucManageOrder: ucManageOrder,
 		k.ucCancelOrder: ucCancelOrder,
+		k.uc5:           uc5,
+		k.uc6:           uc6,
 	}
 
 	// Use case generalizations (3).
@@ -1809,8 +1845,8 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 // =========================================================================
 
 func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization, error) {
-	// Actors (3).
-	actorPerson, err := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen1, nil, "main actor")
+	// Actors (4).
+	actorPerson, err := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen3, nil, "main actor")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1819,7 +1855,15 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	if err != nil {
 		return nil, nil, err
 	}
-	actorVip, err := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen1, "")
+	actorVip, err := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen2, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	actor4, err := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "person", &k.actorGen1, nil, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	actor5, err := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "person", nil, &k.actorGen1, "")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1828,6 +1872,8 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 		k.actorPerson: actorPerson,
 		k.actorSystem: actorSystem,
 		k.actorVip:    actorVip,
+		k.actor4:      actor4,
+		k.actor5:      actor5,
 	}
 
 	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
