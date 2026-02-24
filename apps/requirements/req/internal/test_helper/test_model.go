@@ -131,11 +131,93 @@ func GetTestModel() req_model.Model {
 
 func GetStrictTestModel() req_model.Model {
 	// Add any data so that there are no incomplete parts of the model.
-	// For example the ai input package forces all classes to have attributes, 
+	// For example the ai input package forces all classes to have attributes,
 	// but that is not needed by other parts of the system.
-	model := GetStrictTestModel()
+	model := GetTestModel()
 
-	... ensure every class has at least one attribute ...
+	// Ensure every class has at least one attribute by adding a dummy if needed.
+	for domainKey, domain := range model.Domains {
+		for subdomainKey, subdomain := range domain.Subdomains {
+			for classKey, class := range subdomain.Classes {
+				if len(class.Attributes) == 0 {
+					// Create dummy attribute key.
+					dummyAttrKey, err := identity.NewAttributeKey(classKey, "dummy_id")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy attribute key: %v", err))
+					}
+
+					// Create dummy attribute.
+					dummyAttr, err := model_class.NewAttribute(
+						dummyAttrKey,
+						"Dummy ID",
+						"Dummy attribute to satisfy strict requirements.",
+						"unconstrained",
+						nil,
+						false,
+						"",
+						nil,
+					)
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy attribute: %v", err))
+					}
+
+					// Add to class attributes.
+					if class.Attributes == nil {
+						class.Attributes = make(map[identity.Key]model_class.Attribute)
+					}
+					class.Attributes[dummyAttrKey] = dummyAttr
+
+					// Update the class in the subdomain.
+					subdomain.Classes[classKey] = class
+				}
+			}
+
+			// Ensure every class has a state machine.
+			for classKey, class := range subdomain.Classes {
+				if len(class.States) == 0 {
+					// Create keys for minimal state machine.
+					stateKey, err := identity.NewStateKey(classKey, "existing")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy state key: %v", err))
+					}
+					eventKey, err := identity.NewEventKey(classKey, "create")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy event key: %v", err))
+					}
+					transitionKey, err := identity.NewTransitionKey(classKey, "", "create", "", "", "existing")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy transition key: %v", err))
+					}
+
+					// Create objects.
+					state, err := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy state: %v", err))
+					}
+					event, err := model_state.NewEvent(eventKey, "Create", "Creates the entity.", nil)
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy event: %v", err))
+					}
+					transition, err := model_state.NewTransition(transitionKey, nil, eventKey, nil, nil, &stateKey, "")
+					if err != nil {
+						panic(fmt.Sprintf("failed to create dummy transition: %v", err))
+					}
+
+					// Set on class.
+					class.SetStates(map[identity.Key]model_state.State{stateKey: state})
+					class.SetEvents(map[identity.Key]model_state.Event{eventKey: event})
+					class.SetTransitions(map[identity.Key]model_state.Transition{transitionKey: transition})
+
+					// Update class in subdomain.
+					subdomain.Classes[classKey] = class
+				}
+			}
+			// Update subdomain in domain.
+			domain.Subdomains[subdomainKey] = subdomain
+		}
+		// Update domain in model.
+		model.Domains[domainKey] = domain
+	}
 
 	return model
 }
