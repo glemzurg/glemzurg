@@ -104,7 +104,7 @@ func convertInvariantsToModel(invariants []inputLogic) []model_logic.Logic {
 	}
 	result := make([]model_logic.Logic, len(invariants))
 	for i, inv := range invariants {
-		invKey, _ := identity.NewInvariantKey(fmt.Sprintf("invariant_%d", i))
+		invKey, _ := identity.NewInvariantKey(fmt.Sprintf("%d", i))
 		result[i] = model_logic.Logic{
 			Key:           invKey,
 			Description:   inv.Description,
