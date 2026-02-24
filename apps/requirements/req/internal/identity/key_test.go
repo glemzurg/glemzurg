@@ -596,6 +596,7 @@ func (suite *KeySuite) TestValidateParent() {
 	guardKey := helper.Must(NewGuardKey(classKey, "testguard"))
 	actionKey := helper.Must(NewActionKey(classKey, "testaction"))
 	queryKey := helper.Must(NewQueryKey(classKey, "testquery"))
+	classInvariantKey := helper.Must(NewClassInvariantKey(classKey, "1"))
 	transitionKey := helper.Must(NewTransitionKey(classKey, "state_a", "testevent", "", "", "state_b"))
 	attributeKey := helper.Must(NewAttributeKey(classKey, "testattr"))
 	stateActionKey := helper.Must(NewStateActionKey(stateKey, "entry", "testaction"))
@@ -763,6 +764,31 @@ func (suite *KeySuite) TestValidateParent() {
 			testName: "error class wrong parent key",
 			key:      classKey,
 			parent:   &otherSubdomainKey,
+			errstr:   "does not match expected parent",
+		},
+
+		// Class invariant requires class parent.
+		{
+			testName: "ok class invariant with class parent",
+			key:      classInvariantKey,
+			parent:   &classKey,
+		},
+		{
+			testName: "error class invariant nil parent",
+			key:      classInvariantKey,
+			parent:   nil,
+			errstr:   "requires a parent of type 'class'",
+		},
+		{
+			testName: "error class invariant wrong parent type",
+			key:      classInvariantKey,
+			parent:   &subdomainKey,
+			errstr:   "requires parent of type 'class', but got 'subdomain'",
+		},
+		{
+			testName: "error class invariant wrong parent key",
+			key:      classInvariantKey,
+			parent:   &otherClassKey,
 			errstr:   "does not match expected parent",
 		},
 

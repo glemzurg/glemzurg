@@ -1487,6 +1487,75 @@ func (suite *KeyTypeSuite) TestNewQueryKey() {
 	}
 }
 
+func (suite *KeyTypeSuite) TestClassInvariant() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_CLASS_INVARIANT, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error not integer",
+			classKey: classKey,
+			subKey:   "_InvariantA",
+			errstr:   "class invariant key must be a valid integer",
+		},
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "1",
+			errstr:   "parent key cannot be of type '' for 'cinvariant' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "1",
+			errstr:   "parent key cannot be of type 'actor' for 'cinvariant' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewClassInvariantKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
 func (suite *KeyTypeSuite) TestNewAttributeKey() {
 
 	domainKey, err := NewDomainKey("domain1")

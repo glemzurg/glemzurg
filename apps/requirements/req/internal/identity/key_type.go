@@ -33,13 +33,14 @@ const (
 	KEY_TYPE_CLASS_ASSOCIATION = "cassociation"
 
 	// Keys with class parents.
-	KEY_TYPE_ATTRIBUTE  = "attribute"
-	KEY_TYPE_STATE      = "state"
-	KEY_TYPE_EVENT      = "event"
-	KEY_TYPE_GUARD      = "guard" // Used for both guards and the logic inside guards.
-	KEY_TYPE_ACTION     = "action"
-	KEY_TYPE_QUERY      = "query"
-	KEY_TYPE_TRANSITION = "transition"
+	KEY_TYPE_ATTRIBUTE       = "attribute"
+	KEY_TYPE_STATE           = "state"
+	KEY_TYPE_EVENT           = "event"
+	KEY_TYPE_GUARD           = "guard" // Used for both guards and the logic inside guards.
+	KEY_TYPE_ACTION          = "action"
+	KEY_TYPE_QUERY           = "query"
+	KEY_TYPE_TRANSITION      = "transition"
+	KEY_TYPE_CLASS_INVARIANT = "cinvariant"
 
 	// Keys with class attribute parents.
 	KEY_TYPE_ATTRIBUTE_DERIVATION = "aderive"
@@ -238,6 +239,19 @@ func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key 
 	// SubKey format: from/event/guard/action/to
 	subKey := from + "/" + event + "/" + guard + "/" + action + "/" + to
 	return newKey(classKey.String(), KEY_TYPE_TRANSITION, subKey)
+}
+
+func NewClassInvariantKey(classKey Key, subKey string) (key Key, err error) {
+	// The parent must be a class.
+	if classKey.GetKeyType() != KEY_TYPE_CLASS {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cinvariant' key", classKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("class invariant key must be a valid integer")
+		}
+	}
+	return newKey(classKey.String(), KEY_TYPE_CLASS_INVARIANT, subKey)
 }
 
 func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string) (key Key, err error) {

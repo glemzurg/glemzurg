@@ -1,33 +1,40 @@
 ---------------------------
 
+
+
 todo:
-  - update the yaml parsing
-    -verify final round trip test has a fully developed req_model
-  - update hte parser ai parsing
-      - add the extra structures to parser ai
+
+- give classes invariants
+    - key
+      - get more complete unit test coverage
+    - model
+    - database
+    - yaml
+    - parse ai
   - update the md file output
     - include tla+
-  - update the simulator
-    - finish the todo processing
-    - join simulator into req with parameters
+    - prepare the md output to be complete
+      - update the scenarios to use the logic
+      - update the use cases if needed
 
   - replace all fmt.Errorf() with errors.Errorf()
   
 feb (in parallel)
   - create complete model
-    - add TLA+ parsing to create complete model
-    - move parameters to actions and parsed into database
+    - make ast notation neutral
+    - make ast clearly semantically meaining
+      - add validations for ast semantic meaning (primes, etc)
+    - move ast to the database
     - remvoe the json markup in req_model tree, and any json handling code
       - move to the parser_ai package
-  - prepare the md output to be complete
-    - update the scenarios to use the logic
-    - update the use cases if needed
   
-  - enter the evenplay model
 
 
 march (art workshops)
-  - steven tockey model freivew
+  - enter the evenplay model
+  - steven tockey model review
+
+april
   - generate data models compilers
   - generate protocols compilers
 
