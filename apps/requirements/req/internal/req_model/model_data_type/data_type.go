@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	_COLLECTION_TYPE_ATOMIC    = "atomic"    // An atomic type, not a collection.
-	_COLLECTION_TYPE_ORDERED   = "ordered"   // An ordered collection.
-	_COLLECTION_TYPE_QUEUE     = "queue"     // A first in, first out queue.
-	_COLLECTION_TYPE_RECORD    = "record"    // A data type composed of fields of other data types..
-	_COLLECTION_TYPE_STACK     = "stack"     // A first in, last out stack.
-	_COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
+	COLLECTION_TYPE_ATOMIC    = "atomic"    // An atomic type, not a collection.
+	COLLECTION_TYPE_ORDERED   = "ordered"   // An ordered collection.
+	COLLECTION_TYPE_QUEUE     = "queue"     // A first in, first out queue.
+	COLLECTION_TYPE_RECORD    = "record"    // A data type composed of fields of other data types..
+	COLLECTION_TYPE_STACK     = "stack"     // A first in, last out stack.
+	COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
 )
 
 // DataType represents the main data type structure.
@@ -36,9 +36,9 @@ func New(key, text string) (dataType *DataType, err error) {
 	if strings.TrimSpace(text) == "" {
 
 		dataType = &DataType{
-			CollectionType: _COLLECTION_TYPE_ATOMIC,
+			CollectionType: COLLECTION_TYPE_ATOMIC,
 			Atomic: &Atomic{
-				ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
+				ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED,
 			},
 		}
 
@@ -91,7 +91,7 @@ func (d DataType) Validate() error {
 	}
 
 	// Atomic: required when atomic; validate if present.
-	if d.CollectionType == _COLLECTION_TYPE_ATOMIC {
+	if d.CollectionType == COLLECTION_TYPE_ATOMIC {
 		if d.Atomic == nil {
 			return fmt.Errorf("Atomic: cannot be blank.")
 		}
@@ -105,7 +105,7 @@ func (d DataType) Validate() error {
 	}
 
 	// RecordFields: required when record; each field validated.
-	if d.CollectionType == _COLLECTION_TYPE_RECORD {
+	if d.CollectionType == COLLECTION_TYPE_RECORD {
 		if len(d.RecordFields) == 0 {
 			return fmt.Errorf("RecordFields: cannot be blank.")
 		}
@@ -123,10 +123,10 @@ func (d DataType) Validate() error {
 	}
 
 	// Collection field rules.
-	isCollection := d.CollectionType == _COLLECTION_TYPE_STACK ||
-		d.CollectionType == _COLLECTION_TYPE_UNORDERED ||
-		d.CollectionType == _COLLECTION_TYPE_ORDERED ||
-		d.CollectionType == _COLLECTION_TYPE_QUEUE
+	isCollection := d.CollectionType == COLLECTION_TYPE_STACK ||
+		d.CollectionType == COLLECTION_TYPE_UNORDERED ||
+		d.CollectionType == COLLECTION_TYPE_ORDERED ||
+		d.CollectionType == COLLECTION_TYPE_QUEUE
 
 	if isCollection {
 		// CollectionUnique is required for collections.
@@ -164,19 +164,19 @@ func (d DataType) Validate() error {
 // String returns a string representation of the DataType.
 func (d DataType) String() string {
 	switch d.CollectionType {
-	case _COLLECTION_TYPE_RECORD:
+	case COLLECTION_TYPE_RECORD:
 		result := "{\n"
 		for _, field := range d.RecordFields {
 			result += field.String() + "\n"
 		}
 		result += "}"
 		return result
-	case _COLLECTION_TYPE_ATOMIC:
+	case COLLECTION_TYPE_ATOMIC:
 		if d.Atomic == nil {
 			panic("atomic is nil")
 		}
 		return d.Atomic.String()
-	case _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE:
+	case COLLECTION_TYPE_STACK, COLLECTION_TYPE_UNORDERED, COLLECTION_TYPE_ORDERED, COLLECTION_TYPE_QUEUE:
 		name := ""
 		if d.CollectionUnique != nil && *d.CollectionUnique {
 			name += "unique "
@@ -196,7 +196,7 @@ func (d DataType) String() string {
 		}
 
 		collectionType := d.CollectionType
-		if collectionType == _COLLECTION_TYPE_UNORDERED || collectionType == _COLLECTION_TYPE_ORDERED {
+		if collectionType == COLLECTION_TYPE_UNORDERED || collectionType == COLLECTION_TYPE_ORDERED {
 			collectionType = collectionType + " collection"
 		}
 
@@ -325,7 +325,7 @@ func ReconstructNestedDataTypes(flatDataTypes []DataType) []DataType {
 
 	// Attach nested DataTypes to fields
 	for _, dt := range flatDataTypes {
-		if dt.CollectionType == _COLLECTION_TYPE_RECORD {
+		if dt.CollectionType == COLLECTION_TYPE_RECORD {
 			for i := range dt.RecordFields {
 				field := &dt.RecordFields[i]
 				if field.FieldDataType != nil && field.FieldDataType.Key != "" {

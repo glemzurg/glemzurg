@@ -306,15 +306,9 @@ func (c *ClassCatalog) ExternalDoActions(classKey identity.Key, stateName string
 // simulator-local struct (e.g., EventInfo or a wrapper) rather than on the model struct.
 // See ExternalStateEvents() above for the full migration plan.
 func (c *ClassCatalog) isEventExternal(event model_state.Event) bool {
-	if len(event.SentBy) == 0 {
-		return true // No senders declared — always external.
-	}
-	for _, senderKey := range event.SentBy {
-		if _, inScope := c.classes[senderKey]; inScope {
-			return false // A sender is in scope — this event is internal.
-		}
-	}
-	return true // No senders are in scope — external.
+	// TODO(CalledBy/SentBy): Event.SentBy was removed from the model struct.
+	// Until SentBy is stored in a simulator-local struct, treat all events as external.
+	return true
 }
 
 // isActionExternal returns true if the action has no CalledBy classes in scope.
@@ -324,13 +318,7 @@ func (c *ClassCatalog) isEventExternal(event model_state.Event) bool {
 // simulator-local struct (e.g., a wrapper in this package) rather than on the model struct.
 // See ExternalDoActions() above for the full migration plan.
 func (c *ClassCatalog) isActionExternal(action model_state.Action) bool {
-	if len(action.CalledBy) == 0 {
-		return true
-	}
-	for _, callerKey := range action.CalledBy {
-		if _, inScope := c.classes[callerKey]; inScope {
-			return false
-		}
-	}
+	// TODO(CalledBy/SentBy): Action.CalledBy was removed from the model struct.
+	// Until CalledBy is stored in a simulator-local struct, treat all actions as external.
 	return true
 }

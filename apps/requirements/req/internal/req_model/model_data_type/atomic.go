@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	_CONSTRAINT_TYPE_UNCONSTRAINED = "unconstrained" // Anything.
-	_CONSTRAINT_TYPE_SPAN          = "span"          // A range of allowed values.
-	_CONSTRAINT_TYPE_ENUMERATION   = "enumeration"   // A set of allowed values.
-	_CONSTRAINT_TYPE_REFERENCE     = "reference"     // A reference to other documentation.
-	_CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
+	CONSTRAINT_TYPE_UNCONSTRAINED = "unconstrained" // Anything.
+	CONSTRAINT_TYPE_SPAN          = "span"          // A range of allowed values.
+	CONSTRAINT_TYPE_ENUMERATION   = "enumeration"   // A set of allowed values.
+	CONSTRAINT_TYPE_REFERENCE     = "reference"     // A reference to other documentation.
+	CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
 )
 
 // Atomic represents the atomic data type (as opposed to a collection).
@@ -32,7 +32,7 @@ func (a Atomic) Validate() error {
 	}
 
 	// Reference: must be non-nil and non-empty for reference types; nil for others.
-	if a.ConstraintType == _CONSTRAINT_TYPE_REFERENCE {
+	if a.ConstraintType == CONSTRAINT_TYPE_REFERENCE {
 		if a.Reference == nil || *a.Reference == "" {
 			return fmt.Errorf("Reference: Reference must not be nil or empty for reference types.")
 		}
@@ -43,7 +43,7 @@ func (a Atomic) Validate() error {
 	}
 
 	// ObjectClassKey: must be non-nil and non-empty for object types; nil for others.
-	if a.ConstraintType == _CONSTRAINT_TYPE_OBJECT {
+	if a.ConstraintType == CONSTRAINT_TYPE_OBJECT {
 		if a.ObjectClassKey == nil || *a.ObjectClassKey == "" {
 			return fmt.Errorf("ObjectClassKey: ObjectClassKey must not be nil or empty for object types.")
 		}
@@ -54,7 +54,7 @@ func (a Atomic) Validate() error {
 	}
 
 	// Enums: required when enumeration; must be empty when not enumeration; each must validate.
-	if a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION {
+	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if len(a.Enums) == 0 {
 			return fmt.Errorf("Enums: cannot be blank.")
 		}
@@ -70,7 +70,7 @@ func (a Atomic) Validate() error {
 	}
 
 	// EnumOrdered: must be non-nil for enumeration; nil for others.
-	if a.ConstraintType == _CONSTRAINT_TYPE_ENUMERATION {
+	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if a.EnumOrdered == nil {
 			return fmt.Errorf("EnumOrdered: EnumOrdered must not be nil for enumeration types.")
 		}
@@ -81,7 +81,7 @@ func (a Atomic) Validate() error {
 	}
 
 	// Span: must be non-nil for span types (and validate); nil for others.
-	if a.ConstraintType == _CONSTRAINT_TYPE_SPAN {
+	if a.ConstraintType == CONSTRAINT_TYPE_SPAN {
 		if a.Span == nil {
 			return fmt.Errorf("Span: Span must not be nil for span types.")
 		}
@@ -102,10 +102,10 @@ func (a Atomic) String() string {
 
 	switch a.ConstraintType {
 
-	case _CONSTRAINT_TYPE_UNCONSTRAINED:
+	case CONSTRAINT_TYPE_UNCONSTRAINED:
 		return "unconstrained"
 
-	case _CONSTRAINT_TYPE_SPAN:
+	case CONSTRAINT_TYPE_SPAN:
 		if a.Span == nil {
 			return "span: <nil>"
 
@@ -139,13 +139,13 @@ func (a Atomic) String() string {
 
 		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64) + " " + a.Span.Units
 
-	case _CONSTRAINT_TYPE_REFERENCE:
+	case CONSTRAINT_TYPE_REFERENCE:
 		return "ref from " + *a.Reference
 
-	case _CONSTRAINT_TYPE_OBJECT:
+	case CONSTRAINT_TYPE_OBJECT:
 		return "obj of " + *a.ObjectClassKey
 
-	case _CONSTRAINT_TYPE_ENUMERATION:
+	case CONSTRAINT_TYPE_ENUMERATION:
 		var values []string
 		for _, enum := range a.Enums {
 			values = append(values, enum.Value)

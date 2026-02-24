@@ -3,6 +3,7 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
@@ -54,17 +55,16 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 
 func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
-	simpleClass := model_class.Class{
-		Key:         classKey,
-		Name:        "Simple",
-		Attributes:  map[identity.Key]model_class.Attribute{},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
-	}
+
+	simpleClass := helper.Must(model_class.NewClass(classKey, "Simple", "", nil, nil, nil, ""))
+	simpleClass.Attributes = map[identity.Key]model_class.Attribute{}
+	simpleClass.States = map[identity.Key]model_state.State{}
+	simpleClass.Events = map[identity.Key]model_state.Event{}
+	simpleClass.Guards = map[identity.Key]model_state.Guard{}
+	simpleClass.Actions = map[identity.Key]model_state.Action{}
+	simpleClass.Queries = map[identity.Key]model_state.Query{}
+	simpleClass.Transitions = map[identity.Key]model_state.Transition{}
+
 	model := testModel(classEntry(simpleClass, classKey))
 
 	catalog := NewClassCatalog(model)
@@ -125,40 +125,37 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Counter",
-		Attributes: map[identity.Key]model_class.Attribute{},
-		States: map[identity.Key]model_state.State{
-			stateActiveKey: {
-				Key:  stateActiveKey,
-				Name: "Active",
-				Actions: []model_state.StateAction{
-					{Key: stateActionKey, ActionKey: actionDoKey, When: "do"},
-				},
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
+	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateActiveKey: {
+			Key:  stateActiveKey,
+			Name: "Active",
+			Actions: []model_state.StateAction{
+				{Key: stateActionKey, ActionKey: actionDoKey, When: "do"},
 			},
 		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-		},
-		Guards: map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{
-			actionDoKey: {
-				Key:  actionDoKey,
-				Name: "DoCount",
-				Guarantees: []model_logic.Logic{
-					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.count' = self.count + 1"},
-				},
-			},
-		},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:          transCreateKey,
-				FromStateKey: nil,
-				EventKey:     eventCreateKey,
-				ToStateKey:   &stateActiveKey,
-			},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{
+		actionDoKey: actionDo,
+	}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:          transCreateKey,
+			FromStateKey: nil,
+			EventKey:     eventCreateKey,
+			ToStateKey:   &stateActiveKey,
 		},
 	}
 

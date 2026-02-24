@@ -1374,9 +1374,9 @@ func (c *current) onSpanType1(lowerBracket, lowerValue, higherValue, higherBrack
 	}
 
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_SPAN,
+			ConstraintType: CONSTRAINT_TYPE_SPAN,
 			Span: &AtomicSpan{
 				LowerType:         lowerType,
 				LowerValue:        lvPtr,
@@ -1507,9 +1507,9 @@ func (c *current) onEnumType1(enumValues any) (any, error) {
 		}
 	}
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_ENUMERATION,
+			ConstraintType: CONSTRAINT_TYPE_ENUMERATION,
 			EnumOrdered:    parserBoolPtr(false),
 			Enums:          enums,
 		},
@@ -1525,9 +1525,9 @@ func (p *parser) callonEnumType1() (any, error) {
 func (c *current) onObjectType1(content any) (any, error) {
 	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_OBJECT,
+			ConstraintType: CONSTRAINT_TYPE_OBJECT,
 			ObjectClassKey: &contentStr,
 		},
 	}, nil
@@ -1542,9 +1542,9 @@ func (p *parser) callonObjectType1() (any, error) {
 func (c *current) onReferenceType1(content any) (any, error) {
 	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_REFERENCE,
+			ConstraintType: CONSTRAINT_TYPE_REFERENCE,
 			Reference:      &contentStr,
 		},
 	}, nil
@@ -1558,9 +1558,9 @@ func (p *parser) callonReferenceType1() (any, error) {
 
 func (c *current) onUnconstrainedType1() (any, error) {
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
+			ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED,
 		},
 	}, nil
 }

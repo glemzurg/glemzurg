@@ -22,16 +22,6 @@ type Diagnostic struct {
 func Diagnose(resolved *ResolvedSurface, model *req_model.Model) []Diagnostic {
 	var diagnostics []Diagnostic
 
-	// Build all class keys in model for reference checking.
-	allClassKeys := make(map[identity.Key]bool)
-	for _, domain := range model.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for classKey := range subdomain.Classes {
-				allClassKeys[classKey] = true
-			}
-		}
-	}
-
 	allAssocs := model.GetClassAssociations()
 
 	// 1. Broken creation chain: mandatory outbound association to excluded class.
@@ -113,89 +103,21 @@ func Diagnose(resolved *ResolvedSurface, model *req_model.Model) []Diagnostic {
 	// 6. All events internal: class where ALL events have SentBy pointing to in-scope classes.
 	//
 	// TODO(CalledBy/SentBy): Event.SentBy was removed from the req_model/model_state.Event struct
-	// because CalledBy/SentBy are simulator concerns, not part of the pure data model. This
-	// diagnostic currently will not compile. When re-enabling:
+	// because CalledBy/SentBy are simulator concerns, not part of the pure data model. When
+	// re-enabling:
 	//   1. Define a simulator-local SentBy []identity.Key on a wrapper struct or parallel map.
 	//   2. Populate it from simulator config/annotations during surface resolution.
 	//   3. Update this loop to read from the simulator-local location.
-	for classKey, class := range resolved.Classes {
-		if len(class.Events) == 0 {
-			continue
-		}
-		allInternal := true
-		for _, event := range class.Events {
-			if len(event.SentBy) == 0 {
-				allInternal = false
-				break
-			}
-			// Check if at least one sender is in scope.
-			senderInScope := false
-			for _, senderKey := range event.SentBy {
-				if _, inScope := resolved.Classes[senderKey]; inScope {
-					senderInScope = true
-					break
-				}
-			}
-			if !senderInScope {
-				allInternal = false
-				break
-			}
-		}
-		if allInternal {
-			ck := classKey
-			diagnostics = append(diagnostics, Diagnostic{
-				Level: "warning",
-				Message: fmt.Sprintf("all events internal: class %s has all events with in-scope senders — simulator will never fire them directly",
-					class.Name),
-				ClassKey: &ck,
-			})
-		}
-	}
 
 	// 7. SentBy/CalledBy referencing unknown class.
 	//
 	// TODO(CalledBy/SentBy): Event.SentBy, Action.CalledBy, and Query.CalledBy were removed from
 	// the req_model structs because these are simulator concerns, not part of the pure data model.
-	// This diagnostic block currently will not compile. When re-enabling:
+	// When re-enabling:
 	//   1. Define simulator-local SentBy/CalledBy fields on wrapper structs or a parallel map
 	//      keyed by event/action/query identity.Key.
 	//   2. Populate them from simulator config/annotations during surface resolution.
 	//   3. Update these loops to read from the simulator-local location.
-	for _, class := range resolved.Classes {
-		for _, event := range class.Events {
-			for _, senderKey := range event.SentBy {
-				if !allClassKeys[senderKey] {
-					diagnostics = append(diagnostics, Diagnostic{
-						Level: "warning",
-						Message: fmt.Sprintf("event '%s' SentBy references unknown class: %s",
-							event.Name, senderKey.String()),
-					})
-				}
-			}
-		}
-		for _, action := range class.Actions {
-			for _, callerKey := range action.CalledBy {
-				if !allClassKeys[callerKey] {
-					diagnostics = append(diagnostics, Diagnostic{
-						Level: "warning",
-						Message: fmt.Sprintf("action '%s' CalledBy references unknown class: %s",
-							action.Name, callerKey.String()),
-					})
-				}
-			}
-		}
-		for _, query := range class.Queries {
-			for _, callerKey := range query.CalledBy {
-				if !allClassKeys[callerKey] {
-					diagnostics = append(diagnostics, Diagnostic{
-						Level: "warning",
-						Message: fmt.Sprintf("query '%s' CalledBy references unknown class: %s",
-							query.Name, callerKey.String()),
-					})
-				}
-			}
-		}
-	}
 
 	return diagnostics
 }

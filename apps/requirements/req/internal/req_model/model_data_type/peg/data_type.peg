@@ -167,9 +167,9 @@ SpanType <- lowerBracket:LowerBracket ws? lowerValue:( Unconstrained / FractionV
 	}
 
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_SPAN,
+			ConstraintType: CONSTRAINT_TYPE_SPAN,
 			Span: &AtomicSpan{
 				LowerType:         lowerType,
 				LowerValue:        lvPtr,
@@ -246,9 +246,9 @@ EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* {
 		}
 	}
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_ENUMERATION,
+			ConstraintType: CONSTRAINT_TYPE_ENUMERATION,
 			EnumOrdered:    parserBoolPtr(false),
 			Enums:          enums,
 		},
@@ -258,9 +258,9 @@ EnumType <- ("enumeration" / "enum") ws ("of" / "from") ws enumValues:.* {
 ObjectType <- ("object" / "obj") ws ("of" / "from") ws content:Content? {
 	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_OBJECT,
+			ConstraintType: CONSTRAINT_TYPE_OBJECT,
 			ObjectClassKey: &contentStr,
 		},
 	}, nil
@@ -269,9 +269,9 @@ ObjectType <- ("object" / "obj") ws ("of" / "from") ws content:Content? {
 ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws content:Content? {
 	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_REFERENCE,
+			ConstraintType: CONSTRAINT_TYPE_REFERENCE,
 			Reference: &contentStr,
 		},
 	}, nil
@@ -279,9 +279,9 @@ ReferenceType <- ("reference" / "ref") ws ("of" / "from") ws content:Content? {
 
 UnconstrainedType <- "unconstrained" {
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
+			ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED,
 		},
 	}, nil
 }

@@ -94,7 +94,7 @@ func deterministicFallback(
 			attrDef := indexDef.AttrDefs[i]
 			if attrDef.DataType != nil && attrDef.DataType.Atomic != nil {
 				switch attrDef.DataType.Atomic.ConstraintType {
-				case model_data_type.ConstraintTypeEnumeration:
+				case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 					// Try each enum value
 					for _, enumVal := range attrDef.DataType.Atomic.Enums {
 						attrs.Set(attrName, object.NewString(enumVal.Value))
@@ -107,7 +107,7 @@ func deterministicFallback(
 						}
 					}
 
-				case model_data_type.ConstraintTypeSpan:
+				case model_data_type.CONSTRAINT_TYPE_SPAN:
 					// Try sequential values starting from max existing + 1
 					maxVal := findMaxExistingValue(existingKeys, indexDef, attrName)
 					for seq := maxVal + 1; seq < maxVal+1001; seq++ {

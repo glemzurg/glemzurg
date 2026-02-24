@@ -150,22 +150,22 @@ func (c *DataTypeChecker) checkCollectionSize(
 	// Get size based on collection type
 	var size int
 	switch dataType.CollectionType {
-	case model_data_type.CollectionTypeAtomic:
+	case model_data_type.COLLECTION_TYPE_ATOMIC:
 		// Atomic types don't have collection size constraints
 		return nil
-	case model_data_type.CollectionTypeOrdered, model_data_type.CollectionTypeQueue, model_data_type.CollectionTypeStack:
+	case model_data_type.COLLECTION_TYPE_ORDERED, model_data_type.COLLECTION_TYPE_QUEUE, model_data_type.COLLECTION_TYPE_STACK:
 		if tuple, ok := value.(*object.Tuple); ok {
 			size = tuple.Len()
 		} else {
 			return nil // Type mismatch handled elsewhere
 		}
-	case model_data_type.CollectionTypeUnordered:
+	case model_data_type.COLLECTION_TYPE_UNORDERED:
 		if set, ok := value.(*object.Set); ok {
 			size = set.Size()
 		} else {
 			return nil // Type mismatch handled elsewhere
 		}
-	case model_data_type.CollectionTypeRecord:
+	case model_data_type.COLLECTION_TYPE_RECORD:
 		if rec, ok := value.(*object.Record); ok {
 			size = len(rec.FieldNames())
 		} else {
@@ -213,25 +213,25 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	var violations ViolationList
 
 	switch atomic.ConstraintType {
-	case model_data_type.ConstraintTypeUnconstrained:
+	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
 		// No constraints to check
 		return violations
 
-	case model_data_type.ConstraintTypeSpan:
+	case model_data_type.CONSTRAINT_TYPE_SPAN:
 		if atomic.Span != nil {
 			if violation := c.checkSpanConstraint(instanceID, classKey, attrName, value, atomic.Span); violation != nil {
 				violations = append(violations, violation)
 			}
 		}
 
-	case model_data_type.ConstraintTypeEnumeration:
+	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) > 0 {
 			if violation := c.checkEnumConstraint(instanceID, classKey, attrName, value, atomic.Enums); violation != nil {
 				violations = append(violations, violation)
 			}
 		}
 
-	case model_data_type.ConstraintTypeReference, model_data_type.ConstraintTypeObject:
+	case model_data_type.CONSTRAINT_TYPE_REFERENCE, model_data_type.CONSTRAINT_TYPE_OBJECT:
 		// Reference and object constraints are handled by link/instance validation
 		return violations
 	}

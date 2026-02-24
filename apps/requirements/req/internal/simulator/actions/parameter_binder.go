@@ -61,17 +61,17 @@ func generateRandomValue(dataType *model_data_type.DataType, rng *rand.Rand) obj
 	atomic := dataType.Atomic
 
 	switch atomic.ConstraintType {
-	case model_data_type.ConstraintTypeSpan:
+	case model_data_type.CONSTRAINT_TYPE_SPAN:
 		return randomNumberInSpan(atomic.Span, rng)
 
-	case model_data_type.ConstraintTypeEnumeration:
+	case model_data_type.CONSTRAINT_TYPE_ENUMERATION:
 		if len(atomic.Enums) == 0 {
 			return object.NewString("")
 		}
 		idx := rng.Intn(len(atomic.Enums))
 		return object.NewString(atomic.Enums[idx].Value)
 
-	case model_data_type.ConstraintTypeUnconstrained:
+	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
 		return object.NewNatural(rng.Int63n(100))
 
 	default:
