@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
@@ -95,8 +96,9 @@ func writeModelTree(model *inputModel, modelDir string) error {
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for key, assoc := range model.ClassAssociations {
-			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
+		for _, assoc := range model.ClassAssociations {
+			filename := classAssociationFilename(assoc, AssocLevelModel)
+			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
 		}
@@ -149,8 +151,9 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for key, assoc := range domain.ClassAssociations {
-			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
+		for _, assoc := range domain.ClassAssociations {
+			filename := classAssociationFilename(assoc, AssocLevelDomain)
+			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
 		}
@@ -190,8 +193,9 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 		if err := os.MkdirAll(assocDir, 0755); err != nil {
 			return err
 		}
-		for key, assoc := range subdomain.ClassAssociations {
-			if err := writeJSON(filepath.Join(assocDir, key+".assoc.json"), assoc); err != nil {
+		for _, assoc := range subdomain.ClassAssociations {
+			filename := classAssociationFilename(assoc, AssocLevelSubdomain)
+			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
 		}
@@ -326,6 +330,13 @@ func writeUseCaseTree(useCase *inputUseCase, useCaseDir string) error {
 	}
 
 	return nil
+}
+
+func classAssociationFilename(assoc *inputClassAssociation, level AssociationLevel) string {
+	from := strings.ReplaceAll(assoc.FromClassKey, "/", ".")
+	to := strings.ReplaceAll(assoc.ToClassKey, "/", ".")
+	name := strings.ToLower(strings.ReplaceAll(assoc.Name, " ", "_"))
+	return fmt.Sprintf("%s--%s--%s.assoc.json", from, to, name)
 }
 
 // writeJSON writes a struct as JSON to a file.
