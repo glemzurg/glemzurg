@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
@@ -23,20 +24,16 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 
 	// Validate the model before writing.
 	err := input.Validate()
-	assert.Nil(suite.T(), err, "input model should be valid")
+	suite.Require().Nil(err, "input model should be valid")
 
-	// Write using the top-level parser (original round-trip behavior).
-	tempDir := suite.T().TempDir()
+	// Write to a temporary folder, ensure the subfolder has the model key.
+	tempDir := filepath.Join(suite.T().TempDir(), input.Key)
 	err = WriteModel(input, tempDir)
-	assert.Nil(suite.T(), err, "writing model should succeed")
+	suite.Require().Nil(err, "writing model should succeed")
 
-	// Read from the temporary folder.
+	// Read from the temporary folder and convert back to req_model.Model.
 	output, err := ReadModel(tempDir)
-	assert.Nil(suite.T(), err, "parsing model should succeed")
-
-	// The parsed model's Key will be the tempDir path, not our original key.
-	// Overwrite it for comparison since the parser uses the modelPath as the key.
-	output.Key = input.Key
+	suite.Require().Nil(err, "reading model should succeed")
 
 	// Compare progressively larger slices of the model tree to isolate mismatches.
 	// Each check focuses on a specific layer so failures point to the right area.
