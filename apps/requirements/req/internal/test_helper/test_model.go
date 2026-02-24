@@ -78,8 +78,13 @@ type testKeys struct {
 	// Logic keys for guard.
 	guardLogic1, guardLogic2, guardLogic3 identity.Key
 
-	// Invariant keys.
+	// Invariant keys (model-level).
 	invariant1, invariant2, invariant3 identity.Key
+
+	// Class invariant keys.
+	classInv1, classInv2, classInv3 identity.Key // Order class (3 invariants).
+	classInv4, classInv5            identity.Key // Product class (2 invariants).
+	classInv6                       identity.Key // Warehouse class (1 invariant).
 
 	// Derivation key.
 	derivation1 identity.Key
@@ -332,7 +337,7 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
-	classes, err := buildClasses(k, attrs, sm)
+	classes, err := buildClasses(k, attrs, sm, logic)
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -749,6 +754,32 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	// Class invariants (Order: 3, Product: 2, Warehouse: 1).
+	k.classInv1, err = identity.NewClassInvariantKey(k.classOrder, "0")
+	if err != nil {
+		return k, err
+	}
+	k.classInv2, err = identity.NewClassInvariantKey(k.classOrder, "1")
+	if err != nil {
+		return k, err
+	}
+	k.classInv3, err = identity.NewClassInvariantKey(k.classOrder, "2")
+	if err != nil {
+		return k, err
+	}
+	k.classInv4, err = identity.NewClassInvariantKey(k.classProduct, "0")
+	if err != nil {
+		return k, err
+	}
+	k.classInv5, err = identity.NewClassInvariantKey(k.classProduct, "1")
+	if err != nil {
+		return k, err
+	}
+	k.classInv6, err = identity.NewClassInvariantKey(k.classWarehouse, "0")
+	if err != nil {
+		return k, err
+	}
+
 	// Derivation.
 	k.derivation1, err = identity.NewAttributeDerivationKey(k.attrTotal, "sum_line_items")
 	if err != nil {
@@ -939,6 +970,11 @@ type testLogic struct {
 	globalFunc1Log model_logic.Logic
 	globalFunc2Log model_logic.Logic
 	globalFunc3Log model_logic.Logic
+
+	// Class-level invariants.
+	classInvariants1 []model_logic.Logic // Order (3).
+	classInvariants2 []model_logic.Logic // Product (2).
+	classInvariants3 []model_logic.Logic // Warehouse (1).
 }
 
 func buildLogic(k testKeys) (testLogic, error) {
@@ -1043,6 +1079,39 @@ func buildLogic(k testKeys) (testLogic, error) {
 		return l, err
 	}
 	l.invariants = []model_logic.Logic{inv1, inv2, inv3}
+
+	// Class-level invariants — Order (3).
+	cInv1, err := model_logic.NewLogic(k.classInv1, "Order total matches line item sum", "tla_plus", "self.total = Sum({li.price : li \\in self.lineItems})")
+	if err != nil {
+		return l, err
+	}
+	cInv2, err := model_logic.NewLogic(k.classInv2, "Order must have at least one line item", "tla_plus", "Len(self.lineItems) > 0")
+	if err != nil {
+		return l, err
+	}
+	cInv3, err := model_logic.NewLogic(k.classInv3, "Order status is valid", "tla_plus", "self.status \\in {\"new\", \"processing\", \"complete\"}")
+	if err != nil {
+		return l, err
+	}
+	l.classInvariants1 = []model_logic.Logic{cInv1, cInv2, cInv3}
+
+	// Class-level invariants — Product (2).
+	cInv4, err := model_logic.NewLogic(k.classInv4, "Product name is non-empty", "tla_plus", "Len(self.name) > 0")
+	if err != nil {
+		return l, err
+	}
+	cInv5, err := model_logic.NewLogic(k.classInv5, "Product price is non-negative", "tla_plus", "self.price >= 0")
+	if err != nil {
+		return l, err
+	}
+	l.classInvariants2 = []model_logic.Logic{cInv4, cInv5}
+
+	// Class-level invariants — Warehouse (1).
+	cInv6, err := model_logic.NewLogic(k.classInv6, "Warehouse capacity is positive", "tla_plus", "self.capacity > 0")
+	if err != nil {
+		return l, err
+	}
+	l.classInvariants3 = []model_logic.Logic{cInv6}
 
 	// Derivation with empty specification (tests empty spec path).
 	l.derivation, err = model_logic.NewLogic(k.derivation1, "Sum of line item prices", "tla_plus", "")
@@ -1440,7 +1509,7 @@ type testClasses struct {
 	all map[identity.Key]model_class.Class
 }
 
-func buildClasses(k testKeys, a testAttrs, sm testStateMachine) (testClasses, error) {
+func buildClasses(k testKeys, a testAttrs, sm testStateMachine, l testLogic) (testClasses, error) {
 	var c testClasses
 	c.all = make(map[identity.Key]model_class.Class)
 
@@ -1454,6 +1523,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine) (testClasses, er
 		k.attrTotal:     a.total,
 		k.attrStatus:    a.status,
 	})
+	classOrder.SetInvariants(l.classInvariants1)
 	classOrder.SetStates(sm.states)
 	classOrder.SetEvents(sm.events)
 	classOrder.SetGuards(sm.guards)
@@ -1468,6 +1538,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine) (testClasses, er
 	if err != nil {
 		return c, err
 	}
+	classProduct.SetInvariants(l.classInvariants2)
 	classProduct.SetAttributes(map[identity.Key]model_class.Attribute{
 		k.attrProductName: a.productName,
 	})
@@ -1506,6 +1577,7 @@ func buildClasses(k testKeys, a testAttrs, sm testStateMachine) (testClasses, er
 	if err != nil {
 		return c, err
 	}
+	classWarehouse.SetInvariants(l.classInvariants3)
 	c.all[k.classWarehouse] = classWarehouse
 
 	// Shelf (subdomain B).
