@@ -13,9 +13,11 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -322,6 +324,52 @@ var _funcMap = template.FuncMap{
 		classLookup, _ := reqs.ClassLookup()
 		class := classLookup[classKey.String()]
 		return class.ActorKey
+	},
+
+	// Lookup methods for types not yet exposed to templates.
+	"query_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Query) {
+		lookup := reqs.QueryLookup()
+		return lookup[key.String()]
+	},
+	"global_function_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_logic.GlobalFunction) {
+		lookup := reqs.GlobalFunctionLookup()
+		return lookup[key.String()]
+	},
+	"invariant_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_logic.Logic) {
+		lookup := reqs.InvariantLookup()
+		return lookup[key.String()]
+	},
+	"class_invariant_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_logic.Logic) {
+		lookup := reqs.ClassInvariantLookup()
+		return lookup[key.String()]
+	},
+	"object_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_scenario.Object) {
+		lookup := reqs.ObjectLookup()
+		return lookup[key.String()]
+	},
+	"actor_generalization_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_actor.Generalization) {
+		lookup := reqs.ActorGeneralizationLookup()
+		return lookup[key.String()]
+	},
+	"actor_generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (value model_actor.Actor) {
+		lookup := reqs.ActorGeneralizationSuperclassLookup()
+		return lookup[key.String()]
+	},
+	"actor_generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (values []model_actor.Actor) {
+		lookup := reqs.ActorGeneralizationSubclassesLookup()
+		return lookup[key.String()]
+	},
+	"use_case_generalization_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_use_case.Generalization) {
+		lookup := reqs.UseCaseGeneralizationLookup()
+		return lookup[key.String()]
+	},
+	"use_case_generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (value model_use_case.UseCase) {
+		lookup := reqs.UseCaseGeneralizationSuperclassLookup()
+		return lookup[key.String()]
+	},
+	"use_case_generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (values []model_use_case.UseCase) {
+		lookup := reqs.UseCaseGeneralizationSubclassesLookup()
+		return lookup[key.String()]
 	},
 }
 

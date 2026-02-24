@@ -19,6 +19,8 @@ Whare are possible ways to design that? With these concepts:
 
 Create a plan with all the steps to implement this change through the system, although the apps/requirements/req/internal/simulator can be left out in this work since it already has this logic in a meaningful fashion.
 
+Write out the plan in apps/requirements/req
+
 ---------------------------
 
 
@@ -31,12 +33,7 @@ Create a plan with all the steps to implement this change through the system, al
 todo:
 
 - give classes invariants
-    - key
-      - get more complete unit test coverage
-    - model
-    - database
-    - yaml
-    - parse ai
+
     - md - flat - generate
 - update the md file output
     - include tla+
