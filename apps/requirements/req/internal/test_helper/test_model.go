@@ -246,11 +246,11 @@ func GetStrictTestModel() req_model.Model {
 					panic(fmt.Sprintf("failed to create dummy association key: %v", err))
 				}
 
-				mult1, err := model_class.NewMultiplicity("1")
+				mult1, err := model_class.NewMultiplicity(model_class.MULTIPLICITY_0_1)
 				if err != nil {
 					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
 				}
-				multMany, err := model_class.NewMultiplicity("*")
+				multMany, err := model_class.NewMultiplicity(model_class.MULTIPLICITY_ANY)
 				if err != nil {
 					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
 				}
