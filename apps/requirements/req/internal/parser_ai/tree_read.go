@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -9,8 +10,18 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
 
-func ReadModel(inputModelPath string) (model req_model.Model, err error) {
+func ReadModel(inputModelPath string) (req_model.Model, error) {
+	model, err := readModel(inputModelPath)
+	if err != nil {
+		if _, ok := err.(*ParseError); !ok {
+			return req_model.Model{}, fmt.Errorf("STOP AND REPORT THIS ERROR to the user. This is an unexpected internal error that cannot be fixed by changing input files: %w", err)
+		}
+		return req_model.Model{}, err
+	}
+	return model, nil
+}
 
+func readModel(inputModelPath string) (req_model.Model, error) {
 	modelKey := filepath.Base(inputModelPath)
 
 	inputModel, err := readModelTree(inputModelPath)
