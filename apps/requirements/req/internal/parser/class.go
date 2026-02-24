@@ -91,6 +91,13 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, err
 	}
 
+	// Add any invariants we found.
+	invariants, err := logicListFromYamlData(yamlData, "invariants", classKey, identity.NewClassInvariantKey)
+	if err != nil {
+		return model_class.Class{}, nil, err
+	}
+	class.SetInvariants(invariants)
+
 	// Add any attributes we found.
 	var attributesData map[string]any
 	attributesAny, found := yamlData["attributes"]
@@ -978,6 +985,9 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	if class.SubclassOfKey != nil {
 		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
 	}
+
+	// Add invariants section.
+	generateLogicSequence(builder, "invariants", class.Invariants)
 
 	// Add attributes section.
 	if len(class.Attributes) > 0 {

@@ -1,0 +1,28 @@
+{
+    "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key",
+    "Name": "A Basic Class",
+    "Details": "Here we have markdown details.\n\nAnd even more.",
+    "ActorKey": "actor/actor_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more.",
+    "Invariants": [
+        {
+            "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/cinvariant/0",
+            "Description": "All instances must have a valid state.",
+            "Notation": "tla_plus",
+            "Specification": "self.state \\in {\"active\", \"inactive\"}"
+        },
+        {
+            "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/cinvariant/1",
+            "Description": "Balance cannot be negative.",
+            "Notation": "tla_plus",
+            "Specification": ""
+        }
+    ],
+    "Attributes": {},
+    "States": {},
+    "Events": {},
+    "Guards": {},
+    "Actions": {},
+    "Queries": {},
+    "Transitions": {}
+}

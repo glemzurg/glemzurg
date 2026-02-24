@@ -7,11 +7,15 @@ There are actually four kinds of logics each with their own constraints.
 - A safety rule where it must be a true false assessment that includes values from the prior state and the new state
 - A single unnamed value (this is used in glboal funcitons)
 
-Whare are possible ways to design that? 
-
 The current model Logic is here: 
 
 - apps/requirements/req/internal/req_model/model_logic
+
+Whare are possible ways to design that? With these concepts:
+
+- best practices for golang
+- the pure object model is fully represented by golang and validation code (apps/requirements/req/internal/req_model)
+- eventually the ast will be inside the apps/requirements/req/internal/req_model as well, any any logic spec that parses correctly will have an ast attached (like how datatype works apps/requirements/req/internal/req_model/model_data_type)
 
 
 ---------------------------
