@@ -131,6 +131,13 @@ func (suite *KeySuite) TestParseKey() {
 			expected: Key{ParentKey: "", KeyType: "cassociation", SubKey: "domain/domain_a/subdomain/subdomain_a/class/class_a", SubKey2: "domain/domain_b/subdomain/subdomain_b/class/class_b", SubKey3: "assoc_name"},
 		},
 
+		// Class invariant key.
+		{
+			testName: "ok class invariant key",
+			input:    "domain/domain1/subdomain/subdomain1/class/thing1/cinvariant/0",
+			expected: Key{ParentKey: "domain/domain1/subdomain/subdomain1/class/thing1", KeyType: "cinvariant", SubKey: "0"},
+		},
+
 		// Scenario step key.
 		{
 			testName: "ok scenario step key",
@@ -1540,6 +1547,13 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 			},
 			description: "Transition key with various state/event/guard/action names",
 		},
+		{
+			testName: "class invariant key round trip",
+			createKey: func() (Key, error) {
+				return NewClassInvariantKey(classKey, "0")
+			},
+			description: "ClassInvariant key with numeric subKey",
+		},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
@@ -1591,6 +1605,9 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 	// Class association key.
 	classAssocKey := helper.Must(NewClassAssociationKey(subdomainKey, classKey, classKey2, "json test assoc"))
 
+	// Class invariant key.
+	classInvariantKey := helper.Must(NewClassInvariantKey(classKey, "0"))
+
 	tests := []struct {
 		testName string
 		key      Key
@@ -1607,6 +1624,7 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 		{testName: "transition key", key: transitionKey},
 		{testName: "domain association key", key: domainAssocKey},
 		{testName: "class association key", key: classAssocKey},
+		{testName: "class invariant key", key: classInvariantKey},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
@@ -1702,6 +1720,9 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 	// Class association key.
 	classAssocKey := helper.Must(NewClassAssociationKey(subdomainKey, classKey, classKey2, "text test assoc"))
 
+	// Class invariant key.
+	classInvariantKey := helper.Must(NewClassInvariantKey(classKey, "0"))
+
 	tests := []struct {
 		testName string
 		key      Key
@@ -1718,6 +1739,7 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 		{testName: "transition key", key: transitionKey},
 		{testName: "domain association key", key: domainAssocKey},
 		{testName: "class association key", key: classAssocKey},
+		{testName: "class invariant key", key: classInvariantKey},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
