@@ -241,6 +241,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(suite.domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	classKey2 := helper.Must(identity.NewClassKey(subdomainKey, "class2"))
+	classKey3 := helper.Must(identity.NewClassKey(subdomainKey, "class3"))
 	genKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "gen1"))
 	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
 	useCaseKey2 := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase2"))
@@ -249,6 +250,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 	classes := map[identity.Key]bool{
 		classKey:  true,
 		classKey2: true,
+		classKey3: true,
 	}
 
 	// Test invalid Generalization child propagates error.
@@ -337,7 +339,9 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 			genKey: {Key: genKey, Name: "Gen"},
 		},
 		Classes: map[identity.Key]model_class.Class{
-			classKey: {Key: classKey, Name: "Class"},
+			classKey:  {Key: classKey, Name: "Class", SuperclassOfKey: &genKey},
+			classKey2: {Key: classKey2, Name: "Class2", SubclassOfKey: &genKey},
+			classKey3: {Key: classKey3, Name: "Class3", SubclassOfKey: &genKey},
 		},
 		UseCases: map[identity.Key]model_use_case.UseCase{
 			useCaseKey:  {Key: useCaseKey, Name: "UC1", Level: "sea"},
