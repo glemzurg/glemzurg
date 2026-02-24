@@ -17,6 +17,7 @@ Whare are possible ways to design that? With these concepts:
 - the pure object model is fully represented by golang and validation code (apps/requirements/req/internal/req_model)
 - eventually the ast will be inside the apps/requirements/req/internal/req_model as well, any any logic spec that parses correctly will have an ast attached (like how datatype works apps/requirements/req/internal/req_model/model_data_type)
 
+Create a plan with all the steps to implement this change through the system, although the apps/requirements/req/internal/simulator can be left out in this work since it already has this logic in a meaningful fashion.
 
 ---------------------------
 

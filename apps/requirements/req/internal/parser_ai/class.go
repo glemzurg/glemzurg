@@ -29,7 +29,8 @@ type inputClass struct {
 	Indexes    [][]string                 `json:"indexes,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
-	StateMachine *inputStateMachine    `json:"-"`
+	Invariants   []inputLogic            `json:"-"`
+	StateMachine *inputStateMachine      `json:"-"`
 	Actions      map[string]*inputAction `json:"-"`
 	Queries      map[string]*inputQuery  `json:"-"`
 }

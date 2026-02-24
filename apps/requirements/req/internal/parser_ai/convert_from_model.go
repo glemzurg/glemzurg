@@ -397,6 +397,9 @@ func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
 		}
 	}
 
+	// Convert class invariants
+	result.Invariants = convertLogicsFromModel(class.Invariants)
+
 	// Convert state machine if present
 	if len(class.States) > 0 || len(class.Events) > 0 {
 		result.StateMachine = convertStateMachineFromModel(class)

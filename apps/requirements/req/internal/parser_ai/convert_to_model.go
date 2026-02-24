@@ -761,6 +761,9 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		result.Attributes[converted.Key] = converted
 	}
 
+	// Convert class invariants
+	result.SetInvariants(convertLogicsToModel(class.Invariants, classKey, identity.NewClassInvariantKey))
+
 	// Convert state machine if present
 	if class.StateMachine != nil {
 		if err := convertStateMachineToModel(class.StateMachine, class.Actions, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {

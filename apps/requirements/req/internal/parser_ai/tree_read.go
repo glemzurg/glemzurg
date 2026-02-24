@@ -524,6 +524,34 @@ func readClassTree(classDir string) (*inputClass, error) {
 	class.Actions = make(map[string]*inputAction)
 	class.Queries = make(map[string]*inputQuery)
 
+	// Read invariants
+	invariantsDir := filepath.Join(classDir, "invariants")
+	if entries, err := os.ReadDir(invariantsDir); err == nil {
+		// Sort entries to preserve order (001, 002, ...)
+		names := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(entry.Name(), ".invariant.json") {
+				names = append(names, entry.Name())
+			}
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			filePath := filepath.Join(invariantsDir, name)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			logic, err := parseLogic(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			class.Invariants = append(class.Invariants, *logic)
+		}
+	}
+
 	// Read state_machine.json if present
 	smPath := filepath.Join(classDir, "state_machine.json")
 	if smContent, err := os.ReadFile(smPath); err == nil {

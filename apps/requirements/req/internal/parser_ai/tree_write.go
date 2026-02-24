@@ -268,6 +268,20 @@ func writeClassTree(class *inputClass, classDir string) error {
 		return err
 	}
 
+	// Write invariants
+	if len(class.Invariants) > 0 {
+		invariantsDir := filepath.Join(classDir, "invariants")
+		if err := os.MkdirAll(invariantsDir, 0755); err != nil {
+			return err
+		}
+		for i, inv := range class.Invariants {
+			filename := fmt.Sprintf("%03d.invariant.json", i+1)
+			if err := writeJSON(filepath.Join(invariantsDir, filename), inv); err != nil {
+				return err
+			}
+		}
+	}
+
 	// Write state_machine.json if present
 	if class.StateMachine != nil {
 		if err := writeJSON(filepath.Join(classDir, "state_machine.json"), class.StateMachine); err != nil {
