@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -36,35 +37,24 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 			if !ok {
 				return req_model.Model{}, errors.Errorf("invariants must be a list")
 			}
-			for _, invAny := range invariantsList {
+			for i, invAny := range invariantsList {
 				invMap, ok := invAny.(map[string]any)
 				if !ok {
 					return req_model.Model{}, errors.Errorf("each invariant must be a map")
 				}
 
-				name := ""
-				if n, ok := invMap["name"]; ok {
-					name = n.(string)
-				}
-
-				// Build the key from the name.
-				invKey, err := identity.NewInvariantKey(strings.ToLower(name))
+				// Build the key from the index.
+				invKey, err := identity.NewInvariantKey(strconv.Itoa(i))
 				if err != nil {
 					return req_model.Model{}, errors.WithStack(err)
 				}
 
-				description := ""
-				if d, ok := invMap["description"]; ok {
-					description = d.(string)
-				}
-				specification := ""
-				if s, ok := invMap["specification"]; ok {
-					specification = s.(string)
-				}
+				details, _ := invMap["details"].(string)
+				specification, _ := invMap["specification"].(string)
 
 				inv := model_logic.Logic{
 					Key:           invKey,
-					Description:   description,
+					Description:   details,
 					Notation:      model_logic.NotationTLAPlus,
 					Specification: specification,
 				}
@@ -162,8 +152,7 @@ func generateModelContent(model req_model.Model) string {
 	if len(model.Invariants) > 0 {
 		dataStr += "invariants:\n"
 		for _, inv := range model.Invariants {
-			dataStr += "    - name: " + inv.Key.SubKey + "\n"
-			dataStr += "      description: " + inv.Description + "\n"
+			dataStr += "    - details: " + inv.Description + "\n"
 			if inv.Specification != "" {
 				dataStr += "      specification: " + yamlQuote(inv.Specification) + "\n"
 			}

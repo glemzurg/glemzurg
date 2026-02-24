@@ -7,11 +7,9 @@ And even more.
 ◇
 
 invariants:
-    - name: class_instances_have_value
-      description: all instances of a given class must have a value
+    - details: all instances of a given class must have a value
       specification: '_Bags!SetToBag(set1) \sqsubseteq _Bags!SetToBag(set2)'
-    - name: no_spec_invariant
-      description: with no specification
+    - details: with no specification
 
 global_functions:
     - name: _Max

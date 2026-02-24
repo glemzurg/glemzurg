@@ -2211,7 +2211,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain C (domain B): has 3 classes (for model-level associations).
-	subdomainC, err := model_domain.NewSubdomain(k.subdomainC, "Supply Chain", "Supply chain management.", "")
+	subdomainC, err := model_domain.NewSubdomain(k.subdomainC, "Default", "", "")
 	if err != nil {
 		return nil, err
 	}
