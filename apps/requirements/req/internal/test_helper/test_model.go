@@ -736,15 +736,15 @@ func buildKeys() (testKeys, error) {
 	k.guardLogic3 = k.guardInStock
 
 	// Invariants.
-	k.invariant1, err = identity.NewInvariantKey("invariant_0")
+	k.invariant1, err = identity.NewInvariantKey("0")
 	if err != nil {
 		return k, err
 	}
-	k.invariant2, err = identity.NewInvariantKey("invariant_1")
+	k.invariant2, err = identity.NewInvariantKey("1")
 	if err != nil {
 		return k, err
 	}
-	k.invariant3, err = identity.NewInvariantKey("invariant_2")
+	k.invariant3, err = identity.NewInvariantKey("2")
 	if err != nil {
 		return k, err
 	}
@@ -756,15 +756,15 @@ func buildKeys() (testKeys, error) {
 	}
 
 	// Global functions.
-	k.globalFunc1, err = identity.NewGlobalFunctionKey("_max")
+	k.globalFunc1, err = identity.NewGlobalFunctionKey("_Max")
 	if err != nil {
 		return k, err
 	}
-	k.globalFunc2, err = identity.NewGlobalFunctionKey("_identity")
+	k.globalFunc2, err = identity.NewGlobalFunctionKey("_Identity")
 	if err != nil {
 		return k, err
 	}
-	k.globalFunc3, err = identity.NewGlobalFunctionKey("_count")
+	k.globalFunc3, err = identity.NewGlobalFunctionKey("_Count")
 	if err != nil {
 		return k, err
 	}

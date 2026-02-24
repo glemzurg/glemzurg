@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -89,6 +90,11 @@ func NewGlobalFunctionKey(subKey string) (key Key, err error) {
 }
 
 func NewInvariantKey(subKey string) (key Key, err error) {
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("invariant key must be a valid integer")
+		}
+	}
 	return newRootKey(KEY_TYPE_INVARIANT, subKey)
 }
 

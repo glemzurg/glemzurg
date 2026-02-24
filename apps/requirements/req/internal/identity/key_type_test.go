@@ -200,11 +200,16 @@ func (suite *KeyTypeSuite) TestNewInvariantKey() {
 		// OK.
 		{
 			testName: "ok",
-			subKey:   "_InvariantA",
-			expected: helper.Must(newRootKey(KEY_TYPE_INVARIANT, "_InvariantA")),
+			subKey:   "1",
+			expected: helper.Must(newRootKey(KEY_TYPE_INVARIANT, "1")),
 		},
 
 		// Errors.
+		{
+			testName: "error not integer",
+			subKey:   "_InvariantA",
+			errstr:   "invariant key must be a valid integer",
+		},
 		{
 			testName: "error blank",
 			subKey:   "",

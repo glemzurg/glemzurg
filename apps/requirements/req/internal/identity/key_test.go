@@ -599,7 +599,7 @@ func (suite *KeySuite) TestValidateParent() {
 	transitionKey := helper.Must(NewTransitionKey(classKey, "state_a", "testevent", "", "", "state_b"))
 	attributeKey := helper.Must(NewAttributeKey(classKey, "testattr"))
 	stateActionKey := helper.Must(NewStateActionKey(stateKey, "entry", "testaction"))
-	invariantKey := helper.Must(NewInvariantKey("testinvariant"))
+	invariantKey := helper.Must(NewInvariantKey("1"))
 	actionRequireKey := helper.Must(NewActionRequireKey(actionKey, "testreq"))
 	actionGuaranteeKey := helper.Must(NewActionGuaranteeKey(actionKey, "testguar"))
 	actionSafetyKey := helper.Must(NewActionSafetyKey(actionKey, "testsafety"))
