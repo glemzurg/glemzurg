@@ -79,6 +79,23 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 		return err
 	}
 
+	// Validate subdomain key naming rules.
+	if len(d.Subdomains) == 1 {
+		// Single subdomain must have the key "default".
+		for subdomainKey := range d.Subdomains {
+			if subdomainKey.GetSubKey() != "default" {
+				return errors.Errorf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey())
+			}
+		}
+	} else if len(d.Subdomains) > 1 {
+		// Multiple subdomains cannot have the key "default".
+		for subdomainKey := range d.Subdomains {
+			if subdomainKey.GetSubKey() == "default" {
+				return errors.Errorf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String())
+			}
+		}
+	}
+
 	// Validate all children.
 	for _, subdomain := range d.Subdomains {
 		if err := subdomain.ValidateWithParentAndActorsAndClasses(&d.Key, actors, classes); err != nil {

@@ -417,7 +417,7 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
-	k.subdomainC, err = identity.NewSubdomainKey(k.domainB, "subdomain_c")
+	k.subdomainC, err = identity.NewSubdomainKey(k.domainB, "default")
 	if err != nil {
 		return k, err
 	}

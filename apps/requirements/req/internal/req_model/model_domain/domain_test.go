@@ -325,7 +325,7 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 // domain → subdomain → class → guard/action/query logic keys.
 func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
-	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
@@ -425,6 +425,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 // TestValidateWithParentAndActorsAndClasses tests child validation propagation.
 func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	defaultSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
 	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	subdomain2Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain2"))
 	classKey1 := helper.Must(identity.NewClassKey(subdomain1Key, "class1"))
@@ -441,7 +442,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		Key:  domainKey,
 		Name: "Name",
 		Subdomains: map[identity.Key]Subdomain{
-			subdomain1Key: {Key: subdomain1Key, Name: ""}, // Invalid: blank name
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: ""}, // Invalid: blank name
 		},
 	}
 	err := domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
@@ -460,7 +461,18 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
 	assert.ErrorContains(suite.T(), err, "Name", "Should validate child ClassAssociations")
 
-	// Test valid domain with all children.
+	// Test valid domain with single subdomain named "default".
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Subdomain"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.NoError(suite.T(), err, "Valid domain with single 'default' subdomain should pass")
+
+	// Test single subdomain with non-"default" key fails.
 	domain = Domain{
 		Key:  domainKey,
 		Name: "Name",
@@ -469,5 +481,29 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	assert.NoError(suite.T(), err, "Valid domain with all children should pass")
+	assert.ErrorContains(suite.T(), err, "must be 'default'", "Single subdomain must have key 'default'")
+
+	// Test multiple subdomains with "default" key fails.
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Default Subdomain"},
+			subdomain1Key:       {Key: subdomain1Key, Name: "Subdomain1"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
+
+	// Test multiple subdomains without "default" key passes.
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain1"},
+			subdomain2Key: {Key: subdomain2Key, Name: "Subdomain2"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.NoError(suite.T(), err, "Multiple subdomains without 'default' should pass")
 }

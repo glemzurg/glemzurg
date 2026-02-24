@@ -261,7 +261,7 @@ func (suite *ModelSuite) TestValidateTree() {
 
 	// Test 3: Validate validates parent relationships - wrong parent key should fail.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
-	wrongParentSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	wrongParentSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
 	model = Model{
 		Key:     "model1",
@@ -330,7 +330,7 @@ func (suite *ModelSuite) TestValidateTree() {
 	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate child ClassAssociations")
 
 	// Test 6: Valid model should pass.
-	validSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
 	model = Model{
 		Key:     "model1",
 		Name:    "Model Name",
