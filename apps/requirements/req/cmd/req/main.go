@@ -152,17 +152,11 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 
 	case InputFormatAIJSON:
 		fmt.Println("Reading model from ai/json format...")
-		inputModel, err := parser_ai.readModelTree(sourcePath)
+		m, err := parser_ai.ReadModel(sourcePath)
 		if err != nil {
 			return fmt.Errorf("failed to read ai/json model: %w", err)
 		}
-
-		// Convert to req_model.Model
-		converted, err := parser_ai.ConvertToModel(inputModel, model)
-		if err != nil {
-			return fmt.Errorf("failed to convert ai/json to req_model: %w", err)
-		}
-		parsedModel = converted
+		parsedModel = &m
 	}
 
 	// Step 2: Optionally validate through database
@@ -195,17 +189,10 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 
 	case OutputFormatAIJSON:
 		fmt.Println("Converting to ai/json format...")
-		// Convert req_model.Model to inputModel
-		inputModel, err := parser_ai.ConvertFromModel(parsedModel)
-		if err != nil {
-			return fmt.Errorf("failed to convert to ai/json format: %w", err)
-		}
-
-		// Write to filesystem
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
-		if err := parser_ai.writeModelTree(inputModel, outputPath); err != nil {
+		if err := parser_ai.WriteModel(*parsedModel, outputPath); err != nil {
 			return fmt.Errorf("failed to write ai/json model: %w", err)
 		}
 		fmt.Printf("Model written to: %s\n", outputPath)
