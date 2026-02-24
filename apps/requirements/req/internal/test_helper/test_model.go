@@ -229,6 +229,52 @@ func GetStrictTestModel() req_model.Model {
 					subdomain.Classes[classKey] = class
 				}
 			}
+
+			// Ensure every subdomain has at least one association.
+			if len(subdomain.ClassAssociations) == 0 && len(subdomain.Classes) >= 2 {
+				// Get two class keys.
+				var classKeys []identity.Key
+				for ck := range subdomain.Classes {
+					classKeys = append(classKeys, ck)
+					if len(classKeys) == 2 {
+						break
+					}
+				}
+
+				dummyAssocKey, err := identity.NewClassAssociationKey(subdomainKey, classKeys[0], classKeys[1], "dummy_assoc")
+				if err != nil {
+					panic(fmt.Sprintf("failed to create dummy association key: %v", err))
+				}
+
+				mult1, err := model_class.NewMultiplicity("1")
+				if err != nil {
+					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
+				}
+				multMany, err := model_class.NewMultiplicity("*")
+				if err != nil {
+					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
+				}
+
+				dummyAssoc, err := model_class.NewAssociation(
+					dummyAssocKey,
+					"Dummy Association",
+					"Dummy association to satisfy strict requirements.",
+					classKeys[0],
+					mult1,
+					classKeys[1],
+					multMany,
+					nil,
+					"",
+				)
+				if err != nil {
+					panic(fmt.Sprintf("failed to create dummy association: %v", err))
+				}
+
+				subdomain.ClassAssociations = map[identity.Key]model_class.Association{
+					dummyAssocKey: dummyAssoc,
+				}
+			}
+
 			// Update subdomain in domain.
 			domain.Subdomains[subdomainKey] = subdomain
 		}
