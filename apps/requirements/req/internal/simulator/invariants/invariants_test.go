@@ -3,6 +3,7 @@ package invariants
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -44,9 +45,9 @@ func createTestModel() *req_model.Model {
 	}
 	ordered := true
 	statusDataType := &model_data_type.DataType{
-		CollectionType: model_data_type.CollectionTypeAtomic,
+		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
-			ConstraintType: model_data_type.ConstraintTypeEnumeration,
+			ConstraintType: "enumeration",
 			Enums:          statusEnums,
 			EnumOrdered:    &ordered,
 		},
@@ -58,9 +59,9 @@ func createTestModel() *req_model.Model {
 	lowerDenom := 1
 	higherDenom := 1
 	amountDataType := &model_data_type.DataType{
-		CollectionType: model_data_type.CollectionTypeAtomic,
+		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
-			ConstraintType: model_data_type.ConstraintTypeSpan,
+			ConstraintType: "span",
 			Span: &model_data_type.AtomicSpan{
 				LowerType:         "closed",
 				LowerValue:        &lowerValue,
@@ -76,9 +77,9 @@ func createTestModel() *req_model.Model {
 
 	// Create a data type for name (unconstrained)
 	nameDataType := &model_data_type.DataType{
-		CollectionType: model_data_type.CollectionTypeAtomic,
+		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
-			ConstraintType: model_data_type.ConstraintTypeUnconstrained,
+			ConstraintType: "unconstrained",
 		},
 	}
 
@@ -109,61 +110,49 @@ func createTestModel() *req_model.Model {
 
 	// Create an action with a post-condition guarantee
 	actionKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order/action/complete")
-	completeAction := model_state.Action{
-		Key:  actionKey,
-		Name: "complete",
-		Requires: []model_logic.Logic{
-			{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"active\""},
-		},
-		Guarantees: []model_logic.Logic{
-			{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status' = \"completed\""}, // This is a primed assignment, not a post-condition
-			{Key: "guar_2", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status' # self.status"},   // This is a post-condition invariant
-		},
+	requires := []model_logic.Logic{
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionRequireKey(actionKey, "0")), "Precondition.", model_logic.NotationTLAPlus, "self.status = \"active\"")),
 	}
+	guarantees := []model_logic.Logic{
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), "Postcondition.", model_logic.NotationTLAPlus, "self.status' = \"completed\"")), // This is a primed assignment, not a post-condition
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "1")), "Postcondition.", model_logic.NotationTLAPlus, "self.status' # self.status")),   // This is a post-condition invariant
+	}
+	completeAction := helper.Must(model_state.NewAction(actionKey, "complete", "", requires, guarantees, nil, nil))
 
 	// Create the class
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Order",
-		Attributes: map[identity.Key]model_class.Attribute{
-			statusAttr.Key: statusAttr,
-			amountAttr.Key: amountAttr,
-			nameAttr.Key:   nameAttr,
-		},
-		Actions: map[identity.Key]model_state.Action{
-			actionKey: completeAction,
-		},
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		statusAttr.Key: statusAttr,
+		amountAttr.Key: amountAttr,
+		nameAttr.Key:   nameAttr,
+	}
+	class.Actions = map[identity.Key]model_state.Action{
+		actionKey: completeAction,
 	}
 
 	// Create the subdomain
-	subdomain := model_domain.Subdomain{
-		Key:  mustKey("domain/test_domain/subdomain/test_subdomain"),
-		Name: "TestSubdomain",
-		Classes: map[identity.Key]model_class.Class{
-			classKey: class,
-		},
+	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "TestSubdomain", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		classKey: class,
 	}
 
 	// Create the domain
-	domain := model_domain.Domain{
-		Key:  mustKey("domain/test_domain"),
-		Name: "TestDomain",
-		Subdomains: map[identity.Key]model_domain.Subdomain{
-			subdomain.Key: subdomain,
-		},
+	domainKey := mustKey("domain/test_domain")
+	domain := helper.Must(model_domain.NewDomain(domainKey, "TestDomain", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
 	}
 
 	// Create the model
-	return &req_model.Model{
-		Key:  "test_model",
-		Name: "TestModel",
-		Invariants: []model_logic.Logic{
-			{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
-		},
-		Domains: map[identity.Key]model_domain.Domain{
-			domain.Key: domain,
-		},
+	invariants := []model_logic.Logic{
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), "Always true.", model_logic.NotationTLAPlus, "TRUE")),
 	}
+	model := helper.Must(req_model.NewModel("test_model", "TestModel", "", invariants, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	return &model
 }
 
 // Test: DataTypeChecker detects unparsed data types
@@ -179,33 +168,23 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 		DataType:      nil, // Not parsed!
 	}
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "BadClass",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attr.Key: attr,
-		},
+	class := helper.Must(model_class.NewClass(classKey, "BadClass", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attr.Key: attr,
 	}
 
-	subdomain := model_domain.Subdomain{
-		Key:     mustKey("domain/d/subdomain/s"),
-		Name:    "S",
-		Classes: map[identity.Key]model_class.Class{classKey: class},
-	}
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := model_domain.Domain{
-		Key:        mustKey("domain/d"),
-		Name:       "D",
-		Subdomains: map[identity.Key]model_domain.Subdomain{subdomain.Key: subdomain},
-	}
+	domainKey := mustKey("domain/d")
+	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := &req_model.Model{
-		Key:     "test",
-		Name:    "Test",
-		Domains: map[identity.Key]model_domain.Domain{domain.Key: domain},
-	}
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(&model)
 	s.NotNil(checker)
 	s.True(violations.HasViolations())
 	s.Len(violations, 1)
@@ -443,16 +422,13 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 
 // Test: InvariantChecker model invariant that fails
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
-	model := &req_model.Model{
-		Key:  "test",
-		Name: "Test",
-		Invariants: []model_logic.Logic{
-			{Key: "inv_0", Description: "Always false.", Notation: model_logic.NotationTLAPlus, Specification: "FALSE"},
-		},
-		Domains: map[identity.Key]model_domain.Domain{},
+	invariants := []model_logic.Logic{
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), "Always false.", model_logic.NotationTLAPlus, "FALSE")),
 	}
+	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	checker, err := NewInvariantChecker(model)
+	checker, err := NewInvariantChecker(&model)
 	s.NoError(err)
 
 	simState := state.NewSimulationState()
@@ -466,16 +442,13 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 
 // Test: InvariantChecker with invalid TLA+ expression
 func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
-	model := &req_model.Model{
-		Key:  "test",
-		Name: "Test",
-		Invariants: []model_logic.Logic{
-			{Key: "inv_0", Description: "Invalid expression.", Notation: model_logic.NotationTLAPlus, Specification: "this is not valid TLA+"},
-		},
-		Domains: map[identity.Key]model_domain.Domain{},
+	invariants := []model_logic.Logic{
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), "Invalid expression.", model_logic.NotationTLAPlus, "this is not valid TLA+")),
 	}
+	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	checker, err := NewInvariantChecker(model)
+	checker, err := NewInvariantChecker(&model)
 	s.Error(err)
 	s.Nil(checker)
 }
@@ -486,7 +459,7 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 
 	// Update model invariant to check something real
 	model.Invariants = []model_logic.Logic{
-		{Key: "inv_0", Description: "Always true.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), "Always true.", model_logic.NotationTLAPlus, "TRUE")),
 	}
 
 	invChecker, err := NewInvariantChecker(model)
@@ -525,9 +498,9 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	lowerDenom := 1
 	higherDenom := 1
 	dataType := &model_data_type.DataType{
-		CollectionType: model_data_type.CollectionTypeAtomic,
+		CollectionType: "atomic",
 		Atomic: &model_data_type.Atomic{
-			ConstraintType: model_data_type.ConstraintTypeSpan,
+			ConstraintType: "span",
 			Span: &model_data_type.AtomicSpan{
 				LowerType:         "open", // Exclude 0
 				LowerValue:        &lowerValue,
@@ -549,31 +522,21 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 		DataType:      dataType,
 	}
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Test",
-		Attributes: map[identity.Key]model_class.Attribute{attr.Key: attr},
-	}
+	class := helper.Must(model_class.NewClass(classKey, "Test", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{attr.Key: attr}
 
-	subdomain := model_domain.Subdomain{
-		Key:     mustKey("domain/d/subdomain/s"),
-		Name:    "S",
-		Classes: map[identity.Key]model_class.Class{classKey: class},
-	}
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
 
-	domain := model_domain.Domain{
-		Key:        mustKey("domain/d"),
-		Name:       "D",
-		Subdomains: map[identity.Key]model_domain.Subdomain{subdomain.Key: subdomain},
-	}
+	domainKey := mustKey("domain/d")
+	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := &req_model.Model{
-		Key:     "test",
-		Name:    "Test",
-		Domains: map[identity.Key]model_domain.Domain{domain.Key: domain},
-	}
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
-	checker, violations := NewDataTypeChecker(model)
+	checker, violations := NewDataTypeChecker(&model)
 	s.NotNil(checker)
 	s.False(violations.HasViolations())
 
@@ -603,16 +566,13 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 
 // Test: InvariantChecker rejects model invariants containing primed variables
 func (s *InvariantsSuite) TestInvariantCheckerRejectsPrimedInvariants() {
-	model := &req_model.Model{
-		Key:  "test",
-		Name: "Test",
-		Invariants: []model_logic.Logic{
-			{Key: "inv_0", Description: "Primed variable check.", Notation: model_logic.NotationTLAPlus, Specification: "x' > 0"},
-		},
-		Domains: map[identity.Key]model_domain.Domain{},
+	invariants := []model_logic.Logic{
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), "Primed variable check.", model_logic.NotationTLAPlus, "x' > 0")),
 	}
+	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	checker, err := NewInvariantChecker(model)
+	checker, err := NewInvariantChecker(&model)
 	s.Error(err)
 	s.Nil(checker)
 	s.Contains(err.Error(), "must not contain primed variables")

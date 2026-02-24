@@ -3,6 +3,7 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
@@ -29,34 +30,34 @@ func simpleOrderClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Order",
-		Attributes: map[identity.Key]model_class.Attribute{},
-		States: map[identity.Key]model_state.State{
-			stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
-			stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
+		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+		eventCloseKey:  eventClose,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:          transCreateKey,
+			FromStateKey: nil, // Creation transition
+			EventKey:     eventCreateKey,
+			ToStateKey:   &stateOpenKey,
 		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-			eventCloseKey:  {Key: eventCloseKey, Name: "close"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:          transCreateKey,
-				FromStateKey: nil, // Creation transition
-				EventKey:     eventCreateKey,
-				ToStateKey:   &stateOpenKey,
-			},
-			transCloseKey: {
-				Key:          transCloseKey,
-				FromStateKey: &stateOpenKey,
-				EventKey:     eventCloseKey,
-				ToStateKey:   &stateClosedKey,
-			},
+		transCloseKey: {
+			Key:          transCloseKey,
+			FromStateKey: &stateOpenKey,
+			EventKey:     eventCloseKey,
+			ToStateKey:   &stateClosedKey,
 		},
 	}
 
@@ -156,26 +157,25 @@ func (s *EngineSuite) TestDeadlockDetection() {
 	eventUpdateKey := mustKey("domain/d/subdomain/s/class/stuck/event/update")
 	transUpdateKey := mustKey("domain/d/subdomain/s/class/stuck/transition/update")
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Stuck",
-		Attributes: map[identity.Key]model_class.Attribute{},
-		States: map[identity.Key]model_state.State{
-			stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-		},
-		Events: map[identity.Key]model_state.Event{
-			eventUpdateKey: {Key: eventUpdateKey, Name: "update"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transUpdateKey: {
-				Key:          transUpdateKey,
-				FromStateKey: &stateActiveKey,
-				EventKey:     eventUpdateKey,
-				ToStateKey:   &stateActiveKey,
-			},
+	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateActiveKey: {Key: stateActiveKey, Name: "Active"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventUpdateKey: eventUpdate,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transUpdateKey: {
+			Key:          transUpdateKey,
+			FromStateKey: &stateActiveKey,
+			EventKey:     eventUpdateKey,
+			ToStateKey:   &stateActiveKey,
 		},
 	}
 
@@ -200,9 +200,9 @@ func (s *EngineSuite) TestStopOnViolation() {
 
 	// Add an invariant that will fail: "FALSE".
 	model := testModel(classEntry(orderClass, orderKey))
-	model.Invariants = []model_logic.Logic{
-		{Key: "inv_0", Description: "Always false.", Notation: model_logic.NotationTLAPlus, Specification: "FALSE"},
-	}
+	invariantKey := helper.Must(identity.NewInvariantKey("0"))
+	invariantLogic := helper.Must(model_logic.NewLogic(invariantKey, "Always false.", model_logic.NotationTLAPlus, "FALSE"))
+	model.Invariants = []model_logic.Logic{invariantLogic}
 
 	config := SimulationConfig{
 		MaxSteps:        100,
@@ -255,17 +255,15 @@ func (s *EngineSuite) TestReproducibility() {
 func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	// A class with no states → not simulatable.
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
-	class := model_class.Class{
-		Key:         classKey,
-		Name:        "Empty",
-		Attributes:  map[identity.Key]model_class.Attribute{},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
-	}
+
+	class := helper.Must(model_class.NewClass(classKey, "Empty", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{}
+	class.Events = map[identity.Key]model_state.Event{}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{}
 
 	model := testModel(classEntry(class, classKey))
 

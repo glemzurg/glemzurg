@@ -496,7 +496,7 @@ func (b *DefinitionBuilder) buildGuardExpression(
 // The key format is: domain/DOMAIN_NAME/subdomain/SUBDOMAIN_NAME/class/CLASS_NAME/[action|query|guard]/NAME
 func extractClassScope(key *identity.Key) (domain, subdomain, class string, err error) {
 	// Get the parent key string which should be the class key
-	parentKeyStr := key.ParentKey()
+	parentKeyStr := key.ParentKey
 	if parentKeyStr == "" {
 		return "", "", "", fmt.Errorf("key has no parent: %s", key.String())
 	}

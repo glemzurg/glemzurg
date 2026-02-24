@@ -3,6 +3,7 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
@@ -33,32 +34,26 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDoublePriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/double_price")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Product",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrPriceKey: {
-				Key:  attrPriceKey,
-				Name: "price",
-			},
-			attrDoublePriceKey: {
-				Key:  attrDoublePriceKey,
-				Name: "doublePrice",
-				DerivationPolicy: &model_logic.Logic{
-					Key:           "spec_double_price",
-					Description:   "Double the price.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "self.price * 2",
-				},
-			},
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/10"), "Double the price.", model_logic.NotationTLAPlus, "self.price * 2"))
+
+	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrPriceKey: {
+			Key:  attrPriceKey,
+			Name: "price",
 		},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
+		attrDoublePriceKey: {
+			Key:              attrDoublePriceKey,
+			Name:             "doublePrice",
+			DerivationPolicy: &derivationLogic,
+		},
 	}
+	class.States = map[identity.Key]model_state.State{}
+	class.Events = map[identity.Key]model_state.Event{}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{}
 
 	simState := state.NewSimulationState()
 	relationCtx := evaluator.NewRelationContext()
@@ -88,28 +83,22 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Product",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrKey: {
-				Key:  attrKey,
-				Name: "derivedField",
-				DerivationPolicy: &model_logic.Logic{
-					Key:           "spec_derived",
-					Description:   "A derived field.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "", // Empty specification.
-				},
-			},
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/11"), "A derived field.", model_logic.NotationTLAPlus, ""))
+
+	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrKey: {
+			Key:              attrKey,
+			Name:             "derivedField",
+			DerivationPolicy: &derivationLogic,
 		},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
 	}
+	class.States = map[identity.Key]model_state.State{}
+	class.Events = map[identity.Key]model_state.Event{}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{}
 
 	simState := state.NewSimulationState()
 	relationCtx := evaluator.NewRelationContext()
@@ -128,32 +117,26 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Product",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrPriceKey: {
-				Key:  attrPriceKey,
-				Name: "price",
-			},
-			attrDerivedKey: {
-				Key:  attrDerivedKey,
-				Name: "derivedField",
-				DerivationPolicy: &model_logic.Logic{
-					Key:           "spec_derived",
-					Description:   "A derived field.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "self.price'",
-				},
-			},
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/12"), "A derived field.", model_logic.NotationTLAPlus, "self.price'"))
+
+	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrPriceKey: {
+			Key:  attrPriceKey,
+			Name: "price",
 		},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
+		attrDerivedKey: {
+			Key:              attrDerivedKey,
+			Name:             "derivedField",
+			DerivationPolicy: &derivationLogic,
+		},
 	}
+	class.States = map[identity.Key]model_state.State{}
+	class.Events = map[identity.Key]model_state.Event{}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{}
 
 	simState := state.NewSimulationState()
 	relationCtx := evaluator.NewRelationContext()
@@ -173,32 +156,26 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDoublePriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/double_price")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Product",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrPriceKey: {
-				Key:  attrPriceKey,
-				Name: "price",
-			},
-			attrDoublePriceKey: {
-				Key:  attrDoublePriceKey,
-				Name: "doublePrice",
-				DerivationPolicy: &model_logic.Logic{
-					Key:           "spec_double_price",
-					Description:   "Double the price.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "self.price * 2",
-				},
-			},
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/13"), "Double the price.", model_logic.NotationTLAPlus, "self.price * 2"))
+
+	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrPriceKey: {
+			Key:  attrPriceKey,
+			Name: "price",
 		},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
+		attrDoublePriceKey: {
+			Key:              attrDoublePriceKey,
+			Name:             "doublePrice",
+			DerivationPolicy: &derivationLogic,
+		},
 	}
+	class.States = map[identity.Key]model_state.State{}
+	class.Events = map[identity.Key]model_state.Event{}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{}
 
 	simState := state.NewSimulationState()
 	relationCtx := evaluator.NewRelationContext()

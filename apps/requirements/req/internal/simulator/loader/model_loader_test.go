@@ -35,11 +35,11 @@ func mustKey(str string) identity.Key {
 }
 
 func (s *ModelLoaderSuite) TestRoundTrip() {
-	classKey := mustKey("domain/d/subdomain/s/class/order")
-	stateKey := mustKey("domain/d/subdomain/s/class/order/state/open")
-	eventKey := mustKey("domain/d/subdomain/s/class/order/event/create")
-	transKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
-	subdomainKey := mustKey("domain/d/subdomain/s")
+	classKey := mustKey("domain/d/subdomain/default/class/order")
+	stateKey := mustKey("domain/d/subdomain/default/class/order/state/open")
+	eventKey := mustKey("domain/d/subdomain/default/class/order/event/create")
+	transKey := mustKey("domain/d/subdomain/default/class/order/transition/create")
+	subdomainKey := mustKey("domain/d/subdomain/default")
 	domainKey := mustKey("domain/d")
 
 	model := buildTestModel(domainKey, subdomainKey, classKey, stateKey, eventKey, transKey)
@@ -72,18 +72,18 @@ func (s *ModelLoaderSuite) TestRoundTrip() {
 }
 
 func (s *ModelLoaderSuite) TestRoundTripWithDataTypeRules() {
-	classKey := mustKey("domain/d/subdomain/s/class/order")
-	attrKey := mustKey("domain/d/subdomain/s/class/order/attribute/amount")
-	stateKey := mustKey("domain/d/subdomain/s/class/order/state/open")
-	eventKey := mustKey("domain/d/subdomain/s/class/order/event/create")
-	transKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
-	subdomainKey := mustKey("domain/d/subdomain/s")
+	classKey := mustKey("domain/d/subdomain/default/class/order")
+	attrKey := mustKey("domain/d/subdomain/default/class/order/attribute/amount")
+	stateKey := mustKey("domain/d/subdomain/default/class/order/state/open")
+	eventKey := mustKey("domain/d/subdomain/default/class/order/event/create")
+	transKey := mustKey("domain/d/subdomain/default/class/order/transition/create")
+	subdomainKey := mustKey("domain/d/subdomain/default")
 	domainKey := mustKey("domain/d")
 
 	model := buildTestModel(domainKey, subdomainKey, classKey, stateKey, eventKey, transKey)
 
 	// Add an attribute with a parseable DataTypeRules (enum format).
-	attr, err := model_class.NewAttribute(attrKey, "amount", "", "enum of small, medium, large", "", "", false, "", nil)
+	attr, err := model_class.NewAttribute(attrKey, "amount", "", "enum of small, medium, large", nil, false, "", nil)
 	s.Require().NoError(err)
 	s.Require().NotNil(attr.DataType, "enum DataTypeRules should parse successfully")
 

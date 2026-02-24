@@ -19,9 +19,9 @@ func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
 		Name:      name,
 		IndexNums: []uint{1},
 		DataType: &model_data_type.DataType{
-			CollectionType: model_data_type.CollectionTypeAtomic,
+			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
-				ConstraintType: model_data_type.ConstraintTypeSpan,
+				ConstraintType: "span",
 				Span: &model_data_type.AtomicSpan{
 					LowerType:   "closed",
 					LowerValue:  &lower,
@@ -43,9 +43,9 @@ func enumAttrDef(name string, values []string) *model_class.Attribute {
 		Name:      name,
 		IndexNums: []uint{1},
 		DataType: &model_data_type.DataType{
-			CollectionType: model_data_type.CollectionTypeAtomic,
+			CollectionType: "atomic",
 			Atomic: &model_data_type.Atomic{
-				ConstraintType: model_data_type.ConstraintTypeEnumeration,
+				ConstraintType: "enumeration",
 				Enums:          enums,
 			},
 		},

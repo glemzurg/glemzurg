@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -30,43 +31,41 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Order",
-		Attributes: map[identity.Key]model_class.Attribute{},
-		States: map[identity.Key]model_state.State{
-			stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
-			stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = self.amount + 10"))
+
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
+	actionClose := helper.Must(model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
+		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+		eventCloseKey:  eventClose,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{
+		actionCloseKey: actionClose,
+	}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:          transCreateKey,
+			FromStateKey: nil, // Creation transition
+			EventKey:     eventCreateKey,
+			ToStateKey:   &stateOpenKey,
 		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-			eventCloseKey:  {Key: eventCloseKey, Name: "close"},
-		},
-		Guards: map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{
-			actionCloseKey: {
-				Key:  actionCloseKey,
-				Name: "DoClose",
-				Guarantees: []model_logic.Logic{
-					{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.amount' = self.amount + 10"},
-				},
-			},
-		},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:          transCreateKey,
-				FromStateKey: nil, // Creation transition
-				EventKey:     eventCreateKey,
-				ToStateKey:   &stateOpenKey,
-			},
-			transCloseKey: {
-				Key:          transCloseKey,
-				FromStateKey: &stateOpenKey,
-				EventKey:     eventCloseKey,
-				ActionKey:    &actionCloseKey,
-				ToStateKey:   &stateClosedKey,
-			},
+		transCloseKey: {
+			Key:          transCloseKey,
+			FromStateKey: &stateOpenKey,
+			EventKey:     eventCloseKey,
+			ActionKey:    &actionCloseKey,
+			ToStateKey:   &stateClosedKey,
 		},
 	}
 
@@ -80,26 +79,25 @@ func testItemClass() (model_class.Class, identity.Key) {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/item/event/create")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/item/transition/create")
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Item",
-		Attributes: map[identity.Key]model_class.Attribute{},
-		States: map[identity.Key]model_state.State{
-			stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:          transCreateKey,
-				FromStateKey: nil,
-				EventKey:     eventCreateKey,
-				ToStateKey:   &stateActiveKey,
-			},
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Item", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateActiveKey: {Key: stateActiveKey, Name: "Active"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:          transCreateKey,
+			FromStateKey: nil,
+			EventKey:     eventCreateKey,
+			ToStateKey:   &stateActiveKey,
 		},
 	}
 
@@ -119,23 +117,20 @@ func testModel(classes ...struct {
 		classMap[c.key] = c.class
 	}
 
-	return &req_model.Model{
-		Key:  "test",
-		Name: "Test",
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "D",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:     subdomainKey,
-						Name:    "S",
-						Classes: classMap,
-					},
-				},
-			},
-		},
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain.Classes = classMap
+
+	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
 	}
+
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+
+	return &model
 }
 
 // classEntry is a helper for testModel's variadic parameter.

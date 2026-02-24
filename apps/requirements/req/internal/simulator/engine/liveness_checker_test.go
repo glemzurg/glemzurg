@@ -3,6 +3,7 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
@@ -33,27 +34,26 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	attrAmountKey := mustKey("domain/d/subdomain/s/class/order/attribute/amount")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Order",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrAmountKey: {Key: attrAmountKey, Name: "amount"},
-		},
-		States: map[identity.Key]model_state.State{
-			stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:        transCreateKey,
-				EventKey:   eventCreateKey,
-				ToStateKey: &stateOpenKey,
-			},
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrAmountKey: {Key: attrAmountKey, Name: "amount"},
+	}
+	class.States = map[identity.Key]model_state.State{
+		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:        transCreateKey,
+			EventKey:   eventCreateKey,
+			ToStateKey: &stateOpenKey,
 		},
 	}
 	return class, classKey
@@ -67,27 +67,26 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/item/transition/create")
 	attrNameKey := mustKey("domain/d/subdomain/s/class/item/attribute/name")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Item",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrNameKey: {Key: attrNameKey, Name: "name"},
-		},
-		States: map[identity.Key]model_state.State{
-			stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:        transCreateKey,
-				EventKey:   eventCreateKey,
-				ToStateKey: &stateActiveKey,
-			},
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Item", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrNameKey: {Key: attrNameKey, Name: "name"},
+	}
+	class.States = map[identity.Key]model_state.State{
+		stateActiveKey: {Key: stateActiveKey, Name: "Active"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:        transCreateKey,
+			EventKey:   eventCreateKey,
+			ToStateKey: &stateActiveKey,
 		},
 	}
 	return class, classKey
@@ -249,36 +248,31 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	transCreateKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/order/attribute/total")
 
-	class := model_class.Class{
-		Key:  classKey,
-		Name: "Order",
-		Attributes: map[identity.Key]model_class.Attribute{
-			attrDerivedKey: {
-				Key:  attrDerivedKey,
-				Name: "total",
-				DerivationPolicy: &model_logic.Logic{
-					Key:           "spec_total",
-					Description:   "Sum of items.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "self.amount * 2",
-				},
-			},
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), "Sum of items.", model_logic.NotationTLAPlus, "self.amount * 2"))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{
+		attrDerivedKey: {
+			Key:              attrDerivedKey,
+			Name:             "total",
+			DerivationPolicy: &derivationLogic,
 		},
-		States: map[identity.Key]model_state.State{
-			stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-		},
-		Events: map[identity.Key]model_state.Event{
-			eventCreateKey: {Key: eventCreateKey, Name: "create"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transCreateKey: {
-				Key:        transCreateKey,
-				EventKey:   eventCreateKey,
-				ToStateKey: &stateOpenKey,
-			},
+	}
+	class.States = map[identity.Key]model_state.State{
+		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
+	}
+	class.Events = map[identity.Key]model_state.Event{
+		eventCreateKey: eventCreate,
+	}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:        transCreateKey,
+			EventKey:   eventCreateKey,
+			ToStateKey: &stateOpenKey,
 		},
 	}
 
@@ -412,17 +406,16 @@ func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
 	// But NewSimulationEngine would fail before reaching liveness.
 	// Test the checker directly with an empty catalog.
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
-	statelessClass := model_class.Class{
-		Key:         statelessKey,
-		Name:        "Stateless",
-		Attributes:  map[identity.Key]model_class.Attribute{},
-		States:      map[identity.Key]model_state.State{},
-		Events:      map[identity.Key]model_state.Event{},
-		Guards:      map[identity.Key]model_state.Guard{},
-		Actions:     map[identity.Key]model_state.Action{},
-		Queries:     map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{},
-	}
+
+	statelessClass := helper.Must(model_class.NewClass(statelessKey, "Stateless", "", nil, nil, nil, ""))
+	statelessClass.Attributes = map[identity.Key]model_class.Attribute{}
+	statelessClass.States = map[identity.Key]model_state.State{}
+	statelessClass.Events = map[identity.Key]model_state.Event{}
+	statelessClass.Guards = map[identity.Key]model_state.Guard{}
+	statelessClass.Actions = map[identity.Key]model_state.Action{}
+	statelessClass.Queries = map[identity.Key]model_state.Query{}
+	statelessClass.Transitions = map[identity.Key]model_state.Transition{}
+
 	model := testModel(classEntry(statelessClass, statelessKey))
 	catalog := NewClassCatalog(model)
 	checker := NewLivenessChecker(catalog)

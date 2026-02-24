@@ -3,6 +3,7 @@ package model_bridge
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -20,21 +21,28 @@ func TestExtractorSuite(t *testing.T) {
 	suite.Run(t, new(ExtractorTestSuite))
 }
 
+func mustKey(s string) identity.Key {
+	k, err := identity.ParseKey(s)
+	if err != nil {
+		panic(err)
+	}
+	return k
+}
+
 // =============================================================================
 // Model Invariants
 // =============================================================================
 
 func (s *ExtractorTestSuite) TestExtractModelInvariants() {
-	model := &req_model.Model{
-		Key:  "test_model",
-		Name: "Test Model",
-		Invariants: []model_logic.Logic{
-			{Key: "inv_0", Description: "Item quantities positive.", Notation: model_logic.NotationTLAPlus, Specification: "∀ x ∈ Items : x.quantity > 0"},
-			{Key: "inv_1", Description: "Order count limit.", Notation: model_logic.NotationTLAPlus, Specification: "Cardinality(Orders) < 1000"},
-		},
-	}
+	invKey0 := helper.Must(identity.NewInvariantKey("0"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, "Item quantities positive.", model_logic.NotationTLAPlus, "∀ x ∈ Items : x.quantity > 0"))
 
-	expressions := ExtractFromModel(model)
+	invKey1 := helper.Must(identity.NewInvariantKey("1"))
+	inv1 := helper.Must(model_logic.NewLogic(invKey1, "Order count limit.", model_logic.NotationTLAPlus, "Cardinality(Orders) < 1000"))
+
+	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil))
+
+	expressions := ExtractFromModel(&model)
 
 	s.Len(expressions, 2)
 
@@ -52,13 +60,9 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 }
 
 func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
-	model := &req_model.Model{
-		Key:        "test_model",
-		Name:       "Test Model",
-		Invariants: []model_logic.Logic{},
-	}
+	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{}, nil))
 
-	expressions := ExtractFromModel(model)
+	expressions := ExtractFromModel(&model)
 
 	s.Len(expressions, 0)
 }
@@ -68,34 +72,22 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
 // =============================================================================
 
 func (s *ExtractorTestSuite) TestExtractGlobalFunctions() {
-	model := &req_model.Model{
-		Key:  "test_model",
-		Name: "Test Model",
-		GlobalFunctions: map[string]model_logic.GlobalFunction{
-			"_Max": {
-				Name:       "_Max",
-				Parameters: []string{"x", "y"},
-				Specification: model_logic.Logic{
-					Key:           "spec_max",
-					Description:   "Max of two values.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "IF x > y THEN x ELSE y",
-				},
-			},
-			"_ValidStatuses": {
-				Name:       "_ValidStatuses",
-				Parameters: []string{},
-				Specification: model_logic.Logic{
-					Key:           "spec_statuses",
-					Description:   "Valid status set.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: `{"pending", "active", "complete"}`,
-				},
-			},
-		},
+	gfuncMaxKey := helper.Must(identity.NewGlobalFunctionKey("_Max"))
+	gfuncMaxLogic := helper.Must(model_logic.NewLogic(gfuncMaxKey, "Max of two values.", model_logic.NotationTLAPlus, "IF x > y THEN x ELSE y"))
+	gfuncMax := helper.Must(model_logic.NewGlobalFunction(gfuncMaxKey, "_Max", []string{"x", "y"}, gfuncMaxLogic))
+
+	gfuncStatusKey := helper.Must(identity.NewGlobalFunctionKey("_ValidStatuses"))
+	gfuncStatusLogic := helper.Must(model_logic.NewLogic(gfuncStatusKey, "Valid status set.", model_logic.NotationTLAPlus, `{"pending", "active", "complete"}`))
+	gfuncStatus := helper.Must(model_logic.NewGlobalFunction(gfuncStatusKey, "_ValidStatuses", []string{}, gfuncStatusLogic))
+
+	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
+		gfuncMaxKey:    gfuncMax,
+		gfuncStatusKey: gfuncStatus,
 	}
 
-	expressions := ExtractFromModel(model)
+	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", nil, globalFunctions))
+
+	expressions := ExtractFromModel(&model)
 
 	s.Len(expressions, 2)
 
@@ -130,52 +122,35 @@ func (s *ExtractorTestSuite) TestExtractGlobalFunctions() {
 // =============================================================================
 
 func (s *ExtractorTestSuite) TestExtractActionExpressions() {
-	domainKey, err := identity.NewDomainKey("orders")
-	s.Require().NoError(err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, "management")
-	s.Require().NoError(err)
-	classKey, err := identity.NewClassKey(subdomainKey, "order")
-	s.Require().NoError(err)
-	actionKey, err := identity.NewActionKey(classKey, "place_order")
-	s.Require().NoError(err)
+	domainKey := helper.Must(identity.NewDomainKey("orders"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "management"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "place_order"))
 
-	model := &req_model.Model{
-		Key:  "test_model",
-		Name: "Test Model",
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Management",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:  classKey,
-								Name: "Order",
-								Actions: map[identity.Key]model_state.Action{
-									actionKey: {
-										Key:  actionKey,
-										Name: "PlaceOrder",
-										Requires: []model_logic.Logic{
-											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"pending\""},
-											{Key: "req_2", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "self.items # {}"},
-										},
-										Guarantees: []model_logic.Logic{
-											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self'.status = \"placed\""},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	actionReqKey0 := helper.Must(identity.NewActionRequireKey(actionKey, "0"))
+	actionReq0 := helper.Must(model_logic.NewLogic(actionReqKey0, "Precondition.", model_logic.NotationTLAPlus, `self.status = "pending"`))
 
-	expressions := ExtractFromModel(model)
+	actionReqKey1 := helper.Must(identity.NewActionRequireKey(actionKey, "1"))
+	actionReq1 := helper.Must(model_logic.NewLogic(actionReqKey1, "Precondition.", model_logic.NotationTLAPlus, "self.items # {}"))
+
+	actionGuarKey0 := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+	actionGuar0 := helper.Must(model_logic.NewLogic(actionGuarKey0, "Postcondition.", model_logic.NotationTLAPlus, `self'.status = "placed"`))
+
+	action := helper.Must(model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq0, actionReq1}, []model_logic.Logic{actionGuar0}, nil, nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
+
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Management", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	expressions := ExtractFromModel(&model)
 
 	s.Len(expressions, 3)
 
@@ -219,52 +194,35 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 // =============================================================================
 
 func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
-	domainKey, err := identity.NewDomainKey("orders")
-	s.Require().NoError(err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, "management")
-	s.Require().NoError(err)
-	classKey, err := identity.NewClassKey(subdomainKey, "order")
-	s.Require().NoError(err)
-	queryKey, err := identity.NewQueryKey(classKey, "find_pending")
-	s.Require().NoError(err)
+	domainKey := helper.Must(identity.NewDomainKey("orders"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "management"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "find_pending"))
 
-	model := &req_model.Model{
-		Key:  "test_model",
-		Name: "Test Model",
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Management",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:  classKey,
-								Name: "Order",
-								Queries: map[identity.Key]model_state.Query{
-									queryKey: {
-										Key:  queryKey,
-										Name: "FindPending",
-										Requires: []model_logic.Logic{
-											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "user.role = \"admin\""},
-										},
-										Guarantees: []model_logic.Logic{
-											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "∀ o ∈ result : o.status = \"pending\""},
-											{Key: "guar_2", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "result ⊆ Orders"},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	queryReqKey0 := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
+	queryReq0 := helper.Must(model_logic.NewLogic(queryReqKey0, "Precondition.", model_logic.NotationTLAPlus, `user.role = "admin"`))
 
-	expressions := ExtractFromModel(model)
+	queryGuarKey0 := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
+	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, "Postcondition.", model_logic.NotationTLAPlus, `∀ o ∈ result : o.status = "pending"`))
+
+	queryGuarKey1 := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "1"))
+	queryGuar1 := helper.Must(model_logic.NewLogic(queryGuarKey1, "Postcondition.", model_logic.NotationTLAPlus, "result ⊆ Orders"))
+
+	query := helper.Must(model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq0}, []model_logic.Logic{queryGuar0, queryGuar1}, nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
+
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Management", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	expressions := ExtractFromModel(&model)
 
 	s.Len(expressions, 3)
 
@@ -305,51 +263,28 @@ func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
 // =============================================================================
 
 func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
-	domainKey, err := identity.NewDomainKey("orders")
-	s.Require().NoError(err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, "management")
-	s.Require().NoError(err)
-	classKey, err := identity.NewClassKey(subdomainKey, "order")
-	s.Require().NoError(err)
-	guardKey, err := identity.NewGuardKey(classKey, "can_ship")
-	s.Require().NoError(err)
+	domainKey := helper.Must(identity.NewDomainKey("orders"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "management"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
+	guardKey := helper.Must(identity.NewGuardKey(classKey, "can_ship"))
 
-	model := &req_model.Model{
-		Key:  "test_model",
-		Name: "Test Model",
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Management",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:  classKey,
-								Name: "Order",
-								Guards: map[identity.Key]model_state.Guard{
-									guardKey: {
-										Key:  guardKey,
-										Name: "CanShip",
-										Logic: model_logic.Logic{
-											Key:           "guard_logic_1",
-											Description:   "Order can be shipped",
-											Notation:      model_logic.NotationTLAPlus,
-											Specification: "self.status = \"paid\" /\\ self.items # {}",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, "Order can be shipped", model_logic.NotationTLAPlus, `self.status = "paid" /\ self.items # {}`))
 
-	expressions := ExtractFromModel(model)
+	guard := helper.Must(model_state.NewGuard(guardKey, "CanShip", guardLogic))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
+
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Management", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	expressions := ExtractFromModel(&model)
 
 	s.Len(expressions, 1)
 
@@ -366,94 +301,67 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 // =============================================================================
 
 func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
-	domainKey, err := identity.NewDomainKey("shop")
-	s.Require().NoError(err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, "inventory")
-	s.Require().NoError(err)
-	classKey, err := identity.NewClassKey(subdomainKey, "product")
-	s.Require().NoError(err)
-	actionKey, err := identity.NewActionKey(classKey, "restock")
-	s.Require().NoError(err)
-	queryKey, err := identity.NewQueryKey(classKey, "find_low_stock")
-	s.Require().NoError(err)
-	guardKey, err := identity.NewGuardKey(classKey, "low_stock")
-	s.Require().NoError(err)
+	domainKey := helper.Must(identity.NewDomainKey("shop"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "inventory"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "product"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "restock"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "find_low_stock"))
+	guardKey := helper.Must(identity.NewGuardKey(classKey, "low_stock"))
 
-	model := &req_model.Model{
-		Key:  "shop_model",
-		Name: "Shop Model",
-		Invariants: []model_logic.Logic{
-			{Key: "inv_0", Description: "Stock non-negative.", Notation: model_logic.NotationTLAPlus, Specification: "∀ p ∈ Products : p.stock >= 0"},
-		},
-		GlobalFunctions: map[string]model_logic.GlobalFunction{
-			"_LowStockThreshold": {
-				Name:       "_LowStockThreshold",
-				Parameters: nil,
-				Specification: model_logic.Logic{
-					Key:           "spec_threshold",
-					Description:   "Low stock threshold.",
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: "10",
-				},
-			},
-		},
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Shop",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Inventory",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:  classKey,
-								Name: "Product",
-								Actions: map[identity.Key]model_state.Action{
-									actionKey: {
-										Key:  actionKey,
-										Name: "Restock",
-										Requires: []model_logic.Logic{
-											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "quantity > 0"},
-										},
-										Guarantees: []model_logic.Logic{
-											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "self'.stock = self.stock + quantity"},
-										},
-									},
-								},
-								Queries: map[identity.Key]model_state.Query{
-									queryKey: {
-										Key:  queryKey,
-										Name: "FindLowStock",
-										Requires: []model_logic.Logic{
-											{Key: "req_1", Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "TRUE"},
-										},
-										Guarantees: []model_logic.Logic{
-											{Key: "guar_1", Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "∀ p ∈ result : p.stock < _LowStockThreshold"},
-										},
-									},
-								},
-								Guards: map[identity.Key]model_state.Guard{
-									guardKey: {
-										Key:  guardKey,
-										Name: "LowStock",
-										Logic: model_logic.Logic{
-											Key:           "guard_logic_2",
-											Description:   "Stock is low",
-											Notation:      model_logic.NotationTLAPlus,
-											Specification: "self.stock < _LowStockThreshold",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	// Model invariant
+	invKey0 := helper.Must(identity.NewInvariantKey("0"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, "Stock non-negative.", model_logic.NotationTLAPlus, "∀ p ∈ Products : p.stock >= 0"))
+
+	// Global function
+	gfuncKey := helper.Must(identity.NewGlobalFunctionKey("_LowStockThreshold"))
+	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, "Low stock threshold.", model_logic.NotationTLAPlus, "10"))
+	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_LowStockThreshold", nil, gfuncLogic))
+
+	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
+		gfuncKey: gfunc,
 	}
 
-	expressions := ExtractFromModel(model)
+	// Action
+	actionReqKey0 := helper.Must(identity.NewActionRequireKey(actionKey, "0"))
+	actionReq0 := helper.Must(model_logic.NewLogic(actionReqKey0, "Precondition.", model_logic.NotationTLAPlus, "quantity > 0"))
+
+	actionGuarKey0 := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
+	actionGuar0 := helper.Must(model_logic.NewLogic(actionGuarKey0, "Postcondition.", model_logic.NotationTLAPlus, "self'.stock = self.stock + quantity"))
+
+	action := helper.Must(model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq0}, []model_logic.Logic{actionGuar0}, nil, nil))
+
+	// Query
+	queryReqKey0 := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
+	queryReq0 := helper.Must(model_logic.NewLogic(queryReqKey0, "Precondition.", model_logic.NotationTLAPlus, "TRUE"))
+
+	queryGuarKey0 := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
+	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, "Postcondition.", model_logic.NotationTLAPlus, "∀ p ∈ result : p.stock < _LowStockThreshold"))
+
+	query := helper.Must(model_state.NewQuery(queryKey, "FindLowStock", "", []model_logic.Logic{queryReq0}, []model_logic.Logic{queryGuar0}, nil))
+
+	// Guard
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, "Stock is low", model_logic.NotationTLAPlus, "self.stock < _LowStockThreshold"))
+	guard := helper.Must(model_state.NewGuard(guardKey, "LowStock", guardLogic))
+
+	// Assemble class
+	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
+	class.Actions = map[identity.Key]model_state.Action{actionKey: action}
+	class.Queries = map[identity.Key]model_state.Query{queryKey: query}
+	class.Guards = map[identity.Key]model_state.Guard{guardKey: guard}
+
+	// Assemble subdomain
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Inventory", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{classKey: class}
+
+	// Assemble domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Shop", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
+
+	// Assemble model
+	model := helper.Must(req_model.NewModel("shop_model", "Shop Model", "", []model_logic.Logic{inv0}, globalFunctions))
+	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
+
+	expressions := ExtractFromModel(&model)
 
 	// Count by source type
 	counts := make(map[ExpressionSource]int)

@@ -68,7 +68,7 @@ func extractGlobalFunctions(model *req_model.Model) []ExtractedExpression {
 	for _, gf := range model.GlobalFunctions {
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceTlaDefinition,
-			Expression: gf.Specification.Specification,
+			Expression: gf.Logic.Specification,
 			ScopeKey:   nil, // Global functions have global scope
 			Name:       gf.Name,
 			Parameters: gf.Parameters,
