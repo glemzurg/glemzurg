@@ -779,7 +779,7 @@ func (s *DiagnosticsSuite) TestDiagnose_BrokenCreationChain() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model)
+	diagnostics := Diagnose(resolved, model, nil)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "broken creation chain") {
@@ -808,7 +808,7 @@ func (s *DiagnosticsSuite) TestDiagnose_IsolatedClass() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model)
+	diagnostics := Diagnose(resolved, model, nil)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "isolated class") {
@@ -831,7 +831,7 @@ func (s *DiagnosticsSuite) TestDiagnose_HalfAssociation() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model)
+	diagnostics := Diagnose(resolved, model, nil)
 	found := false
 	for _, d := range diagnostics {
 		if contains(d.Message, "half-association") {
@@ -843,36 +843,100 @@ func (s *DiagnosticsSuite) TestDiagnose_HalfAssociation() {
 	s.True(found, "expected half-association diagnostic")
 }
 
-// TODO(CalledBy/SentBy): This test uses Event.SentBy which was removed from the
-// req_model/model_state.Event struct. SentBy is a simulator concern, not part of the pure
-// data model. When re-enabling, update this test to use the simulator-local SentBy field
-// (wrapper struct or parallel map) instead of setting it directly on model_state.Event.
 func (s *DiagnosticsSuite) TestDiagnose_AllEventsInternal() {
-	s.T().Skip("TODO(CalledBy/SentBy): Event.SentBy was removed from model struct")
+	model := buildSingleDomainModel()
+	resolved := &ResolvedSurface{
+		Classes: map[identity.Key]model_class.Class{
+			orderClassKey: makeOrderClass(),
+			itemClassKey:  makeItemClass(),
+		},
+		Associations:    map[identity.Key]model_class.Association{},
+		ModelInvariants: []model_logic.Logic{},
+	}
 
-	// Original test body commented out — references Event.SentBy which no longer exists.
-	// When re-enabling, update to use the simulator-local SentBy field
-	// (wrapper struct or parallel map) instead of setting it directly on model_state.Event.
+	// Both Order events have SentBy pointing to Item (in-scope) → all events internal.
+	callerData := &CallerData{
+		EventSentBy: map[identity.Key][]identity.Key{
+			orderEventCreateKey: {itemClassKey},
+			orderEventCloseKey:  {itemClassKey},
+		},
+	}
+
+	diagnostics := Diagnose(resolved, model, callerData)
+	found := false
+	for _, d := range diagnostics {
+		if contains(d.Message, "all events internal") {
+			found = true
+			s.Equal("warning", d.Level)
+			s.NotNil(d.ClassKey)
+			s.Equal(orderClassKey, *d.ClassKey)
+			break
+		}
+	}
+	s.True(found, "expected 'all events internal' diagnostic")
 }
 
-// TODO(CalledBy/SentBy): This test uses Event.SentBy which was removed from the
-// req_model/model_state.Event struct. SentBy is a simulator concern, not part of the pure
-// data model. When re-enabling, update this test to use the simulator-local SentBy field.
 func (s *DiagnosticsSuite) TestDiagnose_SentByUnknownClass() {
-	s.T().Skip("TODO(CalledBy/SentBy): Event.SentBy was removed from model struct")
+	model := buildSingleDomainModel()
+	resolved := &ResolvedSurface{
+		Classes: map[identity.Key]model_class.Class{
+			orderClassKey: makeOrderClass(),
+			itemClassKey:  makeItemClass(),
+		},
+		Associations:    map[identity.Key]model_class.Association{},
+		ModelInvariants: []model_logic.Logic{},
+	}
 
-	// Original test body commented out — references Event.SentBy which no longer exists.
-	// When re-enabling, update to use the simulator-local SentBy field.
+	// SentBy references a class that doesn't exist in the model.
+	unknownClassKey := mustKey("domain/d/subdomain/s/class/ghost")
+	callerData := &CallerData{
+		EventSentBy: map[identity.Key][]identity.Key{
+			orderEventCreateKey: {unknownClassKey},
+		},
+	}
+
+	diagnostics := Diagnose(resolved, model, callerData)
+	found := false
+	for _, d := range diagnostics {
+		if contains(d.Message, "SentBy references unknown class") {
+			found = true
+			s.Equal("warning", d.Level)
+			break
+		}
+	}
+	s.True(found, "expected 'SentBy references unknown class' diagnostic")
 }
 
-// TODO(CalledBy/SentBy): This test uses Action.CalledBy which was removed from the
-// req_model/model_state.Action struct. CalledBy is a simulator concern, not part of the pure
-// data model. When re-enabling, update this test to use the simulator-local CalledBy field.
 func (s *DiagnosticsSuite) TestDiagnose_CalledByUnknownClass() {
-	s.T().Skip("TODO(CalledBy/SentBy): Action.CalledBy was removed from model struct")
+	model := buildSingleDomainModel()
+	resolved := &ResolvedSurface{
+		Classes: map[identity.Key]model_class.Class{
+			orderClassKey: makeOrderClass(),
+			itemClassKey:  makeItemClass(),
+		},
+		Associations:    map[identity.Key]model_class.Association{},
+		ModelInvariants: []model_logic.Logic{},
+	}
 
-	// Original test body commented out — references Action.CalledBy which no longer exists.
-	// When re-enabling, update to use the simulator-local CalledBy field.
+	// CalledBy references a class that doesn't exist in the model.
+	unknownClassKey := mustKey("domain/d/subdomain/s/class/ghost")
+	actionKey := mustKey("domain/d/subdomain/s/class/order/action/do_close")
+	callerData := &CallerData{
+		ActionCalledBy: map[identity.Key][]identity.Key{
+			actionKey: {unknownClassKey},
+		},
+	}
+
+	diagnostics := Diagnose(resolved, model, callerData)
+	found := false
+	for _, d := range diagnostics {
+		if contains(d.Message, "CalledBy references unknown class") {
+			found = true
+			s.Equal("warning", d.Level)
+			break
+		}
+	}
+	s.True(found, "expected 'CalledBy references unknown class' diagnostic")
 }
 
 func (s *DiagnosticsSuite) TestDiagnose_NoDiagnosticsForHealthySurface() {
@@ -886,7 +950,7 @@ func (s *DiagnosticsSuite) TestDiagnose_NoDiagnosticsForHealthySurface() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	diagnostics := Diagnose(resolved, model)
+	diagnostics := Diagnose(resolved, model, nil)
 	s.Len(diagnostics, 0, "expected no diagnostics for a healthy surface, got: %v", diagnostics)
 }
 

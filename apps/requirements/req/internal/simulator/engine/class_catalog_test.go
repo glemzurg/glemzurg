@@ -224,3 +224,172 @@ func (s *ClassCatalogSuite) TestGetCreationEvent() {
 	_, found = catalog.GetCreationEvent(mustKey("domain/d/subdomain/s/class/nope"))
 	s.False(found)
 }
+
+// ========================================================================
+// SentBy / CalledBy filtering tests
+// ========================================================================
+
+func (s *ClassCatalogSuite) TestExternalStateEvents_NoSentBy() {
+	// With no SentBy data, all events are external.
+	orderClass, orderKey := testOrderClass()
+	model := testModel(classEntry(orderClass, orderKey))
+
+	catalog := NewClassCatalog(model)
+
+	ext := catalog.ExternalStateEvents(orderKey, "Open")
+	s.Len(ext, 1)
+	s.Equal("close", ext[0].Event.Name)
+}
+
+func (s *ClassCatalogSuite) TestExternalStateEvents_SentByInScope() {
+	// Event with SentBy pointing to an in-scope class → internal (filtered out).
+	orderClass, orderKey := testOrderClass()
+	itemClass, itemKey := testItemClass()
+	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
+
+	catalog := NewClassCatalog(model)
+
+	// Mark the "close" event as sent by Item (in-scope).
+	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
+	catalog.SetEventSentBy(closeEventKey, []identity.Key{itemKey})
+
+	ext := catalog.ExternalStateEvents(orderKey, "Open")
+	s.Empty(ext, "close event should be internal because sender Item is in scope")
+}
+
+func (s *ClassCatalogSuite) TestExternalStateEvents_SentByOutOfScope() {
+	// Event with SentBy pointing to an out-of-scope class → still external.
+	orderClass, orderKey := testOrderClass()
+	model := testModel(classEntry(orderClass, orderKey))
+
+	catalog := NewClassCatalog(model)
+
+	// Mark the "close" event as sent by a class NOT in the catalog.
+	closeEventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
+	outsideClassKey := mustKey("domain/d/subdomain/s/class/external_system")
+	catalog.SetEventSentBy(closeEventKey, []identity.Key{outsideClassKey})
+
+	ext := catalog.ExternalStateEvents(orderKey, "Open")
+	s.Len(ext, 1, "close event should be external because sender is not in scope")
+	s.Equal("close", ext[0].Event.Name)
+}
+
+func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
+	// With no CalledBy data, all do-actions are external.
+	classKey := mustKey("domain/d/subdomain/s/class/counter")
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
+	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
+	actionDoKey := mustKey("domain/d/subdomain/s/class/counter/action/do_count")
+	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
+	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
+
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
+	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+
+	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateActiveKey: {
+			Key:  stateActiveKey,
+			Name: "Active",
+			Actions: []model_state.StateAction{
+				{Key: stateActionKey, ActionKey: actionDoKey, When: "do"},
+			},
+		},
+	}
+	class.Events = map[identity.Key]model_state.Event{eventCreateKey: eventCreate}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{actionDoKey: actionDo}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:          transCreateKey,
+			FromStateKey: nil,
+			EventKey:     eventCreateKey,
+			ToStateKey:   &stateActiveKey,
+		},
+	}
+
+	model := testModel(classEntry(class, classKey))
+	catalog := NewClassCatalog(model)
+
+	ext := catalog.ExternalDoActions(classKey, "Active")
+	s.Len(ext, 1)
+	s.Equal("DoCount", ext[0].Name)
+}
+
+func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
+	// Action with CalledBy pointing to an in-scope class → internal (filtered out).
+	classKey := mustKey("domain/d/subdomain/s/class/counter")
+	stateActiveKey := mustKey("domain/d/subdomain/s/class/counter/state/active")
+	eventCreateKey := mustKey("domain/d/subdomain/s/class/counter/event/create")
+	actionDoKey := mustKey("domain/d/subdomain/s/class/counter/action/do_count")
+	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
+	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
+
+	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+
+	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
+	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+
+	orderClass, orderKey := testOrderClass()
+
+	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class.Attributes = map[identity.Key]model_class.Attribute{}
+	class.States = map[identity.Key]model_state.State{
+		stateActiveKey: {
+			Key:  stateActiveKey,
+			Name: "Active",
+			Actions: []model_state.StateAction{
+				{Key: stateActionKey, ActionKey: actionDoKey, When: "do"},
+			},
+		},
+	}
+	class.Events = map[identity.Key]model_state.Event{eventCreateKey: eventCreate}
+	class.Guards = map[identity.Key]model_state.Guard{}
+	class.Actions = map[identity.Key]model_state.Action{actionDoKey: actionDo}
+	class.Queries = map[identity.Key]model_state.Query{}
+	class.Transitions = map[identity.Key]model_state.Transition{
+		transCreateKey: {
+			Key:          transCreateKey,
+			FromStateKey: nil,
+			EventKey:     eventCreateKey,
+			ToStateKey:   &stateActiveKey,
+		},
+	}
+
+	model := testModel(classEntry(class, classKey), classEntry(orderClass, orderKey))
+	catalog := NewClassCatalog(model)
+
+	// Mark the action as called by Order (in-scope).
+	catalog.SetActionCalledBy(actionDoKey, []identity.Key{orderKey})
+
+	ext := catalog.ExternalDoActions(classKey, "Active")
+	s.Empty(ext, "do action should be internal because caller Order is in scope")
+}
+
+func (s *ClassCatalogSuite) TestCallerDataExport() {
+	orderClass, orderKey := testOrderClass()
+	itemClass, itemKey := testItemClass()
+	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
+
+	catalog := NewClassCatalog(model)
+
+	eventKey := mustKey("domain/d/subdomain/s/class/order/event/close")
+	actionKey := mustKey("domain/d/subdomain/s/class/order/action/do_close")
+	queryKey := mustKey("domain/d/subdomain/s/class/order/query/get_total")
+
+	catalog.SetEventSentBy(eventKey, []identity.Key{itemKey})
+	catalog.SetActionCalledBy(actionKey, []identity.Key{itemKey})
+	catalog.SetQueryCalledBy(queryKey, []identity.Key{orderKey})
+
+	cd := catalog.CallerData()
+	s.NotNil(cd)
+	s.Equal([]identity.Key{itemKey}, cd.EventSentBy[eventKey])
+	s.Equal([]identity.Key{itemKey}, cd.ActionCalledBy[actionKey])
+	s.Equal([]identity.Key{orderKey}, cd.QueryCalledBy[queryKey])
+}

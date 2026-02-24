@@ -16,10 +16,23 @@ type Diagnostic struct {
 	AssocKey *identity.Key // Related association, if applicable.
 }
 
+// CallerData holds simulator-local SentBy/CalledBy metadata.
+// This data is a simulator concern, not part of the core req_model.
+type CallerData struct {
+	// EventSentBy maps event keys to class keys that send them.
+	EventSentBy map[identity.Key][]identity.Key
+	// ActionCalledBy maps action keys to class keys that call them.
+	ActionCalledBy map[identity.Key][]identity.Key
+	// QueryCalledBy maps query keys to class keys that call them.
+	QueryCalledBy map[identity.Key][]identity.Key
+}
+
 // Diagnose analyzes a resolved surface and produces diagnostic messages
 // about potential issues: broken creation chains, unreachable states,
 // orphaned multiplicity constraints, etc.
-func Diagnose(resolved *ResolvedSurface, model *req_model.Model) []Diagnostic {
+//
+// callerData is optional (nil means no caller data available).
+func Diagnose(resolved *ResolvedSurface, model *req_model.Model, callerData *CallerData) []Diagnostic {
 	var diagnostics []Diagnostic
 
 	allAssocs := model.GetClassAssociations()
@@ -100,24 +113,83 @@ func Diagnose(resolved *ResolvedSurface, model *req_model.Model) []Diagnostic {
 
 	// 5. Realized domain included (already reported in resolver warnings).
 
+	// Diagnostics 6 and 7 require CallerData.
+	if callerData != nil {
+		diagnostics = append(diagnostics, diagnoseCallerData(resolved, model, callerData)...)
+	}
+
+	return diagnostics
+}
+
+// diagnoseCallerData produces diagnostics related to SentBy/CalledBy metadata.
+func diagnoseCallerData(resolved *ResolvedSurface, model *req_model.Model, cd *CallerData) []Diagnostic {
+	var diagnostics []Diagnostic
+
 	// 6. All events internal: class where ALL events have SentBy pointing to in-scope classes.
-	//
-	// TODO(CalledBy/SentBy): Event.SentBy was removed from the req_model/model_state.Event struct
-	// because CalledBy/SentBy are simulator concerns, not part of the pure data model. When
-	// re-enabling:
-	//   1. Define a simulator-local SentBy []identity.Key on a wrapper struct or parallel map.
-	//   2. Populate it from simulator config/annotations during surface resolution.
-	//   3. Update this loop to read from the simulator-local location.
+	for classKey, class := range resolved.Classes {
+		if len(class.Events) == 0 {
+			continue
+		}
+		allInternal := true
+		for _, event := range class.Events {
+			senders := cd.EventSentBy[event.Key]
+			if len(senders) == 0 {
+				allInternal = false
+				break
+			}
+			hasInScopeSender := false
+			for _, senderKey := range senders {
+				if _, inScope := resolved.Classes[senderKey]; inScope {
+					hasInScopeSender = true
+					break
+				}
+			}
+			if !hasInScopeSender {
+				allInternal = false
+				break
+			}
+		}
+		if allInternal {
+			ck := classKey
+			diagnostics = append(diagnostics, Diagnostic{
+				Level:    "warning",
+				Message:  fmt.Sprintf("all events internal: %s has no externally-fireable events", classKey.String()),
+				ClassKey: &ck,
+			})
+		}
+	}
 
 	// 7. SentBy/CalledBy referencing unknown class.
-	//
-	// TODO(CalledBy/SentBy): Event.SentBy, Action.CalledBy, and Query.CalledBy were removed from
-	// the req_model structs because these are simulator concerns, not part of the pure data model.
-	// When re-enabling:
-	//   1. Define simulator-local SentBy/CalledBy fields on wrapper structs or a parallel map
-	//      keyed by event/action/query identity.Key.
-	//   2. Populate them from simulator config/annotations during surface resolution.
-	//   3. Update these loops to read from the simulator-local location.
+	for eventKey, senders := range cd.EventSentBy {
+		for _, senderKey := range senders {
+			if _, found := findClassInModel(senderKey, model); !found {
+				diagnostics = append(diagnostics, Diagnostic{
+					Level:   "warning",
+					Message: fmt.Sprintf("SentBy references unknown class: event %s references %s", eventKey.String(), senderKey.String()),
+				})
+			}
+		}
+	}
+	for actionKey, callers := range cd.ActionCalledBy {
+		for _, callerKey := range callers {
+			if _, found := findClassInModel(callerKey, model); !found {
+				diagnostics = append(diagnostics, Diagnostic{
+					Level:   "warning",
+					Message: fmt.Sprintf("CalledBy references unknown class: action %s references %s", actionKey.String(), callerKey.String()),
+				})
+			}
+		}
+	}
+	for queryKey, callers := range cd.QueryCalledBy {
+		for _, callerKey := range callers {
+			if _, found := findClassInModel(callerKey, model); !found {
+				diagnostics = append(diagnostics, Diagnostic{
+					Level:   "warning",
+					Message: fmt.Sprintf("CalledBy references unknown class: query %s references %s", queryKey.String(), callerKey.String()),
+				})
+			}
+		}
+	}
 
 	return diagnostics
 }

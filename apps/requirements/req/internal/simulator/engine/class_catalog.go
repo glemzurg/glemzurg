@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
 // ClassInfo holds pre-computed simulation metadata for one class.
@@ -41,13 +42,21 @@ type ClassCatalog struct {
 	classes      map[identity.Key]*ClassInfo
 	associations []AssociationInfo
 	classAssocs  map[identity.Key][]AssociationInfo // classKey → associations involving it
+
+	// Simulator-local SentBy/CalledBy data.
+	eventSentBy    map[identity.Key][]identity.Key // event key → sender class keys
+	actionCalledBy map[identity.Key][]identity.Key // action key → caller class keys
+	queryCalledBy  map[identity.Key][]identity.Key // query key → caller class keys
 }
 
 // NewClassCatalog builds a class catalog from the model.
 func NewClassCatalog(model *req_model.Model) *ClassCatalog {
 	catalog := &ClassCatalog{
-		classes:     make(map[identity.Key]*ClassInfo),
-		classAssocs: make(map[identity.Key][]AssociationInfo),
+		classes:        make(map[identity.Key]*ClassInfo),
+		classAssocs:    make(map[identity.Key][]AssociationInfo),
+		eventSentBy:    make(map[identity.Key][]identity.Key),
+		actionCalledBy: make(map[identity.Key][]identity.Key),
+		queryCalledBy:  make(map[identity.Key][]identity.Key),
 	}
 
 	// Walk all classes in the model.
@@ -163,6 +172,31 @@ func NewClassCatalog(model *req_model.Model) *ClassCatalog {
 	return catalog
 }
 
+// SetEventSentBy records which classes send a given event.
+func (c *ClassCatalog) SetEventSentBy(eventKey identity.Key, senderClassKeys []identity.Key) {
+	c.eventSentBy[eventKey] = senderClassKeys
+}
+
+// SetActionCalledBy records which classes call a given action.
+func (c *ClassCatalog) SetActionCalledBy(actionKey identity.Key, callerClassKeys []identity.Key) {
+	c.actionCalledBy[actionKey] = callerClassKeys
+}
+
+// SetQueryCalledBy records which classes call a given query.
+func (c *ClassCatalog) SetQueryCalledBy(queryKey identity.Key, callerClassKeys []identity.Key) {
+	c.queryCalledBy[queryKey] = callerClassKeys
+}
+
+// CallerData exports the SentBy/CalledBy metadata as a surface.CallerData
+// for use with surface.Diagnose.
+func (c *ClassCatalog) CallerData() *surface.CallerData {
+	return &surface.CallerData{
+		EventSentBy:    c.eventSentBy,
+		ActionCalledBy: c.actionCalledBy,
+		QueryCalledBy:  c.queryCalledBy,
+	}
+}
+
 // GetClassInfo returns the pre-computed info for a class, or nil if not found.
 func (c *ClassCatalog) GetClassInfo(classKey identity.Key) *ClassInfo {
 	return c.classes[classKey]
@@ -243,14 +277,6 @@ func (c *ClassCatalog) ExternalCreationEvents(classKey identity.Key) []model_sta
 // on an instance in a given state. An event is "internal" if its SentBy list
 // contains any class that is in scope (i.e., in the catalog). Only truly
 // external events are returned for top-level simulation selection.
-//
-// TODO(CalledBy/SentBy): This method depends on Event.SentBy ([]identity.Key), which was
-// removed from the req_model/model_state.Event struct because CalledBy/SentBy are simulator
-// concerns, not part of the pure data model. To re-enable this feature:
-//   1. Add a SentBy []identity.Key field to a simulator-local event wrapper or to the
-//      ClassInfo/EventInfo structs in this package.
-//   2. Populate SentBy during catalog construction (e.g., from simulator config or annotations).
-//   3. Update isEventExternal() below to use the new location.
 func (c *ClassCatalog) ExternalStateEvents(classKey identity.Key, stateName string) []EventInfo {
 	info := c.classes[classKey]
 	if info == nil {
@@ -272,14 +298,6 @@ func (c *ClassCatalog) ExternalStateEvents(classKey identity.Key, stateName stri
 
 // ExternalDoActions returns "do" actions eligible for top-level firing in a state.
 // A "do" action is "internal" if its CalledBy list contains an in-scope class.
-//
-// TODO(CalledBy/SentBy): This method depends on Action.CalledBy ([]identity.Key), which was
-// removed from the req_model/model_state.Action struct because CalledBy/SentBy are simulator
-// concerns, not part of the pure data model. To re-enable this feature:
-//   1. Add a CalledBy []identity.Key field to a simulator-local action wrapper or to the
-//      ClassInfo struct in this package.
-//   2. Populate CalledBy during catalog construction (e.g., from simulator config or annotations).
-//   3. Update isActionExternal() below to use the new location.
 func (c *ClassCatalog) ExternalDoActions(classKey identity.Key, stateName string) []model_state.Action {
 	info := c.classes[classKey]
 	if info == nil {
@@ -300,25 +318,29 @@ func (c *ClassCatalog) ExternalDoActions(classKey identity.Key, stateName string
 }
 
 // isEventExternal returns true if the event has no SentBy classes in scope.
-//
-// TODO(CalledBy/SentBy): Event.SentBy was removed from the req_model/model_state.Event struct.
-// This method currently will not compile. When re-enabling, SentBy should be stored in a
-// simulator-local struct (e.g., EventInfo or a wrapper) rather than on the model struct.
-// See ExternalStateEvents() above for the full migration plan.
 func (c *ClassCatalog) isEventExternal(event model_state.Event) bool {
-	// TODO(CalledBy/SentBy): Event.SentBy was removed from the model struct.
-	// Until SentBy is stored in a simulator-local struct, treat all events as external.
-	return true
+	senders := c.eventSentBy[event.Key]
+	if len(senders) == 0 {
+		return true // No senders declared — always external.
+	}
+	for _, senderKey := range senders {
+		if _, inScope := c.classes[senderKey]; inScope {
+			return false // A sender is in scope — this event is internal.
+		}
+	}
+	return true // No senders are in scope — external.
 }
 
 // isActionExternal returns true if the action has no CalledBy classes in scope.
-//
-// TODO(CalledBy/SentBy): Action.CalledBy was removed from the req_model/model_state.Action struct.
-// This method currently will not compile. When re-enabling, CalledBy should be stored in a
-// simulator-local struct (e.g., a wrapper in this package) rather than on the model struct.
-// See ExternalDoActions() above for the full migration plan.
 func (c *ClassCatalog) isActionExternal(action model_state.Action) bool {
-	// TODO(CalledBy/SentBy): Action.CalledBy was removed from the model struct.
-	// Until CalledBy is stored in a simulator-local struct, treat all actions as external.
-	return true
+	callers := c.actionCalledBy[action.Key]
+	if len(callers) == 0 {
+		return true // No callers declared — always external.
+	}
+	for _, callerKey := range callers {
+		if _, inScope := c.classes[callerKey]; inScope {
+			return false // A caller is in scope — this action is internal.
+		}
+	}
+	return true // No callers are in scope — external.
 }
