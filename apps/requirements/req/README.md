@@ -1,33 +1,4 @@
 
-There are actually four kinds of logics each with their own constraints.
-
-- A true false assessment.
-- A state change where a class data member changes.
-- A query where newly defined temporary named returned value are populated.
-- A safety rule where it must be a true false assessment that includes values from the prior state and the new state
-- A single unnamed value (this is used in glboal funcitons)
-
-The current model Logic is here: 
-
-- apps/requirements/req/internal/req_model/model_logic
-
-Whare are possible ways to design that? With these concepts:
-
-- best practices for golang
-- the pure object model is fully represented by golang and validation code (apps/requirements/req/internal/req_model)
-- eventually the ast will be inside the apps/requirements/req/internal/req_model as well, any any logic spec that parses correctly will have an ast attached (like how datatype works apps/requirements/req/internal/req_model/model_data_type)
-
-Create a plan with all the steps to implement this change through the system, although the apps/requirements/req/internal/simulator can be left out in this work since it already has this logic in a meaningful fashion.
-
-Write out the plan in apps/requirements/req
-
----------------------------
-
-
-
-
-
-
 
 
 todo:
@@ -91,6 +62,8 @@ simulator todo:
 - implement stubbed simulator logic
 
 ---------------------------
+
+- use case shared display in graphviz and capturing the meaning
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
