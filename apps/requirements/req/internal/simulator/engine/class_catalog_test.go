@@ -128,7 +128,7 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
@@ -286,7 +286,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
@@ -333,7 +333,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.count' = self.count + 1"))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	orderClass, orderKey := testOrderClass()

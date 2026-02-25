@@ -34,7 +34,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDoublePriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/double_price")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/10"), "Double the price.", model_logic.NotationTLAPlus, "self.price * 2"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/10"), model_logic.LogicTypeStateChange, "Double the price.", model_logic.NotationTLAPlus, "self.price * 2"))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{
@@ -83,7 +83,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/11"), "A derived field.", model_logic.NotationTLAPlus, ""))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeStateChange, "A derived field.", model_logic.NotationTLAPlus, ""))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{
@@ -117,7 +117,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/12"), "A derived field.", model_logic.NotationTLAPlus, "self.price'"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/12"), model_logic.LogicTypeStateChange, "A derived field.", model_logic.NotationTLAPlus, "self.price'"))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{
@@ -156,7 +156,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDoublePriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/double_price")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/13"), "Double the price.", model_logic.NotationTLAPlus, "self.price * 2"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/13"), model_logic.LogicTypeStateChange, "Double the price.", model_logic.NotationTLAPlus, "self.price * 2"))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{

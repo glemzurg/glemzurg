@@ -32,7 +32,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = self.amount + 10"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = self.amount + 10"))
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))

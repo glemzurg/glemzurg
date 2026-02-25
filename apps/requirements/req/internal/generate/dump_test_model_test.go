@@ -16,7 +16,7 @@ func TestDumpTestModel(t *testing.T) {
 
 	// Write to a fixed directory that won't be cleaned up.
 	outputDir := "/workspaces/glemzurg/test_model_dump"
-	err = GenerateMdFromModel(true, outputDir, model)
+	err := GenerateMdFromModel(true, outputDir, model)
 	assert.NoError(t, err, "GenerateMdFromModel should succeed")
 
 	fmt.Printf("Model written to: %s\n", outputDir)
