@@ -45,7 +45,7 @@ func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_sce
 
 	// Add the steps.
 
-	if len(scenario.Steps.Statements) == 0 {
+	if scenario.Steps == nil || len(scenario.Steps.Statements) == 0 {
 		// No steps, so just add an informative placard.
 		s.AddStep(svgsequence.Step{Source: actors[0], Target: actors[0], Text: "No operations defined"})
 	} else {

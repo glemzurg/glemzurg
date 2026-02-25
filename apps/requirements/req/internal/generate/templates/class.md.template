@@ -17,7 +17,7 @@
 | Name | Rules | Nullable | Comment |
 | ---- | ----- | -------- | ------- |
 {{- range .Class.Attributes }}
-| {{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
 
 ## Relations
 
@@ -48,7 +48,7 @@ The events for this class.
 {{ range .Class.Events -}}
 
 - **{{ .Name }}.** {{ .Details }}{{ if ne .Parameters nil }} Parameters:
-{{ range .Parameters }}   - *{{ .Name }}.* {{ .Source }}
+{{ range .Parameters }}   - *{{ .Name }}.* {{ .DataTypeRules }}
 {{ end }}{{- end }}
 {{ end }}
 
@@ -90,7 +90,7 @@ Requires:
 {{ if ne $action.Requires nil -}}
 
 {{ range $action.Requires -}}
-- {{ . }}
+- {{ .Description }}
 {{ end }}
 
 {{- else -}}
@@ -102,8 +102,8 @@ Guarantees:
 {{ if ne $action.Guarantees nil -}}
 
 {{ range $action.Guarantees -}}
-{{- $mainBullet := main_bullet . }}
-{{- $subBullets := sub_bullets . }}
+{{- $mainBullet := main_bullet .Description }}
+{{- $subBullets := sub_bullets .Description }}
 - {{ $mainBullet }}
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}

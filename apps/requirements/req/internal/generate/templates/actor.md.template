@@ -24,7 +24,7 @@ The domain classes that define this actor.
 | Name | Rules | Nullable | Comment |
 | ---- | ----- | -------- | ------- |
 {{- range $class.Attributes }}
-| {{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name }} | {{ .DataTypeRules }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ .DataTypeRules }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
 
 {{- else -}}
 *No attributes*

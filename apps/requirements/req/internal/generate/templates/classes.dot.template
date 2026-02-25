@@ -24,7 +24,7 @@
 	 						{{- end -}}
 						{{- end -}}
 						» {{ end -}}
-					{{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name -}}</td> </tr>
+					{{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name -}}</td> </tr>
                 {{ end -}}
  				</table>
                 {{- end }}
