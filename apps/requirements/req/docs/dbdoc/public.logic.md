@@ -11,6 +11,7 @@ A bit of business logic.
 | logic_key | text |  | false | [public.invariant](public.invariant.md) [public.global_function](public.global_function.md) [public.attribute](public.attribute.md) [public.class_invariant](public.class_invariant.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) [public.guard](public.guard.md) [public.action_require](public.action_require.md) [public.action_guarantee](public.action_guarantee.md) [public.action_safety](public.action_safety.md) |  | The internal ID. |
 | model_key | text |  | false | [public.invariant](public.invariant.md) [public.global_function](public.global_function.md) [public.attribute](public.attribute.md) [public.class_invariant](public.class_invariant.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) [public.guard](public.guard.md) [public.action_require](public.action_require.md) [public.action_guarantee](public.action_guarantee.md) [public.action_safety](public.action_safety.md) | [public.model](public.model.md) | The model this logic is part of. |
 | sort_order | integer |  | false |  |  | Often part of a list of logics that are sorted. |
+| logic_type | logic_type |  | false |  |  | The kind of logic, each has different rules for what well-formed looks like. |
 | description | text |  | false |  |  | The casual readable form of the logic. |
 | notation | notation |  | false |  |  | The type of notation used for the specification. |
 | specification | text |  | true |  |  | The unambiguous form of the logic. |
@@ -21,6 +22,7 @@ A bit of business logic.
 | ---- | ---- | ---------- |
 | logic_description_not_null | n | NOT NULL description |
 | logic_logic_key_not_null | n | NOT NULL logic_key |
+| logic_logic_type_not_null | n | NOT NULL logic_type |
 | logic_model_key_not_null | n | NOT NULL model_key |
 | logic_notation_not_null | n | NOT NULL notation |
 | logic_sort_order_not_null | n | NOT NULL sort_order |

@@ -30,36 +30,39 @@
 <!-- public.logic -->
 <g id="node2" class="node">
 <title>public.logic</title>
-<polygon fill="#efefef" stroke="none" points="5522.36,-1722.4 5522.36,-1758 5746.33,-1758 5746.33,-1722.4 5522.36,-1722.4"/>
-<polygon fill="none" stroke="black" points="5522.36,-1722.4 5522.36,-1758 5746.33,-1758 5746.33,-1722.4 5522.36,-1722.4"/>
-<text text-anchor="start" x="5529.36" y="-1735.8" font-family="Arial Bold" font-size="18.00">public.logic</text>
-<text text-anchor="start" x="5614.84" y="-1735.8" font-family="Arial" font-size="14.00">    </text>
-<text text-anchor="start" x="5645.96" y="-1735.8" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
-<polygon fill="none" stroke="black" points="5522.36,-1691.6 5522.36,-1722.4 5746.33,-1722.4 5746.33,-1691.6 5522.36,-1691.6"/>
-<text text-anchor="start" x="5529.36" y="-1703.8" font-family="Arial" font-size="14.00">logic_key </text>
-<text text-anchor="start" x="5591.61" y="-1703.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5522.36,-1660.8 5522.36,-1691.6 5746.33,-1691.6 5746.33,-1660.8 5522.36,-1660.8"/>
-<text text-anchor="start" x="5529.36" y="-1673" font-family="Arial" font-size="14.00">model_key </text>
-<text text-anchor="start" x="5600.95" y="-1673" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5522.36,-1630 5522.36,-1660.8 5746.33,-1660.8 5746.33,-1630 5522.36,-1630"/>
-<text text-anchor="start" x="5529.36" y="-1642.2" font-family="Arial" font-size="14.00">sort_order </text>
-<text text-anchor="start" x="5597.06" y="-1642.2" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
-<polygon fill="none" stroke="black" points="5522.36,-1599.2 5522.36,-1630 5746.33,-1630 5746.33,-1599.2 5522.36,-1599.2"/>
-<text text-anchor="start" x="5529.36" y="-1611.4" font-family="Arial" font-size="14.00">description </text>
-<text text-anchor="start" x="5600.95" y="-1611.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
-<polygon fill="none" stroke="black" points="5522.36,-1568.4 5522.36,-1599.2 5746.33,-1599.2 5746.33,-1568.4 5522.36,-1568.4"/>
-<text text-anchor="start" x="5529.36" y="-1580.6" font-family="Arial" font-size="14.00">notation </text>
-<text text-anchor="start" x="5583.07" y="-1580.6" font-family="Arial" font-size="14.00" fill="#666666">[notation]</text>
-<polygon fill="none" stroke="black" points="5522.36,-1537.6 5522.36,-1568.4 5746.33,-1568.4 5746.33,-1537.6 5522.36,-1537.6"/>
-<text text-anchor="start" x="5529.36" y="-1549.8" font-family="Arial" font-size="14.00">specification </text>
-<text text-anchor="start" x="5610.29" y="-1549.8" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="#efefef" stroke="none" points="5522.36,-1737.8 5522.36,-1773.4 5746.33,-1773.4 5746.33,-1737.8 5522.36,-1737.8"/>
+<polygon fill="none" stroke="black" points="5522.36,-1737.8 5522.36,-1773.4 5746.33,-1773.4 5746.33,-1737.8 5522.36,-1737.8"/>
+<text text-anchor="start" x="5529.36" y="-1751.2" font-family="Arial Bold" font-size="18.00">public.logic</text>
+<text text-anchor="start" x="5614.84" y="-1751.2" font-family="Arial" font-size="14.00">    </text>
+<text text-anchor="start" x="5645.96" y="-1751.2" font-family="Arial" font-size="14.00" fill="#666666">[BASE TABLE]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1707 5522.36,-1737.8 5746.33,-1737.8 5746.33,-1707 5522.36,-1707"/>
+<text text-anchor="start" x="5529.36" y="-1719.2" font-family="Arial" font-size="14.00">logic_key </text>
+<text text-anchor="start" x="5591.61" y="-1719.2" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1676.2 5522.36,-1707 5746.33,-1707 5746.33,-1676.2 5522.36,-1676.2"/>
+<text text-anchor="start" x="5529.36" y="-1688.4" font-family="Arial" font-size="14.00">model_key </text>
+<text text-anchor="start" x="5600.95" y="-1688.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1645.4 5522.36,-1676.2 5746.33,-1676.2 5746.33,-1645.4 5522.36,-1645.4"/>
+<text text-anchor="start" x="5529.36" y="-1657.6" font-family="Arial" font-size="14.00">sort_order </text>
+<text text-anchor="start" x="5597.06" y="-1657.6" font-family="Arial" font-size="14.00" fill="#666666">[integer]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1614.6 5522.36,-1645.4 5746.33,-1645.4 5746.33,-1614.6 5522.36,-1614.6"/>
+<text text-anchor="start" x="5529.36" y="-1626.8" font-family="Arial" font-size="14.00">logic_type </text>
+<text text-anchor="start" x="5596.29" y="-1626.8" font-family="Arial" font-size="14.00" fill="#666666">[logic_type]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1583.8 5522.36,-1614.6 5746.33,-1614.6 5746.33,-1583.8 5522.36,-1583.8"/>
+<text text-anchor="start" x="5529.36" y="-1596" font-family="Arial" font-size="14.00">description </text>
+<text text-anchor="start" x="5600.95" y="-1596" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1553 5522.36,-1583.8 5746.33,-1583.8 5746.33,-1553 5522.36,-1553"/>
+<text text-anchor="start" x="5529.36" y="-1565.2" font-family="Arial" font-size="14.00">notation </text>
+<text text-anchor="start" x="5583.07" y="-1565.2" font-family="Arial" font-size="14.00" fill="#666666">[notation]</text>
+<polygon fill="none" stroke="black" points="5522.36,-1522.2 5522.36,-1553 5746.33,-1553 5746.33,-1522.2 5522.36,-1522.2"/>
+<text text-anchor="start" x="5529.36" y="-1534.4" font-family="Arial" font-size="14.00">specification </text>
+<text text-anchor="start" x="5610.29" y="-1534.4" font-family="Arial" font-size="14.00" fill="#666666">[text]</text>
 </g>
 <!-- public.logic&#45;&gt;public.model -->
 <g id="edge1" class="edge">
 <title>public.logic:model_key&#45;&gt;public.model:model_key</title>
-<path fill="none" stroke="black" d="M5511.05,-1676.16C4610.6,-1668.34 4867.2,-635.17 4043.35,-250.4 3796.61,-135.16 3097.15,-120.2 2824.83,-120.2"/>
-<polygon fill="black" stroke="black" points="5511.02,-1676.16 5521.01,-1680.7 5516.36,-1676.18 5520.69,-1676.2 5520.69,-1676.2 5520.69,-1676.2 5516.36,-1676.18 5521.04,-1671.7 5511.02,-1676.16"/>
-<text text-anchor="start" x="5121.48" y="-1686.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
+<path fill="none" stroke="black" d="M5510.99,-1691.55C4605.89,-1683.66 4870.46,-639.4 4043.35,-250.4 3796.92,-134.5 3097.15,-120.2 2824.83,-120.2"/>
+<polygon fill="black" stroke="black" points="5511.02,-1691.55 5521.01,-1696.1 5516.36,-1691.58 5520.69,-1691.6 5520.69,-1691.6 5520.69,-1691.6 5516.36,-1691.58 5521.04,-1687.1 5511.02,-1691.55"/>
+<text text-anchor="start" x="5121.48" y="-1701.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.invariant -->
 <g id="node3" class="node">
@@ -79,8 +82,8 @@
 <!-- public.invariant&#45;&gt;public.logic -->
 <g id="edge2" class="edge">
 <title>public.invariant:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M5770.43,-2140.51C5688.48,-2110.01 5847.5,-1676.2 5747.33,-1676.2"/>
-<polygon fill="black" stroke="black" points="5770.18,-2140.47 5779.28,-2146.58 5775.44,-2141.36 5779.71,-2142.09 5779.71,-2142.09 5779.71,-2142.09 5775.44,-2141.36 5780.79,-2137.71 5770.18,-2140.47"/>
+<path fill="none" stroke="black" d="M5770.27,-2140.38C5692.05,-2109.38 5844.01,-1691.6 5747.33,-1691.6"/>
+<polygon fill="black" stroke="black" points="5770.2,-2140.37 5779.24,-2146.57 5775.45,-2141.32 5779.71,-2142.08 5779.71,-2142.08 5779.71,-2142.08 5775.45,-2141.32 5780.83,-2137.71 5770.2,-2140.37"/>
 <text text-anchor="start" x="5292.66" y="-2152.2" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.global_function -->
@@ -107,8 +110,8 @@
 <!-- public.global_function&#45;&gt;public.logic -->
 <g id="edge3" class="edge">
 <title>public.global_function:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M6126.25,-2170.64C6079.57,-2146.68 6117.56,-1947.31 6085.35,-1898.8 5985.84,-1748.95 5927.21,-1676.2 5747.33,-1676.2"/>
-<polygon fill="black" stroke="black" points="6126.3,-2170.65 6135.02,-2177.31 6131.5,-2171.86 6135.72,-2172.85 6135.72,-2172.85 6135.72,-2172.85 6131.5,-2171.86 6137.06,-2168.54 6126.3,-2170.65"/>
+<path fill="none" stroke="black" d="M6126.26,-2170.63C6079.67,-2146.61 6118.34,-1946.78 6085.35,-1898.8 5985.5,-1753.61 5923.54,-1691.6 5747.33,-1691.6"/>
+<polygon fill="black" stroke="black" points="6126.3,-2170.65 6135.02,-2177.31 6131.5,-2171.86 6135.72,-2172.85 6135.72,-2172.85 6135.72,-2172.85 6131.5,-2171.86 6137.07,-2168.54 6126.3,-2170.65"/>
 <text text-anchor="start" x="6143.37" y="-2183" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.domain -->
@@ -652,7 +655,7 @@
 <!-- public.attribute&#45;&gt;public.logic -->
 <g id="edge26" class="edge">
 <title>public.attribute:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M3066.62,-2265.05C3215.3,-2254.41 3020.9,-2005.71 3145.35,-1898.8 3180.28,-1868.78 3512.47,-1866.98 3558.35,-1862.8 4431.11,-1783.28 4644.98,-1676.2 5521.36,-1676.2"/>
+<path fill="none" stroke="black" d="M3066.62,-2265.05C3215.3,-2254.41 3020.9,-2005.71 3145.35,-1898.8 3180.28,-1868.78 3512.46,-1866.8 3558.35,-1862.8 4430.8,-1786.73 4645.6,-1691.6 5521.36,-1691.6"/>
 <polygon fill="black" stroke="black" points="3066.65,-2265.05 3056.5,-2260.89 3061.32,-2265.23 3056.99,-2265.38 3056.99,-2265.38 3056.99,-2265.38 3061.32,-2265.23 3056.81,-2269.89 3066.65,-2265.05"/>
 <text text-anchor="start" x="2789.01" y="-2249.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
@@ -726,8 +729,8 @@
 <!-- public.class_invariant&#45;&gt;public.logic -->
 <g id="edge31" class="edge">
 <title>public.class_invariant:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M5536.42,-2155.86C5618.31,-2124.35 5418.14,-1676.2 5521.36,-1676.2"/>
-<polygon fill="black" stroke="black" points="5536.5,-2155.84 5525.88,-2153.11 5531.25,-2156.75 5526.98,-2157.49 5526.98,-2157.49 5526.98,-2157.49 5531.25,-2156.75 5527.41,-2161.98 5536.5,-2155.84"/>
+<path fill="none" stroke="black" d="M5536.58,-2155.72C5614.57,-2123.66 5421.64,-1691.6 5521.36,-1691.6"/>
+<polygon fill="black" stroke="black" points="5536.48,-2155.74 5525.84,-2153.11 5531.24,-2156.7 5526.98,-2157.48 5526.98,-2157.48 5526.98,-2157.48 5531.24,-2156.7 5527.46,-2161.97 5536.48,-2155.74"/>
 <text text-anchor="start" x="5409.64" y="-2141.6" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.class_invariant&#45;&gt;public.class -->
@@ -906,7 +909,7 @@
 <!-- public.query_require&#45;&gt;public.logic -->
 <g id="edge40" class="edge">
 <title>public.query_require:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M4633,-2653.81C4718.73,-2643.11 4602.84,-2489.86 4681.35,-2426.4 4758.83,-2363.76 5508.32,-2462.25 5577.35,-2390.4 5615.19,-2351.01 5591.2,-1951.63 5577.35,-1898.8 5564.71,-1850.64 5535.18,-1849.31 5522.36,-1801.2 5508.05,-1747.52 5465.8,-1676.2 5521.36,-1676.2"/>
+<path fill="none" stroke="black" d="M4633,-2653.81C4718.73,-2643.11 4602.84,-2489.86 4681.35,-2426.4 4758.83,-2363.76 5508.32,-2462.25 5577.35,-2390.4 5615.19,-2351.01 5593.21,-1951.07 5577.35,-1898.8 5564.58,-1856.74 5535.3,-1858.61 5522.36,-1816.6 5506.01,-1763.5 5465.8,-1691.6 5521.36,-1691.6"/>
 <polygon fill="black" stroke="black" points="4633.13,-2653.8 4622.88,-2649.89 4627.8,-2654.11 4623.48,-2654.36 4623.48,-2654.36 4623.48,-2654.36 4627.8,-2654.11 4623.41,-2658.87 4633.13,-2653.8"/>
 <text text-anchor="start" x="4135.11" y="-2664.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
@@ -938,7 +941,7 @@
 <!-- public.query_guarantee&#45;&gt;public.logic -->
 <g id="edge42" class="edge">
 <title>public.query_guarantee:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M5052.71,-2653.78C5137.51,-2642.91 5020.62,-2491.28 5097.35,-2426.4 5184.61,-2352.6 5529.25,-2470.92 5610.35,-2390.4 5688.1,-2313.2 5602.44,-1998.29 5648.35,-1898.8 5674.1,-1842.99 5722.53,-1857.87 5746.33,-1801.2 5767.85,-1749.98 5802.89,-1676.2 5747.33,-1676.2"/>
+<path fill="none" stroke="black" d="M5052.71,-2653.78C5137.51,-2642.91 5020.62,-2491.28 5097.35,-2426.4 5184.61,-2352.6 5529.25,-2470.92 5610.35,-2390.4 5688.1,-2313.2 5598.24,-1996.24 5648.35,-1898.8 5674.34,-1848.25 5722.1,-1868.02 5746.33,-1816.6 5770.01,-1766.34 5802.89,-1691.6 5747.33,-1691.6"/>
 <polygon fill="black" stroke="black" points="5052.62,-2653.79 5042.37,-2649.89 5047.29,-2654.1 5042.97,-2654.36 5042.97,-2654.36 5042.97,-2654.36 5047.29,-2654.1 5042.9,-2658.87 5052.62,-2653.79"/>
 <text text-anchor="start" x="4801.95" y="-2638.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
@@ -1082,7 +1085,7 @@
 <!-- public.guard&#45;&gt;public.logic -->
 <g id="edge48" class="edge">
 <title>public.guard:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M4800.02,-2172.54C4904.99,-2162.47 4761.97,-1989.29 4841.35,-1898.8 4946.2,-1779.27 5362.35,-1676.2 5521.36,-1676.2"/>
+<path fill="none" stroke="black" d="M4800.02,-2172.54C4904.94,-2162.42 4761.04,-1988.46 4841.35,-1898.8 4946.74,-1781.12 5363.39,-1691.6 5521.36,-1691.6"/>
 <polygon fill="black" stroke="black" points="4800.15,-2172.53 4789.96,-2168.49 4794.82,-2172.77 4790.5,-2172.97 4790.5,-2172.97 4790.5,-2172.97 4794.82,-2172.77 4790.36,-2177.48 4800.15,-2172.53"/>
 <text text-anchor="start" x="4297.11" y="-2183" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, guard_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
@@ -1189,8 +1192,8 @@
 <!-- public.action_require&#45;&gt;public.logic -->
 <g id="edge53" class="edge">
 <title>public.action_require:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M6462.35,-2652.15C6552.26,-2611.45 6589.23,-2030.25 6491.35,-1898.8 6388.28,-1760.38 5919.91,-1676.2 5747.33,-1676.2"/>
-<polygon fill="black" stroke="black" points="6462.39,-2652.14 6451.65,-2649.94 6457.19,-2653.31 6452.96,-2654.25 6452.96,-2654.25 6452.96,-2654.25 6457.19,-2653.31 6453.62,-2658.72 6462.39,-2652.14"/>
+<path fill="none" stroke="black" d="M6462.46,-2652.15C6553.43,-2611.45 6591.19,-2030.25 6491.35,-1898.8 6387.53,-1762.13 5918.96,-1691.6 5747.33,-1691.6"/>
+<polygon fill="black" stroke="black" points="6462.4,-2652.16 6451.66,-2649.93 6457.19,-2653.32 6452.96,-2654.26 6452.96,-2654.26 6452.96,-2654.26 6457.19,-2653.32 6453.61,-2658.72 6462.4,-2652.16"/>
 <text text-anchor="start" x="6459.31" y="-2664.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
 <!-- public.action_require&#45;&gt;public.action -->
@@ -1221,7 +1224,7 @@
 <!-- public.action_guarantee&#45;&gt;public.logic -->
 <g id="edge55" class="edge">
 <title>public.action_guarantee:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M5472.22,-2653.81C5557.27,-2643.43 5445.61,-2498.53 5515.35,-2426.4 5557.91,-2382.37 5609.23,-2437.52 5648.35,-2390.4 5718.34,-2306.08 5653.77,-2003.12 5687.35,-1898.8 5702.87,-1850.55 5732.53,-1849.97 5746.33,-1801.2 5761.46,-1747.74 5802.89,-1676.2 5747.33,-1676.2"/>
+<path fill="none" stroke="black" d="M5472.22,-2653.81C5557.27,-2643.43 5445.61,-2498.53 5515.35,-2426.4 5557.91,-2382.37 5609.28,-2437.56 5648.35,-2390.4 5718.24,-2306.02 5648.38,-2001.58 5686.35,-1898.8 5702.01,-1856.37 5732.14,-1859.54 5746.33,-1816.6 5763.77,-1763.85 5802.89,-1691.6 5747.33,-1691.6"/>
 <polygon fill="black" stroke="black" points="5472.12,-2653.82 5461.88,-2649.89 5466.79,-2654.12 5462.47,-2654.36 5462.47,-2654.36 5462.47,-2654.36 5466.79,-2654.12 5462.39,-2658.87 5472.12,-2653.82"/>
 <text text-anchor="start" x="5345.13" y="-2638.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>
@@ -1253,7 +1256,7 @@
 <!-- public.action_safety&#45;&gt;public.logic -->
 <g id="edge57" class="edge">
 <title>public.action_safety:model_key&#45;&gt;public.logic:model_key</title>
-<path fill="none" stroke="black" d="M5862.3,-2653.39C5900.79,-2644.64 5868.62,-2580.76 5851.31,-2534.2 5822.12,-2455.65 5758.22,-2469.07 5729.35,-2390.4 5654.07,-2185.29 5710.54,-2116.48 5729.35,-1898.8 5737.89,-1799.91 5846.59,-1676.2 5747.33,-1676.2"/>
+<path fill="none" stroke="black" d="M5862.3,-2653.39C5900.79,-2644.64 5868.62,-2580.76 5851.31,-2534.2 5822.12,-2455.65 5758.22,-2469.07 5729.35,-2390.4 5654.07,-2185.29 5707.12,-2116.16 5729.35,-1898.8 5738.75,-1806.84 5839.77,-1691.6 5747.33,-1691.6"/>
 <polygon fill="black" stroke="black" points="5862.6,-2653.36 5852.2,-2649.89 5857.29,-2653.9 5852.98,-2654.33 5852.98,-2654.33 5852.98,-2654.33 5857.29,-2653.9 5853.1,-2658.84 5862.6,-2653.36"/>
 <text text-anchor="start" x="5859.31" y="-2664.4" font-family="Arial" font-size="10.00">FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE</text>
 </g>

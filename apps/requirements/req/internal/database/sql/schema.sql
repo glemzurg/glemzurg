@@ -18,10 +18,14 @@ COMMENT ON COLUMN model.details IS 'A summary description.';
 CREATE TYPE notation AS ENUM ('tla_plus');
 COMMENT ON TYPE notation IS 'The notation used for a logic specification.';
 
+CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value');
+COMMENT ON TYPE logic_type IS 'The kind of logic specification, each has different rules for well-formedness.';
+
 CREATE TABLE logic (
   logic_key text NOT NULL,
   model_key text NOT NULL,
   sort_order int NOT NULL,
+  logic_type logic_type NOT NULL,
   description text NOT NULL,
   notation notation NOT NULL,
   specification text DEFAULT NULL,
@@ -33,6 +37,7 @@ COMMENT ON TABLE logic IS 'A bit of business logic.';
 COMMENT ON COLUMN logic.logic_key IS 'The internal ID.';
 COMMENT ON COLUMN logic.model_key IS 'The model this logic is part of.';
 COMMENT ON COLUMN logic.sort_order IS 'Often part of a list of logics that are sorted.';
+COMMENT ON COLUMN logic.logic_type IS 'The kind of logic, each has different rules for what well-formed looks like.';
 COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
 COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';

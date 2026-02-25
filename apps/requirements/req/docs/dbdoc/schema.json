@@ -92,6 +92,12 @@
           "comment": "Often part of a list of logics that are sorted."
         },
         {
+          "name": "logic_type",
+          "type": "logic_type",
+          "nullable": false,
+          "comment": "The kind of logic, each has different rules for what well-formed looks like."
+        },
+        {
           "name": "description",
           "type": "text",
           "nullable": false,
@@ -140,6 +146,16 @@
           "referenced_table": "",
           "columns": [
             "logic_key"
+          ]
+        },
+        {
+          "name": "logic_logic_type_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_type",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "logic_type"
           ]
         },
         {
@@ -7255,6 +7271,16 @@
         "event",
         "query",
         "scenario"
+      ]
+    },
+    {
+      "name": "public.logic_type",
+      "values": [
+        "assessment",
+        "query",
+        "safety_rule",
+        "state_change",
+        "value"
       ]
     },
     {
