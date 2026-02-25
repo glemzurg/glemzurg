@@ -14,7 +14,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
 
-
 // ConvertFromModel converts a req_model.Model to an inputModel.
 // It first validates the source model, then performs the conversion.
 func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
@@ -589,6 +588,7 @@ func convertQueryFromModel(query *model_state.Query) *inputQuery {
 // convertLogicFromModel converts a model_logic.Logic to an inputLogic.
 func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	return inputLogic{
+		Type:          logic.Type,
 		Description:   logic.Description,
 		Notation:      logic.Notation,
 		Specification: logic.Specification,

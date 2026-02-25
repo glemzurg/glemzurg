@@ -23,6 +23,11 @@
       "type": "object",
       "description": "The logic specification for this global function. Must contain at least a description.",
       "properties": {
+        "type": {
+          "type": "string",
+          "description": "Optional logic kind discriminator.",
+          "enum": ["value"]
+        },
         "description": {
           "type": "string",
           "description": "A human-readable description of the function logic.",

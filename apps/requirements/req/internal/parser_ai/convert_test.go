@@ -308,7 +308,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 									eventKey: {Key: eventKey, Name: "confirm"},
 								},
 								Guards: map[identity.Key]model_state.Guard{
-									guardKey: {Key: guardKey, Name: "has_items", Logic: model_logic.Logic{Key: guardKey, Description: "Check if order has items", Notation: model_logic.NotationTLAPlus}},
+									guardKey: {Key: guardKey, Name: "has_items", Logic: model_logic.Logic{Key: guardKey, Type: model_logic.LogicTypeAssessment, Description: "Check if order has items", Notation: model_logic.NotationTLAPlus}},
 								},
 								Transitions: map[identity.Key]model_state.Transition{
 									transitionKey: {
@@ -463,10 +463,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 										Name:    "Get Total",
 										Details: "Get order total",
 										Requires: []model_logic.Logic{
-											{Key: helper.Must(identity.NewQueryRequireKey(queryKey, "0")), Description: "order must exist", Notation: model_logic.NotationTLAPlus},
+											{Key: helper.Must(identity.NewQueryRequireKey(queryKey, "0")), Type: model_logic.LogicTypeAssessment, Description: "order must exist", Notation: model_logic.NotationTLAPlus},
 										},
 										Guarantees: []model_logic.Logic{
-											{Key: helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")), Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
+											{Key: helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")), Type: model_logic.LogicTypeQuery, Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
 										},
 									},
 								},

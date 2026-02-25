@@ -10,6 +10,7 @@ import (
 
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
+	Type          string `json:"type,omitempty"`
 	Description   string `json:"description"`
 	Notation      string `json:"notation,omitempty"`
 	Specification string `json:"specification,omitempty"`

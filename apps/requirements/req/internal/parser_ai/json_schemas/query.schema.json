@@ -40,6 +40,11 @@
       "items": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "description": "Optional logic kind discriminator.",
+            "enum": ["assessment"]
+          },
           "description": {
             "type": "string",
             "description": "A precondition statement. Describe what must be true for this query to execute correctly.",
@@ -65,6 +70,11 @@
       "items": {
         "type": "object",
         "properties": {
+          "type": {
+            "type": "string",
+            "description": "Optional logic kind discriminator.",
+            "enum": ["query"]
+          },
           "description": {
             "type": "string",
             "description": "A postcondition statement describing the query result.",

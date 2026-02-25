@@ -105,6 +105,11 @@
             "type": "object",
             "description": "The logic specification for this guard condition. The description explains the boolean expression or business rule.",
             "properties": {
+              "type": {
+                "type": "string",
+                "description": "Optional logic kind discriminator.",
+                "enum": ["assessment"]
+              },
               "description": {
                 "type": "string",
                 "description": "Description of the guard condition. Explain the boolean expression or business rule that determines when this guard is true. Must be non-empty.",

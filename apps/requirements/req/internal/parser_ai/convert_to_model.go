@@ -115,6 +115,7 @@ func convertInvariantsToModel(invariants []inputLogic) []model_logic.Logic {
 		invKey, _ := identity.NewInvariantKey(fmt.Sprintf("%d", i))
 		result[i] = model_logic.Logic{
 			Key:           invKey,
+			Type:          model_logic.LogicTypeAssessment,
 			Description:   inv.Description,
 			Notation:      inv.Notation,
 			Specification: inv.Specification,
@@ -136,6 +137,7 @@ func convertGlobalFunctionToModel(keyStr string, gf *inputGlobalFunction) (model
 
 	logic := model_logic.Logic{
 		Key:           key,
+		Type:          model_logic.LogicTypeValue,
 		Description:   gf.Logic.Description,
 		Notation:      gf.Logic.Notation,
 		Specification: gf.Logic.Specification,
@@ -762,7 +764,7 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 	}
 
 	// Convert class invariants
-	result.SetInvariants(convertLogicsToModel(class.Invariants, classKey, identity.NewClassInvariantKey))
+	result.SetInvariants(convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey))
 
 	// Convert state machine if present
 	if class.StateMachine != nil {
@@ -834,6 +836,7 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 		}
 		dp := model_logic.Logic{
 			Key:           dpKey,
+			Type:          model_logic.LogicTypeValue,
 			Description:   attr.DerivationPolicy.Description,
 			Notation:      attr.DerivationPolicy.Notation,
 			Specification: attr.DerivationPolicy.Specification,
@@ -939,6 +942,7 @@ func convertStateMachineToModel(sm *inputStateMachine, actions map[string]*input
 			Name: guard.Name,
 			Logic: model_logic.Logic{
 				Key:           guardKey,
+				Type:          model_logic.LogicTypeAssessment,
 				Description:   guard.Logic.Description,
 				Notation:      guard.Logic.Notation,
 				Specification: guard.Logic.Specification,
@@ -1069,9 +1073,9 @@ func convertActionToModel(keyStr string, action *inputAction, classKey identity.
 		Name:        action.Name,
 		Details:     action.Details,
 		Parameters:  convertParametersToModel(action.Parameters),
-		Requires:    convertLogicsToModel(action.Requires, actionKey, identity.NewActionRequireKey),
-		Guarantees:  convertLogicsToModel(action.Guarantees, actionKey, identity.NewActionGuaranteeKey),
-		SafetyRules: convertLogicsToModel(action.SafetyRules, actionKey, identity.NewActionSafetyKey),
+		Requires:    convertLogicsToModel(action.Requires, model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey),
+		Guarantees:  convertLogicsToModel(action.Guarantees, model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey),
+		SafetyRules: convertLogicsToModel(action.SafetyRules, model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey),
 	}, nil
 }
 
@@ -1093,15 +1097,16 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 		Name:       query.Name,
 		Details:    query.Details,
 		Parameters: convertParametersToModel(query.Parameters),
-		Requires:   convertLogicsToModel(query.Requires, queryKey, identity.NewQueryRequireKey),
-		Guarantees: convertLogicsToModel(query.Guarantees, queryKey, identity.NewQueryGuaranteeKey),
+		Requires:   convertLogicsToModel(query.Requires, model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey),
+		Guarantees: convertLogicsToModel(query.Guarantees, model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey),
 	}, nil
 }
 
 // convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
-func convertLogicToModel(input *inputLogic, parentKey identity.Key) model_logic.Logic {
+func convertLogicToModel(input *inputLogic, logicType string, parentKey identity.Key) model_logic.Logic {
 	return model_logic.Logic{
 		Key:           parentKey,
+		Type:          logicType,
 		Description:   input.Description,
 		Notation:      input.Notation,
 		Specification: input.Specification,
@@ -1110,7 +1115,7 @@ func convertLogicToModel(input *inputLogic, parentKey identity.Key) model_logic.
 
 // convertLogicsToModel converts a slice of inputLogic to a slice of model_logic.Logic.
 // keyFactory creates the identity key for each logic entry using the parent key and an index-based sub-key.
-func convertLogicsToModel(logics []inputLogic, parentKey identity.Key, keyFactory func(identity.Key, string) (identity.Key, error)) []model_logic.Logic {
+func convertLogicsToModel(logics []inputLogic, logicType string, parentKey identity.Key, keyFactory func(identity.Key, string) (identity.Key, error)) []model_logic.Logic {
 	if len(logics) == 0 {
 		return nil
 	}
@@ -1119,6 +1124,7 @@ func convertLogicsToModel(logics []inputLogic, parentKey identity.Key, keyFactor
 		logicKey, _ := keyFactory(parentKey, fmt.Sprintf("%d", i))
 		result[i] = model_logic.Logic{
 			Key:           logicKey,
+			Type:          logicType,
 			Description:   logic.Description,
 			Notation:      logic.Notation,
 			Specification: logic.Specification,

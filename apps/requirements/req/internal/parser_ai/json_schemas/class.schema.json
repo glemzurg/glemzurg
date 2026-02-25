@@ -45,6 +45,11 @@
             "type": "object",
             "description": "Policy for deriving the attribute value if it's computed rather than stored. Contains a logic specification describing the formula or logic used to calculate this attribute.",
             "properties": {
+              "type": {
+                "type": "string",
+                "description": "Optional logic kind discriminator.",
+                "enum": ["value"]
+              },
               "description": {
                 "type": "string",
                 "description": "Description of the derivation formula or logic.",
