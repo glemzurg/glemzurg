@@ -61,6 +61,11 @@ func (gf *GlobalFunction) Validate() error {
 		return errors.Errorf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String())
 	}
 
+	// Global function logic must be of kind "value".
+	if gf.Logic.Type != LogicTypeValue {
+		return errors.Errorf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type)
+	}
+
 	if err := _validate.Struct(gf); err != nil {
 		// Wrap startswith error with a clearer message for the underscore rule.
 		if _, ok := err.(validator.ValidationErrors); ok {

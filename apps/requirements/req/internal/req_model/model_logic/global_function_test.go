@@ -25,6 +25,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 
 	validSpec := Logic{
 		Key:         gfKey1,
+		Type:        LogicTypeValue,
 		Description: "Max of two values.",
 		Notation:    NotationTLAPlus,
 	}
@@ -59,6 +60,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Name: "_ValidStatuses",
 				Logic: Logic{
 					Key:           gfKey2,
+					Type:          LogicTypeValue,
 					Description:   "Set of valid statuses.",
 					Notation:      NotationTLAPlus,
 					Specification: `{"pending", "active", "complete"}`,
@@ -73,6 +75,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Parameters: nil,
 				Logic: Logic{
 					Key:           gfKey3,
+					Type:          LogicTypeValue,
 					Description:   "A constant value.",
 					Notation:      NotationTLAPlus,
 					Specification: "42",
@@ -127,6 +130,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Parameters: []string{"x", "y"},
 				Logic: Logic{
 					Key:         identity.Key{},
+					Type:        LogicTypeValue,
 					Description: "Some desc.",
 					Notation:    NotationTLAPlus,
 				},
@@ -141,6 +145,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Parameters: []string{"x", "y"},
 				Logic: Logic{
 					Key:         gfKey2, // Different key than gfKey1
+					Type:        LogicTypeValue,
 					Description: "Some desc.",
 					Notation:    NotationTLAPlus,
 				},
@@ -155,6 +160,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Parameters: []string{"x", "y"},
 				Logic: Logic{
 					Key:         gfKey1,
+					Type:        LogicTypeValue,
 					Description: "",
 					Notation:    NotationTLAPlus,
 				},
@@ -169,6 +175,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Parameters: []string{"x", "y"},
 				Logic: Logic{
 					Key:         gfKey1,
+					Type:        LogicTypeValue,
 					Description: "Some desc.",
 					Notation:    "",
 				},
@@ -183,11 +190,27 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Parameters: []string{"x", "y"},
 				Logic: Logic{
 					Key:         gfKey1,
+					Type:        LogicTypeValue,
 					Description: "Some desc.",
 					Notation:    "Z",
 				},
 			},
 			errstr: "Notation",
+		},
+		{
+			testName: "error wrong logic kind",
+			gf: GlobalFunction{
+				Key:        gfKey1,
+				Name:       "_Max",
+				Parameters: []string{"x", "y"},
+				Logic: Logic{
+					Key:         gfKey1,
+					Type:        LogicTypeAssessment, // Wrong kind for global function
+					Description: "Some desc.",
+					Notation:    NotationTLAPlus,
+				},
+			},
+			errstr: "logic kind must be 'value'",
 		},
 	}
 	for _, tt := range tests {
@@ -210,6 +233,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 
 	spec := Logic{
 		Key:           gfKey1,
+		Type:          LogicTypeValue,
 		Description:   "Returns the maximum of two values.",
 		Notation:      NotationTLAPlus,
 		Specification: "IF x > y THEN x ELSE y",
@@ -228,6 +252,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	// Test with nil optional fields (Comment and Parameters are optional).
 	gf, err = NewGlobalFunction(gfKey2, "_Constant", nil, Logic{
 		Key:           gfKey2,
+		Type:          LogicTypeValue,
 		Description:   "A constant.",
 		Notation:      NotationTLAPlus,
 		Specification: "42",
@@ -244,6 +269,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	// Test that invalid specification fails.
 	_, err = NewGlobalFunction(gfKey1, "_Max", []string{"x"}, Logic{
 		Key:         identity.Key{},
+		Type:        LogicTypeValue,
 		Description: "Some desc.",
 		Notation:    NotationTLAPlus,
 	})
@@ -257,6 +283,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 
 	validSpec := Logic{
 		Key:         gfKey,
+		Type:        LogicTypeValue,
 		Description: "Max of two values.",
 		Notation:    NotationTLAPlus,
 	}
@@ -289,6 +316,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		Parameters: []string{"x", "y"},
 		Logic: Logic{
 			Key:         gfKey,
+			Type:        LogicTypeValue,
 			Description: "", // Invalid: missing description
 			Notation:    NotationTLAPlus,
 		},

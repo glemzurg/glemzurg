@@ -36,7 +36,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 		},
@@ -46,7 +46,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: validKey, Description: "Balance must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0",
+					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "Balance must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0",
 				},
 			},
 		},
@@ -56,7 +56,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "'KeyType' failed on the 'required' tag",
@@ -67,7 +67,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  domainKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "Key: invalid key type 'domain' for guard",
@@ -78,7 +78,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Logic: model_logic.Logic{
-					Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "Name",
@@ -89,7 +89,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: identity.Key{}, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "KeyType",
@@ -100,10 +100,21 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: validKey, Description: "", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "Description",
+		},
+		{
+			testName: "error logic wrong kind",
+			guard: Guard{
+				Key:  validKey,
+				Name: "Name",
+				Logic: model_logic.Logic{
+					Key: validKey, Type: model_logic.LogicTypeStateChange, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+				},
+			},
+			errstr: "logic kind must be 'assessment'",
 		},
 	}
 	for _, tt := range tests {
@@ -126,7 +137,7 @@ func (suite *GuardSuite) TestNew() {
 	key := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 
 	logic := model_logic.Logic{
-		Key: key, Description: "Balance check.", Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0",
+		Key: key, Type: model_logic.LogicTypeAssessment, Description: "Balance check.", Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0",
 	}
 
 	// Test all parameters are mapped correctly.
@@ -152,7 +163,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
 	validLogic := model_logic.Logic{
-		Key: validKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+		Key: validKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 	}
 
 	// Test that Validate is called.
@@ -183,7 +194,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Logic: model_logic.Logic{
-			Key: differentGuardKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+			Key: differentGuardKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 		},
 	}
 	err = guard.ValidateWithParent(&classKey)
@@ -196,7 +207,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Key:  wrongParentGuardKey,
 		Name: "Name",
 		Logic: model_logic.Logic{
-			Key: wrongParentGuardKey, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+			Key: wrongParentGuardKey, Type: model_logic.LogicTypeAssessment, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
 		},
 	}
 	// The guard key has otherClassKey2 as parent, but we pass otherClassKey as the parent.

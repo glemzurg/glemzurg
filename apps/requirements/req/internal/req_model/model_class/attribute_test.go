@@ -70,6 +70,7 @@ func (suite *AttributeSuite) TestValidate() {
 				Name: "Name",
 				DerivationPolicy: &model_logic.Logic{
 					Key:         derivKey,
+					Type:        model_logic.LogicTypeValue,
 					Description: "Computed from other fields.",
 					Notation:    model_logic.NotationTLAPlus,
 				},
@@ -89,11 +90,26 @@ func (suite *AttributeSuite) TestValidate() {
 				Name: "Name",
 				DerivationPolicy: &model_logic.Logic{
 					Key:         identity.Key{},
+					Type:        model_logic.LogicTypeValue,
 					Description: "Computed from other fields.",
 					Notation:    model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "DerivationPolicy",
+		},
+		{
+			testName: "error DerivationPolicy wrong kind",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				DerivationPolicy: &model_logic.Logic{
+					Key:         derivKey,
+					Type:        model_logic.LogicTypeAssessment,
+					Description: "Computed from other fields.",
+					Notation:    model_logic.NotationTLAPlus,
+				},
+			},
+			errstr: "DerivationPolicy logic kind must be 'value'",
 		},
 	}
 	for _, tt := range tests {
@@ -118,6 +134,7 @@ func (suite *AttributeSuite) TestNew() {
 
 	derivationPolicy := &model_logic.Logic{
 		Key:         derivKey,
+		Type:        model_logic.LogicTypeValue,
 		Description: "Computed from other fields.",
 		Notation:    model_logic.NotationTLAPlus,
 	}
@@ -146,6 +163,7 @@ func (suite *AttributeSuite) TestNew() {
 	derivParsedKey := helper.Must(identity.NewAttributeDerivationKey(attrParsedKey, "deriv_parsed"))
 	derivParsedPolicy := &model_logic.Logic{
 		Key:         derivParsedKey,
+		Type:        model_logic.LogicTypeValue,
 		Description: "Computed from other fields.",
 		Notation:    model_logic.NotationTLAPlus,
 	}
@@ -209,6 +227,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name: "Name",
 		DerivationPolicy: &model_logic.Logic{
 			Key:         derivKey,
+			Type:        model_logic.LogicTypeValue,
 			Description: "Computed from other fields.",
 			Notation:    model_logic.NotationTLAPlus,
 		},
@@ -224,6 +243,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name: "Name",
 		DerivationPolicy: &model_logic.Logic{
 			Key:         wrongDerivKey,
+			Type:        model_logic.LogicTypeValue,
 			Description: "Computed from other fields.",
 			Notation:    model_logic.NotationTLAPlus,
 		},

@@ -10,8 +10,8 @@ import (
 // Guard is a constraint on an event in a state machine.
 type Guard struct {
 	Key   identity.Key
-	Name  string             `validate:"required"` // A simple unique name for a guard, for internal use.
-	Logic model_logic.Logic  // The formal logic specification for this guard condition.
+	Name  string            `validate:"required"` // A simple unique name for a guard, for internal use.
+	Logic model_logic.Logic // The formal logic specification for this guard condition.
 }
 
 func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Guard, err error) {
@@ -46,6 +46,9 @@ func (g *Guard) Validate() error {
 
 	if err := g.Logic.Validate(); err != nil {
 		return errors.Wrap(err, "logic")
+	}
+	if g.Logic.Type != model_logic.LogicTypeAssessment {
+		return errors.Errorf("logic kind must be '%s', got '%s'", model_logic.LogicTypeAssessment, g.Logic.Type)
 	}
 
 	return nil

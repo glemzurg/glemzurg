@@ -383,22 +383,22 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 				Name: "Class",
 				Guards: map[identity.Key]model_state.Guard{
 					guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
-						Key: guardKey, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
+						Key: guardKey, Type: model_logic.LogicTypeAssessment, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
 					}},
 				},
 				Actions: map[identity.Key]model_state.Action{
 					actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
-						{Key: reqKey, Description: "Req.", Notation: model_logic.NotationTLAPlus},
+						{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Req.", Notation: model_logic.NotationTLAPlus},
 					}},
 				},
 				Queries: map[identity.Key]model_state.Query{
 					queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
-						{Key: guarKey, Description: "Guar.", Notation: model_logic.NotationTLAPlus},
+						{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guar.", Notation: model_logic.NotationTLAPlus},
 					}},
 				},
 				Attributes: map[identity.Key]model_class.Attribute{
 					attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
-						Key: derivKey, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
+						Key: derivKey, Type: model_logic.LogicTypeValue, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
 					}},
 				},
 			},
@@ -418,7 +418,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 				Name: "Class",
 				Guards: map[identity.Key]model_state.Guard{
 					guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
-						Key: otherGuardKey, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
+						Key: otherGuardKey, Type: model_logic.LogicTypeAssessment, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
 					}},
 				},
 			},
@@ -439,7 +439,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 				Name: "Class",
 				Actions: map[identity.Key]model_state.Action{
 					actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
-						{Key: wrongReqKey, Description: "Req.", Notation: model_logic.NotationTLAPlus},
+						{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Req.", Notation: model_logic.NotationTLAPlus},
 					}},
 				},
 			},
@@ -460,7 +460,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 				Name: "Class",
 				Attributes: map[identity.Key]model_class.Attribute{
 					attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
-						Key: wrongDerivKey, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
+						Key: wrongDerivKey, Type: model_logic.LogicTypeValue, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
 					}},
 				},
 			},

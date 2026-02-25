@@ -46,8 +46,8 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
-					{Key: invKey2, Description: "y must be under 100.", Notation: model_logic.NotationTLAPlus, Specification: "y < 100"},
+					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "y must be under 100.", Notation: model_logic.NotationTLAPlus, Specification: "y < 100"},
 				},
 			},
 		},
@@ -63,6 +63,7 @@ func (suite *ModelSuite) TestValidate() {
 						Parameters: []string{"x", "y"},
 						Logic: model_logic.Logic{
 							Key:           gfKey,
+							Type:          model_logic.LogicTypeValue,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
 							Specification: "IF x > y THEN x ELSE y",
@@ -77,7 +78,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 				GlobalFunctions: map[identity.Key]model_logic.GlobalFunction{
 					gfKey: {
@@ -86,6 +87,7 @@ func (suite *ModelSuite) TestValidate() {
 						Parameters: []string{"x", "y"},
 						Logic: model_logic.Logic{
 							Key:           gfKey,
+							Type:          model_logic.LogicTypeValue,
 							Description:   "Max of two values.",
 							Notation:      model_logic.NotationTLAPlus,
 							Specification: "IF x > y THEN x ELSE y",
@@ -116,7 +118,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "",
 				Invariants: []model_logic.Logic{
-					{Key: invKey1, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 			},
 			errstr: "Name",
@@ -127,7 +129,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					{Key: identity.Key{}, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "invariant 0",
@@ -143,6 +145,7 @@ func (suite *ModelSuite) TestValidate() {
 						Name: "Some", // Missing underscore
 						Logic: model_logic.Logic{
 							Key:         gfKey1,
+							Type:        model_logic.LogicTypeValue,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
 						},
@@ -162,6 +165,7 @@ func (suite *ModelSuite) TestValidate() {
 						Name: "_Some",
 						Logic: model_logic.Logic{
 							Key:         gfKey1,
+							Type:        model_logic.LogicTypeValue,
 							Description: "Some desc.",
 							Notation:    model_logic.NotationTLAPlus,
 						},
@@ -196,6 +200,7 @@ func (suite *ModelSuite) TestNew() {
 			Parameters: []string{"x", "y"},
 			Logic: model_logic.Logic{
 				Key:           gfKey,
+				Type:          model_logic.LogicTypeValue,
 				Description:   "Max of two values.",
 				Notation:      model_logic.NotationTLAPlus,
 				Specification: "IF x > y THEN x ELSE y",
@@ -203,7 +208,7 @@ func (suite *ModelSuite) TestNew() {
 		},
 	}
 	invariants := []model_logic.Logic{
-		{Key: invKey1, Description: "First invariant.", Notation: model_logic.NotationTLAPlus, Specification: "inv1"},
+		{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "First invariant.", Notation: model_logic.NotationTLAPlus, Specification: "inv1"},
 	}
 	model, err := NewModel("  MODEL1  ", "Name", "Details",
 		invariants, globalFuncs)

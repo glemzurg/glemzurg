@@ -57,15 +57,24 @@ func (a *Action) Validate() error {
 		if err := req.Validate(); err != nil {
 			return errors.Wrapf(err, "requires %d", i)
 		}
+		if req.Type != model_logic.LogicTypeAssessment {
+			return errors.Errorf("requires %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, req.Type)
+		}
 	}
 	for i, guar := range a.Guarantees {
 		if err := guar.Validate(); err != nil {
 			return errors.Wrapf(err, "guarantee %d", i)
 		}
+		if guar.Type != model_logic.LogicTypeStateChange {
+			return errors.Errorf("guarantee %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeStateChange, guar.Type)
+		}
 	}
 	for i, rule := range a.SafetyRules {
 		if err := rule.Validate(); err != nil {
 			return errors.Wrapf(err, "safety rule %d", i)
+		}
+		if rule.Type != model_logic.LogicTypeSafetyRule {
+			return errors.Errorf("safety rule %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeSafetyRule, rule.Type)
 		}
 	}
 

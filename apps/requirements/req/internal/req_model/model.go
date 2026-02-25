@@ -81,6 +81,9 @@ func (m *Model) Validate() error {
 		if err := inv.ValidateWithParent(nil); err != nil {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
+		if inv.Type != model_logic.LogicTypeAssessment {
+			return errors.Errorf("invariant %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, inv.Type)
+		}
 	}
 
 	// Validate global functions.

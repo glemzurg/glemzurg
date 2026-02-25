@@ -56,10 +56,16 @@ func (q *Query) Validate() error {
 		if err := req.Validate(); err != nil {
 			return errors.Wrapf(err, "requires %d", i)
 		}
+		if req.Type != model_logic.LogicTypeAssessment {
+			return errors.Errorf("requires %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, req.Type)
+		}
 	}
 	for i, guar := range q.Guarantees {
 		if err := guar.Validate(); err != nil {
 			return errors.Wrapf(err, "guarantee %d", i)
+		}
+		if guar.Type != model_logic.LogicTypeQuery {
+			return errors.Errorf("guarantee %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeQuery, guar.Type)
 		}
 	}
 

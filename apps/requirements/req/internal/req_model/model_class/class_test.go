@@ -191,7 +191,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			{Key: identity.Key{}, Description: "Desc.", Notation: model_logic.NotationTLAPlus}, // Invalid: empty key
+			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}, // Invalid: empty key
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -204,7 +204,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			{Key: wrongInvKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus},
+			{Key: wrongInvKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus},
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -296,8 +296,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test valid class with all child types.
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
-	validInvariant := model_logic.Logic{Key: invKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
-	validLogic := model_logic.Logic{Key: guardKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
+	validInvariant := model_logic.Logic{Key: invKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
+	validLogic := model_logic.Logic{Key: guardKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
 	validAction := model_state.Action{Key: actionKey, Name: "Action"}
 	validEvent := model_state.Event{Key: eventKey, Name: "Event"}
 	validState := model_state.State{Key: stateKey, Name: "State"}
@@ -311,8 +311,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		ToStateKey:   &stateKey,
 	}
 	class = Class{
-		Key:  validKey,
-		Name: "Name",
+		Key:         validKey,
+		Name:        "Name",
 		Invariants:  []model_logic.Logic{validInvariant},
 		Attributes:  map[identity.Key]Attribute{attrKey: validAttr},
 		States:      map[identity.Key]model_state.State{stateKey: validState},
@@ -332,7 +332,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Name: "Name",
 		Guards: map[identity.Key]model_state.Guard{
 			guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
-				Key: otherGuardKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus,
+				Key: otherGuardKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus,
 			}},
 		},
 	}
@@ -347,7 +347,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Name: "Name",
 		Actions: map[identity.Key]model_state.Action{
 			actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
-				{Key: wrongReqKey, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+				{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
 			}},
 		},
 	}
@@ -362,7 +362,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Name: "Name",
 		Queries: map[identity.Key]model_state.Query{
 			queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
-				{Key: wrongGuarKey, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
+				{Key: wrongGuarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
 			}},
 		},
 	}
@@ -377,7 +377,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Name: "Name",
 		Attributes: map[identity.Key]Attribute{
 			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
-				Key: wrongDerivKey, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
+				Key: wrongDerivKey, Type: model_logic.LogicTypeStateChange, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
 			}},
 		},
 	}
@@ -401,7 +401,7 @@ func (suite *ClassSuite) TestSetters() {
 	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state1"))
 
 	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
-	invariants := []model_logic.Logic{{Key: invKey, Description: "Desc.", Notation: model_logic.NotationTLAPlus}}
+	invariants := []model_logic.Logic{{Key: invKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}}
 	class.SetInvariants(invariants)
 	assert.Equal(suite.T(), invariants, class.Invariants)
 

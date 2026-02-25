@@ -11,9 +11,9 @@ import (
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
-	Name             string `validate:"required"`
-	Details          string // Markdown.
-	DataTypeRules    string // What are the bounds of this data type.
+	Name             string             `validate:"required"`
+	Details          string             // Markdown.
+	DataTypeRules    string             // What are the bounds of this data type.
 	DerivationPolicy *model_logic.Logic `validate:"-"` // If this is a derived attribute, the logic for how it is derived.
 	Nullable         bool               // Is this attribute optional.
 	UmlComment       string
@@ -78,6 +78,9 @@ func (a *Attribute) Validate() error {
 	if a.DerivationPolicy != nil {
 		if err := a.DerivationPolicy.Validate(); err != nil {
 			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		}
+		if a.DerivationPolicy.Type != model_logic.LogicTypeValue {
+			return errors.Errorf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type)
 		}
 	}
 
