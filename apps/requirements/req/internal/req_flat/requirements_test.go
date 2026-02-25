@@ -38,9 +38,9 @@ var (
 	tAttributeKey   = helper.Must(identity.NewAttributeKey(tClassKey, "amount"))
 	tSActionKey     = helper.Must(identity.NewStateActionKey(tStateOpenKey, "do", "do_close"))
 
-	tActorKey  = helper.Must(identity.NewActorKey("user"))
-	tActor2Key = helper.Must(identity.NewActorKey("admin"))
-	tActor3Key = helper.Must(identity.NewActorKey("guest"))
+	tActorKey    = helper.Must(identity.NewActorKey("user"))
+	tActor2Key   = helper.Must(identity.NewActorKey("admin"))
+	tActor3Key   = helper.Must(identity.NewActorKey("guest"))
 	tActorGenKey = helper.Must(identity.NewActorGeneralizationKey("user_type"))
 
 	tGenKey   = helper.Must(identity.NewGeneralizationKey(tSubdomainKey, "vehicle"))
@@ -48,20 +48,20 @@ var (
 
 	tDomainAssocKey = helper.Must(identity.NewDomainAssociationKey(tDomainKey, tDomainKey))
 
-	tUseCaseKey     = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "place_order"))
-	tUseCase2Key    = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "login"))
-	tUseCase3Key    = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "checkout"))
-	tUseCaseGenKey  = helper.Must(identity.NewUseCaseGeneralizationKey(tSubdomainKey, "order_flow"))
-	tScenarioKey    = helper.Must(identity.NewScenarioKey(tUseCaseKey, "happy_path"))
-	tObjectKey      = helper.Must(identity.NewScenarioObjectKey(tScenarioKey, "order1"))
+	tUseCaseKey    = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "place_order"))
+	tUseCase2Key   = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "login"))
+	tUseCase3Key   = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "checkout"))
+	tUseCaseGenKey = helper.Must(identity.NewUseCaseGeneralizationKey(tSubdomainKey, "order_flow"))
+	tScenarioKey   = helper.Must(identity.NewScenarioKey(tUseCaseKey, "happy_path"))
+	tObjectKey     = helper.Must(identity.NewScenarioObjectKey(tScenarioKey, "order1"))
 
 	tGlobalFuncKey = helper.Must(identity.NewGlobalFunctionKey("_Max"))
 
-	tActionGuaranteeKey  = helper.Must(identity.NewActionGuaranteeKey(tActionKey, "0"))
-	tQueryGuaranteeKey   = helper.Must(identity.NewQueryGuaranteeKey(tQueryKey, "0"))
-	tInvariantKey        = helper.Must(identity.NewInvariantKey("0"))
-	tClassInvariantKey   = helper.Must(identity.NewClassInvariantKey(tClassKey, "0"))
-	tClassInvariant2Key  = helper.Must(identity.NewClassInvariantKey(tClassKey, "1"))
+	tActionGuaranteeKey = helper.Must(identity.NewActionGuaranteeKey(tActionKey, "0"))
+	tQueryGuaranteeKey  = helper.Must(identity.NewQueryGuaranteeKey(tQueryKey, "0"))
+	tInvariantKey       = helper.Must(identity.NewInvariantKey("0"))
+	tClassInvariantKey  = helper.Must(identity.NewClassInvariantKey(tClassKey, "0"))
+	tClassInvariant2Key = helper.Must(identity.NewClassInvariantKey(tClassKey, "1"))
 )
 
 // ============================================================
@@ -71,11 +71,11 @@ var (
 // buildTestModel builds a comprehensive model with all entity types populated.
 func buildTestModel() req_model.Model {
 	// Logics.
-	guardLogic := helper.Must(model_logic.NewLogic(tGuardKey, "Guard logic.", model_logic.NotationTLAPlus, "self.amount > 0"))
-	actionGuarantee := helper.Must(model_logic.NewLogic(tActionGuaranteeKey, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = 0"))
-	queryGuarantee := helper.Must(model_logic.NewLogic(tQueryGuaranteeKey, "Query result.", model_logic.NotationTLAPlus, "result = self.amount"))
-	invariant := helper.Must(model_logic.NewLogic(tInvariantKey, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
-	gfLogic := helper.Must(model_logic.NewLogic(tGlobalFuncKey, "Max function.", model_logic.NotationTLAPlus, "IF a > b THEN a ELSE b"))
+	guardLogic := helper.Must(model_logic.NewLogic(tGuardKey, model_logic.LogicTypeAssessment, "Guard logic.", model_logic.NotationTLAPlus, "self.amount > 0"))
+	actionGuarantee := helper.Must(model_logic.NewLogic(tActionGuaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = 0"))
+	queryGuarantee := helper.Must(model_logic.NewLogic(tQueryGuaranteeKey, model_logic.LogicTypeQuery, "Query result.", model_logic.NotationTLAPlus, "result = self.amount"))
+	invariant := helper.Must(model_logic.NewLogic(tInvariantKey, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
+	gfLogic := helper.Must(model_logic.NewLogic(tGlobalFuncKey, model_logic.LogicTypeValue, "Max function.", model_logic.NotationTLAPlus, "IF a > b THEN a ELSE b"))
 
 	// Global function.
 	globalFunc := helper.Must(model_logic.NewGlobalFunction(tGlobalFuncKey, "_Max", []string{"a", "b"}, gfLogic))
@@ -130,8 +130,8 @@ func buildTestModel() req_model.Model {
 			ToStateKey:   &tStateClosedKey,
 		},
 	}
-	classInv1 := helper.Must(model_logic.NewLogic(tClassInvariantKey, "Order total matches.", model_logic.NotationTLAPlus, "self.total > 0"))
-	classInv2 := helper.Must(model_logic.NewLogic(tClassInvariant2Key, "Order has items.", model_logic.NotationTLAPlus, "Len(self.items) > 0"))
+	classInv1 := helper.Must(model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", model_logic.NotationTLAPlus, "self.total > 0"))
+	classInv2 := helper.Must(model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", model_logic.NotationTLAPlus, "Len(self.items) > 0"))
 	class.SetInvariants([]model_logic.Logic{classInv1, classInv2})
 
 	// Second class (minimal).
