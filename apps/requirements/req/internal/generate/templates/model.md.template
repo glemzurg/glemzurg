@@ -1,5 +1,7 @@
 {{- $reqs := .Reqs -}}
 
+# {{ .Model.Name }}
+
 {{ .Model.Details }}
 
 ## Actors
@@ -7,7 +9,7 @@
 The actors of this model.
 
 {{ range .Actors -}}
-- **[{{ .Name }} <img src="{{ .Type }}.svg" width="30" height="30" />]({{ filename "actor" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ .Name }} <img src="{{ .Type }}.svg" width="7" height="15" />]({{ filename "actor" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 
 {{ if ne .Model.ActorGeneralizations nil -}}
