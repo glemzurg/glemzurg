@@ -1,7 +1,0 @@
-{
-    "code": 10007,
-    "message": "generalization subclass_keys[1] cannot be whitespace only, got '   '",
-    "error_file": "10007_generalization_subclasses_empty.md",
-    "has_schema": false,
-    "field": "subclass_keys[1]"
-}

@@ -1238,38 +1238,39 @@ func (c *current) onCollectionDataType1(uniqueFlag, multiplicity, collectionType
 	collectionTypeStr := collectionType.(string)
 	atomicDt := atomic.(*DataType)
 
-	// Set collection properties
-	var unique *bool
-	if uniqueFlag != nil {
-		unique = parserBoolPtr(true)
-	}
+	// Set collection properties.
+	// CollectionUnique is always set for collections (true or false).
+	unique := parserBoolPtr(uniqueFlag != nil)
 
-	var min, maxPtr *int
-	minVal := 0 // Default min is 0 for collections
-	multiplicitySpecified := false
+	// CollectionMin/Max are nil when not specified or when value is 0 (0 means "none").
+	var min, max *int
 	if multiplicity != nil {
 		mult := multiplicity.(map[string]interface{})
 		if m, ok := mult["min"]; ok {
-			minVal = m.(int)
-			multiplicitySpecified = true
+			if minVal := m.(int); minVal > 0 {
+				min = &minVal
+			}
 		}
 		if m, ok := mult["max"]; ok {
-			maxVal := m.(int)
-			maxPtr = &maxVal
-			multiplicitySpecified = true
+			if maxVal := m.(int); maxVal > 0 {
+				max = &maxVal
+			}
 		}
 	}
-	min = &minVal
 
 	// Build name
 	name := ""
-	if unique != nil {
+	if *unique {
 		name += "unique "
 	}
-	if multiplicitySpecified {
-		name += strconv.Itoa(*min)
-		if maxPtr != nil {
-			name += "-" + strconv.Itoa(*maxPtr)
+	if min != nil || max != nil {
+		if min != nil {
+			name += strconv.Itoa(*min)
+		} else {
+			name += "0"
+		}
+		if max != nil {
+			name += "-" + strconv.Itoa(*max)
 		} else {
 			name += "+"
 		}
@@ -1280,7 +1281,7 @@ func (c *current) onCollectionDataType1(uniqueFlag, multiplicity, collectionType
 		CollectionType:   collectionTypeStr,
 		CollectionUnique: unique,
 		CollectionMin:    min,
-		CollectionMax:    maxPtr,
+		CollectionMax:    max,
 		Atomic:           atomicDt.Atomic,
 	}, nil
 }
@@ -1373,9 +1374,9 @@ func (c *current) onSpanType1(lowerBracket, lowerValue, higherValue, higherBrack
 	}
 
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_SPAN,
+			ConstraintType: CONSTRAINT_TYPE_SPAN,
 			Span: &AtomicSpan{
 				LowerType:         lowerType,
 				LowerValue:        lvPtr,
@@ -1506,9 +1507,9 @@ func (c *current) onEnumType1(enumValues any) (any, error) {
 		}
 	}
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_ENUMERATION,
+			ConstraintType: CONSTRAINT_TYPE_ENUMERATION,
 			EnumOrdered:    parserBoolPtr(false),
 			Enums:          enums,
 		},
@@ -1524,9 +1525,9 @@ func (p *parser) callonEnumType1() (any, error) {
 func (c *current) onObjectType1(content any) (any, error) {
 	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_OBJECT,
+			ConstraintType: CONSTRAINT_TYPE_OBJECT,
 			ObjectClassKey: &contentStr,
 		},
 	}, nil
@@ -1541,9 +1542,9 @@ func (p *parser) callonObjectType1() (any, error) {
 func (c *current) onReferenceType1(content any) (any, error) {
 	contentStr := strings.TrimSpace(content.(string))
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_REFERENCE,
+			ConstraintType: CONSTRAINT_TYPE_REFERENCE,
 			Reference:      &contentStr,
 		},
 	}, nil
@@ -1557,9 +1558,9 @@ func (p *parser) callonReferenceType1() (any, error) {
 
 func (c *current) onUnconstrainedType1() (any, error) {
 	return &DataType{
-		CollectionType: _COLLECTION_TYPE_ATOMIC,
+		CollectionType: COLLECTION_TYPE_ATOMIC,
 		Atomic: &Atomic{
-			ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
+			ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED,
 		},
 	}, nil
 }

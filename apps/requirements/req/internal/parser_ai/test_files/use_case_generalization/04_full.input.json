@@ -1,0 +1,9 @@
+{
+    "name": "Order Operations",
+    "details": "All order lifecycle use cases. Once an order operation starts, it follows a fixed workflow.",
+    "superclass_key": "manage_order",
+    "subclass_keys": ["create_order", "cancel_order", "update_order"],
+    "is_complete": true,
+    "is_static": true,
+    "uml_comment": "Discriminator: operation_type"
+}

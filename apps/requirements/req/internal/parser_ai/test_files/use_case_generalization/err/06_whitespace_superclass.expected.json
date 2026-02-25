@@ -1,0 +1,7 @@
+{
+    "code": 13005,
+    "message": "use case generalization superclass_key cannot be empty or whitespace only, got '   '",
+    "error_file": "13005_use_case_generalization_superclass_required.md",
+    "has_schema": false,
+    "field": "superclass_key"
+}

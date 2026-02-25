@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "logic.schema.json",
+  "title": "Logic",
+  "description": "Schema for a logic specification object. Logic objects represent formal or informal specifications used for preconditions (requires), postconditions (guarantees), safety rules, invariants, guards, and derivation policies. A logic object must have a description and may optionally include a formal notation and specification. If validation fails, verify 'description' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "The kind of logic specification. Optional; when omitted the converter assigns the correct kind based on context. Valid values: 'assessment' (boolean check), 'state_change' (primed assignment), 'query' (named return values), 'safety_rule' (boolean check referencing both prior and new state), 'value' (single unnamed value expression).",
+      "enum": ["assessment", "state_change", "query", "safety_rule", "value"]
+    },
+    "description": {
+      "type": "string",
+      "description": "A human-readable description of the logic specification (e.g., 'Order total must be positive', 'User must be authenticated'). This is required and must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "notation": {
+      "type": "string",
+      "description": "Optional formal notation system used for the specification. Currently the only supported value is 'tla_plus' (TLA+ notation). When present, the specification field should contain a formal expression in this notation. If validation fails: ensure this is exactly 'tla_plus'.",
+      "enum": ["tla_plus"]
+    },
+    "specification": {
+      "type": "string",
+      "description": "Optional formal specification in the given notation. This is a machine-readable expression that formally defines the logic (e.g., 'self.total > 0', 'user.authenticated = TRUE'). Should only be present when notation is also specified."
+    }
+  },
+  "required": ["description"],
+  "additionalProperties": false
+}

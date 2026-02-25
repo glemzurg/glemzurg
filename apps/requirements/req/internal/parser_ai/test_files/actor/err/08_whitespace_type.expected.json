@@ -1,7 +1,6 @@
 {
-    "code": 2004,
-    "message": "actor type cannot be empty or whitespace only, got '   '",
-    "error_file": "2004_actor_type_invalid.md",
-    "has_schema": false,
-    "field": "type"
+    "code": 2006,
+    "message_prefix": "actor JSON does not match schema:",
+    "error_file": "2006_actor_schema_violation.md",
+    "has_schema": true
 }

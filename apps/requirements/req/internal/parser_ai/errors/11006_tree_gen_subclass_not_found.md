@@ -1,14 +1,14 @@
-# Generalization Subclass Not Found (E11006)
+# Class Generalization Subclass Not Found (E11006)
 
-A generalization references a subclass that does not exist in the subdomain.
+A class generalization references a subclass that does not exist in the subdomain.
 
 ## What Went Wrong
 
-A generalization file has a `subclass_keys` array that includes a class key, but no class with that key exists in the same subdomain as the generalization.
+A class generalization file has a `subclass_keys` array that includes a class key, but no class with that key exists in the same subdomain as the class generalization.
 
-## How Generalizations Work
+## How Class Generalizations Work
 
-Generalizations define inheritance relationships between classes. All classes referenced by a generalization (both superclass and subclasses) must exist within the same subdomain.
+Class generalizations define inheritance relationships between classes. All classes referenced by a class generalization (both superclass and subclasses) must exist within the same subdomain.
 
 ```
 your_model/
@@ -40,7 +40,7 @@ domains/{domain}/subdomains/{subdomain}/classes/{subclass_key}/
 
 ### Option 2: Fix the Reference
 
-Update the generalization to reference existing classes only:
+Update the class generalization to reference existing classes only:
 
 ```json
 {
@@ -65,7 +65,7 @@ Remove the missing subclass from the array:
 ## Troubleshooting Checklist
 
 1. **Check spelling**: Ensure each subclass key matches its class directory name exactly
-2. **Check location**: All subclasses must be in the same subdomain as the generalization
+2. **Check location**: All subclasses must be in the same subdomain as the class generalization
 3. **Check all entries**: Each entry in `subclass_keys` must reference an existing class
 
 ## Common Mistakes
@@ -83,6 +83,6 @@ Remove the missing subclass from the array:
 
 ## Related Errors
 
-- **E11005**: Generalization superclass not found
-- **E11015**: Duplicate subclass in generalization
+- **E11005**: Class generalization superclass not found
+- **E11015**: Duplicate subclass in class generalization
 - **E10006**: subclass_keys field is required

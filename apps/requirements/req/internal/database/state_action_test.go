@@ -64,9 +64,7 @@ func (suite *ActionSuite) TestLoad() {
 				class_key,
 				action_key,
 				name,
-				details,
-				requires,
-				guarantees
+				details
 			)
 		VALUES
 			(
@@ -74,9 +72,7 @@ func (suite *ActionSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/key',
 				'Name',
-				'Details',
-				'{"RequiresA","RequiresB"}',
-				'{"GuaranteesA","GuaranteesB"}'
+				'Details'
 			)
 	`)
 	assert.Nil(suite.T(), err)
@@ -85,22 +81,18 @@ func (suite *ActionSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.actionKey,
+		Name:    "Name",
+		Details: "Details",
 	}, action)
 }
 
 func (suite *ActionSuite) TestAdd() {
 
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.actionKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -108,31 +100,25 @@ func (suite *ActionSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.actionKey,
+		Name:    "Name",
+		Details: "Details",
 	}, action)
 }
 
 func (suite *ActionSuite) TestUpdate() {
 
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.actionKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Requires:   []string{"RequiresAX", "RequiresBX"},
-		Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+		Key:     suite.actionKey,
+		Name:    "NameX",
+		Details: "DetailsX",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -140,22 +126,18 @@ func (suite *ActionSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Requires:   []string{"RequiresAX", "RequiresBX"},
-		Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+		Key:     suite.actionKey,
+		Name:    "NameX",
+		Details: "DetailsX",
 	}, action)
 }
 
 func (suite *ActionSuite) TestRemove() {
 
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
-		Key:        suite.actionKey,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     suite.actionKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -173,18 +155,14 @@ func (suite *ActionSuite) TestQuery() {
 	err := AddActions(suite.db, suite.model.Key, map[identity.Key][]model_state.Action{
 		suite.class.Key: {
 			{
-				Key:        suite.actionKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				Requires:   []string{"RequiresAX", "RequiresBX"},
-				Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+				Key:     suite.actionKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
 			},
 			{
-				Key:        suite.actionKey,
-				Name:       "Name",
-				Details:    "Details",
-				Requires:   []string{"RequiresA", "RequiresB"},
-				Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+				Key:     suite.actionKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 		},
 	})
@@ -195,18 +173,14 @@ func (suite *ActionSuite) TestQuery() {
 	assert.Equal(suite.T(), map[identity.Key][]model_state.Action{
 		suite.class.Key: {
 			{
-				Key:        suite.actionKey,
-				Name:       "Name",
-				Details:    "Details",
-				Requires:   []string{"RequiresA", "RequiresB"},
-				Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+				Key:     suite.actionKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 			{
-				Key:        suite.actionKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				Requires:   []string{"RequiresAX", "RequiresBX"},
-				Guarantees: []string{"GuaranteesAX", "GuaranteesBX"},
+				Key:     suite.actionKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
 			},
 		},
 	}, actions)
@@ -219,11 +193,9 @@ func (suite *ActionSuite) TestQuery() {
 func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionKey identity.Key) (action model_state.Action) {
 
 	err := AddAction(dbOrTx, modelKey, classKey, model_state.Action{
-		Key:        actionKey,
-		Name:       actionKey.String(),
-		Details:    "Details",
-		Requires:   []string{"RequiresA", "RequiresB"},
-		Guarantees: []string{"GuaranteesA", "GuaranteesB"},
+		Key:     actionKey,
+		Name:    actionKey.String(),
+		Details: "Details",
 	})
 	assert.Nil(t, err)
 

@@ -71,7 +71,7 @@ func (suite *TransitionSuite) TestValidate() {
 				EventKey:     eventKey,
 				ToStateKey:   &toStateKey,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -91,7 +91,7 @@ func (suite *TransitionSuite) TestValidate() {
 				EventKey:     identity.Key{},
 				ToStateKey:   &toStateKey,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong event key type",

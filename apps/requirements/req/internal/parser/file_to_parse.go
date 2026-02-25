@@ -161,6 +161,17 @@ func (f *fileToParse) String() string {
 	return f.FileType + " : " + f.PathRel + " (" + f.PathAbs + ")"
 }
 
+// isUnderUseCases returns true if the relative path contains a "use_cases" directory segment.
+func isUnderUseCases(pathRel string) bool {
+	parts := strings.Split(pathRel, string(filepath.Separator))
+	for _, part := range parts {
+		if part == _PATH_USE_CASES {
+			return true
+		}
+	}
+	return false
+}
+
 func sortFilesToParse(filesToParse []fileToParse) {
 	sort.Slice(filesToParse, func(i, j int) bool {
 		return lessThanFilesToParse(filesToParse[i], filesToParse[j])

@@ -1,0 +1,6 @@
+{
+    "code": 16004,
+    "message_prefix": "global function JSON does not match schema:",
+    "error_file": "16004_global_function_schema_violation.md",
+    "has_schema": true
+}

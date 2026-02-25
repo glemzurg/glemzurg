@@ -106,39 +106,86 @@ const (
 	ErrQueryDuplicateKey    = 9005
 	ErrQueryFilenameInvalid = 9006
 
-	// Generalization errors (10xxx)
-	ErrGenNameRequired         = 10001
-	ErrGenNameEmpty            = 10002
-	ErrGenInvalidJSON          = 10003
-	ErrGenSchemaViolation      = 10004
-	ErrGenSuperclassRequired   = 10005
-	ErrGenSubclassesRequired   = 10006
-	ErrGenSubclassesEmpty      = 10007
-	ErrGenSuperclassNotFound   = 10008
-	ErrGenSubclassNotFound     = 10009
-	ErrGenDuplicateKey         = 10010
-	ErrGenFilenameInvalid      = 10011
-	ErrGenSubclassDuplicate    = 10012
-	ErrGenSuperclassIsSubclass = 10013
+	// Class generalization errors (10xxx)
+	ErrClassGenNameRequired         = 10001
+	ErrClassGenNameEmpty            = 10002
+	ErrClassGenInvalidJSON          = 10003
+	ErrClassGenSchemaViolation      = 10004
+	ErrClassGenSuperclassRequired   = 10005
+	ErrClassGenSubclassesRequired   = 10006
+	ErrClassGenSubclassesEmpty      = 10007
+	ErrClassGenSuperclassNotFound   = 10008
+	ErrClassGenSubclassNotFound     = 10009
+	ErrClassGenDuplicateKey         = 10010
+	ErrClassGenFilenameInvalid      = 10011
+	ErrClassGenSubclassDuplicate    = 10012
+	ErrClassGenSuperclassIsSubclass = 10013
+
+	// Actor generalization errors (12xxx)
+	ErrActorGenNameRequired       = 12001
+	ErrActorGenNameEmpty          = 12002
+	ErrActorGenInvalidJSON        = 12003
+	ErrActorGenSchemaViolation    = 12004
+	ErrActorGenSuperclassRequired = 12005
+	ErrActorGenSubclassesRequired = 12006
+	ErrActorGenSubclassesEmpty    = 12007
+
+	// Use case generalization errors (13xxx)
+	ErrUseCaseGenNameRequired       = 13001
+	ErrUseCaseGenNameEmpty          = 13002
+	ErrUseCaseGenInvalidJSON        = 13003
+	ErrUseCaseGenSchemaViolation    = 13004
+	ErrUseCaseGenSuperclassRequired = 13005
+	ErrUseCaseGenSubclassesRequired = 13006
+	ErrUseCaseGenSubclassesEmpty    = 13007
+
+	// Logic errors (14xxx)
+	ErrLogicDescriptionRequired = 14001
+	ErrLogicDescriptionEmpty    = 14002
+	ErrLogicInvalidJSON         = 14003
+	ErrLogicSchemaViolation     = 14004
+
+	// Parameter errors (15xxx)
+	ErrParamNameRequired    = 15001
+	ErrParamNameEmpty       = 15002
+	ErrParamInvalidJSON     = 15003
+	ErrParamSchemaViolation = 15004
+
+	// Global function errors (16xxx)
+	ErrGlobalFuncNameRequired     = 16001
+	ErrGlobalFuncNameEmpty        = 16002
+	ErrGlobalFuncInvalidJSON      = 16003
+	ErrGlobalFuncSchemaViolation  = 16004
+	ErrGlobalFuncNameNoUnderscore = 16005
+	ErrGlobalFuncParamEmpty       = 16006
+	ErrGlobalFuncLogicRequired    = 16007
+
+	// Domain association errors (17xxx)
+	ErrDomainAssocProblemKeyRequired  = 17001
+	ErrDomainAssocProblemKeyEmpty     = 17002
+	ErrDomainAssocSolutionKeyRequired = 17003
+	ErrDomainAssocSolutionKeyEmpty    = 17004
+	ErrDomainAssocInvalidJSON         = 17005
+	ErrDomainAssocSchemaViolation     = 17006
 
 	// Tree validation errors (11xxx) - cross-reference and structural integrity
-	ErrTreeClassActorNotFound             = 11001 // Class references an actor that doesn't exist
-	ErrTreeAssocFromClassNotFound         = 11002 // Association from_class_key not found
-	ErrTreeAssocToClassNotFound           = 11003 // Association to_class_key not found
-	ErrTreeAssocClassNotFound             = 11004 // Association association_class_key not found
-	ErrTreeGenSuperclassNotFound          = 11005 // Generalization superclass_key not found
-	ErrTreeGenSubclassNotFound            = 11006 // Generalization subclass_key not found
-	ErrTreeClassIndexAttrNotFound         = 11007 // Class index references attribute that doesn't exist
-	ErrTreeStateMachineStateNotFound      = 11008 // Transition references state that doesn't exist
-	ErrTreeStateMachineEventNotFound      = 11009 // Transition references event that doesn't exist
-	ErrTreeStateMachineGuardNotFound      = 11010 // Transition references guard that doesn't exist
-	ErrTreeStateMachineActionNotFound     = 11011 // Transition or state action references action that doesn't exist
-	ErrTreeTransitionNoStates             = 11012 // Transition has neither from_state_key nor to_state_key
-	ErrTreeTransitionInitialToFinal       = 11013 // Transition is both initial and final (invalid)
-	ErrTreeGenSuperclassIsSubclass        = 11014 // Superclass cannot also be a subclass
-	ErrTreeGenSubclassDuplicate           = 11015 // Same class listed multiple times in subclass_keys
-	ErrTreeAssocMultiplicityInvalid       = 11016 // Invalid multiplicity format
-	ErrTreeAssocClassSameAsEndpoint       = 11025 // Association class cannot be the same as from or to class
+	ErrTreeClassActorNotFound           = 11001 // Class references an actor that doesn't exist
+	ErrTreeAssocFromClassNotFound       = 11002 // Association from_class_key not found
+	ErrTreeAssocToClassNotFound         = 11003 // Association to_class_key not found
+	ErrTreeAssocClassNotFound           = 11004 // Association association_class_key not found
+	ErrTreeClassGenSuperclassNotFound   = 11005 // Class generalization superclass_key not found
+	ErrTreeClassGenSubclassNotFound     = 11006 // Class generalization subclass_key not found
+	ErrTreeClassIndexAttrNotFound       = 11007 // Class index references attribute that doesn't exist
+	ErrTreeStateMachineStateNotFound    = 11008 // Transition references state that doesn't exist
+	ErrTreeStateMachineEventNotFound    = 11009 // Transition references event that doesn't exist
+	ErrTreeStateMachineGuardNotFound    = 11010 // Transition references guard that doesn't exist
+	ErrTreeStateMachineActionNotFound   = 11011 // Transition or state action references action that doesn't exist
+	ErrTreeTransitionNoStates           = 11012 // Transition has neither from_state_key nor to_state_key
+	ErrTreeTransitionInitialToFinal     = 11013 // Transition is both initial and final (invalid)
+	ErrTreeClassGenSuperclassIsSubclass = 11014 // Superclass cannot also be a subclass
+	ErrTreeClassGenSubclassDuplicate    = 11015 // Same class listed multiple times in subclass_keys
+	ErrTreeAssocMultiplicityInvalid     = 11016 // Invalid multiplicity format
+	ErrTreeAssocClassSameAsEndpoint     = 11025 // Association class cannot be the same as from or to class
 
 	// Tree completeness errors (11017+) - ensure model is complete enough for AI guidance
 	ErrTreeModelNoActors             = 11017 // Model must have at least one actor defined
@@ -159,6 +206,48 @@ const (
 	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
 
 	// Subdomain naming errors (11030+)
-	ErrTreeSingleSubdomainNotDefault   = 11030 // Single subdomain must be named "default"
+	ErrTreeSingleSubdomainNotDefault    = 11030 // Single subdomain must be named "default"
 	ErrTreeMultipleSubdomainsHasDefault = 11031 // Multiple subdomains cannot include one named "default"
+
+	// Additional tree-level errors (11032+)
+	// Domain association tree errors
+	ErrTreeDomainAssocDomainNotFound = 11032 // Domain association references a domain that doesn't exist
+
+	// Actor generalization tree errors
+	ErrTreeActorGenActorNotFound = 11033 // Actor generalization references an actor that doesn't exist
+
+	// Scenario/step tree errors
+	ErrTreeScenarioStepObjectNotFound = 11034 // Scenario step references an object key that doesn't exist
+	ErrTreeScenarioStepEventNotFound  = 11035 // Scenario step references an event that doesn't exist on the referenced class
+	ErrTreeScenarioStepQueryNotFound  = 11036 // Scenario step references a query that doesn't exist on the referenced class
+
+	// Use case errors (18xxx)
+	ErrUseCaseNameRequired    = 18001
+	ErrUseCaseNameEmpty       = 18002
+	ErrUseCaseInvalidJSON     = 18003
+	ErrUseCaseSchemaViolation = 18004
+	ErrUseCaseLevelRequired   = 18005
+	ErrUseCaseLevelInvalid    = 18006
+
+	// Scenario errors (19xxx)
+	ErrScenarioNameRequired    = 19001
+	ErrScenarioNameEmpty       = 19002
+	ErrScenarioInvalidJSON     = 19003
+	ErrScenarioSchemaViolation = 19004
+
+	// Use case shared errors (20xxx)
+	ErrUseCaseSharedShareTypeRequired = 20001
+	ErrUseCaseSharedShareTypeEmpty    = 20002
+	ErrUseCaseSharedInvalidJSON       = 20003
+	ErrUseCaseSharedSchemaViolation   = 20004
+
+	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion
+	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
+	ErrConvModelValidation       = 21002 // Model validation failed after conversion
+	ErrConvMultiplicityInvalid   = 21003 // Multiplicity parsing failed during conversion
+	ErrConvClassNotFound         = 21004 // Class key not found during association conversion
+	ErrConvAssocKeyConstruction  = 21005 // Class association key construction failed during conversion
+	ErrConvScopedKeyInvalid      = 21006 // Scoped key format invalid during conversion (domain/subdomain/class)
+	ErrConvObjectResolveFailed   = 21007 // Failed to resolve object reference during scenario conversion
+	ErrConvSourceModelValidation = 21008 // Source model validation failed before ConvertFromModel
 )

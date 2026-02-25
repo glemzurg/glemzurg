@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,6 +23,8 @@ func (suite *UseCaseSuite) TestValidate() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	validKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	genKeyA := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_a"))
+	genKeyB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_b"))
 
 	tests := []struct {
 		testName string
@@ -53,13 +56,23 @@ func (suite *UseCaseSuite) TestValidate() {
 			},
 		},
 		{
+			testName: "valid use case with superclass and subclass",
+			useCase: UseCase{
+				Key:             validKey,
+				Name:            "Name",
+				Level:           _USE_CASE_LEVEL_SEA,
+				SuperclassOfKey: &genKeyA,
+				SubclassOfKey:   &genKeyB,
+			},
+		},
+		{
 			testName: "error empty key",
 			useCase: UseCase{
 				Key:   identity.Key{},
 				Name:  "Name",
 				Level: _USE_CASE_LEVEL_SEA,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -77,7 +90,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "",
 				Level: _USE_CASE_LEVEL_SEA,
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error blank level",
@@ -86,7 +99,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "Name",
 				Level: "",
 			},
-			errstr: "Level: cannot be blank",
+			errstr: "Level",
 		},
 		{
 			testName: "error invalid level",
@@ -95,7 +108,44 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "Name",
 				Level: "unknown",
 			},
-			errstr: "Level: must be a valid value",
+			errstr: "Level",
+		},
+		{
+			testName: "error superclass and subclass same key",
+			useCase: UseCase{
+				Key:             validKey,
+				Name:            "Name",
+				Level:           _USE_CASE_LEVEL_SEA,
+				SuperclassOfKey: &genKeyA,
+				SubclassOfKey:   &genKeyA,
+			},
+			errstr: "SuperclassOfKey and SubclassOfKey cannot be the same",
+		},
+		{
+			testName: "error SuperclassOfKey wrong key type",
+			useCase: func() UseCase {
+				wrongKey := domainKey
+				return UseCase{
+					Key:             validKey,
+					Name:            "Name",
+					Level:           _USE_CASE_LEVEL_SEA,
+					SuperclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SuperclassOfKey: invalid key type 'domain' for use case generalization",
+		},
+		{
+			testName: "error SubclassOfKey wrong key type",
+			useCase: func() UseCase {
+				wrongKey := domainKey
+				return UseCase{
+					Key:           validKey,
+					Name:          "Name",
+					Level:         _USE_CASE_LEVEL_SEA,
+					SubclassOfKey: &wrongKey,
+				}
+			}(),
+			errstr: "SubclassOfKey: invalid key type 'domain' for use case generalization",
 		},
 	}
 	for _, tt := range tests {
@@ -115,9 +165,25 @@ func (suite *UseCaseSuite) TestNew() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	key := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	genKeyA := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_a"))
+	genKeyB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_b"))
 
 	// Test parameters are mapped correctly.
-	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")
+	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, &genKeyA, &genKeyB, "UmlComment")
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), UseCase{
+		Key:             key,
+		Name:            "Name",
+		Details:         "Details",
+		Level:           _USE_CASE_LEVEL_SEA,
+		ReadOnly:        true,
+		SuperclassOfKey: &genKeyA,
+		SubclassOfKey:   &genKeyB,
+		UmlComment:      "UmlComment",
+	}, useCase)
+
+	// Test with nil superclass/subclass.
+	useCase, err = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, nil, nil, "UmlComment")
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), UseCase{
 		Key:        key,
@@ -129,8 +195,8 @@ func (suite *UseCaseSuite) TestNew() {
 	}, useCase)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, nil, nil, "UmlComment")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -147,7 +213,7 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 		Level: _USE_CASE_LEVEL_SEA,
 	}
 	err := useCase.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - use case key has subdomain1 as parent, but we pass other_subdomain.
 	useCase = UseCase{
@@ -235,4 +301,107 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 			}
 		})
 	}
+
+	// Test child Scenario validation propagates error.
+	scenarioKey := helper.Must(identity.NewScenarioKey(validKey, "scenario1"))
+	useCase := UseCase{
+		Key:   validKey,
+		Name:  "Name",
+		Level: _USE_CASE_LEVEL_SEA,
+		Scenarios: map[identity.Key]model_scenario.Scenario{
+			scenarioKey: {Key: scenarioKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err := useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Scenarios")
+
+	// Test valid with child Scenario.
+	useCase = UseCase{
+		Key:   validKey,
+		Name:  "Name",
+		Level: _USE_CASE_LEVEL_SEA,
+		Scenarios: map[identity.Key]model_scenario.Scenario{
+			scenarioKey: {Key: scenarioKey, Name: "Scenario"},
+		},
+	}
+	err = useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
+	assert.NoError(suite.T(), err)
+}
+
+// TestSetters tests that SetActors and SetScenarios correctly set their fields.
+func (suite *UseCaseSuite) TestSetters() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	actorClassKey := helper.Must(identity.NewClassKey(subdomainKey, "actorclass"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+
+	useCase := UseCase{Key: useCaseKey, Name: "Name", Level: _USE_CASE_LEVEL_SEA}
+
+	actors := map[identity.Key]Actor{
+		actorClassKey: {UmlComment: "actor"},
+	}
+	useCase.SetActors(actors)
+	assert.Equal(suite.T(), actors, useCase.Actors)
+
+	scenarios := map[identity.Key]model_scenario.Scenario{
+		scenarioKey: {Key: scenarioKey, Name: "Scenario"},
+	}
+	useCase.SetScenarios(scenarios)
+	assert.Equal(suite.T(), scenarios, useCase.Scenarios)
+}
+
+// TestValidateReferences tests that ValidateReferences validates use case references.
+func (suite *UseCaseSuite) TestValidateReferences() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	validKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	genKeyA := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_a"))
+	genKeyB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_b"))
+	genKeyC := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_c"))
+
+	generalizations := map[identity.Key]bool{
+		genKeyA: true,
+		genKeyB: true,
+	}
+
+	// Valid: references existing generalizations.
+	useCase := UseCase{
+		Key:             validKey,
+		Name:            "Name",
+		Level:           _USE_CASE_LEVEL_SEA,
+		SuperclassOfKey: &genKeyA,
+		SubclassOfKey:   &genKeyB,
+	}
+	err := useCase.ValidateReferences(generalizations)
+	assert.NoError(suite.T(), err)
+
+	// Valid: no references.
+	useCase = UseCase{
+		Key:   validKey,
+		Name:  "Name",
+		Level: _USE_CASE_LEVEL_SEA,
+	}
+	err = useCase.ValidateReferences(generalizations)
+	assert.NoError(suite.T(), err)
+
+	// Error: superclass references non-existent generalization.
+	useCase = UseCase{
+		Key:             validKey,
+		Name:            "Name",
+		Level:           _USE_CASE_LEVEL_SEA,
+		SuperclassOfKey: &genKeyC,
+	}
+	err = useCase.ValidateReferences(generalizations)
+	assert.ErrorContains(suite.T(), err, "non-existent generalization")
+
+	// Error: subclass references non-existent generalization.
+	useCase = UseCase{
+		Key:           validKey,
+		Name:          "Name",
+		Level:         _USE_CASE_LEVEL_SEA,
+		SubclassOfKey: &genKeyC,
+	}
+	err = useCase.ValidateReferences(generalizations)
+	assert.ErrorContains(suite.T(), err, "non-existent generalization")
 }

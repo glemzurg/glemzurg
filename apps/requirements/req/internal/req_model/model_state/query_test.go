@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,6 +24,8 @@ func (suite *QuerySuite) TestValidate() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	reqKey := helper.Must(identity.NewQueryRequireKey(validKey, "req_1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(validKey, "guar_1"))
 
 	tests := []struct {
 		testName string
@@ -30,10 +33,44 @@ func (suite *QuerySuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid query",
+			testName: "valid query minimal",
 			query: Query{
 				Key:  validKey,
 				Name: "Name",
+			},
+		},
+		{
+			testName: "valid query with all optional fields",
+			query: Query{
+				Key:     validKey,
+				Name:    "Name",
+				Details: "Details",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
+				},
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+				},
+			},
+		},
+		{
+			testName: "valid query with requires only",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
+			},
+		},
+		{
+			testName: "valid query with guarantees only",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+				},
 			},
 		},
 		{
@@ -42,7 +79,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -58,7 +95,65 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
+		},
+		{
+			testName: "error blank name with logic fields set",
+			query: Query{
+				Key:  validKey,
+				Name: "",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+				},
+			},
+			errstr: "Name",
+		},
+		{
+			testName: "error invalid requires logic missing key",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "requires 0",
+		},
+		{
+			testName: "error invalid guarantee logic missing key",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: identity.Key{}, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "guarantee 0",
+		},
+		{
+			testName: "error requires wrong kind",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "requires 0: logic kind must be 'assessment'",
+		},
+		{
+			testName: "error guarantee wrong kind",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeAssessment, Description: "Result in S.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "guarantee 0: logic kind must be 'query'",
 		},
 	}
 	for _, tt := range tests {
@@ -79,21 +174,49 @@ func (suite *QuerySuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	reqKey := helper.Must(identity.NewQueryRequireKey(key, "req_1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(key, "guar_1"))
 
-	// Test parameters are mapped correctly.
-	query, err := NewQuery(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"})
+	requires := []model_logic.Logic{
+		{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
+	}
+	guarantees := []model_logic.Logic{
+		{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+	}
+
+	// Test all parameters are mapped correctly.
+	params := []Parameter{
+		{Name: "ParamA", DataTypeRules: "Nat"},
+		{Name: "ParamB", DataTypeRules: "Int"},
+	}
+	query, err := NewQuery(key, "Name", "Details",
+		requires, guarantees, params)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Query{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
-		Requires:   []string{"Requires"},
-		Guarantees: []string{"Guarantees"},
+		Requires:   requires,
+		Guarantees: guarantees,
+		Parameters: []Parameter{
+			{Name: "ParamA", DataTypeRules: "Nat"},
+			{Name: "ParamB", DataTypeRules: "Int"},
+		},
+	}, query)
+
+	// Test with nil optional fields (all Logic slice fields are optional).
+	query, err = NewQuery(key, "Name", "Details",
+		nil, nil, nil)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Query{
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
 	}, query)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewQuery(key, "", "Details", nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	_, err = NewQuery(key, "", "Details", nil, nil, nil)
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -103,6 +226,8 @@ func (suite *QuerySuite) TestValidateWithParent() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+	reqKey := helper.Must(identity.NewQueryRequireKey(validKey, "req_1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(validKey, "guar_1"))
 
 	// Test that Validate is called.
 	query := Query{
@@ -110,7 +235,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := query.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - query key has class1 as parent, but we pass other_class.
 	query = Query{
@@ -121,6 +246,55 @@ func (suite *QuerySuite) TestValidateWithParent() {
 	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
+	err = query.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test valid with logic children.
+	query = Query{
+		Key:  validKey,
+		Name: "Name",
+		Requires: []model_logic.Logic{
+			{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+		},
+		Guarantees: []model_logic.Logic{
+			{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = query.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test logic key validation - require with wrong parent should fail.
+	otherQueryKey := helper.Must(identity.NewQueryKey(classKey, "other_query"))
+	wrongReqKey := helper.Must(identity.NewQueryRequireKey(otherQueryKey, "req_1"))
+	query = Query{
+		Key:  validKey,
+		Name: "Name",
+		Requires: []model_logic.Logic{
+			{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = query.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "requires 0", "ValidateWithParent should validate logic key parent")
+
+	// Test child Parameter validation propagates error.
+	query = Query{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+		},
+	}
+	err = query.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+
+	// Test valid with child Parameters.
+	query = Query{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "param1", DataTypeRules: "Nat"},
+		},
+	}
 	err = query.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
 }

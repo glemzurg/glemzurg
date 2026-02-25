@@ -1,8 +1,8 @@
-# JSON Model Format Proposal
+# JSON Model Format
 
 ## Overview
 
-This document proposes a new JSON-based format for defining requirements models. The format is designed to be:
+This document describes the JSON-based format for defining requirements models. The format is designed to be:
 
 1. **AI-friendly** - Easy for AI to generate and modify individual files
 2. **Human-reviewable** - Each file is small and focused, making corrections easy
@@ -143,12 +143,12 @@ Example: A REST endpoint `POST /orders/{id}/cancel` becomes:
   "name": "Cancel Order",
   "details": "Cancels the order and releases reserved inventory",
   "requires": [
-    "Order has not been shipped"
+    {"description": "Order has not been shipped"}
   ],
   "guarantees": [
-    "Order status is set to cancelled",
-    "Reserved inventory is released",
-    "Customer is notified of cancellation"
+    {"description": "Order status is set to cancelled"},
+    {"description": "Reserved inventory is released"},
+    {"description": "Customer is notified of cancellation"}
   ]
 }
 ```
@@ -173,29 +173,44 @@ Example: A REST endpoint `POST /orders/{id}/cancel` becomes:
 - **Minimal required fields** - Only essential fields are required; everything else is optional
 - **Separate complex concerns** - State machines, actions, and queries are separate files since they will become complex
 
-## Proposed Directory Structure
+## Directory Structure
 
 ```
 models_json/
 └── {model_name}/
     ├── model.json                    # Model metadata
+    ├── invariants/                   # Model-level invariants (logic constraints)
+    │   ├── 001.invariant.json
+    │   ├── 002.invariant.json
+    │   └── 003.invariant.json
     ├── actors/
-    │   ├── customer.json
-    │   ├── manager.json
-    │   └── publisher.json
-    ├── associations/                 # Model-level associations (cross-domain)
-    │   └── order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory.json
+    │   ├── customer.actor.json
+    │   ├── manager.actor.json
+    │   └── publisher.actor.json
+    ├── actor_generalizations/
+    │   └── user_type.agen.json
+    ├── global_functions/
+    │   ├── _max.json
+    │   └── _set_of_values.json
+    ├── class_associations/           # Model-level associations (cross-domain)
+    │   └── orders.default.book_order_line--inventory.default.inventory_item--order_inventory.assoc.json
+    ├── domain_associations/          # Domain constraint relationships
+    │   └── orders.inventory.domain_assoc.json
     └── domains/
         └── {domain_name}/
             ├── domain.json           # Domain metadata
-            ├── associations/         # Domain-level associations (cross-subdomain)
-            │   └── orders.book_order--shipping.shipment--order_shipment.json
+            ├── class_associations/   # Domain-level associations (cross-subdomain)
+            │   └── orders.book_order--shipping.shipment--order_shipment.assoc.json
             └── subdomains/
                 └── {subdomain_name}/
-                    ├── subdomain.json    # Subdomain metadata (optional)
-                    ├── associations/     # Subdomain-level associations (within subdomain)
-                    │   ├── book_order--book_order_line--order_lines.json
-                    │   └── book_order--customer--customer_orders.json
+                    ├── subdomain.json    # Subdomain metadata
+                    ├── class_associations/     # Subdomain-level associations (within subdomain)
+                    │   ├── book_order--book_order_line--order_lines.assoc.json
+                    │   └── book_order--customer--customer_orders.assoc.json
+                    ├── class_generalizations/
+                    │   └── medium.cgen.json
+                    ├── use_case_generalizations/
+                    │   └── order_management.ucgen.json
                     ├── classes/
                     │   ├── book_order/
                     │   │   ├── class.json        # Class definition (attributes only)
@@ -212,15 +227,60 @@ models_json/
                     │   │   └── state_machine.json
                     │   └── customer/
                     │       └── class.json
-                    └── generalizations/
-                        └── medium.json
+                    └── use_cases/
+                        └── {use_case_name}/
+                            ├── use_case.json     # Use case metadata
+                            └── scenarios/
+                                └── happy_path.scenario.json
 ```
+
+## Filename Conventions
+
+Every entity type has a specific filename pattern. These patterns are enforced by the parser.
+
+| Entity Type | Filename Pattern | Directory | Key Derivation |
+|---|---|---|---|
+| Model | `model.json` | root | Directory name |
+| Invariant | `NNN.invariant.json` | `invariants/` | Sequential number (001, 002, ...) |
+| Actor | `{key}.actor.json` | `actors/` | Strip `.actor.json` |
+| Actor Generalization | `{key}.agen.json` | `actor_generalizations/` | Strip `.agen.json` |
+| Global Function | `{key}.json` | `global_functions/` | Strip `.json` |
+| Domain | `domain.json` | `domains/{key}/` | Directory name |
+| Subdomain | `subdomain.json` | `domains/{d}/subdomains/{key}/` | Directory name |
+| Class | `class.json` | `.../classes/{key}/` | Directory name |
+| State Machine | `state_machine.json` | `.../classes/{key}/` | Fixed filename |
+| Action | `{key}.json` | `.../classes/{c}/actions/` | Strip `.json` |
+| Query | `{key}.json` | `.../classes/{c}/queries/` | Strip `.json` |
+| Class Generalization | `{key}.cgen.json` | `.../subdomains/{s}/class_generalizations/` | Strip `.cgen.json` |
+| Class Association | `{compound}.assoc.json` | `class_associations/` at model/domain/subdomain level | Compound key (see below) |
+| Domain Association | `{key}.domain_assoc.json` | `domain_associations/` | Strip `.domain_assoc.json` |
+| Use Case | `use_case.json` | `.../use_cases/{key}/` | Directory name |
+| Use Case Generalization | `{key}.ucgen.json` | `.../subdomains/{s}/use_case_generalizations/` | Strip `.ucgen.json` |
+| Scenario | `{key}.scenario.json` | `.../use_cases/{uc}/scenarios/` | Strip `.scenario.json` |
+
+## Key Naming Rules
+
+All keys derived from filenames and directory names must follow `snake_case` format:
+
+**Pattern**: `^[a-z][a-z0-9]*(_[a-z0-9]+)*$`
+
+Valid: `order`, `book_order`, `order_line_item`, `customer2`, `v2_order`
+
+Invalid: `BookOrder` (uppercase), `book-order` (hyphen), `2order` (starts with number), `_order` (starts with underscore), `order_` (trailing underscore), `order__line` (consecutive underscores)
+
+**Exception — Global function keys**: Must start with an underscore followed by valid snake_case.
+
+**Pattern**: `^_[a-z][a-z0-9]*(_[a-z0-9]+)*$`
+
+Valid: `_max`, `_set_of_values`, `_calculate_total`
+
+**Exception — Domain association keys**: Two snake_case components separated by a dot.
+
+**Pattern**: `{domain1}.{domain2}` (e.g., `orders.inventory`)
 
 ## File Formats
 
 ### model.json
-
-Based on `req_model.Model`:
 
 ```json
 {
@@ -233,9 +293,19 @@ Based on `req_model.Model`:
 - `name` (required): Display name of the model
 - `details` (optional): Markdown description
 
-### actors/{actor_name}.json
+### invariants/NNN.invariant.json
 
-Based on `model_actor.Actor`:
+Invariants are model-level logical constraints that must always hold true. They are numbered sequentially. Each invariant is a **Logic** object (see [Logic Objects](#logic-objects)).
+
+```json
+{
+  "description": "An order cannot have a total less than zero",
+  "notation": "OCL",
+  "specification": "context Order inv: self.total >= 0"
+}
+```
+
+### actors/{actor_key}.actor.json
 
 ```json
 {
@@ -252,9 +322,70 @@ Based on `model_actor.Actor`:
 - `details` (optional): Markdown description
 - `uml_comment` (optional): Comment for UML diagrams
 
-### domains/{domain}/domain.json
+### actor_generalizations/{key}.agen.json
 
-Based on `model_domain.Domain`:
+Actor generalizations define super/sub-type hierarchies between actors.
+
+```json
+{
+  "name": "User Type",
+  "details": "Different types of users in the system",
+  "superclass_key": "user",
+  "subclass_keys": ["customer", "admin", "manager"],
+  "is_complete": true,
+  "is_static": true,
+  "uml_comment": ""
+}
+```
+
+**Fields:**
+- `name` (required): Display name of the generalization
+- `superclass_key` (required): Actor key for the superclass (scoped to model actors)
+- `subclass_keys` (required): Array of actor keys for the subclasses (at least one required)
+- `details` (optional): Markdown description
+- `is_complete` (optional, default false): Are the specializations exhaustive
+- `is_static` (optional, default false): Are the specializations unchanging at runtime
+- `uml_comment` (optional): Comment for UML diagrams
+
+### global_functions/{key}.json
+
+Global functions are reusable definitions referenced from logic expressions throughout the model. Function names **must start with an underscore**.
+
+```json
+{
+  "name": "_Max",
+  "parameters": ["a", "b"],
+  "logic": {
+    "description": "Returns the larger of two values",
+    "notation": "OCL",
+    "specification": "if a > b then a else b endif"
+  }
+}
+```
+
+**Fields:**
+- `name` (required): Display name of the function (must start with `_`)
+- `parameters` (optional): Array of parameter name strings (each must be non-empty)
+- `logic` (required): A Logic object describing the function's behavior (see [Logic Objects](#logic-objects))
+
+### domain_associations/{key}.domain_assoc.json
+
+Domain associations describe constraint relationships between domains (a problem domain enforces requirements on a solution domain).
+
+```json
+{
+  "problem_domain_key": "orders",
+  "solution_domain_key": "inventory",
+  "uml_comment": ""
+}
+```
+
+**Fields:**
+- `problem_domain_key` (required): Key of the domain that defines constraints
+- `solution_domain_key` (required): Key of the domain that must satisfy constraints
+- `uml_comment` (optional): Comment for UML diagrams
+
+### domains/{domain}/domain.json
 
 ```json
 {
@@ -271,9 +402,27 @@ Based on `model_domain.Domain`:
 - `realized` (optional, default false): If true, this domain has no semantic model because it already exists
 - `uml_comment` (optional): Comment for UML diagrams
 
-### classes/{class_name}/class.json
+### subdomains/{subdomain}/subdomain.json
 
-Based on `model_class.Class` and `model_class.Attribute`:
+```json
+{
+  "name": "Order Processing",
+  "details": "Handles creation and management of orders.",
+  "uml_comment": ""
+}
+```
+
+**Fields:**
+- `name` (required): Display name of the subdomain
+- `details` (optional): Markdown description
+- `uml_comment` (optional): Comment for UML diagrams
+
+**Subdomain Naming Rule:**
+
+- **Single subdomain**: When a domain has exactly one subdomain, it **must** be named `default` (directory: `subdomains/default/`).
+- **Multiple subdomains**: When a domain has two or more subdomains, **none** may be named `default`. Each must have a descriptive name.
+
+### classes/{class_name}/class.json
 
 ```json
 {
@@ -287,25 +436,22 @@ Based on `model_class.Class` and `model_class.Attribute`:
       "name": "ID",
       "data_type_rules": "int",
       "details": "Unique identifier",
-      "derivation_policy": "",
-      "nullable": false,
-      "uml_comment": ""
+      "nullable": false
     },
     "status": {
       "name": "Status",
       "data_type_rules": "enum(pending, confirmed, shipped, delivered)",
       "details": "Current order status",
-      "derivation_policy": "",
-      "nullable": false,
-      "uml_comment": ""
+      "nullable": false
     },
     "total": {
       "name": "Total",
       "data_type_rules": "decimal",
       "details": "Order total amount",
-      "derivation_policy": "",
-      "nullable": false,
-      "uml_comment": ""
+      "derivation_policy": {
+        "description": "Sum of line item prices minus discounts plus tax"
+      },
+      "nullable": false
     }
   },
 
@@ -316,20 +462,20 @@ Based on `model_class.Class` and `model_class.Attribute`:
 }
 ```
 
-**Class Fields (from `model_class.Class`):**
+**Class Fields:**
 - `name` (required): Display name of the class
 - `details` (optional): Markdown description
 - `actor_key` (optional): Actor name (scoped to model actors)
 - `uml_comment` (optional): Comment for UML diagrams
 
-**Attribute Fields (from `model_class.Attribute`):**
+**Attribute Fields:**
 
 Attributes are stored as an object keyed by attribute key.
 
 - `name` (required): Display name of the attribute
 - `data_type_rules` (optional): Data type specification string
 - `details` (optional): Markdown description
-- `derivation_policy` (optional): How this derived attribute is computed
+- `derivation_policy` (optional): A Logic object describing how this derived attribute is computed (see [Logic Objects](#logic-objects))
 - `nullable` (optional, default false): Whether this attribute can be null
 - `uml_comment` (optional): Comment for UML diagrams
 
@@ -337,27 +483,27 @@ Attributes are stored as an object keyed by attribute key.
 
 - `indexes` (optional): Array of arrays of attribute keys. Each inner array defines one index.
 
-### associations/{association_name}.json
+### class_associations/{compound_key}.assoc.json
 
-Based on `model_class.Association`. Associations exist at three levels depending on which classes they connect:
+Associations exist at three levels depending on which classes they connect:
 
-- **Subdomain-level** (`subdomains/{subdomain}/associations/`): Classes within the same subdomain
-- **Domain-level** (`domains/{domain}/associations/`): Classes from different subdomains within the same domain
-- **Model-level** (`associations/`): Classes from different domains
+- **Subdomain-level** (`subdomains/{subdomain}/class_associations/`): Classes within the same subdomain
+- **Domain-level** (`domains/{domain}/class_associations/`): Classes from different subdomains within the same domain
+- **Model-level** (`class_associations/`): Classes from different domains
 
 The filename includes enough context to be unique at that level. Separators:
-- `.` separates domain from subdomain from class
+- `.` separates domain from subdomain from class in the filename
 - `--` separates the from-class, to-class, and distilled name
 
 The distilled name is the full association name, lowercase with `_` between words.
 
 | Level | Filename Pattern | Example |
 |-------|-----------------|---------|
-| Subdomain | `{from_class}--{to_class}--{name}.json` | `book_order--book_order_line--order_lines.json` |
-| Domain | `{from_subdomain}.{from_class}--{to_subdomain}.{to_class}--{name}.json` | `orders.book_order--shipping.shipment--order_shipment.json` |
-| Model | `{from_domain}.{from_subdomain}.{from_class}--{to_domain}.{to_subdomain}.{to_class}--{name}.json` | `order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory.json` |
+| Subdomain | `{from_class}--{to_class}--{name}.assoc.json` | `book_order--book_order_line--order_lines.assoc.json` |
+| Domain | `{from_sub}.{from_class}--{to_sub}.{to_class}--{name}.assoc.json` | `orders.book_order--shipping.shipment--order_shipment.assoc.json` |
+| Model | `{from_dom}.{from_sub}.{from_class}--{to_dom}.{to_sub}.{to_class}--{name}.assoc.json` | `order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory.assoc.json` |
 
-**Subdomain-level association** (`subdomains/default/associations/book_order--customer--customer_orders.json`):
+**Subdomain-level association** (`subdomains/default/class_associations/book_order--customer--customer_orders.assoc.json`):
 
 Keys are scoped to the subdomain (just class names).
 
@@ -374,7 +520,7 @@ Keys are scoped to the subdomain (just class names).
 }
 ```
 
-**Domain-level association** (`domains/order_fulfillment/associations/orders.book_order--shipping.shipment--order_shipment.json`):
+**Domain-level association** (`domains/order_fulfillment/class_associations/orders.book_order--shipping.shipment--order_shipment.assoc.json`):
 
 Keys include subdomain to disambiguate (subdomain/class).
 
@@ -391,7 +537,7 @@ Keys include subdomain to disambiguate (subdomain/class).
 }
 ```
 
-**Model-level association** (`associations/order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory.json`):
+**Model-level association** (`class_associations/order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory.assoc.json`):
 
 Keys include domain and subdomain (domain/subdomain/class).
 
@@ -408,7 +554,7 @@ Keys include domain and subdomain (domain/subdomain/class).
 }
 ```
 
-**Association Fields (from `model_class.Association`):**
+**Association Fields:**
 - `name` (required): Display name of the association
 - `from_class_key` (required): Scoped key of the source class
 - `from_multiplicity` (required): Multiplicity on the "from" side
@@ -419,8 +565,6 @@ Keys include domain and subdomain (domain/subdomain/class).
 - `uml_comment` (optional): Comment for UML diagrams
 
 **Multiplicity Format:**
-
-Multiplicity defines cardinality constraints on associations. Valid formats:
 
 | Format | Meaning | Example |
 |--------|---------|---------|
@@ -438,9 +582,32 @@ Rules:
 - `"*"` represents unbounded
 - Upper bound must be >= lower bound (unless upper is unbounded)
 
-### classes/{class_name}/state_machine.json
+### class_generalizations/{key}.cgen.json
 
-Based on `model_state.State`, `model_state.Event`, `model_state.Guard`, and `model_state.Transition`:
+Class generalizations define super/sub-type hierarchies between classes within a subdomain.
+
+```json
+{
+  "name": "Medium",
+  "details": "Different formats a book can be published in",
+  "superclass_key": "product",
+  "subclass_keys": ["book", "ebook", "audiobook"],
+  "is_complete": true,
+  "is_static": true,
+  "uml_comment": ""
+}
+```
+
+**Fields:**
+- `name` (required): Display name of the generalization
+- `superclass_key` (required): Class key for the superclass (scoped to same subdomain)
+- `subclass_keys` (required): Array of class keys for the subclasses (at least one required, scoped to same subdomain)
+- `details` (optional): Markdown description
+- `is_complete` (optional, default false): Are the specializations complete, or can an instantiation exist without a specialization
+- `is_static` (optional, default false): Are the specializations static and unchanging, or can they change at runtime
+- `uml_comment` (optional): Comment for UML diagrams
+
+### classes/{class_name}/state_machine.json
 
 ```json
 {
@@ -458,31 +625,11 @@ Based on `model_state.State`, `model_state.Event`, `model_state.Guard`, and `mod
     },
     "confirmed": {
       "name": "Confirmed",
-      "details": "Order confirmed and ready for processing",
-      "uml_comment": "",
-      "actions": [
-        {
-          "action_key": "reserve_inventory",
-          "when": "entry"
-        }
-      ]
-    },
-    "shipped": {
-      "name": "Shipped",
-      "details": "Order has been shipped to customer",
-      "uml_comment": "",
-      "actions": []
-    },
-    "delivered": {
-      "name": "Delivered",
-      "details": "Order delivered to customer",
-      "uml_comment": "",
-      "actions": []
+      "details": "Order confirmed and ready for processing"
     },
     "cancelled": {
       "name": "Cancelled",
       "details": "Order was cancelled",
-      "uml_comment": "",
       "actions": [
         {
           "action_key": "release_inventory",
@@ -497,34 +644,22 @@ Based on `model_state.State`, `model_state.Event`, `model_state.Guard`, and `mod
       "name": "place",
       "details": "Customer places the order",
       "parameters": [
-        {"name": "items", "source": "cart.items"},
-        {"name": "shipping_address", "source": "customer.address"}
+        {"name": "items", "data_type_rules": "list of cart items"},
+        {"name": "shipping_address", "data_type_rules": "string"}
       ]
     },
     "confirm": {
       "name": "confirm",
       "details": "Order payment confirmed",
       "parameters": [
-        {"name": "payment_id", "source": "payment.id"}
+        {"name": "payment_id", "data_type_rules": "string"}
       ]
-    },
-    "ship": {
-      "name": "ship",
-      "details": "Order shipped",
-      "parameters": [
-        {"name": "tracking_number", "source": "shipment.tracking"}
-      ]
-    },
-    "deliver": {
-      "name": "deliver",
-      "details": "Order delivered",
-      "parameters": []
     },
     "cancel": {
       "name": "cancel",
       "details": "Order cancelled",
       "parameters": [
-        {"name": "reason", "source": "user.input"}
+        {"name": "reason", "data_type_rules": "string"}
       ]
     }
   },
@@ -532,19 +667,23 @@ Based on `model_state.State`, `model_state.Event`, `model_state.Guard`, and `mod
   "guards": {
     "has_items": {
       "name": "hasItems",
-      "details": "Order has at least one line item"
+      "logic": {
+        "description": "Order has at least one line item"
+      }
     },
     "payment_valid": {
       "name": "paymentValid",
-      "details": "Payment has been validated"
-    },
-    "in_stock": {
-      "name": "inStock",
-      "details": "All items are in stock"
+      "logic": {
+        "description": "Payment has been validated",
+        "notation": "OCL",
+        "specification": "self.payment.isValid()"
+      }
     },
     "not_shipped": {
       "name": "notShipped",
-      "details": "Order has not been shipped yet"
+      "logic": {
+        "description": "Order has not been shipped yet"
+      }
     }
   },
 
@@ -562,46 +701,26 @@ Based on `model_state.State`, `model_state.Event`, `model_state.Guard`, and `mod
       "to_state_key": "confirmed",
       "event_key": "confirm",
       "guard_key": "payment_valid",
-      "action_key": "notify_warehouse",
-      "uml_comment": ""
-    },
-    {
-      "from_state_key": "confirmed",
-      "to_state_key": "shipped",
-      "event_key": "ship",
-      "guard_key": "in_stock",
-      "action_key": "send_tracking_email",
-      "uml_comment": ""
-    },
-    {
-      "from_state_key": "shipped",
-      "to_state_key": "delivered",
-      "event_key": "deliver",
-      "guard_key": null,
-      "action_key": "send_delivery_confirmation",
-      "uml_comment": ""
+      "action_key": "notify_warehouse"
     },
     {
       "from_state_key": "pending",
       "to_state_key": "cancelled",
       "event_key": "cancel",
-      "guard_key": null,
-      "action_key": "refund_payment",
-      "uml_comment": ""
+      "action_key": "refund_payment"
     },
     {
       "from_state_key": "confirmed",
       "to_state_key": "cancelled",
       "event_key": "cancel",
       "guard_key": "not_shipped",
-      "action_key": "refund_payment",
-      "uml_comment": ""
+      "action_key": "refund_payment"
     }
   ]
 }
 ```
 
-**State Fields (from `model_state.State`):**
+**State Fields:**
 
 States are stored as an object keyed by state key.
 
@@ -610,30 +729,26 @@ States are stored as an object keyed by state key.
 - `uml_comment` (optional): Comment for UML diagrams
 - `actions` (optional): Array of state actions (entry/exit/do)
 
-**State Action Fields (from `model_state.StateAction`):**
+**State Action Fields:**
 - `action_key` (required): Key of the action to execute
 - `when` (required): When to execute - `"entry"`, `"exit"`, or `"do"`
 
-**Event Fields (from `model_state.Event`):**
+**Event Fields:**
 
 Events are stored as an object keyed by event key.
 
 - `name` (required): Display name of the event
 - `details` (optional): Description
-- `parameters` (optional): Array of event parameters
+- `parameters` (optional): Array of parameters (see [Parameter Objects](#parameter-objects))
 
-**Event Parameter Fields (from `model_state.EventParameter`):**
-- `name` (required): Parameter name
-- `source` (required): Where the parameter value comes from
-
-**Guard Fields (from `model_state.Guard`):**
+**Guard Fields:**
 
 Guards are stored as an object keyed by guard key.
 
 - `name` (required): Simple name for internal use
-- `details` (required): Description of the guard condition (shown in UML)
+- `logic` (required): A Logic object describing the guard condition (see [Logic Objects](#logic-objects))
 
-**Transition Fields (from `model_state.Transition`):**
+**Transition Fields:**
 - `from_state_key` (optional): State key to transition from (null for initial transitions)
 - `to_state_key` (optional): State key to transition to (null for final transitions)
 - `event_key` (required): Event that triggers this transition
@@ -643,110 +758,255 @@ Guards are stored as an object keyed by guard key.
 
 Note: At least one of `from_state_key` or `to_state_key` must be specified.
 
-### classes/{class_name}/actions/{action_name}.json
+### classes/{class_name}/actions/{action_key}.json
 
-Based on `model_state.Action`. Each action is its own file. The filename (without .json) becomes the action key.
+Each action is its own file. The filename (without `.json`) becomes the action key.
 
 ```json
 {
-  "name": "calculateTotal",
+  "name": "Calculate Total",
   "details": "Sum up line item prices and apply taxes/discounts",
+  "parameters": [
+    {"name": "discount_code", "data_type_rules": "string"}
+  ],
   "requires": [
-    "Order has at least one line item",
-    "All line items have valid prices"
+    {"description": "Order has at least one line item"},
+    {"description": "All line items have valid prices"}
   ],
   "guarantees": [
-    "Order.total is set to the computed value",
-    "Total is non-negative"
+    {"description": "Order.total is set to the computed value"},
+    {"description": "Total is non-negative"}
+  ],
+  "safety_rules": [
+    {"description": "Total must not exceed maximum order limit"}
   ]
 }
 ```
 
-**Action Fields (from `model_state.Action`):**
+**Action Fields:**
 - `name` (required): Display name of the action
 - `details` (optional): Description of what the action does
-- `requires` (optional): Array of preconditions
-- `guarantees` (optional): Array of postconditions
+- `parameters` (optional): Array of parameters (see [Parameter Objects](#parameter-objects))
+- `requires` (optional): Array of Logic objects representing preconditions (see [Logic Objects](#logic-objects))
+- `guarantees` (optional): Array of Logic objects representing postconditions
+- `safety_rules` (optional): Array of Logic objects representing safety constraints
 
-Another example (`actions/notify_warehouse.json`):
+### classes/{class_name}/queries/{query_key}.json
 
-```json
-{
-  "name": "notifyWarehouse",
-  "details": "Send order details to warehouse for fulfillment",
-  "requires": [
-    "Order is in confirmed state",
-    "All items have been validated"
-  ],
-  "guarantees": [
-    "Warehouse notification message is queued",
-    "Order.warehouse_notified is set to true"
-  ]
-}
-```
-
-### classes/{class_name}/queries/{query_name}.json
-
-Based on `model_state.Query`. Each query is its own file. The filename (without .json) becomes the query key.
+Each query is its own file. The filename (without `.json`) becomes the query key.
 
 ```json
 {
-  "name": "getSubtotal",
+  "name": "Get Subtotal",
   "details": "Calculate subtotal before tax and discounts",
+  "parameters": [
+    {"name": "include_shipping", "data_type_rules": "boolean"}
+  ],
   "requires": [
-    "Order exists"
+    {"description": "Order exists"}
   ],
   "guarantees": [
-    "Returns sum of (line.price * line.quantity) for all lines",
-    "Return value is non-negative"
+    {"description": "Returns sum of (line.price * line.quantity) for all lines"},
+    {"description": "Return value is non-negative"}
   ]
 }
 ```
 
-**Query Fields (from `model_state.Query`):**
+**Query Fields:**
 - `name` (required): Display name of the query
 - `details` (optional): Description of what the query returns
-- `requires` (optional): Array of preconditions
-- `guarantees` (optional): Array of postconditions/return value guarantees
+- `parameters` (optional): Array of parameters (see [Parameter Objects](#parameter-objects))
+- `requires` (optional): Array of Logic objects representing preconditions (see [Logic Objects](#logic-objects))
+- `guarantees` (optional): Array of Logic objects representing postconditions/return value guarantees
 
-Another example (`queries/is_cancellable.json`):
+### use_cases/{use_case_key}/use_case.json
+
+Use cases describe user stories for the system at various levels.
 
 ```json
 {
-  "name": "isCancellable",
-  "details": "Check if order can still be cancelled",
-  "requires": [],
-  "guarantees": [
-    "Returns true if state is pending or confirmed",
-    "Returns false otherwise"
-  ]
+  "name": "Place Order",
+  "details": "Customer places a new order for books",
+  "level": "sea",
+  "read_only": false,
+  "uml_comment": "",
+  "actors": {
+    "customer": {
+      "uml_comment": "Primary actor"
+    },
+    "inventory_system": {
+      "uml_comment": "Supporting actor"
+    }
+  }
 }
 ```
 
-### generalizations/{generalization_name}.json
+**Fields:**
+- `name` (required): Display name of the use case
+- `level` (required): One of `"sky"`, `"sea"`, or `"mud"`
+  - `sky` — Strategic level (high-level business goals)
+  - `sea` — Tactical level (user-goal level use cases)
+  - `mud` — Operational level (sub-function level details)
+- `details` (optional): Markdown description
+- `read_only` (optional, default false): Whether this use case only reads data
+- `uml_comment` (optional): Comment for UML diagrams
+- `actors` (optional): Map of class keys to actor reference objects. Each actor reference can have:
+  - `uml_comment` (optional): Comment for UML diagrams
 
-Based on `model_class.Generalization`:
+### use_case_generalizations/{key}.ucgen.json
+
+Use case generalizations define super/sub-type hierarchies between use cases within a subdomain.
 
 ```json
 {
-  "name": "Medium",
-  "details": "Different formats a book can be published in",
-  "superclass_key": "product",
-  "subclass_keys": ["book", "ebook", "audiobook"],
-  "is_complete": true,
+  "name": "Order Management",
+  "details": "Different types of order operations",
+  "superclass_key": "manage_order",
+  "subclass_keys": ["place_order", "cancel_order", "modify_order"],
+  "is_complete": false,
   "is_static": true,
   "uml_comment": ""
 }
 ```
 
-**Generalization Fields (from `model_class.Generalization`):**
+**Fields:**
 - `name` (required): Display name of the generalization
-- `superclass_key` (required): Class key for the superclass (scoped to same subdomain)
-- `subclass_keys` (required): Array of class keys for the subclasses (at least one required, scoped to same subdomain)
+- `superclass_key` (required): Use case key for the parent (scoped to same subdomain)
+- `subclass_keys` (required): Array of use case keys for the children (at least one required)
 - `details` (optional): Markdown description
-- `is_complete` (optional, default false): Are the specializations complete, or can an instantiation exist without a specialization
-- `is_static` (optional, default false): Are the specializations static and unchanging, or can they change at runtime
+- `is_complete` (optional, default false): Are the specializations exhaustive
+- `is_static` (optional, default false): Are the specializations unchanging at runtime
 - `uml_comment` (optional): Comment for UML diagrams
+
+### scenarios/{scenario_key}.scenario.json
+
+Scenarios document specific flows through a use case (e.g., sequence diagrams). They live inside a use case directory.
+
+```json
+{
+  "name": "Happy Path",
+  "details": "Customer successfully places an order",
+  "objects": {
+    "c1": {
+      "object_number": 1,
+      "name": "Alice",
+      "name_style": "instance",
+      "class_key": "customer",
+      "multi": false,
+      "uml_comment": ""
+    },
+    "o1": {
+      "object_number": 2,
+      "name_style": "anonymous",
+      "class_key": "book_order",
+      "multi": false
+    }
+  },
+  "steps": {
+    "step_type": "sequence",
+    "statements": [
+      {
+        "step_type": "leaf",
+        "leaf_type": "event",
+        "description": "Customer places an order",
+        "from_object_key": "c1",
+        "to_object_key": "o1",
+        "event_key": "place"
+      },
+      {
+        "step_type": "leaf",
+        "leaf_type": "query",
+        "description": "Check order total",
+        "from_object_key": "c1",
+        "to_object_key": "o1",
+        "query_key": "get_subtotal"
+      }
+    ]
+  }
+}
+```
+
+**Scenario Fields:**
+- `name` (required): Display name of the scenario
+- `details` (optional): Markdown description
+- `objects` (optional): Map of object keys to object definitions
+- `steps` (optional): Root step node (recursive AST structure)
+
+**Object Fields:**
+- `object_number` (required): Sequential number for ordering in diagrams
+- `name` (optional): Instance name (e.g., "Alice")
+- `name_style` (required): How the name is displayed — `"instance"`, `"anonymous"`, or `"class"`
+- `class_key` (required): Key of the class this object represents (scoped to subdomain)
+- `multi` (optional, default false): Whether this represents multiple objects
+- `uml_comment` (optional): Comment for UML diagrams
+
+**Step Fields (recursive AST):**
+
+Steps form a tree structure representing the scenario flow. There are two categories:
+
+**Container steps** (have `statements` children):
+- `step_type: "sequence"` — Execute statements in order
+- `step_type: "loop"` — Repeat statements while condition holds
+  - `condition` (required): Loop condition
+  - `statements`: Body of the loop
+- `step_type: "switch"` — Branch on conditions
+  - `statements`: Array of `case` steps
+- `step_type: "case"` — A branch within a switch
+  - `condition` (required): Case condition
+  - `statements`: Body of the case
+
+**Leaf steps** (`step_type: "leaf"`):
+- `leaf_type: "event"` — An event interaction between objects
+  - `from_object_key`: Sending object
+  - `to_object_key`: Receiving object
+  - `event_key`: Key of the event on the target object's state machine
+  - `description`: What happens
+- `leaf_type: "query"` — A query interaction between objects
+  - `from_object_key`: Querying object
+  - `to_object_key`: Queried object
+  - `query_key`: Key of the query on the target object
+  - `description`: What is being queried
+- `leaf_type: "scenario"` — A reference to another scenario
+  - `scenario_key`: Key of the referenced scenario
+  - `description`: What the sub-scenario does
+- `leaf_type: "delete"` — Deletion of an object
+  - `from_object_key`: Object initiating deletion
+  - `to_object_key`: Object being deleted
+  - `description`: What is being deleted
+
+## Shared Objects
+
+### Logic Objects
+
+Logic objects appear throughout the model wherever formal or informal logic needs to be expressed: invariants, action requires/guarantees/safety_rules, query requires/guarantees, guard conditions, global function definitions, and attribute derivation policies.
+
+```json
+{
+  "description": "Order total must be non-negative",
+  "notation": "OCL",
+  "specification": "context Order inv: self.total >= 0"
+}
+```
+
+**Fields:**
+- `description` (required): Human-readable description of the logic
+- `notation` (optional): Formal notation system (e.g., `"OCL"`, `"Z"`, `"TLA+"`)
+- `specification` (optional): Formal specification in the given notation
+
+### Parameter Objects
+
+Parameters appear in actions, queries, and events.
+
+```json
+{
+  "name": "discount_code",
+  "data_type_rules": "string, max 20 characters"
+}
+```
+
+**Fields:**
+- `name` (required): Parameter name
+- `data_type_rules` (optional): Data type specification string
 
 ## The "details" Field: Purpose and Proper Use
 
@@ -786,12 +1046,12 @@ The `details` field should **never** contain:
   "name": "calculateTotal",
   "details": "Sum up line item prices and apply taxes/discounts",
   "requires": [
-    "Order has at least one line item",
-    "All line items have valid prices"
+    {"description": "Order has at least one line item"},
+    {"description": "All line items have valid prices"}
   ],
   "guarantees": [
-    "Order.total is set to the computed value",
-    "Total is non-negative"
+    {"description": "Order.total is set to the computed value"},
+    {"description": "Total is non-negative"}
   ]
 }
 ```
@@ -802,9 +1062,12 @@ Each entity type has appropriate structured fields for logic:
 
 | Entity | Summary Field | Logic Fields |
 |--------|---------------|--------------|
-| Action | `details` | `requires`, `guarantees` |
-| Query | `details` | `requires`, `guarantees` |
-| Guard | `details` (describes the condition being checked) | N/A (guards ARE the logic) |
+| Action | `details` | `requires`, `guarantees`, `safety_rules` (arrays of Logic objects) |
+| Query | `details` | `requires`, `guarantees` (arrays of Logic objects) |
+| Guard | — | `logic` (single Logic object) |
+| Invariant | — | Is itself a Logic object (`description`, `notation`, `specification`) |
+| Global Function | — | `logic` (single Logic object) |
+| Attribute | `details` | `derivation_policy` (single Logic object, optional) |
 | State | `details` | `actions` (entry/exit/do behaviors) |
 | Event | `details` | `parameters` |
 | Class | `details` | `attributes`, `indexes` |
@@ -812,7 +1075,7 @@ Each entity type has appropriate structured fields for logic:
 
 ### Why This Matters
 
-1. **AI Processing**: Structured fields (`requires`, `guarantees`) are machine-parseable. AI can extract preconditions and postconditions reliably.
+1. **AI Processing**: Structured Logic objects are machine-parseable. AI can extract preconditions and postconditions reliably.
 
 2. **Code Generation**: Generators can use `requires` for validation checks and `guarantees` for assertions. Free-form text in `details` cannot be reliably transformed.
 
@@ -899,11 +1162,15 @@ Each entity type has appropriate structured fields for logic:
 
 2. **Actions are independent**: Actions do not reference or call other actions.
 
+3. **Subdomain naming**: A domain with exactly one subdomain must name it `default`. A domain with multiple subdomains cannot use `default` as any of their names.
+
+4. **Model completeness**: A valid model must have at least one actor and at least one domain. Each domain must have at least one subdomain.
+
 ## Implementation Architecture
 
 ### Separate Go Structs for JSON Import
 
-The JSON import package will use its own set of Go structs, separate from the `req_model` classes. This separation exists for several reasons:
+The JSON import package uses its own set of Go structs, separate from the `req_model` classes. This separation exists for several reasons:
 
 1. **Optimized input shapes**: The JSON format can use structures that are easier for input (e.g., superclass/subclass defined in generalization rather than spread across class files).
 
@@ -919,21 +1186,43 @@ The JSON import package will use its own set of Go structs, separate from the `r
 
 ### JSON Schema Validation
 
-Each JSON file type will have a corresponding JSON Schema for validation:
+Each JSON file type has a corresponding JSON Schema for validation:
 
 - `model.schema.json`
 - `actor.schema.json`
+- `actor_generalization.schema.json`
 - `domain.schema.json`
 - `subdomain.schema.json`
 - `class.schema.json`
-- `association.schema.json`
+- `class_association.schema.json`
+- `class_generalization.schema.json`
 - `state_machine.schema.json`
 - `action.schema.json`
 - `query.schema.json`
-- `generalization.schema.json`
+- `logic.schema.json`
+- `parameter.schema.json`
+- `global_function.schema.json`
+- `domain_association.schema.json`
+- `use_case.schema.json`
+- `use_case_generalization.schema.json`
+- `use_case_shared.schema.json`
+- `scenario.schema.json`
 
 These schemas provide:
 - Early validation before Go parsing
 - Clear documentation of expected structure
 - IDE support for editing JSON files
 - Consistent error messages for structural issues
+
+### Cross-Reference Validation
+
+After parsing, the entire model tree is validated for internal consistency:
+
+- All class `actor_key` references must point to existing actors
+- All association `from_class_key`, `to_class_key`, and `association_class_key` references must point to existing classes at the appropriate scope
+- All class generalization `superclass_key` and `subclass_keys` must point to existing classes in the same subdomain
+- All actor generalization `superclass_key` and `subclass_keys` must point to existing actors
+- All domain association `problem_domain_key` and `solution_domain_key` must point to existing domains
+- State machine transition references to states, events, guards, and actions must all be valid
+- Use case actor references must point to existing classes in the same subdomain
+- Scenario event and query references must point to valid events/queries on the referenced objects' classes

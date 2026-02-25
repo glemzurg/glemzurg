@@ -16,11 +16,11 @@ actor_key: actor_key
 events:
     LogIn:
         details: Appears in data dictionary.
-        parameters:
-            - name: userid
-              source: this comes from x
-            - name: username
-              source: this comes from y
     LogOut: {}
     Trigger:
         details: Appears in data dictionary.
+        parameters:
+            - name: Thing
+              rules: string that is 3-28 chars long
+            - name: Another
+              rules: unconstrained

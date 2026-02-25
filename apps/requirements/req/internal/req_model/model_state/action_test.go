@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,6 +24,9 @@ func (suite *ActionSuite) TestValidate() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	reqKey := helper.Must(identity.NewActionRequireKey(validKey, "req_1"))
+	guarKey := helper.Must(identity.NewActionGuaranteeKey(validKey, "guar_1"))
+	safetyKey := helper.Must(identity.NewActionSafetyKey(validKey, "safety_1"))
 
 	tests := []struct {
 		testName string
@@ -30,10 +34,57 @@ func (suite *ActionSuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid action",
+			testName: "valid action minimal",
 			action: Action{
 				Key:  validKey,
 				Name: "Name",
+			},
+		},
+		{
+			testName: "valid action with all optional fields",
+			action: Action{
+				Key:     validKey,
+				Name:    "Name",
+				Details: "Details",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
+				},
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+				},
+				SafetyRules: []model_logic.Logic{
+					{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule 1.", Notation: model_logic.NotationTLAPlus, Specification: "safety1"},
+				},
+			},
+		},
+		{
+			testName: "valid action with requires only",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
+			},
+		},
+		{
+			testName: "valid action with guarantees only",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' = 1"},
+				},
+			},
+		},
+		{
+			testName: "valid action with safety rules only",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				SafetyRules: []model_logic.Logic{
+					{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "x must stay positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' > 0"},
+				},
 			},
 		},
 		{
@@ -42,7 +93,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -58,7 +109,87 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
+		},
+		{
+			testName: "error blank name with logic fields set",
+			action: Action{
+				Key:  validKey,
+				Name: "",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+				},
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' = 1"},
+				},
+			},
+			errstr: "Name",
+		},
+		{
+			testName: "error invalid requires logic missing key",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "requires 0",
+		},
+		{
+			testName: "error invalid guarantee logic missing key",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: identity.Key{}, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "guarantee 0",
+		},
+		{
+			testName: "error invalid safety rule logic missing key",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				SafetyRules: []model_logic.Logic{
+					{Key: identity.Key{}, Type: model_logic.LogicTypeSafetyRule, Description: "x must stay positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "safety rule 0",
+		},
+		{
+			testName: "error requires wrong kind",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "requires 0: logic kind must be 'assessment'",
+		},
+		{
+			testName: "error guarantee wrong kind",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeAssessment, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "guarantee 0: logic kind must be 'state_change'",
+		},
+		{
+			testName: "error safety rule wrong kind",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				SafetyRules: []model_logic.Logic{
+					{Key: safetyKey, Type: model_logic.LogicTypeAssessment, Description: "x must stay positive.", Notation: model_logic.NotationTLAPlus},
+				},
+			},
+			errstr: "safety rule 0: logic kind must be 'safety_rule'",
 		},
 	}
 	for _, tt := range tests {
@@ -79,21 +210,54 @@ func (suite *ActionSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewActionKey(classKey, "action1"))
+	reqKey := helper.Must(identity.NewActionRequireKey(key, "req_1"))
+	guarKey := helper.Must(identity.NewActionGuaranteeKey(key, "guar_1"))
+	safetyKey := helper.Must(identity.NewActionSafetyKey(key, "safety_1"))
 
-	// Test parameters are mapped correctly.
-	action, err := NewAction(key, "Name", "Details", []string{"Requires"}, []string{"Guarantees"})
+	requires := []model_logic.Logic{
+		{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
+	}
+	guarantees := []model_logic.Logic{
+		{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+	}
+	safetyRules := []model_logic.Logic{
+		{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "tla_safety"},
+	}
+
+	// Test all parameters are mapped correctly.
+	params := []Parameter{
+		{Name: "ParamA", DataTypeRules: "Nat"},
+		{Name: "ParamB", DataTypeRules: "Int"},
+	}
+	action, err := NewAction(key, "Name", "Details",
+		requires, guarantees, safetyRules, params)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Action{
-		Key:        key,
-		Name:       "Name",
-		Details:    "Details",
-		Requires:   []string{"Requires"},
-		Guarantees: []string{"Guarantees"},
+		Key:         key,
+		Name:        "Name",
+		Details:     "Details",
+		Requires:    requires,
+		Guarantees:  guarantees,
+		SafetyRules: safetyRules,
+		Parameters: []Parameter{
+			{Name: "ParamA", DataTypeRules: "Nat"},
+			{Name: "ParamB", DataTypeRules: "Int"},
+		},
+	}, action)
+
+	// Test with nil optional fields (all Logic slice fields are optional).
+	action, err = NewAction(key, "Name", "Details",
+		nil, nil, nil, nil)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Action{
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
 	}, action)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAction(key, "", "Details", nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	_, err = NewAction(key, "", "Details", nil, nil, nil, nil)
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -103,6 +267,9 @@ func (suite *ActionSuite) TestValidateWithParent() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewActionKey(classKey, "action1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+	reqKey := helper.Must(identity.NewActionRequireKey(validKey, "req_1"))
+	guarKey := helper.Must(identity.NewActionGuaranteeKey(validKey, "guar_1"))
+	safetyKey := helper.Must(identity.NewActionSafetyKey(validKey, "safety_1"))
 
 	// Test that Validate is called.
 	action := Action{
@@ -110,7 +277,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := action.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - action key has class1 as parent, but we pass other_class.
 	action = Action{
@@ -121,6 +288,58 @@ func (suite *ActionSuite) TestValidateWithParent() {
 	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
+	err = action.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test valid with logic children.
+	action = Action{
+		Key:  validKey,
+		Name: "Name",
+		Requires: []model_logic.Logic{
+			{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+		},
+		Guarantees: []model_logic.Logic{
+			{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Notation: model_logic.NotationTLAPlus},
+		},
+		SafetyRules: []model_logic.Logic{
+			{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = action.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test logic key validation - require with wrong parent should fail.
+	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
+	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
+	action = Action{
+		Key:  validKey,
+		Name: "Name",
+		Requires: []model_logic.Logic{
+			{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+		},
+	}
+	err = action.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "requires 0", "ValidateWithParent should validate logic key parent")
+
+	// Test child Parameter validation propagates error.
+	action = Action{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+		},
+	}
+	err = action.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+
+	// Test valid with child Parameters.
+	action = Action{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "param1", DataTypeRules: "Nat"},
+		},
+	}
 	err = action.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
 }

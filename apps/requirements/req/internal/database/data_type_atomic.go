@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
@@ -32,11 +31,11 @@ func scanAtomic(scanner Scanner, dataTypeKeyPtr *string, atomic *model_data_type
 func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomic model_data_type.Atomic, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return "", model_data_type.Atomic{}, err
 	}
-	dataTypeKey, err = identity.PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return "", model_data_type.Atomic{}, err
 	}
@@ -75,11 +74,11 @@ func LoadAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr 
 func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_type.Atomic) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = identity.PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -121,11 +120,11 @@ func AddAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_ty
 func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data_type.Atomic) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = identity.PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -160,11 +159,11 @@ func UpdateAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomic model_data
 func RemoveAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = identity.PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -190,7 +189,7 @@ func RemoveAtomic(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 func QueryAtomics(dbOrTx DbOrTx, modelKey string) (atomics map[string]model_data_type.Atomic, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +235,7 @@ func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]model_
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -246,7 +245,7 @@ func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]model_
 	valueStrings := make([]string, 0, len(atomics))
 	i := 0
 	for dataTypeKey, atomic := range atomics {
-		dataTypeKey, err = identity.PreenKey(dataTypeKey)
+		dataTypeKey, err = preenKey(dataTypeKey)
 		if err != nil {
 			return err
 		}

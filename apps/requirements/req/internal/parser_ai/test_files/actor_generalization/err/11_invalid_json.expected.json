@@ -1,0 +1,6 @@
+{
+    "code": 12003,
+    "message_prefix": "failed to parse actor generalization JSON:",
+    "error_file": "12003_actor_generalization_invalid_json.md",
+    "has_schema": false
+}

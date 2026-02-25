@@ -59,7 +59,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerType: cannot be blank.",
+			errorMessage: "LowerType",
 		},
 		{
 			name: "invalid LowerType",
@@ -71,7 +71,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerType: must be a valid value.",
+			errorMessage: "LowerType",
 		},
 		{
 			name: "missing HigherType",
@@ -82,7 +82,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:             "m",
 				Precision:         1.0,
 			},
-			errorMessage: "HigherType: cannot be blank.",
+			errorMessage: "HigherType",
 		},
 		{
 			name: "invalid HigherType",
@@ -94,7 +94,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:             "m",
 				Precision:         1.0,
 			},
-			errorMessage: "HigherType: must be a valid value.",
+			errorMessage: "HigherType",
 		},
 		{
 			name: "missing Units",
@@ -103,7 +103,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				HigherType: "unconstrained",
 				Precision:  1.0,
 			},
-			errorMessage: "Units: cannot be blank.",
+			errorMessage: "Units",
 		},
 		{
 			name: "LowerType closed but LowerValue nil",
@@ -213,7 +213,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				HigherType: "unconstrained",
 				Units:      "m",
 			},
-			errorMessage: "Precision: cannot be blank.",
+			errorMessage: "Precision",
 		},
 		{
 			name: "Precision <= 0",

@@ -1,0 +1,6 @@
+{
+    "name": "System Actor Hierarchy",
+    "details": "Categorizes all system actors by their access level and responsibilities",
+    "superclass_key": "system_actor",
+    "subclass_keys": ["internal_service", "external_api"]
+}

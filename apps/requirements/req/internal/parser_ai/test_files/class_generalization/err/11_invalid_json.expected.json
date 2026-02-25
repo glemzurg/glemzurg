@@ -1,0 +1,6 @@
+{
+    "code": 10003,
+    "message_prefix": "failed to parse class generalization JSON:",
+    "error_file": "10003_class_generalization_invalid_json.md",
+    "has_schema": false
+}

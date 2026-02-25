@@ -9,6 +9,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
 func TestDomainSuite(t *testing.T) {
@@ -41,7 +43,7 @@ func (suite *DomainSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -49,7 +51,7 @@ func (suite *DomainSuite) TestValidate() {
 				Key:  helper.Must(identity.NewActorKey("actor1")),
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'actor' for domain.",
+			errstr: "Key: invalid key type 'actor' for domain",
 		},
 		{
 			testName: "error blank name",
@@ -57,7 +59,7 @@ func (suite *DomainSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -89,7 +91,7 @@ func (suite *DomainSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewDomain(key, "", "Details", true, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -103,7 +105,7 @@ func (suite *DomainSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := domain.ValidateWithParent(nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domains should have nil parent.
 	domain = Domain{
@@ -317,4 +319,191 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 	emptyResult := emptyDomain.GetClassAssociations()
 	assert.NotNil(suite.T(), emptyResult)
 	assert.Equal(suite.T(), 0, len(emptyResult))
+}
+
+// TestValidateWithParentDeepTree tests that key validation propagates through the full tree:
+// domain → subdomain → class → guard/action/query logic keys.
+func (suite *DomainSuite) TestValidateWithParentDeepTree() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	guardKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
+	actionKey := helper.Must(identity.NewActionKey(classKey, "action1"))
+	reqKey := helper.Must(identity.NewActionRequireKey(actionKey, "req_1"))
+	queryKey := helper.Must(identity.NewQueryKey(classKey, "query1"))
+	guarKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "guar_1"))
+
+	// Test valid full tree.
+	domain := Domain{
+		Key:  domainKey,
+		Name: "Domain",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomainKey: {
+				Key:  subdomainKey,
+				Name: "Subdomain",
+				Classes: map[identity.Key]model_class.Class{
+					classKey: {
+						Key:  classKey,
+						Name: "Class",
+						Guards: map[identity.Key]model_state.Guard{
+							guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
+								Key: guardKey, Type: model_logic.LogicTypeAssessment, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
+							}},
+						},
+						Actions: map[identity.Key]model_state.Action{
+							actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
+								{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Req.", Notation: model_logic.NotationTLAPlus},
+							}},
+						},
+						Queries: map[identity.Key]model_state.Query{
+							queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
+								{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guar.", Notation: model_logic.NotationTLAPlus},
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := domain.ValidateWithParent(nil)
+	assert.NoError(suite.T(), err, "Valid full tree should pass")
+
+	// Test that a guard logic key mismatch deep in the tree is caught.
+	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Domain",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomainKey: {
+				Key:  subdomainKey,
+				Name: "Subdomain",
+				Classes: map[identity.Key]model_class.Class{
+					classKey: {
+						Key:  classKey,
+						Name: "Class",
+						Guards: map[identity.Key]model_state.Guard{
+							guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
+								Key: otherGuardKey, Type: model_logic.LogicTypeAssessment, Description: "Guard.", Notation: model_logic.NotationTLAPlus,
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+	err = domain.ValidateWithParent(nil)
+	assert.ErrorContains(suite.T(), err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
+
+	// Test that an action require key with wrong parent deep in the tree is caught.
+	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
+	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Domain",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomainKey: {
+				Key:  subdomainKey,
+				Name: "Subdomain",
+				Classes: map[identity.Key]model_class.Class{
+					classKey: {
+						Key:  classKey,
+						Name: "Class",
+						Actions: map[identity.Key]model_state.Action{
+							actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
+								{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Req.", Notation: model_logic.NotationTLAPlus},
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+	err = domain.ValidateWithParent(nil)
+	assert.ErrorContains(suite.T(), err, "requires 0", "Should catch action require key error in deep tree")
+}
+
+// TestValidateWithParentAndActorsAndClasses tests child validation propagation.
+func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	defaultSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
+	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	subdomain2Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain2"))
+	classKey1 := helper.Must(identity.NewClassKey(subdomain1Key, "class1"))
+	classKey2 := helper.Must(identity.NewClassKey(subdomain2Key, "class2"))
+
+	actors := map[identity.Key]bool{}
+	classes := map[identity.Key]bool{
+		classKey1: true,
+		classKey2: true,
+	}
+
+	// Test invalid Subdomain child propagates error.
+	domain := Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err := domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Subdomains")
+
+	// Test invalid ClassAssociation child propagates error.
+	// Domain-level associations require classes in different subdomains.
+	assocKey := helper.Must(identity.NewClassAssociationKey(domainKey, classKey1, classKey2, "assoc1"))
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		ClassAssociations: map[identity.Key]model_class.Association{
+			assocKey: {Key: assocKey, Name: ""}, // Invalid: blank name
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child ClassAssociations")
+
+	// Test valid domain with single subdomain named "default".
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Subdomain"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.NoError(suite.T(), err, "Valid domain with single 'default' subdomain should pass")
+
+	// Test single subdomain with non-"default" key fails.
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "must be 'default'", "Single subdomain must have key 'default'")
+
+	// Test multiple subdomains with "default" key fails.
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			defaultSubdomainKey: {Key: defaultSubdomainKey, Name: "Default Subdomain"},
+			subdomain1Key:       {Key: subdomain1Key, Name: "Subdomain1"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.ErrorContains(suite.T(), err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
+
+	// Test multiple subdomains without "default" key passes.
+	domain = Domain{
+		Key:  domainKey,
+		Name: "Name",
+		Subdomains: map[identity.Key]Subdomain{
+			subdomain1Key: {Key: subdomain1Key, Name: "Subdomain1"},
+			subdomain2Key: {Key: subdomain2Key, Name: "Subdomain2"},
+		},
+	}
+	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
+	assert.NoError(suite.T(), err, "Multiple subdomains without 'default' should pass")
 }

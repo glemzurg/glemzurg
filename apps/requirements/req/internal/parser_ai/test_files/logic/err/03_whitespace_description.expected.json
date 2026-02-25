@@ -1,0 +1,7 @@
+{
+    "code": 14002,
+    "message": "logic description cannot be empty or whitespace only, got '   '",
+    "error_file": "14002_logic_description_empty.md",
+    "has_schema": false,
+    "field": "description"
+}

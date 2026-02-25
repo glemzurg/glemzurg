@@ -18,8 +18,22 @@ func validateModelTree(model *inputModel) error {
 	}
 
 	// Validate model-level associations
-	for assocKey, assoc := range model.Associations {
+	for assocKey, assoc := range model.ClassAssociations {
 		if err := validateModelAssociation(model, assocKey, assoc); err != nil {
+			return err
+		}
+	}
+
+	// Validate domain associations (cross-domain references)
+	for daKey, da := range model.DomainAssociations {
+		if err := validateModelDomainAssociation(model, daKey, da); err != nil {
+			return err
+		}
+	}
+
+	// Validate actor generalizations reference real actors
+	for agKey, ag := range model.ActorGeneralizations {
+		if err := validateActorGeneralizationTree(model, agKey, ag); err != nil {
 			return err
 		}
 	}
@@ -149,7 +163,7 @@ func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *in
 	}
 
 	// Check subdomain has at least one association
-	if len(subdomain.Associations) == 0 {
+	if len(subdomain.ClassAssociations) == 0 {
 		return NewParseError(
 			ErrTreeSubdomainNoAssociations,
 			fmt.Sprintf("subdomain '%s' must have at least one association defined - associations describe how classes relate to each other; create association files under 'domains/%s/subdomains/%s/associations/' with '.assoc.json' extension",
@@ -216,7 +230,7 @@ func validateDomainTree(model *inputModel, domainKey string, domain *inputDomain
 	}
 
 	// Validate domain-level associations
-	for assocKey, assoc := range domain.Associations {
+	for assocKey, assoc := range domain.ClassAssociations {
 		if err := validateDomainAssociation(model, domainKey, domain, assocKey, assoc); err != nil {
 			return err
 		}
@@ -234,16 +248,30 @@ func validateSubdomainTree(model *inputModel, domainKey, subdomainKey string, su
 		}
 	}
 
-	// Validate generalizations
-	for genKey, gen := range subdomain.Generalizations {
-		if err := validateGeneralizationTree(subdomain, domainKey, subdomainKey, genKey, gen); err != nil {
+	// Validate class generalizations
+	for genKey, gen := range subdomain.ClassGeneralizations {
+		if err := validateClassGeneralizationTree(subdomain, domainKey, subdomainKey, genKey, gen); err != nil {
 			return err
 		}
 	}
 
 	// Validate subdomain-level associations
-	for assocKey, assoc := range subdomain.Associations {
+	for assocKey, assoc := range subdomain.ClassAssociations {
 		if err := validateSubdomainAssociation(subdomain, domainKey, subdomainKey, assocKey, assoc); err != nil {
+			return err
+		}
+	}
+
+	// Validate each use case
+	for useCaseKey, useCase := range subdomain.UseCases {
+		if err := validateUseCaseTree(model, domainKey, subdomainKey, useCaseKey, useCase); err != nil {
+			return err
+		}
+	}
+
+	// Validate use case generalizations
+	for genKey, gen := range subdomain.UseCaseGeneralizations {
+		if err := validateUseCaseGeneralizationTree(subdomain, domainKey, subdomainKey, genKey, gen); err != nil {
 			return err
 		}
 	}
@@ -444,15 +472,15 @@ func validateActionsReferenced(class *inputClass, domainKey, subdomainKey, class
 	return nil
 }
 
-// validateGeneralizationTree validates a generalization's cross-references.
-func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainKey, genKey string, gen *inputGeneralization) error {
+// validateClassGeneralizationTree validates a class generalization's cross-references.
+func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainKey, genKey string, gen *inputClassGeneralization) error {
 	genPath := fmt.Sprintf("domains/%s/subdomains/%s/generalizations/%s.gen.json", domainKey, subdomainKey, genKey)
 
 	// Validate superclass_key exists
 	if _, ok := subdomain.Classes[gen.SuperclassKey]; !ok {
 		return NewParseError(
-			ErrTreeGenSuperclassNotFound,
-			fmt.Sprintf("generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
+			ErrTreeClassGenSuperclassNotFound,
+			fmt.Sprintf("class generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
 				genKey, gen.SuperclassKey, subdomainKey),
 			genPath,
 		).WithField("superclass_key")
@@ -464,8 +492,8 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 		// Check for duplicates
 		if seen[subclassKey] {
 			return NewParseError(
-				ErrTreeGenSubclassDuplicate,
-				fmt.Sprintf("generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
+				ErrTreeClassGenSubclassDuplicate,
+				fmt.Sprintf("class generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
 		}
@@ -474,8 +502,8 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 		// Check that the subclass exists
 		if _, ok := subdomain.Classes[subclassKey]; !ok {
 			return NewParseError(
-				ErrTreeGenSubclassNotFound,
-				fmt.Sprintf("generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
+				ErrTreeClassGenSubclassNotFound,
+				fmt.Sprintf("class generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
 					genKey, subclassKey, subdomainKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
@@ -484,8 +512,8 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 		// Check that superclass is not also a subclass
 		if subclassKey == gen.SuperclassKey {
 			return NewParseError(
-				ErrTreeGenSuperclassIsSubclass,
-				fmt.Sprintf("generalization '%s' superclass '%s' cannot also be a subclass",
+				ErrTreeClassGenSuperclassIsSubclass,
+				fmt.Sprintf("class generalization '%s' superclass '%s' cannot also be a subclass",
 					genKey, gen.SuperclassKey),
 				genPath,
 			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
@@ -495,9 +523,78 @@ func validateGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainK
 	return nil
 }
 
+// validateModelDomainAssociation validates that a parsed domain association refers to existing domains.
+func validateModelDomainAssociation(model *inputModel, key string, da *inputDomainAssociation) error {
+	assocPath := fmt.Sprintf("domain_associations/%s.domain_assoc.json", key)
+
+	if _, ok := model.Domains[da.ProblemDomainKey]; !ok {
+		return NewParseError(
+			ErrTreeDomainAssocDomainNotFound,
+			fmt.Sprintf("domain association '%s' problem_domain_key '%s' references domain which does not exist",
+				key, da.ProblemDomainKey),
+			assocPath,
+		).WithField("problem_domain_key")
+	}
+	if _, ok := model.Domains[da.SolutionDomainKey]; !ok {
+		return NewParseError(
+			ErrTreeDomainAssocDomainNotFound,
+			fmt.Sprintf("domain association '%s' solution_domain_key '%s' references domain which does not exist",
+				key, da.SolutionDomainKey),
+			assocPath,
+		).WithField("solution_domain_key")
+	}
+	return nil
+}
+
+// validateActorGeneralizationTree validates that actor generalizations reference real actors
+func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inputActorGeneralization) error {
+	genPath := fmt.Sprintf("actor_generalizations/%s.agen.json", genKey)
+
+	if _, ok := model.Actors[gen.SuperclassKey]; !ok {
+		return NewParseError(
+			ErrTreeActorGenActorNotFound,
+			fmt.Sprintf("actor generalization '%s' superclass_key '%s' does not exist",
+				genKey, gen.SuperclassKey),
+			genPath,
+		).WithField("superclass_key")
+	}
+
+	seen := make(map[string]bool)
+	for i, subclassKey := range gen.SubclassKeys {
+		if seen[subclassKey] {
+			// reuse existing actor gen duplicate error code if present
+			return NewParseError(
+				ErrActorGenSubclassesEmpty,
+				fmt.Sprintf("actor generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+		seen[subclassKey] = true
+
+		if _, ok := model.Actors[subclassKey]; !ok {
+			return NewParseError(
+				ErrTreeActorGenActorNotFound,
+				fmt.Sprintf("actor generalization '%s' subclass_key '%s' does not exist",
+					genKey, subclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+
+		if subclassKey == gen.SuperclassKey {
+			return NewParseError(
+				ErrTreeActorGenActorNotFound,
+				fmt.Sprintf("actor generalization '%s' superclass '%s' cannot also be a subclass",
+					genKey, gen.SuperclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+	}
+	return nil
+}
+
 // validateSubdomainAssociation validates an association at the subdomain level.
 // Keys are scoped to the subdomain (just class names).
-func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomainKey, assocKey string, assoc *inputAssociation) error {
+func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomainKey, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/subdomains/%s/associations/%s.assoc.json", domainKey, subdomainKey, assocKey)
 
 	// Validate from_class_key
@@ -573,7 +670,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 
 // validateDomainAssociation validates an association at the domain level.
 // Keys include subdomain to disambiguate (subdomain/class).
-func validateDomainAssociation(model *inputModel, domainKey string, domain *inputDomain, assocKey string, assoc *inputAssociation) error {
+func validateDomainAssociation(model *inputModel, domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/associations/%s.assoc.json", domainKey, assocKey)
 
 	// Parse from_class_key (subdomain/class format)
@@ -713,7 +810,7 @@ func validateDomainAssociation(model *inputModel, domainKey string, domain *inpu
 
 // validateModelAssociation validates an association at the model level.
 // Keys include domain and subdomain (domain/subdomain/class).
-func validateModelAssociation(model *inputModel, assocKey string, assoc *inputAssociation) error {
+func validateModelAssociation(model *inputModel, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("associations/%s.assoc.json", assocKey)
 
 	// Parse from_class_key (domain/subdomain/class format)
@@ -928,6 +1025,221 @@ func validateMultiplicity(mult string) error {
 			if upperNum < lowerNum {
 				return fmt.Errorf("upper bound %d cannot be less than lower bound %d", upperNum, lowerNum)
 			}
+		}
+	}
+
+	return nil
+}
+
+// validateUseCaseTree validates a use case and its children.
+func validateUseCaseTree(model *inputModel, domainKey, subdomainKey, useCaseKey string, useCase *inputUseCase) error {
+	useCasePath := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/use_case.json", domainKey, subdomainKey, useCaseKey)
+
+	// Validate actor keys if present (actors reference classes in the same subdomain)
+	subdomain := model.Domains[domainKey].Subdomains[subdomainKey]
+	for actorKey := range useCase.Actors {
+		if _, ok := subdomain.Classes[actorKey]; !ok {
+			return NewParseError(
+				ErrTreeClassActorNotFound,
+				fmt.Sprintf("use case '%s' references actor class '%s' which does not exist in subdomain '%s/%s'", useCaseKey, actorKey, domainKey, subdomainKey),
+				useCasePath,
+			).WithField("actors")
+		}
+	}
+
+	// Validate scenarios (basic validation for now)
+	for scenarioKey, scenario := range useCase.Scenarios {
+		if err := validateScenarioTree(model, domainKey, subdomainKey, useCaseKey, scenarioKey, scenario); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateScenarioTree validates a scenario's cross-references.
+func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey, scenarioKey string, scenario *inputScenario) error {
+	scenarioPath := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/scenarios/%s.scenario.json", domainKey, subdomainKey, useCaseKey, scenarioKey)
+
+	// Validate object class_keys exist
+	for objectKey, object := range scenario.Objects {
+		if _, ok := model.Domains[domainKey].Subdomains[subdomainKey].Classes[object.ClassKey]; !ok {
+			return NewParseError(
+				ErrTreeAssocClassNotFound, // reusing error code
+				fmt.Sprintf("scenario '%s' object '%s' references class '%s' which does not exist", scenarioKey, objectKey, object.ClassKey),
+				scenarioPath,
+			).WithField("objects")
+		}
+	}
+
+	// Validate steps recursively
+	if scenario.Steps != nil {
+		var walk func(step inputStep, path string) error
+		walk = func(step inputStep, path string) error {
+			// Validate referenced objects
+			if step.FromObjectKey != nil {
+				if _, ok := scenario.Objects[*step.FromObjectKey]; !ok {
+					return NewParseError(
+						ErrTreeScenarioStepObjectNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references from_object_key '%s' which does not exist",
+							scenarioKey, path, *step.FromObjectKey),
+						scenarioPath,
+					).WithField(path + ".from_object_key")
+				}
+			}
+			if step.ToObjectKey != nil {
+				if _, ok := scenario.Objects[*step.ToObjectKey]; !ok {
+					return NewParseError(
+						ErrTreeScenarioStepObjectNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references to_object_key '%s' which does not exist",
+							scenarioKey, path, *step.ToObjectKey),
+						scenarioPath,
+					).WithField(path + ".to_object_key")
+				}
+			}
+
+			// Validate event references (check both from and to objects for the event)
+			if step.EventKey != nil {
+				if step.FromObjectKey == nil && step.ToObjectKey == nil {
+					return NewParseError(
+						ErrTreeScenarioStepEventNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but no object is specified to resolve the class",
+							scenarioKey, path, *step.EventKey),
+						scenarioPath,
+					).WithField(path + ".event_key")
+				}
+				found := false
+				for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+					if objKey == nil {
+						continue
+					}
+					obj := scenario.Objects[*objKey]
+					class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[obj.ClassKey]
+					if class != nil && class.StateMachine != nil {
+						if _, ok := class.StateMachine.Events[*step.EventKey]; ok {
+							found = true
+							break
+						}
+					}
+				}
+				if !found {
+					var classNames []string
+					for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+						if objKey != nil {
+							classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
+						}
+					}
+					return NewParseError(
+						ErrTreeScenarioStepEventNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on classes %v",
+							scenarioKey, path, *step.EventKey, classNames),
+						scenarioPath,
+					).WithField(path + ".event_key")
+				}
+			}
+
+			// Validate query references (check both from and to objects for the query)
+			if step.QueryKey != nil {
+				if step.FromObjectKey == nil && step.ToObjectKey == nil {
+					return NewParseError(
+						ErrTreeScenarioStepQueryNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but no object is specified to resolve the class",
+							scenarioKey, path, *step.QueryKey),
+						scenarioPath,
+					).WithField(path + ".query_key")
+				}
+				found := false
+				for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+					if objKey == nil {
+						continue
+					}
+					obj := scenario.Objects[*objKey]
+					class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[obj.ClassKey]
+					if class != nil {
+						if _, ok := class.Queries[*step.QueryKey]; ok {
+							found = true
+							break
+						}
+					}
+				}
+				if !found {
+					var classNames []string
+					for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+						if objKey != nil {
+							classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
+						}
+					}
+					return NewParseError(
+						ErrTreeScenarioStepQueryNotFound,
+						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on classes %v",
+							scenarioKey, path, *step.QueryKey, classNames),
+						scenarioPath,
+					).WithField(path + ".query_key")
+				}
+			}
+
+			// Recurse into nested statements
+			for i, st := range step.Statements {
+				if err := walk(st, fmt.Sprintf("%s.statements[%d]", path, i)); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := walk(*scenario.Steps, "steps"); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateUseCaseGeneralizationTree validates a use case generalization's cross-references.
+func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, subdomainKey, genKey string, gen *inputUseCaseGeneralization) error {
+	genPath := fmt.Sprintf("domains/%s/subdomains/%s/use_case_generalizations/%s.ucgen.json", domainKey, subdomainKey, genKey)
+
+	// Validate superclass_key exists
+	if _, ok := subdomain.UseCases[gen.SuperclassKey]; !ok {
+		return NewParseError(
+			ErrTreeClassGenSuperclassNotFound, // reusing error code
+			fmt.Sprintf("use case generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
+				genKey, gen.SuperclassKey, subdomainKey),
+			genPath,
+		).WithField("superclass_key")
+	}
+
+	// Validate subclass_keys exist and are unique
+	seen := make(map[string]bool)
+	for i, subclassKey := range gen.SubclassKeys {
+		// Check for duplicates
+		if seen[subclassKey] {
+			return NewParseError(
+				ErrTreeClassGenSubclassDuplicate, // reusing error code
+				fmt.Sprintf("use case generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+		seen[subclassKey] = true
+
+		// Check that the subclass exists
+		if _, ok := subdomain.UseCases[subclassKey]; !ok {
+			return NewParseError(
+				ErrTreeClassGenSubclassNotFound, // reusing error code
+				fmt.Sprintf("use case generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
+					genKey, subclassKey, subdomainKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+		}
+
+		// Check that superclass is not also a subclass
+		if subclassKey == gen.SuperclassKey {
+			return NewParseError(
+				ErrTreeClassGenSuperclassIsSubclass, // reusing error code
+				fmt.Sprintf("use case generalization '%s' superclass '%s' cannot also be a subclass",
+					genKey, gen.SuperclassKey),
+				genPath,
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
 		}
 	}
 

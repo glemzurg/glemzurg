@@ -117,6 +117,46 @@ func extractMarkdownTitle(markdown string) (title string) {
 	return title
 }
 
+// stripMarkdownTitle removes the first heading line (any level: #, ##, ###, etc.) and any blank
+// line immediately following it from the beginning of the markdown. Returns the remaining text.
+func stripMarkdownTitle(markdown string) string {
+	trimmed := strings.TrimSpace(markdown)
+	if !_genericFileTitleRegexp.MatchString(strings.SplitN(trimmed, "\n", 2)[0]) {
+		return trimmed
+	}
+	// Split into lines and remove the heading line.
+	lines := strings.SplitN(trimmed, "\n", 2)
+	if len(lines) == 1 {
+		// Markdown was only the heading line.
+		return ""
+	}
+	rest := lines[1]
+	// Remove a single leading blank line after the title if present.
+	rest = strings.TrimPrefix(rest, "\n")
+	return strings.TrimSpace(rest)
+}
+
+// prependMarkdownTitle prepends "# title\n\n" to the markdown if it doesn't already start with a heading.
+func prependMarkdownTitle(title, markdown string) string {
+	return prependMarkdownHeading("# ", title, markdown)
+}
+
+// prependMarkdownSubtitle prepends "## title\n\n" to the markdown if it doesn't already start with a heading.
+func prependMarkdownSubtitle(title, markdown string) string {
+	return prependMarkdownHeading("## ", title, markdown)
+}
+
+func prependMarkdownHeading(prefix, title, markdown string) string {
+	trimmed := strings.TrimSpace(markdown)
+	if trimmed != "" && _genericFileTitleRegexp.MatchString(strings.SplitN(trimmed, "\n", 2)[0]) {
+		return trimmed
+	}
+	if trimmed == "" {
+		return prefix + title
+	}
+	return prefix + title + "\n\n" + trimmed
+}
+
 func generateFileContent(markdown, umlComment, data string) string {
 	// Control whitespace.
 	markdown = strings.TrimSpace(markdown)

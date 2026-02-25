@@ -1,0 +1,6 @@
+{
+    "code": 14004,
+    "message_prefix": "logic JSON does not match schema:",
+    "error_file": "14004_logic_schema_violation.md",
+    "has_schema": true
+}

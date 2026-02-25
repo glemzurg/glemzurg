@@ -37,13 +37,31 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 	// If the title of the use case ends with "?" it is read-only.
 	readOnly := strings.HasSuffix(parsedFile.Title, "?")
 
+	// Parse optional superclass/subclass generalization keys.
+	var superclassOfKey *identity.Key
+	if s, ok := yamlData["superclass_of_key"]; ok {
+		k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
+		if err != nil {
+			return model_use_case.UseCase{}, errors.WithStack(err)
+		}
+		superclassOfKey = &k
+	}
+	var subclassOfKey *identity.Key
+	if s, ok := yamlData["subclass_of_key"]; ok {
+		k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
+		if err != nil {
+			return model_use_case.UseCase{}, errors.WithStack(err)
+		}
+		subclassOfKey = &k
+	}
+
 	// Construct the identity key for this use case.
 	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, useCaseSubKey)
 	if err != nil {
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
-	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, parsedFile.Markdown, level, readOnly, parsedFile.UmlComment)
+	useCase, err = model_use_case.NewUseCase(useCaseKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), level, readOnly, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	if err != nil {
 		return model_use_case.UseCase{}, err
 	}
@@ -121,13 +139,13 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 			if found {
 				stepsData := stepsAny.([]any)
 
-				// Wrap in outer sequence node.
+				// Wrap in outer sequence step.
 				nodeData := map[string]any{
+					"step_type":  "sequence",
 					"statements": stepsData,
 				}
 
-				// Scope object and attribute keys before parsing into Node objects.
-				// This ensures Node objects are always well-formed with complete keys.
+				// Scope compact keys to fully qualified keys before parsing into Step objects.
 				if err = scopeObjectKeys(scenarioKey, subdomainKey, nodeData); err != nil {
 					return model_use_case.UseCase{}, err
 				}
@@ -138,10 +156,13 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 					return model_use_case.UseCase{}, err
 				}
 
-				var node model_scenario.Node
+				var node model_scenario.Step
 				if err = node.FromYAML(string(nodeYaml)); err != nil {
 					return model_use_case.UseCase{}, err
 				}
+
+				// Auto-assign step keys from tree position.
+				assignStepKeys(&node, scenarioKey)
 
 				scenario.Steps = &node
 			}
@@ -260,12 +281,18 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	if useCase.Level != "sea" {
 		yaml += "level: " + useCase.Level + "\n"
 	}
+	if useCase.SuperclassOfKey != nil {
+		yaml += "superclass_of_key: " + useCase.SuperclassOfKey.SubKey + "\n"
+	}
+	if useCase.SubclassOfKey != nil {
+		yaml += "subclass_of_key: " + useCase.SubclassOfKey.SubKey + "\n"
+	}
 
 	if len(useCase.Actors) > 0 {
 		actors := make(map[string]string)
 		for actorKey, actor := range useCase.Actors {
 			if actor.UmlComment != "" {
-				actors[actorKey.SubKey()] = actor.UmlComment
+				actors[actorKey.SubKey] = actor.UmlComment
 			}
 		}
 		if len(actors) > 0 {
@@ -292,7 +319,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 			return scenarios[i].Key.String() < scenarios[j].Key.String()
 		})
 		for _, scenario := range scenarios {
-			name := scenario.Key.SubKey()
+			name := scenario.Key.SubKey
 			yaml += "\n    " + name + ":\n"
 			yaml += "        name: " + scenario.Name + "\n"
 			yaml += formatYamlField("details", scenario.Details, 8)
@@ -307,7 +334,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 					return objects[i].ObjectNumber < objects[j].ObjectNumber
 				})
 				for _, obj := range objects {
-					objName := obj.Key.SubKey()
+					objName := obj.Key.SubKey
 					yaml += "            - key: " + objName + "\n"
 					yaml += formatYamlField("name", obj.Name, 14)
 					if obj.NameStyle != "" && obj.NameStyle != "unnamed" {
@@ -315,7 +342,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 					}
 					if obj.ClassKey.String() != "" {
 						// Output only the subkey for backwards compatibility with the md format.
-						yaml += "              class_key: " + obj.ClassKey.SubKey() + "\n"
+						yaml += "              class_key: " + obj.ClassKey.SubKey + "\n"
 					}
 					if obj.Multi {
 						yaml += "              multi: true\n"
@@ -325,7 +352,7 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 			}
 			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
 				yaml += "        steps:\n"
-				yaml += generateSteps(scenario.Steps.Statements, "            ")
+				yaml += generateSteps(scenario.Steps.Statements, "            ", useCase.Key)
 			}
 		}
 	}
@@ -334,112 +361,98 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	if yamlStr == "" {
 		yamlStr = "\n"
 	}
-	content := useCase.Details + "\n\n◆\n\n" + useCase.UmlComment + "\n\n◇"
+	content := prependMarkdownTitle(useCase.Name, useCase.Details) + "\n\n◆\n\n" + useCase.UmlComment + "\n\n◇"
 	if yamlStr != "" {
 		content += "\n\n" + yamlStr
 	}
 	return strings.TrimSpace(content)
 }
 
-func generateSteps(nodes []model_scenario.Node, indent string) string {
+func generateSteps(steps []model_scenario.Step, indent string, useCaseKey identity.Key) string {
 	s := ""
-	for _, node := range nodes {
-		s += generateNode(node, indent)
+	for _, step := range steps {
+		s += generateStep(step, indent, useCaseKey)
 	}
 	return s
 }
 
-// shortEventKey converts a full event key to its short form for output.
-// Full: domain/test_domain/subdomain/test_subdomain/class/class_key/event/processlog
-// Short: class_key/event/processlog
+func generateStep(step model_scenario.Step, indent string, useCaseKey identity.Key) string {
+	s := indent + "- step_type: " + step.StepType + "\n"
+
+	if step.LeafType != nil {
+		s += indent + "  leaf_type: " + *step.LeafType + "\n"
+	}
+	if step.Condition != "" {
+		s += indent + "  condition: " + step.Condition + "\n"
+	}
+	if step.Description != "" {
+		s += indent + "  description: " + step.Description + "\n"
+	}
+	if step.FromObjectKey != nil {
+		s += indent + "  from_object_key: " + step.FromObjectKey.SubKey + "\n"
+	}
+	if step.ToObjectKey != nil {
+		s += indent + "  to_object_key: " + step.ToObjectKey.SubKey + "\n"
+	}
+	if step.EventKey != nil {
+		s += indent + "  event_key: " + shortEventKey(step.EventKey) + "\n"
+	}
+	if step.QueryKey != nil {
+		s += indent + "  query_key: " + shortQueryKey(step.QueryKey) + "\n"
+	}
+	if step.ScenarioKey != nil {
+		s += indent + "  scenario_key: " + shortScenarioKey(step.ScenarioKey, useCaseKey) + "\n"
+	}
+	if len(step.Statements) > 0 {
+		s += indent + "  statements:\n"
+		s += generateSteps(step.Statements, indent+"      ", useCaseKey)
+	}
+	return s
+}
+
+// assignStepKeys walks the Step tree and assigns keys using a sequential counter.
+func assignStepKeys(step *model_scenario.Step, scenarioKey identity.Key) {
+	counter := 0
+	assignStepKeysRecursive(step, scenarioKey, &counter)
+}
+
+func assignStepKeysRecursive(step *model_scenario.Step, scenarioKey identity.Key, counter *int) {
+	key, _ := identity.NewScenarioStepKey(scenarioKey, strconv.Itoa(*counter))
+	step.Key = key
+	*counter++
+	for i := range step.Statements {
+		assignStepKeysRecursive(&step.Statements[i], scenarioKey, counter)
+	}
+}
+
+// shortEventKey returns the compact form of an event key: "classSubKey/eventSubKey".
 func shortEventKey(key *identity.Key) string {
-	if key == nil {
-		return ""
-	}
-	// Parse the key to extract class subkey and event subkey.
-	// Event key: parentKey="domain/.../subdomain/.../class/class_key", keyType="event", subKey="processlog"
-	// The parent of the event key is a class key.
-	parentKey, err := identity.ParseKey(key.ParentKey())
+	parentKey, err := identity.ParseKey(key.ParentKey)
 	if err != nil {
-		// Fallback to full string if parsing fails.
 		return key.String()
 	}
-	// parentKey is the class key; its subKey is the class subkey.
-	classSubKey := parentKey.SubKey()
-	eventSubKey := key.SubKey()
-	return classSubKey + "/event/" + eventSubKey
+	return parentKey.SubKey + "/" + key.SubKey
 }
 
-// shortScenarioKey converts a full scenario key to its short form for output.
-// Full: domain/test_domain/subdomain/test_subdomain/usecase/use_case_key/scenario/scenario_b_key
-// Short: use_case_key/scenario/scenario_b_key
-func shortScenarioKey(key *identity.Key) string {
-	if key == nil {
-		return ""
-	}
-	// Parse the key to extract use case subkey and scenario subkey.
-	// Scenario key: parentKey="domain/.../subdomain/.../usecase/use_case_key", keyType="scenario", subKey="scenario_b_key"
-	// The parent of the scenario key is a use case key.
-	parentKey, err := identity.ParseKey(key.ParentKey())
+// shortQueryKey returns the compact form of a query key: "classSubKey/querySubKey".
+func shortQueryKey(key *identity.Key) string {
+	parentKey, err := identity.ParseKey(key.ParentKey)
 	if err != nil {
-		// Fallback to full string if parsing fails.
 		return key.String()
 	}
-	// parentKey is the use case key; its subKey is the use case subkey.
-	useCaseSubKey := parentKey.SubKey()
-	scenarioSubKey := key.SubKey()
-	return useCaseSubKey + "/scenario/" + scenarioSubKey
+	return parentKey.SubKey + "/" + key.SubKey
 }
 
-func generateNode(node model_scenario.Node, indent string) string {
-	s := indent + "- "
-	if node.Loop != "" {
-		s += "loop: " + node.Loop + "\n"
-		subIndent := indent + "  "
-		if len(node.Statements) > 0 {
-			s += subIndent + "statements:\n"
-			s += generateSteps(node.Statements, subIndent+"  ")
-		}
-	} else if len(node.Cases) > 0 {
-		s += "cases:\n"
-		subIndent := indent + "    "
-		for _, c := range node.Cases {
-			s += subIndent + "- condition: " + c.Condition + "\n"
-			if len(c.Statements) > 0 {
-				s += subIndent + "  statements:\n"
-				s += generateSteps(c.Statements, subIndent+"    ")
-			}
-		}
-	} else {
-		// Leaf node
-		first := true
-		subIndent := indent + "  "
-		addField := func(key, value string) {
-			if first {
-				s += key + ": " + value + "\n"
-				first = false
-			} else {
-				s += subIndent + key + ": " + value + "\n"
-			}
-		}
-		if node.Description != "" {
-			addField("description", node.Description)
-		}
-		if node.FromObjectKey != nil {
-			addField("from_object_key", node.FromObjectKey.SubKey())
-		}
-		if node.ToObjectKey != nil {
-			addField("to_object_key", node.ToObjectKey.SubKey())
-		}
-		if node.EventKey != nil {
-			addField("event_key", shortEventKey(node.EventKey))
-		}
-		if node.ScenarioKey != nil {
-			addField("scenario_key", shortScenarioKey(node.ScenarioKey))
-		}
-		if node.IsDelete {
-			addField("is_delete", "true        ")
-		}
+// shortScenarioKey returns the compact form of a scenario key.
+// If the scenario is in the same use case as the step's scenario, returns just "scenarioSubKey".
+// Otherwise returns "useCaseSubKey/scenario/scenarioSubKey".
+func shortScenarioKey(key *identity.Key, useCaseKey identity.Key) string {
+	parentKey, err := identity.ParseKey(key.ParentKey)
+	if err != nil {
+		return key.String()
 	}
-	return s
+	if parentKey == useCaseKey {
+		return key.SubKey
+	}
+	return parentKey.SubKey + "/scenario/" + key.SubKey
 }

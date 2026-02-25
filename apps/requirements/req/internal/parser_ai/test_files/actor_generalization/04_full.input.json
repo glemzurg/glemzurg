@@ -1,0 +1,9 @@
+{
+    "name": "User Types",
+    "details": "All user types in the system. Once registered, a user cannot change their type.",
+    "superclass_key": "user",
+    "subclass_keys": ["admin", "customer", "guest"],
+    "is_complete": true,
+    "is_static": true,
+    "uml_comment": "Discriminator: user_role"
+}

@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scenario.schema.json",
+  "title": "Scenario",
+  "description": "Schema for scenario JSON files that define specific flows through a use case. Scenario files are located in the 'scenarios/' directory under a use case (e.g., 'use_cases/manage_order/scenarios/happy_path.json'). Scenarios document sequence diagrams with objects and steps. If validation fails, verify 'name' is present and non-empty.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the scenario (e.g., 'Happy Path', 'Error Handling'). Must be non-empty.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the scenario."
+    },
+    "objects": {
+      "type": "object",
+      "description": "Map of object keys to objects participating in this scenario.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "object_number": {
+            "type": "integer",
+            "description": "The display order number of the object. Determines the left-to-right position of this object in the sequence diagram. Must be a non-negative integer (0 or greater). If validation fails: ensure this is a non-negative integer.",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional display name for the object."
+          },
+          "name_style": {
+            "type": "string",
+            "description": "The style for displaying the object name. Must be one of: 'name' (displayed as 'name:ClassName'), 'id' (displayed as 'ClassName id'), or 'unnamed' (displayed as ':ClassName', and the 'name' field must be empty). If validation fails: ensure this is exactly 'name', 'id', or 'unnamed'.",
+            "enum": ["name", "id", "unnamed"]
+          },
+          "class_key": {
+            "type": "string",
+            "description": "The key of the class this object represents. Must be a scoped class key in the format 'subdomain_key/class_key' (e.g., 'default/order'). The class must be defined in the same subdomain as the use case that contains this scenario. If validation fails: verify the class exists in the subdomain and the key follows the 'subdomain/class' format."
+          },
+          "multi": {
+            "type": "boolean",
+            "description": "Whether this object represents multiple instances."
+          },
+          "uml_comment": {
+            "type": "string",
+            "description": "Optional UML comment for this object."
+          }
+        },
+        "required": ["object_number", "name_style", "class_key"],
+        "additionalProperties": false
+      }
+    },
+    "steps": {
+      "$ref": "#/$defs/step",
+      "description": "The root step tree representing the scenario flow."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false,
+  "$defs": {
+    "step": {
+      "type": "object",
+      "properties": {
+        "step_type": {
+          "type": "string",
+          "description": "The type of step. Must be one of: 'leaf' (a single action), 'sequence' (ordered list of steps), 'switch' (conditional branching with cases), 'case' (a branch within a switch, requires 'condition'), or 'loop' (repeated steps, requires 'condition'). Compound types ('sequence', 'switch', 'loop') require 'statements' to contain child steps. If validation fails: ensure this is exactly one of 'leaf', 'sequence', 'switch', 'case', 'loop'.",
+          "enum": ["leaf", "sequence", "switch", "case", "loop"]
+        },
+        "leaf_type": {
+          "type": "string",
+          "description": "For leaf steps only, the type of leaf action. Must be one of: 'event' (triggers a state machine event on the target object, requires 'to_object_key' and 'event_key'), 'query' (reads data from the target object, requires 'to_object_key' and 'query_key'), 'scenario' (calls another scenario, requires 'scenario_key'), or 'delete' (deletes the target object, requires 'to_object_key'). Required when step_type is 'leaf'. If validation fails: ensure this is exactly one of 'event', 'query', 'scenario', 'delete'.",
+          "enum": ["event", "query", "scenario", "delete"]
+        },
+        "statements": {
+          "type": "array",
+          "description": "Child steps for compound step types ('sequence', 'switch', 'case', 'loop'). Required for compound types, not used for 'leaf' steps. For 'switch' step_type, each child must be a 'case' step.",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "condition": {
+          "type": "string",
+          "description": "Condition expression for 'case' and 'loop' step types. Required for 'case' steps (describes when this branch is taken) and 'loop' steps (describes the loop continuation condition). Not used for other step types."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the step."
+        },
+        "from_object_key": {
+          "type": "string",
+          "description": "Key of the source object for this step. Must match a key defined in the 'objects' map of this scenario. Used for leaf steps to indicate who initiates the action. Steps with 'event_key' or 'query_key' must have at least one of 'from_object_key' or 'to_object_key' to determine the target class."
+        },
+        "to_object_key": {
+          "type": "string",
+          "description": "Key of the target object for this step. Must match a key defined in the 'objects' map of this scenario. For 'event' leaf type, this is the object receiving the event. For 'query' leaf type, this is the object being queried. For 'delete' leaf type, this is the object being deleted."
+        },
+        "event_key": {
+          "type": "string",
+          "description": "Key of the event for 'event' leaf type steps. The event must be defined on the state machine of the class referenced by the target object. Required when leaf_type is 'event'."
+        },
+        "query_key": {
+          "type": "string",
+          "description": "Key of the query for 'query' leaf type steps. The query must be defined in the queries file of the class referenced by the target object. Required when leaf_type is 'query'."
+        },
+        "scenario_key": {
+          "type": "string",
+          "description": "Key of the referenced scenario for 'scenario' leaf type steps. The scenario must be defined within the same use case. Required when leaf_type is 'scenario'."
+        }
+      },
+      "required": ["step_type"],
+      "additionalProperties": false
+    }
+  }
+}

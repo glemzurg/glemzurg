@@ -4,11 +4,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 
 	"github.com/pkg/errors"
 )
+
+// collectionMinForDB maps CollectionMin=0 to nil (SQL NULL) to satisfy CHECK (collection_min > 0).
+// A zero minimum means "no minimum" and is stored as NULL in the database.
+func collectionMinForDB(min *int) *int {
+	if min != nil && *min == 0 {
+		return nil
+	}
+	return min
+}
 
 // Populate a golang struct from a database row.
 func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err error) {
@@ -33,11 +41,11 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return model_data_type.DataType{}, err
 	}
-	dataTypeKey, err = identity.PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return model_data_type.DataType{}, err
 	}
@@ -76,11 +84,11 @@ func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_d
 func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err := identity.PreenKey(dataType.Key)
+	dataTypeKey, err := preenKey(dataType.Key)
 	if err != nil {
 		return err
 	}
@@ -109,7 +117,7 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 		dataTypeKey,
 		dataType.CollectionType,
 		dataType.CollectionUnique,
-		dataType.CollectionMin,
+		collectionMinForDB(dataType.CollectionMin),
 		dataType.CollectionMax)
 	if err != nil {
 		return errors.WithStack(err)
@@ -122,11 +130,11 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err := identity.PreenKey(dataType.Key)
+	dataTypeKey, err := preenKey(dataType.Key)
 	if err != nil {
 		return err
 	}
@@ -147,7 +155,7 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 		dataTypeKey,
 		dataType.CollectionType,
 		dataType.CollectionUnique,
-		dataType.CollectionMin,
+		collectionMinForDB(dataType.CollectionMin),
 		dataType.CollectionMax)
 	if err != nil {
 		return errors.WithStack(err)
@@ -160,11 +168,11 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
-	dataTypeKey, err = identity.PreenKey(dataTypeKey)
+	dataTypeKey, err = preenKey(dataTypeKey)
 	if err != nil {
 		return err
 	}
@@ -189,7 +197,7 @@ func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []model_data_type.DataType, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +240,7 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	}
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}
@@ -241,11 +249,11 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	args := make([]interface{}, 0, len(dataTypes)*6)
 	valueStrings := make([]string, 0, len(dataTypes))
 	for i, dt := range dataTypes {
-		dataTypeKey, err := identity.PreenKey(dt.Key)
+		dataTypeKey, err := preenKey(dt.Key)
 		if err != nil {
 			return err
 		}
-		args = append(args, modelKey, dataTypeKey, dt.CollectionType, dt.CollectionUnique, dt.CollectionMin, dt.CollectionMax)
+		args = append(args, modelKey, dataTypeKey, dt.CollectionType, dt.CollectionUnique, collectionMinForDB(dt.CollectionMin), dt.CollectionMax)
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
 	}
 

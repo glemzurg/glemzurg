@@ -17,7 +17,7 @@ A semantic relationship between typed instances.
 | to_multiplicity_lower | integer |  | false |  |  | The multiplicity of the to end of the relation, lower value, 0 means "any". |
 | to_multiplicity_higher | integer |  | false |  |  | The multiplicity of the to end of the relation, higher value, 0 means "any". |
 | name | text |  | false |  |  | The relationship name next to the taco chip. |
-| association_class_key | text |  | true |  | [public.class](public.class.md) | If thiere is a class for for this association, what is it. |
+| association_class_key | text |  | true |  | [public.class](public.class.md) | If there is a class for this association, what is it. |
 | details | text |  | true |  |  | A summary description. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 

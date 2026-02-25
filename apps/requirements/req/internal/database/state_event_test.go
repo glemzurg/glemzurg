@@ -64,8 +64,7 @@ func (suite *EventSuite) TestLoad() {
 				class_key,
 				event_key,
 				name,
-				details,
-				parameters
+				details
 			)
 		VALUES
 			(
@@ -73,8 +72,7 @@ func (suite *EventSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key',
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/event/key',
 				'Name',
-				'Details',
-				'{"ParamA","SourceA","ParamB","SourceB"}'
+				'Details'
 			)
 	`)
 	assert.Nil(suite.T(), err)
@@ -83,20 +81,18 @@ func (suite *EventSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Key:     suite.eventKey,
+		Name:    "Name",
+		Details: "Details",
 	}, event)
 }
 
 func (suite *EventSuite) TestAdd() {
 
 	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Key:     suite.eventKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -104,49 +100,25 @@ func (suite *EventSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
-	}, event)
-}
-
-func (suite *EventSuite) TestAddNoParams() {
-
-	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: nil,
-	})
-	assert.Nil(suite.T(), err)
-
-	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: nil,
+		Key:     suite.eventKey,
+		Name:    "Name",
+		Details: "Details",
 	}, event)
 }
 
 func (suite *EventSuite) TestUpdate() {
 
 	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Key:     suite.eventKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+		Key:     suite.eventKey,
+		Name:    "NameX",
+		Details: "DetailsX",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -154,20 +126,18 @@ func (suite *EventSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), suite.class.Key, classKey)
 	assert.Equal(suite.T(), model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "NameX",
-		Details:    "DetailsX",
-		Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+		Key:     suite.eventKey,
+		Name:    "NameX",
+		Details: "DetailsX",
 	}, event)
 }
 
 func (suite *EventSuite) TestRemove() {
 
 	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
-		Key:        suite.eventKey,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Key:     suite.eventKey,
+		Name:    "Name",
+		Details: "Details",
 	})
 	assert.Nil(suite.T(), err)
 
@@ -185,16 +155,14 @@ func (suite *EventSuite) TestQuery() {
 	err := AddEvents(suite.db, suite.model.Key, map[identity.Key][]model_state.Event{
 		suite.class.Key: {
 			{
-				Key:        suite.eventKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+				Key:     suite.eventKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
 			},
 			{
-				Key:        suite.eventKey,
-				Name:       "Name",
-				Details:    "Details",
-				Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+				Key:     suite.eventKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 		},
 	})
@@ -205,16 +173,14 @@ func (suite *EventSuite) TestQuery() {
 	assert.Equal(suite.T(), map[identity.Key][]model_state.Event{
 		suite.class.Key: {
 			{
-				Key:        suite.eventKey,
-				Name:       "Name",
-				Details:    "Details",
-				Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+				Key:     suite.eventKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 			{
-				Key:        suite.eventKeyB,
-				Name:       "NameX",
-				Details:    "DetailsX",
-				Parameters: []model_state.EventParameter{{Name: "ParamAX", Source: "SourceAX"}, {Name: "ParamBX", Source: "SourceBX"}},
+				Key:     suite.eventKeyB,
+				Name:    "NameX",
+				Details: "DetailsX",
 			},
 		},
 	}, events)
@@ -227,10 +193,9 @@ func (suite *EventSuite) TestQuery() {
 func t_AddEvent(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey identity.Key) (event model_state.Event) {
 
 	err := AddEvent(dbOrTx, modelKey, classKey, model_state.Event{
-		Key:        eventKey,
-		Name:       eventKey.String(),
-		Details:    "Details",
-		Parameters: []model_state.EventParameter{{Name: "ParamA", Source: "SourceA"}, {Name: "ParamB", Source: "SourceB"}},
+		Key:     eventKey,
+		Name:    eventKey.String(),
+		Details: "Details",
 	})
 	assert.Nil(t, err)
 

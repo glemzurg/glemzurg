@@ -10,14 +10,63 @@
 [⇦ {{ $reqs.Model.Name }}](model.md) / [{{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
 {{- end }}
 
+# {{ .Class.Name }}
+
 {{ .Class.Details }}
+
+{{ if ne .Class.ActorKey nil -}}
+{{- $actor := actor_lookup $reqs .Class.ActorKey -}}
+This is an actor:
+
+- **[{{ $actor.Name }} <img src="{{ $actor.Type }}.svg" width="13" height="30" />]({{ filename "actor" $actor.Key "" ".md" }}).** {{ first_md_sentence $actor.Details }}
+
+{{ end }}
+
+{{ if or (ne .Class.SuperclassOfKey nil) (ne .Class.SubclassOfKey nil) -}}
+## Generalizations
+
+{{ if ne .Class.SuperclassOfKey nil -}}
+{{- $gen := generalization_lookup $reqs .Class.SuperclassOfKey -}}
+{{- $super := generalization_superclass $reqs $gen.Key -}}
+{{- $subs := generalization_subclasses $reqs $gen.Key -}}
+- **{{ $gen.Name }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Class.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Class.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+{{ end -}}
+{{ if ne .Class.SubclassOfKey nil -}}
+{{- $gen := generalization_lookup $reqs .Class.SubclassOfKey -}}
+{{- $super := generalization_superclass $reqs $gen.Key -}}
+{{- $subs := generalization_subclasses $reqs $gen.Key -}}
+- **{{ $gen.Name }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Class.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Class.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
 
 ## Attributes
 
 | Name | Rules | Nullable | Comment |
 | ---- | ----- | -------- | ------- |
 {{- range .Class.Attributes }}
-| {{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Specification "" }} <br> {{ .DerivationPolicy.Specification }}{{ end }}{{ end }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+
+{{- $indexes := class_indexes .Class.Attributes }}
+{{ if ne $indexes nil }}
+
+### Indexes
+
+{{ range $indexes -}}
+- [{{ range $i, $name := . }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
+{{ end }}
+{{ end }}
+
+{{ if ne .Class.Invariants nil -}}
+## Invariants
+
+{{ range .Class.Invariants -}}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+{{- end }}
 
 ## Relations
 
@@ -48,12 +97,22 @@ The events for this class.
 {{ range .Class.Events -}}
 
 - **{{ .Name }}.** {{ .Details }}{{ if ne .Parameters nil }} Parameters:
-{{ range .Parameters }}   - *{{ .Name }}.* {{ .Source }}
+{{ range .Parameters }}   - *{{ .Name }}.* {{ .DataTypeRules }}
 {{ end }}{{- end }}
 {{ end }}
 
 {{- else -}}
 *None*
+{{- end }}
+
+{{ if ne .Class.Guards nil -}}
+The guards for this class.
+
+{{ range .Class.Guards -}}
+- **[{{ .Logic.Description }}]**
+{{ if ne .Logic.Specification "" }}    - {{ .Logic.Specification }}
+{{ end -}}
+{{ end }}
 {{- end }}
 
 ## Action Specifications
@@ -68,29 +127,25 @@ The actions for this class.
 {{- $fromTransitions := action_transitions $reqs .Key -}}
 {{- $fromStateActions := action_state_actions $reqs .Key -}}
 
-
-{{- /* And action may have multiple signatures based on who calls it. */ -}}
-
-{{- $signatures := action_signatures $reqs $fromTransitions $fromStateActions -}}
-
-{{- $actionName := $action.Name -}}
-{{ if eq $signatures nil -}}
-### {{ $actionName }}(*not called*)
-{{ else }}
-### {{ range $i, $signature := $signatures -}}
-    {{- if ne $i 0 }} or {{ end -}}
-        {{- $actionName -}}({{- $signature -}})
-    {{- end -}}
-{{ end }}
+### {{ $action.Name }}({{ action_signature $action }})
 
 {{ $action.Details }}
 
+{{ if ne $action.Parameters nil -}}
+Parameters:
+
+{{ range $action.Parameters -}}
+- *{{ .Name }}.* {{ .DataTypeRules }}
+{{ end }}
+{{ end -}}
 Requires:
 
 {{ if ne $action.Requires nil -}}
 
 {{ range $action.Requires -}}
-- {{ . }}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
 {{ end }}
 
 {{- else -}}
@@ -102,18 +157,29 @@ Guarantees:
 {{ if ne $action.Guarantees nil -}}
 
 {{ range $action.Guarantees -}}
-{{- $mainBullet := main_bullet . }}
-{{- $subBullets := sub_bullets . }}
+{{- $mainBullet := main_bullet .Description }}
+{{- $subBullets := sub_bullets .Description }}
 - {{ $mainBullet }}
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
 {{ end }}
 
 {{- else -}}
 *None*
 {{- end }}
 
+{{ if ne $action.SafetyRules nil -}}
+Safety Rules:
+
+{{ range $action.SafetyRules -}}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+{{ end -}}
 Triggered from:
 
 {{ range $fromTransitions -}}
@@ -130,3 +196,63 @@ Triggered from:
 *None*
 {{- end }}
 
+## Query Specifications
+
+The queries for this class.
+
+{{ if ne .Class.Queries nil -}}
+
+{{ range .Class.Queries -}}
+
+{{- $query := query_lookup $reqs .Key -}}
+
+### {{ $query.Name }}({{ query_signature $query }})
+
+{{ $query.Details }}
+
+{{ if ne $query.Parameters nil -}}
+Parameters:
+
+{{ range $query.Parameters -}}
+- *{{ .Name }}.* {{ .DataTypeRules }}
+{{ end }}
+{{ end -}}
+Requires:
+
+{{ if ne $query.Requires nil -}}
+
+{{ range $query.Requires -}}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+Guarantees:
+
+{{ if ne $query.Guarantees nil -}}
+
+{{ range $query.Guarantees -}}
+{{- $mainBullet := main_bullet .Description }}
+{{- $subBullets := sub_bullets .Description }}
+- {{ $mainBullet }}
+{{- if ne $subBullets nil }}{{ range $subBullets }}
+    - {{ . }}
+{{- end }}{{ end }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+
+{{ end -}}
+
+{{- else -}}
+*None*
+{{- end }}

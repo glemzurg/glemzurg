@@ -24,16 +24,16 @@ func TestClassSuite(t *testing.T) {
 
 type ClassSuite struct {
 	suite.Suite
-	db                 *sql.DB
-	model              req_model.Model
-	domain             model_domain.Domain
-	subdomain          model_domain.Subdomain
-	generalization     model_class.Generalization
-	generalizationB    model_class.Generalization
-	actor              model_actor.Actor
-	actorB             model_actor.Actor
-	classKey           identity.Key
-	classKeyB          identity.Key
+	db              *sql.DB
+	model           req_model.Model
+	domain          model_domain.Domain
+	subdomain       model_domain.Subdomain
+	generalization  model_class.Generalization
+	generalizationB model_class.Generalization
+	actor           model_actor.Actor
+	actorB          model_actor.Actor
+	classKey        identity.Key
+	classKeyB       identity.Key
 }
 
 func (suite *ClassSuite) SetupTest() {
@@ -45,8 +45,8 @@ func (suite *ClassSuite) SetupTest() {
 	suite.model = t_AddModel(suite.T(), suite.db)
 	suite.domain = t_AddDomain(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewDomainKey("domain_key")))
 	suite.subdomain = t_AddSubdomain(suite.T(), suite.db, suite.model.Key, suite.domain.Key, helper.Must(identity.NewSubdomainKey(suite.domain.Key, "subdomain_key")))
-	suite.generalization = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGeneralizationKey(suite.subdomain.Key, "generalization_key")))
-	suite.generalizationB = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewGeneralizationKey(suite.subdomain.Key, "generalization_key_b")))
+	suite.generalization = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewGeneralizationKey(suite.subdomain.Key, "generalization_key")))
+	suite.generalizationB = t_AddGeneralization(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, helper.Must(identity.NewGeneralizationKey(suite.subdomain.Key, "generalization_key_b")))
 	suite.actor = t_AddActor(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewActorKey("actor_key")))
 	suite.actorB = t_AddActor(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewActorKey("actor_key_b")))
 
@@ -84,8 +84,8 @@ func (suite *ClassSuite) TestLoad() {
 				'Name',
 				'Details',
 				'actor/actor_key',
-				'domain/domain_key/subdomain/subdomain_key/generalization/generalization_key',
-				'domain/domain_key/subdomain/subdomain_key/generalization/generalization_key_b',
+				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key',
+				'domain/domain_key/subdomain/subdomain_key/cgeneralization/generalization_key_b',
 				'UmlComment'
 			)
 	`)

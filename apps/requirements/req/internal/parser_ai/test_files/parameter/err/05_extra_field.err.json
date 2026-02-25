@@ -1,0 +1,4 @@
+{
+    "name": "amount",
+    "unknown_field": "should cause schema violation"
+}

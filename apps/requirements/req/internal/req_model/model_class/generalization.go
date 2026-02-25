@@ -1,15 +1,15 @@
 package model_class
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Generalization is how two or more things in the system build on each other (like a super type and sub type).
 type Generalization struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string // Markdown.
 	IsComplete bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
 	IsStatic   bool   // Are the specializations static and unchanging or can they change during runtime.
@@ -36,19 +36,20 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 
 // Validate validates the Generalization struct.
 func (g *Generalization) Validate() error {
-	return validation.ValidateStruct(g,
-		validation.Field(&g.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_GENERALIZATION {
-				return errors.Errorf("invalid key type '%s' for generalization", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&g.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := g.Key.Validate(); err != nil {
+		return err
+	}
+	if g.Key.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
+		return errors.Errorf("Key: invalid key type '%s' for generalization.", g.Key.KeyType)
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(g); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the Generalization, its key's parent relationship, and all children.

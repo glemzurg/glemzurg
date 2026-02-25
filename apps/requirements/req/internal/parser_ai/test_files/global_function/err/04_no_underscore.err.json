@@ -1,0 +1,6 @@
+{
+    "name": "Max",
+    "logic": {
+        "description": "Returns the maximum of two values"
+    }
+}

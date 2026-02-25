@@ -1,5 +1,7 @@
 {{- $reqs := .Reqs -}}
 
+# {{ .Model.Name }}
+
 {{ .Model.Details }}
 
 ## Actors
@@ -7,8 +9,21 @@
 The actors of this model.
 
 {{ range .Actors -}}
-- **[{{ .Name }} <img src="{{ .Type }}.svg" width="30" height="30" />]({{ filename "actor" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
+- **[{{ .Name }} <img src="{{ .Type }}.svg" width="7" height="15" />]({{ filename "actor" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
+
+{{ if ne .Model.ActorGeneralizations nil -}}
+### Generalizations
+
+The actor generalizations of this model.
+
+{{ range .Model.ActorGeneralizations -}}
+{{- $super := actor_generalization_superclass $reqs .Key -}}
+{{- $subs := actor_generalization_subclasses $reqs .Key -}}
+- **{{ .Name }}.** {{ .Details }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
 
 ## Domains
 
@@ -19,4 +34,28 @@ The domains of this model.
 {{ range .Domains -}}
 - **[{{ if .Realized }}«realized» {{ end }}{{ .Name }}]({{ filename "domain" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
+
+## Invariants
+
+{{ if ne .Model.Invariants nil -}}
+{{ range .Model.Invariants -}}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+{{- else -}}
+*No invariants*
+{{- end }}
+
+## Global Functions
+
+{{ if ne .Model.GlobalFunctions nil -}}
+{{ range .Model.GlobalFunctions -}}
+- **{{ .Name }}**{{ if ne .Parameters nil }}({{ range $i, $p := .Parameters }}{{ if $i }}, {{ end }}{{ $p }}{{ end }}){{ end }} — {{ .Logic.Description }}
+{{ if ne .Logic.Specification "" }}    - {{ .Logic.Specification }}
+{{ end -}}
+{{ end }}
+{{- else -}}
+*No global functions*
+{{- end }}
 

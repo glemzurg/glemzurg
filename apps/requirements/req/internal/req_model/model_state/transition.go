@@ -1,7 +1,6 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -39,82 +38,54 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 
 // Validate validates the Transition struct.
 func (t *Transition) Validate() error {
-	err := validation.ValidateStruct(t,
-		validation.Field(&t.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_TRANSITION {
-				return errors.Errorf("invalid key type '%s' for transition", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&t.EventKey, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_EVENT {
-				return errors.Errorf("invalid key type '%s' for event", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&t.FromStateKey, validation.By(func(value interface{}) error {
-			k := value.(*identity.Key)
-			if k == nil {
-				return nil
-			}
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_STATE {
-				return errors.Errorf("invalid key type '%s' for from state", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&t.ToStateKey, validation.By(func(value interface{}) error {
-			k := value.(*identity.Key)
-			if k == nil {
-				return nil
-			}
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_STATE {
-				return errors.Errorf("invalid key type '%s' for to state", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&t.GuardKey, validation.By(func(value interface{}) error {
-			k := value.(*identity.Key)
-			if k == nil {
-				return nil
-			}
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_GUARD {
-				return errors.Errorf("invalid key type '%s' for guard", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&t.ActionKey, validation.By(func(value interface{}) error {
-			k := value.(*identity.Key)
-			if k == nil {
-				return nil
-			}
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_ACTION {
-				return errors.Errorf("invalid key type '%s' for action", k.KeyType())
-			}
-			return nil
-		})),
-	)
-	if err != nil {
+	// Validate the key.
+	if err := t.Key.Validate(); err != nil {
 		return err
+	}
+	if t.Key.KeyType != identity.KEY_TYPE_TRANSITION {
+		return errors.Errorf("Key: invalid key type '%s' for transition", t.Key.KeyType)
+	}
+
+	// Validate the event key (required).
+	if err := t.EventKey.Validate(); err != nil {
+		return errors.Wrap(err, "EventKey")
+	}
+	if t.EventKey.KeyType != identity.KEY_TYPE_EVENT {
+		return errors.Errorf("EventKey: invalid key type '%s' for event", t.EventKey.KeyType)
+	}
+
+	// Validate optional key fields.
+	if t.FromStateKey != nil {
+		if err := t.FromStateKey.Validate(); err != nil {
+			return errors.Wrap(err, "FromStateKey")
+		}
+		if t.FromStateKey.KeyType != identity.KEY_TYPE_STATE {
+			return errors.Errorf("FromStateKey: invalid key type '%s' for from state", t.FromStateKey.KeyType)
+		}
+	}
+	if t.ToStateKey != nil {
+		if err := t.ToStateKey.Validate(); err != nil {
+			return errors.Wrap(err, "ToStateKey")
+		}
+		if t.ToStateKey.KeyType != identity.KEY_TYPE_STATE {
+			return errors.Errorf("ToStateKey: invalid key type '%s' for to state", t.ToStateKey.KeyType)
+		}
+	}
+	if t.GuardKey != nil {
+		if err := t.GuardKey.Validate(); err != nil {
+			return errors.Wrap(err, "GuardKey")
+		}
+		if t.GuardKey.KeyType != identity.KEY_TYPE_GUARD {
+			return errors.Errorf("GuardKey: invalid key type '%s' for guard", t.GuardKey.KeyType)
+		}
+	}
+	if t.ActionKey != nil {
+		if err := t.ActionKey.Validate(); err != nil {
+			return errors.Wrap(err, "ActionKey")
+		}
+		if t.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
+			return errors.Errorf("ActionKey: invalid key type '%s' for action", t.ActionKey.KeyType)
+		}
 	}
 
 	// We must have either from or to state or both.

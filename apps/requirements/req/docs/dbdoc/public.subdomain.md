@@ -8,8 +8,8 @@ A bucket for parts of a model.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| subdomain_key | text |  | false | [public.class](public.class.md) [public.use_case](public.use_case.md) |  | The internal ID. |
-| model_key | text |  | false | [public.class](public.class.md) [public.use_case](public.use_case.md) | [public.domain](public.domain.md) | The model this subdomain is part of. |
+| subdomain_key | text |  | false | [public.class_generalization](public.class_generalization.md) [public.class](public.class.md) [public.use_case_generalization](public.use_case_generalization.md) [public.use_case](public.use_case.md) |  | The internal ID. |
+| model_key | text |  | false | [public.class_generalization](public.class_generalization.md) [public.class](public.class.md) [public.use_case_generalization](public.use_case_generalization.md) [public.use_case](public.use_case.md) | [public.domain](public.domain.md) | The model this subdomain is part of. |
 | domain_key | text |  | false |  | [public.domain](public.domain.md) |  |
 | name | text |  | false |  |  | The unique name of the subdomain. |
 | details | text |  | true |  |  | A summary description. |

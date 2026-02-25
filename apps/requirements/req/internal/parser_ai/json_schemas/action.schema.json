@@ -14,20 +14,114 @@
       "type": "string",
       "description": "Optional detailed description of the action. Describe what the action does, what side effects it has, and any important implementation considerations. This helps implementers understand the full scope of the action."
     },
+    "parameters": {
+      "type": "array",
+      "description": "Parameters for the action. Each parameter has a name and optional data type rules.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the parameter.",
+            "minLength": 1
+          },
+          "data_type_rules": {
+            "type": "string",
+            "description": "Data type rules for the parameter value."
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    },
     "requires": {
       "type": "array",
-      "description": "Preconditions that must be true before the action can execute. Each string describes a condition that the system assumes is satisfied when the action is invoked. Use natural language that can be verified (e.g., 'Order must have at least one item', 'Customer payment method must be valid'). If validation fails: ensure each item is a non-empty string.",
+      "description": "Preconditions that must be true before the action can execute. Each item is a logic specification with a description and optional formal notation.",
       "items": {
-        "type": "string",
-        "description": "A precondition statement. Describe what must be true for this action to execute correctly. Be specific enough for implementation and testing."
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Optional logic kind discriminator.",
+            "enum": ["assessment"]
+          },
+          "description": {
+            "type": "string",
+            "description": "A precondition statement. Describe what must be true for this action to execute correctly.",
+            "minLength": 1
+          },
+          "notation": {
+            "type": "string",
+            "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+            "enum": ["tla_plus"]
+          },
+          "specification": {
+            "type": "string",
+            "description": "Optional formal specification in the given notation."
+          }
+        },
+        "required": ["description"],
+        "additionalProperties": false
       }
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions that will be true after the action executes successfully. Each string describes an outcome the action ensures. Use natural language that can be verified (e.g., 'Confirmation email has been queued', 'Inventory has been decremented', 'Order total reflects current prices'). If validation fails: ensure each item is a non-empty string.",
+      "description": "Postconditions that will be true after the action executes successfully. Each item is a logic specification with a description and optional formal notation.",
       "items": {
-        "type": "string",
-        "description": "A postcondition statement. Describe what will be true after the action completes. Be specific enough for implementation and testing."
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Optional logic kind discriminator.",
+            "enum": ["state_change"]
+          },
+          "description": {
+            "type": "string",
+            "description": "A postcondition statement. Describe what will be true after the action completes.",
+            "minLength": 1
+          },
+          "notation": {
+            "type": "string",
+            "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+            "enum": ["tla_plus"]
+          },
+          "specification": {
+            "type": "string",
+            "description": "Optional formal specification in the given notation."
+          }
+        },
+        "required": ["description"],
+        "additionalProperties": false
+      }
+    },
+    "safety_rules": {
+      "type": "array",
+      "description": "Safety rules that must always hold during and after the action. Each item is a logic specification.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Optional logic kind discriminator.",
+            "enum": ["safety_rule"]
+          },
+          "description": {
+            "type": "string",
+            "description": "A safety rule statement.",
+            "minLength": 1
+          },
+          "notation": {
+            "type": "string",
+            "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
+            "enum": ["tla_plus"]
+          },
+          "specification": {
+            "type": "string",
+            "description": "Optional formal specification in the given notation."
+          }
+        },
+        "required": ["description"],
+        "additionalProperties": false
       }
     }
   },

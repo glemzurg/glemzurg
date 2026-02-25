@@ -1,0 +1,4 @@
+{
+    "description": "Order total must be positive",
+    "unknown_field": "should cause schema violation"
+}

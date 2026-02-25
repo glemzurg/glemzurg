@@ -22,9 +22,9 @@ A semantic relationship between two domains.
 | domain_association_model_key_not_null | n | NOT NULL model_key |
 | domain_association_problem_domain_key_not_null | n | NOT NULL problem_domain_key |
 | domain_association_solution_domain_key_not_null | n | NOT NULL solution_domain_key |
-| fk_association_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
-| fk_association_problem | FOREIGN KEY | FOREIGN KEY (model_key, problem_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE |
-| fk_association_solution | FOREIGN KEY | FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE |
+| fk_domain_association_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
+| fk_domain_association_problem | FOREIGN KEY | FOREIGN KEY (model_key, problem_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE |
+| fk_domain_association_solution | FOREIGN KEY | FOREIGN KEY (model_key, solution_domain_key) REFERENCES domain(model_key, domain_key) ON DELETE CASCADE |
 | domain_association_pkey | PRIMARY KEY | PRIMARY KEY (model_key, association_key) |
 
 ## Indexes

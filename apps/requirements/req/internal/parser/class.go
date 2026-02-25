@@ -6,9 +6,10 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -85,10 +86,17 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 		return model_class.Class{}, nil, errors.WithStack(err)
 	}
 
-	class, err = model_class.NewClass(classKey, parsedFile.Title, parsedFile.Markdown, actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
+	class, err = model_class.NewClass(classKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), actorKey, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	if err != nil {
 		return model_class.Class{}, nil, err
 	}
+
+	// Add any invariants we found.
+	invariants, err := logicListFromYamlData(yamlData, "invariants", model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	if err != nil {
+		return model_class.Class{}, nil, err
+	}
+	class.SetInvariants(invariants)
 
 	// Add any attributes we found.
 	var attributesData map[string]any
@@ -198,6 +206,23 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	}
 	class.SetGuards(guards)
 
+	// Add any queries we found.
+	var queriesData map[string]any
+	queriesAny, found := yamlData["queries"]
+	if found {
+		queriesData = queriesAny.(map[string]any)
+	}
+
+	queries := make(map[identity.Key]model_state.Query)
+	for name, queryAny := range queriesData {
+		query, err := queryFromYamlData(classKey, name, queryAny)
+		if err != nil {
+			return model_class.Class{}, nil, err
+		}
+		queries[query.Key] = query
+	}
+	class.SetQueries(queries)
+
 	// Add any transitions we found.
 	var transitionsData []any
 	transitionsAny, found := yamlData["transitions"]
@@ -243,10 +268,35 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			dataTypeRules = dataTypeRulesAny.(string)
 		}
 
-		derivationPolicy := ""
-		derivationPolicyAny, found := attributeData["derivation"]
+		// Parse derivation policy as *model_logic.Logic.
+		var derivationPolicy *model_logic.Logic
+		derivationAny, found := attributeData["derivation"]
 		if found {
-			derivationPolicy = derivationPolicyAny.(string)
+			derivationMap, ok := derivationAny.(map[string]any)
+			if ok {
+				description := ""
+				if descAny, ok := derivationMap["description"]; ok {
+					description = descAny.(string)
+				}
+				specification := ""
+				if specAny, ok := derivationMap["specification"]; ok {
+					specification = specAny.(string)
+				}
+				// Construct the derivation key as a child of the attribute key.
+				attrKey, err := identity.NewAttributeKey(classKey, attrSubKey)
+				if err != nil {
+					return model_class.Attribute{}, errors.WithStack(err)
+				}
+				derivKey, err := identity.NewAttributeDerivationKey(attrKey, "derivation")
+				if err != nil {
+					return model_class.Attribute{}, errors.WithStack(err)
+				}
+				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "tla_plus", specification)
+				if err != nil {
+					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
+				}
+				derivationPolicy = &logic
+			}
 		}
 
 		nullable := false
@@ -341,14 +391,28 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			return model_class.Association{}, err
 		}
 
-		// Parse association class key if present.
+		// Resolve the to-class key based on the path format.
+		// Simple key (no /): same subdomain.
+		// Starts with "subdomain/": same domain, different subdomain — prepend domain prefix.
+		// Starts with "domain/": different domain — full key, parse directly.
+		toClassKey, err := resolveClassKeyFromRelative(subdomainKey, toClassKeyStr)
+		if err != nil {
+			return model_class.Association{}, err
+		}
+
+		// Determine the association parent key based on which classes are connected.
+		assocParentKey, err := determineAssociationParent(subdomainKey, fromClassKey, toClassKey)
+		if err != nil {
+			return model_class.Association{}, err
+		}
+
+		// Parse association class key if present (uses same relative format).
 		var associationClassKey *identity.Key
 		associationClassKeyAny, found := associationData["association_class_key"]
 		if found {
 			associationClassKeyStr := associationClassKeyAny.(string)
 			if associationClassKeyStr != "" {
-				// Parse the key - it should be a class key relative to subdomain.
-				key, err := identity.NewClassKey(subdomainKey, associationClassKeyStr)
+				key, err := resolveClassKeyFromRelative(subdomainKey, associationClassKeyStr)
 				if err != nil {
 					return model_class.Association{}, errors.WithStack(err)
 				}
@@ -362,15 +426,7 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			umlComment = umlCommentAny.(string)
 		}
 
-		// Construct the to class key - assuming it's in the same subdomain.
-		toClassKey, err := identity.NewClassKey(subdomainKey, toClassKeyStr)
-		if err != nil {
-			return model_class.Association{}, errors.WithStack(err)
-		}
-
-		// Construct the class association key using the subdomain as parent
-		// since both classes are in the same subdomain.
-		assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, name)
+		assocKey, err := identity.NewClassAssociationKey(assocParentKey, fromClassKey, toClassKey, name)
 		if err != nil {
 			return model_class.Association{}, errors.WithStack(err)
 		}
@@ -391,6 +447,56 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 	}
 
 	return association, nil
+}
+
+// resolveClassKeyFromRelative resolves a class key string relative to a subdomain.
+// Simple key (no /): same subdomain → NewClassKey(subdomainKey, str).
+// Starts with "subdomain/": same domain, different subdomain → prepend domain prefix and parse.
+// Starts with "domain/": different domain → parse as full key.
+func resolveClassKeyFromRelative(subdomainKey identity.Key, keyStr string) (identity.Key, error) {
+	if !strings.Contains(keyStr, "/") {
+		// Simple key: same subdomain.
+		return identity.NewClassKey(subdomainKey, keyStr)
+	}
+	if strings.HasPrefix(keyStr, identity.KEY_TYPE_SUBDOMAIN+"/") {
+		// Relative to domain: prepend the domain prefix.
+		fullKeyStr := subdomainKey.ParentKey + "/" + keyStr
+		return identity.ParseKey(fullKeyStr)
+	}
+	// Full key (starts with "domain/" or similar): parse directly.
+	return identity.ParseKey(keyStr)
+}
+
+// determineAssociationParent determines the correct parent key for a class association
+// based on the relationship between the from-class and to-class.
+// Same subdomain → subdomain parent. Same domain → domain parent. Different domains → empty (model) parent.
+func determineAssociationParent(subdomainKey, fromClassKey, toClassKey identity.Key) (identity.Key, error) {
+	// Same subdomain: both class keys have the same parent.
+	if fromClassKey.ParentKey == toClassKey.ParentKey {
+		return subdomainKey, nil
+	}
+
+	// Parse subdomain keys to check if same domain.
+	fromSubParsed, err := identity.ParseKey(fromClassKey.ParentKey)
+	if err != nil {
+		return identity.Key{}, errors.WithStack(err)
+	}
+	toSubParsed, err := identity.ParseKey(toClassKey.ParentKey)
+	if err != nil {
+		return identity.Key{}, errors.WithStack(err)
+	}
+
+	if fromSubParsed.ParentKey == toSubParsed.ParentKey {
+		// Same domain, different subdomain: use domain as parent.
+		domainKey, err := identity.ParseKey(fromSubParsed.ParentKey)
+		if err != nil {
+			return identity.Key{}, errors.WithStack(err)
+		}
+		return domainKey, nil
+	}
+
+	// Different domains: model-level (empty parent key).
+	return identity.Key{}, nil
 }
 
 func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identity.Key, name string, stateAny any) (state model_state.State, err error) {
@@ -487,45 +593,35 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 		return model_state.Event{}, errors.WithStack(err)
 	}
 
-	var params []model_state.EventParameter
 	details := ""
+	var parameters []model_state.Parameter
 
 	eventData, ok := eventAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
 		detailsAny, found := eventData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
 
-		paramsAny, found := eventData["parameters"]
+		// Parse event parameters.
+		parametersAny, found := eventData["parameters"]
 		if found {
-			paramsAny := paramsAny.([]any)
-			for _, paramAny := range paramsAny {
-				paramData, ok := paramAny.(map[string]any)
-				if ok {
-
-					name := ""
-					nameAny, found := paramData["name"]
-					if found {
-						name = nameAny.(string)
-					}
-
-					source := ""
-					sourceAny, found := paramData["source"]
-					if found {
-						source = sourceAny.(string)
-					}
-
-					param, err := model_state.NewEventParameter(name, source)
-					if err != nil {
-						return model_state.Event{}, err
-					}
-
-					params = append(params, param)
+			paramsList, ok := parametersAny.([]any)
+			if !ok {
+				return model_state.Event{}, errors.Errorf("event '%s': parameters must be a sequence", name)
+			}
+			for _, paramAny := range paramsList {
+				paramMap, ok := paramAny.(map[string]any)
+				if !ok {
+					return model_state.Event{}, errors.Errorf("event '%s': each parameter must be a mapping", name)
 				}
+				paramName, _ := paramMap["name"].(string)
+				paramRules, _ := paramMap["rules"].(string)
+				param, err := model_state.NewParameter(paramName, paramRules)
+				if err != nil {
+					return model_state.Event{}, errors.Wrapf(err, "event '%s' parameter '%s'", name, paramName)
+				}
+				parameters = append(parameters, param)
 			}
 		}
 	}
@@ -534,7 +630,7 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 		eventKey,
 		name,
 		details,
-		params)
+		parameters)
 	if err != nil {
 		return model_state.Event{}, err
 	}
@@ -552,21 +648,32 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 
 	details := ""
 
+	specification := ""
+
 	guardData, ok := guardAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
 		detailsAny, found := guardData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
+		specAny, found := guardData["specification"]
+		if found {
+			specification = specAny.(string)
+		}
+	}
+
+	logic := model_logic.Logic{
+		Key:           guardKey,
+		Type:          model_logic.LogicTypeAssessment,
+		Description:   details,
+		Notation:      "tla_plus",
+		Specification: specification,
 	}
 
 	guard, err = model_state.NewGuard(
 		guardKey,
 		name,
-		details)
+		logic)
 	if err != nil {
 		return model_state.Guard{}, err
 	}
@@ -583,33 +690,57 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 	}
 
 	details := ""
-	var requires []string
-	var guarantees []string
+
+	var parameters []model_state.Parameter
+	var requires []model_logic.Logic
+	var guarantees []model_logic.Logic
+	var safetyRules []model_logic.Logic
 
 	actionData, ok := actionAny.(map[string]any)
 	if ok {
-		// Data is in the right structure.
-		// Get each of the values.
-
 		detailsAny, found := actionData["details"]
 		if found {
 			details = detailsAny.(string)
 		}
 
-		requiresAny, found := actionData["requires"]
+		// Parse parameters.
+		parametersAny, found := actionData["parameters"]
 		if found {
-			requiresAny := requiresAny.([]any)
-			for _, requireAny := range requiresAny {
-				requires = append(requires, requireAny.(string))
+			paramsList, ok := parametersAny.([]any)
+			if !ok {
+				return model_state.Action{}, errors.Errorf("action '%s': parameters must be a sequence", name)
+			}
+			for _, paramAny := range paramsList {
+				paramMap, ok := paramAny.(map[string]any)
+				if !ok {
+					return model_state.Action{}, errors.Errorf("action '%s': each parameter must be a mapping", name)
+				}
+				paramName, _ := paramMap["name"].(string)
+				paramRules, _ := paramMap["rules"].(string)
+				param, err := model_state.NewParameter(paramName, paramRules)
+				if err != nil {
+					return model_state.Action{}, errors.Wrapf(err, "action '%s' parameter '%s'", name, paramName)
+				}
+				parameters = append(parameters, param)
 			}
 		}
 
-		guaranteesAny, found := actionData["guarantees"]
-		if found {
-			guaranteesAny := guaranteesAny.([]any)
-			for _, guaranteeAny := range guaranteesAny {
-				guarantees = append(guarantees, guaranteeAny.(string))
-			}
+		// Parse requires.
+		requires, err = logicListFromYamlData(actionData, "requires", model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey)
+		if err != nil {
+			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
+		}
+
+		// Parse guarantees.
+		guarantees, err = logicListFromYamlData(actionData, "guarantees", model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey)
+		if err != nil {
+			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
+		}
+
+		// Parse safety rules.
+		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey)
+		if err != nil {
+			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 	}
 
@@ -618,12 +749,118 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 		name,
 		details,
 		requires,
-		guarantees)
+		guarantees,
+		safetyRules,
+		parameters)
 	if err != nil {
 		return model_state.Action{}, err
 	}
 
 	return action, nil
+}
+
+func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query model_state.Query, err error) {
+
+	// Construct the query key.
+	queryKey, err := identity.NewQueryKey(classKey, strings.ToLower(name))
+	if err != nil {
+		return model_state.Query{}, errors.WithStack(err)
+	}
+
+	details := ""
+	var parameters []model_state.Parameter
+	var requires []model_logic.Logic
+	var guarantees []model_logic.Logic
+
+	queryData, ok := queryAny.(map[string]any)
+	if ok {
+		detailsAny, found := queryData["details"]
+		if found {
+			details = detailsAny.(string)
+		}
+
+		// Parse parameters.
+		parametersAny, found := queryData["parameters"]
+		if found {
+			paramsList, ok := parametersAny.([]any)
+			if !ok {
+				return model_state.Query{}, errors.Errorf("query '%s': parameters must be a sequence", name)
+			}
+			for _, paramAny := range paramsList {
+				paramMap, ok := paramAny.(map[string]any)
+				if !ok {
+					return model_state.Query{}, errors.Errorf("query '%s': each parameter must be a mapping", name)
+				}
+				paramName, _ := paramMap["name"].(string)
+				paramRules, _ := paramMap["rules"].(string)
+				param, err := model_state.NewParameter(paramName, paramRules)
+				if err != nil {
+					return model_state.Query{}, errors.Wrapf(err, "query '%s' parameter '%s'", name, paramName)
+				}
+				parameters = append(parameters, param)
+			}
+		}
+
+		// Parse requires.
+		requires, err = logicListFromYamlData(queryData, "requires", model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey)
+		if err != nil {
+			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
+		}
+
+		// Parse guarantees.
+		guarantees, err = logicListFromYamlData(queryData, "guarantees", model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey)
+		if err != nil {
+			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
+		}
+	}
+
+	query, err = model_state.NewQuery(
+		queryKey,
+		name,
+		details,
+		requires,
+		guarantees,
+		parameters)
+	if err != nil {
+		return model_state.Query{}, err
+	}
+
+	return query, nil
+}
+
+// logicListFromYamlData parses a YAML sequence of logic mappings (details + optional specification).
+func logicListFromYamlData(data map[string]any, field string, logicType string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
+	listAny, found := data[field]
+	if !found {
+		return nil, nil
+	}
+	list, ok := listAny.([]any)
+	if !ok {
+		return nil, errors.Errorf("%s must be a sequence", field)
+	}
+	var logics []model_logic.Logic
+	for i, itemAny := range list {
+		itemMap, ok := itemAny.(map[string]any)
+		if !ok {
+			return nil, errors.Errorf("%s[%d] must be a mapping", field, i)
+		}
+		details, _ := itemMap["details"].(string)
+		specification, _ := itemMap["specification"].(string)
+
+		key, err := newKey(parentKey, strconv.Itoa(i))
+		if err != nil {
+			return nil, errors.Wrapf(err, "%s[%d]", field, i)
+		}
+
+		logics = append(logics, model_logic.Logic{
+			Key:           key,
+			Type:          logicType,
+			Description:   details,
+			Notation:      "tla_plus",
+			Specification: specification,
+		})
+	}
+	return logics, nil
 }
 
 func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup map[string]identity.Key, classKey identity.Key, index int, transitionAny any) (transition model_state.Transition, err error) {
@@ -742,26 +979,34 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 
 	// Add top-level fields.
 	if class.ActorKey != nil {
-		builder.AddField("actor_key", class.ActorKey.SubKey())
+		builder.AddField("actor_key", class.ActorKey.SubKey)
 	}
 	if class.SuperclassOfKey != nil {
-		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey())
+		builder.AddField("superclass_of_key", class.SuperclassOfKey.SubKey)
 	}
 	if class.SubclassOfKey != nil {
-		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey())
+		builder.AddField("subclass_of_key", class.SubclassOfKey.SubKey)
 	}
+
+	// Add invariants section.
+	generateLogicSequence(builder, "invariants", class.Invariants)
 
 	// Add attributes section.
 	if len(class.Attributes) > 0 {
 		attrsBuilder := NewYamlBuilder()
-		sortedAttrs := req_flat.GetAttributesSorted(class.Attributes)
+		sortedAttrs := view_helper.GetAttributesSorted(class.Attributes)
 		for _, attr := range sortedAttrs {
 			attrBuilder := NewYamlBuilder()
 			attrBuilder.AddField("name", attr.Name)
 			attrBuilder.AddField("details", attr.Details)
 			attrBuilder.AddField("rules", attr.DataTypeRules)
-			attrBuilder.AddField("derivation", attr.DerivationPolicy)
 			attrBuilder.AddBoolField("nullable", attr.Nullable)
+			if attr.DerivationPolicy != nil {
+				derivBuilder := NewYamlBuilder()
+				derivBuilder.AddField("description", attr.DerivationPolicy.Description)
+				derivBuilder.AddQuotedField("specification", attr.DerivationPolicy.Specification)
+				attrBuilder.AddMappingField("derivation", derivBuilder)
+			}
 			attrBuilder.AddField("uml_comment", attr.UmlComment)
 			// Convert []uint to []int for index_nums.
 			if len(attr.IndexNums) > 0 {
@@ -771,7 +1016,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 				}
 				attrBuilder.AddIntSliceField("index_nums", intNums)
 			}
-			attrsBuilder.AddMappingField(attr.Key.SubKey(), attrBuilder)
+			attrsBuilder.AddMappingField(attr.Key.SubKey, attrBuilder)
 		}
 		builder.AddMappingField("attributes", attrsBuilder)
 	}
@@ -784,10 +1029,10 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			assocBuilder.AddField("name", assoc.Name)
 			assocBuilder.AddField("details", assoc.Details)
 			addMultiplicityField(assocBuilder, "from_multiplicity", assoc.FromMultiplicity)
-			assocBuilder.AddField("to_class_key", assoc.ToClassKey.SubKey())
+			assocBuilder.AddField("to_class_key", classAssociationRelativeKey(class, assoc.ToClassKey))
 			addMultiplicityField(assocBuilder, "to_multiplicity", assoc.ToMultiplicity)
 			if assoc.AssociationClassKey != nil {
-				assocBuilder.AddField("association_class_key", assoc.AssociationClassKey.SubKey())
+				assocBuilder.AddField("association_class_key", classAssociationRelativeKey(class, *assoc.AssociationClassKey))
 			}
 			assocBuilder.AddField("uml_comment", assoc.UmlComment)
 			assocBuilders = append(assocBuilders, assocBuilder)
@@ -855,16 +1100,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			event := class.Events[key]
 			eventBuilder := NewYamlBuilder()
 			eventBuilder.AddField("details", event.Details)
-			if len(event.Parameters) > 0 {
-				var paramBuilders []*YamlBuilder
-				for _, param := range event.Parameters {
-					paramBuilder := NewYamlBuilder()
-					paramBuilder.AddField("name", param.Name)
-					paramBuilder.AddField("source", param.Source)
-					paramBuilders = append(paramBuilders, paramBuilder)
-				}
-				eventBuilder.AddSequenceOfMappings("parameters", paramBuilders)
-			}
+			generateParameterSequence(eventBuilder, event.Parameters)
 			eventsBuilder.AddMappingFieldAlways(event.Name, eventBuilder)
 		}
 		builder.AddMappingField("events", eventsBuilder)
@@ -882,7 +1118,8 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			key, _ := identity.ParseKey(keyStr)
 			guard := class.Guards[key]
 			guardBuilder := NewYamlBuilder()
-			guardBuilder.AddField("details", guard.Details)
+			guardBuilder.AddField("details", guard.Logic.Description)
+			guardBuilder.AddField("specification", guard.Logic.Specification)
 			guardsBuilder.AddMappingField(guard.Name, guardBuilder)
 		}
 		builder.AddMappingField("guards", guardsBuilder)
@@ -901,11 +1138,34 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			action := class.Actions[key]
 			actionBuilder := NewYamlBuilder()
 			actionBuilder.AddField("details", action.Details)
-			actionBuilder.AddSequenceField("requires", action.Requires)
-			actionBuilder.AddSequenceField("guarantees", action.Guarantees)
+			generateParameterSequence(actionBuilder, action.Parameters)
+			generateLogicSequence(actionBuilder, "requires", action.Requires)
+			generateLogicSequence(actionBuilder, "guarantees", action.Guarantees)
+			generateLogicSequence(actionBuilder, "safety_rules", action.SafetyRules)
 			actionsBuilder.AddMappingField(action.Name, actionBuilder)
 		}
 		builder.AddMappingField("actions", actionsBuilder)
+	}
+
+	// Add queries section.
+	if len(class.Queries) > 0 {
+		queriesBuilder := NewYamlBuilder()
+		queryKeys := make([]string, 0, len(class.Queries))
+		for k := range class.Queries {
+			queryKeys = append(queryKeys, k.String())
+		}
+		sort.Strings(queryKeys)
+		for _, keyStr := range queryKeys {
+			key, _ := identity.ParseKey(keyStr)
+			query := class.Queries[key]
+			queryBuilder := NewYamlBuilder()
+			queryBuilder.AddField("details", query.Details)
+			generateParameterSequence(queryBuilder, query.Parameters)
+			generateLogicSequence(queryBuilder, "requires", query.Requires)
+			generateLogicSequence(queryBuilder, "guarantees", query.Guarantees)
+			queriesBuilder.AddMappingField(query.Name, queryBuilder)
+		}
+		builder.AddMappingField("queries", queriesBuilder)
 	}
 
 	// Add transitions section.
@@ -946,17 +1206,77 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 	}
 
 	yamlStr, _ := builder.Build()
-	return generateFileContent(class.Details, class.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UmlComment, yamlStr)
+}
+
+// generateParameterSequence adds a parameters sequence of mappings to the builder.
+func generateParameterSequence(builder *YamlBuilder, params []model_state.Parameter) {
+	if len(params) == 0 {
+		return
+	}
+	items := make([]*YamlBuilder, 0, len(params))
+	for _, param := range params {
+		paramBuilder := NewYamlBuilder()
+		paramBuilder.AddField("name", param.Name)
+		paramBuilder.AddField("rules", param.DataTypeRules)
+		items = append(items, paramBuilder)
+	}
+	builder.AddSequenceOfMappings("parameters", items)
+}
+
+// generateLogicSequence adds a logic sequence of mappings to the builder.
+func generateLogicSequence(builder *YamlBuilder, field string, logics []model_logic.Logic) {
+	if len(logics) == 0 {
+		return
+	}
+	items := make([]*YamlBuilder, 0, len(logics))
+	for _, logic := range logics {
+		logicBuilder := NewYamlBuilder()
+		logicBuilder.AddField("details", logic.Description)
+		logicBuilder.AddField("specification", logic.Specification)
+		items = append(items, logicBuilder)
+	}
+	builder.AddSequenceOfMappings(field, items)
+}
+
+// classAssociationRelativeKey returns the shortest relative key string for a target class key
+// relative to the from-class. If both classes share the same subdomain, returns just the SubKey.
+// If they share the same domain, returns the path relative to the domain (subdomain/X/class/Y).
+// Otherwise returns the full key string (domain/X/subdomain/Y/class/Z).
+func classAssociationRelativeKey(fromClass model_class.Class, targetClassKey identity.Key) string {
+	fromSubdomain := fromClass.Key.ParentKey
+	targetSubdomain := targetClassKey.ParentKey
+
+	// Same subdomain: just the class subkey.
+	if fromSubdomain == targetSubdomain {
+		return targetClassKey.SubKey
+	}
+
+	// Check if same domain by parsing subdomain parent keys.
+	fromSubdomainParsed, err1 := identity.ParseKey(fromSubdomain)
+	targetSubdomainParsed, err2 := identity.ParseKey(targetSubdomain)
+	if err1 == nil && err2 == nil && fromSubdomainParsed.ParentKey == targetSubdomainParsed.ParentKey {
+		// Same domain, different subdomain: path relative to domain.
+		// Strip the domain prefix to get "subdomain/X/class/Y".
+		domainPrefix := fromSubdomainParsed.ParentKey + "/"
+		return strings.TrimPrefix(targetClassKey.String(), domainPrefix)
+	}
+
+	// Different domains: full key string.
+	return targetClassKey.String()
 }
 
 // addMultiplicityField adds a multiplicity field to the builder.
 // Numeric multiplicities are quoted, "any" is not quoted.
 func addMultiplicityField(builder *YamlBuilder, key string, m model_class.Multiplicity) {
 	s := m.ParsedString()
+	// Convert UML "N..*" format to parseable "N..many" format.
+	if strings.HasSuffix(s, "..*") {
+		s = strings.TrimSuffix(s, "..*") + "..many"
+	}
 	if s == "any" {
 		builder.AddField(key, s)
 	} else {
 		builder.AddQuotedField(key, s)
 	}
 }
-

@@ -34,12 +34,110 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 		{
 			testName: "error blank",
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			key, err := NewActorKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
+	tests := []struct {
+		testName string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			subKey:   "gen1",
+			expected: helper.Must(newRootKey(KEY_TYPE_ACTOR_GENERALIZATION, "gen1")),
+		},
+
+		// Errors.
+		{
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewActorGeneralizationKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		subdomainKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			subdomainKey: subdomainKey,
+			subKey:       "gen1",
+			expected:     helper.Must(newKey(subdomainKey.String(), KEY_TYPE_USE_CASE_GENERALIZATION, "gen1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			subdomainKey: Key{},
+			subKey:       "gen1",
+			errstr:       "parent key cannot be of type '' for 'ucgeneralization' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			subdomainKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "gen1",
+			errstr:       "parent key cannot be of type 'actor' for 'ucgeneralization' key",
+		},
+		{
+			testName:     "error blank subKey",
+			subdomainKey: subdomainKey,
+			subKey:       "",
+			errstr:       "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewUseCaseGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, key)
@@ -72,12 +170,98 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 		{
 			testName: "error blank",
 			subKey:   "",
-			errstr:   "cannot be blank",
+			errstr:   "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			key, err := NewDomainKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewInvariantKey() {
+	tests := []struct {
+		testName string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			subKey:   "1",
+			expected: helper.Must(newRootKey(KEY_TYPE_INVARIANT, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error not integer",
+			subKey:   "_InvariantA",
+			errstr:   "invariant key must be a valid integer",
+		},
+		{
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewInvariantKey(tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
+	tests := []struct {
+		testName string
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			subKey:   "_max",
+			expected: helper.Must(newRootKey(KEY_TYPE_GLOBAL_FUNCTION, "max")),
+		},
+
+		// Errors.
+		{
+			testName: "non-underscored",
+			subKey:   "max",
+			errstr:   "global function key must start with an underscore",
+		},
+		{
+			testName: "error blank",
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewGlobalFunctionKey(tt.subKey)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, key)
@@ -113,10 +297,10 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 			problemDomainKey:  problemDomainKey,
 			solutionDomainKey: solutionDomainKey,
 			expected: Key{
-				parentKey: "",
-				keyType:   KEY_TYPE_DOMAIN_ASSOCIATION,
-				subKey:    "problem1",
-				subKey2:   "solution1",
+				ParentKey: "",
+				KeyType:   KEY_TYPE_DOMAIN_ASSOCIATION,
+				SubKey:    "problem1",
+				SubKey2:   "solution1",
 			},
 		},
 
@@ -200,12 +384,408 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 			testName:  "error blank subKey",
 			domainKey: domainKey,
 			subKey:    "",
-			errstr:    "cannot be blank",
+			errstr:    "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
 		pass := suite.T().Run(tt.testName, func(t *testing.T) {
 			key, err := NewSubdomainKey(tt.domainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	attributeKey, err := NewAttributeKey(classKey, "attribute1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		attributeKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			attributeKey: attributeKey,
+			subKey:       "attribute1",
+			expected:     helper.Must(newKey(attributeKey.String(), KEY_TYPE_ATTRIBUTE_DERIVATION, "attribute1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			attributeKey: Key{},
+			subKey:       "attribute1",
+			errstr:       "parent key cannot be of type '' for 'aderive' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			attributeKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "subdomain1",
+			errstr:       "parent key cannot be of type 'actor' for 'aderive' key",
+		},
+		{
+			testName:     "error blank subKey",
+			attributeKey: attributeKey,
+			subKey:       "",
+			errstr:       "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewAttributeDerivationKey(tt.attributeKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewActionRequireKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	actionKey, err := NewActionKey(classKey, "action1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName  string
+		actionKey Key
+		subKey    string
+		expected  Key
+		errstr    string
+	}{
+		// OK.
+		{
+			testName:  "ok",
+			actionKey: actionKey,
+			subKey:    "1",
+			expected:  helper.Must(newKey(actionKey.String(), KEY_TYPE_ACTION_REQUIRE, "1")),
+		},
+
+		// Errors.
+		{
+			testName:  "error empty parent",
+			actionKey: Key{},
+			subKey:    "1",
+			errstr:    "parent key cannot be of type '' for 'arequire' key",
+		},
+		{
+			testName:  "error wrong parent type",
+			actionKey: helper.Must(NewActorKey("actor1")),
+			subKey:    "1",
+			errstr:    "parent key cannot be of type 'actor' for 'arequire' key",
+		},
+		{
+			testName:  "error blank subKey",
+			actionKey: actionKey,
+			subKey:    "",
+			errstr:    "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewActionRequireKey(tt.actionKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	actionKey, err := NewActionKey(classKey, "action1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName  string
+		actionKey Key
+		subKey    string
+		expected  Key
+		errstr    string
+	}{
+		// OK.
+		{
+			testName:  "ok",
+			actionKey: actionKey,
+			subKey:    "1",
+			expected:  helper.Must(newKey(actionKey.String(), KEY_TYPE_ACTION_GUARANTEE, "1")),
+		},
+
+		// Errors.
+		{
+			testName:  "error empty parent",
+			actionKey: Key{},
+			subKey:    "1",
+			errstr:    "parent key cannot be of type '' for 'aguarantee' key",
+		},
+		{
+			testName:  "error wrong parent type",
+			actionKey: helper.Must(NewActorKey("actor1")),
+			subKey:    "1",
+			errstr:    "parent key cannot be of type 'actor' for 'aguarantee' key",
+		},
+		{
+			testName:  "error blank subKey",
+			actionKey: actionKey,
+			subKey:    "",
+			errstr:    "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewActionGuaranteeKey(tt.actionKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	actionKey, err := NewActionKey(classKey, "action1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName  string
+		actionKey Key
+		subKey    string
+		expected  Key
+		errstr    string
+	}{
+		// OK.
+		{
+			testName:  "ok",
+			actionKey: actionKey,
+			subKey:    "1",
+			expected:  helper.Must(newKey(actionKey.String(), KEY_TYPE_ACTION_SAFETY, "1")),
+		},
+
+		// Errors.
+		{
+			testName:  "error empty parent",
+			actionKey: Key{},
+			subKey:    "1",
+			errstr:    "parent key cannot be of type '' for 'asafety' key",
+		},
+		{
+			testName:  "error wrong parent type",
+			actionKey: helper.Must(NewActorKey("actor1")),
+			subKey:    "1",
+			errstr:    "parent key cannot be of type 'actor' for 'asafety' key",
+		},
+		{
+			testName:  "error blank subKey",
+			actionKey: actionKey,
+			subKey:    "",
+			errstr:    "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewActionSafetyKey(tt.actionKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	queryKey, err := NewQueryKey(classKey, "query1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		queryKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			queryKey: queryKey,
+			subKey:   "1",
+			expected: helper.Must(newKey(queryKey.String(), KEY_TYPE_QUERY_REQUIRE, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			queryKey: Key{},
+			subKey:   "1",
+			errstr:   "parent key cannot be of type '' for 'qrequire' key",
+		},
+		{
+			testName: "error wrong parent type",
+			queryKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "1",
+			errstr:   "parent key cannot be of type 'actor' for 'qrequire' key",
+		},
+		{
+			testName: "error blank subKey",
+			queryKey: queryKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewQueryRequireKey(tt.queryKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	queryKey, err := NewQueryKey(classKey, "query1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		queryKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			queryKey: queryKey,
+			subKey:   "1",
+			expected: helper.Must(newKey(queryKey.String(), KEY_TYPE_QUERY_GUARANTEE, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			queryKey: Key{},
+			subKey:   "1",
+			errstr:   "parent key cannot be of type '' for 'qguarantee' key",
+		},
+		{
+			testName: "error wrong parent type",
+			queryKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "1",
+			errstr:   "parent key cannot be of type 'actor' for 'qguarantee' key",
+		},
+		{
+			testName: "error blank subKey",
+			queryKey: queryKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewQueryGuaranteeKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expected, key)
@@ -260,7 +840,7 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 			testName:     "error blank subKey",
 			subdomainKey: subdomainKey,
 			subKey:       "",
-			errstr:       "cannot be blank",
+			errstr:       "'SubKey' failed on the 'required' tag",
 		},
 	}
 	for _, tt := range tests {
@@ -274,6 +854,768 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 				assert.Equal(t, Key{}, key)
 			}
 		})
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewClassKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		subdomainKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			subdomainKey: subdomainKey,
+			subKey:       "class1",
+			expected:     helper.Must(newKey(subdomainKey.String(), KEY_TYPE_CLASS, "class1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			subdomainKey: Key{},
+			subKey:       "class1",
+			errstr:       "parent key cannot be of type '' for 'class' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			subdomainKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "class1",
+			errstr:       "parent key cannot be of type 'actor' for 'class' key",
+		},
+		{
+			testName:     "error blank subKey",
+			subdomainKey: subdomainKey,
+			subKey:       "",
+			errstr:       "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewClassKey(tt.subdomainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName     string
+		subdomainKey Key
+		subKey       string
+		expected     Key
+		errstr       string
+	}{
+		// OK.
+		{
+			testName:     "ok",
+			subdomainKey: subdomainKey,
+			subKey:       "gen1",
+			expected:     helper.Must(newKey(subdomainKey.String(), KEY_TYPE_CLASS_GENERALIZATION, "gen1")),
+		},
+
+		// Errors.
+		{
+			testName:     "error empty parent",
+			subdomainKey: Key{},
+			subKey:       "gen1",
+			errstr:       "parent key cannot be of type '' for 'generalization' key",
+		},
+		{
+			testName:     "error wrong parent type",
+			subdomainKey: helper.Must(NewActorKey("actor1")),
+			subKey:       "gen1",
+			errstr:       "parent key cannot be of type 'actor' for 'generalization' key",
+		},
+		{
+			testName:     "error blank subKey",
+			subdomainKey: subdomainKey,
+			subKey:       "",
+			errstr:       "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewGeneralizationKey(tt.subdomainKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewScenarioKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName   string
+		useCaseKey Key
+		subKey     string
+		expected   Key
+		errstr     string
+	}{
+		// OK.
+		{
+			testName:   "ok",
+			useCaseKey: useCaseKey,
+			subKey:     "scenario1",
+			expected:   helper.Must(newKey(useCaseKey.String(), KEY_TYPE_SCENARIO, "scenario1")),
+		},
+
+		// Errors.
+		{
+			testName:   "error empty parent",
+			useCaseKey: Key{},
+			subKey:     "scenario1",
+			errstr:     "parent key cannot be of type '' for 'scenario' key",
+		},
+		{
+			testName:   "error wrong parent type",
+			useCaseKey: helper.Must(NewActorKey("actor1")),
+			subKey:     "scenario1",
+			errstr:     "parent key cannot be of type 'actor' for 'scenario' key",
+		},
+		{
+			testName:   "error blank subKey",
+			useCaseKey: useCaseKey,
+			subKey:     "",
+			errstr:     "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewScenarioKey(tt.useCaseKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
+	assert.NoError(suite.T(), err)
+
+	scenarioKey, err := NewScenarioKey(useCaseKey, "scenario1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName    string
+		scenarioKey Key
+		subKey      string
+		expected    Key
+		errstr      string
+	}{
+		// OK.
+		{
+			testName:    "ok",
+			scenarioKey: scenarioKey,
+			subKey:      "object1",
+			expected:    helper.Must(newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_OBJECT, "object1")),
+		},
+
+		// Errors.
+		{
+			testName:    "error empty parent",
+			scenarioKey: Key{},
+			subKey:      "object1",
+			errstr:      "parent key cannot be of type '' for 'sobject' key",
+		},
+		{
+			testName:    "error wrong parent type",
+			scenarioKey: helper.Must(NewActorKey("actor1")),
+			subKey:      "object1",
+			errstr:      "parent key cannot be of type 'actor' for 'sobject' key",
+		},
+		{
+			testName:    "error blank subKey",
+			scenarioKey: scenarioKey,
+			subKey:      "",
+			errstr:      "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewScenarioObjectKey(tt.scenarioKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
+	assert.NoError(suite.T(), err)
+
+	scenarioKey, err := NewScenarioKey(useCaseKey, "scenario1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName    string
+		scenarioKey Key
+		subKey      string
+		expected    Key
+		errstr      string
+	}{
+		// OK.
+		{
+			testName:    "ok",
+			scenarioKey: scenarioKey,
+			subKey:      "0",
+			expected:    helper.Must(newKey(scenarioKey.String(), KEY_TYPE_SCENARIO_STEP, "0")),
+		},
+
+		// Errors.
+		{
+			testName:    "error empty parent",
+			scenarioKey: Key{},
+			subKey:      "0",
+			errstr:      "parent key cannot be of type '' for 'sstep' key",
+		},
+		{
+			testName:    "error wrong parent type",
+			scenarioKey: helper.Must(NewActorKey("actor1")),
+			subKey:      "0",
+			errstr:      "parent key cannot be of type 'actor' for 'sstep' key",
+		},
+		{
+			testName:    "error blank subKey",
+			scenarioKey: scenarioKey,
+			subKey:      "",
+			errstr:      "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewScenarioStepKey(tt.scenarioKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewStateKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "state1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_STATE, "state1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "state1",
+			errstr:   "parent key cannot be of type '' for 'state' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "state1",
+			errstr:   "parent key cannot be of type 'actor' for 'state' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewStateKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewEventKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "event1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_EVENT, "event1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "event1",
+			errstr:   "parent key cannot be of type '' for 'event' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "event1",
+			errstr:   "parent key cannot be of type 'actor' for 'event' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewEventKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewGuardKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "guard1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_GUARD, "guard1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "guard1",
+			errstr:   "parent key cannot be of type '' for 'guard' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "guard1",
+			errstr:   "parent key cannot be of type 'actor' for 'guard' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewGuardKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewActionKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "action1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_ACTION, "action1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "action1",
+			errstr:   "parent key cannot be of type '' for 'action' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "action1",
+			errstr:   "parent key cannot be of type 'actor' for 'action' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewActionKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewQueryKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "query1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_QUERY, "query1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "query1",
+			errstr:   "parent key cannot be of type '' for 'query' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "query1",
+			errstr:   "parent key cannot be of type 'actor' for 'query' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewQueryKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestClassInvariant() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_CLASS_INVARIANT, "1")),
+		},
+
+		// Errors.
+		{
+			testName: "error not integer",
+			classKey: classKey,
+			subKey:   "_InvariantA",
+			errstr:   "class invariant key must be a valid integer",
+		},
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "1",
+			errstr:   "parent key cannot be of type '' for 'cinvariant' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "1",
+			errstr:   "parent key cannot be of type 'actor' for 'cinvariant' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewClassInvariantKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
+	}
+}
+
+func (suite *KeyTypeSuite) TestNewAttributeKey() {
+
+	domainKey, err := NewDomainKey("domain1")
+	assert.NoError(suite.T(), err)
+
+	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
+	assert.NoError(suite.T(), err)
+
+	classKey, err := NewClassKey(subdomainKey, "class1")
+	assert.NoError(suite.T(), err)
+
+	tests := []struct {
+		testName string
+		classKey Key
+		subKey   string
+		expected Key
+		errstr   string
+	}{
+		// OK.
+		{
+			testName: "ok",
+			classKey: classKey,
+			subKey:   "attribute1",
+			expected: helper.Must(newKey(classKey.String(), KEY_TYPE_ATTRIBUTE, "attribute1")),
+		},
+
+		// Errors.
+		{
+			testName: "error empty parent",
+			classKey: Key{},
+			subKey:   "attribute1",
+			errstr:   "parent key cannot be of type '' for 'attribute' key",
+		},
+		{
+			testName: "error wrong parent type",
+			classKey: helper.Must(NewActorKey("actor1")),
+			subKey:   "attribute1",
+			errstr:   "parent key cannot be of type 'actor' for 'attribute' key",
+		},
+		{
+			testName: "error blank subKey",
+			classKey: classKey,
+			subKey:   "",
+			errstr:   "'SubKey' failed on the 'required' tag",
+		},
+	}
+	for _, tt := range tests {
+		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+			key, err := NewAttributeKey(tt.classKey, tt.subKey)
+			if tt.errstr == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, key)
+			} else {
+				assert.ErrorContains(t, err, tt.errstr)
+				assert.Equal(t, Key{}, key)
+			}
+		})
+		if !pass {
+			break
+		}
 	}
 }
 
@@ -314,11 +1656,11 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			toClassKey:   class2Key,
 			name:         "My Association",
 			expected: Key{
-				parentKey: subdomain1Key.String(),
-				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
-				subKey:    "class/class1",
-				subKey2:   "class/class2",
-				subKey3:   "my_association",
+				ParentKey: subdomain1Key.String(),
+				KeyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				SubKey:    "class/class1",
+				SubKey2:   "class/class2",
+				SubKey3:   "my_association",
 			},
 		},
 
@@ -330,11 +1672,11 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			toClassKey:   class3Key,
 			name:         "Cross Subdomain Link",
 			expected: Key{
-				parentKey: domain1Key.String(),
-				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
-				subKey:    "subdomain/subdomain1/class/class1",
-				subKey2:   "subdomain/subdomain2/class/class3",
-				subKey3:   "cross_subdomain_link",
+				ParentKey: domain1Key.String(),
+				KeyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				SubKey:    "subdomain/subdomain1/class/class1",
+				SubKey2:   "subdomain/subdomain2/class/class3",
+				SubKey3:   "cross_subdomain_link",
 			},
 		},
 
@@ -346,11 +1688,11 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			toClassKey:   class4Key,
 			name:         "Cross Domain Link",
 			expected: Key{
-				parentKey: "",
-				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
-				subKey:    "domain/domain1/subdomain/subdomain1/class/class1",
-				subKey2:   "domain/domain2/subdomain/subdomain3/class/class4",
-				subKey3:   "cross_domain_link",
+				ParentKey: "",
+				KeyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				SubKey:    "domain/domain1/subdomain/subdomain1/class/class1",
+				SubKey2:   "domain/domain2/subdomain/subdomain3/class/class4",
+				SubKey3:   "cross_domain_link",
 			},
 		},
 
@@ -362,11 +1704,11 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			toClassKey:   class2Key,
 			name:         "  Spaced Name  ",
 			expected: Key{
-				parentKey: subdomain1Key.String(),
-				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
-				subKey:    "class/class1",
-				subKey2:   "class/class2",
-				subKey3:   "spaced_name",
+				ParentKey: subdomain1Key.String(),
+				KeyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				SubKey:    "class/class1",
+				SubKey2:   "class/class2",
+				SubKey3:   "spaced_name",
 			},
 		},
 
@@ -378,11 +1720,11 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			toClassKey:   class2Key,
 			name:         "Multiple   Spaces   Here",
 			expected: Key{
-				parentKey: subdomain1Key.String(),
-				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
-				subKey:    "class/class1",
-				subKey2:   "class/class2",
-				subKey3:   "multiple___spaces___here",
+				ParentKey: subdomain1Key.String(),
+				KeyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				SubKey:    "class/class1",
+				SubKey2:   "class/class2",
+				SubKey3:   "multiple___spaces___here",
 			},
 		},
 
@@ -394,11 +1736,11 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			toClassKey:   class2Key,
 			name:         "Parent/Child Relationship",
 			expected: Key{
-				parentKey: subdomain1Key.String(),
-				keyType:   KEY_TYPE_CLASS_ASSOCIATION,
-				subKey:    "class/class1",
-				subKey2:   "class/class2",
-				subKey3:   "parent~child_relationship",
+				ParentKey: subdomain1Key.String(),
+				KeyType:   KEY_TYPE_CLASS_ASSOCIATION,
+				SubKey:    "class/class1",
+				SubKey2:   "class/class2",
+				SubKey3:   "parent~child_relationship",
 			},
 		},
 

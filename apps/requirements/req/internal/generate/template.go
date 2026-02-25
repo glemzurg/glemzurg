@@ -13,9 +13,11 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -181,44 +183,24 @@ var _funcMap = template.FuncMap{
 		// Add a guard if there is one.
 		if transition.GuardKey != nil {
 			guard := guardLookup[transition.GuardKey.String()]
-			eventCall += " [" + guard.Details + "]"
+			eventCall += " [" + guard.Logic.Description + "]"
 		}
 
 		return eventCall
 	},
-	"action_signatures": func(reqs *req_flat.Requirements, transitions []model_state.Transition, stateActions []model_state.StateAction) (signatures []string) {
-
-		eventLookup := reqs.EventLookup()
-
-		// Keep track of each signature we find.
-		signatureLookup := map[string]bool{}
-
-		// If there is any state action we have a signature with no parameters.
-		if len(stateActions) > 0 {
-			signatureLookup[""] = true
+	"action_signature": func(action model_state.Action) (signature string) {
+		var paramNames []string
+		for _, param := range action.Parameters {
+			paramNames = append(paramNames, param.Name)
 		}
-
-		// Create a signature for each event used.
-		for _, transition := range transitions {
-			event := eventLookup[transition.EventKey.String()]
-
-			var paramNames []string
-			for _, param := range event.Parameters {
-				paramNames = append(paramNames, param.Name)
-			}
-			signature := strings.Join(paramNames, ", ")
-			signatureLookup[signature] = true
+		return strings.Join(paramNames, ", ")
+	},
+	"query_signature": func(query model_state.Query) (signature string) {
+		var paramNames []string
+		for _, param := range query.Parameters {
+			paramNames = append(paramNames, param.Name)
 		}
-
-		// Put all the signatures in a list.
-		for signature := range signatureLookup {
-			signatures = append(signatures, signature)
-		}
-
-		// Make the signatures ordered for consistent display.
-		sort.Strings(signatures)
-
-		return signatures
+		return strings.Join(paramNames, ", ")
 	},
 
 	// Formatting of bulleted lists.
@@ -264,6 +246,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.ScenarioLookup()
 		return lookup[key.String()]
 	},
+	"actor_lookup": func(reqs *req_flat.Requirements, key identity.Key) (actor model_actor.Actor) {
+		lookup := reqs.ActorLookup()
+		return lookup[key.String()]
+	},
 	"actor_classes": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
 		lookup := reqs.ActorClassesLookup()
 		return lookup[key.String()]
@@ -295,6 +281,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.DomainClassesLookup()
 		return lookup[key.String()]
 	},
+	"generalization_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_class.Generalization) {
+		lookup := reqs.GeneralizationLookup()
+		return lookup[key.String()]
+	},
 	"generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (class model_class.Class) {
 		lookup := reqs.GeneralizationSuperclassLookup()
 		return lookup[key.String()]
@@ -313,7 +303,7 @@ var _funcMap = template.FuncMap{
 	},
 	"state_action_state": func(reqs *req_flat.Requirements, stateActionKey identity.Key) (state model_state.State) {
 		// StateAction's key's parent is the State key.
-		stateKeyStr := stateActionKey.ParentKey()
+		stateKeyStr := stateActionKey.GetParentKey()
 		lookup := reqs.StateLookup()
 		return lookup[stateKeyStr]
 	},
@@ -322,6 +312,77 @@ var _funcMap = template.FuncMap{
 		classLookup, _ := reqs.ClassLookup()
 		class := classLookup[classKey.String()]
 		return class.ActorKey
+	},
+
+	// Lookup methods for types not yet exposed to templates.
+	"query_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_state.Query) {
+		lookup := reqs.QueryLookup()
+		return lookup[key.String()]
+	},
+	"global_function_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_logic.GlobalFunction) {
+		lookup := reqs.GlobalFunctionLookup()
+		return lookup[key.String()]
+	},
+	"invariant_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_logic.Logic) {
+		lookup := reqs.InvariantLookup()
+		return lookup[key.String()]
+	},
+	"class_invariant_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_logic.Logic) {
+		lookup := reqs.ClassInvariantLookup()
+		return lookup[key.String()]
+	},
+	"object_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_scenario.Object) {
+		lookup := reqs.ObjectLookup()
+		return lookup[key.String()]
+	},
+	"actor_generalization_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_actor.Generalization) {
+		lookup := reqs.ActorGeneralizationLookup()
+		return lookup[key.String()]
+	},
+	"actor_generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (value model_actor.Actor) {
+		lookup := reqs.ActorGeneralizationSuperclassLookup()
+		return lookup[key.String()]
+	},
+	"actor_generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (values []model_actor.Actor) {
+		lookup := reqs.ActorGeneralizationSubclassesLookup()
+		return lookup[key.String()]
+	},
+	"use_case_generalization_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_use_case.Generalization) {
+		lookup := reqs.UseCaseGeneralizationLookup()
+		return lookup[key.String()]
+	},
+	"use_case_generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (value model_use_case.UseCase) {
+		lookup := reqs.UseCaseGeneralizationSuperclassLookup()
+		return lookup[key.String()]
+	},
+	"use_case_generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (values []model_use_case.UseCase) {
+		lookup := reqs.UseCaseGeneralizationSubclassesLookup()
+		return lookup[key.String()]
+	},
+	"class_indexes": func(attributes map[identity.Key]model_class.Attribute) (indexes [][]string) {
+		// Group attribute names by index number.
+		indexMap := map[uint][]string{}
+		for _, attr := range attributes {
+			for _, idx := range attr.IndexNums {
+				indexMap[idx] = append(indexMap[idx], attr.Name)
+			}
+		}
+		if len(indexMap) == 0 {
+			return nil
+		}
+		// Collect and sort index numbers.
+		var nums []uint
+		for num := range indexMap {
+			nums = append(nums, num)
+		}
+		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
+		// Build sorted result.
+		for _, num := range nums {
+			names := indexMap[num]
+			sort.Strings(names)
+			indexes = append(indexes, names)
+		}
+		return indexes
 	},
 }
 

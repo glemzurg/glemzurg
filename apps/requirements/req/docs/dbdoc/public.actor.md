@@ -2,19 +2,19 @@
 
 ## Description
 
-A role that a person or sytem can take who uses the system. Actors are outside of subdomains.
+A role that a person or system can take who uses the system. Actors are outside of subdomains.
 
 ## Columns
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.class](public.class.md) | [public.model](public.model.md) [public.generalization](public.generalization.md) | The model this actor is part of. |
+| model_key | text |  | false | [public.class](public.class.md) | [public.model](public.model.md) [public.actor_generalization](public.actor_generalization.md) | The model this actor is part of. |
 | actor_key | text |  | false | [public.class](public.class.md) |  | The internal ID. |
 | name | text |  | false |  |  | The unique name of the actor. |
 | details | text |  | true |  |  | A summary description. |
 | actor_type | actor_type |  | false |  |  | Whether this actor is a person or a system. |
-| superclass_of_key | text |  | true |  | [public.generalization](public.generalization.md) | The generalization this actor is a superclass of, if it is one. |
-| subclass_of_key | text |  | true |  | [public.generalization](public.generalization.md) | The generalization this actor is a subclass of, if it is one. |
+| superclass_of_key | text |  | true |  | [public.actor_generalization](public.actor_generalization.md) | The generalization this actor is a superclass of, if it is one. |
+| subclass_of_key | text |  | true |  | [public.actor_generalization](public.actor_generalization.md) | The generalization this actor is a subclass of, if it is one. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints
@@ -26,8 +26,8 @@ A role that a person or sytem can take who uses the system. Actors are outside o
 | actor_model_key_not_null | n | NOT NULL model_key |
 | actor_name_not_null | n | NOT NULL name |
 | fk_actor_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
-| fk_actor_subclass | FOREIGN KEY | FOREIGN KEY (model_key, subclass_of_key) REFERENCES generalization(model_key, generalization_key) ON DELETE CASCADE |
-| fk_actor_superclass | FOREIGN KEY | FOREIGN KEY (model_key, superclass_of_key) REFERENCES generalization(model_key, generalization_key) ON DELETE CASCADE |
+| fk_actor_subclass | FOREIGN KEY | FOREIGN KEY (model_key, subclass_of_key) REFERENCES actor_generalization(model_key, generalization_key) ON DELETE CASCADE |
+| fk_actor_superclass | FOREIGN KEY | FOREIGN KEY (model_key, superclass_of_key) REFERENCES actor_generalization(model_key, generalization_key) ON DELETE CASCADE |
 | actor_pkey | PRIMARY KEY | PRIMARY KEY (model_key, actor_key) |
 
 ## Indexes

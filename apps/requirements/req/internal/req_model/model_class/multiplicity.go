@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
 
@@ -42,17 +41,13 @@ func NewMultiplicity(value string) (multiplicity Multiplicity, err error) {
 
 // Validate validates the Multiplicity struct.
 func (m *Multiplicity) Validate() error {
-	return validation.ValidateStruct(m,
-		validation.Field(&m.HigherBound, validation.By(func(value interface{}) error {
-			// If HigherBound is 0, it means "any" (unlimited), so no constraint.
-			// If LowerBound is 0, it also means "any", so no constraint.
-			// Only validate when both are non-zero: HigherBound must be >= LowerBound.
-			if m.HigherBound != 0 && m.LowerBound != 0 && m.HigherBound < m.LowerBound {
-				return errors.Errorf("higher bound (%d) must be >= lower bound (%d)", m.HigherBound, m.LowerBound)
-			}
-			return nil
-		})),
-	)
+	// If HigherBound is 0, it means "any" (unlimited), so no constraint.
+	// If LowerBound is 0, it also means "any", so no constraint.
+	// Only validate when both are non-zero: HigherBound must be >= LowerBound.
+	if m.HigherBound != 0 && m.LowerBound != 0 && m.HigherBound < m.LowerBound {
+		return errors.Errorf("higher bound (%d) must be >= lower bound (%d)", m.HigherBound, m.LowerBound)
+	}
+	return nil
 }
 
 func (m *Multiplicity) String() string {

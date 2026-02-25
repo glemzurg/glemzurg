@@ -1,7 +1,6 @@
 package model_scenario
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -10,10 +9,10 @@ import (
 // Scenario is a documented scenario for a use case, such as a sequence diagram.
 type Scenario struct {
 	Key     identity.Key
-	Name    string
+	Name    string `validate:"required"`
 	Details string // Markdown.
 	// Children
-	Steps   *Node // The "abstract syntax tree" of the scenario.
+	Steps   *Step // The "abstract syntax tree" of the scenario.
 	Objects map[identity.Key]Object
 }
 
@@ -34,19 +33,18 @@ func NewScenario(key identity.Key, name, details string) (scenario Scenario, err
 
 // Validate validates the Scenario struct.
 func (s *Scenario) Validate() error {
-	return validation.ValidateStruct(s,
-		validation.Field(&s.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_SCENARIO {
-				return errors.Errorf("invalid key type '%s' for scenario", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&s.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := s.Key.Validate(); err != nil {
+		return err
+	}
+	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO {
+		return errors.Errorf("Key: invalid key type '%s' for scenario.", s.Key.KeyType)
+	}
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(s); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (sc *Scenario) SetObjects(objects map[identity.Key]Object) {
@@ -82,7 +80,7 @@ func (s *Scenario) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 	}
 	// Validate Steps if there is content.
 	if s.Steps != nil {
-		if err := s.Steps.ValidateWithParent(); err != nil {
+		if err := s.Steps.ValidateWithParent(&s.Key); err != nil {
 			return err
 		}
 	}

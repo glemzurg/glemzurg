@@ -1,0 +1,7 @@
+{
+    "code": 17004,
+    "message": "domain association solution_domain_key cannot be empty or whitespace only, got '   '",
+    "error_file": "17004_domain_association_solution_key_empty.md",
+    "has_schema": false,
+    "field": "solution_domain_key"
+}

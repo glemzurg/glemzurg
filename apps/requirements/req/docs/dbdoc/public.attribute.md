@@ -8,14 +8,14 @@ An attribute of a class.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.class_index](public.class_index.md) | [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
+| model_key | text |  | false | [public.class_index](public.class_index.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
 | attribute_key | text |  | false | [public.class_index](public.class_index.md) |  | The internal ID. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this attribute is part of. |
 | name | text |  | false |  |  | The unique name of the attribute within the class. |
 | details | text |  | true |  |  | A summary description. |
 | data_type_rules | text |  | true |  |  | The rules for a well-formed value. |
 | data_type_key | text |  | true |  | [public.data_type](public.data_type.md) | If the rules are parsable, the data type they parse into. |
-| derivation_policy | text |  | true |  |  | If this attribute is derived, the details of the deriviation. |
+| derivation_policy_key | text |  | true |  | [public.logic](public.logic.md) | If this attribute is derived, the logic of it. |
 | nullable | boolean |  | false |  |  | A nullable attribute is one that only humans have to deal with, not software. Should not be used in a sea-level use case. Example: a missing phone number on a contact page. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
@@ -28,6 +28,7 @@ An attribute of a class.
 | attribute_model_key_not_null | n | NOT NULL model_key |
 | attribute_name_not_null | n | NOT NULL name |
 | attribute_nullable_not_null | n | NOT NULL nullable |
+| fk_attribute_derivation_logic | FOREIGN KEY | FOREIGN KEY (model_key, derivation_policy_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE |
 | fk_attribute_data_type | FOREIGN KEY | FOREIGN KEY (model_key, data_type_key) REFERENCES data_type(model_key, data_type_key) ON DELETE CASCADE |
 | fk_attribute_class | FOREIGN KEY | FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE |
 | attribute_pkey | PRIMARY KEY | PRIMARY KEY (model_key, attribute_key) |

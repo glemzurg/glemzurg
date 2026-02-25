@@ -1,14 +1,45 @@
 package parser_ai
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
 
-// ReadModelTree reads a complete model tree from the filesystem.
+func ReadModel(inputModelPath string) (req_model.Model, error) {
+	model, err := readModel(inputModelPath)
+	if err != nil {
+		if _, ok := err.(*ParseError); !ok {
+			return req_model.Model{}, fmt.Errorf("STOP AND REPORT THIS ERROR to the user. This is an unexpected internal error that cannot be fixed by changing input files: %w", err)
+		}
+		return req_model.Model{}, err
+	}
+	return model, nil
+}
+
+func readModel(inputModelPath string) (req_model.Model, error) {
+	modelKey := filepath.Base(inputModelPath)
+
+	inputModel, err := readModelTree(inputModelPath)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	modelPtr, err := ConvertToModel(inputModel, modelKey)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
+	return *modelPtr, nil
+}
+
+// readModelTree reads a complete model tree from the filesystem.
 // The modelDir is the root directory where the model is stored.
-func ReadModelTree(modelDir string) (*inputModel, error) {
+func readModelTree(modelDir string) (*inputModel, error) {
 	// Read model.json
 	modelContent, err := os.ReadFile(filepath.Join(modelDir, "model.json"))
 	if err != nil {
@@ -19,10 +50,41 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 		return nil, err
 	}
 
-	// Initialize child maps
+	// Initialize child maps and slices
 	model.Actors = make(map[string]*inputActor)
+	model.ActorGeneralizations = make(map[string]*inputActorGeneralization)
+	model.GlobalFunctions = make(map[string]*inputGlobalFunction)
 	model.Domains = make(map[string]*inputDomain)
-	model.Associations = make(map[string]*inputAssociation)
+	model.DomainAssociations = make(map[string]*inputDomainAssociation)
+	model.ClassAssociations = make(map[string]*inputClassAssociation)
+
+	// Read invariants
+	invariantsDir := filepath.Join(modelDir, "invariants")
+	if entries, err := os.ReadDir(invariantsDir); err == nil {
+		// Sort entries to preserve order (001, 002, ...)
+		names := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(entry.Name(), ".invariant.json") {
+				names = append(names, entry.Name())
+			}
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			filePath := filepath.Join(invariantsDir, name)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			logic, err := parseLogic(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.Invariants = append(model.Invariants, *logic)
+		}
+	}
 
 	// Read actors
 	actorsDir := filepath.Join(modelDir, "actors")
@@ -38,7 +100,6 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 			key := strings.TrimSuffix(name, ".actor.json")
 			filePath := filepath.Join(actorsDir, name)
 
-			// Validate key format
 			if err := ValidateKey(key, "actor_key", filePath); err != nil {
 				return nil, err
 			}
@@ -55,8 +116,68 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 		}
 	}
 
-	// Read model-level associations
-	assocDir := filepath.Join(modelDir, "associations")
+	// Read actor generalizations
+	agDir := filepath.Join(modelDir, "actor_generalizations")
+	if entries, err := os.ReadDir(agDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".agen.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".agen.json")
+			filePath := filepath.Join(agDir, name)
+
+			if err := ValidateKey(key, "actor_generalization_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			gen, err := parseActorGeneralization(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.ActorGeneralizations[key] = gen
+		}
+	}
+
+	// Read global functions
+	gfDir := filepath.Join(modelDir, "global_functions")
+	if entries, err := os.ReadDir(gfDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".json")
+			filePath := filepath.Join(gfDir, name)
+
+			if err := ValidateKey(key, "global_function_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			gf, err := parseGlobalFunction(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.GlobalFunctions[key] = gf
+		}
+	}
+
+	// Read model-level class associations
+	assocDir := filepath.Join(modelDir, "class_associations")
 	if entries, err := os.ReadDir(assocDir); err == nil {
 		for _, entry := range entries {
 			if entry.IsDir() {
@@ -82,7 +203,37 @@ func ReadModelTree(modelDir string) (*inputModel, error) {
 			if err != nil {
 				return nil, err
 			}
-			model.Associations[key] = assoc
+			model.ClassAssociations[key] = assoc
+		}
+	}
+
+	// Read domain associations
+	daDir := filepath.Join(modelDir, "domain_associations")
+	if entries, err := os.ReadDir(daDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".domain_assoc.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".domain_assoc.json")
+			filePath := filepath.Join(daDir, name)
+
+			if err := ValidateKey(key, "domain_association_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			da, err := parseDomainAssociation(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.DomainAssociations[key] = da
 		}
 	}
 
@@ -136,10 +287,10 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 
 	// Initialize child maps
 	domain.Subdomains = make(map[string]*inputSubdomain)
-	domain.Associations = make(map[string]*inputAssociation)
+	domain.ClassAssociations = make(map[string]*inputClassAssociation)
 
-	// Read domain-level associations
-	assocDir := filepath.Join(domainDir, "associations")
+	// Read domain-level class associations
+	assocDir := filepath.Join(domainDir, "class_associations")
 	if entries, err := os.ReadDir(assocDir); err == nil {
 		for _, entry := range entries {
 			if entry.IsDir() {
@@ -165,7 +316,7 @@ func readDomainTree(domainDir string) (*inputDomain, error) {
 			if err != nil {
 				return nil, err
 			}
-			domain.Associations[key] = assoc
+			domain.ClassAssociations[key] = assoc
 		}
 	}
 
@@ -209,11 +360,14 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 
 	// Initialize child maps
 	subdomain.Classes = make(map[string]*inputClass)
-	subdomain.Generalizations = make(map[string]*inputGeneralization)
-	subdomain.Associations = make(map[string]*inputAssociation)
+	subdomain.ClassGeneralizations = make(map[string]*inputClassGeneralization)
+	subdomain.ClassAssociations = make(map[string]*inputClassAssociation)
+	subdomain.UseCases = make(map[string]*inputUseCase)
+	subdomain.UseCaseGeneralizations = make(map[string]*inputUseCaseGeneralization)
+	subdomain.UseCaseShares = make(map[string]map[string]*inputUseCaseShared)
 
-	// Read subdomain-level associations
-	assocDir := filepath.Join(subdomainDir, "associations")
+	// Read subdomain-level class associations
+	assocDir := filepath.Join(subdomainDir, "class_associations")
 	if entries, err := os.ReadDir(assocDir); err == nil {
 		for _, entry := range entries {
 			if entry.IsDir() {
@@ -239,22 +393,22 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 			if err != nil {
 				return nil, err
 			}
-			subdomain.Associations[key] = assoc
+			subdomain.ClassAssociations[key] = assoc
 		}
 	}
 
 	// Read generalizations
-	genDir := filepath.Join(subdomainDir, "generalizations")
+	genDir := filepath.Join(subdomainDir, "class_generalizations")
 	if entries, err := os.ReadDir(genDir); err == nil {
 		for _, entry := range entries {
 			if entry.IsDir() {
 				continue
 			}
 			name := entry.Name()
-			if !strings.HasSuffix(name, ".gen.json") {
+			if !strings.HasSuffix(name, ".cgen.json") {
 				continue
 			}
-			key := strings.TrimSuffix(name, ".gen.json")
+			key := strings.TrimSuffix(name, ".cgen.json")
 			filePath := filepath.Join(genDir, name)
 
 			// Validate key format
@@ -266,11 +420,42 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 			if err != nil {
 				return nil, err
 			}
-			gen, err := parseGeneralization(content, filePath)
+			gen, err := parseClassGeneralization(content, filePath)
 			if err != nil {
 				return nil, err
 			}
-			subdomain.Generalizations[key] = gen
+			subdomain.ClassGeneralizations[key] = gen
+		}
+	}
+
+	// Read use case generalizations
+	ucgDir := filepath.Join(subdomainDir, "use_case_generalizations")
+	if entries, err := os.ReadDir(ucgDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".ucgen.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".ucgen.json")
+			filePath := filepath.Join(ucgDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "use_case_generalization_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			gen, err := parseUseCaseGeneralization(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			subdomain.UseCaseGeneralizations[key] = gen
 		}
 	}
 
@@ -297,6 +482,29 @@ func readSubdomainTree(subdomainDir string) (*inputSubdomain, error) {
 		}
 	}
 
+	// Read use cases
+	useCasesDir := filepath.Join(subdomainDir, "use_cases")
+	if entries, err := os.ReadDir(useCasesDir); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+			useCaseKey := entry.Name()
+			useCaseDir := filepath.Join(useCasesDir, useCaseKey)
+
+			// Validate key format
+			if err := ValidateKey(useCaseKey, "use_case_key", filepath.Join(useCaseDir, "use_case.json")); err != nil {
+				return nil, err
+			}
+
+			useCase, err := readUseCaseTree(useCaseDir)
+			if err != nil {
+				return nil, err
+			}
+			subdomain.UseCases[useCaseKey] = useCase
+		}
+	}
+
 	return subdomain, nil
 }
 
@@ -315,6 +523,34 @@ func readClassTree(classDir string) (*inputClass, error) {
 	// Initialize child maps
 	class.Actions = make(map[string]*inputAction)
 	class.Queries = make(map[string]*inputQuery)
+
+	// Read invariants
+	invariantsDir := filepath.Join(classDir, "invariants")
+	if entries, err := os.ReadDir(invariantsDir); err == nil {
+		// Sort entries to preserve order (001, 002, ...)
+		names := make([]string, 0, len(entries))
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(entry.Name(), ".invariant.json") {
+				names = append(names, entry.Name())
+			}
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			filePath := filepath.Join(invariantsDir, name)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			logic, err := parseLogic(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			class.Invariants = append(class.Invariants, *logic)
+		}
+	}
 
 	// Read state_machine.json if present
 	smPath := filepath.Join(classDir, "state_machine.json")
@@ -389,4 +625,53 @@ func readClassTree(classDir string) (*inputClass, error) {
 	}
 
 	return class, nil
+}
+
+// readUseCaseTree reads a use case and its children from the filesystem.
+func readUseCaseTree(useCaseDir string) (*inputUseCase, error) {
+	// Read use_case.json
+	useCaseContent, err := os.ReadFile(filepath.Join(useCaseDir, "use_case.json"))
+	if err != nil {
+		return nil, err
+	}
+	useCase, err := parseUseCase(useCaseContent, filepath.Join(useCaseDir, "use_case.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize child maps
+	useCase.Scenarios = make(map[string]*inputScenario)
+
+	// Read scenarios
+	scenariosDir := filepath.Join(useCaseDir, "scenarios")
+	if entries, err := os.ReadDir(scenariosDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".scenario.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".scenario.json")
+			filePath := filepath.Join(scenariosDir, name)
+
+			// Validate key format
+			if err := ValidateKey(key, "scenario_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			scenario, err := parseScenario(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			useCase.Scenarios[key] = scenario
+		}
+	}
+
+	return useCase, nil
 }

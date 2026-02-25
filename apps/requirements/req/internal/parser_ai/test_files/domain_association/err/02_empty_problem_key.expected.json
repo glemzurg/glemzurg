@@ -1,0 +1,6 @@
+{
+    "code": 17006,
+    "message_prefix": "domain association JSON does not match schema:",
+    "error_file": "17006_domain_association_schema_violation.md",
+    "has_schema": true
+}

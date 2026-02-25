@@ -1,0 +1,7 @@
+{
+    "code": 13007,
+    "message": "use case generalization subclass_keys[1] cannot be whitespace only, got '   '",
+    "error_file": "13007_use_case_generalization_subclasses_empty.md",
+    "has_schema": false,
+    "field": "subclass_keys[1]"
+}

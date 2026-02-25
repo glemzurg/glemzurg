@@ -2,6 +2,8 @@
 
 [⇦ {{ .Model.Name }}](model.md) / [{{ .Domain.Name }}]({{ filename "domain" .Domain.Key "" ".md" }})
 
+# {{ .Subdomain.Name }}
+
 {{ .Subdomain.Details }}
 
 ## Use Cases
@@ -12,6 +14,18 @@
 - **[{{ if ne .Level "sea" }}«{{ .Level }}» {{ end }}{{ .Name }}]({{ filename "use_case" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 
+{{ if ne .Subdomain.UseCaseGeneralizations nil -}}
+### Generalizations
+
+The use case generalizations of this subdomain.
+
+{{ range .Subdomain.UseCaseGeneralizations -}}
+{{- $super := use_case_generalization_superclass $reqs .Key -}}
+{{- $subs := use_case_generalization_subclasses $reqs .Key -}}
+- **{{ .Name }}.** {{ .Details }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
 ## Classes
 
 The classes of this subdomain.
@@ -22,3 +36,15 @@ The classes of this subdomain.
 - **[{{ if ne .ActorKey nil }}«actor» {{ end }}{{ .Name }}]({{ filename "class" .Key "" ".md" }}).** {{ first_md_sentence .Details }}
 {{ end }}
 
+{{ if ne .Subdomain.Generalizations nil -}}
+### Generalizations
+
+The class generalizations of this subdomain.
+
+{{ range .Subdomain.Generalizations -}}
+{{- $super := generalization_superclass $reqs .Key -}}
+{{- $subs := generalization_subclasses $reqs .Key -}}
+- **{{ .Name }}.** {{ .Details }}
+    - {{ if ne $super.Name "" }}[{{ $super.Name }}]({{ filename "class" $super.Key "" ".md" }}){{ else }}???{{ end }} ⇐ {{ if or (not .IsComplete) (not .IsStatic) }}**«{{ if not .IsComplete }}incomplete{{ end }}{{ if and (not .IsComplete) (not .IsStatic) }}, {{ end }}{{ if not .IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}[{{ $sub.Name }}]({{ filename "class" $sub.Key "" ".md" }}){{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}

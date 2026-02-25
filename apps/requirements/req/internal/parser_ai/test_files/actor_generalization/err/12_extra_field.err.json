@@ -1,0 +1,6 @@
+{
+    "name": "User Types",
+    "superclass_key": "user",
+    "subclass_keys": ["admin"],
+    "unknown_field": "should cause schema violation"
+}

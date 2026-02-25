@@ -1,27 +1,27 @@
 package model_data_type
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 )
 
 const (
-	_COLLECTION_TYPE_ATOMIC    = "atomic"    // An atomic type, not a collection.
-	_COLLECTION_TYPE_ORDERED   = "ordered"   // An ordered collection.
-	_COLLECTION_TYPE_QUEUE     = "queue"     // A first in, first out queue.
-	_COLLECTION_TYPE_RECORD    = "record"    // A data type composed of fields of other data types..
-	_COLLECTION_TYPE_STACK     = "stack"     // A first in, last out stack.
-	_COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
+	COLLECTION_TYPE_ATOMIC    = "atomic"    // An atomic type, not a collection.
+	COLLECTION_TYPE_ORDERED   = "ordered"   // An ordered collection.
+	COLLECTION_TYPE_QUEUE     = "queue"     // A first in, first out queue.
+	COLLECTION_TYPE_RECORD    = "record"    // A data type composed of fields of other data types..
+	COLLECTION_TYPE_STACK     = "stack"     // A first in, last out stack.
+	COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
 )
 
 // DataType represents the main data type structure.
 type DataType struct {
-	Key              string
-	CollectionType   string
+	Key              string `validate:"required"`
+	CollectionType   string `validate:"required,oneof=atomic ordered queue record stack unordered"`
 	CollectionUnique *bool
 	CollectionMin    *int
 	CollectionMax    *int
@@ -36,9 +36,9 @@ func New(key, text string) (dataType *DataType, err error) {
 	if strings.TrimSpace(text) == "" {
 
 		dataType = &DataType{
-			CollectionType: _COLLECTION_TYPE_ATOMIC,
+			CollectionType: COLLECTION_TYPE_ATOMIC,
 			Atomic: &Atomic{
-				ConstraintType: _CONSTRAINT_TYPE_UNCONSTRAINED,
+				ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED,
 			},
 		}
 
@@ -85,60 +85,108 @@ func New(key, text string) (dataType *DataType, err error) {
 
 // Validate validates the DataType struct.
 func (d DataType) Validate() error {
-	return validation.ValidateStruct(&d,
-		validation.Field(&d.Key, validation.Required),
-		validation.Field(&d.CollectionType, validation.Required, validation.In(_COLLECTION_TYPE_ATOMIC, _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE, _COLLECTION_TYPE_RECORD)),
-		validation.Field(&d.Atomic, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_ATOMIC), validation.By(func(value interface{}) error {
-			if a, ok := value.(*Atomic); ok && a != nil {
-				return a.Validate()
+	// Validate struct tags (Key required, CollectionType required + oneof).
+	if err := _validate.Struct(d); err != nil {
+		return err
+	}
+
+	// Atomic: required when atomic; validate if present.
+	if d.CollectionType == COLLECTION_TYPE_ATOMIC {
+		if d.Atomic == nil {
+			return fmt.Errorf("Atomic: cannot be blank.")
+		}
+		if err := d.Atomic.Validate(); err != nil {
+			return fmt.Errorf("Atomic: (%s).", err.Error())
+		}
+	} else if d.Atomic != nil {
+		if err := d.Atomic.Validate(); err != nil {
+			return fmt.Errorf("Atomic: (%s).", err.Error())
+		}
+	}
+
+	// RecordFields: required when record; each field validated.
+	if d.CollectionType == COLLECTION_TYPE_RECORD {
+		if len(d.RecordFields) == 0 {
+			return fmt.Errorf("RecordFields: cannot be blank.")
+		}
+		for _, f := range d.RecordFields {
+			if err := f.Validate(); err != nil {
+				return fmt.Errorf("RecordFields: (%s).", err.Error())
 			}
-			return nil
-		})),
-		validation.Field(&d.RecordFields, validation.Required.When(d.CollectionType == _COLLECTION_TYPE_RECORD), validation.By(func(value interface{}) error {
-			if fields, ok := value.([]Field); ok {
-				for _, f := range fields {
-					if err := f.Validate(); err != nil {
-						return err
-					}
-				}
+		}
+	} else {
+		for _, f := range d.RecordFields {
+			if err := f.Validate(); err != nil {
+				return fmt.Errorf("RecordFields: (%s).", err.Error())
 			}
-			return nil
-		})),
-		validation.Field(&d.CollectionMin, validation.By(func(value interface{}) error {
-			if d.CollectionType == _COLLECTION_TYPE_STACK || d.CollectionType == _COLLECTION_TYPE_UNORDERED || d.CollectionType == _COLLECTION_TYPE_ORDERED || d.CollectionType == _COLLECTION_TYPE_QUEUE {
-				if value == nil {
-					return errors.New("cannot be blank")
-				}
-				return nil
-			}
-			return nil
-		}), validation.Min(0)),
-		validation.Field(&d.CollectionMax, validation.Min(0)),
-	)
+		}
+	}
+
+	// Collection field rules.
+	isCollection := d.CollectionType == COLLECTION_TYPE_STACK ||
+		d.CollectionType == COLLECTION_TYPE_UNORDERED ||
+		d.CollectionType == COLLECTION_TYPE_ORDERED ||
+		d.CollectionType == COLLECTION_TYPE_QUEUE
+
+	if isCollection {
+		// CollectionUnique is required for collections.
+		if d.CollectionUnique == nil {
+			return fmt.Errorf("CollectionUnique: cannot be blank.")
+		}
+		// CollectionMin if set must be >= 1.
+		if d.CollectionMin != nil && *d.CollectionMin < 1 {
+			return fmt.Errorf("CollectionMin: must be no less than 1.")
+		}
+		// CollectionMax if set must be >= 1.
+		if d.CollectionMax != nil && *d.CollectionMax < 1 {
+			return fmt.Errorf("CollectionMax: must be no less than 1.")
+		}
+		// If both defined, max >= min.
+		if d.CollectionMin != nil && d.CollectionMax != nil && *d.CollectionMax < *d.CollectionMin {
+			return fmt.Errorf("CollectionMax: must be no less than CollectionMin.")
+		}
+	} else {
+		// Non-collections must not have collection fields.
+		if d.CollectionUnique != nil {
+			return fmt.Errorf("CollectionUnique: must be blank.")
+		}
+		if d.CollectionMin != nil {
+			return fmt.Errorf("CollectionMin: must be blank.")
+		}
+		if d.CollectionMax != nil {
+			return fmt.Errorf("CollectionMax: must be blank.")
+		}
+	}
+
+	return nil
 }
 
 // String returns a string representation of the DataType.
 func (d DataType) String() string {
 	switch d.CollectionType {
-	case _COLLECTION_TYPE_RECORD:
+	case COLLECTION_TYPE_RECORD:
 		result := "{\n"
 		for _, field := range d.RecordFields {
 			result += field.String() + "\n"
 		}
 		result += "}"
 		return result
-	case _COLLECTION_TYPE_ATOMIC:
+	case COLLECTION_TYPE_ATOMIC:
 		if d.Atomic == nil {
 			panic("atomic is nil")
 		}
 		return d.Atomic.String()
-	case _COLLECTION_TYPE_STACK, _COLLECTION_TYPE_UNORDERED, _COLLECTION_TYPE_ORDERED, _COLLECTION_TYPE_QUEUE:
+	case COLLECTION_TYPE_STACK, COLLECTION_TYPE_UNORDERED, COLLECTION_TYPE_ORDERED, COLLECTION_TYPE_QUEUE:
 		name := ""
 		if d.CollectionUnique != nil && *d.CollectionUnique {
 			name += "unique "
 		}
-		if d.CollectionMin != nil && (*d.CollectionMin != 0 || d.CollectionMax != nil) {
-			name += strconv.Itoa(*d.CollectionMin)
+		if d.CollectionMin != nil || d.CollectionMax != nil {
+			if d.CollectionMin != nil {
+				name += strconv.Itoa(*d.CollectionMin)
+			} else {
+				name += "0"
+			}
 			if d.CollectionMax != nil {
 				name += "-" + strconv.Itoa(*d.CollectionMax)
 			} else {
@@ -148,7 +196,7 @@ func (d DataType) String() string {
 		}
 
 		collectionType := d.CollectionType
-		if collectionType == _COLLECTION_TYPE_UNORDERED || collectionType == _COLLECTION_TYPE_ORDERED {
+		if collectionType == COLLECTION_TYPE_UNORDERED || collectionType == COLLECTION_TYPE_ORDERED {
 			collectionType = collectionType + " collection"
 		}
 
@@ -277,7 +325,7 @@ func ReconstructNestedDataTypes(flatDataTypes []DataType) []DataType {
 
 	// Attach nested DataTypes to fields
 	for _, dt := range flatDataTypes {
-		if dt.CollectionType == _COLLECTION_TYPE_RECORD {
+		if dt.CollectionType == COLLECTION_TYPE_RECORD {
 			for i := range dt.RecordFields {
 				field := &dt.RecordFields[i]
 				if field.FieldDataType != nil && field.FieldDataType.Key != "" {

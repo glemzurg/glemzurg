@@ -1,7 +1,7 @@
 {
     "name": "Reserve Inventory",
     "requires": [
-        "Order must have at least one item",
-        "All items must be in stock"
+        {"description": "Order must have at least one item"},
+        {"description": "All items must be in stock"}
     ]
 }

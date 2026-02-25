@@ -40,7 +40,7 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 		return model_domain.Domain{}, nil, errors.WithStack(err)
 	}
 
-	domain, err = model_domain.NewDomain(domainKey, parsedFile.Title, markdown, realized, parsedFile.UmlComment)
+	domain, err = model_domain.NewDomain(domainKey, parsedFile.Title, stripMarkdownTitle(markdown), realized, parsedFile.UmlComment)
 	if err != nil {
 		return model_domain.Domain{}, nil, err
 	}
@@ -115,11 +115,11 @@ func generateDomainContent(domain model_domain.Domain, associations []model_doma
 	if len(associations) > 0 {
 		yaml += "\n\nassociations:\n"
 		for _, assoc := range associations {
-			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey() + "\n"
+			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey + "\n"
 			yaml += formatYamlField("uml_comment", assoc.UmlComment, 6)
 		}
 	}
 
 	yamlStr := strings.TrimSpace(yaml)
-	return generateFileContent(domain.Details, domain.UmlComment, yamlStr)
+	return generateFileContent(prependMarkdownTitle(domain.Name, domain.Details), domain.UmlComment, yamlStr)
 }

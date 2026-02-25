@@ -1,10 +1,10 @@
-# Generalization Superclass Is Subclass (E11014)
+# Class Generalization Superclass Is Subclass (E11014)
 
-A generalization lists its superclass as one of its subclasses.
+A class generalization lists its superclass as one of its subclasses.
 
 ## What Went Wrong
 
-A generalization file has the same class key appearing in both `superclass_key` and `subclass_keys`. A class cannot be both the parent and child in the same generalization.
+A class generalization file has the same class key appearing in both `superclass_key` and `subclass_keys`. A class cannot be both the parent and child in the same class generalization.
 
 ## Example of the Error
 
@@ -34,9 +34,9 @@ Remove the superclass from the subclass list:
 
 1. **Review the relationship**: Ensure you understand which class is the parent
 2. **Check for typos**: Verify the correct class keys are used
-3. **Review generalization structure**: Superclass should be the more general concept
+3. **Review class generalization structure**: Superclass should be the more general concept
 
-## Generalization Structure
+## Class Generalization Structure
 
 ```
         Product (superclass)

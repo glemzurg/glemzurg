@@ -47,7 +47,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -67,7 +67,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 		{
 			testName: "error empty from class key",
@@ -77,7 +77,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: identity.Key{},
 				ToClassKey:   toClassKey,
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong from class key type",
@@ -97,7 +97,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   identity.Key{},
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong to class key type",
@@ -130,6 +130,20 @@ func (suite *AssociationSuite) TestValidate() {
 				AssociationClassKey: &toClassKey,
 			},
 			errstr: "AssociationClassKey cannot be the same as ToClassKey",
+		},
+		{
+			testName: "error AssociationClassKey wrong key type",
+			association: func() Association {
+				wrongKey := domainKey
+				return Association{
+					Key:                 validKey,
+					Name:                "Name",
+					FromClassKey:        fromClassKey,
+					ToClassKey:          toClassKey,
+					AssociationClassKey: &wrongKey,
+				}
+			}(),
+			errstr: "AssociationClassKey: invalid key type 'domain' for class",
 		},
 	}
 	for _, tt := range tests {
@@ -172,7 +186,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -192,7 +206,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		ToClassKey:   toClassKey,
 	}
 	err := assoc.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - association key has subdomain1 as parent, but we pass other_subdomain.
 	assoc = Association{
@@ -298,6 +312,33 @@ func (suite *AssociationSuite) TestValidateReferences() {
 			}
 		})
 	}
+}
+
+// TestIncludes tests that Includes returns true for FromClassKey, ToClassKey, and AssociationClassKey.
+func (suite *AssociationSuite) TestIncludes() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
+	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
+	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
+	unknownClassKey := helper.Must(identity.NewClassKey(subdomainKey, "unknown"))
+	validKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
+
+	// Without AssociationClassKey.
+	assoc := Association{
+		Key:          validKey,
+		Name:         "Name",
+		FromClassKey: fromClassKey,
+		ToClassKey:   toClassKey,
+	}
+	assert.True(suite.T(), assoc.Includes(fromClassKey), "Should include FromClassKey")
+	assert.True(suite.T(), assoc.Includes(toClassKey), "Should include ToClassKey")
+	assert.False(suite.T(), assoc.Includes(unknownClassKey), "Should not include unknown key")
+
+	// With AssociationClassKey.
+	assoc.AssociationClassKey = &assocClassKey
+	assert.True(suite.T(), assoc.Includes(assocClassKey), "Should include AssociationClassKey")
+	assert.False(suite.T(), assoc.Includes(unknownClassKey), "Should not include unknown key")
 }
 
 func (suite *AssociationSuite) TestOther() {

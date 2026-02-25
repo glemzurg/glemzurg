@@ -68,6 +68,9 @@ import (
 //   - $          : End of string
 var keyPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
 
+// globalFunctionKeyPattern validates that a global function key starts with underscore followed by valid snake_case.
+var globalFunctionKeyPattern = regexp.MustCompile(`^_[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
+
 // ValidateKey checks if a key follows the required snake_case format.
 // Returns nil if valid, or a ParseError if invalid.
 func ValidateKey(key, keyType, filePath string) error {
@@ -79,12 +82,24 @@ func ValidateKey(key, keyType, filePath string) error {
 		).WithField(keyType)
 	}
 
+	if keyType == "domain_association_key" {
+		dotPattern := regexp.MustCompile(`^[a-z][a-z0-9]*(_[a-z0-9]+)*\.[a-z][a-z0-9]*(_[a-z0-9]+)*$`)
+		if dotPattern.MatchString(key) {
+			return nil
+		}
+	}
+	// Global function keys must start with an underscore followed by a valid key.
+	if keyType == "global_function_key" {
+		if globalFunctionKeyPattern.MatchString(key) {
+			return nil
+		}
+	}
 	if keyPattern.MatchString(key) {
 		return nil
 	}
 
 	// Provide specific guidance based on what's wrong
-	suggestion := suggestKeyFix(key)
+	suggestion := suggestKeyFix(key, keyType)
 
 	return NewParseError(
 		ErrKeyInvalidFormat,
@@ -95,7 +110,7 @@ func ValidateKey(key, keyType, filePath string) error {
 }
 
 // suggestKeyFix analyzes an invalid key and suggests how to fix it.
-func suggestKeyFix(key string) string {
+func suggestKeyFix(key, keyType string) string {
 	var issues []string
 
 	// Check for uppercase
@@ -114,8 +129,10 @@ func suggestKeyFix(key string) string {
 	}
 
 	// Check for dots
-	if strings.Contains(key, ".") {
-		issues = append(issues, "replace dots with underscores")
+	if keyType != "domain_association_key" {
+		if strings.Contains(key, ".") {
+			issues = append(issues, "replace dots with underscores")
+		}
 	}
 
 	// Check if starts with number
@@ -237,7 +254,7 @@ func validateKeyComponent(component, componentName, filePath string) error {
 	}
 
 	if !keyPattern.MatchString(component) {
-		suggestion := suggestKeyFix(component)
+		suggestion := suggestKeyFix(component, componentName)
 		return NewParseError(
 			ErrAssocFilenameInvalidComponent,
 			fmt.Sprintf("association filename component '%s' value '%s' is invalid - "+

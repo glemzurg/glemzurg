@@ -1,14 +1,14 @@
-# Generalization Superclass Not Found (E11005)
+# Class Generalization Superclass Not Found (E11005)
 
-A generalization references a superclass that does not exist in the subdomain.
+A class generalization references a superclass that does not exist in the subdomain.
 
 ## What Went Wrong
 
-A generalization file has a `superclass_key` field that references a class, but no class with that key exists in the same subdomain as the generalization.
+A class generalization file has a `superclass_key` field that references a class, but no class with that key exists in the same subdomain as the class generalization.
 
-## How Generalizations Work
+## How Class Generalizations Work
 
-Generalizations define inheritance relationships between classes. All classes referenced by a generalization must exist within the same subdomain.
+Class generalizations define inheritance relationships between classes. All classes referenced by a class generalization must exist within the same subdomain.
 
 ```
 your_model/
@@ -40,7 +40,7 @@ domains/{domain}/subdomains/{subdomain}/classes/{superclass_key}/
 
 ### Option 2: Fix the Reference
 
-Update the generalization to reference an existing class:
+Update the class generalization to reference an existing class:
 
 ```json
 {
@@ -53,7 +53,7 @@ Update the generalization to reference an existing class:
 ## Troubleshooting Checklist
 
 1. **Check spelling**: Ensure the superclass key matches the class directory name exactly
-2. **Check location**: The superclass must be in the same subdomain as the generalization
+2. **Check location**: The superclass must be in the same subdomain as the class generalization
 3. **Check class exists**: Ensure the class directory contains a valid `class.json`
 
 ## Common Mistakes
@@ -76,6 +76,6 @@ Update the generalization to reference an existing class:
 
 ## Related Errors
 
-- **E11006**: Generalization subclass not found
+- **E11006**: Class generalization subclass not found
 - **E11014**: Superclass cannot also be a subclass
 - **E10005**: superclass_key field is required

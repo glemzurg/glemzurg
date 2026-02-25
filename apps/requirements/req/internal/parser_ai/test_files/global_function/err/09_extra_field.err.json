@@ -1,0 +1,7 @@
+{
+    "name": "_Max",
+    "logic": {
+        "description": "Returns the maximum"
+    },
+    "unknown_field": "should cause schema violation"
+}

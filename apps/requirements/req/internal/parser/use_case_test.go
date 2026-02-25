@@ -38,6 +38,7 @@ func (suite *UseCaseFileSuite) TestParseUseCaseFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
+
 		var expected, actual model_use_case.UseCase
 
 		actual, err := parseUseCase(subdomainKey, useCaseSubKey, testData.Filename, testData.Contents)

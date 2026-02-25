@@ -1,9 +1,5 @@
 package model_use_case
 
-import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-)
-
 const (
 	_USE_CASE_SHARE_TYPE_INCLUDE = "include" // This is a shared bit of sequence in multiple sea-level use cases.
 	_USE_CASE_SHARE_TYPE_EXTEND  = "extend"  // This is a optional continuation of a sea-level use case into a common sequence.
@@ -11,7 +7,7 @@ const (
 
 // UseCaseShared is how a mud-level use case related to a sea-level use case.
 type UseCaseShared struct {
-	ShareType  string
+	ShareType  string `validate:"required,oneof=include extend"`
 	UmlComment string
 }
 
@@ -31,9 +27,10 @@ func NewUseCaseShared(shareType, umlComment string) (useCaseShared UseCaseShared
 
 // Validate validates the UseCaseShared struct.
 func (u *UseCaseShared) Validate() error {
-	return validation.ValidateStruct(u,
-		validation.Field(&u.ShareType, validation.Required, validation.In(_USE_CASE_SHARE_TYPE_INCLUDE, _USE_CASE_SHARE_TYPE_EXTEND)),
-	)
+	if err := _validate.Struct(u); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateWithParent validates the UseCaseShared.

@@ -1,27 +1,28 @@
 package model_class
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 )
 
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
-	Name             string
-	Details          string // Markdown.
-	DataTypeRules    string // What are the bounds of this data type.
-	DerivationPolicy string // If this is a derived attribute, how is it derived.
-	Nullable         bool   // Is this attribute optional.
+	Name             string             `validate:"required"`
+	Details          string             // Markdown.
+	DataTypeRules    string             // What are the bounds of this data type.
+	DerivationPolicy *model_logic.Logic `validate:"-"` // If this is a derived attribute, the logic for how it is derived.
+	Nullable         bool               // Is this attribute optional.
 	UmlComment       string
 	// Children
 	IndexNums []uint                    // The indexes this attribute is part of.
 	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPolicy string, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
+func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
 
 	attribute = Attribute{
 		Key:              key,
@@ -60,19 +61,30 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules, derivationPoli
 
 // Validate validates the Attribute struct.
 func (a *Attribute) Validate() error {
-	return validation.ValidateStruct(a,
-		validation.Field(&a.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_ATTRIBUTE {
-				return errors.Errorf("invalid key type '%s' for attribute", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&a.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := a.Key.Validate(); err != nil {
+		return err
+	}
+	if a.Key.KeyType != identity.KEY_TYPE_ATTRIBUTE {
+		return errors.Errorf("Key: invalid key type '%s' for attribute.", a.Key.KeyType)
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(a); err != nil {
+		return err
+	}
+
+	// Validate the derivation policy logic if present.
+	if a.DerivationPolicy != nil {
+		if err := a.DerivationPolicy.Validate(); err != nil {
+			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		}
+		if a.DerivationPolicy.Type != model_logic.LogicTypeValue {
+			return errors.Errorf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type)
+		}
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the Attribute, its key's parent relationship, and all children.
@@ -86,6 +98,11 @@ func (a *Attribute) ValidateWithParent(parent *identity.Key) error {
 	if err := a.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Attribute has no children with keys that need validation.
+	// Validate derivation policy with attribute as parent.
+	if a.DerivationPolicy != nil {
+		if err := a.DerivationPolicy.ValidateWithParent(&a.Key); err != nil {
+			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		}
+	}
 	return nil
 }

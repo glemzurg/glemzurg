@@ -8,7 +8,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -28,8 +30,12 @@ type AttributeSuite struct {
 	domain        model_domain.Domain
 	subdomain     model_domain.Subdomain
 	class         model_class.Class
+	logic         model_logic.Logic
+	logicB        model_logic.Logic
 	attributeKey  identity.Key
 	attributeKeyB identity.Key
+	dataType      model_data_type.DataType
+	dataTypeB     model_data_type.DataType
 }
 
 func (suite *AttributeSuite) SetupTest() {
@@ -46,6 +52,14 @@ func (suite *AttributeSuite) SetupTest() {
 	// Create the attribute keys for reuse.
 	suite.attributeKey = helper.Must(identity.NewAttributeKey(suite.class.Key, "key"))
 	suite.attributeKeyB = helper.Must(identity.NewAttributeKey(suite.class.Key, "key_b"))
+
+	// Create logic rows for derivation policies (logic must exist before attribute references it).
+	suite.logic = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewAttributeDerivationKey(suite.attributeKey, "deriv")))
+	suite.logicB = t_AddLogic(suite.T(), suite.db, suite.model.Key, helper.Must(identity.NewAttributeDerivationKey(suite.attributeKeyB, "deriv")))
+
+	// Create data type rows (data type must exist before attribute references it via FK).
+	suite.dataType = t_AddDataType(suite.T(), suite.db, suite.model.Key, suite.attributeKey.String())
+	suite.dataTypeB = t_AddDataType(suite.T(), suite.db, suite.model.Key, suite.attributeKeyB.String())
 }
 
 func (suite *AttributeSuite) TestLoad() {
@@ -65,7 +79,7 @@ func (suite *AttributeSuite) TestLoad() {
 				name,
 				details,
 				data_type_rules,
-				derivation_policy,
+				derivation_policy_key,
 				nullable,
 				uml_comment
 			)
@@ -77,7 +91,7 @@ func (suite *AttributeSuite) TestLoad() {
 				'Name',
 				'Details',
 				'DataTypeRules',
-				'DerivationPolicy',
+				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/key/aderive/deriv',
 				true,
 				'UmlComment'
 			)
@@ -92,7 +106,7 @@ func (suite *AttributeSuite) TestLoad() {
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	}, attribute)
@@ -105,7 +119,36 @@ func (suite *AttributeSuite) TestAdd() {
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
+		Nullable:         true,
+		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType, // DataType is written as FK but not read back by LoadAttribute.
+	})
+	assert.Nil(suite.T(), err)
+
+	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
+	assert.Equal(suite.T(), model_class.Attribute{
+		Key:              suite.attributeKey,
+		Name:             "Name",
+		Details:          "Details",
+		DataTypeRules:    "DataTypeRules",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
+		Nullable:         true,
+		UmlComment:       "UmlComment",
+		// DataType is not stitched by LoadAttribute; it stays nil.
+	}, attribute)
+}
+
+func (suite *AttributeSuite) TestAddNulls() {
+
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
+		Name:             "Name",
+		Details:          "Details",
+		DataTypeRules:    "DataTypeRules",
+		DerivationPolicy: nil, // No derivation policy.
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	})
@@ -119,7 +162,7 @@ func (suite *AttributeSuite) TestAdd() {
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: nil, // No derivation policy.
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	}, attribute)
@@ -132,9 +175,10 @@ func (suite *AttributeSuite) TestUpdate() {
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -143,9 +187,10 @@ func (suite *AttributeSuite) TestUpdate() {
 		Name:             "NameX",
 		Details:          "DetailsX",
 		DataTypeRules:    "DataTypeRulesX",
-		DerivationPolicy: "DerivationPolicyX",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
 		Nullable:         false,
 		UmlComment:       "UmlCommentX",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -157,7 +202,47 @@ func (suite *AttributeSuite) TestUpdate() {
 		Name:             "NameX",
 		Details:          "DetailsX",
 		DataTypeRules:    "DataTypeRulesX",
-		DerivationPolicy: "DerivationPolicyX",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
+		Nullable:         false,
+		UmlComment:       "UmlCommentX",
+	}, attribute)
+}
+
+func (suite *AttributeSuite) TestUpdateNulls() {
+
+	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
+		Name:             "Name",
+		Details:          "Details",
+		DataTypeRules:    "DataTypeRules",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
+		Nullable:         true,
+		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType,
+	})
+	assert.Nil(suite.T(), err)
+
+	err = UpdateAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
+		Key:              suite.attributeKey,
+		Name:             "NameX",
+		Details:          "DetailsX",
+		DataTypeRules:    "DataTypeRulesX",
+		DerivationPolicy: nil, // No derivation policy.
+		Nullable:         false,
+		UmlComment:       "UmlCommentX",
+		DataType:         nil, // No data type.
+	})
+	assert.Nil(suite.T(), err)
+
+	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), suite.class.Key, classKey)
+	assert.Equal(suite.T(), model_class.Attribute{
+		Key:              suite.attributeKey,
+		Name:             "NameX",
+		Details:          "DetailsX",
+		DataTypeRules:    "DataTypeRulesX",
+		DerivationPolicy: nil, // No derivation policy.
 		Nullable:         false,
 		UmlComment:       "UmlCommentX",
 	}, attribute)
@@ -170,9 +255,10 @@ func (suite *AttributeSuite) TestRemove() {
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 		Nullable:         true,
 		UmlComment:       "UmlComment",
+		DataType:         &suite.dataType,
 	})
 	assert.Nil(suite.T(), err)
 
@@ -194,18 +280,20 @@ func (suite *AttributeSuite) TestQuery() {
 				Name:             "NameX",
 				Details:          "DetailsX",
 				DataTypeRules:    "DataTypeRulesX",
-				DerivationPolicy: "DerivationPolicyX",
+				DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
 				Nullable:         true,
 				UmlComment:       "UmlCommentX",
+				DataType:         &suite.dataTypeB,
 			},
 			{
 				Key:              suite.attributeKey,
 				Name:             "Name",
 				Details:          "Details",
 				DataTypeRules:    "DataTypeRules",
-				DerivationPolicy: "DerivationPolicy",
+				DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 				Nullable:         true,
 				UmlComment:       "UmlComment",
+				DataType:         &suite.dataType,
 			},
 		},
 	})
@@ -220,7 +308,7 @@ func (suite *AttributeSuite) TestQuery() {
 				Name:             "Name",
 				Details:          "Details",
 				DataTypeRules:    "DataTypeRules",
-				DerivationPolicy: "DerivationPolicy",
+				DerivationPolicy: &model_logic.Logic{Key: suite.logic.Key},
 				Nullable:         true,
 				UmlComment:       "UmlComment",
 			},
@@ -229,7 +317,7 @@ func (suite *AttributeSuite) TestQuery() {
 				Name:             "NameX",
 				Details:          "DetailsX",
 				DataTypeRules:    "DataTypeRulesX",
-				DerivationPolicy: "DerivationPolicyX",
+				DerivationPolicy: &model_logic.Logic{Key: suite.logicB.Key},
 				Nullable:         true,
 				UmlComment:       "UmlCommentX",
 			},
@@ -248,7 +336,7 @@ func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey ident
 		Name:             attributeKey.String(),
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: nil, // No derivation policy.
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	})
@@ -258,4 +346,18 @@ func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey ident
 	assert.Nil(t, err)
 
 	return attribute
+}
+
+func (suite *AttributeSuite) TestVerifyTestObjects() {
+
+	attribute := t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.attributeKey)
+	assert.Equal(suite.T(), model_class.Attribute{
+		Key:              suite.attributeKey,
+		Name:             suite.attributeKey.String(),
+		Details:          "Details",
+		DataTypeRules:    "DataTypeRules",
+		DerivationPolicy: nil, // No derivation policy.
+		Nullable:         true,
+		UmlComment:       "UmlComment",
+	}, attribute)
 }

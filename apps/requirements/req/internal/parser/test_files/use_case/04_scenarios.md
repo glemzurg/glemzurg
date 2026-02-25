@@ -35,27 +35,44 @@ scenarios:
               multi: true
               uml_comment: the book of greatness
         steps:
-            - description: first step
+            - step_type: leaf
+              leaf_type: event
+              description: first step
               from_object_key: bob
               to_object_key: book
-              event_key: class_key/event/processlog
-            - loop: while condition
+              event_key: class_key/processlog
+            - step_type: leaf
+              leaf_type: query
+              description: check stock
+              from_object_key: bob
+              to_object_key: book
+              query_key: class_key/getstock
+            - step_type: loop
+              condition: while condition
               statements:
-                - description: loop step
-                  from_object_key: book
-                  to_object_key: bob
-                  scenario_key: use_case_key/scenario/scenario_b_key
-            - cases:
-                - condition: case1
-                  statements:
-                    - description: case1 step
-                      from_object_key: bob
-                      to_object_key: book
-                      event_key: class_key/event/processlog
-                - condition: case2
-                  statements:
-                    - from_object_key: book
-                      is_delete: true        
+                  - step_type: leaf
+                    leaf_type: scenario
+                    description: loop step
+                    from_object_key: book
+                    to_object_key: bob
+                    scenario_key: scenario_b_key
+            - step_type: switch
+              statements:
+                  - step_type: case
+                    condition: case1
+                    statements:
+                        - step_type: leaf
+                          leaf_type: event
+                          description: case1 step
+                          from_object_key: bob
+                          to_object_key: book
+                          event_key: class_key/processlog
+                  - step_type: case
+                    condition: case2
+                    statements:
+                        - step_type: leaf
+                          leaf_type: delete
+                          from_object_key: book
 
     scenario_b_key:
         name: Scenario B
@@ -67,4 +84,3 @@ scenarios:
               class_key: person_key
             - key: book
               class_key: book_key
-

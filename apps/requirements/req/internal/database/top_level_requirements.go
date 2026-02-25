@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -33,6 +34,125 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 		// Add the model.
 		if err = AddModel(tx, model); err != nil {
+			return err
+		}
+
+		// Collect all logic rows to insert, tracking sort_order for each.
+		allLogics := make([]model_logic.Logic, 0, len(model.Invariants)+len(model.GlobalFunctions))
+		sortOrders := make(map[string]int)
+
+		// Invariants: sort_order = index within the invariants slice.
+		for i, inv := range model.Invariants {
+			sortOrders[inv.Key.String()] = i
+		}
+		allLogics = append(allLogics, model.Invariants...)
+
+		// Global functions: single logic each, sort_order = 0.
+		for _, gf := range model.GlobalFunctions {
+			sortOrders[gf.Logic.Key.String()] = 0
+			allLogics = append(allLogics, gf.Logic)
+		}
+		// Collect derivation policy logics from attributes (single logic each, sort_order = 0).
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, attr := range class.Attributes {
+						if attr.DerivationPolicy != nil {
+							sortOrders[attr.DerivationPolicy.Key.String()] = 0
+							allLogics = append(allLogics, *attr.DerivationPolicy)
+						}
+					}
+				}
+			}
+		}
+		// Collect guard logics (single logic each, sort_order = 0).
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, guard := range class.Guards {
+						sortOrders[guard.Logic.Key.String()] = 0
+						allLogics = append(allLogics, guard.Logic)
+					}
+				}
+			}
+		}
+		// Collect action require, guarantee, and safety logics with sort_order = slice index.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, action := range class.Actions {
+						for i, req := range action.Requires {
+							sortOrders[req.Key.String()] = i
+						}
+						for i, guar := range action.Guarantees {
+							sortOrders[guar.Key.String()] = i
+						}
+						for i, rule := range action.SafetyRules {
+							sortOrders[rule.Key.String()] = i
+						}
+						allLogics = append(allLogics, action.Requires...)
+						allLogics = append(allLogics, action.Guarantees...)
+						allLogics = append(allLogics, action.SafetyRules...)
+					}
+				}
+			}
+		}
+		// Collect query require and guarantee logics with sort_order = slice index.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, query := range class.Queries {
+						for i, req := range query.Requires {
+							sortOrders[req.Key.String()] = i
+						}
+						for i, guar := range query.Guarantees {
+							sortOrders[guar.Key.String()] = i
+						}
+						allLogics = append(allLogics, query.Requires...)
+						allLogics = append(allLogics, query.Guarantees...)
+					}
+				}
+			}
+		}
+		// Collect class invariant logics with sort_order = slice index.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for i, inv := range class.Invariants {
+						sortOrders[inv.Key.String()] = i
+					}
+					allLogics = append(allLogics, class.Invariants...)
+				}
+			}
+		}
+		if err = AddLogics(tx, modelKey, allLogics, sortOrders); err != nil {
+			return err
+		}
+
+		// Add invariant join rows.
+		invariantKeys := make([]identity.Key, len(model.Invariants))
+		for i, inv := range model.Invariants {
+			invariantKeys[i] = inv.Key
+		}
+		if err = AddInvariants(tx, modelKey, invariantKeys); err != nil {
+			return err
+		}
+
+		// Add global function rows.
+		gfSlice := make([]model_logic.GlobalFunction, 0, len(model.GlobalFunctions))
+		for _, gf := range model.GlobalFunctions {
+			gfSlice = append(gfSlice, gf)
+		}
+		if err = AddGlobalFunctions(tx, modelKey, gfSlice); err != nil {
+			return err
+		}
+
+		// Collect actor generalizations into a slice (must be inserted before actors due to FK).
+		actorGeneralizationsSlice := make([]model_actor.Generalization, 0, len(model.ActorGeneralizations))
+		for _, ag := range model.ActorGeneralizations {
+			actorGeneralizationsSlice = append(actorGeneralizationsSlice, ag)
+		}
+		if err = AddActorGeneralizations(tx, modelKey, actorGeneralizationsSlice); err != nil {
 			return err
 		}
 
@@ -64,24 +184,12 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
-		// Collect subdomains, classes, and other nested content into bulk structures.
+		// Collect subdomains, generalizations, use case generalizations, classes, and attributes into bulk structures.
 		subdomainsMap := make(map[identity.Key][]model_domain.Subdomain)
-		generalizationsSlice := make([]model_class.Generalization, 0)
+		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
+		useCaseGeneralizationsMap := make(map[identity.Key][]model_use_case.Generalization)
 		classesMap := make(map[identity.Key][]model_class.Class)
 		attributesMap := make(map[identity.Key][]model_class.Attribute)
-		eventsMap := make(map[identity.Key][]model_state.Event)
-		guardsMap := make(map[identity.Key][]model_state.Guard)
-		actionsMap := make(map[identity.Key][]model_state.Action)
-		statesMap := make(map[identity.Key][]model_state.State)
-		stateActionsMap := make(map[identity.Key][]model_state.StateAction)
-		transitionsMap := make(map[identity.Key][]model_state.Transition)
-		useCaseSubdomainKeys := make(map[identity.Key]identity.Key) // useCaseKey -> subdomainKey
-		useCasesSlice := make([]model_use_case.UseCase, 0)
-		useCaseActorsMap := make(map[identity.Key]map[identity.Key]model_use_case.Actor)
-		scenariosMap := make(map[identity.Key][]model_scenario.Scenario)
-		objectsMap := make(map[identity.Key][]model_scenario.Object)
-		useCaseSharedsMap := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
-		dataTypes := make(map[string]model_data_type.DataType)
 
 		for _, domain := range model.Domains {
 			domainKey := domain.Key
@@ -93,7 +201,12 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 				// Collect generalizations.
 				for _, generalization := range subdomain.Generalizations {
-					generalizationsSlice = append(generalizationsSlice, generalization)
+					generalizationsMap[subdomainKey] = append(generalizationsMap[subdomainKey], generalization)
+				}
+
+				// Collect use case generalizations.
+				for _, ucGen := range subdomain.UseCaseGeneralizations {
+					useCaseGeneralizationsMap[subdomainKey] = append(useCaseGeneralizationsMap[subdomainKey], ucGen)
 				}
 
 				// Collect classes.
@@ -104,74 +217,6 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 					// Collect attributes.
 					for _, attribute := range class.Attributes {
 						attributesMap[classKey] = append(attributesMap[classKey], attribute)
-						// Collect data types.
-						if attribute.DataType != nil {
-							dataTypes[attribute.DataType.Key] = *attribute.DataType
-						}
-					}
-
-					// Collect events.
-					for _, event := range class.Events {
-						eventsMap[classKey] = append(eventsMap[classKey], event)
-					}
-
-					// Collect guards.
-					for _, guard := range class.Guards {
-						guardsMap[classKey] = append(guardsMap[classKey], guard)
-					}
-
-					// Collect actions.
-					for _, action := range class.Actions {
-						actionsMap[classKey] = append(actionsMap[classKey], action)
-					}
-
-					// Collect states and state actions.
-					for _, state := range class.States {
-						stateKey := state.Key
-						statesMap[classKey] = append(statesMap[classKey], state)
-
-						// Collect state actions.
-						for _, stateAction := range state.Actions {
-							stateActionsMap[stateKey] = append(stateActionsMap[stateKey], stateAction)
-						}
-					}
-
-					// Collect transitions.
-					for _, transition := range class.Transitions {
-						transitionsMap[classKey] = append(transitionsMap[classKey], transition)
-					}
-				}
-
-				// Collect use cases.
-				for _, useCase := range subdomain.UseCases {
-					useCaseKey := useCase.Key
-					useCaseSubdomainKeys[useCaseKey] = subdomainKey
-					useCasesSlice = append(useCasesSlice, useCase)
-
-					// Collect use case actors.
-					if len(useCase.Actors) > 0 {
-						useCaseActorsMap[useCaseKey] = useCase.Actors
-					}
-
-					// Collect scenarios.
-					for _, scenario := range useCase.Scenarios {
-						scenarioKey := scenario.Key
-						scenariosMap[useCaseKey] = append(scenariosMap[useCaseKey], scenario)
-
-						// Collect objects.
-						for _, object := range scenario.Objects {
-							objectsMap[scenarioKey] = append(objectsMap[scenarioKey], object)
-						}
-					}
-				}
-
-				// Collect UseCaseShares.
-				for seaLevelKey, mudLevelShares := range subdomain.UseCaseShares {
-					if useCaseSharedsMap[seaLevelKey] == nil {
-						useCaseSharedsMap[seaLevelKey] = make(map[identity.Key]model_use_case.UseCaseShared)
-					}
-					for mudLevelKey, shared := range mudLevelShares {
-						useCaseSharedsMap[seaLevelKey][mudLevelKey] = shared
 					}
 				}
 			}
@@ -183,12 +228,87 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		}
 
 		// Bulk insert generalizations.
-		if err = AddGeneralizations(tx, modelKey, generalizationsSlice); err != nil {
+		if err = AddGeneralizations(tx, modelKey, generalizationsMap); err != nil {
+			return err
+		}
+
+		// Bulk insert use case generalizations.
+		if err = AddUseCaseGeneralizations(tx, modelKey, useCaseGeneralizationsMap); err != nil {
+			return err
+		}
+
+		// Collect use cases from subdomains (must be inserted after use_case_generalization due to FK).
+		useCaseSubdomainKeys := make(map[identity.Key]identity.Key) // useCaseKey -> subdomainKey
+		useCasesSlice := make([]model_use_case.UseCase, 0)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					useCaseSubdomainKeys[uc.Key] = subdomain.Key
+					useCasesSlice = append(useCasesSlice, uc)
+				}
+			}
+		}
+		if err = AddUseCases(tx, modelKey, useCaseSubdomainKeys, useCasesSlice); err != nil {
 			return err
 		}
 
 		// Bulk insert classes.
 		if err = AddClasses(tx, modelKey, classesMap); err != nil {
+			return err
+		}
+
+		// Collect class invariant join rows from classes (must be inserted after classes due to FK).
+		classInvariantsMap := make(map[identity.Key][]identity.Key)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, inv := range class.Invariants {
+						classInvariantsMap[class.Key] = append(classInvariantsMap[class.Key], inv.Key)
+					}
+				}
+			}
+		}
+		if err = AddClassInvariants(tx, modelKey, classInvariantsMap); err != nil {
+			return err
+		}
+
+		// Collect data types from attributes and query parameters (must be inserted before attributes/query_parameter due to FK).
+		dataTypes := make(map[string]model_data_type.DataType)
+		for _, attrs := range attributesMap {
+			for _, attr := range attrs {
+				if attr.DataType != nil {
+					dataTypes[attr.DataType.Key] = *attr.DataType
+				}
+			}
+		}
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, query := range class.Queries {
+						for _, param := range query.Parameters {
+							if param.DataType != nil {
+								dataTypes[param.DataType.Key] = *param.DataType
+							}
+						}
+					}
+					for _, event := range class.Events {
+						for _, param := range event.Parameters {
+							if param.DataType != nil {
+								dataTypes[param.DataType.Key] = *param.DataType
+							}
+						}
+					}
+					for _, action := range class.Actions {
+						for _, param := range action.Parameters {
+							if param.DataType != nil {
+								dataTypes[param.DataType.Key] = *param.DataType
+							}
+						}
+					}
+				}
+			}
+		}
+		if err = AddTopLevelDataTypes(tx, modelKey, dataTypes); err != nil {
 			return err
 		}
 
@@ -213,73 +333,294 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			}
 		}
 
-		// Bulk insert events.
-		if err = AddEvents(tx, modelKey, eventsMap); err != nil {
+		// Collect class associations from all levels (subdomain, domain, and model).
+		allClassAssociations := model.GetClassAssociations()
+		var classAssociationsList []model_class.Association
+		for _, assoc := range allClassAssociations {
+			classAssociationsList = append(classAssociationsList, assoc)
+		}
+		if err = AddAssociations(tx, modelKey, classAssociationsList); err != nil {
 			return err
 		}
 
-		// Bulk insert guards.
-		if err = AddGuards(tx, modelKey, guardsMap); err != nil {
-			return err
+		// Collect states from classes.
+		statesMap := make(map[identity.Key][]model_state.State)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, state := range class.States {
+						statesMap[class.Key] = append(statesMap[class.Key], state)
+					}
+				}
+			}
 		}
-
-		// Bulk insert actions (must be added before states with state actions).
-		if err = AddActions(tx, modelKey, actionsMap); err != nil {
-			return err
-		}
-
-		// Bulk insert states.
 		if err = AddStates(tx, modelKey, statesMap); err != nil {
 			return err
 		}
 
-		// Bulk insert state actions.
+		// Collect guards from classes.
+		guardsMap := make(map[identity.Key][]model_state.Guard)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, guard := range class.Guards {
+						guardsMap[class.Key] = append(guardsMap[class.Key], guard)
+					}
+				}
+			}
+		}
+		if err = AddGuards(tx, modelKey, guardsMap); err != nil {
+			return err
+		}
+
+		// Collect actions from classes.
+		actionsMap := make(map[identity.Key][]model_state.Action)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, action := range class.Actions {
+						actionsMap[class.Key] = append(actionsMap[class.Key], action)
+					}
+				}
+			}
+		}
+		if err = AddActions(tx, modelKey, actionsMap); err != nil {
+			return err
+		}
+
+		// Collect action parameters from actions (must be inserted after actions due to FK).
+		actionParamsMap := make(map[identity.Key][]model_state.Parameter)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, param := range action.Parameters {
+					actionParamsMap[action.Key] = append(actionParamsMap[action.Key], param)
+				}
+			}
+		}
+		if err = AddActionParameters(tx, modelKey, actionParamsMap); err != nil {
+			return err
+		}
+
+		// Collect action require join rows from actions.
+		actionRequiresMap := make(map[identity.Key][]identity.Key)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, req := range action.Requires {
+					actionRequiresMap[action.Key] = append(actionRequiresMap[action.Key], req.Key)
+				}
+			}
+		}
+		if err = AddActionRequires(tx, modelKey, actionRequiresMap); err != nil {
+			return err
+		}
+
+		// Collect action guarantee join rows from actions.
+		actionGuaranteesMap := make(map[identity.Key][]identity.Key)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, guar := range action.Guarantees {
+					actionGuaranteesMap[action.Key] = append(actionGuaranteesMap[action.Key], guar.Key)
+				}
+			}
+		}
+		if err = AddActionGuarantees(tx, modelKey, actionGuaranteesMap); err != nil {
+			return err
+		}
+
+		// Collect action safety join rows from actions.
+		actionSafetiesMap := make(map[identity.Key][]identity.Key)
+		for _, actionList := range actionsMap {
+			for _, action := range actionList {
+				for _, rule := range action.SafetyRules {
+					actionSafetiesMap[action.Key] = append(actionSafetiesMap[action.Key], rule.Key)
+				}
+			}
+		}
+		if err = AddActionSafeties(tx, modelKey, actionSafetiesMap); err != nil {
+			return err
+		}
+
+		// Collect events from classes.
+		eventsMap := make(map[identity.Key][]model_state.Event)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, event := range class.Events {
+						eventsMap[class.Key] = append(eventsMap[class.Key], event)
+					}
+				}
+			}
+		}
+		if err = AddEvents(tx, modelKey, eventsMap); err != nil {
+			return err
+		}
+
+		// Collect queries from classes.
+		queriesMap := make(map[identity.Key][]model_state.Query)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, query := range class.Queries {
+						queriesMap[class.Key] = append(queriesMap[class.Key], query)
+					}
+				}
+			}
+		}
+		if err = AddQueries(tx, modelKey, queriesMap); err != nil {
+			return err
+		}
+
+		// Collect query parameters from queries (must be inserted after queries due to FK).
+		queryParamsMap := make(map[identity.Key][]model_state.Parameter)
+		for _, queryList := range queriesMap {
+			for _, query := range queryList {
+				for _, param := range query.Parameters {
+					queryParamsMap[query.Key] = append(queryParamsMap[query.Key], param)
+				}
+			}
+		}
+		if err = AddQueryParameters(tx, modelKey, queryParamsMap); err != nil {
+			return err
+		}
+
+		// Collect query require join rows from queries.
+		queryRequiresMap := make(map[identity.Key][]identity.Key)
+		for _, queryList := range queriesMap {
+			for _, query := range queryList {
+				for _, req := range query.Requires {
+					queryRequiresMap[query.Key] = append(queryRequiresMap[query.Key], req.Key)
+				}
+			}
+		}
+		if err = AddQueryRequires(tx, modelKey, queryRequiresMap); err != nil {
+			return err
+		}
+
+		// Collect query guarantee join rows from queries.
+		queryGuaranteesMap := make(map[identity.Key][]identity.Key)
+		for _, queryList := range queriesMap {
+			for _, query := range queryList {
+				for _, guar := range query.Guarantees {
+					queryGuaranteesMap[query.Key] = append(queryGuaranteesMap[query.Key], guar.Key)
+				}
+			}
+		}
+		if err = AddQueryGuarantees(tx, modelKey, queryGuaranteesMap); err != nil {
+			return err
+		}
+
+		// Collect event parameters from events (must be inserted after events due to FK).
+		eventParamsMap := make(map[identity.Key][]model_state.Parameter)
+		for _, eventList := range eventsMap {
+			for _, event := range eventList {
+				for _, param := range event.Parameters {
+					eventParamsMap[event.Key] = append(eventParamsMap[event.Key], param)
+				}
+			}
+		}
+		if err = AddEventParameters(tx, modelKey, eventParamsMap); err != nil {
+			return err
+		}
+
+		// Collect state actions from states (must be inserted after states and actions due to FK).
+		stateActionsMap := make(map[identity.Key][]model_state.StateAction)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, state := range class.States {
+						if len(state.Actions) > 0 {
+							stateActionsMap[state.Key] = append(stateActionsMap[state.Key], state.Actions...)
+						}
+					}
+				}
+			}
+		}
 		if err = AddStateActions(tx, modelKey, stateActionsMap); err != nil {
 			return err
 		}
 
-		// Bulk insert transitions.
+		// Collect transitions from classes (must be inserted after states, events, guards, and actions due to FK).
+		transitionsMap := make(map[identity.Key][]model_state.Transition)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, transition := range class.Transitions {
+						transitionsMap[class.Key] = append(transitionsMap[class.Key], transition)
+					}
+				}
+			}
+		}
 		if err = AddTransitions(tx, modelKey, transitionsMap); err != nil {
 			return err
 		}
 
-		// Bulk insert use cases.
-		if err = AddUseCases(tx, modelKey, useCaseSubdomainKeys, useCasesSlice); err != nil {
-			return err
+		// Collect use case actors from use cases (must be inserted after use cases and classes due to FK).
+		useCaseActorsMap := make(map[identity.Key]map[identity.Key]model_use_case.Actor)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					if len(uc.Actors) > 0 {
+						useCaseActorsMap[uc.Key] = uc.Actors
+					}
+				}
+			}
 		}
-
-		// Bulk insert use case actors.
 		if err = AddUseCaseActors(tx, modelKey, useCaseActorsMap); err != nil {
 			return err
 		}
 
-		// Bulk insert scenarios.
-		if err = AddScenarios(tx, modelKey, scenariosMap); err != nil {
-			return err
+		// Collect use case shared entries from subdomains (must be inserted after use cases due to FK).
+		useCaseSharedsMap := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for seaKey, mudMap := range subdomain.UseCaseShares {
+					useCaseSharedsMap[seaKey] = mudMap
+				}
+			}
 		}
-
-		// Bulk insert objects.
-		if err = AddObjects(tx, modelKey, objectsMap); err != nil {
-			return err
-		}
-
-		// Bulk insert use case shareds.
 		if err = AddUseCaseShareds(tx, modelKey, useCaseSharedsMap); err != nil {
 			return err
 		}
 
-		// Bulk insert class associations.
-		classAssociations := model.GetClassAssociations()
-		associationsSlice := make([]model_class.Association, 0, len(classAssociations))
-		for _, association := range classAssociations {
-			associationsSlice = append(associationsSlice, association)
+		// Collect scenarios from use cases (must be inserted after use cases due to FK).
+		scenariosMap := make(map[identity.Key][]model_scenario.Scenario)
+		objectsMap := make(map[identity.Key][]model_scenario.Object)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					for _, scenario := range uc.Scenarios {
+						scenariosMap[uc.Key] = append(scenariosMap[uc.Key], scenario)
+						// Collect objects from this scenario.
+						for _, obj := range scenario.Objects {
+							objectsMap[scenario.Key] = append(objectsMap[scenario.Key], obj)
+						}
+					}
+				}
+			}
 		}
-		if err = AddAssociations(tx, modelKey, associationsSlice); err != nil {
+		if err = AddScenarios(tx, modelKey, scenariosMap); err != nil {
 			return err
 		}
 
-		// Bulk insert data types.
-		if err = AddTopLevelDataTypes(tx, modelKey, dataTypes); err != nil {
+		// Bulk insert scenario objects (must be inserted after scenarios due to FK).
+		if err = AddObjects(tx, modelKey, objectsMap); err != nil {
+			return err
+		}
+
+		// Collect steps from scenarios and flatten for bulk insert (must be after scenarios and objects due to FK).
+		var allStepRows []stepRow
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, uc := range subdomain.UseCases {
+					for _, scenario := range uc.Scenarios {
+						if scenario.Steps != nil {
+							allStepRows = append(allStepRows, flattenSteps(scenario.Key, scenario.Steps)...)
+						}
+					}
+				}
+			}
+		}
+		if err = AddSteps(tx, modelKey, allStepRows); err != nil {
 			return err
 		}
 
@@ -303,14 +644,61 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
+		// Logics.
+		logics, err := QueryLogics(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		logicsByKey := make(map[identity.Key]model_logic.Logic, len(logics))
+		for _, logic := range logics {
+			logicsByKey[logic.Key] = logic
+		}
+
+		// Invariants — stitch logic data onto invariant keys.
+		invariantKeys, err := QueryInvariants(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		model.Invariants = make([]model_logic.Logic, len(invariantKeys))
+		for i, key := range invariantKeys {
+			model.Invariants[i] = logicsByKey[key]
+		}
+
+		// Global functions — stitch logic data onto global function rows.
+		gfs, err := QueryGlobalFunctions(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		if len(gfs) > 0 {
+			model.GlobalFunctions = make(map[identity.Key]model_logic.GlobalFunction, len(gfs))
+			for _, gf := range gfs {
+				gf.Logic = logicsByKey[gf.Key]
+				model.GlobalFunctions[gf.Key] = gf
+			}
+		}
+
+		// Actor generalizations - returns slice, convert to map.
+		actorGeneralizationsSlice, err := QueryActorGeneralizations(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		if len(actorGeneralizationsSlice) > 0 {
+			model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization, len(actorGeneralizationsSlice))
+			for _, ag := range actorGeneralizationsSlice {
+				model.ActorGeneralizations[ag.Key] = ag
+			}
+		}
+
 		// Actors - returns slice, convert to map.
 		actorsSlice, err := QueryActors(tx, modelKey)
 		if err != nil {
 			return err
 		}
-		model.Actors = make(map[identity.Key]model_actor.Actor)
-		for _, actor := range actorsSlice {
-			model.Actors[actor.Key] = actor
+		if len(actorsSlice) > 0 {
+			model.Actors = make(map[identity.Key]model_actor.Actor)
+			for _, actor := range actorsSlice {
+				model.Actors[actor.Key] = actor
+			}
 		}
 
 		// Domains - returns slice.
@@ -331,23 +719,78 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Generalizations - returned as slice, need to group by subdomain (parent) key.
-		generalizationsSlice, err := QueryGeneralizations(tx, modelKey)
+		// Generalizations grouped by subdomain key.
+		generalizationsMap, err := QueryGeneralizations(tx, modelKey)
 		if err != nil {
 			return err
 		}
-		generalizationsMap := make(map[identity.Key][]model_class.Generalization)
-		for _, gen := range generalizationsSlice {
-			// Extract parent (subdomain) key from the generalization key.
-			parentKeyStr := gen.Key.ParentKey()
-			parentKey, parseErr := identity.ParseKey(parentKeyStr)
-			if parseErr == nil {
-				generalizationsMap[parentKey] = append(generalizationsMap[parentKey], gen)
+
+		// Use case generalizations grouped by subdomain key.
+		useCaseGeneralizationsMap, err := QueryUseCaseGeneralizations(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Use cases - returns subdomainKeys map and slice.
+		useCaseSubdomainKeys, useCasesSlice, err := QueryUseCases(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Use case actors grouped by use case key -> actor class key -> Actor.
+		useCaseActorsMap, err := QueryUseCaseActors(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Use case shared entries grouped by sea-level key -> mud-level key -> UseCaseShared.
+		useCaseSharedsMap, err := QueryUseCaseShareds(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Scenarios grouped by use case key.
+		scenariosMap, err := QueryScenarios(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Scenario objects grouped by scenario key.
+		scenarioObjectsMap, err := QueryObjects(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Steps grouped by scenario key (reconstructed trees).
+		stepsMap, err := QuerySteps(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch objects and steps onto scenarios.
+		for useCaseKey, scenList := range scenariosMap {
+			for i, scenario := range scenList {
+				if objs, ok := scenarioObjectsMap[scenario.Key]; ok {
+					scenList[i].Objects = make(map[identity.Key]model_scenario.Object, len(objs))
+					for _, obj := range objs {
+						scenList[i].Objects[obj.Key] = obj
+					}
+				}
+				if rootStep, ok := stepsMap[scenario.Key]; ok {
+					scenList[i].Steps = rootStep
+				}
 			}
+			scenariosMap[useCaseKey] = scenList
 		}
 
 		// Classes grouped by subdomain key.
 		classesMap, err := QueryClasses(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Class invariants grouped by class key.
+		classInvariantsMap, err := QueryClassInvariants(tx, modelKey)
 		if err != nil {
 			return err
 		}
@@ -358,16 +801,81 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Class associations - all associations from DB as a flat slice.
-		associationsSlice, err := QueryAssociations(tx, modelKey)
+		// Guards grouped by class key.
+		guardsMap, err := QueryGuards(tx, modelKey)
 		if err != nil {
 			return err
 		}
 
-		// Load all data types.
-		dataTypes, err := LoadTopLevelDataTypes(tx, modelKey)
+		// Stitch logic data onto guards.
+		for classKey, guards := range guardsMap {
+			for i, guard := range guards {
+				if logic, ok := logicsByKey[guard.Key]; ok {
+					guards[i].Logic = logic
+				}
+			}
+			guardsMap[classKey] = guards
+		}
+
+		// Actions grouped by class key.
+		actionsMap, err := QueryActions(tx, modelKey)
 		if err != nil {
 			return err
+		}
+
+		// Action parameters grouped by action key.
+		actionParamsMap, err := QueryActionParameters(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action require join rows grouped by action key.
+		actionRequiresMap, err := QueryActionRequires(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action guarantee join rows grouped by action key.
+		actionGuaranteesMap, err := QueryActionGuarantees(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Action safety join rows grouped by action key.
+		actionSafetiesMap, err := QueryActionSafeties(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters, requires, guarantees, and safety rules onto actions.
+		for classKey, actions := range actionsMap {
+			for i, action := range actions {
+				if params, ok := actionParamsMap[action.Key]; ok {
+					actions[i].Parameters = params
+				}
+				// Stitch requires from logic data.
+				if reqKeys, ok := actionRequiresMap[action.Key]; ok {
+					actions[i].Requires = make([]model_logic.Logic, len(reqKeys))
+					for j, key := range reqKeys {
+						actions[i].Requires[j] = logicsByKey[key]
+					}
+				}
+				// Stitch guarantees from logic data.
+				if guarKeys, ok := actionGuaranteesMap[action.Key]; ok {
+					actions[i].Guarantees = make([]model_logic.Logic, len(guarKeys))
+					for j, key := range guarKeys {
+						actions[i].Guarantees[j] = logicsByKey[key]
+					}
+				}
+				// Stitch safety rules from logic data.
+				if safetyKeys, ok := actionSafetiesMap[action.Key]; ok {
+					actions[i].SafetyRules = make([]model_logic.Logic, len(safetyKeys))
+					for j, key := range safetyKeys {
+						actions[i].SafetyRules[j] = logicsByKey[key]
+					}
+				}
+			}
+			actionsMap[classKey] = actions
 		}
 
 		// States grouped by class key.
@@ -382,22 +890,14 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Events grouped by class key.
-		eventsMap, err := QueryEvents(tx, modelKey)
-		if err != nil {
-			return err
-		}
-
-		// Guards grouped by class key.
-		guardsMap, err := QueryGuards(tx, modelKey)
-		if err != nil {
-			return err
-		}
-
-		// Actions grouped by class key.
-		actionsMap, err := QueryActions(tx, modelKey)
-		if err != nil {
-			return err
+		// Stitch state actions onto states.
+		for classKey, states := range statesMap {
+			for i, state := range states {
+				if stateActions, ok := stateActionsMap[state.Key]; ok {
+					states[i].SetActions(stateActions)
+				}
+			}
+			statesMap[classKey] = states
 		}
 
 		// Transitions grouped by class key.
@@ -406,192 +906,312 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			return err
 		}
 
-		// Use cases grouped by subdomain key.
-		subdomainKeysForUseCases, useCasesSlice, err := QueryUseCases(tx, modelKey)
-		if err != nil {
-			return err
-		}
-		useCasesMap := make(map[identity.Key][]model_use_case.UseCase)
-		for _, uc := range useCasesSlice {
-			subdomainKey := subdomainKeysForUseCases[uc.Key]
-			useCasesMap[subdomainKey] = append(useCasesMap[subdomainKey], uc)
-		}
-
-		// Use case actors grouped by use case key.
-		useCaseActorsMap, err := QueryUseCaseActors(tx, modelKey)
+		// Events grouped by class key.
+		eventsMap, err := QueryEvents(tx, modelKey)
 		if err != nil {
 			return err
 		}
 
-		// Scenarios grouped by use case key.
-		scenariosMap, err := QueryScenarios(tx, modelKey)
+		// Event parameters grouped by event key.
+		eventParamsMap, err := QueryEventParameters(tx, modelKey)
 		if err != nil {
 			return err
 		}
 
-		// Objects grouped by scenario key.
-		objectsMap, err := QueryObjects(tx, modelKey)
+		// Stitch parameters onto events.
+		for classKey, events := range eventsMap {
+			for i, event := range events {
+				if params, ok := eventParamsMap[event.Key]; ok {
+					events[i].Parameters = params
+				}
+			}
+			eventsMap[classKey] = events
+		}
+
+		// Queries grouped by class key.
+		queriesMap, err := QueryQueries(tx, modelKey)
 		if err != nil {
 			return err
 		}
 
-		// UseCaseShareds grouped by subdomain key (outer key is sea-level use case, inner is mud-level).
-		useCaseSharedsMap, err := QueryUseCaseShareds(tx, modelKey)
+		// Query parameters grouped by query key.
+		queryParamsMap, err := QueryQueryParameters(tx, modelKey)
 		if err != nil {
 			return err
+		}
+
+		// Query require join rows grouped by query key.
+		queryRequiresMap, err := QueryQueryRequires(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Query guarantee join rows grouped by query key.
+		queryGuaranteesMap, err := QueryQueryGuarantees(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch parameters, requires, and guarantees onto queries (data types are stitched onto parameters below after dataTypes are loaded).
+		for classKey, queries := range queriesMap {
+			for i, query := range queries {
+				if params, ok := queryParamsMap[query.Key]; ok {
+					queries[i].Parameters = params
+				}
+				// Stitch requires from logic data.
+				if reqKeys, ok := queryRequiresMap[query.Key]; ok {
+					queries[i].Requires = make([]model_logic.Logic, len(reqKeys))
+					for j, key := range reqKeys {
+						queries[i].Requires[j] = logicsByKey[key]
+					}
+				}
+				// Stitch guarantees from logic data.
+				if guarKeys, ok := queryGuaranteesMap[query.Key]; ok {
+					queries[i].Guarantees = make([]model_logic.Logic, len(guarKeys))
+					for j, key := range guarKeys {
+						queries[i].Guarantees[j] = logicsByKey[key]
+					}
+				}
+			}
+			queriesMap[classKey] = queries
+		}
+
+		// Load data types for stitching onto attributes.
+		dataTypes, err := LoadTopLevelDataTypes(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Stitch derivation policy logics, data types, and class indexes onto attributes.
+		for classKey, attrs := range attributesMap {
+			for i, attr := range attrs {
+				// Stitch derivation policy from logics table.
+				if attr.DerivationPolicy != nil {
+					logic := logicsByKey[attr.DerivationPolicy.Key]
+					attrs[i].DerivationPolicy = &logic
+				}
+				// Stitch data type from data types table.
+				if dt, ok := dataTypes[attr.Key.String()]; ok {
+					attrs[i].DataType = &dt
+				}
+				// Load class indexes for this attribute.
+				indexNums, err := LoadClassAttributeIndexes(tx, modelKey, classKey, attr.Key)
+				if err != nil {
+					return err
+				}
+				attrs[i].IndexNums = indexNums
+			}
+			attributesMap[classKey] = attrs
+		}
+
+		// Stitch data types onto query parameters.
+		for classKey, queries := range queriesMap {
+			for i, query := range queries {
+				for j, param := range query.Parameters {
+					if param.DataType != nil {
+						if dt, ok := dataTypes[param.DataType.Key]; ok {
+							queries[i].Parameters[j].DataType = &dt
+						}
+					}
+				}
+			}
+			queriesMap[classKey] = queries
+		}
+
+		// Stitch data types onto event parameters.
+		for classKey, events := range eventsMap {
+			for i, event := range events {
+				for j, param := range event.Parameters {
+					if param.DataType != nil {
+						if dt, ok := dataTypes[param.DataType.Key]; ok {
+							events[i].Parameters[j].DataType = &dt
+						}
+					}
+				}
+			}
+			eventsMap[classKey] = events
+		}
+
+		// Stitch data types onto action parameters.
+		for classKey, actions := range actionsMap {
+			for i, action := range actions {
+				for j, param := range action.Parameters {
+					if param.DataType != nil {
+						if dt, ok := dataTypes[param.DataType.Key]; ok {
+							actions[i].Parameters[j].DataType = &dt
+						}
+					}
+				}
+			}
+			actionsMap[classKey] = actions
 		}
 
 		// Now assemble the tree structure.
-		model.Domains = make(map[identity.Key]model_domain.Domain)
-		for _, domain := range domainsSlice {
-			domainKey := domain.Key
+		if len(domainsSlice) > 0 {
+			model.Domains = make(map[identity.Key]model_domain.Domain)
+			for _, domain := range domainsSlice {
+				domainKey := domain.Key
 
-			// Attach subdomains to domain.
-			domain.Subdomains = make(map[identity.Key]model_domain.Subdomain)
-			if subdomains, ok := subdomainsMap[domainKey]; ok {
-				for _, subdomain := range subdomains {
-					subdomainKey := subdomain.Key
+				// Attach subdomains to domain.
+				if subdomains, ok := subdomainsMap[domainKey]; ok {
+					domain.Subdomains = make(map[identity.Key]model_domain.Subdomain)
+					for _, subdomain := range subdomains {
+						subdomainKey := subdomain.Key
 
-					// Attach generalizations to subdomain.
-					subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
-					if generalizations, ok := generalizationsMap[subdomainKey]; ok {
-						for _, gen := range generalizations {
-							subdomain.Generalizations[gen.Key] = gen
+						// Attach generalizations to subdomain.
+						if generalizations, ok := generalizationsMap[subdomainKey]; ok {
+							subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
+							for _, gen := range generalizations {
+								subdomain.Generalizations[gen.Key] = gen
+							}
 						}
-					}
 
-					// Attach classes to subdomain.
-					subdomain.Classes = make(map[identity.Key]model_class.Class)
-					if classes, ok := classesMap[subdomainKey]; ok {
-						for _, class := range classes {
-							classKey := class.Key
-
-							// Attach attributes to class.
-							class.Attributes = make(map[identity.Key]model_class.Attribute)
-							if attributes, ok := attributesMap[classKey]; ok {
-								// Attach data types to attributes.
-								for _, attr := range attributes {
-									if dt, ok := dataTypes[attr.Key.String()]; ok {
-										attr.DataType = &dt
-									}
-									class.Attributes[attr.Key] = attr
-								}
+						// Attach use case generalizations to subdomain.
+						if ucGens, ok := useCaseGeneralizationsMap[subdomainKey]; ok {
+							subdomain.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
+							for _, ucGen := range ucGens {
+								subdomain.UseCaseGeneralizations[ucGen.Key] = ucGen
 							}
-
-							// Attach states to class.
-							class.States = make(map[identity.Key]model_state.State)
-							if states, ok := statesMap[classKey]; ok {
-								for _, state := range states {
-									stateKey := state.Key
-									// Attach state actions to state (remains as slice).
-									if stateActions, ok := stateActionsMap[stateKey]; ok {
-										state.Actions = stateActions
-									}
-									class.States[state.Key] = state
-								}
-							}
-
-							// Attach events to class.
-							class.Events = make(map[identity.Key]model_state.Event)
-							if events, ok := eventsMap[classKey]; ok {
-								for _, event := range events {
-									class.Events[event.Key] = event
-								}
-							}
-
-							// Attach guards to class.
-							class.Guards = make(map[identity.Key]model_state.Guard)
-							if guards, ok := guardsMap[classKey]; ok {
-								for _, guard := range guards {
-									class.Guards[guard.Key] = guard
-								}
-							}
-
-							// Attach actions to class.
-							class.Actions = make(map[identity.Key]model_state.Action)
-							if actions, ok := actionsMap[classKey]; ok {
-								for _, action := range actions {
-									class.Actions[action.Key] = action
-								}
-							}
-
-							// Attach transitions to class.
-							class.Transitions = make(map[identity.Key]model_state.Transition)
-							if transitions, ok := transitionsMap[classKey]; ok {
-								for _, transition := range transitions {
-									class.Transitions[transition.Key] = transition
-								}
-							}
-
-							subdomain.Classes[class.Key] = class
 						}
-					}
 
-					// Attach use cases to subdomain.
-					subdomain.UseCases = make(map[identity.Key]model_use_case.UseCase)
-					if useCases, ok := useCasesMap[subdomainKey]; ok {
-						for _, useCase := range useCases {
-							useCaseKey := useCase.Key
-
-							// Attach use case actors.
-							useCase.Actors = make(map[identity.Key]model_use_case.Actor)
-							if actorsMap, ok := useCaseActorsMap[useCaseKey]; ok {
-								for actorKey, actor := range actorsMap {
-									useCase.Actors[actorKey] = actor
-								}
-							}
-
-							// Attach scenarios to use case.
-							useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
-							if scenarios, ok := scenariosMap[useCaseKey]; ok {
-								for _, scenario := range scenarios {
-									scenarioKey := scenario.Key
-									// Attach objects to scenario.
-									scenario.Objects = make(map[identity.Key]model_scenario.Object)
-									if objects, ok := objectsMap[scenarioKey]; ok {
-										for _, obj := range objects {
-											scenario.Objects[obj.Key] = obj
+						// Attach use cases to subdomain, stitching actors and scenarios onto each use case.
+						{
+							useCasesForSubdomain := make(map[identity.Key]model_use_case.UseCase)
+							for _, uc := range useCasesSlice {
+								if useCaseSubdomainKeys[uc.Key] == subdomainKey {
+									// Stitch actors onto use case.
+									if actors, ok := useCaseActorsMap[uc.Key]; ok {
+										uc.Actors = actors
+									}
+									// Stitch scenarios onto use case.
+									if scenList, ok := scenariosMap[uc.Key]; ok {
+										uc.Scenarios = make(map[identity.Key]model_scenario.Scenario, len(scenList))
+										for _, scenario := range scenList {
+											uc.Scenarios[scenario.Key] = scenario
 										}
 									}
-									useCase.Scenarios[scenario.Key] = scenario
+									useCasesForSubdomain[uc.Key] = uc
 								}
 							}
-
-							subdomain.UseCases[useCase.Key] = useCase
+							if len(useCasesForSubdomain) > 0 {
+								subdomain.UseCases = useCasesForSubdomain
+							}
 						}
-					}
 
-					// Attach UseCaseShares to subdomain.
-					subdomain.UseCaseShares = make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
-					// UseCaseShareds are keyed by sea-level use case key.
-					// We need to filter to those belonging to this subdomain.
-					for seaLevelKey, mudLevelShares := range useCaseSharedsMap {
-						// Check if the sea-level use case belongs to this subdomain.
-						if _, exists := subdomain.UseCases[seaLevelKey]; exists {
-							subdomain.UseCaseShares[seaLevelKey] = mudLevelShares
+						// Attach use case shares to subdomain.
+						{
+							sharesForSubdomain := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
+							for seaKey, mudMap := range useCaseSharedsMap {
+								if useCaseSubdomainKeys[seaKey] == subdomainKey {
+									sharesForSubdomain[seaKey] = mudMap
+								}
+							}
+							if len(sharesForSubdomain) > 0 {
+								subdomain.UseCaseShares = sharesForSubdomain
+							}
 						}
-					}
 
-					domain.Subdomains[subdomain.Key] = subdomain
+						// Attach classes to subdomain.
+						if classes, ok := classesMap[subdomainKey]; ok {
+							subdomain.Classes = make(map[identity.Key]model_class.Class)
+							for _, class := range classes {
+								classKey := class.Key
+
+								// Attach class invariants to class.
+								if invKeys, ok := classInvariantsMap[classKey]; ok {
+									class.Invariants = make([]model_logic.Logic, len(invKeys))
+									for j, key := range invKeys {
+										class.Invariants[j] = logicsByKey[key]
+									}
+								}
+
+								// Attach attributes to class.
+								if attributes, ok := attributesMap[classKey]; ok {
+									class.Attributes = make(map[identity.Key]model_class.Attribute)
+									for _, attr := range attributes {
+										class.Attributes[attr.Key] = attr
+									}
+								}
+
+								// Attach guards to class.
+								if guards, ok := guardsMap[classKey]; ok {
+									class.Guards = make(map[identity.Key]model_state.Guard)
+									for _, guard := range guards {
+										class.Guards[guard.Key] = guard
+									}
+								}
+
+								// Attach actions to class.
+								if actions, ok := actionsMap[classKey]; ok {
+									class.Actions = make(map[identity.Key]model_state.Action)
+									for _, action := range actions {
+										class.Actions[action.Key] = action
+									}
+								}
+
+								// Attach states to class.
+								if states, ok := statesMap[classKey]; ok {
+									class.States = make(map[identity.Key]model_state.State)
+									for _, state := range states {
+										class.States[state.Key] = state
+									}
+								}
+
+								// Attach events to class.
+								if events, ok := eventsMap[classKey]; ok {
+									class.Events = make(map[identity.Key]model_state.Event)
+									for _, event := range events {
+										class.Events[event.Key] = event
+									}
+								}
+
+								// Attach queries to class.
+								if queries, ok := queriesMap[classKey]; ok {
+									class.Queries = make(map[identity.Key]model_state.Query)
+									for _, query := range queries {
+										class.Queries[query.Key] = query
+									}
+								}
+
+								// Attach transitions to class.
+								if transitions, ok := transitionsMap[classKey]; ok {
+									class.Transitions = make(map[identity.Key]model_state.Transition)
+									for _, transition := range transitions {
+										class.Transitions[transition.Key] = transition
+									}
+								}
+
+								subdomain.Classes[class.Key] = class
+							}
+						}
+
+						domain.Subdomains[subdomain.Key] = subdomain
+					}
 				}
-			}
 
-			model.Domains[domain.Key] = domain
+				model.Domains[domain.Key] = domain
+			}
 		}
 
 		// Attach domain associations to the model (they are model-level, not domain-level).
-		model.DomainAssociations = make(map[identity.Key]model_domain.Association)
-		for _, assoc := range domainAssociationsSlice {
-			model.DomainAssociations[assoc.Key] = assoc
+		if len(domainAssociationsSlice) > 0 {
+			model.DomainAssociations = make(map[identity.Key]model_domain.Association)
+			for _, assoc := range domainAssociationsSlice {
+				model.DomainAssociations[assoc.Key] = assoc
+			}
 		}
 
-		// Class associations - use SetClassAssociations to route them to the correct level.
-		allAssociations := make(map[identity.Key]model_class.Association)
-		for _, assoc := range associationsSlice {
-			allAssociations[assoc.Key] = assoc
+		// Class associations — query all and route to subdomains, domains, or model level.
+		classAssociationsSlice, err := QueryAssociations(tx, modelKey)
+		if err != nil {
+			return err
 		}
-		if len(allAssociations) > 0 {
-			if err = model.SetClassAssociations(allAssociations); err != nil {
+		if len(classAssociationsSlice) > 0 {
+			allClassAssocs := make(map[identity.Key]model_class.Association)
+			for _, assoc := range classAssociationsSlice {
+				allClassAssocs[assoc.Key] = assoc
+			}
+			if err = model.SetClassAssociations(allClassAssocs); err != nil {
 				return err
 			}
 		}

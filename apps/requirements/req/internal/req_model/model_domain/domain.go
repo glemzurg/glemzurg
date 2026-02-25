@@ -1,7 +1,6 @@
 package model_domain
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,7 +10,7 @@ import (
 // Domain is a root category of the mode.
 type Domain struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string // Markdown.
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment string
@@ -39,19 +38,18 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 
 // Validate validates the Domain struct.
 func (d *Domain) Validate() error {
-	return validation.ValidateStruct(d,
-		validation.Field(&d.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_DOMAIN {
-				return errors.Errorf("invalid key type '%s' for domain", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&d.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := d.Key.Validate(); err != nil {
+		return err
+	}
+	if d.Key.KeyType != identity.KEY_TYPE_DOMAIN {
+		return errors.Errorf("Key: invalid key type '%s' for domain", d.Key.KeyType)
+	}
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(d); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateWithParent validates the Domain, its key's parent relationship, and all children.
@@ -79,6 +77,23 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 	// Validate the key has the correct parent.
 	if err := d.Key.ValidateParent(parent); err != nil {
 		return err
+	}
+
+	// Validate subdomain key naming rules.
+	if len(d.Subdomains) == 1 {
+		// Single subdomain must have the key "default".
+		for subdomainKey := range d.Subdomains {
+			if subdomainKey.GetSubKey() != "default" {
+				return errors.Errorf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey())
+			}
+		}
+	} else if len(d.Subdomains) > 1 {
+		// Multiple subdomains cannot have the key "default".
+		for subdomainKey := range d.Subdomains {
+			if subdomainKey.GetSubKey() == "default" {
+				return errors.Errorf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String())
+			}
+		}
 	}
 
 	// Validate all children.

@@ -27,13 +27,31 @@ func parseActor(actorSubKey, filename, contents string) (actor model_actor.Actor
 		userType = userTypeAny.(string)
 	}
 
+	// Parse optional superclass/subclass generalization keys.
+	var superclassOfKey *identity.Key
+	if s, ok := yamlData["superclass_of_key"]; ok {
+		k, err := identity.NewActorGeneralizationKey(s.(string))
+		if err != nil {
+			return model_actor.Actor{}, errors.WithStack(err)
+		}
+		superclassOfKey = &k
+	}
+	var subclassOfKey *identity.Key
+	if s, ok := yamlData["subclass_of_key"]; ok {
+		k, err := identity.NewActorGeneralizationKey(s.(string))
+		if err != nil {
+			return model_actor.Actor{}, errors.WithStack(err)
+		}
+		subclassOfKey = &k
+	}
+
 	// Construct the identity key for this actor.
 	actorKey, err := identity.NewActorKey(actorSubKey)
 	if err != nil {
 		return model_actor.Actor{}, errors.WithStack(err)
 	}
 
-	actor, err = model_actor.NewActor(actorKey, parsedFile.Title, parsedFile.Markdown, userType, parsedFile.UmlComment)
+	actor, err = model_actor.NewActor(actorKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), userType, superclassOfKey, subclassOfKey, parsedFile.UmlComment)
 	if err != nil {
 		return model_actor.Actor{}, err
 	}
@@ -41,6 +59,12 @@ func parseActor(actorSubKey, filename, contents string) (actor model_actor.Actor
 }
 
 func generateActorContent(actor model_actor.Actor) string {
-	yaml := "type: " + actor.Type
-	return generateFileContent(actor.Details, actor.UmlComment, yaml)
+	yamlStr := "type: " + actor.Type + "\n"
+	if actor.SuperclassOfKey != nil {
+		yamlStr += "superclass_of_key: " + actor.SuperclassOfKey.SubKey + "\n"
+	}
+	if actor.SubclassOfKey != nil {
+		yamlStr += "subclass_of_key: " + actor.SubclassOfKey.SubKey + "\n"
+	}
+	return generateFileContent(prependMarkdownTitle(actor.Name, actor.Details), actor.UmlComment, yamlStr)
 }

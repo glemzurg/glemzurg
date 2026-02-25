@@ -1,19 +1,29 @@
 package model_data_type
 
-import validation "github.com/go-ozzo/ozzo-validation/v4"
+import (
+	"fmt"
+	"regexp"
+)
+
+// _fieldNameRegexp enforces that field names are lowercase identifiers.
+// Field names become part of data type keys via UnpackNested() (parentKey + "/" + field.Name).
+var _fieldNameRegexp = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 
 // Field represents a single field of a record datatype.
 type Field struct {
-	Name          string    // The name of the field.
-	FieldDataType *DataType // The data type of this field.
+	Name          string    `validate:"required"` // The name of the field.
+	FieldDataType *DataType `validate:"required"` // The data type of this field.
 }
 
 // Validate validates the Field struct.
 func (f Field) Validate() error {
-	return validation.ValidateStruct(&f,
-		validation.Field(&f.Name, validation.Required),
-		validation.Field(&f.FieldDataType, validation.Required),
-	)
+	if err := _validate.Struct(f); err != nil {
+		return err
+	}
+	if !_fieldNameRegexp.MatchString(f.Name) {
+		return fmt.Errorf("Name: '%s' must be a lowercase identifier matching [a-z_][a-z0-9_]*", f.Name)
+	}
+	return nil
 }
 
 // String returns a string representation of the Field.

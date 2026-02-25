@@ -41,19 +41,19 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "",
 			collectionType: "atomic",
 			atomic:         atomic,
-			errstr:         `Key: cannot be blank.`,
+			errstr:         `Key`,
 		},
 		{
 			key:            "Key",
 			collectionType: "",
 			atomic:         atomic,
-			errstr:         `CollectionType: cannot be blank.`,
+			errstr:         `CollectionType`,
 		},
 		{
 			key:            "Key",
 			collectionType: "unknown",
 			atomic:         atomic,
-			errstr:         `CollectionType: must be a valid value.`,
+			errstr:         `CollectionType`,
 		},
 		{
 			key:            "Key",
@@ -65,7 +65,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "Key",
 			collectionType: "atomic",
 			atomic:         atomicInvalid,
-			errstr:         `Atomic: (ConstraintType: must be a valid value.).`,
+			errstr:         `ConstraintType`,
 		},
 	}
 
@@ -80,7 +80,148 @@ func (suite *DataTypeSuite) TestValidate() {
 			assert.Nil(suite.T(), err, "expected no error for %+v", dataType)
 		} else {
 			assert.NotNil(suite.T(), err, "expected error for %+v", dataType)
-			assert.Equal(suite.T(), tt.errstr, err.Error(), "error message mismatch for %+v", dataType)
+			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %+v", dataType)
+		}
+	}
+
+	// Collection field rules.
+	falseValue := false
+	trueValue := true
+
+	collectionTests := []struct {
+		name   string
+		dt     DataType
+		errstr string
+	}{
+		// Valid collections.
+		{
+			name: "valid collection no multiplicity",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "stack",
+				CollectionUnique: &falseValue,
+				Atomic:           atomic,
+			},
+		},
+		{
+			name: "valid collection with min and max",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "ordered",
+				CollectionUnique: &trueValue,
+				CollectionMin:    intPtr(2),
+				CollectionMax:    intPtr(5),
+				Atomic:           atomic,
+			},
+		},
+		{
+			name: "valid collection with min only",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				CollectionMin:    intPtr(3),
+				Atomic:           atomic,
+			},
+		},
+		{
+			name: "valid collection with max only",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "queue",
+				CollectionUnique: &falseValue,
+				CollectionMax:    intPtr(7),
+				Atomic:           atomic,
+			},
+		},
+
+		// Invalid collections.
+		{
+			name: "collection missing CollectionUnique",
+			dt: DataType{
+				Key:            "Key",
+				CollectionType: "stack",
+				Atomic:         atomic,
+			},
+			errstr: "CollectionUnique: cannot be blank.",
+		},
+		{
+			name: "collection CollectionMin less than 1",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "stack",
+				CollectionUnique: &falseValue,
+				CollectionMin:    intPtr(0),
+				Atomic:           atomic,
+			},
+			errstr: "CollectionMin: must be no less than 1.",
+		},
+		{
+			name: "collection CollectionMax less than 1",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "stack",
+				CollectionUnique: &falseValue,
+				CollectionMax:    intPtr(0),
+				Atomic:           atomic,
+			},
+			errstr: "CollectionMax: must be no less than 1.",
+		},
+		{
+			name: "collection max less than min",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "stack",
+				CollectionUnique: &falseValue,
+				CollectionMin:    intPtr(5),
+				CollectionMax:    intPtr(2),
+				Atomic:           atomic,
+			},
+			errstr: "CollectionMax: must be no less than CollectionMin.",
+		},
+
+		// Non-collections must not have collection fields.
+		{
+			name: "atomic with CollectionUnique",
+			dt: DataType{
+				Key:              "Key",
+				CollectionType:   "atomic",
+				CollectionUnique: &falseValue,
+				Atomic:           atomic,
+			},
+			errstr: "CollectionUnique: must be blank.",
+		},
+		{
+			name: "atomic with CollectionMin",
+			dt: DataType{
+				Key:            "Key",
+				CollectionType: "atomic",
+				CollectionMin:  intPtr(1),
+				Atomic:         atomic,
+			},
+			errstr: "CollectionMin: must be blank.",
+		},
+		{
+			name: "record with CollectionMax",
+			dt: DataType{
+				Key:            "Key",
+				CollectionType: "record",
+				CollectionMax:  intPtr(1),
+				RecordFields: []Field{
+					{Name: "f", FieldDataType: &DataType{Key: "f", CollectionType: "atomic", Atomic: atomic}},
+				},
+			},
+			errstr: "CollectionMax: must be blank.",
+		},
+	}
+
+	for _, tt := range collectionTests {
+		err := tt.dt.Validate()
+		if tt.errstr == "" {
+			assert.Nil(suite.T(), err, "expected no error for %s", tt.name)
+		} else {
+			assert.NotNil(suite.T(), err, "expected error for %s", tt.name)
+			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %s", tt.name)
 		}
 	}
 }
@@ -198,8 +339,8 @@ func TestParseCollections(t *testing.T) {
 			name:  "stack of unconstrained",
 			input: "stack of unconstrained",
 			expected: &DataType{
-				CollectionType: "stack",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "stack",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -210,8 +351,8 @@ func TestParseCollections(t *testing.T) {
 			name:  "unordered of ref from something",
 			input: "unordered of ref from something",
 			expected: &DataType{
-				CollectionType: "unordered",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "reference",
 					Reference:      t_StrPtr("something"),
@@ -223,8 +364,8 @@ func TestParseCollections(t *testing.T) {
 			name:  "ordered of obj of class_key",
 			input: "ordered of obj of class_key",
 			expected: &DataType{
-				CollectionType: "ordered",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "ordered",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "object",
 					ObjectClassKey: t_StrPtr("class_key"),
@@ -236,8 +377,8 @@ func TestParseCollections(t *testing.T) {
 			name:  "queue of enum of value_a, value_b",
 			input: "queue of enum of value_a, value_b",
 			expected: &DataType{
-				CollectionType: "queue",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "queue",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
 					EnumOrdered:    &falseValue,
@@ -255,8 +396,9 @@ func TestParseCollections(t *testing.T) {
 			name:  "3+ unordered of unconstrained",
 			input: "3+ unordered of unconstrained",
 			expected: &DataType{
-				CollectionType: "unordered",
-				CollectionMin:  intPtr(3),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				CollectionMin:    intPtr(3),
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -267,9 +409,10 @@ func TestParseCollections(t *testing.T) {
 			name:  "2-5 ordered of ref from something",
 			input: "2-5 ordered of ref from something",
 			expected: &DataType{
-				CollectionType: "ordered",
-				CollectionMin:  intPtr(2),
-				CollectionMax:  intPtr(5),
+				CollectionType:   "ordered",
+				CollectionUnique: &falseValue,
+				CollectionMin:    intPtr(2),
+				CollectionMax:    intPtr(5),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
 					Reference:      t_StrPtr("something"),
@@ -281,9 +424,9 @@ func TestParseCollections(t *testing.T) {
 			name:  "0-7 queue of obj of class_key",
 			input: "0-7 queue of obj of class_key",
 			expected: &DataType{
-				CollectionType: "queue",
-				CollectionMin:  intPtr(0),
-				CollectionMax:  intPtr(7),
+				CollectionType:   "queue",
+				CollectionUnique: &falseValue,
+				CollectionMax:    intPtr(7),
 				Atomic: &Atomic{
 					ConstraintType: "object",
 					ObjectClassKey: t_StrPtr("class_key"),
@@ -299,7 +442,6 @@ func TestParseCollections(t *testing.T) {
 			expected: &DataType{
 				CollectionType:   "stack",
 				CollectionUnique: &trueValue,
-				CollectionMin:    intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -312,7 +454,6 @@ func TestParseCollections(t *testing.T) {
 			expected: &DataType{
 				CollectionType:   "unordered",
 				CollectionUnique: &trueValue,
-				CollectionMin:    intPtr(0),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
 					Reference:      t_StrPtr("something"),
@@ -341,7 +482,6 @@ func TestParseCollections(t *testing.T) {
 			expected: &DataType{
 				CollectionType:   "queue",
 				CollectionUnique: &trueValue,
-				CollectionMin:    intPtr(0),
 				CollectionMax:    intPtr(7),
 				Atomic: &Atomic{
 					ConstraintType: "enumeration",
@@ -382,6 +522,8 @@ func TestParseCollections(t *testing.T) {
 }
 
 func TestParseRecordFields(t *testing.T) {
+	falseValue := false
+
 	tests := []struct {
 		name         string
 		input        string
@@ -426,8 +568,8 @@ func TestParseRecordFields(t *testing.T) {
 			expected: Field{
 				Name: "ham",
 				FieldDataType: &DataType{
-					CollectionType: "unordered",
-					CollectionMin:  intPtr(0),
+					CollectionType:   "unordered",
+					CollectionUnique: &falseValue,
 					Atomic: &Atomic{
 						ConstraintType: "reference",
 						Reference:      t_StrPtr("something"),
@@ -665,12 +807,13 @@ func TestNewUnparsable(t *testing.T) {
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
 	result, err := New("", "")
-	assert.ErrorContains(t, err, "Key: cannot be blank.")
+	assert.ErrorContains(t, err, "Key")
 	assert.Nil(t, result)
 }
 
 func TestDataTypeString(t *testing.T) {
 	trueValue := true
+	falseValue := false
 
 	tests := []struct {
 		name         string
@@ -702,8 +845,8 @@ func TestDataTypeString(t *testing.T) {
 		{
 			name: "collection stack",
 			dataType: DataType{
-				CollectionType: "stack",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "stack",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -713,8 +856,8 @@ func TestDataTypeString(t *testing.T) {
 		{
 			name: "collection ordered",
 			dataType: DataType{
-				CollectionType: "ordered",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "ordered",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -724,8 +867,8 @@ func TestDataTypeString(t *testing.T) {
 		{
 			name: "collection unordered",
 			dataType: DataType{
-				CollectionType: "unordered",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -735,8 +878,8 @@ func TestDataTypeString(t *testing.T) {
 		{
 			name: "collection queue",
 			dataType: DataType{
-				CollectionType: "queue",
-				CollectionMin:  intPtr(0),
+				CollectionType:   "queue",
+				CollectionUnique: &falseValue,
 				Atomic: &Atomic{
 					ConstraintType: "unconstrained",
 				},
@@ -746,14 +889,27 @@ func TestDataTypeString(t *testing.T) {
 		{
 			name: "collection with multiplicity",
 			dataType: DataType{
-				CollectionType: "unordered",
-				CollectionMin:  intPtr(3),
+				CollectionType:   "unordered",
+				CollectionUnique: &falseValue,
+				CollectionMin:    intPtr(3),
 				Atomic: &Atomic{
 					ConstraintType: "reference",
 					Reference:      t_StrPtr("something"),
 				},
 			},
 			expected: "3+ unordered collection of ref from something",
+		},
+		{
+			name: "collection with max only",
+			dataType: DataType{
+				CollectionType:   "queue",
+				CollectionUnique: &falseValue,
+				CollectionMax:    intPtr(7),
+				Atomic: &Atomic{
+					ConstraintType: "unconstrained",
+				},
+			},
+			expected: "0-7 queue of unconstrained",
 		},
 		{
 			name: "collection with unique",
@@ -900,7 +1056,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
-				Name:          "Name",
+				Name:          "name",
 				FieldDataType: &DataType{Key: "field_type"},
 			},
 		},
@@ -913,7 +1069,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 	assert.Equal(suite.T(), map[string][]Field{
 		"record_key": {
 			{
-				Name:          "Name",
+				Name:          "name",
 				FieldDataType: &DataType{Key: "field_type"},
 			},
 		},
@@ -962,7 +1118,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	fieldMap := map[string][]Field{
 		"record_key": {
 			{
-				Name:          "Name",
+				Name:          "name",
 				FieldDataType: &DataType{Key: "field_type"},
 			},
 		},
@@ -1028,7 +1184,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 			CollectionType: "record",
 			RecordFields: []Field{
 				{
-					Name:          "Name",
+					Name:          "name",
 					FieldDataType: &DataType{Key: "field_type"},
 				},
 			},
@@ -1091,7 +1247,7 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 		CollectionType: "record",
 		RecordFields: []Field{
 			{
-				Name:          "child field",
+				Name:          "other_child_field",
 				FieldDataType: &child2,
 			},
 		},

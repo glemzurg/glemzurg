@@ -10,7 +10,28 @@
 [⇦ {{ $reqs.Model.Name }}](model.md) / [{{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
 {{- end }}
 
+# {{ .UseCase.Name }}
+
 {{ .UseCase.Details }}
+
+{{ if or (ne .UseCase.SuperclassOfKey nil) (ne .UseCase.SubclassOfKey nil) -}}
+## Generalizations
+
+{{ if ne .UseCase.SuperclassOfKey nil -}}
+{{- $gen := use_case_generalization_lookup $reqs .UseCase.SuperclassOfKey -}}
+{{- $super := use_case_generalization_superclass $reqs $gen.Key -}}
+{{- $subs := use_case_generalization_subclasses $reqs $gen.Key -}}
+- **{{ $gen.Name }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.UseCase.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.UseCase.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+{{ end -}}
+{{ if ne .UseCase.SubclassOfKey nil -}}
+{{- $gen := use_case_generalization_lookup $reqs .UseCase.SubclassOfKey -}}
+{{- $super := use_case_generalization_superclass $reqs $gen.Key -}}
+{{- $subs := use_case_generalization_subclasses $reqs $gen.Key -}}
+- **{{ $gen.Name }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.UseCase.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "use_case" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.UseCase.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "use_case" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
 
 ## Scenarios
 

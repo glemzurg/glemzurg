@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,6 +25,7 @@ func (suite *AttributeSuite) TestValidate() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(validKey, "deriv1"))
 
 	tests := []struct {
 		testName  string
@@ -43,7 +45,7 @@ func (suite *AttributeSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -59,7 +61,55 @@ func (suite *AttributeSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
+		},
+		{
+			testName: "valid with DerivationPolicy",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				DerivationPolicy: &model_logic.Logic{
+					Key:         derivKey,
+					Type:        model_logic.LogicTypeValue,
+					Description: "Computed from other fields.",
+					Notation:    model_logic.NotationTLAPlus,
+				},
+			},
+		},
+		{
+			testName: "valid without DerivationPolicy",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+			},
+		},
+		{
+			testName: "error invalid DerivationPolicy missing key",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				DerivationPolicy: &model_logic.Logic{
+					Key:         identity.Key{},
+					Type:        model_logic.LogicTypeValue,
+					Description: "Computed from other fields.",
+					Notation:    model_logic.NotationTLAPlus,
+				},
+			},
+			errstr: "DerivationPolicy",
+		},
+		{
+			testName: "error DerivationPolicy wrong kind",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				DerivationPolicy: &model_logic.Logic{
+					Key:         derivKey,
+					Type:        model_logic.LogicTypeAssessment,
+					Description: "Computed from other fields.",
+					Notation:    model_logic.NotationTLAPlus,
+				},
+			},
+			errstr: "DerivationPolicy logic kind must be 'value'",
 		},
 	}
 	for _, tt := range tests {
@@ -80,31 +130,51 @@ func (suite *AttributeSuite) TestNew() {
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(key, "deriv1"))
+
+	derivationPolicy := &model_logic.Logic{
+		Key:         derivKey,
+		Type:        model_logic.LogicTypeValue,
+		Description: "Computed from other fields.",
+		Notation:    model_logic.NotationTLAPlus,
+	}
 
 	// Test parameters are mapped correctly.
-	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", "DerivationPolicy", true, "UmlComment", []uint{1, 2})
+	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              key,
 		Name:             "Name",
 		Details:          "Details",
 		DataTypeRules:    "DataTypeRules",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: derivationPolicy,
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
 	}, attr)
 
+	// Test with nil DerivationPolicy (non-derived attribute).
+	attrNoDeriv, err := NewAttribute(key, "Name", "Details", "DataTypeRules", nil, true, "UmlComment", []uint{1, 2})
+	assert.NoError(suite.T(), err)
+	assert.Nil(suite.T(), attrNoDeriv.DerivationPolicy)
+
 	// Test parseable data type rules result in DataType being set.
 	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
-	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", "DerivationPolicy", true, "UmlComment", []uint{1, 2})
+	derivParsedKey := helper.Must(identity.NewAttributeDerivationKey(attrParsedKey, "deriv_parsed"))
+	derivParsedPolicy := &model_logic.Logic{
+		Key:         derivParsedKey,
+		Type:        model_logic.LogicTypeValue,
+		Description: "Computed from other fields.",
+		Notation:    model_logic.NotationTLAPlus,
+	}
+	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Attribute{
 		Key:              attrParsedKey,
 		Name:             "NameParsed",
 		Details:          "Details",
 		DataTypeRules:    "unconstrained",
-		DerivationPolicy: "DerivationPolicy",
+		DerivationPolicy: derivParsedPolicy,
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 		IndexNums:        []uint{1, 2},
@@ -118,8 +188,8 @@ func (suite *AttributeSuite) TestNew() {
 	}, attrParsed)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAttribute(key, "", "Details", "DataTypeRules", "DerivationPolicy", true, "UmlComment", nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	_, err = NewAttribute(key, "", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", nil)
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -129,6 +199,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	validKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
+	derivKey := helper.Must(identity.NewAttributeDerivationKey(validKey, "deriv1"))
 
 	// Test that Validate is called.
 	attr := Attribute{
@@ -136,7 +207,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := attr.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - attribute key has class1 as parent, but we pass other_class.
 	attr = Attribute{
@@ -149,4 +220,34 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = attr.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
+
+	// Test valid with derivation policy.
+	attr = Attribute{
+		Key:  validKey,
+		Name: "Name",
+		DerivationPolicy: &model_logic.Logic{
+			Key:         derivKey,
+			Type:        model_logic.LogicTypeValue,
+			Description: "Computed from other fields.",
+			Notation:    model_logic.NotationTLAPlus,
+		},
+	}
+	err = attr.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test derivation policy key validation - wrong parent should fail.
+	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
+	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
+	attr = Attribute{
+		Key:  validKey,
+		Name: "Name",
+		DerivationPolicy: &model_logic.Logic{
+			Key:         wrongDerivKey,
+			Type:        model_logic.LogicTypeValue,
+			Description: "Computed from other fields.",
+			Notation:    model_logic.NotationTLAPlus,
+		},
+	}
+	err = attr.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "DerivationPolicy", "ValidateWithParent should validate derivation policy key parent")
 }

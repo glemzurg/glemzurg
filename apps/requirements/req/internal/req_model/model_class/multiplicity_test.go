@@ -196,6 +196,41 @@ func (suite *MultiplicitySuite) TestParseMultiplicity() {
 	}
 }
 
+// TestParsedString tests that ParsedString converts "*" to "any" and passes other values through.
+func (suite *MultiplicitySuite) TestParsedString() {
+	tests := []struct {
+		name         string
+		multiplicity Multiplicity
+		expected     string
+	}{
+		{
+			name:         "star becomes any",
+			multiplicity: Multiplicity{LowerBound: 0, HigherBound: 0},
+			expected:     "any",
+		},
+		{
+			name:         "single value unchanged",
+			multiplicity: Multiplicity{LowerBound: 1, HigherBound: 1},
+			expected:     "1",
+		},
+		{
+			name:         "range unchanged",
+			multiplicity: Multiplicity{LowerBound: 1, HigherBound: 3},
+			expected:     "1..3",
+		},
+		{
+			name:         "no upper bound unchanged",
+			multiplicity: Multiplicity{LowerBound: 2, HigherBound: 0},
+			expected:     "2..*",
+		},
+	}
+	for _, tt := range tests {
+		suite.T().Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.multiplicity.ParsedString())
+		})
+	}
+}
+
 func (suite *MultiplicitySuite) TestString() {
 
 	tests := []struct {

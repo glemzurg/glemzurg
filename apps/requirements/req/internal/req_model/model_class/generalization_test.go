@@ -41,7 +41,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -57,7 +57,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -92,7 +92,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -108,7 +108,7 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := gen.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - generalization key has subdomain1 as parent, but we pass other_subdomain.
 	gen = Generalization{

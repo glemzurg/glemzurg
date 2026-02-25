@@ -1,18 +1,37 @@
 
----------------------------
 
+
+todo:
+
+- give classes invariants
+
+    - md - flat - generate
+- update the md file output
+    - include tla+
+    - prepare the md output to be complete
+      - update the scenarios to use the logic
+      - update the use cases if needed
+
+  - replace all fmt.Errorf() with errors.Errorf()
   
 feb (in parallel)
-  - generate data models compilers
-  - generate protocols compilers
   - create complete model
-    - add TLA+ parsing to create complete model
-    - move parameters to actions and parsed into database
-  - run simulations on basic model
-
+    - make ast notation neutral
+    - make ast clearly semantically meaining
+      - add validations for ast semantic meaning (primes, etc)
+    - move ast to the database
+    - remvoe the json markup in req_model tree, and any json handling code
+      - move to the parser_ai package
+  
 
 
 march (art workshops)
+  - enter the evenplay model
+  - steven tockey model review
+
+april
+  - generate data models compilers
+  - generate protocols compilers
 
 when:
   - generate ui designs compilers
@@ -26,21 +45,6 @@ april (in parallel)
   - manage design models
   - update simulators to run models together
 
-
-questions:
-  - how to organize file structure for next steop from model to compiler
-  - when is a user entered into the state?
-  - targeted build of parts of the system:
-    - e.g. wallet before all others
-  - model compilers
-    - how to partition a model to different database (technical not domains)
-    - how to model compile performacne tuning
-    - how to hot fix with model compilers
-    - how to incrementally roll out schema changes
-    - complexity metrics
-  - simulator of TLA+
-  - importing model from AI
-    - describe the process: deep dive folder, refine, simulate, next dive
 
 ---------------------------
 
@@ -57,8 +61,9 @@ simulator todo:
   - extend into database and input/outputs
 - implement stubbed simulator logic
 
-
 ---------------------------
+
+- use case shared display in graphviz and capturing the meaning
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
@@ -74,6 +79,10 @@ simulator todo:
 
 - make generalization a class object, and make a use case one too
 
+- schema has commented out columsn that represent undone features
+
+- last half of year: complete all the functionality from text book
+  - and create working example for documentation
 
 - tla plus peg parser
 - design the simuilator - chained with derived simulators
@@ -262,3 +271,20 @@ render with mermaid.js
 
 docker version of:
     https://github.com/mermaid-js/mermaid-cli
+
+
+================================
+
+Code line count
+
+find . -type f -name '*.go' -print0 |   xargs -0 awk '
+    FNR==1 {print FILENAME ":"}
+    $0 ~ /[^[:space:]]/ {n++}
+    END {print "  → " n " non-blank lines\n"}
+  '
+
+find . -type f -name '*.go' -not -name '*_test.go' -print0 |   xargs -0 awk '
+    FNR==1 {print FILENAME ":"}
+    $0 ~ /[^[:space:]]/ {n++}
+    END {print "  → " n " non-blank lines\n"}
+  '

@@ -3,7 +3,6 @@ package model_state
 import (
 	"sort"
 
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -12,7 +11,7 @@ import (
 // State is a particular set of values in a state, distinct from all other states in the state.
 type State struct {
 	Key        identity.Key
-	Name       string
+	Name       string `validate:"required"`
 	Details    string // Markdown.
 	UmlComment string
 	// Children
@@ -37,19 +36,20 @@ func NewState(key identity.Key, name, details, umlComment string) (state State, 
 
 // Validate validates the State struct.
 func (s *State) Validate() error {
-	return validation.ValidateStruct(s,
-		validation.Field(&s.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_STATE {
-				return errors.Errorf("invalid key type '%s' for state", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&s.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := s.Key.Validate(); err != nil {
+		return err
+	}
+	if s.Key.KeyType != identity.KEY_TYPE_STATE {
+		return errors.Errorf("Key: invalid key type '%s' for state", s.Key.KeyType)
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(s); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *State) SetActions(actions []StateAction) {

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "use_case.schema.json",
+  "title": "Use Case",
+  "description": "Schema for use case JSON files that define use cases within a subdomain. Use case files are located in the 'use_cases/{key}/' directory under a subdomain (e.g., 'use_cases/manage_order/use_case.json'). Use cases represent user stories at various levels (sky/sea/mud). If validation fails, verify 'name' and 'level' are present and non-empty.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the use case (e.g., 'Manage Order', 'Process Payment'). Must be non-empty.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the use case."
+    },
+    "level": {
+      "type": "string",
+      "description": "The level of the use case. Must be one of: 'sky' (a high-level organizational user story), 'sea' (a straightforward user story), or 'mud' (a small, reusable part of another user story, e.g., a login flow). Mud-level use cases can be shared with sea-level use cases via use_case_shared files. If validation fails: ensure this is exactly 'sky', 'sea', or 'mud'.",
+      "enum": ["sky", "sea", "mud"]
+    },
+    "read_only": {
+      "type": "boolean",
+      "description": "Whether the use case only reads data without modifying state."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations."
+    },
+    "actors": {
+      "type": "object",
+      "description": "Map of actor keys to actor references for this use case. Each key must match the filename (without extension) of an actor file in the 'actors/' directory (e.g., 'customer' for 'actors/customer.actor.json'). If validation fails: verify the actor file exists.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "uml_comment": {
+            "type": "string",
+            "description": "Optional UML comment for this actor's participation in the use case."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["name", "level"],
+  "additionalProperties": false
+}

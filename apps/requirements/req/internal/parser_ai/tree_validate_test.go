@@ -236,8 +236,8 @@ func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 		States: map[string]*inputState{
 			"pending": {Name: "Pending"},
 		},
-		Events:      map[string]*inputEvent{},
-		Guards:      map[string]*inputGuard{},
+		Events: map[string]*inputEvent{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -308,7 +308,7 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -343,7 +343,7 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -388,7 +388,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -420,7 +420,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 		Events: map[string]*inputEvent{
 			"create": {Name: "create"},
 		},
-		Guards:      map[string]*inputGuard{},
+		Guards: map[string]*inputGuard{},
 		Transitions: []inputTransition{
 			{
 				FromStateKey: nil,
@@ -445,7 +445,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "missing_class",
@@ -458,7 +458,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSuperclassNotFound, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSuperclassNotFound, parseErr.Code)
 	assert.Equal(t, "superclass_key", parseErr.Field)
 }
 
@@ -469,7 +469,7 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -482,7 +482,7 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSubclassNotFound, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSubclassNotFound, parseErr.Code)
 	assert.Equal(t, "subclass_keys[0]", parseErr.Field)
 }
 
@@ -494,7 +494,7 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -507,7 +507,7 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSubclassDuplicate, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSubclassDuplicate, parseErr.Code)
 	assert.Equal(t, "subclass_keys[1]", parseErr.Field)
 }
 
@@ -519,7 +519,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
-	subdomain.Generalizations = map[string]*inputGeneralization{
+	subdomain.ClassGeneralizations = map[string]*inputClassGeneralization{
 		"medium": {
 			Name:          "Medium",
 			SuperclassKey: "product",
@@ -532,7 +532,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 
 	parseErr, ok := err.(*ParseError)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeGenSuperclassIsSubclass, parseErr.Code)
+	assert.Equal(t, ErrTreeClassGenSuperclassIsSubclass, parseErr.Code)
 }
 
 // TestSubdomainAssocFromClassNotFound verifies error when subdomain association from_class_key doesn't exist.
@@ -541,7 +541,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
 
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
-	subdomain.Associations = map[string]*inputAssociation{
+	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "missing_class",
@@ -566,7 +566,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
 
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
-	subdomain.Associations = map[string]*inputAssociation{
+	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "class1",
@@ -593,7 +593,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
 	missingClass := "missing_class"
-	subdomain.Associations = map[string]*inputAssociation{
+	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:                "Test Association",
 			FromClassKey:        "class1",
@@ -621,7 +621,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
 	sameAsFrom := "class1"
-	subdomain.Associations = map[string]*inputAssociation{
+	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:                "Test Association",
 			FromClassKey:        "class1",
@@ -650,7 +650,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
 	sameAsTo := "class2"
-	subdomain.Associations = map[string]*inputAssociation{
+	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:                "Test Association",
 			FromClassKey:        "class1",
@@ -678,7 +678,7 @@ func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
-	subdomain.Associations = map[string]*inputAssociation{
+	subdomain.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "class1",
@@ -704,12 +704,12 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	model := t_buildMinimalModelTree()
 	// Add another subdomain with a class
 	model.Domains["domain1"].Subdomains["subdomain2"] = &inputSubdomain{
-		Name:            "Subdomain 2",
-		Classes:         map[string]*inputClass{"class2": {Name: "Class 2"}},
-		Generalizations: map[string]*inputGeneralization{},
-		Associations:    map[string]*inputAssociation{},
+		Name:                 "Subdomain 2",
+		Classes:              map[string]*inputClass{"class2": {Name: "Class 2"}},
+		ClassGeneralizations: map[string]*inputClassGeneralization{},
+		ClassAssociations:    map[string]*inputClassAssociation{},
 	}
-	model.Domains["domain1"].Associations = map[string]*inputAssociation{
+	model.Domains["domain1"].ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "subdomain1/missing_class",
@@ -733,7 +733,7 @@ func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
 	t := suite.T()
 
 	model := t_buildMinimalModelTree()
-	model.Domains["domain1"].Associations = map[string]*inputAssociation{
+	model.Domains["domain1"].ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "class1", // Wrong format - should be subdomain/class
@@ -761,15 +761,15 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 		Name: "Domain 2",
 		Subdomains: map[string]*inputSubdomain{
 			"subdomain1": {
-				Name:            "Subdomain 1",
-				Classes:         map[string]*inputClass{"class1": {Name: "Class 1"}},
-				Generalizations: map[string]*inputGeneralization{},
-				Associations:    map[string]*inputAssociation{},
+				Name:                 "Subdomain 1",
+				Classes:              map[string]*inputClass{"class1": {Name: "Class 1"}},
+				ClassGeneralizations: map[string]*inputClassGeneralization{},
+				ClassAssociations:    map[string]*inputClassAssociation{},
 			},
 		},
-		Associations: map[string]*inputAssociation{},
+		ClassAssociations: map[string]*inputClassAssociation{},
 	}
-	model.Associations = map[string]*inputAssociation{
+	model.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "domain1/subdomain1/missing_class",
@@ -797,15 +797,15 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 		Name: "Domain 2",
 		Subdomains: map[string]*inputSubdomain{
 			"subdomain1": {
-				Name:            "Subdomain 1",
-				Classes:         map[string]*inputClass{},
-				Generalizations: map[string]*inputGeneralization{},
-				Associations:    map[string]*inputAssociation{},
+				Name:                 "Subdomain 1",
+				Classes:              map[string]*inputClass{},
+				ClassGeneralizations: map[string]*inputClassGeneralization{},
+				ClassAssociations:    map[string]*inputClassAssociation{},
 			},
 		},
-		Associations: map[string]*inputAssociation{},
+		ClassAssociations: map[string]*inputClassAssociation{},
 	}
-	model.Associations = map[string]*inputAssociation{
+	model.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "domain1/subdomain1/class1",
@@ -829,7 +829,7 @@ func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
 	t := suite.T()
 
 	model := t_buildMinimalModelTree()
-	model.Associations = map[string]*inputAssociation{
+	model.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
 			Name:             "Test Association",
 			FromClassKey:     "subdomain1/class1", // Wrong format - should be domain/subdomain/class
@@ -983,7 +983,7 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
 			"shipment": t_buildCompleteClass(),
 			"tracking": t_buildCompleteClass(),
 		},
-		Associations: map[string]*inputAssociation{
+		ClassAssociations: map[string]*inputClassAssociation{
 			"shipment_tracking": {
 				Name:             "Shipment Tracking",
 				FromClassKey:     "shipment",
@@ -1021,7 +1021,7 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
 			"shipment": t_buildCompleteClass(),
 			"tracking": t_buildCompleteClass(),
 		},
-		Associations: map[string]*inputAssociation{
+		ClassAssociations: map[string]*inputClassAssociation{
 			"shipment_tracking": {
 				Name:             "Shipment Tracking",
 				FromClassKey:     "shipment",
@@ -1047,7 +1047,7 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 		"order": t_buildCompleteClass(),
 	}
 	// Update association to use remaining classes
-	model.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{
+	model.Domains["orders"].Subdomains["default"].ClassAssociations = map[string]*inputClassAssociation{
 		"self_ref": {
 			Name:             "Self Ref",
 			FromClassKey:     "order",
@@ -1073,7 +1073,7 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	t := suite.T()
 
 	model := t_buildCompleteModelTree()
-	model.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{} // Remove all associations
+	model.Domains["orders"].Subdomains["default"].ClassAssociations = map[string]*inputClassAssociation{} // Remove all associations
 
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
@@ -1145,10 +1145,10 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 
 	// Test each error type and verify it contains actionable guidance
 	tests := []struct {
-		name            string
-		buildModel      func() *inputModel
-		expectedCode    int
-		shouldContain   []string
+		name          string
+		buildModel    func() *inputModel
+		expectedCode  int
+		shouldContain []string
 	}{
 		{
 			name: "no_actors",
@@ -1198,7 +1198,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 				m.Domains["orders"].Subdomains["default"].Classes = map[string]*inputClass{
 					"order": t_buildCompleteClass(),
 				}
-				m.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{
+				m.Domains["orders"].Subdomains["default"].ClassAssociations = map[string]*inputClassAssociation{
 					"self_ref": {
 						Name:             "Self Ref",
 						FromClassKey:     "order",
@@ -1220,7 +1220,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			name: "no_associations",
 			buildModel: func() *inputModel {
 				m := t_buildCompleteModelTree()
-				m.Domains["orders"].Subdomains["default"].Associations = map[string]*inputAssociation{}
+				m.Domains["orders"].Subdomains["default"].ClassAssociations = map[string]*inputClassAssociation{}
 				return m
 			},
 			expectedCode: ErrTreeSubdomainNoAssociations,
@@ -1290,6 +1290,127 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 	}
 }
 
+// New tests for tree-level validations added in tree_validate.go
+func (suite *TreeValidateSuite) TestModelDomainAssocDomainNotFound() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	model.DomainAssociations = map[string]*inputDomainAssociation{
+		"bad_da": {
+			ProblemDomainKey:  "missing_domain",
+			SolutionDomainKey: "domain1",
+		},
+	}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeDomainAssocDomainNotFound, parseErr.Code)
+	assert.Equal(t, "problem_domain_key", parseErr.Field)
+}
+
+func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
+	t := suite.T()
+
+	model := t_buildMinimalModelTree()
+	model.ActorGeneralizations = map[string]*inputActorGeneralization{
+		"ag1": {
+			Name:          "AG1",
+			SuperclassKey: "missing_actor",
+			SubclassKeys:  []string{"sub_a"},
+		},
+	}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeActorGenActorNotFound, parseErr.Code)
+	assert.Equal(t, "superclass_key", parseErr.Field)
+}
+
+func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
+	t := suite.T()
+
+	model := t_buildValidModelTree()
+
+	// Prepare use case and scenario containers
+	sub := model.Domains["orders"].Subdomains["default"]
+	if sub.UseCases == nil {
+		sub.UseCases = make(map[string]*inputUseCase)
+	}
+
+	// 1) object missing
+	scMissingObj := &inputScenario{
+		Name:    "ScMissingObj",
+		Objects: map[string]*inputObject{},
+		Steps: &inputStep{
+			StepType:      "action",
+			FromObjectKey: ptrString("missing_obj"),
+		},
+	}
+	uc1 := &inputUseCase{Name: "UC1", Level: "mud", Scenarios: map[string]*inputScenario{"sc1": scMissingObj}}
+	sub.UseCases = map[string]*inputUseCase{"uc_missing_obj": uc1}
+
+	err := validateModelTree(model)
+	require.Error(t, err)
+	parseErr, ok := err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeScenarioStepObjectNotFound, parseErr.Code)
+	assert.Equal(t, "steps.from_object_key", parseErr.Field)
+
+	// 2) event missing on class
+	// reuse same model but add a scenario with an object referencing class 'order'
+	scEvent := &inputScenario{
+		Name: "ScEvent",
+		Objects: map[string]*inputObject{
+			"o1": {ObjectNumber: 1, Name: "O1", ClassKey: "order"},
+		},
+		Steps: &inputStep{
+			StepType:      "action",
+			FromObjectKey: ptrString("o1"),
+			EventKey:      ptrString("missing_event"),
+		},
+	}
+	uc2 := &inputUseCase{Name: "UC2", Level: "mud", Scenarios: map[string]*inputScenario{"sc_event": scEvent}}
+	sub.UseCases = map[string]*inputUseCase{"uc_event": uc2}
+
+	err = validateModelTree(model)
+	require.Error(t, err)
+	parseErr, ok = err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeScenarioStepEventNotFound, parseErr.Code)
+	assert.Equal(t, "steps.event_key", parseErr.Field)
+
+	// 3) query missing on class
+	scQuery := &inputScenario{
+		Name: "ScQuery",
+		Objects: map[string]*inputObject{
+			"o1": {ObjectNumber: 1, Name: "O1", ClassKey: "order"},
+		},
+		Steps: &inputStep{
+			StepType:      "action",
+			FromObjectKey: ptrString("o1"),
+			QueryKey:      ptrString("missing_query"),
+		},
+	}
+	uc3 := &inputUseCase{Name: "UC3", Level: "mud", Scenarios: map[string]*inputScenario{"sc_query": scQuery}}
+	sub.UseCases = map[string]*inputUseCase{"uc_query": uc3}
+
+	err = validateModelTree(model)
+	require.Error(t, err)
+	parseErr, ok = err.(*ParseError)
+	require.True(t, ok)
+	assert.Equal(t, ErrTreeScenarioStepQueryNotFound, parseErr.Code)
+	assert.Equal(t, "steps.query_key", parseErr.Field)
+}
+
+// helper to get *string
+func ptrString(s string) *string { return &s }
+
 // t_buildMinimalModelTree creates a minimal valid model tree for testing.
 func t_buildMinimalModelTree() *inputModel {
 	return &inputModel{
@@ -1307,14 +1428,14 @@ func t_buildMinimalModelTree() *inputModel {
 								Attributes: map[string]*inputAttribute{},
 							},
 						},
-						Generalizations: map[string]*inputGeneralization{},
-						Associations:    map[string]*inputAssociation{},
+						ClassGeneralizations: map[string]*inputClassGeneralization{},
+						ClassAssociations:    map[string]*inputClassAssociation{},
 					},
 				},
-				Associations: map[string]*inputAssociation{},
+				ClassAssociations: map[string]*inputClassAssociation{},
 			},
 		},
-		Associations: map[string]*inputAssociation{},
+		ClassAssociations: map[string]*inputClassAssociation{},
 	}
 }
 
@@ -1354,7 +1475,7 @@ func t_buildValidModelTree() *inputModel {
 										"confirm": {Name: "confirm"},
 									},
 									Guards: map[string]*inputGuard{
-										"has_items": {Name: "hasItems", Details: "Order has items"},
+										"has_items": {Name: "hasItems", Logic: inputLogic{Description: "Order has items", Notation: "tla_plus"}},
 									},
 									Transitions: []inputTransition{
 										{
@@ -1384,14 +1505,14 @@ func t_buildValidModelTree() *inputModel {
 								Attributes: map[string]*inputAttribute{},
 							},
 						},
-						Generalizations: map[string]*inputGeneralization{
+						ClassGeneralizations: map[string]*inputClassGeneralization{
 							"product_type": {
 								Name:          "Product Type",
 								SuperclassKey: "product",
 								SubclassKeys:  []string{"book"},
 							},
 						},
-						Associations: map[string]*inputAssociation{
+						ClassAssociations: map[string]*inputClassAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
 								FromClassKey:     "order",
@@ -1402,10 +1523,10 @@ func t_buildValidModelTree() *inputModel {
 						},
 					},
 				},
-				Associations: map[string]*inputAssociation{},
+				ClassAssociations: map[string]*inputClassAssociation{},
 			},
 		},
-		Associations: map[string]*inputAssociation{},
+		ClassAssociations: map[string]*inputClassAssociation{},
 	}
 }
 
@@ -1427,8 +1548,8 @@ func t_buildCompleteModelTree() *inputModel {
 							"order":     t_buildCompleteClass(),
 							"line_item": t_buildCompleteClass(),
 						},
-						Generalizations: map[string]*inputGeneralization{},
-						Associations: map[string]*inputAssociation{
+						ClassGeneralizations: map[string]*inputClassGeneralization{},
+						ClassAssociations: map[string]*inputClassAssociation{
 							"order_lines": {
 								Name:             "Order Lines",
 								FromClassKey:     "order",
@@ -1439,10 +1560,10 @@ func t_buildCompleteModelTree() *inputModel {
 						},
 					},
 				},
-				Associations: map[string]*inputAssociation{},
+				ClassAssociations: map[string]*inputClassAssociation{},
 			},
 		},
-		Associations: map[string]*inputAssociation{},
+		ClassAssociations: map[string]*inputClassAssociation{},
 	}
 }
 
@@ -1461,7 +1582,7 @@ func t_buildCompleteClass() *inputClass {
 			Events: map[string]*inputEvent{
 				"create": {Name: "create"},
 			},
-			Guards:      map[string]*inputGuard{},
+			Guards: map[string]*inputGuard{},
 			Transitions: []inputTransition{
 				{
 					FromStateKey: nil, // Initial transition

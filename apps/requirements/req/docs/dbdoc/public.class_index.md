@@ -2,7 +2,7 @@
 
 ## Description
 
-A unique identity for a class, may be mulitple attributes together for the identity.
+A unique identity for a class, may be multiple attributes together for the identity.
 
 ## Columns
 

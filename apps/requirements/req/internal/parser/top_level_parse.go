@@ -98,6 +98,9 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 	// Track subdomains by their composite path key (domain/subdomain) for lookup.
 	subdomainKeysByPath := map[string]identity.Key{}
 
+	// Collect all class associations from all classes, then distribute after all classes are parsed.
+	allClassAssociations := map[identity.Key]model_class.Association{}
+
 	// Now, parse each file according to its type.
 
 	for _, toParseFile := range filesToParse {
@@ -121,6 +124,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			// Initialize maps.
 			model.Actors = make(map[identity.Key]model_actor.Actor)
+			model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
 			model.Domains = make(map[identity.Key]model_domain.Domain)
 			model.DomainAssociations = make(map[identity.Key]model_domain.Association)
 			model.ClassAssociations = make(map[identity.Key]model_class.Association)
@@ -133,37 +137,81 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			model.Actors[actor.Key] = actor
 
 		case _EXT_GENERALIZATION:
-			// Need to find the domain for this generalization.
-			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
-			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
-			}
-			domain := model.Domains[domainKey]
+			if toParseFile.Domain == "" {
+				// Actor generalization (under actors/ directory).
+				actorGen, err := parseActorGeneralization(toParseFile.Generalization, toParseFile.PathRel, contents)
+				if err != nil {
+					return req_model.Model{}, err
+				}
+				if model.ActorGeneralizations == nil {
+					model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
+				}
+				model.ActorGeneralizations[actorGen.Key] = actorGen
+			} else if isUnderUseCases(toParseFile.PathRel) {
+				// Use case generalization (under use_cases/ directory).
+				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("domain '%s' not found for use case generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+				}
+				domain := model.Domains[domainKey]
 
-			// Determine which subdomain to use (explicit or default).
-			subdomainName := toParseFile.Subdomain
-			if subdomainName == "" {
-				subdomainName = "default"
-			}
-			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
-			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
-			}
-			subdomain, ok := domain.Subdomains[subdomainKey]
-			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
-			}
+				// Determine which subdomain to use (explicit or default).
+				subdomainName := toParseFile.Subdomain
+				if subdomainName == "" {
+					subdomainName = "default"
+				}
+				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
+				subdomain, ok := domain.Subdomains[subdomainKey]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
 
-			generalization, err := parseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
-			if err != nil {
-				return req_model.Model{}, err
+				generalization, err := parseUseCaseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+				if err != nil {
+					return req_model.Model{}, err
+				}
+				if subdomain.UseCaseGeneralizations == nil {
+					subdomain.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
+				}
+				subdomain.UseCaseGeneralizations[generalization.Key] = generalization
+				domain.Subdomains[subdomainKey] = subdomain
+				model.Domains[domainKey] = domain
+			} else {
+				// Class generalization (under classes/ or domain/subdomain directory).
+				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+				}
+				domain := model.Domains[domainKey]
+
+				// Determine which subdomain to use (explicit or default).
+				subdomainName := toParseFile.Subdomain
+				if subdomainName == "" {
+					subdomainName = "default"
+				}
+				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
+				subdomain, ok := domain.Subdomains[subdomainKey]
+				if !ok {
+					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+				}
+
+				generalization, err := parseClassGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
+				if err != nil {
+					return req_model.Model{}, err
+				}
+				if subdomain.Generalizations == nil {
+					subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
+				}
+				subdomain.Generalizations[generalization.Key] = generalization
+				domain.Subdomains[subdomainKey] = subdomain
+				model.Domains[domainKey] = domain
 			}
-			if subdomain.Generalizations == nil {
-				subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
-			}
-			subdomain.Generalizations[generalization.Key] = generalization
-			domain.Subdomains[subdomainKey] = subdomain
-			model.Domains[domainKey] = domain
 
 		case _EXT_DOMAIN:
 			domain, associations, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)
@@ -245,12 +293,9 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				return req_model.Model{}, err
 			}
 
-			// Add associations to subdomain level.
-			if subdomain.ClassAssociations == nil {
-				subdomain.ClassAssociations = make(map[identity.Key]model_class.Association)
-			}
+			// Collect associations for distribution after all classes are parsed.
 			for _, assoc := range associations {
-				subdomain.ClassAssociations[assoc.Key] = assoc
+				allClassAssociations[assoc.Key] = assoc
 			}
 
 			// Add the class to the subdomain.
@@ -307,5 +352,39 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		}
 	}
 
+	// Remove empty default subdomains that have no content.
+	// The parser unconditionally creates a default subdomain for each domain,
+	// but if it was never populated, it should be removed.
+	for domainKey, domain := range model.Domains {
+		for subdomainKey, subdomain := range domain.Subdomains {
+			if subdomainKey.SubKey == "default" && isEmptySubdomain(subdomain) {
+				delete(domain.Subdomains, subdomainKey)
+			}
+		}
+		// If domain has no subdomains left, set to nil for consistency.
+		if len(domain.Subdomains) == 0 {
+			domain.Subdomains = nil
+		}
+		model.Domains[domainKey] = domain
+	}
+
+	// Distribute class associations to the correct level (model, domain, subdomain).
+	if len(allClassAssociations) > 0 {
+		if err := model.SetClassAssociations(allClassAssociations); err != nil {
+			return req_model.Model{}, errors.Wrap(err, "failed to set class associations")
+		}
+	}
+
 	return model, nil
+}
+
+// isEmptySubdomain returns true if the subdomain has no classes, generalizations,
+// use cases, use case generalizations, class associations, or use case shares.
+func isEmptySubdomain(subdomain model_domain.Subdomain) bool {
+	return len(subdomain.Classes) == 0 &&
+		len(subdomain.Generalizations) == 0 &&
+		len(subdomain.UseCases) == 0 &&
+		len(subdomain.UseCaseGeneralizations) == 0 &&
+		len(subdomain.ClassAssociations) == 0 &&
+		len(subdomain.UseCaseShares) == 0
 }

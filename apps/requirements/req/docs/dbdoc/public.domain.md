@@ -12,7 +12,7 @@ A bucket for parts of a model.
 | model_key | text |  | false | [public.subdomain](public.subdomain.md) [public.domain_association](public.domain_association.md) | [public.model](public.model.md) | The model this domain is part of. |
 | name | text |  | false |  |  | The unique name of the domain. |
 | details | text |  | true |  |  | A summary description. |
-| realized | boolean |  | true |  |  | A realized domain is one with no semantic model, which is preexisting, and just design and later artifacts. |
+| realized | boolean |  | false |  |  | A realized domain is one with no semantic model, which is preexisting, and just design and later artifacts. |
 | uml_comment | text |  | true |  |  | A comment that appears in the diagrams. |
 
 ## Constraints
@@ -22,6 +22,7 @@ A bucket for parts of a model.
 | domain_domain_key_not_null | n | NOT NULL domain_key |
 | domain_model_key_not_null | n | NOT NULL model_key |
 | domain_name_not_null | n | NOT NULL name |
+| domain_realized_not_null | n | NOT NULL realized |
 | fk_domain_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | domain_pkey | PRIMARY KEY | PRIMARY KEY (model_key, domain_key) |
 

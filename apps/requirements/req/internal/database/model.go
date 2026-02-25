@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 
 	"github.com/pkg/errors"
@@ -27,7 +26,7 @@ func scanModel(scanner Scanner, model *req_model.Model) (err error) {
 func LoadModel(dbOrTx DbOrTx, modelKey string) (model req_model.Model, err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return req_model.Model{}, err
 	}
@@ -61,7 +60,7 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model req_model.Model, err error
 func AddModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err := identity.PreenKey(model.Key)
+	modelKey, err := preenKey(model.Key)
 	if err != nil {
 		return err
 	}
@@ -94,7 +93,7 @@ func AddModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 func UpdateModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err := identity.PreenKey(model.Key)
+	modelKey, err := preenKey(model.Key)
 	if err != nil {
 		return err
 	}
@@ -122,7 +121,7 @@ func UpdateModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 
 	// Keys should be preened so they collide correctly.
-	modelKey, err = identity.PreenKey(modelKey)
+	modelKey, err = preenKey(modelKey)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,8 @@
 
 [⇦ {{ .Model.Name }}](model.md)
 
+# {{ if .Domain.Realized }}«realized» {{ end }}{{ .Domain.Name }}
+
 {{ .Domain.Details }}
 
 {{ if gt (len .Domain.Subdomains) 1 }}

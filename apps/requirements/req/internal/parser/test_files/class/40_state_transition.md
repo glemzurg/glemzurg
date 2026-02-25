@@ -21,11 +21,6 @@ states:
 events:
     LogIn:
         details: Appears in data dictionary.
-        parameters:
-            - name: userid
-              source: this comes from x
-            - name: username
-              source: this comes from y
     LogOut: {}
     Trigger:
         details: Appears in data dictionary.
@@ -37,12 +32,6 @@ guards:
 actions:
     ProcessLog:
         details: Appears in data dictionary.
-        requires:
-            - userid (with details)
-            - username (e.g. bob)
-        guarantees:
-            - userid (with details)
-            - username (e.g. bob)
 transitions:
     - {from: "Started", event: "LogIn", to: "Stopped"}
     - {from: "Started", event: "LogIn", to: "Stopped", guard: "FirstLogin", action: "ProcessLog", uml_comment: "work here."}

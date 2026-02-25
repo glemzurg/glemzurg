@@ -30,10 +30,18 @@ func (suite *EventSuite) TestValidate() {
 		errstr   string
 	}{
 		{
-			testName: "valid event",
+			testName: "valid event minimal",
 			event: Event{
 				Key:  validKey,
 				Name: "Name",
+			},
+		},
+		{
+			testName: "valid event with all optional fields",
+			event: Event{
+				Key:     validKey,
+				Name:    "Name",
+				Details: "Details",
 			},
 		},
 		{
@@ -42,7 +50,7 @@ func (suite *EventSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -58,7 +66,7 @@ func (suite *EventSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -81,18 +89,31 @@ func (suite *EventSuite) TestNew() {
 	key := helper.Must(identity.NewEventKey(classKey, "event1"))
 
 	// Test parameters are mapped correctly.
-	event, err := NewEvent(key, "Name", "Details", []EventParameter{{Name: "ParamA", Source: "SourceA"}})
+	event, err := NewEvent(key, "Name", "Details",
+		[]Parameter{{Name: "ParamA", DataTypeRules: "Nat"}, {Name: "ParamB", DataTypeRules: "Int"}})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Event{
-		Key:        key,
-		Name:       "Name",
-		Details:    "Details",
-		Parameters: []EventParameter{{Name: "ParamA", Source: "SourceA"}},
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
+		Parameters: []Parameter{
+			{Name: "ParamA", DataTypeRules: "Nat"},
+			{Name: "ParamB", DataTypeRules: "Int"},
+		},
+	}, event)
+
+	// Test with nil optional Parameters.
+	event, err = NewEvent(key, "Name", "Details", nil)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), Event{
+		Key:     key,
+		Name:    "Name",
+		Details: "Details",
 	}, event)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewEvent(key, "", "Details", nil)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -109,7 +130,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := event.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - event key has class1 as parent, but we pass other_class.
 	event = Event{
@@ -120,6 +141,28 @@ func (suite *EventSuite) TestValidateWithParent() {
 	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
+	err = event.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test child Parameter validation propagates error.
+	event = Event{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "", DataTypeRules: "Nat"}, // Invalid: blank name
+		},
+	}
+	err = event.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+
+	// Test valid with child Parameters.
+	event = Event{
+		Key:  validKey,
+		Name: "Name",
+		Parameters: []Parameter{
+			{Name: "param1", DataTypeRules: "Nat"},
+		},
+	}
 	err = event.ValidateWithParent(&classKey)
 	assert.NoError(suite.T(), err)
 }

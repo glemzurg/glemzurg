@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "use_case_generalization.schema.json",
+  "title": "Use Case Generalization",
+  "description": "Schema for use case generalization JSON files that define inheritance relationships between use cases. Use case generalization files are located in the 'use_case_generalizations/' directory at the model root (e.g., 'use_case_generalizations/order_operations.uc_gen.json'). A use case generalization defines a superclass use case and its subclass use cases, modeling an 'is-a' relationship. If validation fails, verify 'name', 'superclass_key', and 'subclass_keys' are all present and that the use case keys reference existing use cases.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The display name of the use case generalization (e.g., 'Order Operations', 'Payment Workflows'). This is the human-readable name shown in diagrams and documentation. Use a noun phrase that describes the classification. Must be non-empty. If validation fails: ensure this is a string with at least one character.",
+      "minLength": 1
+    },
+    "details": {
+      "type": "string",
+      "description": "Optional detailed description of the use case generalization. Describe the inheritance hierarchy, the discriminator criteria (what distinguishes subclass use cases), and any polymorphic behavior. Helps readers understand the use case classification system."
+    },
+    "superclass_key": {
+      "type": "string",
+      "description": "Key referencing the superclass (parent use case) in the use case generalization. The use case key matches the use case filename without extension: for a use case at 'use_cases/manage_order.uc.json', the key is 'manage_order'. The superclass is the general use case that the subclass use cases specialize. If validation fails: verify the use case file exists at the expected path and the key matches the filename pattern exactly.",
+      "minLength": 1
+    },
+    "subclass_keys": {
+      "type": "array",
+      "description": "Keys referencing the subclass (child use cases) that inherit from the superclass use case. Each key matches the use case filename without extension. There must be at least one subclass. If validation fails: verify each use case file exists and keys are correctly formatted.",
+      "items": {
+        "type": "string",
+        "description": "A use case key referencing a subclass use case. Must match a use case file using the filename pattern (e.g., 'create_order', 'cancel_order'). If validation fails: verify the use case file exists at 'use_cases/{key}.uc.json'.",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "is_complete": {
+      "type": "boolean",
+      "description": "Whether the use case generalization is complete (all possible subclass use cases are listed). Set to true if no other subclass use cases can exist beyond those listed. Set to false or omit if additional subclass use cases may be added in the future. If validation fails: ensure this is a boolean (true or false), not a string."
+    },
+    "is_static": {
+      "type": "boolean",
+      "description": "Whether use case instances cannot change their subclass type at runtime. Set to true if once a use case is assigned a specific subclass type, it cannot become a different subclass type. Set to false or omit if use cases can change their classification over their lifetime. If validation fails: ensure this is a boolean (true or false), not a string."
+    },
+    "uml_comment": {
+      "type": "string",
+      "description": "Optional UML comment for diagram annotations. This text appears as a note attached to the use case generalization in generated UML diagrams. Use for diagram-specific clarifications about the use case inheritance relationship."
+    }
+  },
+  "required": ["name", "superclass_key", "subclass_keys"],
+  "additionalProperties": false
+}

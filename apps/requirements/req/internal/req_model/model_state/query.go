@@ -1,22 +1,25 @@
 package model_state
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 )
 
 // Query is a business logic query of a class that does not change the state of a class.
+// Guarantees describe filtering/selection criteria for returned data, NOT state changes.
 type Query struct {
-	Key        identity.Key
-	Name       string
-	Details    string
-	Requires   []string // To enter this query.
-	Guarantees []string
+	Key     identity.Key
+	Name    string `validate:"required"`
+	Details string
+	// Children
+	Parameters []Parameter         // Typed parameters for this query.
+	Requires   []model_logic.Logic // Preconditions for this query.
+	Guarantees []model_logic.Logic // Filtering criteria for returned data (NOT state changes).
 }
 
-func NewQuery(key identity.Key, name, details string, requires, guarantees []string) (query Query, err error) {
+func NewQuery(key identity.Key, name, details string, requires, guarantees []model_logic.Logic, parameters []Parameter) (query Query, err error) {
 
 	query = Query{
 		Key:        key,
@@ -24,6 +27,7 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []str
 		Details:    details,
 		Requires:   requires,
 		Guarantees: guarantees,
+		Parameters: parameters,
 	}
 
 	if err = query.Validate(); err != nil {
@@ -35,19 +39,37 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []str
 
 // Validate validates the Query struct.
 func (q *Query) Validate() error {
-	return validation.ValidateStruct(q,
-		validation.Field(&q.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_QUERY {
-				return errors.Errorf("invalid key type '%s' for query", k.KeyType())
-			}
-			return nil
-		})),
-		validation.Field(&q.Name, validation.Required),
-	)
+	// Validate the key.
+	if err := q.Key.Validate(); err != nil {
+		return err
+	}
+	if q.Key.KeyType != identity.KEY_TYPE_QUERY {
+		return errors.Errorf("Key: invalid key type '%s' for query", q.Key.KeyType)
+	}
+
+	// Validate struct tags (Name required).
+	if err := _validate.Struct(q); err != nil {
+		return err
+	}
+
+	for i, req := range q.Requires {
+		if err := req.Validate(); err != nil {
+			return errors.Wrapf(err, "requires %d", i)
+		}
+		if req.Type != model_logic.LogicTypeAssessment {
+			return errors.Errorf("requires %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, req.Type)
+		}
+	}
+	for i, guar := range q.Guarantees {
+		if err := guar.Validate(); err != nil {
+			return errors.Wrapf(err, "guarantee %d", i)
+		}
+		if guar.Type != model_logic.LogicTypeQuery {
+			return errors.Errorf("guarantee %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeQuery, guar.Type)
+		}
+	}
+
+	return nil
 }
 
 // ValidateWithParent validates the Query, its key's parent relationship, and all children.
@@ -61,6 +83,22 @@ func (q *Query) ValidateWithParent(parent *identity.Key) error {
 	if err := q.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-	// Query has no children with keys that need validation.
+	// Validate logic children with query as parent.
+	for i := range q.Requires {
+		if err := q.Requires[i].ValidateWithParent(&q.Key); err != nil {
+			return errors.Wrapf(err, "requires %d", i)
+		}
+	}
+	for i := range q.Guarantees {
+		if err := q.Guarantees[i].ValidateWithParent(&q.Key); err != nil {
+			return errors.Wrapf(err, "guarantee %d", i)
+		}
+	}
+	// Validate all children.
+	for i := range q.Parameters {
+		if err := q.Parameters[i].ValidateWithParent(); err != nil {
+			return err
+		}
+	}
 	return nil
 }

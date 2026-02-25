@@ -14,9 +14,13 @@ type inputModel struct {
 	Details string `json:"details,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
-	Actors       map[string]*inputActor       `json:"-"`
-	Domains      map[string]*inputDomain      `json:"-"`
-	Associations map[string]*inputAssociation `json:"-"`
+	Invariants           []inputLogic                         `json:"-"`
+	Actors               map[string]*inputActor               `json:"-"`
+	ActorGeneralizations map[string]*inputActorGeneralization `json:"-"`
+	GlobalFunctions      map[string]*inputGlobalFunction      `json:"-"`
+	Domains              map[string]*inputDomain              `json:"-"`
+	DomainAssociations   map[string]*inputDomainAssociation   `json:"-"`
+	ClassAssociations    map[string]*inputClassAssociation    `json:"-"`
 }
 
 // modelSchema is the compiled JSON schema for model.json.

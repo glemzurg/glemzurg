@@ -13,13 +13,11 @@ import (
 func scanScenario(scanner Scanner, useCaseKeyPtr *identity.Key, scenario *model_scenario.Scenario) (err error) {
 	var scenarioKeyStr string
 	var useCaseKeyStr string
-	var stepsJSON []byte
 	if err = scanner.Scan(
 		&scenarioKeyStr,
 		&scenario.Name,
 		&useCaseKeyStr,
 		&scenario.Details,
-		&stepsJSON,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -37,14 +35,6 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *identity.Key, scenario *model_
 	*useCaseKeyPtr, err = identity.ParseKey(useCaseKeyStr)
 	if err != nil {
 		return err
-	}
-
-	// Unmarshal the steps JSON if present
-	if len(stepsJSON) > 0 {
-		scenario.Steps = &model_scenario.Node{}
-		if err = scenario.Steps.FromJSON(string(stepsJSON)); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -66,8 +56,7 @@ func LoadScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (use
 			scenario_key,
 			name,
 			use_case_key,
-			details,
-			steps
+			details
 		FROM
 			scenario
 		WHERE
@@ -93,23 +82,13 @@ func AddScenario(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, scenar
 // UpdateScenario updates a scenario in the database.
 func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scenario) (err error) {
 
-	// Serialize the steps to JSON
-	var stepsJSON interface{}
-	if scenario.Steps != nil {
-		stepsJSON, err = scenario.Steps.ToJSON()
-		if err != nil {
-			return err
-		}
-	}
-
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
 			scenario
 		SET
 			name         = $3 ,
-			details      = $4 ,
-			steps        = $5
+			details      = $4
 		WHERE
 			scenario_key = $2
 		AND
@@ -117,8 +96,7 @@ func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scen
 		modelKey,
 		scenario.Key.String(),
 		scenario.Name,
-		scenario.Details,
-		stepsJSON)
+		scenario.Details)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -168,8 +146,7 @@ func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[identity.Key]
 			scenario_key,
 			name,
 			use_case_key,
-			details,
-			steps
+			details
 		FROM
 			scenario
 		WHERE
@@ -196,27 +173,17 @@ func AddScenarios(dbOrTx DbOrTx, modelKey string, scenarios map[identity.Key][]m
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details, steps) VALUES `
-	args := make([]interface{}, 0, count*6)
+	query := `INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details) VALUES `
+	args := make([]interface{}, 0, count*5)
 	i := 0
 	for useCaseKey, scenList := range scenarios {
 		for _, scenario := range scenList {
 			if i > 0 {
 				query += ", "
 			}
-			base := i * 6
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
-
-			// Serialize the steps to JSON.
-			var stepsJSON interface{}
-			if scenario.Steps != nil {
-				stepsJSON, err = scenario.Steps.ToJSON()
-				if err != nil {
-					return err
-				}
-			}
-
-			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details, stepsJSON)
+			base := i * 5
+			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details)
 			i++
 		}
 	}

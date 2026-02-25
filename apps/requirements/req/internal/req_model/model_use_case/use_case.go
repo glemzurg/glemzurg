@@ -1,11 +1,9 @@
 package model_use_case
 
 import (
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/pkg/errors"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -16,26 +14,30 @@ const (
 
 // UseCase is a user story for the system.
 type UseCase struct {
-	Key        identity.Key
-	Name       string
-	Details    string // Markdown.
-	Level      string // How high cocept or tightly focused the user case is.
-	ReadOnly   bool   // This is a user story that does not change the state of the system.
-	UmlComment string
+	Key             identity.Key
+	Name            string        `validate:"required"`
+	Details         string        // Markdown.
+	Level           string        `validate:"required,oneof=sky sea mud"` // How high cocept or tightly focused the user case is.
+	ReadOnly        bool          // This is a user story that does not change the state of the system.
+	SuperclassOfKey *identity.Key // If this use case is part of a generalization as the superclass.
+	SubclassOfKey   *identity.Key // If this use case is part of a generalization as a subclass.
+	UmlComment      string
 	// Children
 	Actors    map[identity.Key]Actor
 	Scenarios map[identity.Key]model_scenario.Scenario
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, umlComment string) (useCase UseCase, err error) {
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (useCase UseCase, err error) {
 
 	useCase = UseCase{
-		Key:        key,
-		Name:       name,
-		Details:    details,
-		Level:      level,
-		ReadOnly:   readOnly,
-		UmlComment: umlComment,
+		Key:             key,
+		Name:            name,
+		Details:         details,
+		Level:           level,
+		ReadOnly:        readOnly,
+		SuperclassOfKey: superclassOfKey,
+		SubclassOfKey:   subclassOfKey,
+		UmlComment:      umlComment,
 	}
 
 	if err = useCase.Validate(); err != nil {
@@ -47,20 +49,40 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, um
 
 // Validate validates the UseCase struct.
 func (uc *UseCase) Validate() error {
-	return validation.ValidateStruct(uc,
-		validation.Field(&uc.Key, validation.Required, validation.By(func(value interface{}) error {
-			k := value.(identity.Key)
-			if err := k.Validate(); err != nil {
-				return err
-			}
-			if k.KeyType() != identity.KEY_TYPE_USE_CASE {
-				return errors.New("invalid key type for use_case")
-			}
-			return nil
-		})),
-		validation.Field(&uc.Name, validation.Required),
-		validation.Field(&uc.Level, validation.Required, validation.In(_USE_CASE_LEVEL_SKY, _USE_CASE_LEVEL_SEA, _USE_CASE_LEVEL_MUD)),
-	)
+	// Validate the key.
+	if err := uc.Key.Validate(); err != nil {
+		return err
+	}
+	if uc.Key.KeyType != identity.KEY_TYPE_USE_CASE {
+		return errors.New("invalid key type for use_case")
+	}
+	// Validate struct tags (Name required, Level required+oneof).
+	if err := _validate.Struct(uc); err != nil {
+		return err
+	}
+	// Validate FK key types.
+	if uc.SuperclassOfKey != nil {
+		if err := uc.SuperclassOfKey.Validate(); err != nil {
+			return errors.Wrap(err, "SuperclassOfKey")
+		}
+		if uc.SuperclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
+			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for use case generalization", uc.SuperclassOfKey.KeyType)
+		}
+	}
+	if uc.SubclassOfKey != nil {
+		if err := uc.SubclassOfKey.Validate(); err != nil {
+			return errors.Wrap(err, "SubclassOfKey")
+		}
+		if uc.SubclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
+			return errors.Errorf("SubclassOfKey: invalid key type '%s' for use case generalization", uc.SubclassOfKey.KeyType)
+		}
+	}
+
+	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
+	if uc.SuperclassOfKey != nil && uc.SubclassOfKey != nil && *uc.SuperclassOfKey == *uc.SubclassOfKey {
+		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+	}
+	return nil
 }
 
 func (uc *UseCase) SetActors(actors map[identity.Key]Actor) {
@@ -103,6 +125,23 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 	for _, scenario := range uc.Scenarios {
 		if err := scenario.ValidateWithParentAndClasses(&uc.Key, classes); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// ValidateReferences validates that the use case's reference keys point to valid entities.
+// - SuperclassOfKey must exist in the generalizations map
+// - SubclassOfKey must exist in the generalizations map
+func (uc *UseCase) ValidateReferences(generalizations map[identity.Key]bool) error {
+	if uc.SuperclassOfKey != nil {
+		if !generalizations[*uc.SuperclassOfKey] {
+			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SuperclassOfKey.String())
+		}
+	}
+	if uc.SubclassOfKey != nil {
+		if !generalizations[*uc.SubclassOfKey] {
+			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SubclassOfKey.String())
 		}
 	}
 	return nil

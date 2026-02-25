@@ -1,0 +1,5 @@
+{
+    "name": "User Types",
+    "superclass_key": "",
+    "subclass_keys": ["admin"]
+}

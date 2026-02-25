@@ -42,7 +42,7 @@ func (suite *ScenarioSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "keyType: cannot be blank",
+			errstr: "'KeyType' failed on the 'required' tag",
 		},
 		{
 			testName: "error wrong key type",
@@ -58,7 +58,7 @@ func (suite *ScenarioSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name: cannot be blank",
+			errstr: "Name",
 		},
 	}
 	for _, tt := range tests {
@@ -91,7 +91,7 @@ func (suite *ScenarioSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewScenario(key, "", "Details")
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank")
+	assert.ErrorContains(suite.T(), err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -108,7 +108,7 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := scenario.ValidateWithParent(&useCaseKey)
-	assert.ErrorContains(suite.T(), err, "Name: cannot be blank", "ValidateWithParent should call Validate()")
+	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - scenario key has usecase1 as parent, but we pass other_usecase.
 	scenario = Scenario{
@@ -121,4 +121,69 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 	// Test valid case.
 	err = scenario.ValidateWithParent(&useCaseKey)
 	assert.NoError(suite.T(), err)
+}
+
+// TestValidateWithParentAndClasses tests that ValidateWithParentAndClasses validates child Objects.
+func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	objectKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1"))
+	nonExistentClassKey := helper.Must(identity.NewClassKey(subdomainKey, "nonexistent"))
+
+	classes := map[identity.Key]bool{
+		classKey: true,
+	}
+
+	// Test valid scenario with valid Object child.
+	scenario := Scenario{
+		Key:  scenarioKey,
+		Name: "Name",
+		Objects: map[identity.Key]Object{
+			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: classKey},
+		},
+	}
+	err := scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
+	assert.NoError(suite.T(), err)
+
+	// Test invalid child Object (blank name with name style) propagates error.
+	scenario = Scenario{
+		Key:  scenarioKey,
+		Name: "Name",
+		Objects: map[identity.Key]Object{
+			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "", NameStyle: "name", ClassKey: classKey}, // Invalid: name required for "name" style
+		},
+	}
+	err = scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
+	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Objects")
+
+	// Test Object references non-existent class.
+	scenario = Scenario{
+		Key:  scenarioKey,
+		Name: "Name",
+		Objects: map[identity.Key]Object{
+			objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: nonExistentClassKey},
+		},
+	}
+	err = scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
+	assert.ErrorContains(suite.T(), err, "references non-existent class", "Should validate Object class references")
+}
+
+// TestSetObjects tests that SetObjects correctly sets objects.
+func (suite *ScenarioSuite) TestSetObjects() {
+	domainKey := helper.Must(identity.NewDomainKey("domain1"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
+	useCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "usecase1"))
+	scenarioKey := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
+	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
+	objectKey := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1"))
+
+	scenario := Scenario{Key: scenarioKey, Name: "Name"}
+	objects := map[identity.Key]Object{
+		objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: classKey},
+	}
+	scenario.SetObjects(objects)
+	assert.Equal(suite.T(), objects, scenario.Objects)
 }

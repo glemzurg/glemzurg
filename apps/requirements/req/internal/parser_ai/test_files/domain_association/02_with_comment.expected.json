@@ -1,0 +1,5 @@
+{
+    "problem_domain_key": "billing",
+    "solution_domain_key": "payment_processing",
+    "uml_comment": "billing enforces payment requirements"
+}

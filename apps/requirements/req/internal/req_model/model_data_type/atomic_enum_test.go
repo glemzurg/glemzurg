@@ -26,7 +26,7 @@ func TestAtomicEnumValidate(t *testing.T) {
 				Value:     "",
 				SortOrder: 1,
 			},
-			errorMessage: "Value: cannot be blank.",
+			errorMessage: "Value",
 		},
 		{
 			name: "zero sort order",

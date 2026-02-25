@@ -1,0 +1,4 @@
+{
+    "superclass_key": "manage_order",
+    "subclass_keys": ["create_order"]
+}

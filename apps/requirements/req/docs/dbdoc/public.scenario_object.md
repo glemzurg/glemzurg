@@ -8,8 +8,8 @@ An object that participates in a scenario.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false |  | [public.model](public.model.md) [public.class](public.class.md) [public.scenario](public.scenario.md) | The model this scenario object is part of. |
-| scenario_object_key | text |  | false |  |  | The internal ID. |
+| model_key | text |  | false | [public.scenario_step](public.scenario_step.md) | [public.model](public.model.md) [public.class](public.class.md) [public.scenario](public.scenario.md) | The model this scenario object is part of. |
+| scenario_object_key | text |  | false | [public.scenario_step](public.scenario_step.md) |  | The internal ID. |
 | scenario_key | text |  | false |  | [public.scenario](public.scenario.md) | The scenario this object is part of. |
 | object_number | integer |  | false |  |  | Where this object is drawn in the diagram. |
 | name | text |  | false |  |  | The name of the scenario object. |

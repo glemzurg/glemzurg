@@ -1,0 +1,10 @@
+{
+    "Key": "domain/test_domain/subdomain/test_subdomain/usecase/use_case_key",
+    "Name": "A Basic Use Case",
+    "Details": "Here we have markdown details.\n\nAnd even more.",
+    "Level": "sea",
+    "ReadOnly": false,
+    "SuperclassOfKey": "domain/test_domain/subdomain/test_subdomain/ucgeneralization/superclass_key",
+    "SubclassOfKey": "domain/test_domain/subdomain/test_subdomain/ucgeneralization/subclass_key",
+    "UmlComment": "Here we have a UML comment.\n\nAnd even more."
+}

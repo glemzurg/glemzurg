@@ -1,0 +1,6 @@
+{
+    "code": 14003,
+    "message_prefix": "failed to parse logic JSON:",
+    "error_file": "14003_logic_invalid_json.md",
+    "has_schema": false
+}

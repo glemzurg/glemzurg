@@ -3,7 +3,30 @@
 
 [⇦ {{ $reqs.Model.Name }}](model.md)
 
+# {{ .Actor.Name }} <img src="{{ .Actor.Type }}.svg" width="13" height="30" />
+
+**«{{ .Actor.Type }}»**
+
 {{ .Actor.Details }}
+
+{{ if or (ne .Actor.SuperclassOfKey nil) (ne .Actor.SubclassOfKey nil) -}}
+## Generalizations
+
+{{ if ne .Actor.SuperclassOfKey nil -}}
+{{- $gen := actor_generalization_lookup $reqs .Actor.SuperclassOfKey -}}
+{{- $super := actor_generalization_superclass $reqs $gen.Key -}}
+{{- $subs := actor_generalization_subclasses $reqs $gen.Key -}}
+- **{{ $gen.Name }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+{{ end -}}
+{{ if ne .Actor.SubclassOfKey nil -}}
+{{- $gen := actor_generalization_lookup $reqs .Actor.SubclassOfKey -}}
+{{- $super := actor_generalization_superclass $reqs $gen.Key -}}
+{{- $subs := actor_generalization_subclasses $reqs $gen.Key -}}
+- **{{ $gen.Name }}.** {{ $gen.Details }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
+{{ end }}
+{{- end }}
 
 ## Classes
 
@@ -15,7 +38,7 @@ The domain classes that define this actor.
 {{- $class := . }}
 {{- $domain := class_domain $reqs $class.Key }}
 
-### {{ $domain.Name }} : {{ $class.Name }}
+### {{ $domain.Name }} : [{{ $class.Name }}]({{ filename "class" $class.Key "" ".md" }})
 
 {{ first_md_paragraph $class.Details }}
 
@@ -24,7 +47,7 @@ The domain classes that define this actor.
 | Name | Rules | Nullable | Comment |
 | ---- | ----- | -------- | ------- |
 {{- range $class.Attributes }}
-| {{ if ne .DerivationPolicy "" }}/{{ end }}{{ .Name }} | {{ .DataTypeRules }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
+| {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ .DataTypeRules }}  {{ .DerivationPolicy }} | {{ .Nullable }} | {{ .Details }} |{{end}}
 
 {{- else -}}
 *No attributes*
