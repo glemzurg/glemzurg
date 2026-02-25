@@ -301,6 +301,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.DomainClassesLookup()
 		return lookup[key.String()]
 	},
+	"generalization_lookup": func(reqs *req_flat.Requirements, key identity.Key) (value model_class.Generalization) {
+		lookup := reqs.GeneralizationLookup()
+		return lookup[key.String()]
+	},
 	"generalization_superclass": func(reqs *req_flat.Requirements, key identity.Key) (class model_class.Class) {
 		lookup := reqs.GeneralizationSuperclassLookup()
 		return lookup[key.String()]

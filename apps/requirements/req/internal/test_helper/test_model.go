@@ -1114,7 +1114,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	l.classInvariants3 = []model_logic.Logic{cInv6}
 
 	// Derivation with empty specification (tests empty spec path).
-	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "tla_plus", "")
+	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "tla_plus", "_Sum(things)")
 	if err != nil {
 		return l, err
 	}

@@ -17,14 +17,14 @@
 {{- $super := actor_generalization_superclass $reqs $gen.Key -}}
 {{- $subs := actor_generalization_subclasses $reqs $gen.Key -}}
 - **{{ $gen.Name }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ $super.Name }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ $sub.Name }}{{ end }}{{ else }}???{{ end }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end -}}
 {{ if ne .Actor.SubclassOfKey nil -}}
 {{- $gen := actor_generalization_lookup $reqs .Actor.SubclassOfKey -}}
 {{- $super := actor_generalization_superclass $reqs $gen.Key -}}
 {{- $subs := actor_generalization_subclasses $reqs $gen.Key -}}
 - **{{ $gen.Name }}.** {{ $gen.Details }}
-    - {{ if ne $super.Name "" }}{{ $super.Name }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ $sub.Name }}{{ end }}{{ else }}???{{ end }}
+    - {{ if ne $super.Name "" }}{{ if eq $super.Key $.Actor.Key }}{{ $super.Name }}{{ else }}[{{ $super.Name }}]({{ filename "actor" $super.Key "" ".md" }}){{ end }}{{ else }}???{{ end }} ⇐ {{ if or (not $gen.IsComplete) (not $gen.IsStatic) }}**«{{ if not $gen.IsComplete }}incomplete{{ end }}{{ if and (not $gen.IsComplete) (not $gen.IsStatic) }}, {{ end }}{{ if not $gen.IsStatic }}dynamic{{ end }}»** ⇐ {{ end }}{{ if ne $subs nil }}{{ range $i, $sub := $subs }}{{ if $i }}, {{ end }}{{ if eq $sub.Key $.Actor.Key }}{{ $sub.Name }}{{ else }}[{{ $sub.Name }}]({{ filename "actor" $sub.Key "" ".md" }}){{ end }}{{ end }}{{ else }}???{{ end }}
 {{ end }}
 {{- end }}
 
