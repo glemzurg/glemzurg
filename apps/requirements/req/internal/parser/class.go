@@ -92,7 +92,7 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	}
 
 	// Add any invariants we found.
-	invariants, err := logicListFromYamlData(yamlData, "invariants", classKey, identity.NewClassInvariantKey)
+	invariants, err := logicListFromYamlData(yamlData, "invariants", model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
 	if err != nil {
 		return model_class.Class{}, nil, err
 	}
@@ -291,7 +291,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				logic, err := model_logic.NewLogic(derivKey, description, "tla_plus", specification)
+				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "tla_plus", specification)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}
@@ -664,6 +664,7 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 
 	logic := model_logic.Logic{
 		Key:           guardKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   details,
 		Notation:      "tla_plus",
 		Specification: specification,
@@ -725,19 +726,19 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 		}
 
 		// Parse requires.
-		requires, err = logicListFromYamlData(actionData, "requires", actionKey, identity.NewActionRequireKey)
+		requires, err = logicListFromYamlData(actionData, "requires", model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 
 		// Parse guarantees.
-		guarantees, err = logicListFromYamlData(actionData, "guarantees", actionKey, identity.NewActionGuaranteeKey)
+		guarantees, err = logicListFromYamlData(actionData, "guarantees", model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
 
 		// Parse safety rules.
-		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", actionKey, identity.NewActionSafetyKey)
+		safetyRules, err = logicListFromYamlData(actionData, "safety_rules", model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey)
 		if err != nil {
 			return model_state.Action{}, errors.Wrapf(err, "action '%s'", name)
 		}
@@ -801,13 +802,13 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 		}
 
 		// Parse requires.
-		requires, err = logicListFromYamlData(queryData, "requires", queryKey, identity.NewQueryRequireKey)
+		requires, err = logicListFromYamlData(queryData, "requires", model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey)
 		if err != nil {
 			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
 		}
 
 		// Parse guarantees.
-		guarantees, err = logicListFromYamlData(queryData, "guarantees", queryKey, identity.NewQueryGuaranteeKey)
+		guarantees, err = logicListFromYamlData(queryData, "guarantees", model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey)
 		if err != nil {
 			return model_state.Query{}, errors.Wrapf(err, "query '%s'", name)
 		}
@@ -828,7 +829,7 @@ func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query 
 }
 
 // logicListFromYamlData parses a YAML sequence of logic mappings (details + optional specification).
-func logicListFromYamlData(data map[string]any, field string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
+func logicListFromYamlData(data map[string]any, field string, logicType string, parentKey identity.Key, newKey func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
 	listAny, found := data[field]
 	if !found {
 		return nil, nil
@@ -853,6 +854,7 @@ func logicListFromYamlData(data map[string]any, field string, parentKey identity
 
 		logics = append(logics, model_logic.Logic{
 			Key:           key,
+			Type:          logicType,
 			Description:   details,
 			Notation:      "tla_plus",
 			Specification: specification,

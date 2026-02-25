@@ -42,12 +42,14 @@
             "Requires": [
                 {
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/arequire/0",
+                    "Type": "assessment",
                     "Description": "The amount must be positive.",
                     "Notation": "tla_plus",
                     "Specification": "amount > 0"
                 },
                 {
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/arequire/1",
+                    "Type": "assessment",
                     "Description": "The label must not be empty.",
                     "Notation": "tla_plus",
                     "Specification": ""
@@ -56,6 +58,7 @@
             "Guarantees": [
                 {
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/aguarantee/0",
+                    "Type": "state_change",
                     "Description": "The log is updated.",
                     "Notation": "tla_plus",
                     "Specification": "self.log' = Append(self.log, amount)"
@@ -64,6 +67,7 @@
             "SafetyRules": [
                 {
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/action/processlog/asafety/0",
+                    "Type": "safety_rule",
                     "Description": "The total never exceeds the limit.",
                     "Notation": "tla_plus",
                     "Specification": "self.total' <= self.limit"

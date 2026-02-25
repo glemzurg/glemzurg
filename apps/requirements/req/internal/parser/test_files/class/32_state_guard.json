@@ -13,6 +13,7 @@
             "Name": "FirstLogin",
             "Logic": {
                 "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/firstlogin",
+                "Type": "assessment",
                 "Description": "login count < 1",
                 "Notation": "tla_plus",
                 "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"
@@ -23,6 +24,7 @@
             "Name": "PriorLogin",
             "Logic": {
                 "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/guard/priorlogin",
+                "Type": "assessment",
                 "Description": "login count >= 1",
                 "Notation": "tla_plus",
                 "Specification": ""

@@ -23,6 +23,7 @@
             "Requires": [
                 {
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/query/getbalance/qrequire/0",
+                    "Type": "assessment",
                     "Description": "The account must exist.",
                     "Notation": "tla_plus",
                     "Specification": "accountId \\in DOMAIN self.accounts"
@@ -31,6 +32,7 @@
             "Guarantees": [
                 {
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/query/getbalance/qguarantee/0",
+                    "Type": "query",
                     "Description": "Returns the balance for the account.",
                     "Notation": "tla_plus",
                     "Specification": "result = self.accounts[accountId].balance"

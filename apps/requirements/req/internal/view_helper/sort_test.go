@@ -52,13 +52,13 @@ func (suite *SortSuite) TestSortAttributes() {
 	attrDerived := model_class.Attribute{
 		Key:              helper.Must(identity.NewAttributeKey(classKey, "derived")),
 		Name:             "Derived",
-		DerivationPolicy: &model_logic.Logic{Description: "some derivation", Notation: "tla_plus"},
+		DerivationPolicy: &model_logic.Logic{Type: model_logic.LogicTypeValue, Description: "some derivation", Notation: "tla_plus"},
 	}
 	attrDerivedWithIndex := model_class.Attribute{
 		Key:              helper.Must(identity.NewAttributeKey(classKey, "derived_indexed")),
 		Name:             "DerivedIndexed",
 		IndexNums:        []uint{3},
-		DerivationPolicy: &model_logic.Logic{Description: "some derivation", Notation: "tla_plus"},
+		DerivationPolicy: &model_logic.Logic{Type: model_logic.LogicTypeValue, Description: "some derivation", Notation: "tla_plus"},
 	}
 
 	tests := []struct {

@@ -5,12 +5,14 @@
     "Invariants": [
         {
             "Key": "invariant/0",
+            "Type": "assessment",
             "Description": "all instances of a given class must have a value",
             "Notation": "tla_plus",
             "Specification": "_Bags!SetToBag(set1) \\sqsubseteq _Bags!SetToBag(set2)"
         },
         {
             "Key": "invariant/1",
+            "Type": "assessment",
             "Description": "with no specification",
             "Notation": "tla_plus"
         }
@@ -25,6 +27,7 @@
             ],
             "Logic": {
                 "Key": "gfunc/max",
+                "Type": "value",
                 "Description": "A comment about a global functions.",
                 "Notation": "tla_plus",
                 "Specification": "_Bags!SetToBag(set1) ⊑ _Bags!SetToBag(set2)"

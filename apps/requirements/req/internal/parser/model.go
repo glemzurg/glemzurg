@@ -54,6 +54,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 
 				inv := model_logic.Logic{
 					Key:           invKey,
+					Type:          model_logic.LogicTypeAssessment,
 					Description:   details,
 					Notation:      model_logic.NotationTLAPlus,
 					Specification: specification,
@@ -114,6 +115,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 					Parameters: parameters,
 					Logic: model_logic.Logic{
 						Key:           gfKey,
+						Type:          model_logic.LogicTypeValue,
 						Description:   description,
 						Notation:      model_logic.NotationTLAPlus,
 						Specification: specification,

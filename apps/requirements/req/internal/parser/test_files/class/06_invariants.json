@@ -7,12 +7,14 @@
     "Invariants": [
         {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/cinvariant/0",
+            "Type": "assessment",
             "Description": "All instances must have a valid state.",
             "Notation": "tla_plus",
             "Specification": "self.state \\in {\"active\", \"inactive\"}"
         },
         {
             "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/cinvariant/1",
+            "Type": "assessment",
             "Description": "Balance cannot be negative.",
             "Notation": "tla_plus",
             "Specification": ""
