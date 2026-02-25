@@ -48,6 +48,15 @@ This is an actor:
 {{- range .Class.Attributes }}
 | {{ if ne .DerivationPolicy nil }}/{{ end }}{{ .Name }} | {{ data_type_rules .DataTypeRules .DataType }}{{ if ne .DerivationPolicy nil }} <br> {{ .DerivationPolicy.Description }}{{ if ne .DerivationPolicy.Specification "" }} <br> {{ .DerivationPolicy.Specification }}{{ end }}{{ end }} | {{ .Nullable }} | {{ .Details }} |{{end}}
 
+{{- $indexes := class_indexes .Class.Attributes }}
+{{ if ne $indexes nil }}
+
+### Indexes
+
+{{ range $indexes -}}
+- [{{ range $i, $name := . }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
+{{ end }}
+{{ end }}
 ## Relations
 
 ![er]({{ filename "class" .Class.Key "" ".svg" }})

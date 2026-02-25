@@ -379,6 +379,31 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.UseCaseGeneralizationSubclassesLookup()
 		return lookup[key.String()]
 	},
+	"class_indexes": func(attributes map[identity.Key]model_class.Attribute) (indexes [][]string) {
+		// Group attribute names by index number.
+		indexMap := map[uint][]string{}
+		for _, attr := range attributes {
+			for _, idx := range attr.IndexNums {
+				indexMap[idx] = append(indexMap[idx], attr.Name)
+			}
+		}
+		if len(indexMap) == 0 {
+			return nil
+		}
+		// Collect and sort index numbers.
+		var nums []uint
+		for num := range indexMap {
+			nums = append(nums, num)
+		}
+		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
+		// Build sorted result.
+		for _, num := range nums {
+			names := indexMap[num]
+			sort.Strings(names)
+			indexes = append(indexes, names)
+		}
+		return indexes
+	},
 }
 
 // Split multi-line bullets into sub bullets.
