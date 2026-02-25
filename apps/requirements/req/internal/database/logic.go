@@ -15,6 +15,7 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 
 	if err = scanner.Scan(
 		&keyStr,
+		&logic.Type,
 		&logic.Description,
 		&logic.Notation,
 		&logic.Specification,
@@ -48,6 +49,7 @@ func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic mod
 		},
 		`SELECT
 			logic_key     ,
+			logic_type    ,
 			description   ,
 			notation      ,
 			specification
@@ -80,16 +82,18 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 		UPDATE
 			logic
 		SET
-			description   = $3 ,
-			notation      = $4 ,
-			specification = $5 ,
-			sort_order    = $6
+			logic_type    = $3 ,
+			description   = $4 ,
+			notation      = $5 ,
+			specification = $6 ,
+			sort_order    = $7
 		WHERE
 			model_key = $1
 		AND
 			logic_key = $2`,
 		modelKey,
 		logic.Key.String(),
+		logic.Type,
 		logic.Description,
 		logic.Notation,
 		logic.Specification,
@@ -137,6 +141,7 @@ func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, er
 		},
 		`SELECT
 			logic_key     ,
+			logic_type    ,
 			description   ,
 			notation      ,
 			specification
@@ -161,15 +166,15 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO logic (model_key, logic_key, description, notation, specification, sort_order) VALUES `
-	args := make([]interface{}, 0, len(logics)*6)
+	query := `INSERT INTO logic (model_key, logic_key, logic_type, description, notation, specification, sort_order) VALUES `
+	args := make([]interface{}, 0, len(logics)*7)
 	for i, logic := range logics {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 6
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
-		args = append(args, modelKey, logic.Key.String(), logic.Description, logic.Notation, logic.Specification, sortOrders[logic.Key.String()])
+		base := i * 7
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Notation, logic.Specification, sortOrders[logic.Key.String()])
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

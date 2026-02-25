@@ -53,6 +53,7 @@ func (suite *LogicSuite) TestLoad() {
 			(
 				model_key,
 				logic_key,
+				logic_type,
 				description,
 				notation,
 				specification,
@@ -62,6 +63,7 @@ func (suite *LogicSuite) TestLoad() {
 			(
 				'model_key',
 				'invariant/0',
+				'assessment',
 				'Description',
 				'tla_plus',
 				'Specification',
@@ -74,6 +76,7 @@ func (suite *LogicSuite) TestLoad() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "Specification",
@@ -84,6 +87,7 @@ func (suite *LogicSuite) TestAdd() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "Specification",
@@ -94,6 +98,7 @@ func (suite *LogicSuite) TestAdd() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "Specification",
@@ -104,6 +109,7 @@ func (suite *LogicSuite) TestAddNulls() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "",
@@ -114,6 +120,7 @@ func (suite *LogicSuite) TestAddNulls() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "",
@@ -124,6 +131,7 @@ func (suite *LogicSuite) TestUpdate() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "Specification",
@@ -132,6 +140,7 @@ func (suite *LogicSuite) TestUpdate() {
 
 	err = UpdateLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
 		Notation:      "tla_plus",
 		Specification: "SpecificationX",
@@ -142,6 +151,7 @@ func (suite *LogicSuite) TestUpdate() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
 		Notation:      "tla_plus",
 		Specification: "SpecificationX",
@@ -152,6 +162,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "Specification",
@@ -160,6 +171,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 
 	err = UpdateLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
 		Notation:      "tla_plus",
 		Specification: "",
@@ -170,6 +182,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
 		Notation:      "tla_plus",
 		Specification: "",
@@ -180,6 +193,7 @@ func (suite *LogicSuite) TestRemove() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:           suite.logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
 		Notation:      "tla_plus",
 		Specification: "Specification",
@@ -199,12 +213,14 @@ func (suite *LogicSuite) TestQuery() {
 	err := AddLogics(suite.db, suite.model.Key, []model_logic.Logic{
 		{
 			Key:           suite.logicKeyB,
+			Type:          model_logic.LogicTypeAssessment,
 			Description:   "DescriptionX",
 			Notation:      "tla_plus",
 			Specification: "SpecificationX",
 		},
 		{
 			Key:           suite.logicKey,
+			Type:          model_logic.LogicTypeAssessment,
 			Description:   "Description",
 			Notation:      "tla_plus",
 			Specification: "Specification",
@@ -220,12 +236,14 @@ func (suite *LogicSuite) TestQuery() {
 	assert.Equal(suite.T(), []model_logic.Logic{
 		{
 			Key:           suite.logicKey,
+			Type:          model_logic.LogicTypeAssessment,
 			Description:   "Description",
 			Notation:      "tla_plus",
 			Specification: "Specification",
 		},
 		{
 			Key:           suite.logicKeyB,
+			Type:          model_logic.LogicTypeAssessment,
 			Description:   "DescriptionX",
 			Notation:      "tla_plus",
 			Specification: "SpecificationX",
@@ -241,6 +259,7 @@ func t_AddLogic(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.
 
 	err := AddLogic(dbOrTx, modelKey, model_logic.Logic{
 		Key:           logicKey,
+		Type:          model_logic.LogicTypeAssessment,
 		Description:   logicKey.String(),
 		Notation:      "tla_plus",
 		Specification: "Specification",
