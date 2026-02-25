@@ -188,39 +188,19 @@ var _funcMap = template.FuncMap{
 
 		return eventCall
 	},
-	"action_signatures": func(reqs *req_flat.Requirements, transitions []model_state.Transition, stateActions []model_state.StateAction) (signatures []string) {
-
-		eventLookup := reqs.EventLookup()
-
-		// Keep track of each signature we find.
-		signatureLookup := map[string]bool{}
-
-		// If there is any state action we have a signature with no parameters.
-		if len(stateActions) > 0 {
-			signatureLookup[""] = true
+	"action_signature": func(action model_state.Action) (signature string) {
+		var paramNames []string
+		for _, param := range action.Parameters {
+			paramNames = append(paramNames, param.Name)
 		}
-
-		// Create a signature for each event used.
-		for _, transition := range transitions {
-			event := eventLookup[transition.EventKey.String()]
-
-			var paramNames []string
-			for _, param := range event.Parameters {
-				paramNames = append(paramNames, param.Name)
-			}
-			signature := strings.Join(paramNames, ", ")
-			signatureLookup[signature] = true
+		return strings.Join(paramNames, ", ")
+	},
+	"query_signature": func(query model_state.Query) (signature string) {
+		var paramNames []string
+		for _, param := range query.Parameters {
+			paramNames = append(paramNames, param.Name)
 		}
-
-		// Put all the signatures in a list.
-		for signature := range signatureLookup {
-			signatures = append(signatures, signature)
-		}
-
-		// Make the signatures ordered for consistent display.
-		sort.Strings(signatures)
-
-		return signatures
+		return strings.Join(paramNames, ", ")
 	},
 
 	// Formatting of bulleted lists.

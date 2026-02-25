@@ -57,6 +57,17 @@ This is an actor:
 - [{{ range $i, $name := . }}{{ if $i }}, {{ end }}{{ $name }}{{ end }}]
 {{ end }}
 {{ end }}
+
+{{ if ne .Class.Invariants nil -}}
+## Invariants
+
+{{ range .Class.Invariants -}}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+{{- end }}
+
 ## Relations
 
 ![er]({{ filename "class" .Class.Key "" ".svg" }})
@@ -94,6 +105,16 @@ The events for this class.
 *None*
 {{- end }}
 
+{{ if ne .Class.Guards nil -}}
+The guards for this class.
+
+{{ range .Class.Guards -}}
+- **[{{ .Logic.Description }}]**
+{{ if ne .Logic.Specification "" }}    - {{ .Logic.Specification }}
+{{ end -}}
+{{ end }}
+{{- end }}
+
 ## Action Specifications
 
 The actions for this class.
@@ -106,29 +127,25 @@ The actions for this class.
 {{- $fromTransitions := action_transitions $reqs .Key -}}
 {{- $fromStateActions := action_state_actions $reqs .Key -}}
 
-
-{{- /* And action may have multiple signatures based on who calls it. */ -}}
-
-{{- $signatures := action_signatures $reqs $fromTransitions $fromStateActions -}}
-
-{{- $actionName := $action.Name -}}
-{{ if eq $signatures nil -}}
-### {{ $actionName }}(*not called*)
-{{ else }}
-### {{ range $i, $signature := $signatures -}}
-    {{- if ne $i 0 }} or {{ end -}}
-        {{- $actionName -}}({{- $signature -}})
-    {{- end -}}
-{{ end }}
+### {{ $action.Name }}({{ action_signature $action }})
 
 {{ $action.Details }}
 
+{{ if ne $action.Parameters nil -}}
+Parameters:
+
+{{ range $action.Parameters -}}
+- *{{ .Name }}.* {{ .DataTypeRules }}
+{{ end }}
+{{ end -}}
 Requires:
 
 {{ if ne $action.Requires nil -}}
 
 {{ range $action.Requires -}}
 - {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
 {{ end }}
 
 {{- else -}}
@@ -146,12 +163,23 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
 {{ end }}
 
 {{- else -}}
 *None*
 {{- end }}
 
+{{ if ne $action.SafetyRules nil -}}
+Safety Rules:
+
+{{ range $action.SafetyRules -}}
+- {{ .Description }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+{{ end -}}
 Triggered from:
 
 {{ range $fromTransitions -}}
@@ -168,13 +196,63 @@ Triggered from:
 *None*
 {{- end }}
 
-{{ if ne .Class.Invariants nil -}}
-## Invariants
+## Query Specifications
 
-{{ range .Class.Invariants -}}
+The queries for this class.
+
+{{ if ne .Class.Queries nil -}}
+
+{{ range .Class.Queries -}}
+
+{{- $query := query_lookup $reqs .Key -}}
+
+### {{ $query.Name }}({{ query_signature $query }})
+
+{{ $query.Details }}
+
+{{ if ne $query.Parameters nil -}}
+Parameters:
+
+{{ range $query.Parameters -}}
+- *{{ .Name }}.* {{ .DataTypeRules }}
+{{ end }}
+{{ end -}}
+Requires:
+
+{{ if ne $query.Requires nil -}}
+
+{{ range $query.Requires -}}
 - {{ .Description }}
 {{ if ne .Specification "" }}    - {{ .Specification }}
 {{ end -}}
 {{ end }}
+
+{{- else -}}
+*None*
 {{- end }}
 
+Guarantees:
+
+{{ if ne $query.Guarantees nil -}}
+
+{{ range $query.Guarantees -}}
+{{- $mainBullet := main_bullet .Description }}
+{{- $subBullets := sub_bullets .Description }}
+- {{ $mainBullet }}
+{{- if ne $subBullets nil }}{{ range $subBullets }}
+    - {{ . }}
+{{- end }}{{ end }}
+{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ end -}}
+{{ end }}
+
+{{- else -}}
+*None*
+{{- end }}
+
+
+{{ end -}}
+
+{{- else -}}
+*None*
+{{- end }}
