@@ -38,7 +38,7 @@ The domain classes that define this actor.
 {{- $class := . }}
 {{- $domain := class_domain $reqs $class.Key }}
 
-### {{ $domain.Name }} : {{ $class.Name }}
+### {{ $domain.Name }} : [{{ $class.Name }}]({{ filename "class" $class.Key "" ".md" }})
 
 {{ first_md_paragraph $class.Details }}
 

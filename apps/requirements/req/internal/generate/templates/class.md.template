@@ -10,8 +10,17 @@
 [⇦ {{ $reqs.Model.Name }}](model.md) / [{{ $domain.Name }}]({{ filename "domain" $domain.Key "" ".md" }})
 {{- end }}
 
+# {{ .Class.Name }}
+
 {{ .Class.Details }}
 
+{{ if ne .Class.ActorKey nil -}}
+{{- $actor := actor_lookup $reqs .Class.ActorKey -}}
+This is an actor:
+
+- **[{{ $actor.Name }} <img src="{{ $actor.Type }}.svg" width="13" height="30" />]({{ filename "actor" $actor.Key "" ".md" }}).** {{ first_md_sentence $actor.Details }}
+
+{{ end -}}
 ## Attributes
 
 | Name | Rules | Nullable | Comment |

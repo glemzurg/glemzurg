@@ -266,6 +266,10 @@ var _funcMap = template.FuncMap{
 		lookup := reqs.ScenarioLookup()
 		return lookup[key.String()]
 	},
+	"actor_lookup": func(reqs *req_flat.Requirements, key identity.Key) (actor model_actor.Actor) {
+		lookup := reqs.ActorLookup()
+		return lookup[key.String()]
+	},
 	"actor_classes": func(reqs *req_flat.Requirements, key identity.Key) (classes []model_class.Class) {
 		lookup := reqs.ActorClassesLookup()
 		return lookup[key.String()]
