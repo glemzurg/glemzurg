@@ -71,11 +71,11 @@ var (
 // buildTestModel builds a comprehensive model with all entity types populated.
 func buildTestModel() req_model.Model {
 	// Logics.
-	guardLogic := helper.Must(model_logic.NewLogic(tGuardKey, model_logic.LogicTypeAssessment, "Guard logic.", model_logic.NotationTLAPlus, "self.amount > 0"))
-	actionGuarantee := helper.Must(model_logic.NewLogic(tActionGuaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = 0"))
-	queryGuarantee := helper.Must(model_logic.NewLogic(tQueryGuaranteeKey, model_logic.LogicTypeQuery, "Query result.", model_logic.NotationTLAPlus, "result = self.amount"))
-	invariant := helper.Must(model_logic.NewLogic(tInvariantKey, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
-	gfLogic := helper.Must(model_logic.NewLogic(tGlobalFuncKey, model_logic.LogicTypeValue, "Max function.", model_logic.NotationTLAPlus, "IF a > b THEN a ELSE b"))
+	guardLogic := helper.Must(model_logic.NewLogic(tGuardKey, model_logic.LogicTypeAssessment, "Guard logic.", "", model_logic.NotationTLAPlus, "self.amount > 0"))
+	actionGuarantee := helper.Must(model_logic.NewLogic(tActionGuaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_logic.NotationTLAPlus, "self.amount' = 0"))
+	queryGuarantee := helper.Must(model_logic.NewLogic(tQueryGuaranteeKey, model_logic.LogicTypeQuery, "Query result.", "result", model_logic.NotationTLAPlus, "result = self.amount"))
+	invariant := helper.Must(model_logic.NewLogic(tInvariantKey, model_logic.LogicTypeAssessment, "Always true.", "", model_logic.NotationTLAPlus, "TRUE"))
+	gfLogic := helper.Must(model_logic.NewLogic(tGlobalFuncKey, model_logic.LogicTypeValue, "Max function.", "", model_logic.NotationTLAPlus, "IF a > b THEN a ELSE b"))
 
 	// Global function.
 	globalFunc := helper.Must(model_logic.NewGlobalFunction(tGlobalFuncKey, "_Max", []string{"a", "b"}, gfLogic))
@@ -130,8 +130,8 @@ func buildTestModel() req_model.Model {
 			ToStateKey:   &tStateClosedKey,
 		},
 	}
-	classInv1 := helper.Must(model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", model_logic.NotationTLAPlus, "self.total > 0"))
-	classInv2 := helper.Must(model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", model_logic.NotationTLAPlus, "Len(self.items) > 0"))
+	classInv1 := helper.Must(model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", "", model_logic.NotationTLAPlus, "self.total > 0"))
+	classInv2 := helper.Must(model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", "", model_logic.NotationTLAPlus, "Len(self.items) > 0"))
 	class.SetInvariants([]model_logic.Logic{classInv1, classInv2})
 
 	// Second class (minimal).

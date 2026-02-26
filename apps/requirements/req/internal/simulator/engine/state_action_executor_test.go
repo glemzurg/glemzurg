@@ -37,7 +37,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/exit/on_exit")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionExitKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.exit_count' = self.exit_count + 1"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", model_logic.NotationTLAPlus, "self.exit_count + 1"))
 	actionExit := helper.Must(model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
@@ -85,7 +85,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/entry/on_entry")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionEntryKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.entry_count' = self.entry_count + 1"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", model_logic.NotationTLAPlus, "self.entry_count + 1"))
 	actionEntry := helper.Must(model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
