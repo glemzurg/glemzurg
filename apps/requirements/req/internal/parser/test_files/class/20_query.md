@@ -24,6 +24,7 @@ queries:
               specification: accountId \in DOMAIN self.accounts
         guarantees:
             - details: Returns the balance for the account.
-              specification: result = self.accounts[accountId].balance
+              target: balance
+              specification: self.accounts[accountId].balance
     ListAccounts:
         details: Lists all accounts.

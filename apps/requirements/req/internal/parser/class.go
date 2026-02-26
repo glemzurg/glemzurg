@@ -291,7 +291,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "tla_plus", specification)
+				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", "tla_plus", specification)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}
@@ -666,6 +666,7 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 		Key:           guardKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   details,
+		Target:        "",
 		Notation:      "tla_plus",
 		Specification: specification,
 	}
@@ -845,6 +846,7 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 			return nil, errors.Errorf("%s[%d] must be a mapping", field, i)
 		}
 		details, _ := itemMap["details"].(string)
+		target, _ := itemMap["target"].(string)
 		specification, _ := itemMap["specification"].(string)
 
 		key, err := newKey(parentKey, strconv.Itoa(i))
@@ -856,6 +858,7 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 			Key:           key,
 			Type:          logicType,
 			Description:   details,
+			Target:        target,
 			Notation:      "tla_plus",
 			Specification: specification,
 		})
@@ -1233,6 +1236,7 @@ func generateLogicSequence(builder *YamlBuilder, field string, logics []model_lo
 	for _, logic := range logics {
 		logicBuilder := NewYamlBuilder()
 		logicBuilder.AddField("details", logic.Description)
+		logicBuilder.AddField("target", logic.Target)
 		logicBuilder.AddField("specification", logic.Specification)
 		items = append(items, logicBuilder)
 	}
