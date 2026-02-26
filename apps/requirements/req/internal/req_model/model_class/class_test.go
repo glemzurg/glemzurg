@@ -204,7 +204,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			{Key: wrongInvKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus},
+			helper.Must(model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", model_logic.NotationTLAPlus, "")),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -296,20 +296,15 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test valid class with all child types.
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
-	validInvariant := model_logic.Logic{Key: invKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
-	validLogic := model_logic.Logic{Key: guardKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}
-	validAction := model_state.Action{Key: actionKey, Name: "Action"}
-	validEvent := model_state.Event{Key: eventKey, Name: "Event"}
-	validState := model_state.State{Key: stateKey, Name: "State"}
-	validGuard := model_state.Guard{Key: guardKey, Name: "Guard", Logic: validLogic}
-	validQuery := model_state.Query{Key: queryKey, Name: "Query"}
+	validInvariant := helper.Must(model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_logic.NotationTLAPlus, ""))
+	validLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", model_logic.NotationTLAPlus, ""))
+	validAction := helper.Must(model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil))
+	validEvent := helper.Must(model_state.NewEvent(eventKey, "Event", "", nil))
+	validState := helper.Must(model_state.NewState(stateKey, "State", "", ""))
+	validGuard := helper.Must(model_state.NewGuard(guardKey, "Guard", validLogic))
+	validQuery := helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, nil, nil))
 	validAttr := Attribute{Key: attrKey, Name: "Attr"}
-	validTransition := model_state.Transition{
-		Key:          transitionKey,
-		FromStateKey: &stateKey,
-		EventKey:     eventKey,
-		ToStateKey:   &stateKey,
-	}
+	validTransition := helper.Must(model_state.NewTransition(transitionKey, &stateKey, eventKey, nil, nil, &stateKey, ""))
 	class = Class{
 		Key:         validKey,
 		Name:        "Name",
@@ -327,13 +322,12 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test guard logic key mismatch is caught through class validation.
 	otherGuardKey := helper.Must(identity.NewGuardKey(validKey, "other_guard"))
+	mismatchedLogic := helper.Must(model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Desc.", "", model_logic.NotationTLAPlus, ""))
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Guards: map[identity.Key]model_state.Guard{
-			guardKey: {Key: guardKey, Name: "Guard", Logic: model_logic.Logic{
-				Key: otherGuardKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus,
-			}},
+			guardKey: helper.Must(model_state.NewGuard(guardKey, "Guard", mismatchedLogic)),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -342,13 +336,12 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test action require key with wrong parent is caught.
 	otherActionKey := helper.Must(identity.NewActionKey(validKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
+	wrongReqLogic := helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, ""))
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Actions: map[identity.Key]model_state.Action{
-			actionKey: {Key: actionKey, Name: "Action", Requires: []model_logic.Logic{
-				{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
-			}},
+			actionKey: helper.Must(model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -357,13 +350,12 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test query guarantee key with wrong parent is caught.
 	otherQueryKey := helper.Must(identity.NewQueryKey(validKey, "other_query"))
 	wrongGuarKey := helper.Must(identity.NewQueryGuaranteeKey(otherQueryKey, "guar_1"))
+	wrongGuarLogic := helper.Must(model_logic.NewLogic(wrongGuarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_logic.NotationTLAPlus, ""))
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Queries: map[identity.Key]model_state.Query{
-			queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
-				{Key: wrongGuarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
-			}},
+			queryKey: helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{wrongGuarLogic}, nil)),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -372,13 +364,12 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test attribute derivation policy key with wrong parent is caught.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(validKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
+	wrongDerivLogic := helper.Must(model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeStateChange, "Computed.", "field", model_logic.NotationTLAPlus, ""))
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
 		Attributes: map[identity.Key]Attribute{
-			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &model_logic.Logic{
-				Key: wrongDerivKey, Type: model_logic.LogicTypeStateChange, Description: "Computed.", Notation: model_logic.NotationTLAPlus,
-			}},
+			attrKey: {Key: attrKey, Name: "Attr", DerivationPolicy: &wrongDerivLogic},
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -401,7 +392,7 @@ func (suite *ClassSuite) TestSetters() {
 	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state1"))
 
 	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
-	invariants := []model_logic.Logic{{Key: invKey, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Notation: model_logic.NotationTLAPlus}}
+	invariants := []model_logic.Logic{helper.Must(model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_logic.NotationTLAPlus, ""))}
 	class.SetInvariants(invariants)
 	assert.Equal(suite.T(), invariants, class.Invariants)
 
@@ -409,11 +400,11 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetAttributes(attrs)
 	assert.Equal(suite.T(), attrs, class.Attributes)
 
-	states := map[identity.Key]model_state.State{stateKey: {Key: stateKey, Name: "State"}}
+	states := map[identity.Key]model_state.State{stateKey: helper.Must(model_state.NewState(stateKey, "State", "", ""))}
 	class.SetStates(states)
 	assert.Equal(suite.T(), states, class.States)
 
-	events := map[identity.Key]model_state.Event{eventKey: {Key: eventKey, Name: "Event"}}
+	events := map[identity.Key]model_state.Event{eventKey: helper.Must(model_state.NewEvent(eventKey, "Event", "", nil))}
 	class.SetEvents(events)
 	assert.Equal(suite.T(), events, class.Events)
 
@@ -421,11 +412,11 @@ func (suite *ClassSuite) TestSetters() {
 	class.SetGuards(guards)
 	assert.Equal(suite.T(), guards, class.Guards)
 
-	actions := map[identity.Key]model_state.Action{actionKey: {Key: actionKey, Name: "Action"}}
+	actions := map[identity.Key]model_state.Action{actionKey: helper.Must(model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil))}
 	class.SetActions(actions)
 	assert.Equal(suite.T(), actions, class.Actions)
 
-	queries := map[identity.Key]model_state.Query{queryKey: {Key: queryKey, Name: "Query"}}
+	queries := map[identity.Key]model_state.Query{queryKey: helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, nil, nil))}
 	class.SetQueries(queries)
 	assert.Equal(suite.T(), queries, class.Queries)
 

@@ -47,13 +47,13 @@ func (suite *ActionSuite) TestValidate() {
 				Name:    "Name",
 				Details: "Details",
 				Requires: []model_logic.Logic{
-					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", model_logic.NotationTLAPlus, "req1")),
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition 1.", Target: "shipping", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition 1.", "shipping", model_logic.NotationTLAPlus, "guar1")),
 				},
 				SafetyRules: []model_logic.Logic{
-					{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule 1.", Notation: model_logic.NotationTLAPlus, Specification: "safety1"},
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule 1.", "", model_logic.NotationTLAPlus, "safety1")),
 				},
 			},
 		},
@@ -63,7 +63,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_logic.NotationTLAPlus, "x > 0")),
 				},
 			},
 		},
@@ -73,7 +73,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "1"},
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x to 1.", "x", model_logic.NotationTLAPlus, "1")),
 				},
 			},
 		},
@@ -83,7 +83,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				SafetyRules: []model_logic.Logic{
-					{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "x must stay positive.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' > 0"},
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "x must stay positive.", "", model_logic.NotationTLAPlus, "self.x' > 0")),
 				},
 			},
 		},
@@ -117,10 +117,10 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Requires: []model_logic.Logic{
-					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_logic.NotationTLAPlus, "x > 0")),
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "1"},
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x to 1.", "x", model_logic.NotationTLAPlus, "1")),
 				},
 			},
 			errstr: "Name",
@@ -164,7 +164,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Target: "x", Notation: model_logic.NotationTLAPlus},
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_logic.NotationTLAPlus, "")),
 				},
 			},
 			errstr: "requires 0: logic kind must be 'assessment'",
@@ -175,7 +175,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeAssessment, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus},
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", model_logic.NotationTLAPlus, "")),
 				},
 			},
 			errstr: "guarantee 0: logic kind must be 'state_change'",
@@ -186,7 +186,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				SafetyRules: []model_logic.Logic{
-					{Key: safetyKey, Type: model_logic.LogicTypeAssessment, Description: "x must stay positive.", Notation: model_logic.NotationTLAPlus},
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeAssessment, "x must stay positive.", "", model_logic.NotationTLAPlus, "")),
 				},
 			},
 			errstr: "safety rule 0: logic kind must be 'safety_rule'",
@@ -197,8 +197,8 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "1"},
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x again.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "2"},
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x.", "x", model_logic.NotationTLAPlus, "1")),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x again.", "x", model_logic.NotationTLAPlus, "2")),
 				},
 			},
 			errstr: "duplicate target",
@@ -227,19 +227,19 @@ func (suite *ActionSuite) TestNew() {
 	safetyKey := helper.Must(identity.NewActionSafetyKey(key, "safety_1"))
 
 	requires := []model_logic.Logic{
-		{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
+		helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "tla_req")),
 	}
 	guarantees := []model_logic.Logic{
-		{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Target: "shipping", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+		helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition.", "shipping", model_logic.NotationTLAPlus, "tla_guar")),
 	}
 	safetyRules := []model_logic.Logic{
-		{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "tla_safety"},
+		helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "tla_safety")),
 	}
 
 	// Test all parameters are mapped correctly.
 	params := []Parameter{
-		{Name: "ParamA", DataTypeRules: "Nat"},
-		{Name: "ParamB", DataTypeRules: "Int"},
+		helper.Must(NewParameter("ParamA", "Nat")),
+		helper.Must(NewParameter("ParamB", "Int")),
 	}
 	action, err := NewAction(key, "Name", "Details",
 		requires, guarantees, safetyRules, params)
@@ -252,8 +252,8 @@ func (suite *ActionSuite) TestNew() {
 		Guarantees:  guarantees,
 		SafetyRules: safetyRules,
 		Parameters: []Parameter{
-			{Name: "ParamA", DataTypeRules: "Nat"},
-			{Name: "ParamB", DataTypeRules: "Int"},
+			helper.Must(NewParameter("ParamA", "Nat")),
+			helper.Must(NewParameter("ParamB", "Int")),
 		},
 	}, action)
 
@@ -308,13 +308,13 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+			helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "")),
 		},
 		Guarantees: []model_logic.Logic{
-			{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Target: "shipping", Notation: model_logic.NotationTLAPlus},
+			helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition.", "shipping", model_logic.NotationTLAPlus, "")),
 		},
 		SafetyRules: []model_logic.Logic{
-			{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus},
+			helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "")),
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
@@ -327,7 +327,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			{Key: wrongReqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
+			helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "")),
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
@@ -349,7 +349,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			{Name: "param1", DataTypeRules: "Nat"},
+			helper.Must(NewParameter("param1", "Nat")),
 		},
 	}
 	err = action.ValidateWithParent(&classKey)

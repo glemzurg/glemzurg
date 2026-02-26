@@ -90,15 +90,15 @@ func (suite *EventSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	event, err := NewEvent(key, "Name", "Details",
-		[]Parameter{{Name: "ParamA", DataTypeRules: "Nat"}, {Name: "ParamB", DataTypeRules: "Int"}})
+		[]Parameter{helper.Must(NewParameter("ParamA", "Nat")), helper.Must(NewParameter("ParamB", "Int"))})
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), Event{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
 		Parameters: []Parameter{
-			{Name: "ParamA", DataTypeRules: "Nat"},
-			{Name: "ParamB", DataTypeRules: "Int"},
+			helper.Must(NewParameter("ParamA", "Nat")),
+			helper.Must(NewParameter("ParamB", "Int")),
 		},
 	}, event)
 
@@ -160,7 +160,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Parameters: []Parameter{
-			{Name: "param1", DataTypeRules: "Nat"},
+			helper.Must(NewParameter("param1", "Nat")),
 		},
 	}
 	err = event.ValidateWithParent(&classKey)
