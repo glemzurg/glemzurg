@@ -140,14 +140,7 @@ func buildTwoDomainModel() *req_model.Model {
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "order_items",
-			FromClassKey:     orderClassKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToClassKey:       itemClassKey,
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 1},
-		},
+		assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderClassKey, helper.Must(model_class.NewMultiplicity("1")), itemClassKey, helper.Must(model_class.NewMultiplicity("1..many")), nil, "")),
 	}
 
 	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
@@ -638,7 +631,8 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0"))},
 	}
 
-	filtered := BuildFilteredModel(model, resolved)
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.NoError(err)
 	s.NotNil(filtered)
 
 	// Count total classes in filtered model.
@@ -666,7 +660,8 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_ExcludesFilteredClasses() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	filtered := BuildFilteredModel(model, resolved)
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.NoError(err)
 
 	// Count total classes — should be 1.
 	totalClasses := 0
@@ -687,17 +682,13 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: {
-				Key:          assocKey,
-				Name:         "order_items",
-				FromClassKey: orderClassKey,
-				ToClassKey:   itemClassKey,
-			},
+			assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderClassKey, helper.Must(model_class.NewMultiplicity("any")), itemClassKey, helper.Must(model_class.NewMultiplicity("any")), nil, "")),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	filtered := BuildFilteredModel(model, resolved)
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.NoError(err)
 
 	// Count associations at all levels.
 	totalAssocs := len(filtered.ClassAssociations)
@@ -723,7 +714,8 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesModelMetadata() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	filtered := BuildFilteredModel(model, resolved)
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.NoError(err)
 	s.Equal("original_key", filtered.Key)
 	s.Equal("Original Name", filtered.Name)
 }
@@ -739,7 +731,8 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_EmptyDomainsOmitted() {
 		ModelInvariants: []model_logic.Logic{},
 	}
 
-	filtered := BuildFilteredModel(model, resolved)
+	filtered, err := BuildFilteredModel(model, resolved)
+	s.NoError(err)
 
 	// Domain D should have no classes in its subdomain.
 	// Check that domain2 has Payment.

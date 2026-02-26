@@ -40,25 +40,25 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", model_logic.NotationTLAPlus, "self.exit_count + 1"))
 	actionExit := helper.Must(model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
+	stateActionExit := helper.Must(model_state.NewStateAction(stateActionKey, actionExitKey, "exit"))
+
+	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateOpen.SetActions([]model_state.StateAction{stateActionExit})
+	stateClosed := helper.Must(model_state.NewState(stateClosedKey, "Closed", "", ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {
-			Key:  stateOpenKey,
-			Name: "Open",
-			Actions: []model_state.StateAction{
-				{Key: stateActionKey, ActionKey: actionExitKey, When: "exit"},
-			},
-		},
-		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
-	}
-	class.Events = map[identity.Key]model_state.Event{}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey:   stateOpen,
+		stateClosedKey: stateClosed,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{
 		actionExitKey: actionExit,
-	}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{}
+	})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -88,24 +88,23 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", model_logic.NotationTLAPlus, "self.entry_count + 1"))
 	actionEntry := helper.Must(model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
+	stateActionEntry := helper.Must(model_state.NewStateAction(stateActionKey, actionEntryKey, "entry"))
+
+	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateOpen.SetActions([]model_state.StateAction{stateActionEntry})
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {
-			Key:  stateOpenKey,
-			Name: "Open",
-			Actions: []model_state.StateAction{
-				{Key: stateActionKey, ActionKey: actionEntryKey, When: "entry"},
-			},
-		},
-	}
-	class.Events = map[identity.Key]model_state.Event{}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey: stateOpen,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{
 		actionEntryKey: actionEntry,
-	}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{}
+	})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -128,16 +127,18 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/order/state/open")
 
+	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-	}
-	class.Events = map[identity.Key]model_state.Event{}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{}
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey: stateOpen,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -157,13 +158,13 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	bogusStateKey := mustKey("domain/d/subdomain/s/class/order/state/bogus")
 
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{}
-	class.Events = map[identity.Key]model_state.Event{}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{}
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()

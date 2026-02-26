@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -54,21 +55,19 @@ func buildOrderItemModel(mandatory bool) *testChainModel {
 
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 
-	var toMin uint
+	var toMultStr string
 	if mandatory {
-		toMin = 1
+		toMultStr = "1..many"
+	} else {
+		toMultStr = "any"
 	}
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity(toMultStr))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
 
 	m := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	m.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "OrderItem",
-			FromClassKey:     orderKey,
-			ToClassKey:       itemKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: toMin, HigherBound: 0},
-		},
+		assocKey: assoc,
 	}
 
 	return &testChainModel{
@@ -154,41 +153,33 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	eventUpdateKey := mustKey("domain/d/subdomain/s/class/item/event/update")
 	transUpdateKey := mustKey("domain/d/subdomain/s/class/item/transition/update")
 
-	itemClass := model_class.Class{
-		Key:        itemKey,
-		Name:       "Item",
-		Attributes: map[identity.Key]model_class.Attribute{},
-		States: map[identity.Key]model_state.State{
-			stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-		},
-		Events: map[identity.Key]model_state.Event{
-			eventUpdateKey: {Key: eventUpdateKey, Name: "update"},
-		},
-		Guards:  map[identity.Key]model_state.Guard{},
-		Actions: map[identity.Key]model_state.Action{},
-		Queries: map[identity.Key]model_state.Query{},
-		Transitions: map[identity.Key]model_state.Transition{
-			transUpdateKey: {
-				Key:          transUpdateKey,
-				FromStateKey: &stateActiveKey,
-				EventKey:     eventUpdateKey,
-				ToStateKey:   &stateActiveKey, // Self-transition
-			},
-		},
-	}
+	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
+	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	transUpdate := helper.Must(model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, ""))
+
+	itemClass := helper.Must(model_class.NewClass(itemKey, "Item", "", nil, nil, nil, ""))
+	itemClass.SetAttributes(map[identity.Key]model_class.Attribute{})
+	itemClass.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: stateActive,
+	})
+	itemClass.SetEvents(map[identity.Key]model_state.Event{
+		eventUpdateKey: eventUpdate,
+	})
+	itemClass.SetGuards(map[identity.Key]model_state.Guard{})
+	itemClass.SetActions(map[identity.Key]model_state.Action{})
+	itemClass.SetQueries(map[identity.Key]model_state.Query{})
+	itemClass.SetTransitions(map[identity.Key]model_state.Transition{
+		transUpdateKey: transUpdate,
+	})
 
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "OrderItem",
-			FromClassKey:     orderKey,
-			ToClassKey:       itemKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 0},
-		},
+		assocKey: assoc,
 	}
 
 	simState := state.NewSimulationState()

@@ -10,15 +10,12 @@ import (
 // BuildFilteredModel creates a new Model containing only the classes,
 // associations, and invariants from the resolved surface. The original
 // model is not modified.
-func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) *req_model.Model {
-	filtered := &req_model.Model{
-		Key:            original.Key,
-		Name:           original.Name,
-		Details:        original.Details,
-		Invariants:     resolved.ModelInvariants,
-		GlobalFunctions: original.GlobalFunctions,
-		Actors:         original.Actors,
+func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) (*req_model.Model, error) {
+	filtered, err := req_model.NewModel(original.Key, original.Name, original.Details, resolved.ModelInvariants, original.GlobalFunctions)
+	if err != nil {
+		return nil, err
 	}
+	filtered.Actors = original.Actors
 
 	// Rebuild domain/subdomain/class tree with only included classes.
 	filteredDomains := make(map[identity.Key]model_domain.Domain)
@@ -32,29 +29,26 @@ func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) *r
 				}
 			}
 			if len(filteredClasses) > 0 {
-				filteredSubdomains[subdomainKey] = model_domain.Subdomain{
-					Key:               subdomainKey,
-					Name:              subdomain.Name,
-					Details:           subdomain.Details,
-					UmlComment:        subdomain.UmlComment,
-					Generalizations:   subdomain.Generalizations,
-					Classes:           filteredClasses,
-					UseCases:          subdomain.UseCases,
-					ClassAssociations: filterAssociations(subdomain.ClassAssociations, resolved.Associations),
-					UseCaseShares:     subdomain.UseCaseShares,
+				filteredSub, err := model_domain.NewSubdomain(subdomainKey, subdomain.Name, subdomain.Details, subdomain.UmlComment)
+				if err != nil {
+					return nil, err
 				}
+				filteredSub.Generalizations = subdomain.Generalizations
+				filteredSub.Classes = filteredClasses
+				filteredSub.UseCases = subdomain.UseCases
+				filteredSub.ClassAssociations = filterAssociations(subdomain.ClassAssociations, resolved.Associations)
+				filteredSub.UseCaseShares = subdomain.UseCaseShares
+				filteredSubdomains[subdomainKey] = filteredSub
 			}
 		}
 		if len(filteredSubdomains) > 0 {
-			filteredDomains[domainKey] = model_domain.Domain{
-				Key:               domainKey,
-				Name:              domain.Name,
-				Details:           domain.Details,
-				Realized:          domain.Realized,
-				UmlComment:        domain.UmlComment,
-				Subdomains:        filteredSubdomains,
-				ClassAssociations: filterAssociations(domain.ClassAssociations, resolved.Associations),
+			filteredDom, err := model_domain.NewDomain(domainKey, domain.Name, domain.Details, domain.Realized, domain.UmlComment)
+			if err != nil {
+				return nil, err
 			}
+			filteredDom.Subdomains = filteredSubdomains
+			filteredDom.ClassAssociations = filterAssociations(domain.ClassAssociations, resolved.Associations)
+			filteredDomains[domainKey] = filteredDom
 		}
 	}
 	filtered.Domains = filteredDomains
@@ -65,7 +59,7 @@ func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) *r
 	// Preserve domain associations.
 	filtered.DomainAssociations = original.DomainAssociations
 
-	return filtered
+	return &filtered, nil
 }
 
 // filterAssociations keeps only associations that are in the resolved set.

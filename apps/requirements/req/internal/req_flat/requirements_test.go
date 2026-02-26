@@ -46,7 +46,8 @@ var (
 	tGenKey   = helper.Must(identity.NewGeneralizationKey(tSubdomainKey, "vehicle"))
 	tAssocKey = helper.Must(identity.NewClassAssociationKey(tSubdomainKey, tClassKey, tClass2Key, "order_items"))
 
-	tDomainAssocKey = helper.Must(identity.NewDomainAssociationKey(tDomainKey, tDomainKey))
+	tDomain2Key     = helper.Must(identity.NewDomainKey("d2"))
+	tDomainAssocKey = helper.Must(identity.NewDomainAssociationKey(tDomainKey, tDomain2Key))
 
 	tUseCaseKey    = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "place_order"))
 	tUseCase2Key   = helper.Must(identity.NewUseCaseKey(tSubdomainKey, "login"))
@@ -90,16 +91,16 @@ func buildTestModel() req_model.Model {
 	// Class.
 	class := helper.Must(model_class.NewClass(tClassKey, "Order", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{
-		tAttributeKey: {Key: tAttributeKey, Name: "amount"},
+		tAttributeKey: helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false, "", nil)),
 	}
+	stateOpen := helper.Must(model_state.NewState(tStateOpenKey, "Open", "", ""))
+	stateOpen.SetActions([]model_state.StateAction{
+		helper.Must(model_state.NewStateAction(tSActionKey, tActionKey, "do")),
+	})
+	stateClosed := helper.Must(model_state.NewState(tStateClosedKey, "Closed", "", ""))
 	class.States = map[identity.Key]model_state.State{
-		tStateOpenKey: {
-			Key: tStateOpenKey, Name: "Open",
-			Actions: []model_state.StateAction{
-				{Key: tSActionKey, ActionKey: tActionKey, When: "do"},
-			},
-		},
-		tStateClosedKey: {Key: tStateClosedKey, Name: "Closed"},
+		tStateOpenKey:   stateOpen,
+		tStateClosedKey: stateClosed,
 	}
 	class.Events = map[identity.Key]model_state.Event{
 		tEventCreateKey: eventCreate,
@@ -115,20 +116,8 @@ func buildTestModel() req_model.Model {
 		tQueryKey: query,
 	}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		tTransCreateKey: {
-			Key:          tTransCreateKey,
-			FromStateKey: nil,
-			EventKey:     tEventCreateKey,
-			ToStateKey:   &tStateOpenKey,
-		},
-		tTransCloseKey: {
-			Key:          tTransCloseKey,
-			FromStateKey: &tStateOpenKey,
-			EventKey:     tEventCloseKey,
-			GuardKey:     &tGuardKey,
-			ActionKey:    &tActionKey,
-			ToStateKey:   &tStateClosedKey,
-		},
+		tTransCreateKey: helper.Must(model_state.NewTransition(tTransCreateKey, nil, tEventCreateKey, nil, nil, &tStateOpenKey, "")),
+		tTransCloseKey:  helper.Must(model_state.NewTransition(tTransCloseKey, &tStateOpenKey, tEventCloseKey, &tGuardKey, &tActionKey, &tStateClosedKey, "")),
 	}
 	classInv1 := helper.Must(model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", "", model_logic.NotationTLAPlus, "self.total > 0"))
 	classInv2 := helper.Must(model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", "", model_logic.NotationTLAPlus, "Len(self.items) > 0"))
@@ -178,14 +167,7 @@ func buildTestModel() req_model.Model {
 		tUseCaseKey: useCase,
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		tAssocKey: {
-			Key:              tAssocKey,
-			Name:             "order_items",
-			FromClassKey:     tClassKey,
-			ToClassKey:       tClass2Key,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 0},
-		},
+		tAssocKey: helper.Must(model_class.NewAssociation(tAssocKey, "order_items", "", tClassKey, helper.Must(model_class.NewMultiplicity("1")), tClass2Key, helper.Must(model_class.NewMultiplicity("any")), nil, "")),
 	}
 
 	// Domain.
@@ -210,15 +192,14 @@ func buildTestModel() req_model.Model {
 	model.ActorGeneralizations = map[identity.Key]model_actor.Generalization{
 		tActorGenKey: actorGen,
 	}
+	domain2 := helper.Must(model_domain.NewDomain(tDomain2Key, "D2", "", false, ""))
+	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{}
 	model.Domains = map[identity.Key]model_domain.Domain{
-		tDomainKey: domain,
+		tDomainKey:  domain,
+		tDomain2Key: domain2,
 	}
 	model.DomainAssociations = map[identity.Key]model_domain.Association{
-		tDomainAssocKey: {
-			Key:               tDomainAssocKey,
-			ProblemDomainKey:  tDomainKey,
-			SolutionDomainKey: tDomainKey,
-		},
+		tDomainAssocKey: helper.Must(model_domain.NewAssociation(tDomainAssocKey, tDomainKey, tDomain2Key, "")),
 	}
 	model.ClassAssociations = map[identity.Key]model_class.Association{}
 
@@ -257,9 +238,11 @@ func (s *RequirementsSuite) TestFlattenModel_ActorGeneralizations() {
 
 func (s *RequirementsSuite) TestFlattenModel_Domains() {
 	reqs := NewRequirements(buildTestModel())
-	s.Len(reqs.Domains, 1)
+	s.Len(reqs.Domains, 2)
 	s.Contains(reqs.Domains, tDomainKey)
 	s.Equal("D", reqs.Domains[tDomainKey].Name)
+	s.Contains(reqs.Domains, tDomain2Key)
+	s.Equal("D2", reqs.Domains[tDomain2Key].Name)
 }
 
 func (s *RequirementsSuite) TestFlattenModel_Subdomains() {
@@ -445,8 +428,9 @@ func (s *RequirementsSuite) TestActorGeneralizationLookup() {
 func (s *RequirementsSuite) TestDomainLookup() {
 	reqs := NewRequirements(buildTestModel())
 	lookup, assocs := reqs.DomainLookup()
-	s.Len(lookup, 1)
+	s.Len(lookup, 2)
 	s.Contains(lookup, tDomainKey.String())
+	s.Contains(lookup, tDomain2Key.String())
 	s.Len(assocs, 1)
 }
 

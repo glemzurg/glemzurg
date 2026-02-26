@@ -84,29 +84,14 @@ func createTestModel() *req_model.Model {
 	}
 
 	// Create attributes
-	statusAttr := model_class.Attribute{
-		Key:           mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"),
-		Name:          "status",
-		DataTypeRules: "{pending, active, completed}",
-		Nullable:      false,
-		DataType:      statusDataType,
-	}
+	statusAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"), "status", "", "{pending, active, completed}", nil, false, "", nil))
+	statusAttr.DataType = statusDataType
 
-	amountAttr := model_class.Attribute{
-		Key:           mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"),
-		Name:          "amount",
-		DataTypeRules: "[0, 1000000] cents",
-		Nullable:      false,
-		DataType:      amountDataType,
-	}
+	amountAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"), "amount", "", "[0, 1000000] cents", nil, false, "", nil))
+	amountAttr.DataType = amountDataType
 
-	nameAttr := model_class.Attribute{
-		Key:           mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"),
-		Name:          "name",
-		DataTypeRules: "string",
-		Nullable:      true,
-		DataType:      nameDataType,
-	}
+	nameAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"), "name", "", "string", nil, true, "", nil))
+	nameAttr.DataType = nameDataType
 
 	// Create an action with a post-condition guarantee
 	actionKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order/action/complete")
@@ -121,14 +106,14 @@ func createTestModel() *req_model.Model {
 
 	// Create the class
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{
 		statusAttr.Key: statusAttr,
 		amountAttr.Key: amountAttr,
 		nameAttr.Key:   nameAttr,
-	}
-	class.Actions = map[identity.Key]model_state.Action{
+	})
+	class.SetActions(map[identity.Key]model_state.Action{
 		actionKey: completeAction,
-	}
+	})
 
 	// Create the subdomain
 	subdomainKey := mustKey("domain/test_domain/subdomain/test_subdomain")
@@ -160,13 +145,8 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
 	// Create an attribute without a parsed DataType
-	attr := model_class.Attribute{
-		Key:           mustKey("domain/d/subdomain/s/class/c/attribute/bad"),
-		Name:          "bad",
-		DataTypeRules: "invalid data type rules",
-		Nullable:      false,
-		DataType:      nil, // Not parsed!
-	}
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/bad"), "bad", "", "invalid data type rules", nil, false, "", nil))
+	attr.DataType = nil // Not parsed!
 
 	class := helper.Must(model_class.NewClass(classKey, "BadClass", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{
@@ -514,13 +494,8 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 		},
 	}
 
-	attr := model_class.Attribute{
-		Key:           mustKey("domain/d/subdomain/s/class/c/attribute/value"),
-		Name:          "value",
-		DataTypeRules: "(0, 100) items",
-		Nullable:      false,
-		DataType:      dataType,
-	}
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/value"), "value", "", "(0, 100) items", nil, false, "", nil))
+	attr.DataType = dataType
 
 	class := helper.Must(model_class.NewClass(classKey, "Test", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{attr.Key: attr}

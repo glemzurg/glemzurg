@@ -1,10 +1,12 @@
 package invariants
 
 import (
+	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -15,84 +17,41 @@ import (
 func indexTestModel(attrs map[identity.Key]model_class.Attribute) (*req_model.Model, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/plane")
 
-	class := model_class.Class{
-		Key:        classKey,
-		Name:       "Plane",
-		Attributes: attrs,
+	class := helper.Must(model_class.NewClass(classKey, "Plane", "", nil, nil, nil, ""))
+	class.SetAttributes(attrs)
+
+	subdomainKey := mustKey("domain/d/subdomain/s")
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		classKey: class,
 	}
 
-	return &req_model.Model{
-		Key:  "test",
-		Name: "Test",
-		Domains: map[identity.Key]model_domain.Domain{
-			mustKey("domain/d"): {
-				Key:  mustKey("domain/d"),
-				Name: "D",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					mustKey("domain/d/subdomain/s"): {
-						Key:  mustKey("domain/d/subdomain/s"),
-						Name: "S",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: class,
-						},
-					},
-				},
-			},
-		},
-	}, classKey
+	domainKey := mustKey("domain/d")
+	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	return &model, classKey
 }
 
 func spanAttr(name string, indexNums []uint) model_class.Attribute {
-	lower := 0
-	upper := 10000
-	return model_class.Attribute{
-		Key:           mustKey("domain/d/subdomain/s/class/plane/attribute/" + name),
-		Name:          name,
-		DataTypeRules: "[0,10000]",
-		IndexNums:     indexNums,
-		DataType: &model_data_type.DataType{
-			CollectionType: "atomic",
-			Atomic: &model_data_type.Atomic{
-				ConstraintType: "span",
-				Span: &model_data_type.AtomicSpan{
-					LowerType:   "closed",
-					LowerValue:  &lower,
-					HigherType:  "closed",
-					HigherValue: &upper,
-				},
-			},
-		},
-	}
+	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", "[0, 10000]", nil, false, "", indexNums))
 }
 
 func enumAttr(name string, values []string, indexNums []uint) model_class.Attribute {
-	enums := make([]model_data_type.AtomicEnum, len(values))
-	for i, v := range values {
-		enums[i] = model_data_type.AtomicEnum{Value: v, SortOrder: i}
-	}
-	return model_class.Attribute{
-		Key:           mustKey("domain/d/subdomain/s/class/plane/attribute/" + name),
-		Name:          name,
-		DataTypeRules: "enum",
-		IndexNums:     indexNums,
-		DataType: &model_data_type.DataType{
-			CollectionType: "atomic",
-			Atomic: &model_data_type.Atomic{
-				ConstraintType: "enumeration",
-				Enums:          enums,
-			},
-		},
-	}
+	dataTypeRules := "{" + strings.Join(values, ", ") + "}"
+	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", dataTypeRules, nil, false, "", indexNums))
 }
 
 // --- Tests ---
 
 func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
-	attr := model_class.Attribute{
-		Key:       mustKey("domain/d/subdomain/s/class/plane/attribute/name"),
-		Name:      "name",
-		IndexNums: nil, // no indexes
-	}
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), "name", "", "string", nil, false, "", nil))
 	model, _ := indexTestModel(map[identity.Key]model_class.Attribute{
 		attr.Key: attr,
 	})

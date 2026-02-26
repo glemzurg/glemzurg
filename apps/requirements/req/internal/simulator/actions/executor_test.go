@@ -78,29 +78,25 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	action := helper.Must(model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 	event := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
 
+	transition := helper.Must(model_state.NewTransition(transKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
-		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey:   helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateClosedKey: helper.Must(model_state.NewState(stateClosedKey, "Closed", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCloseKey: event,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{
 		actionCloseKey: action,
-	}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transKey: {
-			Key:          transKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventCloseKey,
-			ActionKey:    &actionCloseKey,
-			ToStateKey:   &stateClosedKey,
-		},
-	}
+	})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transKey: transition,
+	})
 
 	return class, classKey
 }
@@ -502,25 +498,22 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 
 	event := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
+	transition := helper.Must(model_state.NewTransition(transKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCreateKey: event,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transKey: {
-			Key:          transKey,
-			FromStateKey: nil, // Initial state -> creation
-			EventKey:     eventCreateKey,
-			ToStateKey:   &stateOpenKey,
-		},
-	}
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transKey: transition,
+	})
 
 	simState := state.NewSimulationState()
 	exec, err := buildTestExecutor(simState, nil)
@@ -548,25 +541,22 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 
 	event := helper.Must(model_state.NewEvent(eventDeleteKey, "delete", "", nil))
 
+	transition := helper.Must(model_state.NewTransition(transKey, &stateOpenKey, eventDeleteKey, nil, nil, nil, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventDeleteKey: event,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transKey: {
-			Key:          transKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventDeleteKey,
-			ToStateKey:   nil, // Final state -> deletion
-		},
-	}
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transKey: transition,
+	})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -638,38 +628,29 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	guardLow := helper.Must(model_state.NewGuard(guardLowKey, "low_value", guardLowLogic))
 	eventReview := helper.Must(model_state.NewEvent(eventReviewKey, "review", "", nil))
 
+	transApprove := helper.Must(model_state.NewTransition(transApproveKey, &stateOpenKey, eventReviewKey, &guardHighKey, nil, &stateApprovedKey, ""))
+	transReject := helper.Must(model_state.NewTransition(transRejectKey, &stateOpenKey, eventReviewKey, &guardLowKey, nil, &stateRejectedKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey:     {Key: stateOpenKey, Name: "Open"},
-		stateApprovedKey: {Key: stateApprovedKey, Name: "Approved"},
-		stateRejectedKey: {Key: stateRejectedKey, Name: "Rejected"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey:     helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateApprovedKey: helper.Must(model_state.NewState(stateApprovedKey, "Approved", "", "")),
+		stateRejectedKey: helper.Must(model_state.NewState(stateRejectedKey, "Rejected", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventReviewKey: eventReview,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{
 		guardHighKey: guardHigh,
 		guardLowKey:  guardLow,
-	}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transApproveKey: {
-			Key:          transApproveKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventReviewKey,
-			GuardKey:     &guardHighKey,
-			ToStateKey:   &stateApprovedKey,
-		},
-		transRejectKey: {
-			Key:          transRejectKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventReviewKey,
-			GuardKey:     &guardLowKey,
-			ToStateKey:   &stateRejectedKey,
-		},
-	}
+	})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transApproveKey: transApprove,
+		transRejectKey:  transReject,
+	})
 
 	simState := state.NewSimulationState()
 
@@ -718,38 +699,29 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	guardAlways2 := helper.Must(model_state.NewGuard(guardAlwaysKey2, "always2", guardAlways2Logic))
 	eventGo := helper.Must(model_state.NewEvent(eventKey, "go", "", nil))
 
+	trans1 := helper.Must(model_state.NewTransition(trans1Key, &stateOpenKey, eventKey, &guardAlwaysKey1, nil, &stateAKey, ""))
+	trans2 := helper.Must(model_state.NewTransition(trans2Key, &stateOpenKey, eventKey, &guardAlwaysKey2, nil, &stateBKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-		stateAKey:    {Key: stateAKey, Name: "A"},
-		stateBKey:    {Key: stateBKey, Name: "B"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateAKey:    helper.Must(model_state.NewState(stateAKey, "A", "", "")),
+		stateBKey:    helper.Must(model_state.NewState(stateBKey, "B", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventKey: eventGo,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{
 		guardAlwaysKey1: guardAlways1,
 		guardAlwaysKey2: guardAlways2,
-	}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		trans1Key: {
-			Key:          trans1Key,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventKey,
-			GuardKey:     &guardAlwaysKey1,
-			ToStateKey:   &stateAKey,
-		},
-		trans2Key: {
-			Key:          trans2Key,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventKey,
-			GuardKey:     &guardAlwaysKey2,
-			ToStateKey:   &stateBKey,
-		},
-	}
+	})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		trans1Key: trans1,
+		trans2Key: trans2,
+	})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -778,29 +750,25 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	guardNever := helper.Must(model_state.NewGuard(guardNeverKey, "never", guardNeverLogic))
 	eventGo := helper.Must(model_state.NewEvent(eventKey, "go", "", nil))
 
+	trans := helper.Must(model_state.NewTransition(transKey, &stateOpenKey, eventKey, &guardNeverKey, nil, &stateAKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey: {Key: stateOpenKey, Name: "Open"},
-		stateAKey:    {Key: stateAKey, Name: "A"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateAKey:    helper.Must(model_state.NewState(stateAKey, "A", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventKey: eventGo,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{
 		guardNeverKey: guardNever,
-	}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transKey: {
-			Key:          transKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventKey,
-			GuardKey:     &guardNeverKey,
-			ToStateKey:   &stateAKey,
-		},
-	}
+	})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transKey: trans,
+	})
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -823,7 +791,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 
 func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
 	class := helper.Must(model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), "Empty", "", nil, nil, nil, ""))
-	class.States = map[identity.Key]model_state.State{}
+	class.SetStates(map[identity.Key]model_state.State{})
 
 	err := ValidateClassForSimulation(class)
 	s.Error(err)
@@ -834,9 +802,9 @@ func (s *ActionsSuite) TestValidateClassForSimulationWithStates() {
 	stateKey := mustKey("domain/d/subdomain/s/class/c/state/s1")
 
 	class := helper.Must(model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, ""))
-	class.States = map[identity.Key]model_state.State{
-		stateKey: {Key: stateKey, Name: "S1"},
-	}
+	class.SetStates(map[identity.Key]model_state.State{
+		stateKey: helper.Must(model_state.NewState(stateKey, "S1", "", "")),
+	})
 
 	err := ValidateClassForSimulation(class)
 	s.NoError(err)
@@ -851,10 +819,10 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 	stateClosedKey := mustKey("domain/d/subdomain/s/class/c/state/closed")
 
 	class := helper.Must(model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, ""))
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
-		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
-	}
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey:   helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateClosedKey: helper.Must(model_state.NewState(stateClosedKey, "Closed", "", "")),
+	})
 
 	values := GetStateEnumValues(class)
 	s.Len(values, 2)
@@ -870,8 +838,8 @@ func (s *ActionsSuite) TestBindParametersSuccess() {
 	binder := NewParameterBinder()
 
 	paramDefs := []model_state.Parameter{
-		{Name: "amount", DataTypeRules: "[0,100]"},
-		{Name: "name", DataTypeRules: "string"},
+		helper.Must(model_state.NewParameter("amount", "[0,100]")),
+		helper.Must(model_state.NewParameter("name", "string")),
 	}
 
 	values := map[string]object.Object{
@@ -890,7 +858,7 @@ func (s *ActionsSuite) TestBindParametersMissing() {
 	binder := NewParameterBinder()
 
 	paramDefs := []model_state.Parameter{
-		{Name: "amount", DataTypeRules: "[0,100]"},
+		helper.Must(model_state.NewParameter("amount", "[0,100]")),
 	}
 
 	values := map[string]object.Object{} // missing amount
@@ -907,24 +875,22 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 	lowerValue := 10
 	higherValue := 20
 
-	paramDefs := []model_state.Parameter{
-		{
-			Name:          "count",
-			DataTypeRules: "[10, 20]",
-			DataType: &model_data_type.DataType{
-				CollectionType: "atomic",
-				Atomic: &model_data_type.Atomic{
-					ConstraintType: "span",
-					Span: &model_data_type.AtomicSpan{
-						LowerType:   "closed",
-						LowerValue:  &lowerValue,
-						HigherType:  "closed",
-						HigherValue: &higherValue,
-					},
-				},
+	countParam := helper.Must(model_state.NewParameter("count", "[10, 20]"))
+	countParam.DataType = &model_data_type.DataType{
+		Key:            "count",
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "span",
+			Span: &model_data_type.AtomicSpan{
+				LowerType:   "closed",
+				LowerValue:  &lowerValue,
+				HigherType:  "closed",
+				HigherValue: &higherValue,
 			},
 		},
 	}
+
+	paramDefs := []model_state.Parameter{countParam}
 
 	for i := 0; i < 100; i++ {
 		result := binder.GenerateRandomParameters(paramDefs, rng)
@@ -940,23 +906,21 @@ func (s *ActionsSuite) TestGenerateRandomParametersEnum() {
 	binder := NewParameterBinder()
 	rng := rand.New(rand.NewSource(42))
 
-	paramDefs := []model_state.Parameter{
-		{
-			Name:          "color",
-			DataTypeRules: "{red, green, blue}",
-			DataType: &model_data_type.DataType{
-				CollectionType: "atomic",
-				Atomic: &model_data_type.Atomic{
-					ConstraintType: "enumeration",
-					Enums: []model_data_type.AtomicEnum{
-						{Value: "red", SortOrder: 0},
-						{Value: "green", SortOrder: 1},
-						{Value: "blue", SortOrder: 2},
-					},
-				},
+	colorParam := helper.Must(model_state.NewParameter("color", "{red, green, blue}"))
+	colorParam.DataType = &model_data_type.DataType{
+		Key:            "color",
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "enumeration",
+			Enums: []model_data_type.AtomicEnum{
+				{Value: "red", SortOrder: 0},
+				{Value: "green", SortOrder: 1},
+				{Value: "blue", SortOrder: 2},
 			},
 		},
 	}
+
+	paramDefs := []model_state.Parameter{colorParam}
 
 	allowedValues := map[string]bool{"red": true, "green": true, "blue": true}
 
@@ -973,7 +937,7 @@ func (s *ActionsSuite) TestGenerateRandomParametersNoType() {
 	rng := rand.New(rand.NewSource(42))
 
 	paramDefs := []model_state.Parameter{
-		{Name: "x", DataTypeRules: "unknown"},
+		helper.Must(model_state.NewParameter("x", "unknown")),
 	}
 
 	result := binder.GenerateRandomParameters(paramDefs, rng)

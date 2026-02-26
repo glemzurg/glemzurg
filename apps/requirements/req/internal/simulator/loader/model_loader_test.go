@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -148,44 +149,38 @@ func buildTestModel(
 	domainKey, subdomainKey, classKey, stateKey, eventKey, transKey identity.Key,
 ) *req_model.Model {
 	toStateKey := stateKey
-	return &req_model.Model{
-		Key:  "test",
-		Name: "Test Model",
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "D",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "S",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:        classKey,
-								Name:       "Order",
-								Attributes: map[identity.Key]model_class.Attribute{},
-								States: map[identity.Key]model_state.State{
-									stateKey: {Key: stateKey, Name: "Open"},
-								},
-								Events: map[identity.Key]model_state.Event{
-									eventKey: {Key: eventKey, Name: "create"},
-								},
-								Guards:  map[identity.Key]model_state.Guard{},
-								Actions: map[identity.Key]model_state.Action{},
-								Queries: map[identity.Key]model_state.Query{},
-								Transitions: map[identity.Key]model_state.Transition{
-									transKey: {
-										Key:          transKey,
-										FromStateKey: nil,
-										EventKey:     eventKey,
-										ToStateKey:   &toStateKey,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+
+	transition := helper.Must(model_state.NewTransition(transKey, nil, eventKey, nil, nil, &toStateKey, ""))
+
+	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateKey: helper.Must(model_state.NewState(stateKey, "Open", "", "")),
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
+		eventKey: helper.Must(model_state.NewEvent(eventKey, "create", "", nil)),
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transKey: transition,
+	})
+
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		classKey: class,
 	}
+
+	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	model := helper.Must(req_model.NewModel("test", "Test Model", "", nil, nil))
+	model.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+
+	return &model
 }

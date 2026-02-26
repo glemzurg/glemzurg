@@ -1,10 +1,6 @@
 
 
------------------------------
 
-Design choices:
-
-- Any unit test that included objects not under test, for example a query test that includes logic objects, the test should always use constructors for the object not under test. Even if the object can be fully defined a struct literal, the object should be constructed using the Must pattern like: helper.Must(req_model.NewModel("test", "Test", "", nil, nil)). The Must call should only be used in tests, never non-test code.
 
 -----------------------------
 

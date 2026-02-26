@@ -1,8 +1,11 @@
 package actions
 
 import (
+	"fmt"
 	"math/rand"
+	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
@@ -14,42 +17,40 @@ import (
 // --- Helpers for index value generator tests ---
 
 func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
-	return &model_class.Attribute{
-		Key:       mustKey("domain/d/subdomain/s/class/c/attribute/" + name),
-		Name:      name,
-		IndexNums: []uint{1},
-		DataType: &model_data_type.DataType{
-			CollectionType: "atomic",
-			Atomic: &model_data_type.Atomic{
-				ConstraintType: "span",
-				Span: &model_data_type.AtomicSpan{
-					LowerType:   "closed",
-					LowerValue:  &lower,
-					HigherType:  "closed",
-					HigherValue: &upper,
-				},
+	dataTypeRules := fmt.Sprintf("[%d, %d]", lower, upper)
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false, "", []uint{1}))
+	attr.DataType = &model_data_type.DataType{
+		Key:            attr.Key.String(),
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "span",
+			Span: &model_data_type.AtomicSpan{
+				LowerType:   "closed",
+				LowerValue:  &lower,
+				HigherType:  "closed",
+				HigherValue: &upper,
 			},
 		},
 	}
+	return &attr
 }
 
 func enumAttrDef(name string, values []string) *model_class.Attribute {
+	dataTypeRules := "{" + strings.Join(values, ", ") + "}"
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false, "", []uint{1}))
 	enums := make([]model_data_type.AtomicEnum, len(values))
 	for i, v := range values {
 		enums[i] = model_data_type.AtomicEnum{Value: v, SortOrder: i}
 	}
-	return &model_class.Attribute{
-		Key:       mustKey("domain/d/subdomain/s/class/c/attribute/" + name),
-		Name:      name,
-		IndexNums: []uint{1},
-		DataType: &model_data_type.DataType{
-			CollectionType: "atomic",
-			Atomic: &model_data_type.Atomic{
-				ConstraintType: "enumeration",
-				Enums:          enums,
-			},
+	attr.DataType = &model_data_type.DataType{
+		Key:            attr.Key.String(),
+		CollectionType: "atomic",
+		Atomic: &model_data_type.Atomic{
+			ConstraintType: "enumeration",
+			Enums:          enums,
 		},
 	}
+	return &attr
 }
 
 func makeIndexInfo(classKey identity.Key, indexes []invariants.IndexDefinition) *invariants.ClassIndexInfo {
@@ -67,7 +68,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesNoIndexes() {
 
 	indexInfo := makeIndexInfo(classKey, nil) // no indexes
 	attrs := object.NewRecord()
-	class := model_class.Class{Key: classKey, Name: "C"}
+	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 
 	err := generateIndexSafeValues(attrs, indexInfo, nil, class, rng)
 	s.NoError(err)
@@ -92,7 +93,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 	existAttrs.Set("id", object.NewInteger(42))
 	simState.CreateInstance(classKey, existAttrs)
 
-	class := model_class.Class{Key: classKey, Name: "C"}
+	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
@@ -127,7 +128,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 	a2.Set("color", object.NewString("green"))
 	simState.CreateInstance(classKey, a2)
 
-	class := model_class.Class{Key: classKey, Name: "C"}
+	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
@@ -165,7 +166,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 	a2.Set("color", object.NewString("green"))
 	simState.CreateInstance(classKey, a2)
 
-	class := model_class.Class{Key: classKey, Name: "C"}
+	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
@@ -198,7 +199,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 	a1.Set("tenant", object.NewString("acme"))
 	simState.CreateInstance(classKey, a1)
 
-	class := model_class.Class{Key: classKey, Name: "C"}
+	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
@@ -234,7 +235,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesPresetAttribute() {
 	a1.Set("tenant", object.NewString("acme"))
 	simState.CreateInstance(classKey, a1)
 
-	class := model_class.Class{Key: classKey, Name: "C"}
+	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 
 	// Pre-set email to "a@b.com" — generator should pick a different tenant
 	newAttrs := object.NewRecord()

@@ -82,25 +82,24 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 
 	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
 
+	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+
+	transUpdate := helper.Must(model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: stateActive,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventUpdateKey: eventUpdate,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transUpdateKey: {
-			Key:          transUpdateKey,
-			FromStateKey: &stateActiveKey,
-			EventKey:     eventUpdateKey,
-			ToStateKey:   &stateActiveKey,
-		},
-	}
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transUpdateKey: transUpdate,
+	})
 
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
@@ -128,33 +127,29 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1"))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
+	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
+
+	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive.SetActions([]model_state.StateAction{stateActionDo})
+
+	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateActiveKey: {
-			Key:  stateActiveKey,
-			Name: "Active",
-			Actions: []model_state.StateAction{
-				{Key: stateActionKey, ActionKey: actionDoKey, When: "do"},
-			},
-		},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: stateActive,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCreateKey: eventCreate,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{
 		actionDoKey: actionDo,
-	}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transCreateKey: {
-			Key:          transCreateKey,
-			FromStateKey: nil,
-			EventKey:     eventCreateKey,
-			ToStateKey:   &stateActiveKey,
-		},
-	}
+	})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transCreateKey: transCreate,
+	})
 
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)

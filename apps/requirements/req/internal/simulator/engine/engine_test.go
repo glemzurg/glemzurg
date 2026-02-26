@@ -33,33 +33,29 @@ func simpleOrderClass() (model_class.Class, identity.Key) {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
 
+	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateClosed := helper.Must(model_state.NewState(stateClosedKey, "Closed", "", ""))
+
+	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
+	transClose := helper.Must(model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, nil, &stateClosedKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
-		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey:   stateOpen,
+		stateClosedKey: stateClosed,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCreateKey: eventCreate,
 		eventCloseKey:  eventClose,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transCreateKey: {
-			Key:          transCreateKey,
-			FromStateKey: nil, // Creation transition
-			EventKey:     eventCreateKey,
-			ToStateKey:   &stateOpenKey,
-		},
-		transCloseKey: {
-			Key:          transCloseKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventCloseKey,
-			ToStateKey:   &stateClosedKey,
-		},
-	}
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transCreateKey: transCreate,
+		transCloseKey:  transClose,
+	})
 
 	return class, classKey
 }
@@ -159,25 +155,23 @@ func (s *EngineSuite) TestDeadlockDetection() {
 
 	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
 
+	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	transUpdate := helper.Must(model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Stuck", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: stateActive,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventUpdateKey: eventUpdate,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transUpdateKey: {
-			Key:          transUpdateKey,
-			FromStateKey: &stateActiveKey,
-			EventKey:     eventUpdateKey,
-			ToStateKey:   &stateActiveKey,
-		},
-	}
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transUpdateKey: transUpdate,
+	})
 
 	model := testModel(classEntry(class, classKey))
 
@@ -257,13 +251,13 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 	classKey := mustKey("domain/d/subdomain/s/class/empty")
 
 	class := helper.Must(model_class.NewClass(classKey, "Empty", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{}
-	class.Events = map[identity.Key]model_state.Event{}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{}
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{})
+	class.SetEvents(map[identity.Key]model_state.Event{})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{})
 
 	model := testModel(classEntry(class, classKey))
 
