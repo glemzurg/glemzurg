@@ -27,6 +27,7 @@ CREATE TABLE logic (
   sort_order int NOT NULL,
   logic_type logic_type NOT NULL,
   description text NOT NULL,
+  target text NOT NULL,
   notation notation NOT NULL,
   specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
@@ -39,6 +40,7 @@ COMMENT ON COLUMN logic.model_key IS 'The model this logic is part of.';
 COMMENT ON COLUMN logic.sort_order IS 'Often part of a list of logics that are sorted.';
 COMMENT ON COLUMN logic.logic_type IS 'The kind of logic, each has different rules for what well-formed looks like.';
 COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
+COMMENT ON COLUMN logic.target IS 'When this logic sets a value, the identifier of the value to set.';
 COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
 

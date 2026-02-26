@@ -104,6 +104,12 @@
           "comment": "The casual readable form of the logic."
         },
         {
+          "name": "target",
+          "type": "text",
+          "nullable": false,
+          "comment": "When this logic sets a value, the identifier of the value to set."
+        },
+        {
           "name": "notation",
           "type": "notation",
           "nullable": false,
@@ -186,6 +192,16 @@
           "referenced_table": "",
           "columns": [
             "sort_order"
+          ]
+        },
+        {
+          "name": "logic_target_not_null",
+          "type": "n",
+          "def": "NOT NULL target",
+          "table": "public.logic",
+          "referenced_table": "",
+          "columns": [
+            "target"
           ]
         },
         {
