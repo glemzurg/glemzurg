@@ -489,8 +489,8 @@ func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 	// Build a model with two domains so Payment is a known class.
 	model2 := buildTwoDomainModel()
 	model2.Invariants = []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", model_logic.NotationTLAPlus, "Order.count > 0")),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", model_logic.NotationTLAPlus, "Payment.count > 0")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", model_logic.NotationTLAPlus, "Order.count > 0", nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", model_logic.NotationTLAPlus, "Payment.count > 0", nil)),
 	}
 	spec2 := &SurfaceSpecification{
 		IncludeDomains: []identity.Key{domainKey},
@@ -529,8 +529,8 @@ type InvariantScopingSuite struct {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0")),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Item.count >= 0")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0", nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Item.count >= 0", nil)),
 	}
 	inScope := map[string]bool{"Order": true, "Item": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -540,8 +540,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0")),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Payment.count >= 0")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0", nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Payment.count >= 0", nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -554,8 +554,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0")),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Payment.count >= 0")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0", nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Payment.count >= 0", nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -568,7 +568,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfSc
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_KeepsNonClassIdentifiers() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "x + y > 0")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "x + y > 0", nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
@@ -586,7 +586,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_EmptyInvariant
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInvariant() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "!!@@## invalid TLA+")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "!!@@## invalid TLA+", nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
@@ -598,7 +598,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInv
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassReferences() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0 /\\ Payment.count > 0")),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0 /\\ Payment.count > 0", nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -628,7 +628,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations:    map[identity.Key]model_class.Association{},
-		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0"))},
+		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", model_logic.NotationTLAPlus, "Order.count > 0", nil))},
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)

@@ -282,7 +282,7 @@ func (s *LogicTestSuite) TestNew() {
 	validKey2 := helper.Must(identity.NewInvariantKey("1"))
 
 	// Test all parameters are mapped correctly (assessment — no target).
-	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
+	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0", nil)
 	s.NoError(err)
 	s.Equal(Logic{
 		Key:           validKey,
@@ -293,7 +293,7 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test with empty specification (optional).
-	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", NotationTLAPlus, "")
+	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", NotationTLAPlus, "", nil)
 	s.NoError(err)
 	s.Equal(Logic{
 		Key:         validKey2,
@@ -303,27 +303,27 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test state_change with target.
-	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", NotationTLAPlus, "address")
+	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", NotationTLAPlus, "address", nil)
 	s.NoError(err)
 	s.Equal("shipping", logic.Target)
 
 	// Test query with target.
-	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", NotationTLAPlus, "expr")
+	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", NotationTLAPlus, "expr", nil)
 	s.NoError(err)
 	s.Equal("result", logic.Target)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", NotationTLAPlus, "")
+	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", NotationTLAPlus, "", nil)
 	s.Error(err)
 	s.Contains(err.Error(), "KeyType")
 
 	// Test that invalid notation fails.
-	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", "Z", "")
+	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", "Z", "", nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Notation")
 
 	// Test that invalid kind fails.
-	_, err = NewLogic(validKey, "bogus", "Some description.", "", NotationTLAPlus, "")
+	_, err = NewLogic(validKey, "bogus", "Some description.", "", NotationTLAPlus, "", nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Type")
 }

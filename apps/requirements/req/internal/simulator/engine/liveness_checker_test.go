@@ -249,7 +249,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/order/attribute/total")
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", model_logic.NotationTLAPlus, "self.amount * 2"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", model_logic.NotationTLAPlus, "self.amount * 2", nil))
 
 	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false, "", nil))
 	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))

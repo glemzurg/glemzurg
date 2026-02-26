@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
 )
 
 // NotationTLAPlus is the only supported notation for logic specifications.
@@ -26,16 +27,17 @@ var _validate = validator.New()
 
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
-	Key           identity.Key // The key is unique in the whole model, and built on the key of the containing object.
-	Type          string       `validate:"required,oneof=assessment state_change query safety_rule value"`
-	Description   string       `validate:"required"`
-	Target        string       // Identifier or attribute to set. Required for state_change and query types.
-	Notation      string       `validate:"required,oneof=tla_plus"`
-	Specification string       // Optional logic specification body.
+	Key           identity.Key                  // The key is unique in the whole model, and built on the key of the containing object.
+	Type          string                        `validate:"required,oneof=assessment state_change query safety_rule value"`
+	Description   string                        `validate:"required"`
+	Target        string                        // Identifier or attribute to set. Required for state_change and query types.
+	Notation      string                        `validate:"required,oneof=tla_plus"`
+	Specification string                        // Optional logic specification body.
+	Expression    model_expression.Expression   // Optional structured expression tree (nil = no expression).
 }
 
 // NewLogic creates a new Logic and validates it.
-func NewLogic(key identity.Key, logicType, description, target, notation, specification string) (logic Logic, err error) {
+func NewLogic(key identity.Key, logicType, description, target, notation, specification string, expression model_expression.Expression) (logic Logic, err error) {
 	logic = Logic{
 		Key:           key,
 		Type:          logicType,
@@ -43,6 +45,7 @@ func NewLogic(key identity.Key, logicType, description, target, notation, specif
 		Target:        target,
 		Notation:      notation,
 		Specification: specification,
+		Expression:    expression,
 	}
 
 	if err = logic.Validate(); err != nil {
@@ -73,6 +76,12 @@ func (l *Logic) Validate() error {
 	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue:
 		if l.Target != "" {
 			return errors.Errorf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target)
+		}
+	}
+	// Validate expression if present.
+	if l.Expression != nil {
+		if err := l.Expression.Validate(); err != nil {
+			return errors.Wrapf(err, "logic %q expression", l.Key.String())
 		}
 	}
 	return nil

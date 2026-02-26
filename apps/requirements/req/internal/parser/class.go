@@ -291,7 +291,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", "tla_plus", specification)
+				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", "tla_plus", specification, nil)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}

@@ -624,6 +624,17 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect and flatten expression nodes from all logics (must be after attributes, actions, global_functions due to FK).
+		var allExprRows []exprNodeRow
+		for _, logic := range allLogics {
+			if logic.Expression != nil {
+				allExprRows = append(allExprRows, FlattenExpression(logic.Key, logic.Expression)...)
+			}
+		}
+		if err = AddExpressionNodes(tx, modelKey, allExprRows); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -652,6 +663,18 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		logicsByKey := make(map[identity.Key]model_logic.Logic, len(logics))
 		for _, logic := range logics {
 			logicsByKey[logic.Key] = logic
+		}
+
+		// Expression nodes — stitch expression trees onto logics.
+		expressions, err := QueryExpressionNodes(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		for logicKey, expr := range expressions {
+			if logic, ok := logicsByKey[logicKey]; ok {
+				logic.Expression = expr
+				logicsByKey[logicKey] = logic
+			}
 		}
 
 		// Invariants — stitch logic data onto invariant keys.

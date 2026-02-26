@@ -195,7 +195,7 @@ func (s *EngineSuite) TestStopOnViolation() {
 	// Add an invariant that will fail: "FALSE".
 	model := testModel(classEntry(orderClass, orderKey))
 	invariantKey := helper.Must(identity.NewInvariantKey("0"))
-	invariantLogic := helper.Must(model_logic.NewLogic(invariantKey, model_logic.LogicTypeAssessment, "Always false.", "", model_logic.NotationTLAPlus, "FALSE"))
+	invariantLogic := helper.Must(model_logic.NewLogic(invariantKey, model_logic.LogicTypeAssessment, "Always false.", "", model_logic.NotationTLAPlus, "FALSE", nil))
 	model.Invariants = []model_logic.Logic{invariantLogic}
 
 	config := SimulationConfig{

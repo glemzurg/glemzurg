@@ -1010,3 +1010,97 @@ COMMENT ON COLUMN scenario_step.to_object_key IS 'The destination of a step.';
 COMMENT ON COLUMN scenario_step.event_key IS 'A leaf step that changes state.';
 COMMENT ON COLUMN scenario_step.query_key IS 'A leaf step that does not change state.';
 COMMENT ON COLUMN scenario_step.scenario_ref_key IS 'A leaf step that is another scenario.';
+
+--------------------------------------------------------------
+
+CREATE TYPE expression_node_type AS ENUM (
+    -- Literals
+    'bool_literal', 'int_literal', 'rational_literal', 'string_literal',
+    'set_literal', 'tuple_literal', 'record_literal', 'set_constant',
+    -- References
+    'self_ref', 'attribute_ref', 'local_var', 'prior_field_value', 'next_state',
+    -- Binary operators
+    'binary_arith', 'binary_logic', 'compare', 'set_op', 'set_compare',
+    'bag_op', 'bag_compare', 'membership',
+    -- Unary operators
+    'negate', 'not',
+    -- Collections
+    'field_access', 'tuple_index', 'record_update', 'field_alteration',
+    'string_index', 'string_concat', 'tuple_concat',
+    -- Control flow
+    'if_then_else', 'case', 'case_branch',
+    -- Quantifiers
+    'quantifier', 'set_filter', 'set_range',
+    -- Calls
+    'action_call', 'global_call', 'builtin_call'
+);
+
+CREATE TABLE expression_node (
+    model_key           text NOT NULL,
+    expression_node_key text NOT NULL,
+    logic_key           text NOT NULL,
+    parent_node_key     text DEFAULT NULL,
+    sort_order          int NOT NULL,
+    node_type           expression_node_type NOT NULL,
+
+    -- Scalar values (used by literals and leaf nodes, NULL otherwise).
+    bool_value          boolean DEFAULT NULL,
+    int_value           bigint DEFAULT NULL,
+    numerator           bigint DEFAULT NULL,
+    denominator         bigint DEFAULT NULL,
+    string_value        text DEFAULT NULL,
+
+    -- Operator enums (used by binary/unary operator nodes).
+    operator            text DEFAULT NULL,
+
+    -- Model references (foreign keys to other model entities).
+    attribute_key       text DEFAULT NULL,
+    action_key          text DEFAULT NULL,
+    global_function_key text DEFAULT NULL,
+    builtin_module      text DEFAULT NULL,
+    builtin_function    text DEFAULT NULL,
+
+    -- Quantifier metadata.
+    quantifier_kind     text DEFAULT NULL,
+    variable_name       text DEFAULT NULL,
+
+    -- Set constant kind.
+    set_constant_kind   text DEFAULT NULL,
+
+    -- Membership negation.
+    negated             boolean DEFAULT NULL,
+
+    PRIMARY KEY (model_key, expression_node_key),
+    CONSTRAINT fk_expr_parent FOREIGN KEY (model_key, parent_node_key)
+        REFERENCES expression_node (model_key, expression_node_key) ON DELETE CASCADE,
+    CONSTRAINT fk_expr_logic FOREIGN KEY (model_key, logic_key)
+        REFERENCES logic (model_key, logic_key) ON DELETE CASCADE,
+    CONSTRAINT fk_expr_attribute FOREIGN KEY (model_key, attribute_key)
+        REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE,
+    CONSTRAINT fk_expr_action FOREIGN KEY (model_key, action_key)
+        REFERENCES action (model_key, action_key) ON DELETE CASCADE,
+    CONSTRAINT fk_expr_global_function FOREIGN KEY (model_key, global_function_key)
+        REFERENCES global_function (model_key, global_function_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE expression_node IS 'A node in a structured expression tree attached to a logic.';
+COMMENT ON COLUMN expression_node.expression_node_key IS 'Unique ID for this node within the model.';
+COMMENT ON COLUMN expression_node.logic_key IS 'The logic this expression belongs to.';
+COMMENT ON COLUMN expression_node.parent_node_key IS 'Parent node, NULL for root.';
+COMMENT ON COLUMN expression_node.sort_order IS 'Ordering among siblings (e.g. left=0, right=1).';
+COMMENT ON COLUMN expression_node.node_type IS 'The kind of expression node.';
+COMMENT ON COLUMN expression_node.bool_value IS 'Boolean literal value.';
+COMMENT ON COLUMN expression_node.int_value IS 'Integer literal value.';
+COMMENT ON COLUMN expression_node.numerator IS 'Rational literal numerator.';
+COMMENT ON COLUMN expression_node.denominator IS 'Rational literal denominator.';
+COMMENT ON COLUMN expression_node.string_value IS 'Multipurpose string: literal value, field name, variable name.';
+COMMENT ON COLUMN expression_node.operator IS 'Operator enum string for binary/unary nodes.';
+COMMENT ON COLUMN expression_node.attribute_key IS 'FK to attribute for attribute_ref nodes.';
+COMMENT ON COLUMN expression_node.action_key IS 'FK to action for action_call nodes.';
+COMMENT ON COLUMN expression_node.global_function_key IS 'FK to global_function for global_call nodes.';
+COMMENT ON COLUMN expression_node.builtin_module IS 'Module name for builtin_call nodes.';
+COMMENT ON COLUMN expression_node.builtin_function IS 'Function name for builtin_call nodes.';
+COMMENT ON COLUMN expression_node.quantifier_kind IS 'forall or exists for quantifier nodes.';
+COMMENT ON COLUMN expression_node.variable_name IS 'Bound variable name for quantifier/set_filter nodes.';
+COMMENT ON COLUMN expression_node.set_constant_kind IS 'nat, int, real, or boolean for set_constant nodes.';
+COMMENT ON COLUMN expression_node.negated IS 'Whether membership is negated (not-in).';

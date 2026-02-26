@@ -278,7 +278,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	event := helper.Must(model_state.NewEvent(eventKey, "confirm", "", nil))
 
 	// Build guard with logic
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Check if order has items", "", model_logic.NotationTLAPlus, ""))
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Check if order has items", "", model_logic.NotationTLAPlus, "", nil))
 	guard := helper.Must(model_state.NewGuard(guardKey, "has_items", guardLogic))
 
 	// Build transition
@@ -439,8 +439,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	// Build query logic
 	requireKey := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
 	guaranteeKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
-	requireLogic := helper.Must(model_logic.NewLogic(requireKey, model_logic.LogicTypeAssessment, "order must exist", "", model_logic.NotationTLAPlus, ""))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeQuery, "returns total amount", "total", model_logic.NotationTLAPlus, ""))
+	requireLogic := helper.Must(model_logic.NewLogic(requireKey, model_logic.LogicTypeAssessment, "order must exist", "", model_logic.NotationTLAPlus, "", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeQuery, "returns total amount", "total", model_logic.NotationTLAPlus, "", nil))
 
 	// Build query
 	query := helper.Must(model_state.NewQuery(queryKey, "Get Total", "Get order total",

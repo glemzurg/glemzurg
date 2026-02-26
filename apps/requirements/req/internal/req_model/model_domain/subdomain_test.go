@@ -347,10 +347,10 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 
 	// Test valid full tree.
 	// Build inside-out: Logic → Guard/Action/Query/Attribute → Class → Subdomain.
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_logic.NotationTLAPlus, ""))
-	reqLogic := helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", model_logic.NotationTLAPlus, ""))
-	guarLogic := helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", model_logic.NotationTLAPlus, ""))
-	derivLogic := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed.", "", model_logic.NotationTLAPlus, ""))
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_logic.NotationTLAPlus, "", nil))
+	reqLogic := helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", model_logic.NotationTLAPlus, "", nil))
+	guarLogic := helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", model_logic.NotationTLAPlus, "", nil))
+	derivLogic := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed.", "", model_logic.NotationTLAPlus, "", nil))
 
 	validGuard := helper.Must(model_state.NewGuard(guardKey, "Guard", guardLogic))
 	validAction := helper.Must(model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil))
@@ -375,7 +375,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 
 	// Test guard logic key mismatch is caught deep in the tree.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
-	mismatchGuardLogic := helper.Must(model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_logic.NotationTLAPlus, ""))
+	mismatchGuardLogic := helper.Must(model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_logic.NotationTLAPlus, "", nil))
 	mismatchGuard := helper.Must(model_state.NewGuard(guardKey, "Guard", mismatchGuardLogic))
 
 	mismatchGuardClass := helper.Must(model_class.NewClass(classKey, "Class", "", nil, nil, nil, ""))
@@ -394,7 +394,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	// Test action require key with wrong parent is caught deep in the tree.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
-	wrongReqLogic := helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", model_logic.NotationTLAPlus, ""))
+	wrongReqLogic := helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", model_logic.NotationTLAPlus, "", nil))
 	wrongReqAction := helper.Must(model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil))
 
 	wrongReqClass := helper.Must(model_class.NewClass(classKey, "Class", "", nil, nil, nil, ""))
@@ -413,7 +413,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	// Test attribute derivation key with wrong parent is caught deep in the tree.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
-	wrongDerivLogic := helper.Must(model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed.", "", model_logic.NotationTLAPlus, ""))
+	wrongDerivLogic := helper.Must(model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed.", "", model_logic.NotationTLAPlus, "", nil))
 	wrongDerivAttr := helper.Must(model_class.NewAttribute(attrKey, "Attr", "", "", &wrongDerivLogic, false, "", nil))
 
 	wrongDerivClass := helper.Must(model_class.NewClass(classKey, "Class", "", nil, nil, nil, ""))
