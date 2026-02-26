@@ -1,7 +1,10 @@
 package model_logic
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -26,16 +29,18 @@ type Logic struct {
 	Key           identity.Key // The key is unique in the whole model, and built on the key of the containing object.
 	Type          string       `validate:"required,oneof=assessment state_change query safety_rule value"`
 	Description   string       `validate:"required"`
+	Target        string       // Identifier or attribute to set. Required for state_change and query types.
 	Notation      string       `validate:"required,oneof=tla_plus"`
 	Specification string       // Optional logic specification body.
 }
 
 // NewLogic creates a new Logic and validates it.
-func NewLogic(key identity.Key, logicType, description, notation, specification string) (logic Logic, err error) {
+func NewLogic(key identity.Key, logicType, description, target, notation, specification string) (logic Logic, err error) {
 	logic = Logic{
 		Key:           key,
 		Type:          logicType,
 		Description:   description,
+		Target:        target,
 		Notation:      notation,
 		Specification: specification,
 	}
@@ -52,7 +57,25 @@ func (l *Logic) Validate() error {
 	if err := l.Key.Validate(); err != nil {
 		return err
 	}
-	return _validate.Struct(l)
+	if err := _validate.Struct(l); err != nil {
+		return err
+	}
+	// Target validation based on logic type.
+	switch l.Type {
+	case LogicTypeStateChange, LogicTypeQuery:
+		if l.Target == "" {
+			return errors.Errorf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type)
+		}
+		// Query targets cannot start with "_".
+		if l.Type == LogicTypeQuery && strings.HasPrefix(l.Target, "_") {
+			return errors.Errorf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target)
+		}
+	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue:
+		if l.Target != "" {
+			return errors.Errorf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target)
+		}
+	}
+	return nil
 }
 
 // ValidateWithParent validates the Logic and its key's parent relationship.

@@ -357,7 +357,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 						},
 						Queries: map[identity.Key]model_state.Query{
 							queryKey: {Key: queryKey, Name: "Query", Guarantees: []model_logic.Logic{
-								{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guar.", Notation: model_logic.NotationTLAPlus},
+								{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guar.", Target: "result", Notation: model_logic.NotationTLAPlus},
 							}},
 						},
 					},

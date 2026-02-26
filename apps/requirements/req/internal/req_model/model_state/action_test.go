@@ -50,7 +50,7 @@ func (suite *ActionSuite) TestValidate() {
 					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition 1.", Target: "shipping", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
 				},
 				SafetyRules: []model_logic.Logic{
 					{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule 1.", Notation: model_logic.NotationTLAPlus, Specification: "safety1"},
@@ -73,7 +73,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' = 1"},
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "1"},
 				},
 			},
 		},
@@ -120,7 +120,7 @@ func (suite *ActionSuite) TestValidate() {
 					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus, Specification: "self.x' = 1"},
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "1"},
 				},
 			},
 			errstr: "Name",
@@ -164,7 +164,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Target: "x", Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "requires 0: logic kind must be 'assessment'",
@@ -190,6 +190,18 @@ func (suite *ActionSuite) TestValidate() {
 				},
 			},
 			errstr: "safety rule 0: logic kind must be 'safety_rule'",
+		},
+		{
+			testName: "error duplicate guarantee target",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "1"},
+					{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Set x again.", Target: "x", Notation: model_logic.NotationTLAPlus, Specification: "2"},
+				},
+			},
+			errstr: "duplicate target",
 		},
 	}
 	for _, tt := range tests {
@@ -218,7 +230,7 @@ func (suite *ActionSuite) TestNew() {
 		{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
 	}
 	guarantees := []model_logic.Logic{
-		{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+		{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Target: "shipping", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
 	}
 	safetyRules := []model_logic.Logic{
 		{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus, Specification: "tla_safety"},
@@ -299,7 +311,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 			{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
 		},
 		Guarantees: []model_logic.Logic{
-			{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Notation: model_logic.NotationTLAPlus},
+			{Key: guarKey, Type: model_logic.LogicTypeStateChange, Description: "Postcondition.", Target: "shipping", Notation: model_logic.NotationTLAPlus},
 		},
 		SafetyRules: []model_logic.Logic{
 			{Key: safetyKey, Type: model_logic.LogicTypeSafetyRule, Description: "Safety rule.", Notation: model_logic.NotationTLAPlus},

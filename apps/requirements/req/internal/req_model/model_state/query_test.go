@@ -49,7 +49,7 @@ func (suite *QuerySuite) TestValidate() {
 					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition 1.", Notation: model_logic.NotationTLAPlus, Specification: "req1"},
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee 1.", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee 1.", Target: "result", Notation: model_logic.NotationTLAPlus, Specification: "guar1"},
 				},
 			},
 		},
@@ -69,7 +69,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Target: "result", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
 				},
 			},
 		},
@@ -106,7 +106,7 @@ func (suite *QuerySuite) TestValidate() {
 					{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus, Specification: "x > 0"},
 				},
 				Guarantees: []model_logic.Logic{
-					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Target: "result", Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"},
 				},
 			},
 			errstr: "Name",
@@ -139,7 +139,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: reqKey, Type: model_logic.LogicTypeStateChange, Description: "x must be positive.", Target: "x", Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "requires 0: logic kind must be 'assessment'",
@@ -154,6 +154,18 @@ func (suite *QuerySuite) TestValidate() {
 				},
 			},
 			errstr: "guarantee 0: logic kind must be 'query'",
+		},
+		{
+			testName: "error duplicate guarantee target",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result 1.", Target: "result", Notation: model_logic.NotationTLAPlus, Specification: "expr1"},
+					{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Result 2.", Target: "result", Notation: model_logic.NotationTLAPlus, Specification: "expr2"},
+				},
+			},
+			errstr: "duplicate target",
 		},
 	}
 	for _, tt := range tests {
@@ -181,7 +193,7 @@ func (suite *QuerySuite) TestNew() {
 		{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus, Specification: "tla_req"},
 	}
 	guarantees := []model_logic.Logic{
-		{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
+		{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Target: "result", Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"},
 	}
 
 	// Test all parameters are mapped correctly.
@@ -257,7 +269,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 			{Key: reqKey, Type: model_logic.LogicTypeAssessment, Description: "Precondition.", Notation: model_logic.NotationTLAPlus},
 		},
 		Guarantees: []model_logic.Logic{
-			{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Notation: model_logic.NotationTLAPlus},
+			{Key: guarKey, Type: model_logic.LogicTypeQuery, Description: "Guarantee.", Target: "result", Notation: model_logic.NotationTLAPlus},
 		},
 	}
 	err = query.ValidateWithParent(&classKey)

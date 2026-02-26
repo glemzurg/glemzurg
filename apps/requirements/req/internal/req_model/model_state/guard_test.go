@@ -111,7 +111,7 @@ func (suite *GuardSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Logic: model_logic.Logic{
-					Key: validKey, Type: model_logic.LogicTypeStateChange, Description: "Guard condition.", Notation: model_logic.NotationTLAPlus,
+					Key: validKey, Type: model_logic.LogicTypeStateChange, Description: "Guard condition.", Target: "x", Notation: model_logic.NotationTLAPlus,
 				},
 			},
 			errstr: "logic kind must be 'assessment'",

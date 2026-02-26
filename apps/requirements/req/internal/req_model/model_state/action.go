@@ -61,6 +61,7 @@ func (a *Action) Validate() error {
 			return errors.Errorf("requires %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, req.Type)
 		}
 	}
+	guarTargets := make(map[string]bool)
 	for i, guar := range a.Guarantees {
 		if err := guar.Validate(); err != nil {
 			return errors.Wrapf(err, "guarantee %d", i)
@@ -68,6 +69,11 @@ func (a *Action) Validate() error {
 		if guar.Type != model_logic.LogicTypeStateChange {
 			return errors.Errorf("guarantee %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeStateChange, guar.Type)
 		}
+		// Each guarantee must set a unique target attribute.
+		if guarTargets[guar.Target] {
+			return errors.Errorf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target)
+		}
+		guarTargets[guar.Target] = true
 	}
 	for i, rule := range a.SafetyRules {
 		if err := rule.Validate(); err != nil {

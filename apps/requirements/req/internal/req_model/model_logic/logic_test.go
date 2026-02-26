@@ -63,6 +63,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeStateChange,
 				Description: "Some state change.",
+				Target:      "shipping",
 				Notation:    NotationTLAPlus,
 			},
 		},
@@ -72,6 +73,17 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeQuery,
 				Description: "Some query.",
+				Target:      "result",
+				Notation:    NotationTLAPlus,
+			},
+		},
+		{
+			testName: "valid query kind with mixed case target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeQuery,
+				Description: "Some query.",
+				Target:      "TotalAmount",
 				Notation:    NotationTLAPlus,
 			},
 		},
@@ -185,6 +197,71 @@ func (s *LogicTestSuite) TestValidate() {
 			},
 			errstr: "Notation",
 		},
+		// Target validation.
+		{
+			testName: "error state_change missing target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeStateChange,
+				Description: "Some state change.",
+				Notation:    NotationTLAPlus,
+			},
+			errstr: "requires a non-empty target",
+		},
+		{
+			testName: "error query missing target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeQuery,
+				Description: "Some query.",
+				Notation:    NotationTLAPlus,
+			},
+			errstr: "requires a non-empty target",
+		},
+		{
+			testName: "error query target starts with underscore",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeQuery,
+				Description: "Some query.",
+				Target:      "_hidden",
+				Notation:    NotationTLAPlus,
+			},
+			errstr: "starting with '_'",
+		},
+		{
+			testName: "error assessment with target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeAssessment,
+				Description: "Some assessment.",
+				Target:      "shipping",
+				Notation:    NotationTLAPlus,
+			},
+			errstr: "must not have a target",
+		},
+		{
+			testName: "error safety_rule with target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeSafetyRule,
+				Description: "Some safety rule.",
+				Target:      "shipping",
+				Notation:    NotationTLAPlus,
+			},
+			errstr: "must not have a target",
+		},
+		{
+			testName: "error value with target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeValue,
+				Description: "Some value.",
+				Target:      "shipping",
+				Notation:    NotationTLAPlus,
+			},
+			errstr: "must not have a target",
+		},
 	}
 	for _, tt := range tests {
 		s.T().Run(tt.testName, func(t *testing.T) {
@@ -204,8 +281,8 @@ func (s *LogicTestSuite) TestNew() {
 	validKey := helper.Must(identity.NewInvariantKey("0"))
 	validKey2 := helper.Must(identity.NewInvariantKey("1"))
 
-	// Test all parameters are mapped correctly.
-	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
+	// Test all parameters are mapped correctly (assessment — no target).
+	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0")
 	s.NoError(err)
 	s.Equal(Logic{
 		Key:           validKey,
@@ -216,7 +293,7 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test with empty specification (optional).
-	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", NotationTLAPlus, "")
+	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", NotationTLAPlus, "")
 	s.NoError(err)
 	s.Equal(Logic{
 		Key:         validKey2,
@@ -225,18 +302,28 @@ func (s *LogicTestSuite) TestNew() {
 		Notation:    NotationTLAPlus,
 	}, logic)
 
+	// Test state_change with target.
+	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", NotationTLAPlus, "address")
+	s.NoError(err)
+	s.Equal("shipping", logic.Target)
+
+	// Test query with target.
+	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", NotationTLAPlus, "expr")
+	s.NoError(err)
+	s.Equal("result", logic.Target)
+
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", NotationTLAPlus, "")
+	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", NotationTLAPlus, "")
 	s.Error(err)
 	s.Contains(err.Error(), "KeyType")
 
 	// Test that invalid notation fails.
-	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "Z", "")
+	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", "Z", "")
 	s.Error(err)
 	s.Contains(err.Error(), "Notation")
 
 	// Test that invalid kind fails.
-	_, err = NewLogic(validKey, "bogus", "Some description.", NotationTLAPlus, "")
+	_, err = NewLogic(validKey, "bogus", "Some description.", "", NotationTLAPlus, "")
 	s.Error(err)
 	s.Contains(err.Error(), "Type")
 }

@@ -228,9 +228,20 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 			return err
 		}
 	}
+	// Build attribute SubKey lookup for action target validation.
+	attrSubKeys := make(map[string]bool)
+	for _, attr := range c.Attributes {
+		attrSubKeys[attr.Key.SubKey] = true
+	}
 	for _, action := range c.Actions {
 		if err := action.ValidateWithParent(&c.Key); err != nil {
 			return err
+		}
+		// Validate that each action guarantee target is a valid attribute SubKey on this class.
+		for i, guar := range action.Guarantees {
+			if guar.Target != "" && !attrSubKeys[guar.Target] {
+				return errors.Errorf("action %q guarantee %d: target %q is not a valid attribute on class %q", action.Key.String(), i, guar.Target, c.Key.String())
+			}
 		}
 	}
 	for _, query := range c.Queries {

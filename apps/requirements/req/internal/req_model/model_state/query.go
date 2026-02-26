@@ -60,6 +60,7 @@ func (q *Query) Validate() error {
 			return errors.Errorf("requires %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, req.Type)
 		}
 	}
+	guarTargets := make(map[string]bool)
 	for i, guar := range q.Guarantees {
 		if err := guar.Validate(); err != nil {
 			return errors.Wrapf(err, "guarantee %d", i)
@@ -67,6 +68,11 @@ func (q *Query) Validate() error {
 		if guar.Type != model_logic.LogicTypeQuery {
 			return errors.Errorf("guarantee %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeQuery, guar.Type)
 		}
+		// Each guarantee must set a unique target identifier.
+		if guarTargets[guar.Target] {
+			return errors.Errorf("guarantee %d: duplicate target %q — each output identifier can only appear once per query", i, guar.Target)
+		}
+		guarTargets[guar.Target] = true
 	}
 
 	return nil
