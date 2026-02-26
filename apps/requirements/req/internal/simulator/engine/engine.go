@@ -73,7 +73,10 @@ func NewSimulationEngine(model *req_model.Model, config SimulationConfig) (*Simu
 		if err != nil {
 			return nil, fmt.Errorf("surface area resolution: %w", err)
 		}
-		activeModel = surface.BuildFilteredModel(model, resolved)
+		activeModel, err = surface.BuildFilteredModel(model, resolved)
+		if err != nil {
+			return nil, fmt.Errorf("build filtered model: %w", err)
+		}
 	}
 
 	// Create simulation state.

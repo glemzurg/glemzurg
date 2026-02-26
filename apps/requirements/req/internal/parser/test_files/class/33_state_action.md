@@ -29,6 +29,7 @@ actions:
             - details: The label must not be empty.
         guarantees:
             - details: The log is updated.
+              target: log
               specification: self.log' = Append(self.log, amount)
         safety_rules:
             - details: The total never exceeds the limit.

@@ -12,6 +12,7 @@ import (
 type inputLogic struct {
 	Type          string `json:"type,omitempty"`
 	Description   string `json:"description"`
+	Target        string `json:"target,omitempty"`
 	Notation      string `json:"notation,omitempty"`
 	Specification string `json:"specification,omitempty"`
 }
@@ -97,6 +98,33 @@ func validateLogic(logic *inputLogic, filename string) error {
 			"logic description cannot be empty or whitespace only, got '"+logic.Description+"'",
 			filename,
 		).WithField("description")
+	}
+
+	// Target validation based on logic type (when type is specified).
+	switch logic.Type {
+	case "state_change", "query":
+		if logic.Target == "" {
+			return NewParseError(
+				ErrLogicTargetRequired,
+				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name",
+				filename,
+			).WithField("target")
+		}
+		if logic.Type == "query" && strings.HasPrefix(logic.Target, "_") {
+			return NewParseError(
+				ErrLogicTargetNoLeadUnderscore,
+				"query logic target '"+logic.Target+"' cannot start with '_' — use a plain identifier name",
+				filename,
+			).WithField("target")
+		}
+	case "assessment", "safety_rule", "value":
+		if logic.Target != "" {
+			return NewParseError(
+				ErrLogicTargetNotAllowed,
+				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change and query types use target",
+				filename,
+			).WithField("target")
+		}
 	}
 
 	return nil

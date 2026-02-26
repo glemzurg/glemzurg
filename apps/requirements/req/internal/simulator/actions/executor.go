@@ -250,31 +250,47 @@ func (e *ActionExecutor) executeActionInContext(
 		}
 	}
 
-	// Step 2: Evaluate guarantees (must be primed assignments only).
+	// Step 2: Evaluate guarantees.
 	for i, guar := range action.Guarantees {
-		expr, err := parser.ParseExpression(guar.Specification)
-		if err != nil {
-			return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
-		}
-
-		kind := model_bridge.ClassifyGuarantee(expr)
-
-		if kind != model_bridge.GuaranteePrimedAssignment {
-			return fmt.Errorf("action %s guarantee[%d]: Guarantees must be primed assignments only (e.g., self.field' = expr); use SafetyRules for boolean assertions", action.Name, i)
-		}
-
-		// Check re-entrancy constraint
+		// Check re-entrancy constraint.
 		if !ctx.CanMutate(instance.ID) {
 			return fmt.Errorf("re-entrant mutation on instance %d in action %s: instance already has primed values from another action", instance.ID, action.Name)
 		}
 
-		fieldName, rhsValue, err := evaluatePrimedAssignment(expr, bindings)
-		if err != nil {
-			return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
-		}
-
-		if err := ctx.RecordPrimedAssignment(instance.ID, fieldName, rhsValue); err != nil {
-			return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
+		if guar.Target != "" {
+			// Target is set: use it directly as the field name.
+			// The specification is the RHS value expression only.
+			if guar.Specification == "" {
+				return fmt.Errorf("action %s guarantee[%d]: target %q is set but specification is empty", action.Name, i, guar.Target)
+			}
+			expr, err := parser.ParseExpression(guar.Specification)
+			if err != nil {
+				return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
+			}
+			rhsValue := evaluator.Eval(expr, bindings)
+			if rhsValue.IsError() {
+				return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", action.Name, i, rhsValue.Error.Inspect())
+			}
+			if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
+				return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
+			}
+		} else {
+			// Legacy: extract field name from primed TLA+ expression.
+			expr, err := parser.ParseExpression(guar.Specification)
+			if err != nil {
+				return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
+			}
+			kind := model_bridge.ClassifyGuarantee(expr)
+			if kind != model_bridge.GuaranteePrimedAssignment {
+				return fmt.Errorf("action %s guarantee[%d]: Guarantees must be primed assignments only (e.g., self.field' = expr); use SafetyRules for boolean assertions", action.Name, i)
+			}
+			fieldName, rhsValue, err := evaluatePrimedAssignment(expr, bindings)
+			if err != nil {
+				return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
+			}
+			if err := ctx.RecordPrimedAssignment(instance.ID, fieldName, rhsValue); err != nil {
+				return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
+			}
 		}
 	}
 
@@ -390,32 +406,45 @@ func (e *ActionExecutor) executeQueryInContext(
 	outputs := make(map[string]object.Object)
 
 	for i, guar := range query.Guarantees {
-		expr, err := parser.ParseExpression(guar.Specification)
-		if err != nil {
-			return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
-		}
-
-		kind := model_bridge.ClassifyGuarantee(expr)
-
-		if kind == model_bridge.GuaranteePrimedAssignment {
-			// The parser produces BinaryEquality for "result' = expr".
-			// Extract the output name from the LHS and evaluate the RHS.
-			outputName, rhsValue, err := evaluatePrimedAssignment(expr, bindings)
-			if err != nil {
-				return nil, fmt.Errorf("query %s guarantee[%d]: %w", query.Name, i, err)
+		if guar.Target != "" {
+			// Target is set: use it directly as the output name.
+			// The specification is the value expression only.
+			if guar.Specification == "" {
+				return nil, fmt.Errorf("query %s guarantee[%d]: target %q is set but specification is empty", query.Name, i, guar.Target)
 			}
-			outputs[outputName] = rhsValue
-
-		} else if kind == model_bridge.GuaranteePostCondition {
-			ctx.AddPostCondition(DeferredPostCondition{
-				Expression:         expr,
-				InstanceID:         instance.ID,
-				SourceKey:          query.Key,
-				SourceName:         query.Name,
-				SourceType:         "query",
-				Index:              i,
-				OriginalExpression: guar.Specification,
-			})
+			expr, err := parser.ParseExpression(guar.Specification)
+			if err != nil {
+				return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
+			}
+			rhsValue := evaluator.Eval(expr, bindings)
+			if rhsValue.IsError() {
+				return nil, fmt.Errorf("query %s guarantee[%d] evaluation error: %s", query.Name, i, rhsValue.Error.Inspect())
+			}
+			outputs[guar.Target] = rhsValue.Value
+		} else {
+			// Legacy: extract output name from primed TLA+ expression.
+			expr, err := parser.ParseExpression(guar.Specification)
+			if err != nil {
+				return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
+			}
+			kind := model_bridge.ClassifyGuarantee(expr)
+			if kind == model_bridge.GuaranteePrimedAssignment {
+				outputName, rhsValue, err := evaluatePrimedAssignment(expr, bindings)
+				if err != nil {
+					return nil, fmt.Errorf("query %s guarantee[%d]: %w", query.Name, i, err)
+				}
+				outputs[outputName] = rhsValue
+			} else if kind == model_bridge.GuaranteePostCondition {
+				ctx.AddPostCondition(DeferredPostCondition{
+					Expression:         expr,
+					InstanceID:         instance.ID,
+					SourceKey:          query.Key,
+					SourceName:         query.Name,
+					SourceType:         "query",
+					Index:              i,
+					OriginalExpression: guar.Specification,
+				})
+			}
 		}
 	}
 

@@ -55,6 +55,7 @@ func (suite *LogicSuite) TestLoad() {
 				logic_key,
 				logic_type,
 				description,
+				target,
 				notation,
 				specification,
 				sort_order
@@ -65,9 +66,10 @@ func (suite *LogicSuite) TestLoad() {
 				'invariant/0',
 				'assessment',
 				'Description',
+				'Target',
 				'tla_plus',
 				'Specification',
-				0
+				1
 			)
 	`)
 	assert.Nil(suite.T(), err)
@@ -78,6 +80,7 @@ func (suite *LogicSuite) TestLoad() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "Target",
 		Notation:      "tla_plus",
 		Specification: "Specification",
 	}, logic)
@@ -89,6 +92,7 @@ func (suite *LogicSuite) TestAdd() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "Target",
 		Notation:      "tla_plus",
 		Specification: "Specification",
 	})
@@ -100,6 +104,7 @@ func (suite *LogicSuite) TestAdd() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "Target",
 		Notation:      "tla_plus",
 		Specification: "Specification",
 	}, logic)
@@ -111,6 +116,7 @@ func (suite *LogicSuite) TestAddNulls() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "",
 		Notation:      "tla_plus",
 		Specification: "",
 	})
@@ -122,6 +128,7 @@ func (suite *LogicSuite) TestAddNulls() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "",
 		Notation:      "tla_plus",
 		Specification: "",
 	}, logic)
@@ -133,6 +140,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "Target",
 		Notation:      "tla_plus",
 		Specification: "Specification",
 	})
@@ -142,6 +150,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
+		Target:        "TargetX",
 		Notation:      "tla_plus",
 		Specification: "SpecificationX",
 	}, 0)
@@ -153,6 +162,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
+		Target:        "TargetX",
 		Notation:      "tla_plus",
 		Specification: "SpecificationX",
 	}, logic)
@@ -164,6 +174,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "Target",
 		Notation:      "tla_plus",
 		Specification: "Specification",
 	})
@@ -173,6 +184,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
+		Target:        "",
 		Notation:      "tla_plus",
 		Specification: "",
 	}, 0)
@@ -184,6 +196,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "DescriptionX",
+		Target:        "",
 		Notation:      "tla_plus",
 		Specification: "",
 	}, logic)
@@ -195,6 +208,7 @@ func (suite *LogicSuite) TestRemove() {
 		Key:           suite.logicKey,
 		Type:          model_logic.LogicTypeAssessment,
 		Description:   "Description",
+		Target:        "Target",
 		Notation:      "tla_plus",
 		Specification: "Specification",
 	})
@@ -215,6 +229,7 @@ func (suite *LogicSuite) TestQuery() {
 			Key:           suite.logicKeyB,
 			Type:          model_logic.LogicTypeAssessment,
 			Description:   "DescriptionX",
+			Target:        "TargetX",
 			Notation:      "tla_plus",
 			Specification: "SpecificationX",
 		},
@@ -222,6 +237,7 @@ func (suite *LogicSuite) TestQuery() {
 			Key:           suite.logicKey,
 			Type:          model_logic.LogicTypeAssessment,
 			Description:   "Description",
+			Target:        "Target",
 			Notation:      "tla_plus",
 			Specification: "Specification",
 		},
@@ -238,6 +254,7 @@ func (suite *LogicSuite) TestQuery() {
 			Key:           suite.logicKey,
 			Type:          model_logic.LogicTypeAssessment,
 			Description:   "Description",
+			Target:        "Target",
 			Notation:      "tla_plus",
 			Specification: "Specification",
 		},
@@ -245,6 +262,7 @@ func (suite *LogicSuite) TestQuery() {
 			Key:           suite.logicKeyB,
 			Type:          model_logic.LogicTypeAssessment,
 			Description:   "DescriptionX",
+			Target:        "TargetX",
 			Notation:      "tla_plus",
 			Specification: "SpecificationX",
 		},

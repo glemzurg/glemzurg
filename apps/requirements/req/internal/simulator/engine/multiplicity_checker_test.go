@@ -3,6 +3,7 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -23,16 +24,13 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 	itemClass, itemKey := testItemClass()
 
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("1..3"))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "OrderItem",
-			FromClassKey:     orderKey,
-			ToClassKey:       itemKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 3},
-		},
+		assocKey: assoc,
 	}
 
 	catalog := NewClassCatalog(model)
@@ -54,16 +52,13 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 	itemClass, itemKey := testItemClass()
 
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("1"))
+	toMult := helper.Must(model_class.NewMultiplicity("2..many"))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "OrderItem",
-			FromClassKey:     orderKey,
-			ToClassKey:       itemKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 2, HigherBound: 0}, // At least 2 items
-		},
+		assocKey: assoc,
 	}
 
 	catalog := NewClassCatalog(model)
@@ -86,16 +81,13 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 	itemClass, itemKey := testItemClass()
 
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("any"))
+	toMult := helper.Must(model_class.NewMultiplicity("0..1"))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "OrderItem",
-			FromClassKey:     orderKey,
-			ToClassKey:       itemKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 0}, // any
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 1}, // at most 1
-		},
+		assocKey: assoc,
 	}
 
 	catalog := NewClassCatalog(model)
@@ -119,16 +111,13 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 	itemClass, itemKey := testItemClass()
 
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
+	fromMult := helper.Must(model_class.NewMultiplicity("any"))
+	toMult := helper.Must(model_class.NewMultiplicity("any"))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: {
-			Key:              assocKey,
-			Name:             "OrderItem",
-			FromClassKey:     orderKey,
-			ToClassKey:       itemKey,
-			FromMultiplicity: model_class.Multiplicity{LowerBound: 0, HigherBound: 0}, // any
-			ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0}, // any
-		},
+		assocKey: assoc,
 	}
 
 	catalog := NewClassCatalog(model)

@@ -32,42 +32,37 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self.amount' = self.amount + 10"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_logic.NotationTLAPlus, "self.amount + 10"))
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
 	actionClose := helper.Must(model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
+	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateClosed := helper.Must(model_state.NewState(stateClosedKey, "Closed", "", ""))
+
+	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
+	transClose := helper.Must(model_state.NewTransition(transCloseKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateOpenKey:   {Key: stateOpenKey, Name: "Open"},
-		stateClosedKey: {Key: stateClosedKey, Name: "Closed"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateOpenKey:   stateOpen,
+		stateClosedKey: stateClosed,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCreateKey: eventCreate,
 		eventCloseKey:  eventClose,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{
 		actionCloseKey: actionClose,
-	}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transCreateKey: {
-			Key:          transCreateKey,
-			FromStateKey: nil, // Creation transition
-			EventKey:     eventCreateKey,
-			ToStateKey:   &stateOpenKey,
-		},
-		transCloseKey: {
-			Key:          transCloseKey,
-			FromStateKey: &stateOpenKey,
-			EventKey:     eventCloseKey,
-			ActionKey:    &actionCloseKey,
-			ToStateKey:   &stateClosedKey,
-		},
-	}
+	})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transCreateKey: transCreate,
+		transCloseKey:  transClose,
+	})
 
 	return class, classKey
 }
@@ -81,25 +76,24 @@ func testItemClass() (model_class.Class, identity.Key) {
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
+	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+
+	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+
 	class := helper.Must(model_class.NewClass(classKey, "Item", "", nil, nil, nil, ""))
-	class.Attributes = map[identity.Key]model_class.Attribute{}
-	class.States = map[identity.Key]model_state.State{
-		stateActiveKey: {Key: stateActiveKey, Name: "Active"},
-	}
-	class.Events = map[identity.Key]model_state.Event{
+	class.SetAttributes(map[identity.Key]model_class.Attribute{})
+	class.SetStates(map[identity.Key]model_state.State{
+		stateActiveKey: stateActive,
+	})
+	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCreateKey: eventCreate,
-	}
-	class.Guards = map[identity.Key]model_state.Guard{}
-	class.Actions = map[identity.Key]model_state.Action{}
-	class.Queries = map[identity.Key]model_state.Query{}
-	class.Transitions = map[identity.Key]model_state.Transition{
-		transCreateKey: {
-			Key:          transCreateKey,
-			FromStateKey: nil,
-			EventKey:     eventCreateKey,
-			ToStateKey:   &stateActiveKey,
-		},
-	}
+	})
+	class.SetGuards(map[identity.Key]model_state.Guard{})
+	class.SetActions(map[identity.Key]model_state.Action{})
+	class.SetQueries(map[identity.Key]model_state.Query{})
+	class.SetTransitions(map[identity.Key]model_state.Transition{
+		transCreateKey: transCreate,
+	})
 
 	return class, classKey
 }

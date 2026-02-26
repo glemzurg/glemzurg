@@ -34,8 +34,9 @@
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/query/getbalance/qguarantee/0",
                     "Type": "query",
                     "Description": "Returns the balance for the account.",
+                    "Target": "balance",
                     "Notation": "tla_plus",
-                    "Specification": "result = self.accounts[accountId].balance"
+                    "Specification": "self.accounts[accountId].balance"
                 }
             ]
         },

@@ -35,10 +35,10 @@ func mustKey(s string) identity.Key {
 
 func (s *ExtractorTestSuite) TestExtractModelInvariants() {
 	invKey0 := helper.Must(identity.NewInvariantKey("0"))
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Item quantities positive.", model_logic.NotationTLAPlus, "∀ x ∈ Items : x.quantity > 0"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Item quantities positive.", "", model_logic.NotationTLAPlus, "∀ x ∈ Items : x.quantity > 0"))
 
 	invKey1 := helper.Must(identity.NewInvariantKey("1"))
-	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Order count limit.", model_logic.NotationTLAPlus, "Cardinality(Orders) < 1000"))
+	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Order count limit.", "", model_logic.NotationTLAPlus, "Cardinality(Orders) < 1000"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil))
 
@@ -73,11 +73,11 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
 
 func (s *ExtractorTestSuite) TestExtractGlobalFunctions() {
 	gfuncMaxKey := helper.Must(identity.NewGlobalFunctionKey("_Max"))
-	gfuncMaxLogic := helper.Must(model_logic.NewLogic(gfuncMaxKey, model_logic.LogicTypeValue, "Max of two values.", model_logic.NotationTLAPlus, "IF x > y THEN x ELSE y"))
+	gfuncMaxLogic := helper.Must(model_logic.NewLogic(gfuncMaxKey, model_logic.LogicTypeValue, "Max of two values.", "", model_logic.NotationTLAPlus, "IF x > y THEN x ELSE y"))
 	gfuncMax := helper.Must(model_logic.NewGlobalFunction(gfuncMaxKey, "_Max", []string{"x", "y"}, gfuncMaxLogic))
 
 	gfuncStatusKey := helper.Must(identity.NewGlobalFunctionKey("_ValidStatuses"))
-	gfuncStatusLogic := helper.Must(model_logic.NewLogic(gfuncStatusKey, model_logic.LogicTypeValue, "Valid status set.", model_logic.NotationTLAPlus, `{"pending", "active", "complete"}`))
+	gfuncStatusLogic := helper.Must(model_logic.NewLogic(gfuncStatusKey, model_logic.LogicTypeValue, "Valid status set.", "", model_logic.NotationTLAPlus, `{"pending", "active", "complete"}`))
 	gfuncStatus := helper.Must(model_logic.NewGlobalFunction(gfuncStatusKey, "_ValidStatuses", []string{}, gfuncStatusLogic))
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
@@ -128,13 +128,13 @@ func (s *ExtractorTestSuite) TestExtractActionExpressions() {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "place_order"))
 
 	actionReqKey0 := helper.Must(identity.NewActionRequireKey(actionKey, "0"))
-	actionReq0 := helper.Must(model_logic.NewLogic(actionReqKey0, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, `self.status = "pending"`))
+	actionReq0 := helper.Must(model_logic.NewLogic(actionReqKey0, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, `self.status = "pending"`))
 
 	actionReqKey1 := helper.Must(identity.NewActionRequireKey(actionKey, "1"))
-	actionReq1 := helper.Must(model_logic.NewLogic(actionReqKey1, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, "self.items # {}"))
+	actionReq1 := helper.Must(model_logic.NewLogic(actionReqKey1, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "self.items # {}"))
 
 	actionGuarKey0 := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
-	actionGuar0 := helper.Must(model_logic.NewLogic(actionGuarKey0, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, `self'.status = "placed"`))
+	actionGuar0 := helper.Must(model_logic.NewLogic(actionGuarKey0, model_logic.LogicTypeStateChange, "Postcondition.", "status", model_logic.NotationTLAPlus, `self'.status = "placed"`))
 
 	action := helper.Must(model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq0, actionReq1}, []model_logic.Logic{actionGuar0}, nil, nil))
 
@@ -200,13 +200,13 @@ func (s *ExtractorTestSuite) TestExtractQueryExpressions() {
 	queryKey := helper.Must(identity.NewQueryKey(classKey, "find_pending"))
 
 	queryReqKey0 := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
-	queryReq0 := helper.Must(model_logic.NewLogic(queryReqKey0, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, `user.role = "admin"`))
+	queryReq0 := helper.Must(model_logic.NewLogic(queryReqKey0, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, `user.role = "admin"`))
 
 	queryGuarKey0 := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
-	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", model_logic.NotationTLAPlus, `∀ o ∈ result : o.status = "pending"`))
+	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, `∀ o ∈ result : o.status = "pending"`))
 
 	queryGuarKey1 := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "1"))
-	queryGuar1 := helper.Must(model_logic.NewLogic(queryGuarKey1, model_logic.LogicTypeQuery, "Postcondition.", model_logic.NotationTLAPlus, "result ⊆ Orders"))
+	queryGuar1 := helper.Must(model_logic.NewLogic(queryGuarKey1, model_logic.LogicTypeQuery, "Postcondition.", "subset", model_logic.NotationTLAPlus, "result ⊆ Orders"))
 
 	query := helper.Must(model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq0}, []model_logic.Logic{queryGuar0, queryGuar1}, nil))
 
@@ -268,7 +268,7 @@ func (s *ExtractorTestSuite) TestExtractGuardExpressions() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
 	guardKey := helper.Must(identity.NewGuardKey(classKey, "can_ship"))
 
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Order can be shipped", model_logic.NotationTLAPlus, `self.status = "paid" /\ self.items # {}`))
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Order can be shipped", "", model_logic.NotationTLAPlus, `self.status = "paid" /\ self.items # {}`))
 
 	guard := helper.Must(model_state.NewGuard(guardKey, "CanShip", guardLogic))
 
@@ -310,11 +310,11 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 
 	// Model invariant
 	invKey0 := helper.Must(identity.NewInvariantKey("0"))
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Stock non-negative.", model_logic.NotationTLAPlus, "∀ p ∈ Products : p.stock >= 0"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Stock non-negative.", "", model_logic.NotationTLAPlus, "∀ p ∈ Products : p.stock >= 0"))
 
 	// Global function
 	gfuncKey := helper.Must(identity.NewGlobalFunctionKey("_LowStockThreshold"))
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Low stock threshold.", model_logic.NotationTLAPlus, "10"))
+	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Low stock threshold.", "", model_logic.NotationTLAPlus, "10"))
 	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_LowStockThreshold", nil, gfuncLogic))
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
@@ -323,24 +323,24 @@ func (s *ExtractorTestSuite) TestExtractFromModel_Combined() {
 
 	// Action
 	actionReqKey0 := helper.Must(identity.NewActionRequireKey(actionKey, "0"))
-	actionReq0 := helper.Must(model_logic.NewLogic(actionReqKey0, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, "quantity > 0"))
+	actionReq0 := helper.Must(model_logic.NewLogic(actionReqKey0, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "quantity > 0"))
 
 	actionGuarKey0 := helper.Must(identity.NewActionGuaranteeKey(actionKey, "0"))
-	actionGuar0 := helper.Must(model_logic.NewLogic(actionGuarKey0, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "self'.stock = self.stock + quantity"))
+	actionGuar0 := helper.Must(model_logic.NewLogic(actionGuarKey0, model_logic.LogicTypeStateChange, "Postcondition.", "stock", model_logic.NotationTLAPlus, "self'.stock = self.stock + quantity"))
 
 	action := helper.Must(model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq0}, []model_logic.Logic{actionGuar0}, nil, nil))
 
 	// Query
 	queryReqKey0 := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
-	queryReq0 := helper.Must(model_logic.NewLogic(queryReqKey0, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, "TRUE"))
+	queryReq0 := helper.Must(model_logic.NewLogic(queryReqKey0, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	queryGuarKey0 := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
-	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", model_logic.NotationTLAPlus, "∀ p ∈ result : p.stock < _LowStockThreshold"))
+	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, "∀ p ∈ result : p.stock < _LowStockThreshold"))
 
 	query := helper.Must(model_state.NewQuery(queryKey, "FindLowStock", "", []model_logic.Logic{queryReq0}, []model_logic.Logic{queryGuar0}, nil))
 
 	// Guard
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Stock is low", model_logic.NotationTLAPlus, "self.stock < _LowStockThreshold"))
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Stock is low", "", model_logic.NotationTLAPlus, "self.stock < _LowStockThreshold"))
 	guard := helper.Must(model_state.NewGuard(guardKey, "LowStock", guardLogic))
 
 	// Assemble class

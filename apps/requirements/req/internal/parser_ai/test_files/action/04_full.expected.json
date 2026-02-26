@@ -7,8 +7,8 @@
         {"description": "Order must not already be paid"}
     ],
     "guarantees": [
-        {"description": "Payment has been charged to customer's payment method"},
-        {"description": "Transaction record has been created"},
-        {"description": "Order payment status is set to paid"}
+        {"description": "Payment has been charged to customer's payment method", "target": "payment_status"},
+        {"description": "Transaction record has been created", "target": "transaction"},
+        {"description": "Order payment status is set to paid", "target": "order_status"}
     ]
 }

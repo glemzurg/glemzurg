@@ -66,7 +66,7 @@
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions that will be true after the action executes successfully. Each item is a logic specification with a description and optional formal notation.",
+      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey). The 'specification' is the right-hand-side value expression only (no primed LHS). Each attribute can only be set once per action.",
       "items": {
         "type": "object",
         "properties": {
@@ -80,6 +80,11 @@
             "description": "A postcondition statement. Describe what will be true after the action completes.",
             "minLength": 1
           },
+          "target": {
+            "type": "string",
+            "description": "Required. The lowercase attribute SubKey being set by this guarantee (e.g., 'shipping', 'status'). Must match an attribute on the action's owning class. Each target can only appear once per action.",
+            "minLength": 1
+          },
           "notation": {
             "type": "string",
             "description": "Optional formal notation system. Currently the only supported value is 'tla_plus' (TLA+ notation). If validation fails: ensure this is exactly 'tla_plus'.",
@@ -87,10 +92,10 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation."
+            "description": "Optional formal specification in the given notation. This represents only the right-hand-side value expression (not the primed assignment)."
           }
         },
-        "required": ["description"],
+        "required": ["description", "target"],
         "additionalProperties": false
       }
     },

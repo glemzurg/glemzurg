@@ -32,8 +32,8 @@ func (s *LoaderTestSuite) TestLoadModelInvariants() {
 	invKey1, err := identity.NewInvariantKey("1")
 	s.Require().NoError(err)
 
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
-	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Basic arithmetic.", model_logic.NotationTLAPlus, "1 + 1 = 2"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", model_logic.NotationTLAPlus, "TRUE"))
+	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Basic arithmetic.", "", model_logic.NotationTLAPlus, "1 + 1 = 2"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil))
 
@@ -72,8 +72,8 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_ParseError() {
 	invKey1, err := identity.NewInvariantKey("1")
 	s.Require().NoError(err)
 
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
-	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Invalid expression.", model_logic.NotationTLAPlus, "THIS IS NOT VALID TLA+"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", model_logic.NotationTLAPlus, "TRUE"))
+	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Invalid expression.", "", model_logic.NotationTLAPlus, "THIS IS NOT VALID TLA+"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil))
 
@@ -93,7 +93,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions() {
 	gfuncKey, err := identity.NewGlobalFunctionKey("_Max")
 	s.Require().NoError(err)
 
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Max of two values.", model_logic.NotationTLAPlus, "IF x > y THEN x ELSE y"))
+	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Max of two values.", "", model_logic.NotationTLAPlus, "IF x > y THEN x ELSE y"))
 	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_Max", []string{"x", "y"}, gfuncLogic))
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
@@ -122,7 +122,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions_NoParams() {
 	gfuncKey, err := identity.NewGlobalFunctionKey("_StatusSet")
 	s.Require().NoError(err)
 
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Status set.", model_logic.NotationTLAPlus, `{"pending", "active"}`))
+	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Status set.", "", model_logic.NotationTLAPlus, `{"pending", "active"}`))
 	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_StatusSet", []string{}, gfuncLogic))
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
@@ -159,12 +159,12 @@ func (s *LoaderTestSuite) TestLoadActionExpressions() {
 	// Build action requires logic
 	actionReqKey, err := identity.NewActionRequireKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionReq := helper.Must(model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, "TRUE"))
+	actionReq := helper.Must(model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build action guarantees logic
 	actionGuarKey, err := identity.NewActionGuaranteeKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionGuar := helper.Must(model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "TRUE"))
+	actionGuar := helper.Must(model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build the action
 	action := helper.Must(model_state.NewAction(actionKey, "PlaceOrder", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil))
@@ -220,16 +220,16 @@ func (s *LoaderTestSuite) TestLoadQueryExpressions() {
 	// Build query requires logic
 	queryReqKey, err := identity.NewQueryRequireKey(queryKey, "0")
 	s.Require().NoError(err)
-	queryReq := helper.Must(model_logic.NewLogic(queryReqKey, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, "TRUE"))
+	queryReq := helper.Must(model_logic.NewLogic(queryReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build query guarantees logic
 	queryGuarKey0, err := identity.NewQueryGuaranteeKey(queryKey, "0")
 	s.Require().NoError(err)
-	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", model_logic.NotationTLAPlus, "TRUE"))
+	queryGuar0 := helper.Must(model_logic.NewLogic(queryGuarKey0, model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, "TRUE"))
 
 	queryGuarKey1, err := identity.NewQueryGuaranteeKey(queryKey, "1")
 	s.Require().NoError(err)
-	queryGuar1 := helper.Must(model_logic.NewLogic(queryGuarKey1, model_logic.LogicTypeQuery, "Postcondition.", model_logic.NotationTLAPlus, "FALSE"))
+	queryGuar1 := helper.Must(model_logic.NewLogic(queryGuarKey1, model_logic.LogicTypeQuery, "Postcondition.", "items", model_logic.NotationTLAPlus, "FALSE"))
 
 	// Build the query
 	query := helper.Must(model_state.NewQuery(queryKey, "FindPending", "", []model_logic.Logic{queryReq}, []model_logic.Logic{queryGuar0, queryGuar1}, nil))
@@ -285,7 +285,7 @@ func (s *LoaderTestSuite) TestLoadGuardExpressions() {
 	s.Require().NoError(err)
 
 	// Build guard logic using the guard key itself
-	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Order can be shipped", model_logic.NotationTLAPlus, "TRUE"))
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Order can be shipped", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build the guard
 	guard := helper.Must(model_state.NewGuard(guardKey, "CanShip", guardLogic))
@@ -334,12 +334,12 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	// Build invariant
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build global function
 	gfuncKey, err := identity.NewGlobalFunctionKey("_Threshold")
 	s.Require().NoError(err)
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Threshold value.", model_logic.NotationTLAPlus, "10"))
+	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Threshold value.", "", model_logic.NotationTLAPlus, "10"))
 	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_Threshold", nil, gfuncLogic))
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
@@ -349,12 +349,12 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 	// Build action requires logic
 	actionReqKey, err := identity.NewActionRequireKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionReq := helper.Must(model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", model_logic.NotationTLAPlus, "TRUE"))
+	actionReq := helper.Must(model_logic.NewLogic(actionReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build action guarantees logic
 	actionGuarKey, err := identity.NewActionGuaranteeKey(actionKey, "0")
 	s.Require().NoError(err)
-	actionGuar := helper.Must(model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", model_logic.NotationTLAPlus, "TRUE"))
+	actionGuar := helper.Must(model_logic.NewLogic(actionGuarKey, model_logic.LogicTypeStateChange, "Postcondition.", "stock", model_logic.NotationTLAPlus, "TRUE"))
 
 	// Build the action
 	action := helper.Must(model_state.NewAction(actionKey, "Restock", "", []model_logic.Logic{actionReq}, []model_logic.Logic{actionGuar}, nil, nil))
@@ -453,7 +453,7 @@ func (s *LoaderTestSuite) TestLoadIntoRegistry() {
 func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil))
 
@@ -468,7 +468,7 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 func (s *LoaderTestSuite) TestLoadFromModelStrict_Error() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Invalid syntax.", model_logic.NotationTLAPlus, "INVALID SYNTAX HERE"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Invalid syntax.", "", model_logic.NotationTLAPlus, "INVALID SYNTAX HERE"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil))
 
@@ -486,7 +486,7 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Error() {
 func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", model_logic.NotationTLAPlus, "TRUE"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", model_logic.NotationTLAPlus, "TRUE"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil))
 
@@ -501,7 +501,7 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 func (s *LoaderTestSuite) TestMustLoadFromModel_Panics() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Invalid syntax.", model_logic.NotationTLAPlus, "INVALID SYNTAX HERE"))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Invalid syntax.", "", model_logic.NotationTLAPlus, "INVALID SYNTAX HERE"))
 
 	model := helper.Must(req_model.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil))
 

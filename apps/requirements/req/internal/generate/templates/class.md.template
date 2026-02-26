@@ -163,7 +163,8 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ if ne .Target "" }}    - {{ .Target }} = {{ if ne .Specification "" }}{{ .Specification }}{{ else }}???{{ end }}
+{{ else if ne .Specification "" }}    - {{ .Specification }}
 {{ end -}}
 {{ end }}
 
@@ -242,7 +243,8 @@ Guarantees:
 {{- if ne $subBullets nil }}{{ range $subBullets }}
     - {{ . }}
 {{- end }}{{ end }}
-{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ if ne .Target "" }}    - {{ .Target }} = {{ if ne .Specification "" }}{{ .Specification }}{{ else }}???{{ end }}
+{{ else if ne .Specification "" }}    - {{ .Specification }}
 {{ end -}}
 {{ end }}
 

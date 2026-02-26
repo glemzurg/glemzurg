@@ -29,13 +29,10 @@ func TestConvertSuite(t *testing.T) {
 func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	t := suite.T()
 
-	model := &req_model.Model{
-		Key:     "testmodel",
-		Name:    "Test Model",
-		Details: "Model details",
-		Actors:  make(map[identity.Key]model_actor.Actor),
-		Domains: make(map[identity.Key]model_domain.Domain),
-	}
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "Model details", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = make(map[identity.Key]model_domain.Domain)
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
@@ -72,19 +69,15 @@ func (suite *ConvertSuite) TestConvertFromModelWithActor() {
 	t := suite.T()
 
 	actorKey := helper.Must(identity.NewActorKey("customer"))
-	model := &req_model.Model{
-		Key:  "testmodel",
-		Name: "Test Model",
-		Actors: map[identity.Key]model_actor.Actor{
-			actorKey: {
-				Key:     actorKey,
-				Name:    "Customer",
-				Type:    "person",
-				Details: "Customer details",
-			},
-		},
-		Domains: make(map[identity.Key]model_domain.Domain),
+
+	actor := helper.Must(model_actor.NewActor(actorKey, "Customer", "Customer details", "person", nil, nil, ""))
+
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = map[identity.Key]model_actor.Actor{
+		actorKey: actor,
 	}
+	m.Domains = make(map[identity.Key]model_domain.Domain)
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
@@ -139,47 +132,41 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 	idAttrKey := helper.Must(identity.NewAttributeKey(classKey, "id"))
 	statusAttrKey := helper.Must(identity.NewAttributeKey(classKey, "status"))
 
-	model := &req_model.Model{
-		Key:  "testmodel",
-		Name: "Test Model",
-		Actors: map[identity.Key]model_actor.Actor{
-			actorKey: {Key: actorKey, Name: "Customer", Type: "person"},
-		},
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Default",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:      classKey,
-								Name:     "Order",
-								Details:  "Order details",
-								ActorKey: &actorKey,
-								Attributes: map[identity.Key]model_class.Attribute{
-									idAttrKey: {
-										Key:           idAttrKey,
-										Name:          "ID",
-										Details:       "The order ID",
-										DataTypeRules: "int",
-										IndexNums:     []uint{0},
-									},
-									statusAttrKey: {
-										Key:           statusAttrKey,
-										Name:          "Status",
-										DataTypeRules: "string",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	// Build attributes
+	idAttr := helper.Must(model_class.NewAttribute(idAttrKey, "ID", "The order ID", "int", nil, false, "", []uint{0}))
+	statusAttr := helper.Must(model_class.NewAttribute(statusAttrKey, "Status", "", "string", nil, false, "", nil))
+
+	// Build class
+	orderClass := helper.Must(model_class.NewClass(classKey, "Order", "Order details", &actorKey, nil, nil, ""))
+	orderClass.SetAttributes(map[identity.Key]model_class.Attribute{
+		idAttrKey:     idAttr,
+		statusAttrKey: statusAttr,
+	})
+
+	// Build subdomain
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Default", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		classKey: orderClass,
 	}
+
+	// Build domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	// Build actor
+	actor := helper.Must(model_actor.NewActor(actorKey, "Customer", "", "person", nil, nil, ""))
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = map[identity.Key]model_actor.Actor{
+		actorKey: actor,
+	}
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
@@ -283,53 +270,62 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	actionKey := helper.Must(identity.NewActionKey(classKey, "process"))
 	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "pending", "confirm", "has_items", "process", "confirmed"))
 
-	model := &req_model.Model{
-		Key:    "testmodel",
-		Name:   "Test Model",
-		Actors: make(map[identity.Key]model_actor.Actor),
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Default",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:        classKey,
-								Name:       "Order",
-								Attributes: make(map[identity.Key]model_class.Attribute),
-								States: map[identity.Key]model_state.State{
-									stateKey1: {Key: stateKey1, Name: "Pending"},
-									stateKey2: {Key: stateKey2, Name: "Confirmed"},
-								},
-								Events: map[identity.Key]model_state.Event{
-									eventKey: {Key: eventKey, Name: "confirm"},
-								},
-								Guards: map[identity.Key]model_state.Guard{
-									guardKey: {Key: guardKey, Name: "has_items", Logic: model_logic.Logic{Key: guardKey, Type: model_logic.LogicTypeAssessment, Description: "Check if order has items", Notation: model_logic.NotationTLAPlus}},
-								},
-								Transitions: map[identity.Key]model_state.Transition{
-									transitionKey: {
-										Key:          transitionKey,
-										FromStateKey: &stateKey1,
-										ToStateKey:   &stateKey2,
-										EventKey:     eventKey,
-										GuardKey:     &guardKey,
-										ActionKey:    &actionKey,
-									},
-								},
-								Actions: map[identity.Key]model_state.Action{
-									actionKey: {Key: actionKey, Name: "Process", Details: "Process the order"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	// Build states
+	state1 := helper.Must(model_state.NewState(stateKey1, "Pending", "", ""))
+	state2 := helper.Must(model_state.NewState(stateKey2, "Confirmed", "", ""))
+
+	// Build event
+	event := helper.Must(model_state.NewEvent(eventKey, "confirm", "", nil))
+
+	// Build guard with logic
+	guardLogic := helper.Must(model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Check if order has items", "", model_logic.NotationTLAPlus, ""))
+	guard := helper.Must(model_state.NewGuard(guardKey, "has_items", guardLogic))
+
+	// Build transition
+	transition := helper.Must(model_state.NewTransition(transitionKey, &stateKey1, eventKey, &guardKey, &actionKey, &stateKey2, ""))
+
+	// Build action
+	action := helper.Must(model_state.NewAction(actionKey, "Process", "Process the order", nil, nil, nil, nil))
+
+	// Build class
+	orderClass := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetStates(map[identity.Key]model_state.State{
+		stateKey1: state1,
+		stateKey2: state2,
+	})
+	orderClass.SetEvents(map[identity.Key]model_state.Event{
+		eventKey: event,
+	})
+	orderClass.SetGuards(map[identity.Key]model_state.Guard{
+		guardKey: guard,
+	})
+	orderClass.SetTransitions(map[identity.Key]model_state.Transition{
+		transitionKey: transition,
+	})
+	orderClass.SetActions(map[identity.Key]model_state.Action{
+		actionKey: action,
+	})
+
+	// Build subdomain
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Default", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		classKey: orderClass,
 	}
+
+	// Build domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
@@ -440,43 +436,45 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "order"))
 	queryKey := helper.Must(identity.NewQueryKey(classKey, "get_total"))
 
-	model := &req_model.Model{
-		Key:    "testmodel",
-		Name:   "Test Model",
-		Actors: make(map[identity.Key]model_actor.Actor),
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Default",
-						Classes: map[identity.Key]model_class.Class{
-							classKey: {
-								Key:        classKey,
-								Name:       "Order",
-								Attributes: make(map[identity.Key]model_class.Attribute),
-								Queries: map[identity.Key]model_state.Query{
-									queryKey: {
-										Key:     queryKey,
-										Name:    "Get Total",
-										Details: "Get order total",
-										Requires: []model_logic.Logic{
-											{Key: helper.Must(identity.NewQueryRequireKey(queryKey, "0")), Type: model_logic.LogicTypeAssessment, Description: "order must exist", Notation: model_logic.NotationTLAPlus},
-										},
-										Guarantees: []model_logic.Logic{
-											{Key: helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")), Type: model_logic.LogicTypeQuery, Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	// Build query logic
+	requireKey := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
+	guaranteeKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
+	requireLogic := helper.Must(model_logic.NewLogic(requireKey, model_logic.LogicTypeAssessment, "order must exist", "", model_logic.NotationTLAPlus, ""))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeQuery, "returns total amount", "total", model_logic.NotationTLAPlus, ""))
+
+	// Build query
+	query := helper.Must(model_state.NewQuery(queryKey, "Get Total", "Get order total",
+		[]model_logic.Logic{requireLogic},
+		[]model_logic.Logic{guaranteeLogic},
+		nil,
+	))
+
+	// Build class
+	orderClass := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+	orderClass.SetQueries(map[identity.Key]model_state.Query{
+		queryKey: query,
+	})
+
+	// Build subdomain
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Default", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		classKey: orderClass,
 	}
+
+	// Build domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
@@ -484,13 +482,13 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	class := input.Domains["orders"].Subdomains["default"].Classes["order"]
 	require.Contains(t, class.Queries, "get_total")
 
-	query := class.Queries["get_total"]
-	assert.Equal(t, "Get Total", query.Name)
-	assert.Equal(t, "Get order total", query.Details)
-	require.Len(t, query.Requires, 1)
-	assert.Equal(t, "order must exist", query.Requires[0].Description)
-	require.Len(t, query.Guarantees, 1)
-	assert.Equal(t, "returns total amount", query.Guarantees[0].Description)
+	inputQuery := class.Queries["get_total"]
+	assert.Equal(t, "Get Total", inputQuery.Name)
+	assert.Equal(t, "Get order total", inputQuery.Details)
+	require.Len(t, inputQuery.Requires, 1)
+	assert.Equal(t, "order must exist", inputQuery.Requires[0].Description)
+	require.Len(t, inputQuery.Guarantees, 1)
+	assert.Equal(t, "returns total amount", inputQuery.Guarantees[0].Description)
 }
 
 // TestConvertToModelWithQueries tests converting queries.
@@ -518,7 +516,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 											{Description: "order must exist", Notation: model_logic.NotationTLAPlus},
 										},
 										Guarantees: []inputLogic{
-											{Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
+											{Description: "returns total amount", Target: "total", Notation: model_logic.NotationTLAPlus},
 										},
 									},
 								},
@@ -574,55 +572,50 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	bookKey := helper.Must(identity.NewClassKey(subdomainKey, "book"))
 	genKey := helper.Must(identity.NewGeneralizationKey(subdomainKey, "product_types"))
 
-	model := &req_model.Model{
-		Key:    "testmodel",
-		Name:   "Test Model",
-		Actors: make(map[identity.Key]model_actor.Actor),
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Products",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Default",
-						Classes: map[identity.Key]model_class.Class{
-							productKey: {
-								Key:             productKey,
-								Name:            "Product",
-								Attributes:      make(map[identity.Key]model_class.Attribute),
-								SuperclassOfKey: &genKey, // This class is the superclass of the generalization
-							},
-							bookKey: {
-								Key:           bookKey,
-								Name:          "Book",
-								Attributes:    make(map[identity.Key]model_class.Attribute),
-								SubclassOfKey: &genKey, // This class is a subclass of the generalization
-							},
-						},
-						Generalizations: map[identity.Key]model_class.Generalization{
-							genKey: {
-								Key:     genKey,
-								Name:    "Product Types",
-								Details: "Types of products",
-							},
-						},
-					},
-				},
-			},
-		},
+	// Build classes
+	productClass := helper.Must(model_class.NewClass(productKey, "Product", "", nil, &genKey, nil, ""))
+	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	bookClass := helper.Must(model_class.NewClass(bookKey, "Book", "", nil, nil, &genKey, ""))
+	bookClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	// Build generalization
+	gen := helper.Must(model_class.NewGeneralization(genKey, "Product Types", "Types of products", false, false, ""))
+
+	// Build subdomain
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Default", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		productKey: productClass,
+		bookKey:    bookClass,
 	}
+	subdomain.Generalizations = map[identity.Key]model_class.Generalization{
+		genKey: gen,
+	}
+
+	// Build domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Products", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
 
-	subdomain := input.Domains["products"].Subdomains["default"]
-	require.Contains(t, subdomain.ClassGeneralizations, "product_types")
+	inputSubdomain := input.Domains["products"].Subdomains["default"]
+	require.Contains(t, inputSubdomain.ClassGeneralizations, "product_types")
 
-	gen := subdomain.ClassGeneralizations["product_types"]
-	assert.Equal(t, "Product Types", gen.Name)
-	assert.Equal(t, "product", gen.SuperclassKey)
-	assert.Equal(t, []string{"book"}, gen.SubclassKeys)
+	inputGen := inputSubdomain.ClassGeneralizations["product_types"]
+	assert.Equal(t, "Product Types", inputGen.Name)
+	assert.Equal(t, "product", inputGen.SuperclassKey)
+	assert.Equal(t, []string{"book"}, inputGen.SubclassKeys)
 }
 
 // TestConvertToModelWithGeneralization tests converting a generalization.
@@ -708,50 +701,57 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	lineItemKey := helper.Must(identity.NewClassKey(subdomainKey, "line_item"))
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, orderKey, lineItemKey, "order_lines"))
 
-	model := &req_model.Model{
-		Key:    "testmodel",
-		Name:   "Test Model",
-		Actors: make(map[identity.Key]model_actor.Actor),
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomainKey: {
-						Key:  subdomainKey,
-						Name: "Default",
-						Classes: map[identity.Key]model_class.Class{
-							orderKey:    {Key: orderKey, Name: "Order", Attributes: make(map[identity.Key]model_class.Attribute)},
-							lineItemKey: {Key: lineItemKey, Name: "Line Item", Attributes: make(map[identity.Key]model_class.Attribute)},
-						},
-						ClassAssociations: map[identity.Key]model_class.Association{
-							assocKey: {
-								Key:              assocKey,
-								Name:             "Order Lines",
-								FromClassKey:     orderKey,
-								FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-								ToClassKey:       lineItemKey,
-								ToMultiplicity:   model_class.Multiplicity{LowerBound: 1, HigherBound: 0}, // 1..*
-							},
-						},
-					},
-				},
-			},
-		},
+	// Build classes
+	orderClass := helper.Must(model_class.NewClass(orderKey, "Order", "", nil, nil, nil, ""))
+	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	lineItemClass := helper.Must(model_class.NewClass(lineItemKey, "Line Item", "", nil, nil, nil, ""))
+	lineItemClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	// Build association
+	assoc := helper.Must(model_class.NewAssociation(
+		assocKey, "Order Lines", "",
+		orderKey, helper.Must(model_class.NewMultiplicity("1")),
+		lineItemKey, helper.Must(model_class.NewMultiplicity("1..many")),
+		nil, "",
+	))
+
+	// Build subdomain
+	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "Default", "", ""))
+	subdomain.Classes = map[identity.Key]model_class.Class{
+		orderKey:    orderClass,
+		lineItemKey: lineItemClass,
 	}
+	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
+		assocKey: assoc,
+	}
+
+	// Build domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomainKey: subdomain,
+	}
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
 
-	subdomain := input.Domains["orders"].Subdomains["default"]
-	require.Contains(t, subdomain.ClassAssociations, "order_lines")
+	inputSubdomain := input.Domains["orders"].Subdomains["default"]
+	require.Contains(t, inputSubdomain.ClassAssociations, "order_lines")
 
-	assoc := subdomain.ClassAssociations["order_lines"]
-	assert.Equal(t, "Order Lines", assoc.Name)
-	assert.Equal(t, "order", assoc.FromClassKey)
-	assert.Equal(t, "1", assoc.FromMultiplicity)
-	assert.Equal(t, "line_item", assoc.ToClassKey)
-	assert.Equal(t, "1..*", assoc.ToMultiplicity)
+	inputAssoc := inputSubdomain.ClassAssociations["order_lines"]
+	assert.Equal(t, "Order Lines", inputAssoc.Name)
+	assert.Equal(t, "order", inputAssoc.FromClassKey)
+	assert.Equal(t, "1", inputAssoc.FromMultiplicity)
+	assert.Equal(t, "line_item", inputAssoc.ToClassKey)
+	assert.Equal(t, "1..*", inputAssoc.ToMultiplicity)
 }
 
 // TestConvertToModelWithSubdomainAssociation tests converting a subdomain-level association.
@@ -1053,50 +1053,56 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	shipmentKey := helper.Must(identity.NewClassKey(subdomain2Key, "shipment"))
 	assocKey := helper.Must(identity.NewClassAssociationKey(domainKey, orderKey, shipmentKey, "order_shipments"))
 
-	model := &req_model.Model{
-		Key:    "testmodel",
-		Name:   "Test Model",
-		Actors: make(map[identity.Key]model_actor.Actor),
-		Domains: map[identity.Key]model_domain.Domain{
-			domainKey: {
-				Key:  domainKey,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomain1Key: {
-						Key:     subdomain1Key,
-						Name:    "Core",
-						Classes: map[identity.Key]model_class.Class{orderKey: {Key: orderKey, Name: "Order", Attributes: make(map[identity.Key]model_class.Attribute)}},
-					},
-					subdomain2Key: {
-						Key:     subdomain2Key,
-						Name:    "Shipping",
-						Classes: map[identity.Key]model_class.Class{shipmentKey: {Key: shipmentKey, Name: "Shipment", Attributes: make(map[identity.Key]model_class.Attribute)}},
-					},
-				},
-				ClassAssociations: map[identity.Key]model_class.Association{
-					assocKey: {
-						Key:              assocKey,
-						Name:             "Order Shipments",
-						FromClassKey:     orderKey,
-						FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-						ToClassKey:       shipmentKey,
-						ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0}, // *
-					},
-				},
-			},
-		},
+	// Build classes
+	orderClass := helper.Must(model_class.NewClass(orderKey, "Order", "", nil, nil, nil, ""))
+	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	shipmentClass := helper.Must(model_class.NewClass(shipmentKey, "Shipment", "", nil, nil, nil, ""))
+	shipmentClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	// Build subdomains
+	subdomain1 := helper.Must(model_domain.NewSubdomain(subdomain1Key, "Core", "", ""))
+	subdomain1.Classes = map[identity.Key]model_class.Class{orderKey: orderClass}
+
+	subdomain2 := helper.Must(model_domain.NewSubdomain(subdomain2Key, "Shipping", "", ""))
+	subdomain2.Classes = map[identity.Key]model_class.Class{shipmentKey: shipmentClass}
+
+	// Build association
+	assoc := helper.Must(model_class.NewAssociation(
+		assocKey, "Order Shipments", "",
+		orderKey, helper.Must(model_class.NewMultiplicity("1")),
+		shipmentKey, helper.Must(model_class.NewMultiplicity("any")),
+		nil, "",
+	))
+
+	// Build domain
+	domain := helper.Must(model_domain.NewDomain(domainKey, "Orders", "", false, ""))
+	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomain1Key: subdomain1,
+		subdomain2Key: subdomain2,
 	}
+	domain.ClassAssociations = map[identity.Key]model_class.Association{
+		assocKey: assoc,
+	}
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domainKey: domain,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
 
-	domain := input.Domains["orders"]
-	require.Contains(t, domain.ClassAssociations, "order_shipments")
+	inputDomain := input.Domains["orders"]
+	require.Contains(t, inputDomain.ClassAssociations, "order_shipments")
 
-	assoc := domain.ClassAssociations["order_shipments"]
-	assert.Equal(t, "Order Shipments", assoc.Name)
-	assert.Equal(t, "core/order", assoc.FromClassKey)
-	assert.Equal(t, "shipping/shipment", assoc.ToClassKey)
+	inputAssoc := inputDomain.ClassAssociations["order_shipments"]
+	assert.Equal(t, "Order Shipments", inputAssoc.Name)
+	assert.Equal(t, "core/order", inputAssoc.FromClassKey)
+	assert.Equal(t, "shipping/shipment", inputAssoc.ToClassKey)
 }
 
 // TestConvertToModelWithDomainAssociation tests converting a domain-level association.
@@ -1174,55 +1180,60 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	productKey := helper.Must(identity.NewClassKey(subdomain2Key, "product"))
 	assocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, orderKey, productKey, "order_products"))
 
-	model := &req_model.Model{
-		Key:    "testmodel",
-		Name:   "Test Model",
-		Actors: make(map[identity.Key]model_actor.Actor),
-		Domains: map[identity.Key]model_domain.Domain{
-			domain1Key: {
-				Key:  domain1Key,
-				Name: "Orders",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomain1Key: {
-						Key:     subdomain1Key,
-						Name:    "Core",
-						Classes: map[identity.Key]model_class.Class{orderKey: {Key: orderKey, Name: "Order", Attributes: make(map[identity.Key]model_class.Attribute)}},
-					},
-				},
-			},
-			domain2Key: {
-				Key:  domain2Key,
-				Name: "Inventory",
-				Subdomains: map[identity.Key]model_domain.Subdomain{
-					subdomain2Key: {
-						Key:     subdomain2Key,
-						Name:    "Products",
-						Classes: map[identity.Key]model_class.Class{productKey: {Key: productKey, Name: "Product", Attributes: make(map[identity.Key]model_class.Attribute)}},
-					},
-				},
-			},
-		},
-		ClassAssociations: map[identity.Key]model_class.Association{
-			assocKey: {
-				Key:              assocKey,
-				Name:             "Order Products",
-				FromClassKey:     orderKey,
-				FromMultiplicity: model_class.Multiplicity{LowerBound: 1, HigherBound: 1},
-				ToClassKey:       productKey,
-				ToMultiplicity:   model_class.Multiplicity{LowerBound: 0, HigherBound: 0}, // *
-			},
-		},
+	// Build classes
+	orderClass := helper.Must(model_class.NewClass(orderKey, "Order", "", nil, nil, nil, ""))
+	orderClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	productClass := helper.Must(model_class.NewClass(productKey, "Product", "", nil, nil, nil, ""))
+	productClass.SetAttributes(make(map[identity.Key]model_class.Attribute))
+
+	// Build subdomains
+	subdomain1 := helper.Must(model_domain.NewSubdomain(subdomain1Key, "Core", "", ""))
+	subdomain1.Classes = map[identity.Key]model_class.Class{orderKey: orderClass}
+
+	subdomain2 := helper.Must(model_domain.NewSubdomain(subdomain2Key, "Products", "", ""))
+	subdomain2.Classes = map[identity.Key]model_class.Class{productKey: productClass}
+
+	// Build domains
+	domain1 := helper.Must(model_domain.NewDomain(domain1Key, "Orders", "", false, ""))
+	domain1.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomain1Key: subdomain1,
 	}
+
+	domain2 := helper.Must(model_domain.NewDomain(domain2Key, "Inventory", "", false, ""))
+	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{
+		subdomain2Key: subdomain2,
+	}
+
+	// Build association
+	assoc := helper.Must(model_class.NewAssociation(
+		assocKey, "Order Products", "",
+		orderKey, helper.Must(model_class.NewMultiplicity("1")),
+		productKey, helper.Must(model_class.NewMultiplicity("any")),
+		nil, "",
+	))
+
+	// Build model
+	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil))
+	m.Actors = make(map[identity.Key]model_actor.Actor)
+	m.Domains = map[identity.Key]model_domain.Domain{
+		domain1Key: domain1,
+		domain2Key: domain2,
+	}
+	m.ClassAssociations = map[identity.Key]model_class.Association{
+		assocKey: assoc,
+	}
+	model := &m
 
 	input, err := ConvertFromModel(model)
 	require.NoError(t, err)
 
 	require.Contains(t, input.ClassAssociations, "order_products")
 
-	assoc := input.ClassAssociations["order_products"]
-	assert.Equal(t, "Order Products", assoc.Name)
-	assert.Equal(t, "orders/default/order", assoc.FromClassKey)
-	assert.Equal(t, "inventory/default/product", assoc.ToClassKey)
+	inputAssoc := input.ClassAssociations["order_products"]
+	assert.Equal(t, "Order Products", inputAssoc.Name)
+	assert.Equal(t, "orders/default/order", inputAssoc.FromClassKey)
+	assert.Equal(t, "inventory/default/product", inputAssoc.ToClassKey)
 }
 
 // TestConvertToModelWithModelAssociation tests converting a model-level association.
@@ -1292,12 +1303,12 @@ func (suite *ConvertSuite) TestConvertMultiplicityFormats() {
 		mult     model_class.Multiplicity
 		expected string
 	}{
-		{model_class.Multiplicity{LowerBound: 1, HigherBound: 1}, "1"},
-		{model_class.Multiplicity{LowerBound: 0, HigherBound: 1}, "0..1"},
-		{model_class.Multiplicity{LowerBound: 0, HigherBound: 0}, "*"},
-		{model_class.Multiplicity{LowerBound: 1, HigherBound: 0}, "1..*"},
-		{model_class.Multiplicity{LowerBound: 2, HigherBound: 5}, "2..5"},
-		{model_class.Multiplicity{LowerBound: 3, HigherBound: 3}, "3"},
+		{helper.Must(model_class.NewMultiplicity("1")), "1"},
+		{helper.Must(model_class.NewMultiplicity("0..1")), "0..1"},
+		{helper.Must(model_class.NewMultiplicity("any")), "*"},
+		{helper.Must(model_class.NewMultiplicity("1..many")), "1..*"},
+		{helper.Must(model_class.NewMultiplicity("2..5")), "2..5"},
+		{helper.Must(model_class.NewMultiplicity("3")), "3"},
 	}
 
 	for _, tt := range tests {

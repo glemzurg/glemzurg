@@ -13,6 +13,7 @@ A bit of business logic.
 | sort_order | integer |  | false |  |  | Often part of a list of logics that are sorted. |
 | logic_type | logic_type |  | false |  |  | The kind of logic, each has different rules for what well-formed looks like. |
 | description | text |  | false |  |  | The casual readable form of the logic. |
+| target | text |  | false |  |  | When this logic sets a value, the identifier of the value to set. |
 | notation | notation |  | false |  |  | The type of notation used for the specification. |
 | specification | text |  | true |  |  | The unambiguous form of the logic. |
 
@@ -26,6 +27,7 @@ A bit of business logic.
 | logic_model_key_not_null | n | NOT NULL model_key |
 | logic_notation_not_null | n | NOT NULL notation |
 | logic_sort_order_not_null | n | NOT NULL sort_order |
+| logic_target_not_null | n | NOT NULL target |
 | fk_logic_model | FOREIGN KEY | FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE |
 | logic_pkey | PRIMARY KEY | PRIMARY KEY (model_key, logic_key) |
 
