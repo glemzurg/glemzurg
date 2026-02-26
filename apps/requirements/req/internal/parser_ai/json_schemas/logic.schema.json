@@ -15,6 +15,11 @@
       "description": "A human-readable description of the logic specification (e.g., 'Order total must be positive', 'User must be authenticated'). This is required and must be non-empty. If validation fails: ensure this is a string with at least one character.",
       "minLength": 1
     },
+    "target": {
+      "type": "string",
+      "description": "The target identifier for this logic. Required for 'state_change' type (the lowercase attribute SubKey being set, e.g., 'shipping', 'status'). Required for 'query' type (the output identifier name, e.g., 'result'; can be mixed case but cannot start with '_'). Must be empty or omitted for 'assessment', 'safety_rule', and 'value' types.",
+      "minLength": 1
+    },
     "notation": {
       "type": "string",
       "description": "Optional formal notation system used for the specification. Currently the only supported value is 'tla_plus' (TLA+ notation). When present, the specification field should contain a formal expression in this notation. If validation fails: ensure this is exactly 'tla_plus'.",

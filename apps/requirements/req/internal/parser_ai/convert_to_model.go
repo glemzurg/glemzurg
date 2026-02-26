@@ -1108,6 +1108,7 @@ func convertLogicToModel(input *inputLogic, logicType string, parentKey identity
 		Key:           parentKey,
 		Type:          logicType,
 		Description:   input.Description,
+		Target:        input.Target,
 		Notation:      input.Notation,
 		Specification: input.Specification,
 	}
@@ -1126,6 +1127,7 @@ func convertLogicsToModel(logics []inputLogic, logicType string, parentKey ident
 			Key:           logicKey,
 			Type:          logicType,
 			Description:   logic.Description,
+			Target:        logic.Target,
 			Notation:      logic.Notation,
 			Specification: logic.Specification,
 		}

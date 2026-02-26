@@ -7,8 +7,8 @@
         {"description": "Shipping method must be selected"}
     ],
     "guarantees": [
-        {"description": "Returns the shipping cost in the order currency"},
-        {"description": "Returns zero if free shipping applies"},
-        {"description": "Returns an error if shipping is not available to destination"}
+        {"description": "Returns the shipping cost in the order currency", "target": "shipping_cost"},
+        {"description": "Returns zero if free shipping applies", "target": "free_shipping"},
+        {"description": "Returns an error if shipping is not available to destination", "target": "shipping_error"}
     ]
 }

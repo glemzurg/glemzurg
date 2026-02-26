@@ -140,10 +140,13 @@ const (
 	ErrUseCaseGenSubclassesEmpty    = 13007
 
 	// Logic errors (14xxx)
-	ErrLogicDescriptionRequired = 14001
-	ErrLogicDescriptionEmpty    = 14002
-	ErrLogicInvalidJSON         = 14003
-	ErrLogicSchemaViolation     = 14004
+	ErrLogicDescriptionRequired    = 14001
+	ErrLogicDescriptionEmpty       = 14002
+	ErrLogicInvalidJSON            = 14003
+	ErrLogicSchemaViolation        = 14004
+	ErrLogicTargetRequired         = 14005
+	ErrLogicTargetNotAllowed       = 14006
+	ErrLogicTargetNoLeadUnderscore = 14007
 
 	// Parameter errors (15xxx)
 	ErrParamNameRequired    = 15001

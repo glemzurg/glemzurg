@@ -466,7 +466,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 											{Key: helper.Must(identity.NewQueryRequireKey(queryKey, "0")), Type: model_logic.LogicTypeAssessment, Description: "order must exist", Notation: model_logic.NotationTLAPlus},
 										},
 										Guarantees: []model_logic.Logic{
-											{Key: helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")), Type: model_logic.LogicTypeQuery, Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
+											{Key: helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")), Type: model_logic.LogicTypeQuery, Description: "returns total amount", Target: "total", Notation: model_logic.NotationTLAPlus},
 										},
 									},
 								},
@@ -518,7 +518,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 											{Description: "order must exist", Notation: model_logic.NotationTLAPlus},
 										},
 										Guarantees: []inputLogic{
-											{Description: "returns total amount", Notation: model_logic.NotationTLAPlus},
+											{Description: "returns total amount", Target: "total", Notation: model_logic.NotationTLAPlus},
 										},
 									},
 								},
