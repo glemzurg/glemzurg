@@ -7,9 +7,12 @@
 
 todo:
 
-- give classes invariants
 
-    - md - flat - generate
+- give classes invariants
+- give attributes invariants
+- move error codes to req_model
+
+- md - flat - generate
 - update the md file output
     - include tla+
     - prepare the md output to be complete
