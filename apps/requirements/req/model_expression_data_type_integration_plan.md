@@ -740,6 +740,19 @@ COMMENT ON COLUMN attribute_invariant.sort_order IS 'Ordering of invariants with
 
 Comments on every table, column, and custom type following existing patterns.
 
+7. Update `expression_node_type` enum — add `'named_set_ref'`:
+```sql
+ALTER TYPE expression_node_type ADD VALUE 'named_set_ref';
+```
+
+8. Add `named_set_key` column to `expression_node` table for `NamedSetRef` nodes:
+```sql
+ALTER TABLE expression_node
+    ADD COLUMN named_set_key text DEFAULT NULL;
+-- FK to named_set
+COMMENT ON COLUMN expression_node.named_set_key IS 'FK to named_set for named_set_ref nodes.';
+```
+
 ### 5B: New Data Access File — expression_type.go
 
 **New file: `internal/database/expression_type.go`**
@@ -901,6 +914,30 @@ These are deferred to future sessions:
 6. **TLA+ lowering/raising passes** — Converting between notation/ast and model_expression. Depends on notation restructuring.
 
 7. **Test model enrichment** — Adding precise types, named sets, and TargetTypeSpecs to the test models for comprehensive end-to-end testing. Should happen incrementally as each stage completes.
+
+8. **Enumeration ordering** (design doc Gap 6) — `DataType.EnumOrdered *bool` should control whether comparison operators are valid on enum values. The expression type checker should enforce this.
+
+9. **Nullable attributes** (design doc Gap 7) — Design decision that `Attribute.Nullable bool` is a DataType constraint, not a structural type concern. ExpressionType remains non-nullable.
+
+10. **Derivation policy type checking** (design doc Gap 8) — `Attribute.DerivationPolicy` expression's result type must match the attribute's declared ExpressionType.
+
+11. **Association class attributes** (design doc Gap 9) — How to access attributes of association classes during traversal, using LET/IN mechanism.
+
+12. **Generation templates consume ExpressionType** (design doc Gap 10) — Templates may need to render ExpressionType alongside DataTypeRules. The `req_flat` layer may need to expose ExpressionType.
+
+13. **Parameter type enforcement** (design doc Gap 11) — Action/query parameters have DataTypes that are never type-checked during expression evaluation. When ExpressionType exists on a parameter's DataType, the type checker should use it.
+
+14. **No function values at runtime** (design doc Gap 12) — The simulator's `object` package has no `Function` type for runtime values, limiting higher-order patterns.
+
+15. **Scenario test data typing** (design doc Gap 13) — When scenarios need concrete test data, values must conform to both DataType and ExpressionType.
+
+16. **Class associations and object type traversal** (design doc section) — How `FieldAccess` does double duty for attribute access and association traversal. `TypeContext` with `AssociationTypes` for type-checking association navigation. Multiplicity-based result type mapping.
+
+17. **Builtin call type signatures** (design doc section) — Defining formal type signatures for builtin calls (`_Stack!Push`, `_FiniteSet!Cardinality`, etc.) connecting the expression layer to the precise type system.
+
+18. **NamedSetRef.ResolveType()** — Function to resolve `NamedSetRef` type nodes to the actual structural type at type-checking time.
+
+19. ~~**expression_node.named_set_key column**~~ — Addressed: added to Stage 5A (items 7 and 8).
 
 ---
 
