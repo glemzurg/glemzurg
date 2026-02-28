@@ -10,7 +10,7 @@ import (
 // Key uniquely identifies an entity in the model.
 type Key struct {
 	ParentKey string `validate:"-"`                                                                                                                                                                                                                                                                                                    // The parent entity's key.
-	KeyType   string `validate:"required,oneof=actor ageneralization domain dassociation gfunc invariant subdomain usecase ucgeneralization class attribute aderive state event guard action cinvariant arequire aguarantee asafety query qrequire qguarantee transition cgeneralization scenario sobject sstep cassociation saction"` // The type of the key, e.g., "class", "association".
+	KeyType   string `validate:"required,oneof=actor ageneralization domain dassociation gfunc invariant nset subdomain usecase ucgeneralization class attribute aderive state event guard action cinvariant arequire aguarantee asafety query qrequire qguarantee transition cgeneralization scenario sobject sstep cassociation saction"` // The type of the key, e.g., "class", "association".
 	SubKey    string `validate:"required"`                                                                                                                                                                                                                                                                                             // The unique key of the child entity within its parent and type.
 	SubKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
 	SubKey3   string // Optional tertiary key (e.g., for association names). Empty string means not set.
@@ -59,7 +59,7 @@ func (k *Key) Validate() error {
 
 	// Custom ParentKey validation (context-dependent on KeyType).
 	switch k.KeyType {
-	case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT:
+	case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
 		// These key types must have blank parentKey.
 		if k.ParentKey != "" {
 			return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey)
@@ -130,7 +130,7 @@ func (k *Key) ValidateParent(parent *Key) error {
 	}
 
 	switch k.KeyType {
-	case KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT:
+	case KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
 		// These are root keys - parent must be nil.
 		if parent != nil {
 			return errors.Errorf("key type '%s' should not have a parent, but got parent of type '%s'", k.KeyType, parent.KeyType)

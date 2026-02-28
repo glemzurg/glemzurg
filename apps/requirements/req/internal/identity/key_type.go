@@ -19,6 +19,7 @@ const (
 	KEY_TYPE_DOMAIN_ASSOCIATION   = "dassociation"
 	KEY_TYPE_GLOBAL_FUNCTION      = "gfunc"
 	KEY_TYPE_INVARIANT            = "invariant"
+	KEY_TYPE_NAMED_SET            = "nset"
 
 	// Keys with domain parents.
 	KEY_TYPE_SUBDOMAIN = "subdomain"
@@ -88,6 +89,10 @@ func NewGlobalFunctionKey(subKey string) (key Key, err error) {
 	}
 
 	return newRootKey(KEY_TYPE_GLOBAL_FUNCTION, subKey)
+}
+
+func NewNamedSetKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_NAMED_SET, subKey)
 }
 
 func NewInvariantKey(subKey string) (key Key, err error) {
