@@ -18,8 +18,9 @@ type Attribute struct {
 	Nullable         bool               // Is this attribute optional.
 	UmlComment       string
 	// Children
-	IndexNums []uint                    // The indexes this attribute is part of.
-	DataType  *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
+	IndexNums  []uint                    // The indexes this attribute is part of.
+	DataType   *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
+	Invariants []model_logic.Logic       // Invariants that must hold for this attribute's value.
 }
 
 func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
@@ -84,7 +85,22 @@ func (a *Attribute) Validate() error {
 		}
 	}
 
+	// Validate invariants.
+	for i, inv := range a.Invariants {
+		if err := inv.Validate(); err != nil {
+			return errors.Wrapf(err, "attribute invariant %d", i)
+		}
+		if inv.Type != model_logic.LogicTypeAssessment {
+			return errors.Errorf("attribute invariant %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, inv.Type)
+		}
+	}
+
 	return nil
+}
+
+// SetInvariants sets the invariants for this attribute.
+func (a *Attribute) SetInvariants(invariants []model_logic.Logic) {
+	a.Invariants = invariants
 }
 
 // ValidateWithParent validates the Attribute, its key's parent relationship, and all children.
@@ -102,6 +118,12 @@ func (a *Attribute) ValidateWithParent(parent *identity.Key) error {
 	if a.DerivationPolicy != nil {
 		if err := a.DerivationPolicy.ValidateWithParent(&a.Key); err != nil {
 			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
+		}
+	}
+	// Validate invariants with attribute as parent.
+	for i, inv := range a.Invariants {
+		if err := inv.ValidateWithParent(&a.Key); err != nil {
+			return errors.Wrapf(err, "attribute invariant %d", i)
 		}
 	}
 	return nil

@@ -87,6 +87,11 @@ type testKeys struct {
 	classInv4, classInv5            identity.Key // Product class (2 invariants).
 	classInv6                       identity.Key // Warehouse class (1 invariant).
 
+	// Attribute invariant keys.
+	attrInv1, attrInv2, attrInv3 identity.Key // Total attribute (3 invariants).
+	attrInv4, attrInv5           identity.Key // Status attribute (2 invariants).
+	attrInv6                     identity.Key // Product name attribute (1 invariant).
+
 	// Derivation key.
 	derivation1 identity.Key
 
@@ -782,6 +787,34 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	// Attribute invariants — Total (3).
+	k.attrInv1, err = identity.NewAttributeInvariantKey(k.attrTotal, "0")
+	if err != nil {
+		return k, err
+	}
+	k.attrInv2, err = identity.NewAttributeInvariantKey(k.attrTotal, "1")
+	if err != nil {
+		return k, err
+	}
+	k.attrInv3, err = identity.NewAttributeInvariantKey(k.attrTotal, "2")
+	if err != nil {
+		return k, err
+	}
+	// Attribute invariants — Status (2).
+	k.attrInv4, err = identity.NewAttributeInvariantKey(k.attrStatus, "0")
+	if err != nil {
+		return k, err
+	}
+	k.attrInv5, err = identity.NewAttributeInvariantKey(k.attrStatus, "1")
+	if err != nil {
+		return k, err
+	}
+	// Attribute invariants — Product name (1).
+	k.attrInv6, err = identity.NewAttributeInvariantKey(k.attrProductName, "0")
+	if err != nil {
+		return k, err
+	}
+
 	// Derivation.
 	k.derivation1, err = identity.NewAttributeDerivationKey(k.attrTotal, "sum_line_items")
 	if err != nil {
@@ -977,6 +1010,11 @@ type testLogic struct {
 	classInvariants1 []model_logic.Logic // Order (3).
 	classInvariants2 []model_logic.Logic // Product (2).
 	classInvariants3 []model_logic.Logic // Warehouse (1).
+
+	// Attribute-level invariants.
+	attrInvariants1 []model_logic.Logic // Total (3).
+	attrInvariants2 []model_logic.Logic // Status (2).
+	attrInvariants3 []model_logic.Logic // Product name (1).
 }
 
 func buildLogic(k testKeys) (testLogic, error) {
@@ -1114,6 +1152,39 @@ func buildLogic(k testKeys) (testLogic, error) {
 		return l, err
 	}
 	l.classInvariants3 = []model_logic.Logic{cInv6}
+
+	// Attribute-level invariants — Total (3).
+	aInv1, err := model_logic.NewLogic(k.attrInv1, model_logic.LogicTypeAssessment, "Total must be non-negative", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.total >= 0"}, nil)
+	if err != nil {
+		return l, err
+	}
+	aInv2, err := model_logic.NewLogic(k.attrInv2, model_logic.LogicTypeAssessment, "Total must not exceed one million", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.total <= 1000000"}, nil)
+	if err != nil {
+		return l, err
+	}
+	aInv3, err := model_logic.NewLogic(k.attrInv3, model_logic.LogicTypeAssessment, "Total must be a multiple of the cent", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.total * 100 \\in Int"}, nil)
+	if err != nil {
+		return l, err
+	}
+	l.attrInvariants1 = []model_logic.Logic{aInv1, aInv2, aInv3}
+
+	// Attribute-level invariants — Status (2).
+	aInv4, err := model_logic.NewLogic(k.attrInv4, model_logic.LogicTypeAssessment, "Status must be a known value", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.status \\in {\"new\", \"processing\", \"complete\"}"}, nil)
+	if err != nil {
+		return l, err
+	}
+	aInv5, err := model_logic.NewLogic(k.attrInv5, model_logic.LogicTypeAssessment, "Status must not be empty", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.status /= \"\""}, nil)
+	if err != nil {
+		return l, err
+	}
+	l.attrInvariants2 = []model_logic.Logic{aInv4, aInv5}
+
+	// Attribute-level invariants — Product name (1).
+	aInv6, err := model_logic.NewLogic(k.attrInv6, model_logic.LogicTypeAssessment, "Product name must not be empty", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Len(self.name) > 0"}, nil)
+	if err != nil {
+		return l, err
+	}
+	l.attrInvariants3 = []model_logic.Logic{aInv6}
 
 	// Derivation with empty specification (tests empty spec path).
 	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_Sum(things)"}, nil)
@@ -1499,6 +1570,11 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	if err != nil {
 		return a, err
 	}
+
+	// Set attribute invariants.
+	a.total.SetInvariants(l.attrInvariants1)
+	a.status.SetInvariants(l.attrInvariants2)
+	a.productName.SetInvariants(l.attrInvariants3)
 
 	return a, nil
 }

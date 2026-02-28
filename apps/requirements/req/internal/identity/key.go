@@ -10,7 +10,7 @@ import (
 // Key uniquely identifies an entity in the model.
 type Key struct {
 	ParentKey string `validate:"-"`                                                                                                                                                                                                                                                                                                    // The parent entity's key.
-	KeyType   string `validate:"required,oneof=actor ageneralization domain dassociation gfunc invariant nset subdomain usecase ucgeneralization class attribute aderive state event guard action cinvariant arequire aguarantee asafety query qrequire qguarantee transition cgeneralization scenario sobject sstep cassociation saction"` // The type of the key, e.g., "class", "association".
+	KeyType   string `validate:"required,oneof=actor ageneralization domain dassociation gfunc invariant nset subdomain usecase ucgeneralization class attribute aderive ainvariant state event guard action cinvariant arequire aguarantee asafety query qrequire qguarantee transition cgeneralization scenario sobject sstep cassociation saction"` // The type of the key, e.g., "class", "association".
 	SubKey    string `validate:"required"`                                                                                                                                                                                                                                                                                             // The unique key of the child entity within its parent and type.
 	SubKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
 	SubKey3   string // Optional tertiary key (e.g., for association names). Empty string means not set.
@@ -235,7 +235,7 @@ func (k *Key) ValidateParent(parent *Key) error {
 			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
 		}
 
-	case KEY_TYPE_ATTRIBUTE_DERIVATION:
+	case KEY_TYPE_ATTRIBUTE_DERIVATION, KEY_TYPE_ATTRIBUTE_INVARIANT:
 		// Parent must be an attribute.
 		if parent == nil {
 			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_ATTRIBUTE)

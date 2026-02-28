@@ -31,6 +31,13 @@ func (suite *AttributeSuite) TestValidate() {
 	validDerivationPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 	wrongKindDerivationPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeAssessment, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 
+	// Invariant keys and logic objects.
+	invKey1 := helper.Must(identity.NewAttributeInvariantKey(validKey, "0"))
+	invKey2 := helper.Must(identity.NewAttributeInvariantKey(validKey, "1"))
+	validInvariant := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	validInvariant2 := helper.Must(model_logic.NewLogic(invKey2, model_logic.LogicTypeAssessment, "Must be less than 100.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	wrongKindInvariant := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeStateChange, "Should fail.", "target", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+
 	tests := []struct {
 		testName  string
 		attribute Attribute
@@ -104,6 +111,55 @@ func (suite *AttributeSuite) TestValidate() {
 				DerivationPolicy: &wrongKindDerivationPolicy,
 			},
 			errstr: "DerivationPolicy logic kind must be 'value'",
+		},
+		{
+			testName: "valid with nil invariants",
+			attribute: Attribute{
+				Key:        validKey,
+				Name:       "Name",
+				Invariants: nil,
+			},
+		},
+		{
+			testName: "valid with single invariant",
+			attribute: Attribute{
+				Key:        validKey,
+				Name:       "Name",
+				Invariants: []model_logic.Logic{validInvariant},
+			},
+		},
+		{
+			testName: "valid with multiple invariants",
+			attribute: Attribute{
+				Key:        validKey,
+				Name:       "Name",
+				Invariants: []model_logic.Logic{validInvariant, validInvariant2},
+			},
+		},
+		{
+			testName: "error invariant wrong logic type",
+			attribute: Attribute{
+				Key:        validKey,
+				Name:       "Name",
+				Invariants: []model_logic.Logic{wrongKindInvariant},
+			},
+			errstr: "logic kind must be 'assessment'",
+		},
+		{
+			testName: "error invariant invalid logic missing key",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					{
+						Key:         identity.Key{},
+						Type:        model_logic.LogicTypeAssessment,
+						Description: "Missing key.",
+						Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
+					},
+				},
+			},
+			errstr: "attribute invariant 0",
 		},
 	}
 	for _, tt := range tests {
@@ -228,4 +284,26 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	}
 	err = attr.ValidateWithParent(&classKey)
 	assert.ErrorContains(suite.T(), err, "DerivationPolicy", "ValidateWithParent should validate derivation policy key parent")
+
+	// Test valid with invariants.
+	invKey := helper.Must(identity.NewAttributeInvariantKey(validKey, "0"))
+	validInvariant := helper.Must(model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	attr = Attribute{
+		Key:        validKey,
+		Name:       "Name",
+		Invariants: []model_logic.Logic{validInvariant},
+	}
+	err = attr.ValidateWithParent(&classKey)
+	assert.NoError(suite.T(), err)
+
+	// Test invariant with wrong parent key - invariant key has other_attr as parent, but attribute key is validKey.
+	wrongInvKey := helper.Must(identity.NewAttributeInvariantKey(otherAttrKey, "0"))
+	wrongParentInvariant := helper.Must(model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Wrong parent.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	attr = Attribute{
+		Key:        validKey,
+		Name:       "Name",
+		Invariants: []model_logic.Logic{wrongParentInvariant},
+	}
+	err = attr.ValidateWithParent(&classKey)
+	assert.ErrorContains(suite.T(), err, "attribute invariant 0", "ValidateWithParent should validate invariant key parent")
 }
