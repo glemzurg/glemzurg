@@ -30,7 +30,7 @@ func ScopeInvariantsWithAllClasses(
 	allClassNames map[string]bool,
 ) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	for _, inv := range invariants {
-		expr, err := parser.ParseExpression(inv.Specification)
+		expr, err := parser.ParseExpression(inv.Spec.Specification)
 		if err != nil {
 			// If we can't parse it, include it — better safe than sorry.
 			included = append(included, inv)

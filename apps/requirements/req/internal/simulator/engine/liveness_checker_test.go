@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -249,7 +250,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/order/attribute/total")
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", model_logic.NotationTLAPlus, "self.amount * 2", nil))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount * 2"}, nil))
 
 	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false, "", nil))
 	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))

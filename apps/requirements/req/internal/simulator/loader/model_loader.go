@@ -61,7 +61,7 @@ func reParseDataTypes(model *req_model.Model) error {
 				for attrKey, attr := range class.Attributes {
 					if attr.DataType == nil && attr.DataTypeRules != "" {
 						dataTypeKey := attr.Key.String()
-						parsedDataType, err := model_data_type.New(dataTypeKey, attr.DataTypeRules)
+						parsedDataType, err := model_data_type.New(dataTypeKey, attr.DataTypeRules, nil)
 
 						// Only an error if it is not a parse error.
 						var parseError *model_data_type.CannotParseError

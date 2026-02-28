@@ -11,6 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -72,7 +73,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_logic.NotationTLAPlus, "self.amount + 10",
+		model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount + 10"},
 		nil,
 	))
 
@@ -117,7 +118,7 @@ func testModel(class model_class.Class, classKey identity.Key) *req_model.Model 
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -197,7 +198,7 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1",
+		model_logic.LogicTypeStateChange, "Postcondition.", "count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count + 1"},
 		nil,
 	))
 
@@ -227,12 +228,12 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 
 	requireLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
-		model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "self.status = \"open\"",
+		model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"open\""},
 		nil,
 	))
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "status", model_logic.NotationTLAPlus, "\"closed\"",
+		model_logic.LogicTypeStateChange, "Postcondition.", "status", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "\"closed\""},
 		nil,
 	))
 
@@ -260,12 +261,12 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 
 	requireLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
-		model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "self.status = \"open\"",
+		model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"open\""},
 		nil,
 	))
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "status", model_logic.NotationTLAPlus, "\"closed\"",
+		model_logic.LogicTypeStateChange, "Postcondition.", "status", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "\"closed\""},
 		nil,
 	))
 
@@ -290,7 +291,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_logic.NotationTLAPlus, "amount",
+		model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "amount"},
 		nil,
 	))
 
@@ -326,7 +327,7 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
-		model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, "self.amount * 2",
+		model_logic.LogicTypeQuery, "Postcondition.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount * 2"},
 		nil,
 	))
 
@@ -353,7 +354,7 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
-		model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, "self.amount",
+		model_logic.LogicTypeQuery, "Postcondition.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount"},
 		nil,
 	))
 
@@ -381,12 +382,12 @@ func (s *ActionsSuite) TestExecuteQueryPreconditionFails() {
 
 	requireLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewQueryRequireKey(queryKey, "0")),
-		model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "self.amount > 100",
+		model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount > 100"},
 		nil,
 	))
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
-		model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, "self.amount",
+		model_logic.LogicTypeQuery, "Postcondition.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount"},
 		nil,
 	))
 
@@ -415,7 +416,7 @@ func (s *ActionsSuite) TestGuardEvaluatorAllTrue() {
 
 	guardLogic := helper.Must(model_logic.NewLogic(
 		guardKey,
-		model_logic.LogicTypeAssessment, "Guard for open status and positive amount.", "", model_logic.NotationTLAPlus, "self.status = \"open\" /\\ self.amount > 0",
+		model_logic.LogicTypeAssessment, "Guard for open status and positive amount.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"open\" /\\ self.amount > 0"},
 		nil,
 	))
 
@@ -441,7 +442,7 @@ func (s *ActionsSuite) TestGuardEvaluatorOneFalse() {
 
 	guardLogic := helper.Must(model_logic.NewLogic(
 		guardKey,
-		model_logic.LogicTypeAssessment, "Guard for open status and positive amount.", "", model_logic.NotationTLAPlus, "self.status = \"open\" /\\ self.amount > 0",
+		model_logic.LogicTypeAssessment, "Guard for open status and positive amount.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"open\" /\\ self.amount > 0"},
 		nil,
 	))
 
@@ -630,12 +631,12 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 
 	guardHighLogic := helper.Must(model_logic.NewLogic(
 		guardHighKey,
-		model_logic.LogicTypeAssessment, "High value guard.", "", model_logic.NotationTLAPlus, "self.amount >= 100",
+		model_logic.LogicTypeAssessment, "High value guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount >= 100"},
 		nil,
 	))
 	guardLowLogic := helper.Must(model_logic.NewLogic(
 		guardLowKey,
-		model_logic.LogicTypeAssessment, "Low value guard.", "", model_logic.NotationTLAPlus, "self.amount < 100",
+		model_logic.LogicTypeAssessment, "Low value guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount < 100"},
 		nil,
 	))
 
@@ -707,8 +708,8 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	trans1Key := mustKey("domain/d/subdomain/s/class/order/transition/t1")
 	trans2Key := mustKey("domain/d/subdomain/s/class/order/transition/t2")
 
-	guardAlways1Logic := helper.Must(model_logic.NewLogic(guardAlwaysKey1, model_logic.LogicTypeAssessment, "Always true guard.", "", model_logic.NotationTLAPlus, "TRUE", nil))
-	guardAlways2Logic := helper.Must(model_logic.NewLogic(guardAlwaysKey2, model_logic.LogicTypeAssessment, "Always true guard.", "", model_logic.NotationTLAPlus, "TRUE", nil))
+	guardAlways1Logic := helper.Must(model_logic.NewLogic(guardAlwaysKey1, model_logic.LogicTypeAssessment, "Always true guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil))
+	guardAlways2Logic := helper.Must(model_logic.NewLogic(guardAlwaysKey2, model_logic.LogicTypeAssessment, "Always true guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil))
 
 	guardAlways1 := helper.Must(model_state.NewGuard(guardAlwaysKey1, "always1", guardAlways1Logic))
 	guardAlways2 := helper.Must(model_state.NewGuard(guardAlwaysKey2, "always2", guardAlways2Logic))
@@ -761,7 +762,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	guardNeverKey := mustKey("domain/d/subdomain/s/class/order/guard/never")
 	transKey := mustKey("domain/d/subdomain/s/class/order/transition/t1")
 
-	guardNeverLogic := helper.Must(model_logic.NewLogic(guardNeverKey, model_logic.LogicTypeAssessment, "Never true guard.", "", model_logic.NotationTLAPlus, "FALSE", nil))
+	guardNeverLogic := helper.Must(model_logic.NewLogic(guardNeverKey, model_logic.LogicTypeAssessment, "Never true guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "FALSE"}, nil))
 	guardNever := helper.Must(model_state.NewGuard(guardNeverKey, "never", guardNeverLogic))
 	eventGo := helper.Must(model_state.NewEvent(eventKey, "go", "", nil))
 
@@ -989,7 +990,7 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 
 	requireLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
-		model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "self.count' > 0",
+		model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count' > 0"},
 		nil,
 	))
 
@@ -1014,7 +1015,7 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 
 	safetyLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionSafetyKey(actionKey, "0")),
-		model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "self.count > 0",
+		model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count > 0"},
 		nil,
 	))
 
@@ -1043,12 +1044,12 @@ func (s *ActionsSuite) TestActionSafetyRulesPass() {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1",
+		model_logic.LogicTypeStateChange, "Postcondition.", "count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count + 1"},
 		nil,
 	))
 	safetyLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionSafetyKey(actionKey, "0")),
-		model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "self.count' >= 1",
+		model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count' >= 1"},
 		nil,
 	))
 
@@ -1074,12 +1075,12 @@ func (s *ActionsSuite) TestActionSafetyRuleViolation() {
 
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
-		model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1",
+		model_logic.LogicTypeStateChange, "Postcondition.", "count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count + 1"},
 		nil,
 	))
 	safetyLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewActionSafetyKey(actionKey, "0")),
-		model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "self.count' < 0",
+		model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count' < 0"},
 		nil,
 	))
 
@@ -1110,7 +1111,7 @@ func (s *ActionsSuite) TestGuardRejectsPrimedVariables() {
 
 	guardLogic := helper.Must(model_logic.NewLogic(
 		guardKey,
-		model_logic.LogicTypeAssessment, "Guard with primed variable.", "", model_logic.NotationTLAPlus, "self.count' > 0",
+		model_logic.LogicTypeAssessment, "Guard with primed variable.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count' > 0"},
 		nil,
 	))
 
@@ -1139,12 +1140,12 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 
 	requireLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewQueryRequireKey(queryKey, "0")),
-		model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "self.count' > 0",
+		model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count' > 0"},
 		nil,
 	))
 	guaranteeLogic := helper.Must(model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
-		model_logic.LogicTypeQuery, "Postcondition.", "result", model_logic.NotationTLAPlus, "result' = self.count",
+		model_logic.LogicTypeQuery, "Postcondition.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result' = self.count"},
 		nil,
 	))
 

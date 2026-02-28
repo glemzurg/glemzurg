@@ -177,7 +177,7 @@ func buildTestModel(
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(req_model.NewModel("test", "Test Model", "", nil, nil))
+	model := helper.Must(req_model.NewModel("test", "Test Model", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

@@ -57,7 +57,7 @@ func NewDerivedAttributeEvaluator(
 						continue
 					}
 
-					expr, err := parser.ParseExpression(attr.DerivationPolicy.Specification)
+					expr, err := parser.ParseExpression(attr.DerivationPolicy.Spec.Specification)
 					if err != nil {
 						return nil, fmt.Errorf(
 							"class %s attribute %s DerivationPolicy parse error: %w",

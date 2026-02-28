@@ -232,7 +232,7 @@ func (e *ActionExecutor) executeActionInContext(
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
 	for i, req := range action.Requires {
-		expr, err := parser.ParseExpression(req.Specification)
+		expr, err := parser.ParseExpression(req.Spec.Specification)
 		if err != nil {
 			return fmt.Errorf("action %s requires[%d] parse error: %w", action.Name, i, err)
 		}
@@ -246,7 +246,7 @@ func (e *ActionExecutor) executeActionInContext(
 			return fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Specification)
+			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Spec.Specification)
 		}
 	}
 
@@ -260,10 +260,10 @@ func (e *ActionExecutor) executeActionInContext(
 		if guar.Target != "" {
 			// Target is set: use it directly as the field name.
 			// The specification is the RHS value expression only.
-			if guar.Specification == "" {
+			if guar.Spec.Specification == "" {
 				return fmt.Errorf("action %s guarantee[%d]: target %q is set but specification is empty", action.Name, i, guar.Target)
 			}
-			expr, err := parser.ParseExpression(guar.Specification)
+			expr, err := parser.ParseExpression(guar.Spec.Specification)
 			if err != nil {
 				return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
 			}
@@ -276,7 +276,7 @@ func (e *ActionExecutor) executeActionInContext(
 			}
 		} else {
 			// Legacy: extract field name from primed TLA+ expression.
-			expr, err := parser.ParseExpression(guar.Specification)
+			expr, err := parser.ParseExpression(guar.Spec.Specification)
 			if err != nil {
 				return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
 			}
@@ -296,7 +296,7 @@ func (e *ActionExecutor) executeActionInContext(
 
 	// Step 3: Collect safety rules (must contain primed variables).
 	for i, rule := range action.SafetyRules {
-		expr, err := parser.ParseExpression(rule.Specification)
+		expr, err := parser.ParseExpression(rule.Spec.Specification)
 		if err != nil {
 			return fmt.Errorf("action %s safety_rule[%d] parse error: %w", action.Name, i, err)
 		}
@@ -311,7 +311,7 @@ func (e *ActionExecutor) executeActionInContext(
 			SourceKey:          action.Key,
 			SourceName:         action.Name,
 			Index:              i,
-			OriginalExpression: rule.Specification,
+			OriginalExpression: rule.Spec.Specification,
 		})
 	}
 
@@ -384,7 +384,7 @@ func (e *ActionExecutor) executeQueryInContext(
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
 	for i, req := range query.Requires {
-		expr, err := parser.ParseExpression(req.Specification)
+		expr, err := parser.ParseExpression(req.Spec.Specification)
 		if err != nil {
 			return nil, fmt.Errorf("query %s requires[%d] parse error: %w", query.Name, i, err)
 		}
@@ -398,7 +398,7 @@ func (e *ActionExecutor) executeQueryInContext(
 			return nil, fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Specification)
+			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Spec.Specification)
 		}
 	}
 
@@ -409,10 +409,10 @@ func (e *ActionExecutor) executeQueryInContext(
 		if guar.Target != "" {
 			// Target is set: use it directly as the output name.
 			// The specification is the value expression only.
-			if guar.Specification == "" {
+			if guar.Spec.Specification == "" {
 				return nil, fmt.Errorf("query %s guarantee[%d]: target %q is set but specification is empty", query.Name, i, guar.Target)
 			}
-			expr, err := parser.ParseExpression(guar.Specification)
+			expr, err := parser.ParseExpression(guar.Spec.Specification)
 			if err != nil {
 				return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
 			}
@@ -423,7 +423,7 @@ func (e *ActionExecutor) executeQueryInContext(
 			outputs[guar.Target] = rhsValue.Value
 		} else {
 			// Legacy: extract output name from primed TLA+ expression.
-			expr, err := parser.ParseExpression(guar.Specification)
+			expr, err := parser.ParseExpression(guar.Spec.Specification)
 			if err != nil {
 				return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
 			}
@@ -442,7 +442,7 @@ func (e *ActionExecutor) executeQueryInContext(
 					SourceName:         query.Name,
 					SourceType:         "query",
 					Index:              i,
-					OriginalExpression: guar.Specification,
+					OriginalExpression: guar.Spec.Specification,
 				})
 			}
 		}

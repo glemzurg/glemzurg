@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 )
 
@@ -32,7 +33,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_logic.NotationTLAPlus, "self.amount + 10", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount + 10"}, nil))
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
@@ -119,7 +120,7 @@ func testModel(classes ...struct {
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

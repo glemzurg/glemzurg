@@ -32,7 +32,7 @@ func indexTestModel(attrs map[identity.Key]model_class.Attribute) (*req_model.Mo
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

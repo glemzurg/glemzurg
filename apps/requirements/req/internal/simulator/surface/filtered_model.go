@@ -11,7 +11,7 @@ import (
 // associations, and invariants from the resolved surface. The original
 // model is not modified.
 func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) (*req_model.Model, error) {
-	filtered, err := req_model.NewModel(original.Key, original.Name, original.Details, resolved.ModelInvariants, original.GlobalFunctions)
+	filtered, err := req_model.NewModel(original.Key, original.Name, original.Details, resolved.ModelInvariants, original.GlobalFunctions, original.NamedSets)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -37,7 +38,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/exit/on_exit")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionExitKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", model_logic.NotationTLAPlus, "self.exit_count + 1", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.exit_count + 1"}, nil))
 	actionExit := helper.Must(model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionExit := helper.Must(model_state.NewStateAction(stateActionKey, actionExitKey, "exit"))
@@ -85,7 +86,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/entry/on_entry")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionEntryKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", model_logic.NotationTLAPlus, "self.entry_count + 1", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.entry_count + 1"}, nil))
 	actionEntry := helper.Must(model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionEntry := helper.Must(model_state.NewStateAction(stateActionKey, actionEntryKey, "entry"))

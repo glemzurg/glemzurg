@@ -55,12 +55,12 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 
 	// Parse model invariants
 	for i, inv := range model.Invariants {
-		expr, err := parser.ParseExpression(inv.Specification)
+		expr, err := parser.ParseExpression(inv.Spec.Specification)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse model invariant %d: %w", i, err)
 		}
 		if model_bridge.ContainsAnyPrimed(expr) {
-			return nil, fmt.Errorf("model invariant %d must not contain primed variables: %s", i, inv.Specification)
+			return nil, fmt.Errorf("model invariant %d must not contain primed variables: %s", i, inv.Spec.Specification)
 		}
 		checker.parsedInvariants = append(checker.parsedInvariants, expr)
 	}
@@ -75,7 +75,7 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 				for _, action := range class.Actions {
 					guarantees := make([]parsedGuarantee, 0)
 					for i, guar := range action.Guarantees {
-						expr, err := parser.ParseExpression(guar.Specification)
+						expr, err := parser.ParseExpression(guar.Spec.Specification)
 						if err != nil {
 							return nil, fmt.Errorf("failed to parse action %s guarantee %d: %w", action.Name, i, err)
 						}
@@ -98,7 +98,7 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 				for _, query := range class.Queries {
 					guarantees := make([]parsedGuarantee, 0)
 					for i, guar := range query.Guarantees {
-						expr, err := parser.ParseExpression(guar.Specification)
+						expr, err := parser.ParseExpression(guar.Spec.Specification)
 						if err != nil {
 							return nil, fmt.Errorf("failed to parse query %s guarantee %d: %w", query.Name, i, err)
 						}
@@ -139,7 +139,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		if result.Error != nil {
 			violations = append(violations, NewModelInvariantViolation(
 				i,
-				c.model.Invariants[i].Specification,
+				c.model.Invariants[i].Spec.Specification,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
@@ -155,7 +155,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 			}
 			violations = append(violations, NewModelInvariantViolation(
 				i,
-				c.model.Invariants[i].Specification,
+				c.model.Invariants[i].Spec.Specification,
 				message,
 			))
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/stretchr/testify/suite"
 )
@@ -125,7 +126,7 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count + 1"}, nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
@@ -276,7 +277,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count + 1"}, nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
@@ -319,7 +320,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_logic.NotationTLAPlus, "self.count + 1", nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.count + 1"}, nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))

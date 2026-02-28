@@ -32,11 +32,11 @@ func (g *GuardEvaluator) EvaluateGuard(
 ) (bool, error) {
 	bindings := g.bindingsBuilder.BuildForInstance(instance)
 
-	if guard.Logic.Specification == "" {
+	if guard.Logic.Spec.Specification == "" {
 		return true, nil // No specification means guard always passes
 	}
 
-	expr, err := parser.ParseExpression(guard.Logic.Specification)
+	expr, err := parser.ParseExpression(guard.Logic.Spec.Specification)
 	if err != nil {
 		return false, fmt.Errorf("guard %s parse error: %w", guard.Name, err)
 	}
