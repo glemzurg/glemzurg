@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -15,6 +16,16 @@ type LogicTestSuite struct {
 
 func TestLogicSuite(t *testing.T) {
 	suite.Run(t, new(LogicTestSuite))
+}
+
+// validSpec returns a valid ExpressionSpec for testing.
+func validSpec() model_spec.ExpressionSpec {
+	return model_spec.ExpressionSpec{Notation: NotationTLAPlus}
+}
+
+// validSpecWithBody returns a valid ExpressionSpec with a specification body.
+func validSpecWithBody(body string) model_spec.ExpressionSpec {
+	return model_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: body}
 }
 
 // TestValidate tests all validation rules for Logic.
@@ -34,27 +45,25 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "All orders must have at least one item.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 		},
 		{
 			testName: "valid with specification",
 			logic: Logic{
-				Key:           validKey2,
-				Type:          LogicTypeAssessment,
-				Description:   "Stock is never negative.",
-				Notation:      NotationTLAPlus,
-				Specification: "\\A p \\in Products : p.stock >= 0",
+				Key:         validKey2,
+				Type:        LogicTypeAssessment,
+				Description: "Stock is never negative.",
+				Spec:        validSpecWithBody("\\A p \\in Products : p.stock >= 0"),
 			},
 		},
 		{
 			testName: "valid with empty specification",
 			logic: Logic{
-				Key:           validKey3,
-				Type:          LogicTypeAssessment,
-				Description:   "Placeholder invariant.",
-				Notation:      NotationTLAPlus,
-				Specification: "",
+				Key:         validKey3,
+				Type:        LogicTypeAssessment,
+				Description: "Placeholder invariant.",
+				Spec:        validSpec(),
 			},
 		},
 		{
@@ -64,7 +73,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeStateChange,
 				Description: "Some state change.",
 				Target:      "shipping",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 		},
 		{
@@ -74,7 +83,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeQuery,
 				Description: "Some query.",
 				Target:      "result",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 		},
 		{
@@ -84,7 +93,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeQuery,
 				Description: "Some query.",
 				Target:      "TotalAmount",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 		},
 		{
@@ -93,7 +102,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeSafetyRule,
 				Description: "Some safety rule.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 		},
 		{
@@ -102,7 +111,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeValue,
 				Description: "Some value.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 		},
 		{
@@ -111,7 +120,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         identity.Key{},
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "KeyType",
 		},
@@ -121,7 +130,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        "",
 				Description: "Some description.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "Type",
 		},
@@ -131,7 +140,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        "unknown",
 				Description: "Some description.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "Type",
 		},
@@ -141,27 +150,27 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "Description",
 		},
 		{
-			testName: "error missing notation",
+			testName: "error missing notation in spec",
 			logic: Logic{
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Notation:    "",
+				Spec:        model_spec.ExpressionSpec{},
 			},
 			errstr: "Notation",
 		},
 		{
-			testName: "error invalid notation",
+			testName: "error invalid notation in spec",
 			logic: Logic{
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Notation:    "Z",
+				Spec:        model_spec.ExpressionSpec{Notation: "Z"},
 			},
 			errstr: "Notation",
 		},
@@ -171,29 +180,27 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         identity.Key{},
 				Type:        LogicTypeAssessment,
 				Description: "",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "KeyType",
 		},
 		{
 			testName: "error missing key with specification set",
 			logic: Logic{
-				Key:           identity.Key{},
-				Type:          LogicTypeAssessment,
-				Description:   "Some description.",
-				Notation:      NotationTLAPlus,
-				Specification: "TRUE",
+				Key:         identity.Key{},
+				Type:        LogicTypeAssessment,
+				Description: "Some description.",
+				Spec:        validSpecWithBody("TRUE"),
 			},
 			errstr: "KeyType",
 		},
 		{
 			testName: "error invalid notation with specification set",
 			logic: Logic{
-				Key:           validKey,
-				Type:          LogicTypeAssessment,
-				Description:   "Some description.",
-				Notation:      "Alloy",
-				Specification: "some spec",
+				Key:         validKey,
+				Type:        LogicTypeAssessment,
+				Description: "Some description.",
+				Spec:        model_spec.ExpressionSpec{Notation: "Alloy", Specification: "some spec"},
 			},
 			errstr: "Notation",
 		},
@@ -204,7 +211,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeStateChange,
 				Description: "Some state change.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "requires a non-empty target",
 		},
@@ -214,7 +221,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeQuery,
 				Description: "Some query.",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "requires a non-empty target",
 		},
@@ -225,7 +232,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeQuery,
 				Description: "Some query.",
 				Target:      "_hidden",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "starting with '_'",
 		},
@@ -236,7 +243,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeAssessment,
 				Description: "Some assessment.",
 				Target:      "shipping",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "must not have a target",
 		},
@@ -247,7 +254,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeSafetyRule,
 				Description: "Some safety rule.",
 				Target:      "shipping",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "must not have a target",
 		},
@@ -258,7 +265,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Type:        LogicTypeValue,
 				Description: "Some value.",
 				Target:      "shipping",
-				Notation:    NotationTLAPlus,
+				Spec:        validSpec(),
 			},
 			errstr: "must not have a target",
 		},
@@ -282,48 +289,48 @@ func (s *LogicTestSuite) TestNew() {
 	validKey2 := helper.Must(identity.NewInvariantKey("1"))
 
 	// Test all parameters are mapped correctly (assessment — no target).
-	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", NotationTLAPlus, "\\A p \\in Products : p.stock >= 0", nil)
+	spec := validSpecWithBody("\\A p \\in Products : p.stock >= 0")
+	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", spec, nil)
 	s.NoError(err)
 	s.Equal(Logic{
-		Key:           validKey,
-		Type:          LogicTypeAssessment,
-		Description:   "Stock is never negative.",
-		Notation:      NotationTLAPlus,
-		Specification: "\\A p \\in Products : p.stock >= 0",
+		Key:         validKey,
+		Type:        LogicTypeAssessment,
+		Description: "Stock is never negative.",
+		Spec:        spec,
 	}, logic)
 
 	// Test with empty specification (optional).
-	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", NotationTLAPlus, "", nil)
+	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", validSpec(), nil)
 	s.NoError(err)
 	s.Equal(Logic{
 		Key:         validKey2,
 		Type:        LogicTypeAssessment,
 		Description: "Placeholder.",
-		Notation:    NotationTLAPlus,
+		Spec:        validSpec(),
 	}, logic)
 
 	// Test state_change with target.
-	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", NotationTLAPlus, "address", nil)
+	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", validSpecWithBody("address"), nil)
 	s.NoError(err)
 	s.Equal("shipping", logic.Target)
 
 	// Test query with target.
-	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", NotationTLAPlus, "expr", nil)
+	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
 	s.NoError(err)
 	s.Equal("result", logic.Target)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", NotationTLAPlus, "", nil)
+	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", validSpec(), nil)
 	s.Error(err)
 	s.Contains(err.Error(), "KeyType")
 
 	// Test that invalid notation fails.
-	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", "Z", "", nil)
+	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", model_spec.ExpressionSpec{Notation: "Z"}, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Notation")
 
 	// Test that invalid kind fails.
-	_, err = NewLogic(validKey, "bogus", "Some description.", "", NotationTLAPlus, "", nil)
+	_, err = NewLogic(validKey, "bogus", "Some description.", "", validSpec(), nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Type")
 }
@@ -337,7 +344,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
 		Description: "Some description.",
-		Notation:    NotationTLAPlus,
+		Spec:        validSpec(),
 	}
 	err := logic.ValidateWithParent(nil)
 	s.NoError(err)
@@ -347,7 +354,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
 		Description: "", // Invalid
-		Notation:    NotationTLAPlus,
+		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(nil)
 	s.ErrorContains(err, "Description")
@@ -358,7 +365,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
 		Description: "Some description.",
-		Notation:    NotationTLAPlus,
+		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(&domainKey)
 	s.ErrorContains(err, "should not have a parent")
@@ -373,7 +380,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Key:         requireKey,
 		Type:        LogicTypeAssessment,
 		Description: "Precondition.",
-		Notation:    NotationTLAPlus,
+		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(&actionKey)
 	s.NoError(err)

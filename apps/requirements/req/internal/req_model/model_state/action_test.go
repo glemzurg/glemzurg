@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -47,13 +48,13 @@ func (suite *ActionSuite) TestValidate() {
 				Name:    "Name",
 				Details: "Details",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", model_logic.NotationTLAPlus, "req1", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "req1"}, nil)),
 				},
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition 1.", "shipping", model_logic.NotationTLAPlus, "guar1", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition 1.", "shipping", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "guar1"}, nil)),
 				},
 				SafetyRules: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule 1.", "", model_logic.NotationTLAPlus, "safety1", nil)),
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule 1.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "safety1"}, nil)),
 				},
 			},
 		},
@@ -63,7 +64,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_logic.NotationTLAPlus, "x > 0", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil)),
 				},
 			},
 		},
@@ -73,7 +74,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x to 1.", "x", model_logic.NotationTLAPlus, "1", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x to 1.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
 				},
 			},
 		},
@@ -83,7 +84,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				SafetyRules: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "x must stay positive.", "", model_logic.NotationTLAPlus, "self.x' > 0", nil)),
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "x must stay positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.x' > 0"}, nil)),
 				},
 			},
 		},
@@ -117,10 +118,10 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_logic.NotationTLAPlus, "x > 0", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil)),
 				},
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x to 1.", "x", model_logic.NotationTLAPlus, "1", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x to 1.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
 				},
 			},
 			errstr: "Name",
@@ -131,7 +132,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "requires 0",
@@ -142,7 +143,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeStateChange, Description: "Set x to 1.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "guarantee 0",
@@ -153,7 +154,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				SafetyRules: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeSafetyRule, Description: "x must stay positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeSafetyRule, Description: "x must stay positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "safety rule 0",
@@ -164,7 +165,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_logic.NotationTLAPlus, "", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
 			errstr: "requires 0: logic kind must be 'assessment'",
@@ -175,7 +176,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", model_logic.NotationTLAPlus, "", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
 			errstr: "guarantee 0: logic kind must be 'state_change'",
@@ -186,7 +187,7 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				SafetyRules: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeAssessment, "x must stay positive.", "", model_logic.NotationTLAPlus, "", nil)),
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeAssessment, "x must stay positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
 			errstr: "safety rule 0: logic kind must be 'safety_rule'",
@@ -197,8 +198,8 @@ func (suite *ActionSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x.", "x", model_logic.NotationTLAPlus, "1", nil)),
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x again.", "x", model_logic.NotationTLAPlus, "2", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x again.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
 				},
 			},
 			errstr: "duplicate target",
@@ -227,13 +228,13 @@ func (suite *ActionSuite) TestNew() {
 	safetyKey := helper.Must(identity.NewActionSafetyKey(key, "safety_1"))
 
 	requires := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "tla_req", nil)),
+		helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_req"}, nil)),
 	}
 	guarantees := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition.", "shipping", model_logic.NotationTLAPlus, "tla_guar", nil)),
+		helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition.", "shipping", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"}, nil)),
 	}
 	safetyRules := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "tla_safety", nil)),
+		helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_safety"}, nil)),
 	}
 
 	// Test all parameters are mapped correctly.
@@ -308,13 +309,13 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 		Guarantees: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition.", "shipping", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Postcondition.", "shipping", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 		SafetyRules: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "Safety rule.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
@@ -327,7 +328,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 	}
 	err = action.ValidateWithParent(&classKey)

@@ -41,6 +41,12 @@ func validGlobalFunctionKey() identity.Key {
 	return key
 }
 
+// validNamedSetKey returns a valid named set identity.Key for testing.
+func validNamedSetKey() identity.Key {
+	key, _ := identity.NewNamedSetKey("valid_statuses")
+	return key
+}
+
 func (s *ExpressionTestSuite) TestValidateLiterals() {
 	tests := []struct {
 		testName string
@@ -295,6 +301,8 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 		{testName: "valid builtin call", expr: &BuiltinCall{Module: "_Seq", Function: "Len", Args: []Expression{arg}}},
 		{testName: "error builtin call no module", expr: &BuiltinCall{Function: "Len"}, errstr: "Module"},
 		{testName: "error builtin call no function", expr: &BuiltinCall{Module: "_Seq"}, errstr: "Function"},
+		{testName: "valid named set ref", expr: &NamedSetRef{SetKey: validNamedSetKey()}},
+		{testName: "error named set ref empty key", expr: &NamedSetRef{}, errstr: "SetKey"},
 	}
 	for _, tt := range tests {
 		s.T().Run(tt.testName, func(t *testing.T) {
@@ -327,6 +335,7 @@ func (s *ExpressionTestSuite) TestNodeType() {
 	s.Equal(NodeBuiltinCall, (&BuiltinCall{}).NodeType())
 	s.Equal(NodeIfThenElse, (&IfThenElse{}).NodeType())
 	s.Equal(NodeRecordUpdate, (&RecordUpdate{}).NodeType())
+	s.Equal(NodeNamedSetRef, (&NamedSetRef{}).NodeType())
 }
 
 func (s *ExpressionTestSuite) TestRecursiveValidation() {

@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 )
 
 const (
@@ -27,10 +29,11 @@ type DataType struct {
 	CollectionMax    *int
 	Atomic           *Atomic
 	RecordFields     []Field
+	TypeSpec         *model_spec.TypeSpec // Optional precise type specification.
 }
 
 // New creates a new DataType by parsing the input text.
-func New(key, text string) (dataType *DataType, err error) {
+func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, err error) {
 
 	// If this is blank then it is an unconstrained data type.
 	if strings.TrimSpace(text) == "" {
@@ -72,8 +75,9 @@ func New(key, text string) (dataType *DataType, err error) {
 		}
 	}
 
-	// Set the key.
+	// Set the key and optional type spec.
 	dataType.Key = key
+	dataType.TypeSpec = typeSpec
 
 	// Validate the data type.
 	if err = dataType.Validate(); err != nil {
@@ -155,6 +159,13 @@ func (d DataType) Validate() error {
 		}
 		if d.CollectionMax != nil {
 			return fmt.Errorf("CollectionMax: must be blank.")
+		}
+	}
+
+	// Validate TypeSpec if present.
+	if d.TypeSpec != nil {
+		if err := d.TypeSpec.Validate(); err != nil {
+			return fmt.Errorf("TypeSpec: %w", err)
 		}
 	}
 

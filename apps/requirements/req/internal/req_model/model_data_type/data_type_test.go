@@ -263,7 +263,7 @@ func TestNewBlank(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := New(key, tt.input)
+			result, err := New(key, tt.input, nil)
 			if tt.errorMessage != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
@@ -312,7 +312,7 @@ func TestNew(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := New(key, tt.input)
+			result, err := New(key, tt.input, nil)
 			if tt.errorMessage != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
@@ -797,7 +797,7 @@ func TestParseRecords(t *testing.T) {
 func TestNewUnparsable(t *testing.T) {
 
 	// If we cannot parse the text, no error but instead just a nil result.
-	result, err := New("key", "this cannot be parsed so it is just an unparsable blob")
+	result, err := New("key", "this cannot be parsed so it is just an unparsable blob", nil)
 	var targetType *CannotParseError
 	assert.ErrorAs(t, err, &targetType)
 	assert.ErrorContains(t, err, "failed to parse")
@@ -806,7 +806,7 @@ func TestNewUnparsable(t *testing.T) {
 
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
-	result, err := New("", "")
+	result, err := New("", "", nil)
 	assert.ErrorContains(t, err, "Key")
 	assert.Nil(t, result)
 }

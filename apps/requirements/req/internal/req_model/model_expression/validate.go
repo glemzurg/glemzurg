@@ -507,3 +507,12 @@ func (n *BuiltinCall) Validate() error {
 	}
 	return nil
 }
+
+// --- Named set reference validation ---
+
+func (n *NamedSetRef) Validate() error {
+	if err := n.SetKey.Validate(); err != nil {
+		return fmt.Errorf("NamedSetRef.SetKey: %w", err)
+	}
+	return nil
+}

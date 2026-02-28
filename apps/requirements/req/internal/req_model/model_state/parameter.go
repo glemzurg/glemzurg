@@ -21,7 +21,7 @@ func NewParameter(name, dataTypeRules string) (param Parameter, err error) {
 	// Parse the data type rules into a DataType object if possible.
 	if param.DataTypeRules != "" {
 		// Use the parameter name as the key of this data type.
-		parsedDataType, parseErr := model_data_type.New(name, param.DataTypeRules)
+		parsedDataType, parseErr := model_data_type.New(name, param.DataTypeRules, nil)
 
 		// Only an error if it is not a parse error.
 		var cannotParseError *model_data_type.CannotParseError

@@ -365,3 +365,13 @@ type BuiltinCall struct {
 
 func (n *BuiltinCall) expressionNode()    {}
 func (n *BuiltinCall) NodeType() string   { return NodeBuiltinCall }
+
+// --- Named set references ---
+
+// NamedSetRef references a model-level named set by key.
+type NamedSetRef struct {
+	SetKey identity.Key `validate:"required"`
+}
+
+func (n *NamedSetRef) expressionNode()    {}
+func (n *NamedSetRef) NodeType() string   { return NodeNamedSetRef }

@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,10 +47,10 @@ func (suite *QuerySuite) TestValidate() {
 				Name:    "Name",
 				Details: "Details",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", model_logic.NotationTLAPlus, "req1", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "req1"}, nil)),
 				},
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee 1.", "result", model_logic.NotationTLAPlus, "guar1", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee 1.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "guar1"}, nil)),
 				},
 			},
 		},
@@ -59,7 +60,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_logic.NotationTLAPlus, "x > 0", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil)),
 				},
 			},
 		},
@@ -69,7 +70,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", model_logic.NotationTLAPlus, "result \\in S", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"}, nil)),
 				},
 			},
 		},
@@ -103,10 +104,10 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_logic.NotationTLAPlus, "x > 0", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil)),
 				},
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", model_logic.NotationTLAPlus, "result \\in S", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"}, nil)),
 				},
 			},
 			errstr: "Name",
@@ -117,7 +118,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "requires 0",
@@ -128,7 +129,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Notation: model_logic.NotationTLAPlus},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "guarantee 0",
@@ -139,7 +140,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_logic.NotationTLAPlus, "", nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
 			errstr: "requires 0: logic kind must be 'assessment'",
@@ -150,7 +151,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Result in S.", "", model_logic.NotationTLAPlus, "", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Result in S.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
 			errstr: "guarantee 0: logic kind must be 'query'",
@@ -161,8 +162,8 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 1.", "result", model_logic.NotationTLAPlus, "expr1", nil)),
-					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 2.", "result", model_logic.NotationTLAPlus, "expr2", nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 1.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr1"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 2.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr2"}, nil)),
 				},
 			},
 			errstr: "duplicate target",
@@ -190,10 +191,10 @@ func (suite *QuerySuite) TestNew() {
 	guarKey := helper.Must(identity.NewQueryGuaranteeKey(key, "guar_1"))
 
 	requires := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "tla_req", nil)),
+		helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_req"}, nil)),
 	}
 	guarantees := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_logic.NotationTLAPlus, "tla_guar", nil)),
+		helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"}, nil)),
 	}
 
 	// Test all parameters are mapped correctly.
@@ -266,10 +267,10 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 		Guarantees: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 	}
 	err = query.ValidateWithParent(&classKey)
@@ -282,7 +283,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_logic.NotationTLAPlus, "", nil)),
+			helper.Must(model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 		},
 	}
 	err = query.ValidateWithParent(&classKey)

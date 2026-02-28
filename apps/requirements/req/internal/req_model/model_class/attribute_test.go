@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -27,8 +28,8 @@ func (suite *AttributeSuite) TestValidate() {
 	validKey := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
 	derivKey := helper.Must(identity.NewAttributeDerivationKey(validKey, "deriv1"))
 
-	validDerivationPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_logic.NotationTLAPlus, "", nil))
-	wrongKindDerivationPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeAssessment, "Computed from other fields.", "", model_logic.NotationTLAPlus, "", nil))
+	validDerivationPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	wrongKindDerivationPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeAssessment, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 
 	tests := []struct {
 		testName  string
@@ -90,7 +91,7 @@ func (suite *AttributeSuite) TestValidate() {
 					Key:         identity.Key{},
 					Type:        model_logic.LogicTypeValue,
 					Description: "Computed from other fields.",
-					Notation:    model_logic.NotationTLAPlus,
+					Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus},
 				},
 			},
 			errstr: "DerivationPolicy",
@@ -125,7 +126,7 @@ func (suite *AttributeSuite) TestNew() {
 	key := helper.Must(identity.NewAttributeKey(classKey, "attr1"))
 	derivKey := helper.Must(identity.NewAttributeDerivationKey(key, "deriv1"))
 
-	derivationPolicyVal := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_logic.NotationTLAPlus, "", nil))
+	derivationPolicyVal := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 	derivationPolicy := &derivationPolicyVal
 
 	// Test parameters are mapped correctly.
@@ -150,7 +151,7 @@ func (suite *AttributeSuite) TestNew() {
 	// Test parseable data type rules result in DataType being set.
 	attrParsedKey := helper.Must(identity.NewAttributeKey(classKey, "attrparsed"))
 	derivParsedKey := helper.Must(identity.NewAttributeDerivationKey(attrParsedKey, "deriv_parsed"))
-	derivParsedPolicyVal := helper.Must(model_logic.NewLogic(derivParsedKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_logic.NotationTLAPlus, "", nil))
+	derivParsedPolicyVal := helper.Must(model_logic.NewLogic(derivParsedKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 	derivParsedPolicy := &derivParsedPolicyVal
 	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true, "UmlComment", []uint{1, 2})
 	assert.NoError(suite.T(), err)
@@ -207,7 +208,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	assert.NoError(suite.T(), err)
 
 	// Test valid with derivation policy.
-	validDerivPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_logic.NotationTLAPlus, "", nil))
+	validDerivPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 	attr = Attribute{
 		Key:              validKey,
 		Name:             "Name",
@@ -219,7 +220,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 	// Test derivation policy key validation - wrong parent should fail.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
-	wrongParentDerivPolicy := helper.Must(model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_logic.NotationTLAPlus, "", nil))
+	wrongParentDerivPolicy := helper.Must(model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 	attr = Attribute{
 		Key:              validKey,
 		Name:             "Name",

@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
 )
 
 // Model is the documentation summary of a set of requirements.
@@ -20,6 +21,8 @@ type Model struct {
 	Invariants []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
 	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
+	// Named sets that can be referenced from behavioral logic.
+	NamedSets map[identity.Key]model_named_set.NamedSet
 	// Children
 	Actors               map[identity.Key]model_actor.Actor
 	ActorGeneralizations map[identity.Key]model_actor.Generalization
@@ -28,7 +31,7 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction) (model Model, err error) {
+func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_named_set.NamedSet) (model Model, err error) {
 
 	model = Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
@@ -36,6 +39,7 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 		Details:         details,
 		Invariants:      invariants,
 		GlobalFunctions: globalFunctions,
+		NamedSets:       namedSets,
 	}
 
 	if err = model.Validate(); err != nil {
@@ -94,6 +98,17 @@ func (m *Model) Validate() error {
 		// Ensure the map key matches the function key.
 		if gfKey != gf.Key {
 			return errors.Errorf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String())
+		}
+	}
+
+	// Validate named sets.
+	for nsKey, ns := range m.NamedSets {
+		if err := ns.ValidateWithParent(); err != nil {
+			return errors.Wrapf(err, "named set '%s'", nsKey.String())
+		}
+		// Ensure the map key matches the named set key.
+		if nsKey != ns.Key {
+			return errors.Errorf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String())
 		}
 	}
 

@@ -40,7 +40,7 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 
 		// Use the attribute key as the key of this data type.
 		dataTypeKey := attribute.Key.String()
-		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules)
+		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules, nil)
 
 		// Only an error if it is not a parse error.
 		var parseError *model_data_type.CannotParseError // Use a pointer for type checking.
