@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -114,11 +115,10 @@ func convertInvariantsToModel(invariants []inputLogic) []model_logic.Logic {
 	for i, inv := range invariants {
 		invKey, _ := identity.NewInvariantKey(fmt.Sprintf("%d", i))
 		result[i] = model_logic.Logic{
-			Key:           invKey,
-			Type:          model_logic.LogicTypeAssessment,
-			Description:   inv.Description,
-			Notation:      inv.Notation,
-			Specification: inv.Specification,
+			Key:         invKey,
+			Type:        model_logic.LogicTypeAssessment,
+			Description: inv.Description,
+			Spec:        model_spec.ExpressionSpec{Notation: inv.Notation, Specification: inv.Specification},
 		}
 	}
 	return result
@@ -136,11 +136,10 @@ func convertGlobalFunctionToModel(keyStr string, gf *inputGlobalFunction) (model
 	}
 
 	logic := model_logic.Logic{
-		Key:           key,
-		Type:          model_logic.LogicTypeValue,
-		Description:   gf.Logic.Description,
-		Notation:      gf.Logic.Notation,
-		Specification: gf.Logic.Specification,
+		Key:         key,
+		Type:        model_logic.LogicTypeValue,
+		Description: gf.Logic.Description,
+		Spec:        model_spec.ExpressionSpec{Notation: gf.Logic.Notation, Specification: gf.Logic.Specification},
 	}
 
 	return model_logic.GlobalFunction{
@@ -835,11 +834,10 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 			).WithField(fmt.Sprintf("attributes.%s.derivation_policy", keyStr))
 		}
 		dp := model_logic.Logic{
-			Key:           dpKey,
-			Type:          model_logic.LogicTypeValue,
-			Description:   attr.DerivationPolicy.Description,
-			Notation:      attr.DerivationPolicy.Notation,
-			Specification: attr.DerivationPolicy.Specification,
+			Key:         dpKey,
+			Type:        model_logic.LogicTypeValue,
+			Description: attr.DerivationPolicy.Description,
+			Spec:        model_spec.ExpressionSpec{Notation: attr.DerivationPolicy.Notation, Specification: attr.DerivationPolicy.Specification},
 		}
 		result.DerivationPolicy = &dp
 	}
@@ -941,11 +939,10 @@ func convertStateMachineToModel(sm *inputStateMachine, actions map[string]*input
 			Key:  guardKey,
 			Name: guard.Name,
 			Logic: model_logic.Logic{
-				Key:           guardKey,
-				Type:          model_logic.LogicTypeAssessment,
-				Description:   guard.Logic.Description,
-				Notation:      guard.Logic.Notation,
-				Specification: guard.Logic.Specification,
+				Key:         guardKey,
+				Type:        model_logic.LogicTypeAssessment,
+				Description: guard.Logic.Description,
+				Spec:        model_spec.ExpressionSpec{Notation: guard.Logic.Notation, Specification: guard.Logic.Specification},
 			},
 		}
 
@@ -1105,12 +1102,11 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 // convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
 func convertLogicToModel(input *inputLogic, logicType string, parentKey identity.Key) model_logic.Logic {
 	return model_logic.Logic{
-		Key:           parentKey,
-		Type:          logicType,
-		Description:   input.Description,
-		Target:        input.Target,
-		Notation:      input.Notation,
-		Specification: input.Specification,
+		Key:         parentKey,
+		Type:        logicType,
+		Description: input.Description,
+		Target:      input.Target,
+		Spec:        model_spec.ExpressionSpec{Notation: input.Notation, Specification: input.Specification},
 	}
 }
 
@@ -1124,12 +1120,11 @@ func convertLogicsToModel(logics []inputLogic, logicType string, parentKey ident
 	for i, logic := range logics {
 		logicKey, _ := keyFactory(parentKey, fmt.Sprintf("%d", i))
 		result[i] = model_logic.Logic{
-			Key:           logicKey,
-			Type:          logicType,
-			Description:   logic.Description,
-			Target:        logic.Target,
-			Notation:      logic.Notation,
-			Specification: logic.Specification,
+			Key:         logicKey,
+			Type:        logicType,
+			Description: logic.Description,
+			Target:      logic.Target,
+			Spec:        model_spec.ExpressionSpec{Notation: logic.Notation, Specification: logic.Specification},
 		}
 	}
 	return result

@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -53,11 +54,10 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 				specification, _ := invMap["specification"].(string)
 
 				inv := model_logic.Logic{
-					Key:           invKey,
-					Type:          model_logic.LogicTypeAssessment,
-					Description:   details,
-					Notation:      model_logic.NotationTLAPlus,
-					Specification: specification,
+					Key:         invKey,
+					Type:        model_logic.LogicTypeAssessment,
+					Description: details,
+					Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: specification},
 				}
 				invariants = append(invariants, inv)
 			}
@@ -114,11 +114,10 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 					Name:       name,
 					Parameters: parameters,
 					Logic: model_logic.Logic{
-						Key:           gfKey,
-						Type:          model_logic.LogicTypeValue,
-						Description:   description,
-						Notation:      model_logic.NotationTLAPlus,
-						Specification: specification,
+						Key:         gfKey,
+						Type:        model_logic.LogicTypeValue,
+						Description: description,
+						Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: specification},
 					},
 				}
 				globalFunctions[gfKey] = gf
@@ -155,8 +154,8 @@ func generateModelContent(model req_model.Model) string {
 		dataStr += "invariants:\n"
 		for _, inv := range model.Invariants {
 			dataStr += "    - details: " + inv.Description + "\n"
-			if inv.Specification != "" {
-				dataStr += "      specification: " + yamlQuote(inv.Specification) + "\n"
+			if inv.Spec.Specification != "" {
+				dataStr += "      specification: " + yamlQuote(inv.Spec.Specification) + "\n"
 			}
 		}
 	}
@@ -190,8 +189,8 @@ func generateModelContent(model req_model.Model) string {
 			if gf.Logic.Description != "" {
 				dataStr += "      description: " + gf.Logic.Description + "\n"
 			}
-			if gf.Logic.Specification != "" {
-				dataStr += "      specification: " + yamlQuote(gf.Logic.Specification) + "\n"
+			if gf.Logic.Spec.Specification != "" {
+				dataStr += "      specification: " + yamlQuote(gf.Logic.Spec.Specification) + "\n"
 			}
 		}
 	}

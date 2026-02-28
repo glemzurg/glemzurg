@@ -8,9 +8,12 @@
 todo:
 
 
+deeply examine the data type to expression type separation
+
 - give classes invariants
 - give attributes invariants
 - move error codes to req_model
+  - req_model to core
 
 - md - flat - generate
 - update the md file output

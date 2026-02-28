@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 )
@@ -389,6 +390,7 @@ func buildTestModel() (req_model.Model, error) {
 		"A comprehensive test model with every type represented.",
 		logic.invariants,
 		globalFuncs,
+		nil,
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -982,153 +984,153 @@ func buildLogic(k testKeys) (testLogic, error) {
 	var err error
 
 	// Guard logic.
-	l.guard1, err = model_logic.NewLogic(k.guardLogic1, model_logic.LogicTypeAssessment, "Order has at least one line item", "", "tla_plus", "Len(order.lineItems) > 0", nil)
+	l.guard1, err = model_logic.NewLogic(k.guardLogic1, model_logic.LogicTypeAssessment, "Order has at least one line item", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Len(order.lineItems) > 0"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.guard2, err = model_logic.NewLogic(k.guardLogic2, model_logic.LogicTypeAssessment, "Order passes validation rules", "", "tla_plus", "order.isValid = TRUE", nil)
+	l.guard2, err = model_logic.NewLogic(k.guardLogic2, model_logic.LogicTypeAssessment, "Order passes validation rules", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.isValid = TRUE"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.guard3, err = model_logic.NewLogic(k.guardLogic3, model_logic.LogicTypeAssessment, "All items are in stock", "", "tla_plus", "\\A item \\in order.items : item.inStock", nil)
+	l.guard3, err = model_logic.NewLogic(k.guardLogic3, model_logic.LogicTypeAssessment, "All items are in stock", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "\\A item \\in order.items : item.inStock"}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Action requires (3).
-	l.actionRequire1, err = model_logic.NewLogic(k.actionRequire1, model_logic.LogicTypeAssessment, "Order must exist", "", "tla_plus", "order \\in Orders", nil)
+	l.actionRequire1, err = model_logic.NewLogic(k.actionRequire1, model_logic.LogicTypeAssessment, "Order must exist", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order \\in Orders"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionRequire2, err = model_logic.NewLogic(k.actionRequire2, model_logic.LogicTypeAssessment, "Quantity must be positive", "", "tla_plus", "quantity > 0", nil)
+	l.actionRequire2, err = model_logic.NewLogic(k.actionRequire2, model_logic.LogicTypeAssessment, "Quantity must be positive", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "quantity > 0"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionRequire3, err = model_logic.NewLogic(k.actionRequire3, model_logic.LogicTypeAssessment, "Customer must be active", "", "tla_plus", "customer.active = TRUE", nil)
+	l.actionRequire3, err = model_logic.NewLogic(k.actionRequire3, model_logic.LogicTypeAssessment, "Customer must be active", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "customer.active = TRUE"}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Action guarantees (3).
-	l.actionGuarantee1, err = model_logic.NewLogic(k.actionGuarantee1, model_logic.LogicTypeStateChange, "Order state becomes processing", "status", "tla_plus", "\"processing\"", nil)
+	l.actionGuarantee1, err = model_logic.NewLogic(k.actionGuarantee1, model_logic.LogicTypeStateChange, "Order state becomes processing", "status", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "\"processing\""}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionGuarantee2, err = model_logic.NewLogic(k.actionGuarantee2, model_logic.LogicTypeStateChange, "Inventory is decremented", "total", "tla_plus", "total - quantity", nil)
+	l.actionGuarantee2, err = model_logic.NewLogic(k.actionGuarantee2, model_logic.LogicTypeStateChange, "Inventory is decremented", "total", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "total - quantity"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionGuarantee3, err = model_logic.NewLogic(k.actionGuarantee3, model_logic.LogicTypeStateChange, "Status field is updated", "order_date", "tla_plus", "Now", nil)
+	l.actionGuarantee3, err = model_logic.NewLogic(k.actionGuarantee3, model_logic.LogicTypeStateChange, "Status field is updated", "order_date", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Now"}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Action safety rules (3).
-	l.actionSafety1, err = model_logic.NewLogic(k.actionSafety1, model_logic.LogicTypeSafetyRule, "Cannot process already processing order", "", "tla_plus", "order.state /= \"processing\"", nil)
+	l.actionSafety1, err = model_logic.NewLogic(k.actionSafety1, model_logic.LogicTypeSafetyRule, "Cannot process already processing order", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.state /= \"processing\""}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionSafety2, err = model_logic.NewLogic(k.actionSafety2, model_logic.LogicTypeSafetyRule, "Inventory cannot go negative", "", "tla_plus", "inventory' >= 0", nil)
+	l.actionSafety2, err = model_logic.NewLogic(k.actionSafety2, model_logic.LogicTypeSafetyRule, "Inventory cannot go negative", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "inventory' >= 0"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionSafety3, err = model_logic.NewLogic(k.actionSafety3, model_logic.LogicTypeSafetyRule, "Closed orders cannot change", "", "tla_plus", "order.state /= \"closed\"", nil)
+	l.actionSafety3, err = model_logic.NewLogic(k.actionSafety3, model_logic.LogicTypeSafetyRule, "Closed orders cannot change", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.state /= \"closed\""}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Query requires (3).
-	l.queryRequire1, err = model_logic.NewLogic(k.queryRequire1, model_logic.LogicTypeAssessment, "Order must exist for query", "", "tla_plus", "order \\in Orders", nil)
+	l.queryRequire1, err = model_logic.NewLogic(k.queryRequire1, model_logic.LogicTypeAssessment, "Order must exist for query", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order \\in Orders"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryRequire2, err = model_logic.NewLogic(k.queryRequire2, model_logic.LogicTypeAssessment, "User must be authorized", "", "tla_plus", "user.hasPermission(\"read\")", nil)
+	l.queryRequire2, err = model_logic.NewLogic(k.queryRequire2, model_logic.LogicTypeAssessment, "User must be authorized", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "user.hasPermission(\"read\")"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryRequire3, err = model_logic.NewLogic(k.queryRequire3, model_logic.LogicTypeAssessment, "Order must not be deleted", "", "tla_plus", "order.deleted = FALSE", nil)
+	l.queryRequire3, err = model_logic.NewLogic(k.queryRequire3, model_logic.LogicTypeAssessment, "Order must not be deleted", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.deleted = FALSE"}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Query guarantees (3).
-	l.queryGuarantee1, err = model_logic.NewLogic(k.queryGuarantee1, model_logic.LogicTypeQuery, "Returns current status", "status", "tla_plus", "order.state", nil)
+	l.queryGuarantee1, err = model_logic.NewLogic(k.queryGuarantee1, model_logic.LogicTypeQuery, "Returns current status", "status", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.state"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryGuarantee2, err = model_logic.NewLogic(k.queryGuarantee2, model_logic.LogicTypeQuery, "Returns last update timestamp", "timestamp", "tla_plus", "order.updatedAt", nil)
+	l.queryGuarantee2, err = model_logic.NewLogic(k.queryGuarantee2, model_logic.LogicTypeQuery, "Returns last update timestamp", "timestamp", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.updatedAt"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryGuarantee3, err = model_logic.NewLogic(k.queryGuarantee3, model_logic.LogicTypeQuery, "Returns full order details", "details", "tla_plus", "order.toJSON()", nil)
+	l.queryGuarantee3, err = model_logic.NewLogic(k.queryGuarantee3, model_logic.LogicTypeQuery, "Returns full order details", "details", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.toJSON()"}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Invariants (3).
-	inv1, err := model_logic.NewLogic(k.invariant1, model_logic.LogicTypeAssessment, "Order total must be non-negative", "", "tla_plus", "\\A o \\in Orders : o.total >= 0", nil)
+	inv1, err := model_logic.NewLogic(k.invariant1, model_logic.LogicTypeAssessment, "Order total must be non-negative", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "\\A o \\in Orders : o.total >= 0"}, nil)
 	if err != nil {
 		return l, err
 	}
-	inv2, err := model_logic.NewLogic(k.invariant2, model_logic.LogicTypeAssessment, "Every order has a customer", "", "tla_plus", "\\A o \\in Orders : o.customer /= NULL", nil)
+	inv2, err := model_logic.NewLogic(k.invariant2, model_logic.LogicTypeAssessment, "Every order has a customer", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "\\A o \\in Orders : o.customer /= NULL"}, nil)
 	if err != nil {
 		return l, err
 	}
-	inv3, err := model_logic.NewLogic(k.invariant3, model_logic.LogicTypeAssessment, "Order IDs are unique", "", "tla_plus", "\\A o1, o2 \\in Orders : o1 /= o2 => o1.id /= o2.id", nil)
+	inv3, err := model_logic.NewLogic(k.invariant3, model_logic.LogicTypeAssessment, "Order IDs are unique", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "\\A o1, o2 \\in Orders : o1 /= o2 => o1.id /= o2.id"}, nil)
 	if err != nil {
 		return l, err
 	}
 	l.invariants = []model_logic.Logic{inv1, inv2, inv3}
 
 	// Class-level invariants — Order (3).
-	cInv1, err := model_logic.NewLogic(k.classInv1, model_logic.LogicTypeAssessment, "Order total matches line item sum", "", "tla_plus", "self.total = Sum({li.price : li \\in self.lineItems})", nil)
+	cInv1, err := model_logic.NewLogic(k.classInv1, model_logic.LogicTypeAssessment, "Order total matches line item sum", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.total = Sum({li.price : li \\in self.lineItems})"}, nil)
 	if err != nil {
 		return l, err
 	}
-	cInv2, err := model_logic.NewLogic(k.classInv2, model_logic.LogicTypeAssessment, "Order must have at least one line item", "", "tla_plus", "Len(self.lineItems) > 0", nil)
+	cInv2, err := model_logic.NewLogic(k.classInv2, model_logic.LogicTypeAssessment, "Order must have at least one line item", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Len(self.lineItems) > 0"}, nil)
 	if err != nil {
 		return l, err
 	}
-	cInv3, err := model_logic.NewLogic(k.classInv3, model_logic.LogicTypeAssessment, "Order status is valid", "", "tla_plus", "self.status \\in {\"new\", \"processing\", \"complete\"}", nil)
+	cInv3, err := model_logic.NewLogic(k.classInv3, model_logic.LogicTypeAssessment, "Order status is valid", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.status \\in {\"new\", \"processing\", \"complete\"}"}, nil)
 	if err != nil {
 		return l, err
 	}
 	l.classInvariants1 = []model_logic.Logic{cInv1, cInv2, cInv3}
 
 	// Class-level invariants — Product (2).
-	cInv4, err := model_logic.NewLogic(k.classInv4, model_logic.LogicTypeAssessment, "Product name is non-empty", "", "tla_plus", "Len(self.name) > 0", nil)
+	cInv4, err := model_logic.NewLogic(k.classInv4, model_logic.LogicTypeAssessment, "Product name is non-empty", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Len(self.name) > 0"}, nil)
 	if err != nil {
 		return l, err
 	}
-	cInv5, err := model_logic.NewLogic(k.classInv5, model_logic.LogicTypeAssessment, "Product price is non-negative", "", "tla_plus", "self.price >= 0", nil)
+	cInv5, err := model_logic.NewLogic(k.classInv5, model_logic.LogicTypeAssessment, "Product price is non-negative", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.price >= 0"}, nil)
 	if err != nil {
 		return l, err
 	}
 	l.classInvariants2 = []model_logic.Logic{cInv4, cInv5}
 
 	// Class-level invariants — Warehouse (1).
-	cInv6, err := model_logic.NewLogic(k.classInv6, model_logic.LogicTypeAssessment, "Warehouse capacity is positive", "", "tla_plus", "self.capacity > 0", nil)
+	cInv6, err := model_logic.NewLogic(k.classInv6, model_logic.LogicTypeAssessment, "Warehouse capacity is positive", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "self.capacity > 0"}, nil)
 	if err != nil {
 		return l, err
 	}
 	l.classInvariants3 = []model_logic.Logic{cInv6}
 
 	// Derivation with empty specification (tests empty spec path).
-	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", "tla_plus", "_Sum(things)", nil)
+	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "_Sum(things)"}, nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Global function logic.
-	l.globalFunc1Log, err = model_logic.NewLogic(k.globalFunc1, model_logic.LogicTypeValue, "Returns maximum of two values", "", "tla_plus", "IF x > y THEN x ELSE y", nil)
+	l.globalFunc1Log, err = model_logic.NewLogic(k.globalFunc1, model_logic.LogicTypeValue, "Returns maximum of two values", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "IF x > y THEN x ELSE y"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.globalFunc2Log, err = model_logic.NewLogic(k.globalFunc2, model_logic.LogicTypeValue, "Returns the input unchanged", "", "tla_plus", "", nil)
+	l.globalFunc2Log, err = model_logic.NewLogic(k.globalFunc2, model_logic.LogicTypeValue, "Returns the input unchanged", "", model_spec.ExpressionSpec{Notation: "tla_plus"}, nil)
 	if err != nil {
 		return l, err
 	}
-	l.globalFunc3Log, err = model_logic.NewLogic(k.globalFunc3, model_logic.LogicTypeValue, "Counts elements in a set", "", "tla_plus", "Cardinality(s)", nil)
+	l.globalFunc3Log, err = model_logic.NewLogic(k.globalFunc3, model_logic.LogicTypeValue, "Counts elements in a set", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Cardinality(s)"}, nil)
 	if err != nil {
 		return l, err
 	}

@@ -627,8 +627,8 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		// Collect and flatten expression nodes from all logics (must be after attributes, actions, global_functions due to FK).
 		var allExprRows []exprNodeRow
 		for _, logic := range allLogics {
-			if logic.Expression != nil {
-				allExprRows = append(allExprRows, FlattenExpression(logic.Key, logic.Expression)...)
+			if logic.Spec.Expression != nil {
+				allExprRows = append(allExprRows, FlattenExpression(logic.Key, logic.Spec.Expression)...)
 			}
 		}
 		if err = AddExpressionNodes(tx, modelKey, allExprRows); err != nil {
@@ -672,7 +672,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		}
 		for logicKey, expr := range expressions {
 			if logic, ok := logicsByKey[logicKey]; ok {
-				logic.Expression = expr
+				logic.Spec.Expression = expr
 				logicsByKey[logicKey] = logic
 			}
 		}

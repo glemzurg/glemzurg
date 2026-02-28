@@ -18,8 +18,8 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		&logic.Type,
 		&logic.Description,
 		&logic.Target,
-		&logic.Notation,
-		&logic.Specification,
+		&logic.Spec.Notation,
+		&logic.Spec.Specification,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -99,8 +99,8 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 		logic.Type,
 		logic.Description,
 		logic.Target,
-		logic.Notation,
-		logic.Specification,
+		logic.Spec.Notation,
+		logic.Spec.Specification,
 		sortOrder)
 	if err != nil {
 		return errors.WithStack(err)
@@ -180,7 +180,7 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 		base := i * 8
 		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
 		// Map empty target to nil for NULL in the database.
-		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Notation, logic.Specification, sortOrders[logic.Key.String()])
+		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()])
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

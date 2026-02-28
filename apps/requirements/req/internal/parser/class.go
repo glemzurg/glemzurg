@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
 
@@ -291,7 +292,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", "tla_plus", specification, nil)
+				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: specification}, nil)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}
@@ -663,12 +664,11 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 	}
 
 	logic := model_logic.Logic{
-		Key:           guardKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   details,
-		Target:        "",
-		Notation:      "tla_plus",
-		Specification: specification,
+		Key:         guardKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: details,
+		Target:      "",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: specification},
 	}
 
 	guard, err = model_state.NewGuard(
@@ -855,12 +855,11 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		logics = append(logics, model_logic.Logic{
-			Key:           key,
-			Type:          logicType,
-			Description:   details,
-			Target:        target,
-			Notation:      "tla_plus",
-			Specification: specification,
+			Key:         key,
+			Type:        logicType,
+			Description: details,
+			Target:      target,
+			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: specification},
 		})
 	}
 	return logics, nil
@@ -1007,7 +1006,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			if attr.DerivationPolicy != nil {
 				derivBuilder := NewYamlBuilder()
 				derivBuilder.AddField("description", attr.DerivationPolicy.Description)
-				derivBuilder.AddQuotedField("specification", attr.DerivationPolicy.Specification)
+				derivBuilder.AddQuotedField("specification", attr.DerivationPolicy.Spec.Specification)
 				attrBuilder.AddMappingField("derivation", derivBuilder)
 			}
 			attrBuilder.AddField("uml_comment", attr.UmlComment)
@@ -1122,7 +1121,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			guard := class.Guards[key]
 			guardBuilder := NewYamlBuilder()
 			guardBuilder.AddField("details", guard.Logic.Description)
-			guardBuilder.AddField("specification", guard.Logic.Specification)
+			guardBuilder.AddField("specification", guard.Logic.Spec.Specification)
 			guardsBuilder.AddMappingField(guard.Name, guardBuilder)
 		}
 		builder.AddMappingField("guards", guardsBuilder)
@@ -1237,7 +1236,7 @@ func generateLogicSequence(builder *YamlBuilder, field string, logics []model_lo
 		logicBuilder := NewYamlBuilder()
 		logicBuilder.AddField("details", logic.Description)
 		logicBuilder.AddField("target", logic.Target)
-		logicBuilder.AddField("specification", logic.Specification)
+		logicBuilder.AddField("specification", logic.Spec.Specification)
 		items = append(items, logicBuilder)
 	}
 	builder.AddSequenceOfMappings(field, items)

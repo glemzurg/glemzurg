@@ -591,8 +591,8 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 		Type:          logic.Type,
 		Description:   logic.Description,
 		Target:        logic.Target,
-		Notation:      logic.Notation,
-		Specification: logic.Specification,
+		Notation:      logic.Spec.Notation,
+		Specification: logic.Spec.Specification,
 	}
 }
 

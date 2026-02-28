@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -77,140 +78,128 @@ func (suite *LogicSuite) TestLoad() {
 	logic, err = LoadLogic(suite.db, suite.model.Key, suite.logicKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "Target",
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "Target",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	}, logic)
 }
 
 func (suite *LogicSuite) TestAdd() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "Target",
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "Target",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	assert.Nil(suite.T(), err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "Target",
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "Target",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	}, logic)
 }
 
 func (suite *LogicSuite) TestAddNulls() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "",
-		Notation:      "tla_plus",
-		Specification: "",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	})
 	assert.Nil(suite.T(), err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "",
-		Notation:      "tla_plus",
-		Specification: "",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	}, logic)
 }
 
 func (suite *LogicSuite) TestUpdate() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "Target",
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "Target",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "DescriptionX",
-		Target:        "TargetX",
-		Notation:      "tla_plus",
-		Specification: "SpecificationX",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "DescriptionX",
+		Target:      "TargetX",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 	}, 0)
 	assert.Nil(suite.T(), err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "DescriptionX",
-		Target:        "TargetX",
-		Notation:      "tla_plus",
-		Specification: "SpecificationX",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "DescriptionX",
+		Target:      "TargetX",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 	}, logic)
 }
 
 func (suite *LogicSuite) TestUpdateNulls() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "Target",
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "Target",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	assert.Nil(suite.T(), err)
 
 	err = UpdateLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "DescriptionX",
-		Target:        "",
-		Notation:      "tla_plus",
-		Specification: "",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "DescriptionX",
+		Target:      "",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	}, 0)
 	assert.Nil(suite.T(), err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "DescriptionX",
-		Target:        "",
-		Notation:      "tla_plus",
-		Specification: "",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "DescriptionX",
+		Target:      "",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	}, logic)
 }
 
 func (suite *LogicSuite) TestRemove() {
 
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
-		Key:           suite.logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   "Description",
-		Target:        "Target",
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         suite.logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: "Description",
+		Target:      "Target",
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	assert.Nil(suite.T(), err)
 
@@ -226,20 +215,18 @@ func (suite *LogicSuite) TestQuery() {
 
 	err := AddLogics(suite.db, suite.model.Key, []model_logic.Logic{
 		{
-			Key:           suite.logicKeyB,
-			Type:          model_logic.LogicTypeAssessment,
-			Description:   "DescriptionX",
-			Target:        "TargetX",
-			Notation:      "tla_plus",
-			Specification: "SpecificationX",
+			Key:         suite.logicKeyB,
+			Type:        model_logic.LogicTypeAssessment,
+			Description: "DescriptionX",
+			Target:      "TargetX",
+			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 		},
 		{
-			Key:           suite.logicKey,
-			Type:          model_logic.LogicTypeAssessment,
-			Description:   "Description",
-			Target:        "Target",
-			Notation:      "tla_plus",
-			Specification: "Specification",
+			Key:         suite.logicKey,
+			Type:        model_logic.LogicTypeAssessment,
+			Description: "Description",
+			Target:      "Target",
+			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 		},
 	}, map[string]int{
 		suite.logicKeyB.String(): 0,
@@ -251,20 +238,18 @@ func (suite *LogicSuite) TestQuery() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), []model_logic.Logic{
 		{
-			Key:           suite.logicKey,
-			Type:          model_logic.LogicTypeAssessment,
-			Description:   "Description",
-			Target:        "Target",
-			Notation:      "tla_plus",
-			Specification: "Specification",
+			Key:         suite.logicKey,
+			Type:        model_logic.LogicTypeAssessment,
+			Description: "Description",
+			Target:      "Target",
+			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 		},
 		{
-			Key:           suite.logicKeyB,
-			Type:          model_logic.LogicTypeAssessment,
-			Description:   "DescriptionX",
-			Target:        "TargetX",
-			Notation:      "tla_plus",
-			Specification: "SpecificationX",
+			Key:         suite.logicKeyB,
+			Type:        model_logic.LogicTypeAssessment,
+			Description: "DescriptionX",
+			Target:      "TargetX",
+			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 		},
 	}, logics)
 }
@@ -276,11 +261,10 @@ func (suite *LogicSuite) TestQuery() {
 func t_AddLogic(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic model_logic.Logic) {
 
 	err := AddLogic(dbOrTx, modelKey, model_logic.Logic{
-		Key:           logicKey,
-		Type:          model_logic.LogicTypeAssessment,
-		Description:   logicKey.String(),
-		Notation:      "tla_plus",
-		Specification: "Specification",
+		Key:         logicKey,
+		Type:        model_logic.LogicTypeAssessment,
+		Description: logicKey.String(),
+		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	assert.Nil(t, err)
 
