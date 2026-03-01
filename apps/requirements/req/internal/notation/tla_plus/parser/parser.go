@@ -5,7 +5,7 @@ package parser
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
 
 // ParseExpression parses a TLA+ expression string and returns an ast.Expression.

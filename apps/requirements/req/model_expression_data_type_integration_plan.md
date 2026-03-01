@@ -334,7 +334,7 @@ The TLA+ expression parser already handles most type expression constructs as re
 
 ### 2B: Extend PEG Grammar (if needed)
 
-**Modified file: `internal/notation/parser/peg/tla_expression.peg`**
+**Modified file: `internal/notation/tla_plus/parser/peg/tla_expression.peg`**
 
 - Add record type syntax rule: `RecordTypeExpr <- '[' FieldTypeBinding (',' FieldTypeBinding)* ']'` where `FieldTypeBinding <- Identifier ':' Expression`. This is distinct from `RecordInstance` which uses `|->`.
 - Add Cartesian product if not present: `CartesianExpr <- Expression '\X' Expression` (or `\times`).
@@ -344,7 +344,7 @@ The TLA+ expression parser already handles most type expression constructs as re
 
 If record type syntax produces a new AST node:
 
-**New file or modified: `internal/notation/ast/record_type.go`**
+**New file or modified: `internal/notation/tla_plus/ast/record_type.go`**
 
 ```go
 type RecordType struct {
@@ -362,7 +362,7 @@ Implements `Expression` interface.
 
 Create a function that converts a TLA+ AST (from the parser) into an ExpressionType tree. This is the "type interpretation" pass.
 
-**New file: `internal/notation/ast/type_convert.go`** (or a new sub-package)
+**New file: `internal/notation/tla_plus/ast/type_convert.go`** (or a new sub-package)
 
 ```go
 func ConvertToExpressionType(expr ast.Expression) (model_expression_type.ExpressionType, error)
@@ -386,7 +386,7 @@ Mapping:
 | `Identifier(name)` where name is a known NamedSet | `NamedSetRef{SetKey: ...}` |
 | Anything else | error: "not a valid type expression" |
 
-**Test file: `internal/notation/ast/type_convert_test.go`**
+**Test file: `internal/notation/tla_plus/ast/type_convert_test.go`**
 
 Table-driven tests: parse TLA+ string → convert → assert ExpressionType matches expected.
 
@@ -908,9 +908,9 @@ These are deferred to future sessions:
 
 4. **ObjectClassKey migration** — Changing `Atomic.ObjectClassKey` from `*string` to `*identity.Key`. Small cleanup.
 
-5. **notation/ast → notation/tla/ast restructuring** — 88+ file import change. Pure mechanical refactor.
+5. **notation/ast → notation/tla_plus/ast restructuring** — DONE. Moved to `notation/tla_plus/ast/` and `notation/tla_plus/parser/`.
 
-6. **TLA+ lowering/raising passes** — Converting between notation/ast and model_expression. Depends on notation restructuring.
+6. **TLA+ lowering/raising passes** — Converting between notation/tla_plus/ast and model_expression.
 
 7. **Test model enrichment** — Adding precise types, named sets, and TargetTypeSpecs to the test models for comprehensive end-to-end testing. Should happen incrementally as each stage completes.
 
