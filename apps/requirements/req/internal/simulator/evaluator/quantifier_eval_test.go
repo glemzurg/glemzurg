@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/parser"
 	"github.com/stretchr/testify/suite"
 )
 

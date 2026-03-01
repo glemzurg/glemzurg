@@ -315,9 +315,9 @@ All three must pass. The `parser`, `parser_ai`, `database`, `req_flat`, and `gen
 
 **Goal:** Enable parsing of TLA+ type expressions into ExpressionType trees.
 
-**Packages touched:** `internal/notation/`, `internal/simulator/parser/`
+**Packages touched:** `internal/notation/`
 
-**Test command:** `go test ./internal/simulator/parser/...`
+**Test command:** `go test ./internal/notation/...`
 
 ### 2A: Assess Grammar Needs
 
@@ -334,7 +334,7 @@ The TLA+ expression parser already handles most type expression constructs as re
 
 ### 2B: Extend PEG Grammar (if needed)
 
-**Modified file: `internal/simulator/parser/peg/tla_expression.peg`**
+**Modified file: `internal/notation/parser/peg/tla_expression.peg`**
 
 - Add record type syntax rule: `RecordTypeExpr <- '[' FieldTypeBinding (',' FieldTypeBinding)* ']'` where `FieldTypeBinding <- Identifier ':' Expression`. This is distinct from `RecordInstance` which uses `|->`.
 - Add Cartesian product if not present: `CartesianExpr <- Expression '\X' Expression` (or `\times`).
@@ -394,7 +394,6 @@ Table-driven tests: parse TLA+ string → convert → assert ExpressionType matc
 
 ```bash
 cd /workspaces/glemzurg/apps/requirements/req
-go test ./internal/simulator/parser/...
 go test ./internal/notation/...
 ```
 
