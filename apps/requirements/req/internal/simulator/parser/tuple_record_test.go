@@ -369,3 +369,131 @@ func (s *TupleRecordSuite) TestMixed_TupleIndexOnRecord() {
 	s.True(ok, "tuple should be *ast.FieldAccess, got %T", idx.Tuple)
 	s.Equal("positions", field.Member)
 }
+
+// =============================================================================
+// Record Type Expressions
+// =============================================================================
+
+func (s *TupleRecordSuite) TestRecordType_Single() {
+	expr, err := ParseExpression("[name: STRING]")
+	s.NoError(err)
+
+	rt, ok := expr.(*ast.RecordTypeExpr)
+	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
+	s.Equal(1, len(rt.Fields))
+	s.Equal("name", rt.Fields[0].Name.Value)
+}
+
+func (s *TupleRecordSuite) TestRecordType_Multiple() {
+	expr, err := ParseExpression("[name: STRING, age: Int, active: BOOLEAN]")
+	s.NoError(err)
+
+	rt, ok := expr.(*ast.RecordTypeExpr)
+	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
+	s.Equal(3, len(rt.Fields))
+	s.Equal("name", rt.Fields[0].Name.Value)
+	s.Equal("age", rt.Fields[1].Name.Value)
+	s.Equal("active", rt.Fields[2].Name.Value)
+}
+
+func (s *TupleRecordSuite) TestRecordType_WithIdentifierTypes() {
+	expr, err := ParseExpression("[x: Nat, y: Real]")
+	s.NoError(err)
+
+	rt, ok := expr.(*ast.RecordTypeExpr)
+	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
+	s.Equal(2, len(rt.Fields))
+
+	// x: Nat — Nat parses as Identifier in this context (type converter resolves it).
+	id, ok := rt.Fields[0].Type.(*ast.Identifier)
+	s.True(ok, "expected *ast.Identifier for Nat, got %T", rt.Fields[0].Type)
+	s.Equal("Nat", id.Value)
+}
+
+func (s *TupleRecordSuite) TestRecordType_String() {
+	expr, err := ParseExpression("[name: STRING, age: Int]")
+	s.NoError(err)
+
+	rt, ok := expr.(*ast.RecordTypeExpr)
+	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
+	s.Equal("[name: STRING, age: Int]", rt.String())
+	s.Equal("[name: STRING, age: Int]", rt.Ascii())
+}
+
+func (s *TupleRecordSuite) TestRecordType_Validate() {
+	expr, err := ParseExpression("[name: STRING]")
+	s.NoError(err)
+
+	rt, ok := expr.(*ast.RecordTypeExpr)
+	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
+	s.NoError(rt.Validate())
+}
+
+// Ensure record value syntax still works alongside record type syntax.
+func (s *TupleRecordSuite) TestRecordInstance_StillWorks_AfterRecordType() {
+	expr, err := ParseExpression("[name |-> \"Alice\", age |-> 30]")
+	s.NoError(err)
+
+	ri, ok := expr.(*ast.RecordInstance)
+	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
+	s.Equal(2, len(ri.Bindings))
+}
+
+// =============================================================================
+// Cartesian Product
+// =============================================================================
+
+func (s *TupleRecordSuite) TestCartesianProduct_ASCII() {
+	expr, err := ParseExpression("Int \\X STRING")
+	s.NoError(err)
+
+	cp, ok := expr.(*ast.CartesianProduct)
+	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
+	s.Equal(2, len(cp.Operands))
+}
+
+func (s *TupleRecordSuite) TestCartesianProduct_Unicode() {
+	expr, err := ParseExpression("Int × STRING")
+	s.NoError(err)
+
+	cp, ok := expr.(*ast.CartesianProduct)
+	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
+	s.Equal(2, len(cp.Operands))
+}
+
+func (s *TupleRecordSuite) TestCartesianProduct_Times() {
+	expr, err := ParseExpression("Nat \\times Real")
+	s.NoError(err)
+
+	cp, ok := expr.(*ast.CartesianProduct)
+	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
+	s.Equal(2, len(cp.Operands))
+}
+
+func (s *TupleRecordSuite) TestCartesianProduct_Three() {
+	expr, err := ParseExpression("Nat \\X Int \\X STRING")
+	s.NoError(err)
+
+	cp, ok := expr.(*ast.CartesianProduct)
+	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
+	s.Equal(3, len(cp.Operands))
+}
+
+func (s *TupleRecordSuite) TestCartesianProduct_String() {
+	expr, err := ParseExpression("Int \\X STRING")
+	s.NoError(err)
+
+	cp, ok := expr.(*ast.CartesianProduct)
+	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
+	s.Equal("Int × STRING", cp.String())
+	s.Equal("Int \\X STRING", cp.Ascii())
+}
+
+func (s *TupleRecordSuite) TestCartesianProduct_Validate() {
+	expr, err := ParseExpression("Int \\X STRING")
+	s.NoError(err)
+
+	cp, ok := expr.(*ast.CartesianProduct)
+	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
+	s.NoError(cp.Validate())
+}

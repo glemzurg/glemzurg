@@ -46,6 +46,7 @@ RootExpression <- ws? expr:Expression ws? !. {
 // 8.1: \ (set difference)
 // 8.2: ∩ (set intersection)
 // 8.3: ∪ (set union)
+// 8.5: × (cartesian product, tuple set construction, no a TLA+ operator, but give it a precedence)
 // 9:   .. (set range)
 //
 // Arithmetic and Bag operators (precedence 10-14):
@@ -392,7 +393,7 @@ SetIntersectionExpr <- left:SetUnionExpr rest:( ws? SetIntersectionOp ws? right:
 SetIntersectionOp <- ( "∩" / "\\intersect" / "\\cap" )
 
 // Set union: ∪ (at 8.3, left-associative)
-SetUnionExpr <- left:SetRangeExpr rest:( ws? SetUnionOp ws? right:SetRangeExpr )* {
+SetUnionExpr <- left:CartesianProductExpr rest:( ws? SetUnionOp ws? right:CartesianProductExpr )* {
 	result := left.(ast.Expression)
 	if rest != nil {
 		for _, r := range rest.([]interface{}) {
@@ -409,6 +410,24 @@ SetUnionExpr <- left:SetRangeExpr rest:( ws? SetUnionOp ws? right:SetRangeExpr )
 }
 
 SetUnionOp <- ( "∪" / "\\union" / "\\cup" )
+
+// Cartesian product: × or \X or \times (at 8.5, left-associative)
+// Int \X STRING = set of all <<Int, STRING>> tuples.
+// As a type expression, maps to TupleType.
+CartesianProductExpr <- left:SetRangeExpr rest:( ws? CartesianProductOp ws? right:SetRangeExpr )+ {
+	operands := []ast.Expression{left.(ast.Expression)}
+	for _, r := range rest.([]interface{}) {
+		parts := r.([]interface{})
+		operands = append(operands, parts[3].(ast.Expression))
+	}
+	return &ast.CartesianProduct{
+		Operands: operands,
+	}, nil
+} / left:SetRangeExpr {
+	return left.(ast.Expression), nil
+}
+
+CartesianProductOp <- ( "×" / "\\X" / "\\times" )
 
 // =============================================================================
 // Set Range (precedence 9)
@@ -769,9 +788,10 @@ TupleElements <- first:Expression rest:( ws? "," ws? expr:Expression )* {
 // Record Expressions
 // =============================================================================
 
-// RecordExpr: either a record literal [a |-> 1, b |-> 2] or a record EXCEPT [r EXCEPT !.x = 1]
-// We need to look ahead to distinguish them
-RecordExpr <- RecordAltered / RecordInstance
+// RecordExpr: record type [f: T], record literal [a |-> 1], or record EXCEPT [r EXCEPT !.x = 1]
+// RecordTypeExpr must be tried before RecordInstance because both start with "[" + identifier.
+// The colon after the first identifier disambiguates: [name: Type] vs [name |-> value].
+RecordExpr <- RecordAltered / RecordTypeExpr / RecordInstance
 
 // RecordAltered: [identifier EXCEPT !.field = expr, ...]
 // Pattern: [r EXCEPT !.count = @ + 1, !.total = @ * 2]
@@ -802,6 +822,35 @@ FieldAlteration <- "!" "." field:IdentifierName ws? "=" ws? expr:Expression {
 			Member: field.(string),
 		},
 		Expression: expr.(ast.Expression),
+	}, nil
+}
+
+// RecordTypeExpr: [field: type, field: type, ...]
+// Pattern: [name: STRING, age: Int]
+// Distinct from RecordInstance which uses |-> instead of :
+RecordTypeExpr <- "[" ws? fields:RecordTypeFields ws? "]" {
+	return &ast.RecordTypeExpr{
+		Fields: fields.([]*ast.RecordTypeField),
+	}, nil
+}
+
+// RecordTypeFields: comma-separated list of field: type
+RecordTypeFields <- first:RecordTypeFieldBinding rest:( ws? "," ws? field:RecordTypeFieldBinding )* {
+	fields := []*ast.RecordTypeField{first.(*ast.RecordTypeField)}
+	if rest != nil {
+		for _, r := range rest.([]interface{}) {
+			parts := r.([]interface{})
+			fields = append(fields, parts[3].(*ast.RecordTypeField))
+		}
+	}
+	return fields, nil
+}
+
+// RecordTypeFieldBinding: field: type
+RecordTypeFieldBinding <- name:IdentifierName ws? ":" ws? typeExpr:Expression {
+	return &ast.RecordTypeField{
+		Name: &ast.Identifier{Value: name.(string)},
+		Type: typeExpr.(ast.Expression),
 	}, nil
 }
 

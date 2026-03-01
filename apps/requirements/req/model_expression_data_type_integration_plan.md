@@ -354,7 +354,7 @@ type RecordTypeField struct {
     Name *Identifier
     Type Expression
 }
-```
+```f
 
 Implements `Expression` interface.
 
