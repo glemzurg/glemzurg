@@ -338,6 +338,13 @@ func lowerIdentifier(e *ast.Identifier, ctx *LowerContext) (me.Expression, error
 		return &me.NamedSetRef{SetKey: key}, nil
 	}
 
+	// Check well-known set constant names (Nat, Int, Real, BOOLEAN).
+	// The parser produces Identifier nodes for these since they are not
+	// reserved keywords in the PEG grammar.
+	if kind, ok := setConstantIdentifiers[name]; ok {
+		return &me.SetConstant{Kind: kind}, nil
+	}
+
 	return nil, fmt.Errorf("unresolved identifier: %q", name)
 }
 
@@ -375,6 +382,16 @@ func lowerPrimed(e *ast.Primed, ctx *LowerContext) (*me.NextState, error) {
 }
 
 // --- Binary operator lowering ---
+
+// setConstantIdentifiers maps well-known set constant names to their model enum.
+// The parser produces Identifier nodes for these since they are not reserved
+// keywords in the PEG grammar, so lowerIdentifier must recognize them.
+var setConstantIdentifiers = map[string]me.SetConstantKind{
+	"Nat":     me.SetConstantNat,
+	"Int":     me.SetConstantInt,
+	"Real":    me.SetConstantReal,
+	"BOOLEAN": me.SetConstantBoolean,
+}
 
 var arithOpMap = map[string]me.ArithOp{
 	"+": me.ArithAdd,
