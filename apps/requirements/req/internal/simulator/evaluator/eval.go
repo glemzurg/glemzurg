@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -71,12 +72,118 @@ func (r *EvalResult) HasPrimedBindings() bool {
 	return len(r.PrimedBindings) > 0
 }
 
-// Eval evaluates a TLA+ AST node and returns the result.
+// Eval evaluates a model expression and returns the result.
+// This is the primary evaluator entry point. It dispatches on the concrete
+// model_expression.Expression type to the appropriate handler.
+func Eval(node me.Expression, bindings *Bindings) *EvalResult {
+	switch n := node.(type) {
+
+	// === Literals ===
+	case *me.IntLiteral:
+		return evalIntLiteral(n)
+	case *me.RationalLiteral:
+		return evalRationalLiteral(n)
+	case *me.BoolLiteral:
+		return evalBoolLiteral(n)
+	case *me.StringLiteral:
+		return evalMEStringLiteral(n)
+	case *me.TupleLiteral:
+		return evalMETupleLiteral(n, bindings)
+	case *me.SetLiteral:
+		return evalMESetLiteral(n, bindings)
+	case *me.SetConstant:
+		return evalMESetConstant(n)
+	case *me.SetRange:
+		return evalMESetRange(n, bindings)
+	case *me.RecordLiteral:
+		return evalMERecordLiteral(n, bindings)
+
+	// === References ===
+	case *me.SelfRef:
+		return evalSelfRef(bindings)
+	case *me.AttributeRef:
+		return evalAttributeRef(n, bindings)
+	case *me.LocalVar:
+		return evalLocalVar(n, bindings)
+	case *me.PriorFieldValue:
+		return evalPriorFieldValue(n, bindings)
+	case *me.NextState:
+		return evalNextState(n, bindings)
+	case *me.NamedSetRef:
+		return evalNamedSetRef(n, bindings)
+
+	// === Binary operators ===
+	case *me.BinaryArith:
+		return evalMEBinaryArith(n, bindings)
+	case *me.BinaryLogic:
+		return evalMEBinaryLogic(n, bindings)
+	case *me.Compare:
+		return evalMECompare(n, bindings)
+	case *me.SetOp:
+		return evalMESetOp(n, bindings)
+	case *me.SetCompare:
+		return evalMESetCompare(n, bindings)
+	case *me.BagOp:
+		return evalMEBagOp(n, bindings)
+	case *me.BagCompare:
+		return evalMEBagCompare(n, bindings)
+	case *me.Membership:
+		return evalMEMembership(n, bindings)
+
+	// === Unary operators ===
+	case *me.Negate:
+		return evalMENegate(n, bindings)
+	case *me.Not:
+		return evalMENot(n, bindings)
+
+	// === Collections ===
+	case *me.FieldAccess:
+		return evalMEFieldAccess(n, bindings)
+	case *me.TupleIndex:
+		return evalMETupleIndex(n, bindings)
+	case *me.RecordUpdate:
+		return evalMERecordUpdate(n, bindings)
+	case *me.StringIndex:
+		return evalMEStringIndex(n, bindings)
+	case *me.StringConcat:
+		return evalMEStringConcat(n, bindings)
+	case *me.TupleConcat:
+		return evalMETupleConcat(n, bindings)
+
+	// === Control flow ===
+	case *me.IfThenElse:
+		return evalMEIfThenElse(n, bindings)
+	case *me.Case:
+		return evalMECase(n, bindings)
+
+	// === Quantifiers ===
+	case *me.Quantifier:
+		return evalMEQuantifier(n, bindings)
+	case *me.SetFilter:
+		return evalMESetFilter(n, bindings)
+
+	// === Calls ===
+	case *me.BuiltinCall:
+		return evalMEBuiltinCall(n, bindings)
+	case *me.GlobalCall:
+		return evalMEGlobalCall(n, bindings)
+	case *me.ActionCall:
+		return evalMEActionCall(n, bindings)
+
+	default:
+		return NewEvalError("unknown model expression type: %T", node)
+	}
+}
+
+// EvalAST evaluates a TLA+ AST node and returns the result.
+// This is the legacy evaluator that operates on AST nodes directly.
+// New code should use Eval() with model_expression.Expression instead.
+//
 // Valid root nodes are:
 // - *ast.Assignment: Primes a binding, returns EvalResult with PrimedBindings populated
 // - Logic nodes: Returns Boolean for assertion checks
 // Other nodes can be evaluated but are typically sub-expressions.
-func Eval(node ast.Node, bindings *Bindings) *EvalResult {
+func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 	switch n := node.(type) {
 
 	// === Root Nodes ===
@@ -200,12 +307,12 @@ func nativeBoolToBoolean(value bool) *object.Boolean {
 	return FALSE
 }
 
-// evalBuiltinCall evaluates a builtin function call.
+// evalBuiltinCall evaluates a builtin function call (AST version).
 func evalBuiltinCall(node *ast.BuiltinCall, bindings *Bindings) *EvalResult {
 	// Evaluate all arguments
 	args := make([]object.Object, len(node.Args))
 	for i, argExpr := range node.Args {
-		result := Eval(argExpr, bindings)
+		result := EvalAST(argExpr, bindings)
 		if result.IsError() {
 			return result
 		}

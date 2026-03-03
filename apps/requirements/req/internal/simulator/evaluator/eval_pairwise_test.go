@@ -42,7 +42,7 @@ func (s *PairwiseSuite) TestAssignment_WithTupleConcat() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.HasPrimedBindings())
@@ -69,7 +69,7 @@ func (s *PairwiseSuite) TestAssignment_WithTupleAppend() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.PrimedBindings["x"].(*object.Tuple)
@@ -89,7 +89,7 @@ func (s *PairwiseSuite) TestAssignment_WithRecordInstance() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.PrimedBindings["x"].(*object.Record)
@@ -109,7 +109,7 @@ func (s *PairwiseSuite) TestAssignment_WithIfElse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.PrimedBindings["x"].(*object.Number)
@@ -132,7 +132,7 @@ func (s *PairwiseSuite) TestAssignment_WithArithmetic() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.PrimedBindings["x"].(*object.Number)
@@ -158,7 +158,7 @@ func (s *PairwiseSuite) TestQuantifier_OverSetUnion() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -185,7 +185,7 @@ func (s *PairwiseSuite) TestQuantifier_OverSetConditional() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -208,7 +208,7 @@ func (s *PairwiseSuite) TestQuantifier_OverSetRange() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -234,7 +234,7 @@ func (s *PairwiseSuite) TestIfElse_ReturnsRecord() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)
@@ -257,7 +257,7 @@ func (s *PairwiseSuite) TestIfElse_ReturnsTuple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -282,7 +282,7 @@ func (s *PairwiseSuite) TestCase_ReturnsTuple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -318,7 +318,7 @@ func (s *PairwiseSuite) TestCase_ReturnsRecord() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)
@@ -340,7 +340,7 @@ func (s *PairwiseSuite) TestMembership_InSetUnion() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -360,7 +360,7 @@ func (s *PairwiseSuite) TestMembership_InSetIntersection() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -380,7 +380,7 @@ func (s *PairwiseSuite) TestMembership_InSetDifference() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -400,7 +400,7 @@ func (s *PairwiseSuite) TestNotMembership_InSetDifference() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -429,7 +429,7 @@ func (s *PairwiseSuite) TestSeqLen_InArithmetic() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -455,7 +455,7 @@ func (s *PairwiseSuite) TestSeqLen_InComparison() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -486,7 +486,7 @@ func (s *PairwiseSuite) TestRecordExcept_WithArithmetic() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	newRecord := result.Value.(*object.Record)
@@ -515,7 +515,7 @@ func (s *PairwiseSuite) TestRecordExcept_WithIfElse() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	newRecord := result.Value.(*object.Record)
@@ -540,7 +540,7 @@ func (s *PairwiseSuite) TestError_InSetConditional() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	// No error - just empty result (all elements fail predicate)
 	s.False(result.IsError())
@@ -574,7 +574,7 @@ func (s *PairwiseSuite) TestError_InQuantifier_BadType() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -589,7 +589,7 @@ func (s *PairwiseSuite) TestError_InAssignment_UndefinedVariable() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "not found")
@@ -608,7 +608,7 @@ func (s *PairwiseSuite) TestError_InRecordAltered_UndefinedVariable() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 }
@@ -621,7 +621,7 @@ func (s *PairwiseSuite) TestError_InFieldAccess_UndefinedVariable() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 }
@@ -639,7 +639,7 @@ func (s *PairwiseSuite) TestError_InTupleIndex_OutOfBounds() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "out of bounds")
@@ -654,7 +654,7 @@ func (s *PairwiseSuite) TestError_DivisionByZero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "division by zero")
@@ -679,7 +679,7 @@ func (s *PairwiseSuite) TestDeeplyNested_SetOperations() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -713,7 +713,7 @@ func (s *PairwiseSuite) TestDeeplyNested_TupleOperations() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -740,7 +740,7 @@ func (s *PairwiseSuite) TestDeeplyNested_LogicOperations() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -764,7 +764,7 @@ func (s *PairwiseSuite) TestStringConcat_InIfElse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -783,7 +783,7 @@ func (s *PairwiseSuite) TestStringIndex_InComparison() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.PrimedBindings["c"].(*object.String)

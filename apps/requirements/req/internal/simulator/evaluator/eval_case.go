@@ -9,7 +9,7 @@ import (
 func evalCase(node *ast.ExpressionCase, bindings *Bindings) *EvalResult {
 	// Evaluate each branch condition
 	for _, branch := range node.Branches {
-		condResult := Eval(branch.Condition, bindings)
+		condResult := EvalAST(branch.Condition, bindings)
 		if condResult.IsError() {
 			return condResult
 		}
@@ -20,13 +20,13 @@ func evalCase(node *ast.ExpressionCase, bindings *Bindings) *EvalResult {
 		}
 
 		if condBool.Value() {
-			return Eval(branch.Result, bindings)
+			return EvalAST(branch.Result, bindings)
 		}
 	}
 
 	// No branch matched - check for OTHER clause
 	if node.Other != nil {
-		return Eval(node.Other, bindings)
+		return EvalAST(node.Other, bindings)
 	}
 
 	return NewEvalError("CASE: no branch matched and no OTHER clause")

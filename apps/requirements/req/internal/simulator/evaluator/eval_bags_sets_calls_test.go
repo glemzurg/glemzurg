@@ -30,7 +30,7 @@ func (s *BagsSetsCallsSuite) TestSetConditional_FilterAll() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -49,7 +49,7 @@ func (s *BagsSetsCallsSuite) TestSetConditional_FilterNone() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -68,7 +68,7 @@ func (s *BagsSetsCallsSuite) TestSetConditional_EmptySource() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -91,7 +91,7 @@ func (s *BagsSetsCallsSuite) TestSetConditional_WithComparisonPredicate() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -323,7 +323,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagComparison_ProperSubbag() {
 		Right:    &ast.Identifier{Value: "b"},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
 	s.True(b.Value())
@@ -349,7 +349,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagComparison_SubbagEq() {
 		Right:    &ast.Identifier{Value: "b"},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
 	s.True(b.Value()) // Equal bags, so subbag-or-equal is true
@@ -374,7 +374,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagComparison_ProperSuperbag() {
 		Right:    &ast.Identifier{Value: "b"},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
 	s.True(b.Value())
@@ -400,7 +400,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagComparison_SuperbagEq() {
 		Right:    &ast.Identifier{Value: "b"},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
 	s.True(b.Value()) // Equal bags, so superbag-or-equal is true
@@ -533,7 +533,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagOperation_Sum() {
 		Right:    &ast.Identifier{Value: "b"},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	resultBag := result.Value.(*object.Bag)
 	// {1:1, 2:1} ⊕ {2:1, 3:1} = {1:1, 2:2, 3:1}
@@ -560,7 +560,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagOperation_Difference() {
 		Right:    &ast.Identifier{Value: "b"},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	resultBag := result.Value.(*object.Bag)
 	// {1:1, 2:2} ⊖ {2:1} = {1:1, 2:1}
@@ -582,7 +582,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_NotImplemented() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "not yet implemented")
@@ -602,7 +602,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_WithClass() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "MyClass!New")
@@ -621,7 +621,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_ModelScope() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "_Initialize")
@@ -642,7 +642,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_FullyScoped() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "MyDomain!MySub!MyClass!DoSomething")

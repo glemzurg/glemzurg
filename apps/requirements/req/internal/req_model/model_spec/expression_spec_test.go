@@ -69,7 +69,7 @@ func (s *ExpressionSpecTestSuite) TestValidate() {
 			testName: "error invalid expression",
 			spec: ExpressionSpec{
 				Notation:   "tla_plus",
-				Expression: &model_expression.RationalLiteral{Numerator: 1, Denominator: 0},
+				Expression: &model_expression.RationalLiteral{}, // nil Value
 			},
 			errstr: "ExpressionSpec.Expression",
 		},

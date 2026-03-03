@@ -1,6 +1,10 @@
 package model_expression
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+import (
+	"math/big"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+)
 
 // --- Supporting types (not Expression nodes themselves) ---
 
@@ -34,16 +38,15 @@ func (n *BoolLiteral) NodeType() string   { return NodeBoolLiteral }
 
 // IntLiteral represents an integer constant.
 type IntLiteral struct {
-	Value int64
+	Value *big.Int
 }
 
 func (n *IntLiteral) expressionNode()    {}
 func (n *IntLiteral) NodeType() string   { return NodeIntLiteral }
 
-// RationalLiteral represents a rational number (numerator/denominator).
+// RationalLiteral represents a rational number.
 type RationalLiteral struct {
-	Numerator   int64
-	Denominator int64
+	Value *big.Rat
 }
 
 func (n *RationalLiteral) expressionNode()    {}

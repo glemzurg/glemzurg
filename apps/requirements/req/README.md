@@ -23,7 +23,9 @@ deeply examine the data type to expression type separation
       - update the use cases if needed
 
   - replace all fmt.Errorf() with errors.Errorf()
-  
+
+add complexity linter to req
+
 feb (in parallel)
   - create complete model
     - make ast notation neutral

@@ -5,12 +5,17 @@ import "fmt"
 // --- Literal validation ---
 
 func (n *BoolLiteral) Validate() error     { return nil }
-func (n *IntLiteral) Validate() error      { return nil }
+func (n *IntLiteral) Validate() error {
+	if n.Value == nil {
+		return fmt.Errorf("IntLiteral.Value: is required")
+	}
+	return nil
+}
 func (n *StringLiteral) Validate() error   { return nil }
 
 func (n *RationalLiteral) Validate() error {
-	if n.Denominator == 0 {
-		return fmt.Errorf("RationalLiteral: denominator cannot be zero")
+	if n.Value == nil {
+		return fmt.Errorf("RationalLiteral.Value: is required")
 	}
 	return nil
 }

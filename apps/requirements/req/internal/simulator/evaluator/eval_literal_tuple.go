@@ -10,7 +10,7 @@ func evalTupleLiteral(node *ast.TupleLiteral, bindings *Bindings) *EvalResult {
 	elements := make([]object.Object, 0, len(node.Elements))
 
 	for _, elemExpr := range node.Elements {
-		result := Eval(elemExpr, bindings)
+		result := EvalAST(elemExpr, bindings)
 		if result.IsError() {
 			return result
 		}

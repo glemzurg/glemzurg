@@ -7,12 +7,12 @@ import (
 
 // evalStringIndex evaluates string[index].
 func evalStringIndex(node *ast.StringIndex, bindings *Bindings) *EvalResult {
-	strResult := Eval(node.Str, bindings)
+	strResult := EvalAST(node.Str, bindings)
 	if strResult.IsError() {
 		return strResult
 	}
 
-	indexResult := Eval(node.Index, bindings)
+	indexResult := EvalAST(node.Index, bindings)
 	if indexResult.IsError() {
 		return indexResult
 	}

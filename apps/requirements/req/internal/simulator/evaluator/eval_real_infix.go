@@ -7,12 +7,12 @@ import (
 
 // evalRealInfix evaluates an arithmetic infix expression.
 func evalRealInfix(node *ast.RealInfixExpression, bindings *Bindings) *EvalResult {
-	leftResult := Eval(node.Left, bindings)
+	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult
 	}
 
-	rightResult := Eval(node.Right, bindings)
+	rightResult := EvalAST(node.Right, bindings)
 	if rightResult.IsError() {
 		return rightResult
 	}

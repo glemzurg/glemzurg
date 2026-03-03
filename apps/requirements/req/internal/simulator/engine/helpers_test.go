@@ -1,8 +1,11 @@
 package engine
 
 import (
+	"fmt"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
@@ -125,7 +128,11 @@ func testModel(classes ...struct {
 		domainKey: domain,
 	}
 
-	return &model
+	m := &model
+	if err := convert.LowerModel(m); err != nil {
+		panic(fmt.Sprintf("LowerModel failed: %v", err))
+	}
+	return m
 }
 
 // classEntry is a helper for testModel's variadic parameter.
@@ -137,6 +144,21 @@ func classEntry(class model_class.Class, key identity.Key) struct {
 		class model_class.Class
 		key   identity.Key
 	}{class, key}
+}
+
+// lowerClass wraps a class in a temporary model and lowers all expressions.
+// Returns the class with lowered expressions.
+func lowerClass(class model_class.Class, classKey identity.Key) model_class.Class {
+	m := testModel(classEntry(class, classKey))
+	// testModel already calls LowerModel, so just extract the class back.
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for _, c := range subdomain.Classes {
+				return c
+			}
+		}
+	}
+	panic("no class found after lowering")
 }
 
 // testSubdomainKey returns the standard test subdomain key.

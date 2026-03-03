@@ -75,7 +75,8 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 }
 
 // TestDerivedAttributeEmptySpecification verifies that NewDerivedAttributeEvaluator
-// returns an error when an attribute has a DerivationPolicy with an empty Specification.
+// silently skips an attribute with a DerivationPolicy that has an empty Specification.
+// After LowerModel, empty specs remain with nil Expression and are skipped.
 func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
@@ -100,9 +101,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.Error(err)
-	s.Nil(dae)
-	s.Contains(err.Error(), "DerivationPolicy parse error")
+	s.NoError(err)
+	s.NotNil(dae)
+	// Empty specification is silently skipped — no derived attributes.
+	s.False(dae.HasDerivedAttributes())
 }
 
 // TestDerivedAttributeRejectsPrimedVars verifies that NewDerivedAttributeEvaluator

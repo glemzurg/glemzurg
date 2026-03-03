@@ -12,7 +12,7 @@ func evalRecordInstance(node *ast.RecordInstance, bindings *Bindings) *EvalResul
 	for _, binding := range node.Bindings {
 		fieldName := binding.Field.Value
 
-		result := Eval(binding.Expression, bindings)
+		result := EvalAST(binding.Expression, bindings)
 		if result.IsError() {
 			return result
 		}

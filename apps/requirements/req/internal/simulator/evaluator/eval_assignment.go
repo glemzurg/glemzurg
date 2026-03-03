@@ -8,7 +8,7 @@ import (
 // This is one of the two valid root nodes.
 func evalAssignment(node *ast.Assignment, bindings *Bindings) *EvalResult {
 	// Evaluate the value expression
-	valueResult := Eval(node.Value, bindings)
+	valueResult := EvalAST(node.Value, bindings)
 	if valueResult.IsError() {
 		return valueResult
 	}

@@ -25,7 +25,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_TrueCondition() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("1", result.Value.Inspect())
@@ -36,7 +36,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_FalseCondition() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("2", result.Value.Inspect())
@@ -49,7 +49,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_WithComparison() {
 	// Test with positive x
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(5), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("5", result.Value.Inspect())
@@ -57,7 +57,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_WithComparison() {
 	// Test with negative x
 	bindings2 := NewBindings()
 	bindings2.Set("x", object.NewInteger(-5), NamespaceGlobal)
-	result2 := Eval(expr, bindings2)
+	result2 := EvalAST(expr, bindings2)
 
 	s.False(result2.IsError(), "unexpected error: %v", result2.Error)
 	s.Equal("5", result2.Value.Inspect()) // -(-5) = 5
@@ -71,19 +71,19 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_Nested() {
 	// Positive
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(5), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.Equal("1", result.Value.Inspect())
 
 	// Negative
 	bindings2 := NewBindings()
 	bindings2.Set("x", object.NewInteger(-5), NamespaceGlobal)
-	result2 := Eval(expr, bindings2)
+	result2 := EvalAST(expr, bindings2)
 	s.Equal("-1", result2.Value.Inspect())
 
 	// Zero
 	bindings3 := NewBindings()
 	bindings3.Set("x", object.NewInteger(0), NamespaceGlobal)
-	result3 := Eval(expr, bindings3)
+	result3 := EvalAST(expr, bindings3)
 	s.Equal("0", result3.Value.Inspect())
 }
 
@@ -92,7 +92,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_NonBooleanCondition() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "Boolean")
@@ -108,7 +108,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_FirstMatch() {
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(5), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("1", result.Value.Inspect())
@@ -120,7 +120,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_SecondMatch() {
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(-5), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("2", result.Value.Inspect())
@@ -132,7 +132,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_OtherMatch() {
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(0), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("0", result.Value.Inspect())
@@ -144,7 +144,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_NoMatchNoOther() {
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(0), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "no branch matched")
@@ -157,13 +157,13 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_WithExpressions() {
 	// Positive
 	bindings := NewBindings()
 	bindings.Set("n", object.NewInteger(5), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.Equal("10", result.Value.Inspect()) // 5 * 2 = 10
 
 	// Negative
 	bindings2 := NewBindings()
 	bindings2.Set("n", object.NewInteger(-5), NamespaceGlobal)
-	result2 := Eval(expr, bindings2)
+	result2 := EvalAST(expr, bindings2)
 	s.Equal("5", result2.Value.Inspect()) // -(-5) = 5
 }
 
@@ -176,7 +176,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Len() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("3", result.Value.Inspect())
@@ -194,7 +194,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Len_Variable() {
 		object.NewInteger(4),
 		object.NewInteger(5),
 	}), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("5", result.Value.Inspect())
@@ -205,7 +205,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Head() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("1", result.Value.Inspect())
@@ -216,7 +216,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Tail() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -231,7 +231,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Append() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -246,7 +246,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Nested() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("2", result.Value.Inspect()) // Tail has 2 elements
@@ -257,7 +257,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Stack_Push() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -271,7 +271,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Stack_Pop() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("1", result.Value.Inspect()) // Returns top element
@@ -282,7 +282,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Queue_Enqueue() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -296,7 +296,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Queue_Dequeue() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("1", result.Value.Inspect()) // Returns front element
@@ -307,7 +307,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_UnknownFunction() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "unknown function")
@@ -327,7 +327,7 @@ func (s *ControlFlowEvalSuite) TestCombined_IfWithFunctionCall() {
 		object.NewInteger(42),
 		object.NewInteger(43),
 	}), NamespaceGlobal)
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("42", result.Value.Inspect())
@@ -335,7 +335,7 @@ func (s *ControlFlowEvalSuite) TestCombined_IfWithFunctionCall() {
 	// Empty sequence
 	bindings2 := NewBindings()
 	bindings2.Set("seq", object.NewTupleFromElements([]object.Object{}), NamespaceGlobal)
-	result2 := Eval(expr, bindings2)
+	result2 := EvalAST(expr, bindings2)
 
 	s.False(result2.IsError(), "unexpected error: %v", result2.Error)
 	s.Equal("0", result2.Value.Inspect())
@@ -347,7 +347,7 @@ func (s *ControlFlowEvalSuite) TestCombined_FunctionCallInQuantifier() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)

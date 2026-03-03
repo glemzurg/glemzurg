@@ -62,7 +62,7 @@ func parseIntegerPart(node *ast.NumberLiteral) (int64, error) {
 // evalNumericPrefixExpression evaluates a numeric prefix expression (negation).
 func evalNumericPrefixExpression(node *ast.NumericPrefixExpression, bindings *Bindings) *EvalResult {
 	// Evaluate the right operand
-	rightResult := Eval(node.Right, bindings)
+	rightResult := EvalAST(node.Right, bindings)
 	if rightResult.IsError() {
 		return rightResult
 	}
@@ -84,13 +84,13 @@ func evalNumericPrefixExpression(node *ast.NumericPrefixExpression, bindings *Bi
 // evalFractionExpr evaluates a fraction expression (a/b).
 func evalFractionExpr(node *ast.FractionExpr, bindings *Bindings) *EvalResult {
 	// Evaluate numerator
-	numResult := Eval(node.Numerator, bindings)
+	numResult := EvalAST(node.Numerator, bindings)
 	if numResult.IsError() {
 		return numResult
 	}
 
 	// Evaluate denominator
-	denomResult := Eval(node.Denominator, bindings)
+	denomResult := EvalAST(node.Denominator, bindings)
 	if denomResult.IsError() {
 		return denomResult
 	}
@@ -115,5 +115,5 @@ func evalFractionExpr(node *ast.FractionExpr, bindings *Bindings) *EvalResult {
 
 // evalParenExpr evaluates a parenthesized expression.
 func evalParenExpr(node *ast.ParenExpr, bindings *Bindings) *EvalResult {
-	return Eval(node.Inner, bindings)
+	return EvalAST(node.Inner, bindings)
 }

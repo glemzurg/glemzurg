@@ -14,7 +14,7 @@ func evalStringInfix(node *ast.StringInfixExpression, bindings *Bindings) *EvalR
 	// Evaluate and concatenate all operands
 	var result string
 	for i, operand := range node.Operands {
-		opResult := Eval(operand, bindings)
+		opResult := EvalAST(operand, bindings)
 		if opResult.IsError() {
 			return opResult
 		}

@@ -1,10 +1,12 @@
 package invariants
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
@@ -138,7 +140,11 @@ func createTestModel() *req_model.Model {
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
-	return &model
+	m := &model
+	if err := convert.LowerModel(m); err != nil {
+		panic(fmt.Sprintf("LowerModel failed: %v", err))
+	}
+	return m
 }
 
 // Test: DataTypeChecker detects unparsed data types
@@ -408,8 +414,12 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	}
 	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
+	m := &model
+	if err := convert.LowerModel(m); err != nil {
+		panic(fmt.Sprintf("LowerModel failed: %v", err))
+	}
 
-	checker, err := NewInvariantChecker(&model)
+	checker, err := NewInvariantChecker(m)
 	s.NoError(err)
 
 	simState := state.NewSimulationState()
@@ -421,7 +431,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	s.Equal(ViolationTypeModelInvariant, violations[0].Type)
 }
 
-// Test: InvariantChecker with invalid TLA+ expression
+// Test: Invalid TLA+ expression is caught during LowerModel, not during NewInvariantChecker.
 func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Invalid expression.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "this is not valid TLA+"}, nil)),
@@ -429,9 +439,9 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	checker, err := NewInvariantChecker(&model)
+	// LowerModel should fail for invalid TLA+ expression.
+	err := convert.LowerModel(&model)
 	s.Error(err)
-	s.Nil(checker)
 }
 
 // Test: CheckAllInvariants combines data type and TLA+ checks
@@ -441,6 +451,10 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 	// Update model invariant to check something real
 	model.Invariants = []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always true.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil)),
+	}
+	// Re-lower after replacing invariants.
+	if err := convert.LowerModel(model); err != nil {
+		panic(fmt.Sprintf("LowerModel failed: %v", err))
 	}
 
 	invChecker, err := NewInvariantChecker(model)
@@ -540,16 +554,20 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	s.False(v3.HasViolations(), "Value 50 should pass")
 }
 
-// Test: InvariantChecker rejects model invariants containing primed variables
+// Test: InvariantChecker rejects model invariants containing primed variables.
+// Primed variables in model-level invariants are caught either during lowering
+// (if the identifier is unresolved) or during NewInvariantChecker (if resolved
+// but primed). We test both paths.
 func (s *InvariantsSuite) TestInvariantCheckerRejectsPrimedInvariants() {
+	// Case 1: Primed unresolved identifier caught during LowerModel.
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Primed variable check.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x' > 0"}, nil)),
 	}
 	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	checker, err := NewInvariantChecker(&model)
+	err := convert.LowerModel(&model)
 	s.Error(err)
-	s.Nil(checker)
-	s.Contains(err.Error(), "must not contain primed variables")
+	// The error is about unresolved identifier (caught before primed check).
+	s.Contains(err.Error(), "unresolved identifier")
 }

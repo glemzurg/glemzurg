@@ -37,7 +37,7 @@ func (s *NumberLiteralSuite) TestNumberLiteral_DecimalInteger() {
 				Base:        ast.BaseDecimal,
 				IntegerPart: tt.integerPart,
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -70,7 +70,7 @@ func (s *NumberLiteralSuite) TestNumberLiteral_DecimalWithFraction() {
 				HasDecimalPoint: true,
 				FractionalPart:  tt.fractionalPart,
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -100,7 +100,7 @@ func (s *NumberLiteralSuite) TestNumberLiteral_BinaryBase() {
 				BasePrefix:  tt.prefix,
 				IntegerPart: tt.integerPart,
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -129,7 +129,7 @@ func (s *NumberLiteralSuite) TestNumberLiteral_OctalBase() {
 				BasePrefix:  tt.prefix,
 				IntegerPart: tt.integerPart,
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -159,7 +159,7 @@ func (s *NumberLiteralSuite) TestNumberLiteral_HexBase() {
 				BasePrefix:  tt.prefix,
 				IntegerPart: tt.integerPart,
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -185,7 +185,7 @@ func (s *NumberLiteralSuite) TestNumberLiteral_InvalidDigits() {
 				Base:        tt.base,
 				IntegerPart: tt.integerPart,
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.True(result.IsError())
 			s.Contains(result.Error.Message, "invalid")
@@ -217,7 +217,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_Negation() {
 				Base:        ast.BaseDecimal,
 				IntegerPart: intToString(tt.value),
 			}
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -236,7 +236,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_DoubleNegation() {
 			Right:    &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 		},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -255,7 +255,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_NegateDecimal() {
 			FractionalPart:  "14",
 		},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -268,7 +268,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_NegateNonNumeric() {
 		Operator: "-",
 		Right:    &ast.StringLiteral{Value: "hello"},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "cannot negate non-numeric")
@@ -279,7 +279,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_UnknownOperator() {
 		Operator: "+",
 		Right:    &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "unknown numeric prefix operator")
@@ -307,7 +307,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_Simple() {
 				&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: intToString(tt.numerator)},
 				&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: intToString(tt.denominator)},
 			)
-			result := Eval(node, NewBindings())
+			result := EvalAST(node, NewBindings())
 
 			s.False(result.IsError())
 			num := result.Value.(*object.Number)
@@ -323,7 +323,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NegativeNumerator() {
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}),
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -337,7 +337,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NegativeDenominator() {
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}),
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -351,7 +351,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_BothNegative() {
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}),
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}),
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -364,7 +364,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_DivisionByZero() {
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "0"},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "division by zero")
@@ -375,7 +375,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NonNumericNumerator() {
 		&ast.StringLiteral{Value: "hello"},
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "numerator must be numeric")
@@ -386,7 +386,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NonNumericDenominator() {
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		&ast.StringLiteral{Value: "hello"},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "denominator must be numeric")
@@ -401,7 +401,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NestedFractions() {
 		),
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -414,7 +414,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_DecimalOperands() {
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1", HasDecimalPoint: true, FractionalPart: "5"},
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "0", HasDecimalPoint: true, FractionalPart: "5"},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -428,7 +428,7 @@ func (s *NumberLiteralSuite) TestParenExpr_Number() {
 	node := &ast.ParenExpr{
 		Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -439,7 +439,7 @@ func (s *NumberLiteralSuite) TestParenExpr_String() {
 	node := &ast.ParenExpr{
 		Inner: &ast.StringLiteral{Value: "hello"},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -450,7 +450,7 @@ func (s *NumberLiteralSuite) TestParenExpr_Boolean() {
 	node := &ast.ParenExpr{
 		Inner: &ast.BooleanLiteral{Value: true},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -464,7 +464,7 @@ func (s *NumberLiteralSuite) TestParenExpr_NestedParens() {
 			Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 		},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -479,7 +479,7 @@ func (s *NumberLiteralSuite) TestParenExpr_WithNegation() {
 			Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 		},
 	}
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -492,7 +492,7 @@ func (s *NumberLiteralSuite) TestParenExpr_WithFraction() {
 		&ast.ParenExpr{Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}},
 		&ast.ParenExpr{Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}},
 	)
-	result := Eval(node, NewBindings())
+	result := EvalAST(node, NewBindings())
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)

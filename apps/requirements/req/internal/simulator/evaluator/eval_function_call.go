@@ -20,7 +20,7 @@ func evalFunctionCall(node *ast.FunctionCall, bindings *Bindings) *EvalResult {
 	// Evaluate all arguments
 	args := make([]object.Object, len(node.Args))
 	for i, argExpr := range node.Args {
-		result := Eval(argExpr, bindings)
+		result := EvalAST(argExpr, bindings)
 		if result.IsError() {
 			return result
 		}

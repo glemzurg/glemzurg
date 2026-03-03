@@ -21,7 +21,7 @@ func evalSetConditional(node *ast.SetConditional, bindings *Bindings) *EvalResul
 	varName := varIdent.Value
 
 	// Evaluate the source set
-	setResult := Eval(membership.Right, bindings)
+	setResult := EvalAST(membership.Right, bindings)
 	if setResult.IsError() {
 		return setResult
 	}
@@ -37,7 +37,7 @@ func evalSetConditional(node *ast.SetConditional, bindings *Bindings) *EvalResul
 		childBindings := NewEnclosedBindings(bindings)
 		childBindings.Set(varName, elem, NamespaceLocal)
 
-		predResult := Eval(node.Predicate, childBindings)
+		predResult := EvalAST(node.Predicate, childBindings)
 		if predResult.IsError() {
 			return predResult
 		}

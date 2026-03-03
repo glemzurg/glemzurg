@@ -27,7 +27,7 @@ func (s *CollectionsSuite) TestSetUnion_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -46,7 +46,7 @@ func (s *CollectionsSuite) TestSetUnion_EmptySet() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -64,7 +64,7 @@ func (s *CollectionsSuite) TestSetIntersection_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -82,7 +82,7 @@ func (s *CollectionsSuite) TestSetIntersection_Disjoint() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -100,7 +100,7 @@ func (s *CollectionsSuite) TestSetDifference_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -119,7 +119,7 @@ func (s *CollectionsSuite) TestSetDifference_NoOverlap() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -142,7 +142,7 @@ func (s *CollectionsSuite) TestSetNested_UnionIntersection() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -161,7 +161,7 @@ func (s *CollectionsSuite) TestMembership_Contains() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -177,7 +177,7 @@ func (s *CollectionsSuite) TestMembership_NotContains() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -193,7 +193,7 @@ func (s *CollectionsSuite) TestMembership_NotIn() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -211,7 +211,7 @@ func (s *CollectionsSuite) TestSetSubset() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -227,7 +227,7 @@ func (s *CollectionsSuite) TestSetSubsetEqual() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -243,7 +243,7 @@ func (s *CollectionsSuite) TestSetProperSubset() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -259,7 +259,7 @@ func (s *CollectionsSuite) TestSetProperSubsetEqual_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -275,7 +275,7 @@ func (s *CollectionsSuite) TestSetEquals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -291,7 +291,7 @@ func (s *CollectionsSuite) TestSetNotEquals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -374,7 +374,7 @@ func (s *CollectionsSuite) TestSetWithStrings() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)

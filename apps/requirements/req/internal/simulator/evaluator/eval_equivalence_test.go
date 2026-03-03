@@ -29,7 +29,7 @@ func (s *EquivalenceSuite) TestEquivalence_TrueTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -44,7 +44,7 @@ func (s *EquivalenceSuite) TestEquivalence_TrueFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -59,7 +59,7 @@ func (s *EquivalenceSuite) TestEquivalence_FalseTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -74,7 +74,7 @@ func (s *EquivalenceSuite) TestEquivalence_FalseFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -97,7 +97,7 @@ func (s *EquivalenceSuite) TestEquivalence_WithAndExpressions() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -116,7 +116,7 @@ func (s *EquivalenceSuite) TestEquivalence_WithOrExpressions() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -134,7 +134,7 @@ func (s *EquivalenceSuite) TestEquivalence_WithNotExpressions() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -155,7 +155,7 @@ func (s *EquivalenceSuite) TestEquivalence_DoubleNegation() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -182,7 +182,7 @@ func (s *EquivalenceSuite) TestEquivalence_WithComparisons() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -205,7 +205,7 @@ func (s *EquivalenceSuite) TestEquivalence_ComparisonMismatch() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -228,7 +228,7 @@ func (s *EquivalenceSuite) TestEquivalence_LessOrEqualVsGreaterOrEqual() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -251,7 +251,7 @@ func (s *EquivalenceSuite) TestEquivalence_WithEquality() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -274,7 +274,7 @@ func (s *EquivalenceSuite) TestEquivalence_EqualityVsNotEquality() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -297,7 +297,7 @@ func (s *EquivalenceSuite) TestEquivalence_Chained() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -316,7 +316,7 @@ func (s *EquivalenceSuite) TestEquivalence_ChainedFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -339,7 +339,7 @@ func (s *EquivalenceSuite) TestEquivalence_WithImplication() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -359,7 +359,7 @@ func (s *EquivalenceSuite) TestEquivalence_ImplicationTautology() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -379,7 +379,7 @@ func (s *EquivalenceSuite) TestEquivalence_VacuousImplication() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -418,7 +418,7 @@ func (s *EquivalenceSuite) TestEquivalence_DeMorganLaw1() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -453,7 +453,7 @@ func (s *EquivalenceSuite) TestEquivalence_DeMorganLaw2() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -472,7 +472,7 @@ func (s *EquivalenceSuite) TestEquivalence_AsciiOperator() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -487,7 +487,7 @@ func (s *EquivalenceSuite) TestEquivalence_AsciiOperator_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())

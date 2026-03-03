@@ -7,7 +7,7 @@ import (
 
 // evalLogicPrefix evaluates a logic prefix expression (¬).
 func evalLogicPrefix(node *ast.LogicPrefixExpression, bindings *Bindings) *EvalResult {
-	result := Eval(node.Right, bindings)
+	result := EvalAST(node.Right, bindings)
 	if result.IsError() {
 		return result
 	}

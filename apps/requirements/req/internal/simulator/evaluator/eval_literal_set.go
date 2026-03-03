@@ -10,7 +10,7 @@ func evalSetLiteral(node *ast.SetLiteral, bindings *Bindings) *EvalResult {
 	elements := make([]object.Object, 0, len(node.Elements))
 
 	for _, elemExpr := range node.Elements {
-		result := Eval(elemExpr, bindings)
+		result := EvalAST(elemExpr, bindings)
 		if result.IsError() {
 			return result
 		}
@@ -23,7 +23,7 @@ func evalSetLiteral(node *ast.SetLiteral, bindings *Bindings) *EvalResult {
 // evalSetRangeExpr evaluates a dynamic set range expression (start..end).
 func evalSetRangeExpr(node *ast.SetRangeExpr, bindings *Bindings) *EvalResult {
 	// Evaluate start
-	startResult := Eval(node.Start, bindings)
+	startResult := EvalAST(node.Start, bindings)
 	if startResult.IsError() {
 		return startResult
 	}
@@ -39,7 +39,7 @@ func evalSetRangeExpr(node *ast.SetRangeExpr, bindings *Bindings) *EvalResult {
 	}
 
 	// Evaluate end
-	endResult := Eval(node.End, bindings)
+	endResult := EvalAST(node.End, bindings)
 	if endResult.IsError() {
 		return endResult
 	}

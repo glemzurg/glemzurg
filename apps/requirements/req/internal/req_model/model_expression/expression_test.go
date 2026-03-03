@@ -1,6 +1,7 @@
 package model_expression
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,20 +56,21 @@ func (s *ExpressionTestSuite) TestValidateLiterals() {
 	}{
 		{testName: "valid bool literal true", expr: &BoolLiteral{Value: true}},
 		{testName: "valid bool literal false", expr: &BoolLiteral{Value: false}},
-		{testName: "valid int literal", expr: &IntLiteral{Value: 42}},
-		{testName: "valid int literal zero", expr: &IntLiteral{Value: 0}},
+		{testName: "valid int literal", expr: &IntLiteral{Value: big.NewInt(42)}},
+		{testName: "valid int literal zero", expr: &IntLiteral{Value: big.NewInt(0)}},
+		{testName: "error int literal nil", expr: &IntLiteral{}, errstr: "IntLiteral.Value: is required"},
 		{testName: "valid string literal", expr: &StringLiteral{Value: "hello"}},
 		{testName: "valid string literal empty", expr: &StringLiteral{Value: ""}},
-		{testName: "valid rational", expr: &RationalLiteral{Numerator: 1, Denominator: 3}},
-		{testName: "error rational zero denominator", expr: &RationalLiteral{Numerator: 1, Denominator: 0}, errstr: "denominator cannot be zero"},
+		{testName: "valid rational", expr: &RationalLiteral{Value: big.NewRat(1, 3)}},
+		{testName: "error rational nil", expr: &RationalLiteral{}, errstr: "RationalLiteral.Value: is required"},
 		{testName: "valid set literal empty", expr: &SetLiteral{}},
-		{testName: "valid set literal with elements", expr: &SetLiteral{Elements: []Expression{&IntLiteral{Value: 1}, &IntLiteral{Value: 2}}}},
+		{testName: "valid set literal with elements", expr: &SetLiteral{Elements: []Expression{&IntLiteral{Value: big.NewInt(1)}, &IntLiteral{Value: big.NewInt(2)}}}},
 		{testName: "error set literal nil element", expr: &SetLiteral{Elements: []Expression{nil}}, errstr: "Elements[0]: is required"},
-		{testName: "valid tuple literal", expr: &TupleLiteral{Elements: []Expression{&IntLiteral{Value: 1}}}},
+		{testName: "valid tuple literal", expr: &TupleLiteral{Elements: []Expression{&IntLiteral{Value: big.NewInt(1)}}}},
 		{testName: "error tuple literal empty", expr: &TupleLiteral{}, errstr: "Elements"},
-		{testName: "valid record literal", expr: &RecordLiteral{Fields: []RecordField{{Name: "x", Value: &IntLiteral{Value: 1}}}}},
+		{testName: "valid record literal", expr: &RecordLiteral{Fields: []RecordField{{Name: "x", Value: &IntLiteral{Value: big.NewInt(1)}}}}},
 		{testName: "error record literal empty", expr: &RecordLiteral{}, errstr: "Fields"},
-		{testName: "error record literal missing name", expr: &RecordLiteral{Fields: []RecordField{{Value: &IntLiteral{Value: 1}}}}, errstr: "Name: is required"},
+		{testName: "error record literal missing name", expr: &RecordLiteral{Fields: []RecordField{{Value: &IntLiteral{Value: big.NewInt(1)}}}}, errstr: "Name: is required"},
 		{testName: "error record literal nil value", expr: &RecordLiteral{Fields: []RecordField{{Name: "x"}}}, errstr: "Value: is required"},
 		{testName: "valid set constant nat", expr: &SetConstant{Kind: SetConstantNat}},
 		{testName: "valid set constant boolean", expr: &SetConstant{Kind: SetConstantBoolean}},
@@ -117,8 +119,8 @@ func (s *ExpressionTestSuite) TestValidateReferences() {
 }
 
 func (s *ExpressionTestSuite) TestValidateBinaryOps() {
-	left := &IntLiteral{Value: 1}
-	right := &IntLiteral{Value: 2}
+	left := &IntLiteral{Value: big.NewInt(1)}
+	right := &IntLiteral{Value: big.NewInt(2)}
 	boolLeft := &BoolLiteral{Value: true}
 	boolRight := &BoolLiteral{Value: false}
 
@@ -163,7 +165,7 @@ func (s *ExpressionTestSuite) TestValidateUnaryOps() {
 		expr     Expression
 		errstr   string
 	}{
-		{testName: "valid negate", expr: &Negate{Expr: &IntLiteral{Value: 1}}},
+		{testName: "valid negate", expr: &Negate{Expr: &IntLiteral{Value: big.NewInt(1)}}},
 		{testName: "error negate nil", expr: &Negate{}, errstr: "Expr: is required"},
 		{testName: "valid not", expr: &Not{Expr: &BoolLiteral{Value: true}}},
 		{testName: "error not nil", expr: &Not{}, errstr: "Expr: is required"},
@@ -183,7 +185,7 @@ func (s *ExpressionTestSuite) TestValidateUnaryOps() {
 
 func (s *ExpressionTestSuite) TestValidateCollections() {
 	base := &SelfRef{}
-	idx := &IntLiteral{Value: 1}
+	idx := &IntLiteral{Value: big.NewInt(1)}
 
 	tests := []struct {
 		testName string
@@ -217,7 +219,7 @@ func (s *ExpressionTestSuite) TestValidateCollections() {
 
 func (s *ExpressionTestSuite) TestValidateControlFlow() {
 	cond := &BoolLiteral{Value: true}
-	val := &IntLiteral{Value: 1}
+	val := &IntLiteral{Value: big.NewInt(1)}
 
 	tests := []struct {
 		testName string
@@ -250,8 +252,8 @@ func (s *ExpressionTestSuite) TestValidateControlFlow() {
 func (s *ExpressionTestSuite) TestValidateQuantifiers() {
 	domain := &SetConstant{Kind: SetConstantNat}
 	pred := &BoolLiteral{Value: true}
-	start := &IntLiteral{Value: 1}
-	end := &IntLiteral{Value: 10}
+	start := &IntLiteral{Value: big.NewInt(1)}
+	end := &IntLiteral{Value: big.NewInt(10)}
 
 	tests := []struct {
 		testName string
@@ -285,7 +287,7 @@ func (s *ExpressionTestSuite) TestValidateQuantifiers() {
 }
 
 func (s *ExpressionTestSuite) TestValidateCalls() {
-	arg := &IntLiteral{Value: 1}
+	arg := &IntLiteral{Value: big.NewInt(1)}
 
 	tests := []struct {
 		testName string
@@ -321,7 +323,7 @@ func (s *ExpressionTestSuite) TestValidateExpression() {
 	// Test the ValidateExpression helper function.
 	s.NoError(ValidateExpression(nil))
 	s.NoError(ValidateExpression(&BoolLiteral{Value: true}))
-	s.Error(ValidateExpression(&RationalLiteral{Numerator: 1, Denominator: 0}))
+	s.Error(ValidateExpression(&RationalLiteral{}))
 }
 
 func (s *ExpressionTestSuite) TestNodeType() {
@@ -341,15 +343,15 @@ func (s *ExpressionTestSuite) TestNodeType() {
 func (s *ExpressionTestSuite) TestRecursiveValidation() {
 	// Ensure validation propagates through nested expressions.
 	// Build a tree with an invalid leaf deep inside.
-	invalidLeaf := &RationalLiteral{Numerator: 1, Denominator: 0}
+	invalidLeaf := &RationalLiteral{} // nil Value
 	tree := &BinaryArith{
 		Op:   ArithAdd,
-		Left: &IntLiteral{Value: 1},
+		Left: &IntLiteral{Value: big.NewInt(1)},
 		Right: &Negate{
 			Expr: invalidLeaf,
 		},
 	}
 	err := tree.Validate()
 	s.Error(err)
-	s.Contains(err.Error(), "denominator cannot be zero")
+	s.Contains(err.Error(), "RationalLiteral.Value: is required")
 }

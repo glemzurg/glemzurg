@@ -33,7 +33,7 @@ func (s *QuantifiersCaseSuite) TestForAll_AllTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -53,7 +53,7 @@ func (s *QuantifiersCaseSuite) TestForAll_SomeFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -73,7 +73,7 @@ func (s *QuantifiersCaseSuite) TestForAll_EmptySet() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -95,7 +95,7 @@ func (s *QuantifiersCaseSuite) TestExists_SomeTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -115,7 +115,7 @@ func (s *QuantifiersCaseSuite) TestExists_NoneTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -135,7 +135,7 @@ func (s *QuantifiersCaseSuite) TestExists_EmptySet() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -160,7 +160,7 @@ func (s *QuantifiersCaseSuite) TestCase_FirstBranchMatches() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -183,7 +183,7 @@ func (s *QuantifiersCaseSuite) TestCase_SecondBranchMatches() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -207,7 +207,7 @@ func (s *QuantifiersCaseSuite) TestCase_OtherBranch() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -230,7 +230,7 @@ func (s *QuantifiersCaseSuite) TestCase_NoMatchNoOther_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "no branch matched")
@@ -252,7 +252,7 @@ func (s *QuantifiersCaseSuite) TestCase_WithStringResults() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -280,7 +280,7 @@ func (s *QuantifiersCaseSuite) TestCase_WithRecordResults() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)
@@ -347,7 +347,7 @@ func (s *QuantifiersCaseSuite) TestForAll_WithComparison() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -373,7 +373,7 @@ func (s *QuantifiersCaseSuite) TestCase_WithNestedIfElse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -399,7 +399,7 @@ func (s *QuantifiersCaseSuite) TestForAll_WithLogicInfix() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -423,7 +423,7 @@ func (s *QuantifiersCaseSuite) TestExists_WithLogicOr() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)

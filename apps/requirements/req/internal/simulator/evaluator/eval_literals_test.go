@@ -22,7 +22,7 @@ func (s *LiteralsSuite) TestStringLiteral_Simple() {
 	node := &ast.StringLiteral{Value: "hello"}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -33,7 +33,7 @@ func (s *LiteralsSuite) TestStringLiteral_Empty() {
 	node := &ast.StringLiteral{Value: ""}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -44,7 +44,7 @@ func (s *LiteralsSuite) TestStringLiteral_Unicode() {
 	node := &ast.StringLiteral{Value: "hello 世界"}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -57,7 +57,7 @@ func (s *LiteralsSuite) TestBooleanLiteral_True() {
 	node := &ast.BooleanLiteral{Value: true}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -68,7 +68,7 @@ func (s *LiteralsSuite) TestBooleanLiteral_False() {
 	node := &ast.BooleanLiteral{Value: false}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -81,7 +81,7 @@ func (s *LiteralsSuite) TestTupleLiteral_Empty() {
 	node := &ast.TupleLiteral{Elements: []ast.Expression{}}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -96,7 +96,7 @@ func (s *LiteralsSuite) TestTupleLiteral_SingleElement() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -116,7 +116,7 @@ func (s *LiteralsSuite) TestTupleLiteral_MultipleElements() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -139,7 +139,7 @@ func (s *LiteralsSuite) TestSetLiteralInt_Empty() {
 	node := &ast.SetLiteralInt{Values: []int{}}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -150,7 +150,7 @@ func (s *LiteralsSuite) TestSetLiteralInt_SingleElement() {
 	node := &ast.SetLiteralInt{Values: []int{42}}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -162,7 +162,7 @@ func (s *LiteralsSuite) TestSetLiteralInt_MultipleElements() {
 	node := &ast.SetLiteralInt{Values: []int{1, 2, 3}}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -177,7 +177,7 @@ func (s *LiteralsSuite) TestSetLiteralInt_Duplicates() {
 	node := &ast.SetLiteralInt{Values: []int{1, 1, 2, 2, 3}}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -188,7 +188,7 @@ func (s *LiteralsSuite) TestSetLiteralEnum_Simple() {
 	node := &ast.SetLiteralEnum{Values: []string{"red", "green", "blue"}}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -205,7 +205,7 @@ func (s *LiteralsSuite) TestSetRange_Simple() {
 	node := &ast.SetRange{Start: 1, End: 5}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -220,7 +220,7 @@ func (s *LiteralsSuite) TestSetRange_SingleElement() {
 	node := &ast.SetRange{Start: 5, End: 5}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -233,7 +233,7 @@ func (s *LiteralsSuite) TestSetRange_Negative() {
 	node := &ast.SetRange{Start: -2, End: 2}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -249,7 +249,7 @@ func (s *LiteralsSuite) TestSetConstant_BOOLEAN() {
 	node := &ast.SetConstant{Value: "BOOLEAN"}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	set := result.Value.(*object.Set)
@@ -263,7 +263,7 @@ func (s *LiteralsSuite) TestSetConstant_Nat_Error() {
 	node := &ast.SetConstant{Value: "Nat"}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "infinite set")
@@ -280,7 +280,7 @@ func (s *LiteralsSuite) TestRecordInstance_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)
@@ -303,7 +303,7 @@ func (s *LiteralsSuite) TestRecordInstance_MixedTypes() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)

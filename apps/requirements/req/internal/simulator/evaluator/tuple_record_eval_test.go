@@ -25,7 +25,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_Empty() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -38,7 +38,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_Integers() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -55,7 +55,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_WithVariables() {
 	bindings.Set("y", object.NewInteger(20), NamespaceGlobal)
 	bindings.Set("z", object.NewInteger(30), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -73,7 +73,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_WithExpressions() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -88,7 +88,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_Nested() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -116,7 +116,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_First() {
 		object.NewInteger(30),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -135,7 +135,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_Middle() {
 		object.NewInteger(30),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -154,7 +154,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_Last() {
 		object.NewInteger(30),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -172,7 +172,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_OutOfBounds() {
 		object.NewInteger(20),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "out of bounds")
@@ -183,7 +183,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_LiteralTuple() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -203,7 +203,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_WithExpressionIndex() {
 	}), NamespaceGlobal)
 	bindings.Set("i", object.NewInteger(1), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -228,7 +228,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_Chained() {
 		}),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -245,7 +245,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_Single() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -263,7 +263,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_Multiple() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -287,7 +287,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_WithExpressions() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -308,7 +308,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_WithVariables() {
 	bindings.Set("x", object.NewInteger(100), NamespaceGlobal)
 	bindings.Set("y", object.NewInteger(200), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -323,7 +323,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_Nested() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -351,7 +351,7 @@ func (s *TupleRecordEvalSuite) TestRecordFieldAccess() {
 		"age":  object.NewInteger(30),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	str, ok := result.Value.(*object.String)
@@ -373,7 +373,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_Simple() {
 		"name":  object.NewString("test"),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -396,7 +396,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_Multiple() {
 		"z": object.NewInteger(3),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -417,7 +417,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_WithAt() {
 		"count": object.NewInteger(41),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -436,7 +436,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_MultipleWithAt() {
 		"total": object.NewInteger(50),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -458,7 +458,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_DoesNotMutateOriginal() {
 	bindings := NewBindings()
 	bindings.Set("r", originalRecord, NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	newRecord, ok := result.Value.(*object.Record)
@@ -480,7 +480,7 @@ func (s *TupleRecordEvalSuite) TestCombined_RecordWithTuple() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record, ok := result.Value.(*object.Record)
@@ -497,7 +497,7 @@ func (s *TupleRecordEvalSuite) TestCombined_TupleWithRecords() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	tuple, ok := result.Value.(*object.Tuple)
@@ -526,7 +526,7 @@ func (s *TupleRecordEvalSuite) TestCombined_AccessTupleInRecord() {
 		}),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num, ok := result.Value.(*object.Number)
@@ -549,7 +549,7 @@ func (s *TupleRecordEvalSuite) TestCombined_AccessRecordInTuple() {
 		}),
 	}), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	str, ok := result.Value.(*object.String)

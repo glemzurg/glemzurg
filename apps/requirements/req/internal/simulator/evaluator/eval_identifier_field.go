@@ -15,7 +15,7 @@ func evalFieldIdentifier(node *ast.FieldIdentifier, bindings *Bindings) *EvalRes
 
 	if base != nil {
 		// Evaluate the base expression
-		result := Eval(base, bindings)
+		result := EvalAST(base, bindings)
 		if result.IsError() {
 			return result
 		}

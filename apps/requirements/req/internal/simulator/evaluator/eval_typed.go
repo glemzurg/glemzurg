@@ -875,7 +875,7 @@ func evalTypedAssignment(typed *typechecker.TypedNode, bindings *Bindings) *Eval
 		valueResult = evalTypedNode(typed.Children[0], bindings)
 	} else {
 		// Fallback for untyped value
-		valueResult = Eval(n.Value, bindings)
+		valueResult = EvalAST(n.Value, bindings)
 	}
 
 	if valueResult.IsError() {

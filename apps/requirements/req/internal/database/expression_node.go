@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/pkg/errors"
 
@@ -200,9 +201,9 @@ func (ctx *rebuildContext) buildNode(key string) (me.Expression, error) {
 	case me.NodeBoolLiteral:
 		return &me.BoolLiteral{Value: derefBool(row.boolValue)}, nil
 	case me.NodeIntLiteral:
-		return &me.IntLiteral{Value: derefInt64(row.intValue)}, nil
+		return &me.IntLiteral{Value: big.NewInt(derefInt64(row.intValue))}, nil
 	case me.NodeRationalLiteral:
-		return &me.RationalLiteral{Numerator: derefInt64(row.numerator), Denominator: derefInt64(row.denominator)}, nil
+		return &me.RationalLiteral{Value: big.NewRat(derefInt64(row.numerator), derefInt64(row.denominator))}, nil
 	case me.NodeStringLiteral:
 		return &me.StringLiteral{Value: derefString(row.stringValue)}, nil
 	case me.NodeSetLiteral:
@@ -627,10 +628,13 @@ func flattenExprRecursive(logicKey identity.Key, parentKey *string, expr me.Expr
 	case *me.BoolLiteral:
 		row.boolValue = &n.Value
 	case *me.IntLiteral:
-		row.intValue = &n.Value
+		v := n.Value.Int64()
+		row.intValue = &v
 	case *me.RationalLiteral:
-		row.numerator = &n.Numerator
-		row.denominator = &n.Denominator
+		num := n.Value.Num().Int64()
+		den := n.Value.Denom().Int64()
+		row.numerator = &num
+		row.denominator = &den
 	case *me.StringLiteral:
 		row.stringValue = exprStrPtr(n.Value)
 	case *me.SetLiteral:

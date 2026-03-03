@@ -60,6 +60,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	})
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
+	class = lowerClass(class, classKey)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()
@@ -106,6 +107,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	})
 	class.SetQueries(map[identity.Key]model_state.Query{})
 	class.SetTransitions(map[identity.Key]model_state.Transition{})
+	class = lowerClass(class, classKey)
 
 	simState := state.NewSimulationState()
 	attrs := object.NewRecord()

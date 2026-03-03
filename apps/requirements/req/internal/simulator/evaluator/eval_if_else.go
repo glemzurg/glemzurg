@@ -7,7 +7,7 @@ import (
 
 // evalIfElse evaluates IF condition THEN expr ELSE expr.
 func evalIfElse(node *ast.ExpressionIfElse, bindings *Bindings) *EvalResult {
-	condResult := Eval(node.Condition, bindings)
+	condResult := EvalAST(node.Condition, bindings)
 	if condResult.IsError() {
 		return condResult
 	}
@@ -18,7 +18,7 @@ func evalIfElse(node *ast.ExpressionIfElse, bindings *Bindings) *EvalResult {
 	}
 
 	if condBool.Value() {
-		return Eval(node.Then, bindings)
+		return EvalAST(node.Then, bindings)
 	}
-	return Eval(node.Else, bindings)
+	return EvalAST(node.Else, bindings)
 }

@@ -27,7 +27,7 @@ func (s *RecordsControlSuite) TestIfElse_TrueCondition() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -43,7 +43,7 @@ func (s *RecordsControlSuite) TestIfElse_FalseCondition() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -63,7 +63,7 @@ func (s *RecordsControlSuite) TestIfElse_NestedCondition() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -84,7 +84,7 @@ func (s *RecordsControlSuite) TestIfElse_NestedIfElse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(outer, bindings)
+	result := EvalAST(outer, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -111,7 +111,7 @@ func (s *RecordsControlSuite) TestRecordExcept_SimpleUpdate() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	newRecord := result.Value.(*object.Record)
@@ -146,7 +146,7 @@ func (s *RecordsControlSuite) TestRecordExcept_MultipleUpdates() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	newRecord := result.Value.(*object.Record)
@@ -170,7 +170,7 @@ func (s *RecordsControlSuite) TestAssignment_Simple() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(10), NamespaceGlobal)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.HasPrimedBindings())
@@ -192,7 +192,7 @@ func (s *RecordsControlSuite) TestAssignment_NewVariable() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.Equal("100", result.PrimedBindings["y"].Inspect())
@@ -218,7 +218,7 @@ func (s *RecordsControlSuite) TestIfElse_WithRecords() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)
@@ -235,7 +235,7 @@ func (s *RecordsControlSuite) TestStringIndex_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -250,7 +250,7 @@ func (s *RecordsControlSuite) TestStringIndex_Middle() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -265,7 +265,7 @@ func (s *RecordsControlSuite) TestStringIndex_OutOfBounds() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "out of bounds")
@@ -283,7 +283,7 @@ func (s *RecordsControlSuite) TestStringConcat_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)

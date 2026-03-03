@@ -29,7 +29,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_EvalSimple() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -42,7 +42,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_EvalNotFound() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "identifier not found")
@@ -61,7 +61,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_EvalSelf() {
 	bindings := NewBindings()
 	innerBindings := bindings.WithSelf(selfRecord)
 
-	result := Eval(expr, innerBindings)
+	result := EvalAST(expr, innerBindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	record := result.Value.(*object.Record)
@@ -81,7 +81,7 @@ func (s *IdentifierEvalSuite) TestExistingValue_Eval() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(existingValue)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -94,7 +94,7 @@ func (s *IdentifierEvalSuite) TestExistingValue_OutsideExceptContext() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "EXCEPT context")
@@ -117,7 +117,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_Eval() {
 	bindings := NewBindings()
 	bindings.Set("person", personRecord, NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	str := result.Value.(*object.String)
@@ -136,7 +136,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_FieldNotFound() {
 	bindings := NewBindings()
 	bindings.Set("person", personRecord, NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "field not found")
@@ -150,7 +150,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_NotARecord() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "requires Record")
@@ -169,7 +169,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_ExistingValue() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(existingRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	str := result.Value.(*object.String)
@@ -189,7 +189,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_InArithmeticExpr() {
 	bindings.Set("x", object.NewNatural(10), NamespaceGlobal)
 	bindings.Set("y", object.NewNatural(5), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -205,7 +205,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_InComparisonExpr() {
 	bindings := NewBindings()
 	bindings.Set("age", object.NewNatural(25), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -221,7 +221,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_InLogicExpr() {
 	bindings.Set("a", object.NewBoolean(true), NamespaceGlobal)
 	bindings.Set("b", object.NewBoolean(false), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -241,7 +241,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_InComparisonExpr() {
 	bindings := NewBindings()
 	bindings.Set("person", personRecord, NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -256,7 +256,7 @@ func (s *IdentifierEvalSuite) TestExistingValue_InArithmeticExpr() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(object.NewNatural(41))
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -275,7 +275,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_ExistingValueInExpr() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(existingRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -295,7 +295,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_Equality() {
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 	bindings.Set("y", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -311,7 +311,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_NotEqual() {
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 	bindings.Set("y", object.NewNatural(43), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -330,7 +330,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_Negation() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -345,7 +345,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_LogicNegation() {
 	bindings := NewBindings()
 	bindings.Set("flag", object.NewBoolean(true), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -374,7 +374,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_Chained() {
 	bindings := NewBindings()
 	bindings.Set("person", personRecord, NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	str := result.Value.(*object.String)
@@ -397,7 +397,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_ChainedExistingValue() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(outerRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -416,7 +416,7 @@ func (s *IdentifierEvalSuite) TestPrimed_ReadCurrentValue() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -432,7 +432,7 @@ func (s *IdentifierEvalSuite) TestPrimed_ReadPrimedValue() {
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 	bindings.SetPrimed("x", object.NewNatural(100))
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -447,7 +447,7 @@ func (s *IdentifierEvalSuite) TestPrimed_InExpression() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(41), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -460,7 +460,7 @@ func (s *IdentifierEvalSuite) TestPrimed_UndefinedVariable() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "identifier not found")
@@ -478,7 +478,7 @@ func (s *IdentifierEvalSuite) TestPrimed_FieldAccess() {
 	bindings := NewBindings()
 	bindings.Set("record", recordObj, NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -505,7 +505,7 @@ func (s *IdentifierEvalSuite) TestPrimed_FieldAccessWithPrimedRecord() {
 	bindings.Set("record", currentRecord, NamespaceGlobal)
 	bindings.SetPrimed("record", primedRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)
@@ -533,7 +533,7 @@ func (s *IdentifierEvalSuite) TestPrimed_CompareCurrentAndNextState() {
 	bindings.Set("record", currentRecord, NamespaceGlobal)
 	bindings.SetPrimed("record", primedRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -560,7 +560,7 @@ func (s *IdentifierEvalSuite) TestPrimed_CompareCurrentAndNextState_NotIncreased
 	bindings.Set("record", currentRecord, NamespaceGlobal)
 	bindings.SetPrimed("record", primedRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b := result.Value.(*object.Boolean)
@@ -593,7 +593,7 @@ func (s *IdentifierEvalSuite) TestPrimed_ChainedFieldAccessWithPrimedRecord() {
 	bindings.Set("record", currentRecord, NamespaceGlobal)
 	bindings.SetPrimed("record", primedRecord)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	num := result.Value.(*object.Number)

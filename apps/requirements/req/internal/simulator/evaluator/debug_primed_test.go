@@ -40,20 +40,20 @@ func TestDebugPrimed(t *testing.T) {
 	bindings.SetPrimed("record", primedRecord)
 
 	// Evaluate left (record.value')
-	leftResult := Eval(comp.Left, bindings)
+	leftResult := EvalAST(comp.Left, bindings)
 	if leftResult.IsError() {
 		t.Fatalf("Left eval error: %v", leftResult.Error.Message)
 	}
 	fmt.Printf("Left result: %v\n", leftResult.Value.Inspect())
 
 	// Evaluate right (record.value)
-	rightResult := Eval(comp.Right, bindings)
+	rightResult := EvalAST(comp.Right, bindings)
 	if rightResult.IsError() {
 		t.Fatalf("Right eval error: %v", rightResult.Error.Message)
 	}
 	fmt.Printf("Right result: %v\n", rightResult.Value.Inspect())
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	if result.IsError() {
 		t.Fatalf("Eval error: %v", result.Error.Message)
 	}

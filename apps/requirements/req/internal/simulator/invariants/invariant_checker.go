@@ -4,16 +4,15 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
-// InvariantChecker evaluates TLA+ invariants against simulation state.
+// InvariantChecker evaluates invariants against simulation state.
 // It checks:
 //   - Model-level invariants (Model.Invariants)
 //   - Action post-condition guarantees
@@ -22,100 +21,59 @@ type InvariantChecker struct {
 	// model is the requirements model containing invariant definitions
 	model *req_model.Model
 
-	// parsedInvariants caches parsed model invariant expressions
-	parsedInvariants []ast.Expression
+	// parsedInvariants caches pre-lowered model invariant expressions
+	parsedInvariants []me.Expression
 
-	// actionPostConditions maps action key to parsed post-condition expressions
+	// actionPostConditions maps action key to post-condition expressions
 	actionPostConditions map[identity.Key][]parsedGuarantee
 
-	// queryPostConditions maps query key to parsed post-condition expressions
+	// queryPostConditions maps query key to post-condition expressions
 	queryPostConditions map[identity.Key][]parsedGuarantee
 
 	// classNameMap maps class keys to class names for bindings
 	classNameMap map[identity.Key]string
 }
 
-// parsedGuarantee holds a parsed guarantee expression with its metadata
+// parsedGuarantee holds a lowered guarantee expression with its metadata
 type parsedGuarantee struct {
-	expression ast.Expression
-	index      int  // Index in the original guarantees array
-	isPrimed   bool // True if this is a primed assignment, false if post-condition
+	expression me.Expression
+	spec       string // original specification string for error messages
+	index      int    // Index in the original guarantees array
+	isPrimed   bool   // True if this is a primed assignment, false if post-condition
 }
 
 // NewInvariantChecker creates a new invariant checker from a model.
-// Returns an error if any TLA+ expression fails to parse.
+// The model must have been lowered (LowerModel called) so that
+// ExpressionSpec.Expression fields are populated.
 func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
 		model:                model,
-		parsedInvariants:     make([]ast.Expression, 0, len(model.Invariants)),
+		parsedInvariants:     make([]me.Expression, 0, len(model.Invariants)),
 		actionPostConditions: make(map[identity.Key][]parsedGuarantee),
 		queryPostConditions:  make(map[identity.Key][]parsedGuarantee),
 		classNameMap:         make(map[identity.Key]string),
 	}
 
-	// Parse model invariants
+	// Load model invariants from pre-lowered expressions
 	for i, inv := range model.Invariants {
-		expr, err := parser.ParseExpression(inv.Spec.Specification)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse model invariant %d: %w", i, err)
+		expr := inv.Spec.Expression
+		if expr == nil {
+			if inv.Spec.Specification == "" {
+				continue // Skip empty specs
+			}
+			return nil, fmt.Errorf("model invariant %d: expression not lowered", i)
 		}
-		if model_bridge.ContainsAnyPrimed(expr) {
+		if model_bridge.ContainsAnyPrimedME(expr) {
 			return nil, fmt.Errorf("model invariant %d must not contain primed variables: %s", i, inv.Spec.Specification)
 		}
 		checker.parsedInvariants = append(checker.parsedInvariants, expr)
 	}
 
-	// Iterate through all classes to collect actions, queries, and class names
+	// Iterate through all classes to collect class names
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {
 				checker.classNameMap[class.Key] = class.Name
-
-				// Parse action post-conditions
-				for _, action := range class.Actions {
-					guarantees := make([]parsedGuarantee, 0)
-					for i, guar := range action.Guarantees {
-						expr, err := parser.ParseExpression(guar.Spec.Specification)
-						if err != nil {
-							return nil, fmt.Errorf("failed to parse action %s guarantee %d: %w", action.Name, i, err)
-						}
-
-						kind := model_bridge.ClassifyGuarantee(expr)
-						if kind == model_bridge.GuaranteePostCondition {
-							guarantees = append(guarantees, parsedGuarantee{
-								expression: expr,
-								index:      i,
-								isPrimed:   false,
-							})
-						}
-					}
-					if len(guarantees) > 0 {
-						checker.actionPostConditions[action.Key] = guarantees
-					}
-				}
-
-				// Parse query post-conditions
-				for _, query := range class.Queries {
-					guarantees := make([]parsedGuarantee, 0)
-					for i, guar := range query.Guarantees {
-						expr, err := parser.ParseExpression(guar.Spec.Specification)
-						if err != nil {
-							return nil, fmt.Errorf("failed to parse query %s guarantee %d: %w", query.Name, i, err)
-						}
-
-						kind := model_bridge.ClassifyGuarantee(expr)
-						if kind == model_bridge.GuaranteePostCondition {
-							guarantees = append(guarantees, parsedGuarantee{
-								expression: expr,
-								index:      i,
-								isPrimed:   false,
-							})
-						}
-					}
-					if len(guarantees) > 0 {
-						checker.queryPostConditions[query.Key] = guarantees
-					}
-				}
 			}
 		}
 	}
@@ -197,7 +155,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 				actionKey,
 				actionName,
 				g.index,
-				expressionToString(g.expression),
+				g.spec,
 				instance.ID,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
@@ -216,7 +174,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 				actionKey,
 				actionName,
 				g.index,
-				expressionToString(g.expression),
+				g.spec,
 				instance.ID,
 				message,
 			))
@@ -259,7 +217,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 				queryKey,
 				queryName,
 				g.index,
-				expressionToString(g.expression),
+				g.spec,
 				instance.ID,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
@@ -278,7 +236,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 				queryKey,
 				queryName,
 				g.index,
-				expressionToString(g.expression),
+				g.spec,
 				instance.ID,
 				message,
 			))
@@ -330,19 +288,6 @@ func isTrueBoolean(obj object.Object) bool {
 		return false
 	}
 	return b.Value()
-}
-
-// expressionToString converts an AST expression to a string representation.
-// This is used for error messages when we don't have the original source.
-func expressionToString(expr ast.Expression) string {
-	if expr == nil {
-		return "<nil>"
-	}
-	// Use the String() method if available, otherwise use the type name
-	if stringer, ok := expr.(fmt.Stringer); ok {
-		return stringer.String()
-	}
-	return fmt.Sprintf("<%T>", expr)
 }
 
 // GetActionPostConditionCount returns the number of post-conditions for an action.

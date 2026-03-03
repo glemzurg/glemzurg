@@ -8,7 +8,7 @@ import (
 // evalRecordAltered evaluates an EXCEPT expression [id EXCEPT !.field = expr, ...].
 func evalRecordAltered(node *ast.RecordAltered, bindings *Bindings) *EvalResult {
 	// Evaluate the base record
-	baseResult := Eval(node.Identifier, bindings)
+	baseResult := EvalAST(node.Identifier, bindings)
 	if baseResult.IsError() {
 		return baseResult
 	}
@@ -39,7 +39,7 @@ func evalRecordAltered(node *ast.RecordAltered, bindings *Bindings) *EvalResult 
 		}
 
 		// Evaluate the new value
-		newValueResult := Eval(alt.Expression, childBindings)
+		newValueResult := EvalAST(alt.Expression, childBindings)
 		if newValueResult.IsError() {
 			return newValueResult
 		}
