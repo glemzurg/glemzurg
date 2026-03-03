@@ -1600,6 +1600,11 @@ Following the project's standard build order (Model → test_helper → Database
 9. **Type checker integration** — Use declared ExpressionTypes when available; bridge to simulator/types
 10. **LET/IN** — Implement as shared local variable scope (prerequisite for complex expression patterns)
 
+**Already completed (see [Completed Infrastructure](#completed-infrastructure-tla-expression-lowering-pass) section):**
+- ~~**TLA+ expression lowering pass**~~ — `ast.Expression` → `model_expression.Expression` conversion with semantic resolution
+- ~~**Model population**~~ — `LowerModel()` walks model tree and populates all `ExpressionSpec.Expression` fields
+- ~~**Simulator rewiring**~~ — Evaluator consumes `model_expression.Expression` instead of `ast.Expression`
+
 ### Blast Radius
 
 TypeSpec on DataType is a pointer (nil = no precise type). TargetTypeSpec on Logic is the same. Refactoring Logic to use ExpressionSpec groups existing fields — no semantic change. This means:
@@ -1624,6 +1629,49 @@ Another alternative is to add a `DataType` field to expression nodes that produc
 1. Types belong to declarations (attributes, parameters), not to individual expression nodes.
 2. Interior expression nodes have types derived from their children — storing types on every node is redundant and error-prone.
 3. This would massively increase the expression_node table width and row count.
+
+---
+
+## Completed Infrastructure: TLA+ Expression Lowering Pass
+
+The lowering pass that converts `notation/tla_plus/ast.Expression` → `model_expression.Expression` is fully implemented. This was a prerequisite infrastructure piece not originally scoped in this design document, but it underpins the entire `model_expression` pipeline.
+
+### What Exists Now
+
+**Package: `internal/notation/tla_plus/convert/`**
+
+- `lower.go` — `Lower(expr ast.Expression, ctx *LowerContext) (model_expression.Expression, error)` — converts a single AST expression tree to a model_expression tree with semantic resolution via `LowerContext`
+- `lower_model.go` — `LowerModel(model *req_model.Model) error` — walks the entire model tree, parses all TLA+ specification strings, and populates every `ExpressionSpec.Expression` field
+- Tests for both
+
+**`LowerContext`** provides class-level and model-level context for semantic identifier resolution:
+- `AttributeNames` (name → `identity.Key`) — identifiers matching attribute names resolve to `AttributeRef`
+- `ActionNames`, `QueryNames` — for same-class action/query call resolution
+- `ParameterNames` — for action/query parameter resolution to `LocalVar`
+- `GlobalFunctions`, `NamedSets` — for model-level resolution to `GlobalCall`/`NamedSetRef`
+- `AllActions` — for cross-class action call resolution via fully-qualified TLA+ names
+- Quantifier/SetFilter variable bindings shadow attribute names during recursion
+
+**`model_expression` node types use `math/big`:**
+- `IntLiteral.Value` is `*big.Int` (not `int64`)
+- `RationalLiteral.Value` is `*big.Rat` (not separate numerator/denominator)
+- Aligns with the simulator's runtime `Number` type
+
+**Simulator rewired to consume `model_expression`:**
+- The evaluator dispatches on `model_expression.Expression` (38 node types) instead of `ast.Expression`
+- All callers (executor, guard evaluator, invariant checker, derived evaluator) use pre-lowered expressions from the model
+- `Definition.Body` in the registry is `model_expression.Expression`
+- The evaluator no longer imports `notation/tla_plus/ast` — clean notation/evaluation separation
+
+### Implications for This Design
+
+1. **`ExpressionSpec.Expression` is live** — After `LowerModel()` runs, all Logic objects in the model have their `Expression` field populated. Any new `ExpressionSpec` locations (e.g., NamedSet.Spec, attribute invariant Logic) will be automatically lowered by extending `LowerModel()`'s walk.
+
+2. **`LowerContext` already supports `NamedSets`** — When NamedSet entities are added to the model (this design's Stage 1E), the lowering pass will resolve `Identifier("IsoStateAbbr")` → `NamedSetRef{SetKey}` using the pre-populated `NamedSets` map.
+
+3. **The evaluator is model_expression-native** — Adding evaluation handlers for new node types (e.g., `NamedSetRef` evaluation) only requires adding cases to the `model_expression` evaluator. No AST changes needed.
+
+4. **Strict identifier resolution** — `Lower()` errors on unresolved identifiers. Test fixtures and new Logic objects must declare all referenced identifiers (attributes, parameters) in their context.
 
 ---
 

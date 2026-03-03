@@ -910,7 +910,7 @@ These are deferred to future sessions:
 
 5. **notation/ast → notation/tla_plus/ast restructuring** — DONE. Moved to `notation/tla_plus/ast/` and `notation/tla_plus/parser/`.
 
-6. **TLA+ lowering/raising passes** — Converting between notation/tla_plus/ast and model_expression.
+6. ~~**TLA+ lowering/raising passes**~~ — DONE. The full lowering pipeline (`ast.Expression` → `model_expression.Expression`) is implemented in `notation/tla_plus/convert/`. See [Completed: TLA+ Lowering Pass](#completed-tla-lowering-pass) below for details.
 
 7. **Test model enrichment** — Adding precise types, named sets, and TargetTypeSpecs to the test models for comprehensive end-to-end testing. Should happen incrementally as each stage completes.
 
@@ -937,6 +937,84 @@ These are deferred to future sessions:
 18. **NamedSetRef.ResolveType()** — Function to resolve `NamedSetRef` type nodes to the actual structural type at type-checking time.
 
 19. ~~**expression_node.named_set_key column**~~ — Addressed: added to Stage 5A (items 7 and 8).
+
+---
+
+## Completed: TLA+ Lowering Pass
+
+The full pipeline for converting `notation/tla_plus/ast.Expression` → `model_expression.Expression` is implemented and the simulator is rewired to consume `model_expression` nodes instead of AST nodes. This work was done on the `feature/intermediate-representation` branch across multiple sessions.
+
+### What Was Built
+
+**Stage 0: `model_expression` uses `math/big`**
+- `IntLiteral.Value` changed from `int64` to `*big.Int`
+- `RationalLiteral` changed from `Numerator/Denominator int64` to `Value *big.Rat`
+- Aligns with the simulator's runtime `Number` type which uses `*big.Rat`
+
+**Stage 1: Lowering pass — `internal/notation/tla_plus/convert/`**
+
+New files:
+- `convert/lower.go` — `Lower(expr ast.Expression, ctx *LowerContext) (model_expression.Expression, error)` — single-pass converter with class context for semantic resolution
+- `convert/lower_test.go` — comprehensive test suite
+
+`LowerContext` carries:
+- `ClassKey`, `AttributeNames` (name → `identity.Key`), `ActionNames`, `QueryNames` — for resolving identifiers to `AttributeRef`/`ActionCall`/etc.
+- `ParameterNames` — for resolving action/query parameters to `LocalVar`
+- `GlobalFunctions`, `NamedSets` — for model-level resolution
+- `AllActions` — for cross-class action call resolution (fully-qualified TLA+ names)
+
+Key behaviors:
+- `Identifier("self")` → `SelfRef{}`
+- `Identifier(attrName)` → `AttributeRef{Key}` (when in class context and not quantifier-bound)
+- `Identifier(paramName)` → `LocalVar{Name}` (when in action/query parameter scope)
+- Quantifier/SetFilter variable bindings shadow attribute names during recursion
+- `Parenthesized` nodes are unwrapped (transparent)
+- `NumberLiteral` → `IntLiteral{*big.Int}` or `RationalLiteral{*big.Rat}`
+- All operator strings (Unicode `∧∨⇒≡<>≤≥=≠∈∉∪∩⊆⊂⊇⊃⊕⊖⊏⊑⊐⊒`) mapped to typed enums
+- `FunctionCall` routing: builtin → `BuiltinCall`, global → `GlobalCall`, same-class → `ActionCall`, cross-class → `ActionCall`
+- Unresolved identifiers produce errors (strict resolution)
+
+**Stage 2: Model population — `convert/lower_model.go`**
+
+New files:
+- `convert/lower_model.go` — `LowerModel(model *req_model.Model) error`
+- `convert/lower_model_test.go` — tests using `test_helper.GetTestModel()`
+
+`LowerModel()` walks the entire model tree and populates every `ExpressionSpec.Expression` field:
+1. Parses `ExpressionSpec.Specification` via `parser.ParseExpression()`
+2. Builds a `LowerContext` from the class hierarchy (attribute names, actions, queries, parameters)
+3. Calls `Lower(parsedAST, ctx)` to get the `model_expression.Expression`
+4. Sets `ExpressionSpec.Expression = result`
+
+Walk order covers: Model.Invariants, Model.GlobalFunctions, Class.Invariants, Attribute.DerivationPolicy, Action.Requires/Guarantees/SafetyRules, Guard.Logic, Query.Requires/Guarantees.
+
+Empty specifications (`Specification == ""`) are silently skipped. Errors are collected with the Logic.Key identifying which expression failed.
+
+**Stage 3: Simulator rewiring**
+
+Modified files:
+- `evaluator/eval.go` — new `Eval()` dispatches on `model_expression.Expression` (38 node types); old AST-based evaluator renamed to `EvalAST()`
+- `evaluator/eval_me.go` — new file with all `model_expression` evaluation handlers
+- `actions/executor.go` — uses pre-lowered `logic.Spec.Expression` instead of parsing per-execution
+- `actions/guard_evaluator.go` — uses `guard.Logic.Spec.Expression`
+- `invariants/invariant_checker.go` — stores `model_expression.Expression` from `inv.Spec.Expression`
+- `engine/derived_evaluator.go` — uses `attr.DerivationPolicy.Spec.Expression`
+- `model_bridge/definition_builder.go` — registers `model_expression.Expression` in registry; new `ContainsAnyPrimedME()` walks model_expression tree
+- `registry/` — `Definition.Body` type changed from `ast.Expression` to `model_expression.Expression`
+- All evaluator test files rewritten to construct `model_expression` nodes
+
+Key simplifications from rewiring:
+- No operator string matching at eval time (enums replace Unicode strings)
+- No identifier resolution at eval time (already resolved to `AttributeRef`/`SelfRef`/`LocalVar`)
+- No quantifier decomposition at eval time (Variable+Domain already separated by lowering)
+- No EXCEPT field tracking at eval time (`PriorFieldValue` has field name from lowering)
+
+### Impact on This Plan
+
+- **Stage 1H (Simulator Alignment)** will need to account for the existing `model_expression`-based evaluator when changing Logic field access patterns (e.g., `logic.Spec.Notation` instead of `logic.Notation`)
+- **`ExpressionSpec.Expression` is now populated** — after `LowerModel()` runs, all Logic objects have their Expression field set. Stage 1C's refactoring of Logic to use ExpressionSpec is already partially realized (Logic already has a `Spec` field with `ExpressionSpec`)
+- **The evaluator no longer imports `notation/tla_plus/ast`** — it only depends on `model_expression`. This clean separation means notation changes (Stage 2) won't affect the evaluator
+- **`LowerModel()` must be called** before any simulator operation — this is the new initialization step that populates all expression trees from their TLA+ specification strings
 
 ---
 
