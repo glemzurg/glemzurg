@@ -211,6 +211,32 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	err = class.ValidateWithParent(&subdomainKey)
 	assert.ErrorContains(suite.T(), err, "invariant 0", "Should catch invariant with wrong parent key")
 
+	// Test valid class with let in invariants.
+	letInvKey1 := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
+	letInvKey2 := helper.Must(identity.NewClassInvariantKey(validKey, "1"))
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Invariants: []model_logic.Logic{
+			helper.Must(model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+			helper.Must(model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.NoError(suite.T(), err, "Class with let in invariants should be valid")
+
+	// Test duplicate let target in class invariants.
+	class = Class{
+		Key:  validKey,
+		Name: "Name",
+		Invariants: []model_logic.Logic{
+			helper.Must(model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+			helper.Must(model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+		},
+	}
+	err = class.ValidateWithParent(&subdomainKey)
+	assert.ErrorContains(suite.T(), err, "duplicate let target \"a\"", "Should catch duplicate let target in class invariants")
+
 	// Test child Attribute validation propagates error.
 	attrKey := helper.Must(identity.NewAttributeKey(validKey, "attr1"))
 	class = Class{

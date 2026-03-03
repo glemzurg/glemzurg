@@ -53,12 +53,19 @@ func (a *Action) Validate() error {
 		return err
 	}
 
+	reqLetTargets := make(map[string]bool)
 	for i, req := range a.Requires {
 		if err := req.Validate(); err != nil {
 			return errors.Wrapf(err, "requires %d", i)
 		}
-		if req.Type != model_logic.LogicTypeAssessment {
-			return errors.Errorf("requires %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, req.Type)
+		if req.Type != model_logic.LogicTypeAssessment && req.Type != model_logic.LogicTypeLet {
+			return errors.Errorf("requires %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, req.Type)
+		}
+		if req.Type == model_logic.LogicTypeLet {
+			if reqLetTargets[req.Target] {
+				return errors.Errorf("requires %d: duplicate let target %q", i, req.Target)
+			}
+			reqLetTargets[req.Target] = true
 		}
 	}
 	guarTargets := make(map[string]bool)
@@ -66,21 +73,31 @@ func (a *Action) Validate() error {
 		if err := guar.Validate(); err != nil {
 			return errors.Wrapf(err, "guarantee %d", i)
 		}
-		if guar.Type != model_logic.LogicTypeStateChange {
-			return errors.Errorf("guarantee %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeStateChange, guar.Type)
+		if guar.Type != model_logic.LogicTypeStateChange && guar.Type != model_logic.LogicTypeLet {
+			return errors.Errorf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeStateChange, model_logic.LogicTypeLet, guar.Type)
 		}
-		// Each guarantee must set a unique target attribute.
+		// Each guarantee and let must set a unique target.
 		if guarTargets[guar.Target] {
+			if guar.Type == model_logic.LogicTypeLet {
+				return errors.Errorf("guarantee %d: duplicate let target %q", i, guar.Target)
+			}
 			return errors.Errorf("guarantee %d: duplicate target %q — each attribute can only be set once per action", i, guar.Target)
 		}
 		guarTargets[guar.Target] = true
 	}
+	safetyLetTargets := make(map[string]bool)
 	for i, rule := range a.SafetyRules {
 		if err := rule.Validate(); err != nil {
 			return errors.Wrapf(err, "safety rule %d", i)
 		}
-		if rule.Type != model_logic.LogicTypeSafetyRule {
-			return errors.Errorf("safety rule %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeSafetyRule, rule.Type)
+		if rule.Type != model_logic.LogicTypeSafetyRule && rule.Type != model_logic.LogicTypeLet {
+			return errors.Errorf("safety rule %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeSafetyRule, model_logic.LogicTypeLet, rule.Type)
+		}
+		if rule.Type == model_logic.LogicTypeLet {
+			if safetyLetTargets[rule.Target] {
+				return errors.Errorf("safety rule %d: duplicate let target %q", i, rule.Target)
+			}
+			safetyLetTargets[rule.Target] = true
 		}
 	}
 

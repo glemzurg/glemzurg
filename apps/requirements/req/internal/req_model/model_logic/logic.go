@@ -20,6 +20,7 @@ const (
 	LogicTypeQuery       = "query"        // Defines temporary named return values.
 	LogicTypeSafetyRule  = "safety_rule"  // Boolean check referencing both prior and new state (has primed).
 	LogicTypeValue       = "value"        // Single unnamed value expression (global functions).
+	LogicTypeLet         = "let"          // Local variable definition: target = expression.
 )
 
 // _validate is the shared validator instance for this package.
@@ -28,7 +29,7 @@ var _validate = validator.New()
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
 	Key            identity.Key           // The key is unique in the whole model, and built on the key of the containing object.
-	Type           string                 `validate:"required,oneof=assessment state_change query safety_rule value"`
+	Type           string                 `validate:"required,oneof=assessment state_change query safety_rule value let"`
 	Description    string                 `validate:"required"`
 	Target         string                 // Identifier or attribute to set. Required for state_change and query types.
 	Spec           model_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
@@ -63,12 +64,12 @@ func (l *Logic) Validate() error {
 	}
 	// Target validation based on logic type.
 	switch l.Type {
-	case LogicTypeStateChange, LogicTypeQuery:
+	case LogicTypeStateChange, LogicTypeQuery, LogicTypeLet:
 		if l.Target == "" {
 			return errors.Errorf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type)
 		}
-		// Query targets cannot start with "_".
-		if l.Type == LogicTypeQuery && strings.HasPrefix(l.Target, "_") {
+		// Query and let targets cannot start with "_".
+		if (l.Type == LogicTypeQuery || l.Type == LogicTypeLet) && strings.HasPrefix(l.Target, "_") {
 			return errors.Errorf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target)
 		}
 	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue:

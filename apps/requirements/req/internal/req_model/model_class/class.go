@@ -200,12 +200,19 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 	}
 
 	// Validate all children.
+	invLetTargets := make(map[string]bool)
 	for i, inv := range c.Invariants {
 		if err := inv.ValidateWithParent(&c.Key); err != nil {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
-		if inv.Type != model_logic.LogicTypeAssessment {
-			return errors.Errorf("invariant %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, inv.Type)
+		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
+			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+		}
+		if inv.Type == model_logic.LogicTypeLet {
+			if invLetTargets[inv.Target] {
+				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
+			}
+			invLetTargets[inv.Target] = true
 		}
 	}
 	for _, attr := range c.Attributes {
@@ -238,7 +245,11 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 			return err
 		}
 		// Validate that each action guarantee target is a valid attribute SubKey on this class.
+		// Let targets are local variables, not attribute references — skip them.
 		for i, guar := range action.Guarantees {
+			if guar.Type == model_logic.LogicTypeLet {
+				continue
+			}
 			if guar.Target != "" && !attrSubKeys[guar.Target] {
 				return errors.Errorf("action %q guarantee %d: target %q is not a valid attribute on class %q", action.Key.String(), i, guar.Target, c.Key.String())
 			}

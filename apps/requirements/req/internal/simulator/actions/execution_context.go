@@ -56,6 +56,11 @@ type DeferredSafetyRule struct {
 
 	// OriginalExpression is the original TLA+ string (for error messages).
 	OriginalExpression string
+
+	// LetBindings contains let variable values computed before this safety rule
+	// in the same list. These are added to the evaluation bindings when the
+	// safety rule is evaluated after primed assignments are applied.
+	LetBindings map[string]object.Object
 }
 
 // ExecutionContext tracks the state of an action execution chain.

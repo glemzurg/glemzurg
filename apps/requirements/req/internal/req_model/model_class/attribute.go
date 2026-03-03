@@ -86,12 +86,19 @@ func (a *Attribute) Validate() error {
 	}
 
 	// Validate invariants.
+	attrInvLetTargets := make(map[string]bool)
 	for i, inv := range a.Invariants {
 		if err := inv.Validate(); err != nil {
 			return errors.Wrapf(err, "attribute invariant %d", i)
 		}
-		if inv.Type != model_logic.LogicTypeAssessment {
-			return errors.Errorf("attribute invariant %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, inv.Type)
+		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
+			return errors.Errorf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+		}
+		if inv.Type == model_logic.LogicTypeLet {
+			if attrInvLetTargets[inv.Target] {
+				return errors.Errorf("attribute invariant %d: duplicate let target %q", i, inv.Target)
+			}
+			attrInvLetTargets[inv.Target] = true
 		}
 	}
 

@@ -134,6 +134,29 @@ func (suite *ModelSuite) TestValidate() {
 			errstr: "invariant 0",
 		},
 		{
+			testName: "valid model with let in invariants",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
+				},
+			},
+		},
+		{
+			testName: "error duplicate let target in model invariants",
+			model: Model{
+				Key:  "model1",
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
+		},
+		{
 			testName: "error invalid global function name",
 			model: Model{
 				Key:  "model1",

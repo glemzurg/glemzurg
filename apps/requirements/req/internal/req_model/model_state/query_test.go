@@ -143,7 +143,7 @@ func (suite *QuerySuite) TestValidate() {
 					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
-			errstr: "requires 0: logic kind must be 'assessment'",
+			errstr: "requires 0: logic kind must be 'assessment' or 'let'",
 		},
 		{
 			testName: "error guarantee wrong kind",
@@ -154,7 +154,7 @@ func (suite *QuerySuite) TestValidate() {
 					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Result in S.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
-			errstr: "guarantee 0: logic kind must be 'query'",
+			errstr: "guarantee 0: logic kind must be 'query' or 'let'",
 		},
 		{
 			testName: "error duplicate guarantee target",
@@ -167,6 +167,52 @@ func (suite *QuerySuite) TestValidate() {
 				},
 			},
 			errstr: "duplicate target",
+		},
+		// Let in logic lists.
+		{
+			testName: "valid query with let in requires",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+				},
+			},
+		},
+		{
+			testName: "valid query with let in guarantees",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local value.", "localVar", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr"}, nil)),
+				},
+			},
+		},
+		{
+			testName: "error duplicate let target in requires",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
+		},
+		{
+			testName: "error let target collides with query target in guarantees",
+			query: Query{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"result\"",
 		},
 	}
 	for _, tt := range tests {

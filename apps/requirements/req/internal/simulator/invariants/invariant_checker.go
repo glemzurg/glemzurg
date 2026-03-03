@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -21,8 +22,8 @@ type InvariantChecker struct {
 	// model is the requirements model containing invariant definitions
 	model *req_model.Model
 
-	// parsedInvariants caches pre-lowered model invariant expressions
-	parsedInvariants []me.Expression
+	// parsedInvariantItems caches pre-lowered model invariant items (both let and assessment).
+	parsedInvariantItems []parsedInvariantItem
 
 	// actionPostConditions maps action key to post-condition expressions
 	actionPostConditions map[identity.Key][]parsedGuarantee
@@ -32,6 +33,15 @@ type InvariantChecker struct {
 
 	// classNameMap maps class keys to class names for bindings
 	classNameMap map[identity.Key]string
+}
+
+// parsedInvariantItem holds a pre-lowered invariant or let expression with metadata.
+type parsedInvariantItem struct {
+	isLet         bool          // True if this is a LogicTypeLet item.
+	target        string        // Only set if isLet is true.
+	expression    me.Expression // The lowered expression.
+	originalIndex int           // Index in the original Model.Invariants slice.
+	spec          string        // Original specification string for error messages.
 }
 
 // parsedGuarantee holds a lowered guarantee expression with its metadata
@@ -48,7 +58,7 @@ type parsedGuarantee struct {
 func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
 		model:                model,
-		parsedInvariants:     make([]me.Expression, 0, len(model.Invariants)),
+		parsedInvariantItems: make([]parsedInvariantItem, 0, len(model.Invariants)),
 		actionPostConditions: make(map[identity.Key][]parsedGuarantee),
 		queryPostConditions:  make(map[identity.Key][]parsedGuarantee),
 		classNameMap:         make(map[identity.Key]string),
@@ -63,10 +73,18 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 			}
 			return nil, fmt.Errorf("model invariant %d: expression not lowered", i)
 		}
-		if model_bridge.ContainsAnyPrimedME(expr) {
+		isLet := inv.Type == model_logic.LogicTypeLet
+		// Only non-let invariants are checked for primed variables
+		if !isLet && model_bridge.ContainsAnyPrimedME(expr) {
 			return nil, fmt.Errorf("model invariant %d must not contain primed variables: %s", i, inv.Spec.Specification)
 		}
-		checker.parsedInvariants = append(checker.parsedInvariants, expr)
+		checker.parsedInvariantItems = append(checker.parsedInvariantItems, parsedInvariantItem{
+			isLet:         isLet,
+			target:        inv.Target,
+			expression:    expr,
+			originalIndex: i,
+			spec:          inv.Spec.Specification,
+		})
 	}
 
 	// Iterate through all classes to collect class names
@@ -91,13 +109,34 @@ func (c *InvariantChecker) CheckModelInvariants(
 
 	bindings := bindingsBuilder.BuildWithClassInstances(c.classNameMap)
 
-	for i, expr := range c.parsedInvariants {
-		result := evaluator.Eval(expr, bindings)
+	// Pass 1: Evaluate all let items in order, setting their targets in bindings.
+	for _, item := range c.parsedInvariantItems {
+		if !item.isLet {
+			continue
+		}
+		result := evaluator.Eval(item.expression, bindings)
+		if result.IsError() {
+			violations = append(violations, NewModelInvariantViolation(
+				item.originalIndex,
+				item.spec,
+				fmt.Sprintf("let evaluation error: %s", result.Error.Inspect()),
+			))
+			continue
+		}
+		bindings.Set(item.target, result.Value, evaluator.NamespaceLocal)
+	}
+
+	// Pass 2: Evaluate all non-let (assessment) items with let bindings available.
+	for _, item := range c.parsedInvariantItems {
+		if item.isLet {
+			continue
+		}
+		result := evaluator.Eval(item.expression, bindings)
 
 		if result.Error != nil {
 			violations = append(violations, NewModelInvariantViolation(
-				i,
-				c.model.Invariants[i].Spec.Specification,
+				item.originalIndex,
+				item.spec,
 				fmt.Sprintf("evaluation error: %s", result.Error.Inspect()),
 			))
 			continue
@@ -112,8 +151,8 @@ func (c *InvariantChecker) CheckModelInvariants(
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
 			violations = append(violations, NewModelInvariantViolation(
-				i,
-				c.model.Invariants[i].Spec.Specification,
+				item.originalIndex,
+				item.spec,
 				message,
 			))
 		}
@@ -308,7 +347,13 @@ func (c *InvariantChecker) GetQueryPostConditionCount(queryKey identity.Key) int
 	return len(guarantees)
 }
 
-// GetModelInvariantCount returns the number of model invariants.
+// GetModelInvariantCount returns the number of model invariants (excluding let items).
 func (c *InvariantChecker) GetModelInvariantCount() int {
-	return len(c.parsedInvariants)
+	count := 0
+	for _, item := range c.parsedInvariantItems {
+		if !item.isLet {
+			count++
+		}
+	}
+	return count
 }

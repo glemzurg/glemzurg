@@ -81,12 +81,19 @@ func (m *Model) Validate() error {
 	}
 
 	// Validate invariants.
+	modelInvLetTargets := make(map[string]bool)
 	for i, inv := range m.Invariants {
 		if err := inv.ValidateWithParent(nil); err != nil {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
-		if inv.Type != model_logic.LogicTypeAssessment {
-			return errors.Errorf("invariant %d: logic kind must be '%s', got '%s'", i, model_logic.LogicTypeAssessment, inv.Type)
+		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
+			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+		}
+		if inv.Type == model_logic.LogicTypeLet {
+			if modelInvLetTargets[inv.Target] {
+				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
+			}
+			modelInvLetTargets[inv.Target] = true
 		}
 	}
 

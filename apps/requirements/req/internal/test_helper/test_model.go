@@ -72,9 +72,18 @@ type testKeys struct {
 	actionGuarantee1, actionGuarantee2, actionGuarantee3 identity.Key
 	actionSafety1, actionSafety2, actionSafety3          identity.Key
 
+	// Let keys for actions.
+	actionRequireLet  identity.Key
+	actionGuarLet     identity.Key
+	actionSafetyLet   identity.Key
+
 	// Logic keys for queries.
 	queryRequire1, queryRequire2, queryRequire3       identity.Key
 	queryGuarantee1, queryGuarantee2, queryGuarantee3 identity.Key
+
+	// Let keys for queries.
+	queryRequireLet  identity.Key
+	queryGuarLet     identity.Key
 
 	// Logic keys for guard.
 	guardLogic1, guardLogic2, guardLogic3 identity.Key
@@ -716,6 +725,20 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	// Action let keys.
+	k.actionRequireLet, err = identity.NewActionRequireKey(k.actionProcess, "let_req_threshold")
+	if err != nil {
+		return k, err
+	}
+	k.actionGuarLet, err = identity.NewActionGuaranteeKey(k.actionProcess, "let_guar_computed")
+	if err != nil {
+		return k, err
+	}
+	k.actionSafetyLet, err = identity.NewActionSafetyKey(k.actionProcess, "let_safety_limit")
+	if err != nil {
+		return k, err
+	}
+
 	// Query logic keys.
 	k.queryRequire1, err = identity.NewQueryRequireKey(k.queryStatus, "order_exists")
 	if err != nil {
@@ -738,6 +761,16 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.queryGuarantee3, err = identity.NewQueryGuaranteeKey(k.queryStatus, "returns_details")
+	if err != nil {
+		return k, err
+	}
+
+	// Query let keys.
+	k.queryRequireLet, err = identity.NewQueryRequireKey(k.queryStatus, "let_req_threshold")
+	if err != nil {
+		return k, err
+	}
+	k.queryGuarLet, err = identity.NewQueryGuaranteeKey(k.queryStatus, "let_guar_computed")
 	if err != nil {
 		return k, err
 	}
@@ -995,9 +1028,18 @@ type testLogic struct {
 	actionGuarantee1, actionGuarantee2, actionGuarantee3 model_logic.Logic
 	actionSafety1, actionSafety2, actionSafety3          model_logic.Logic
 
+	// Action let logic.
+	actionRequireLet  model_logic.Logic
+	actionGuarLet     model_logic.Logic
+	actionSafetyLet   model_logic.Logic
+
 	// Query logic.
 	queryRequire1, queryRequire2, queryRequire3       model_logic.Logic
 	queryGuarantee1, queryGuarantee2, queryGuarantee3 model_logic.Logic
+
+	// Query let logic.
+	queryRequireLet  model_logic.Logic
+	queryGuarLet     model_logic.Logic
 
 	// Model-level.
 	invariants     []model_logic.Logic
@@ -1077,6 +1119,20 @@ func buildLogic(k testKeys) (testLogic, error) {
 		return l, err
 	}
 
+	// Action let logic.
+	l.actionRequireLet, err = model_logic.NewLogic(k.actionRequireLet, model_logic.LogicTypeLet, "Compute threshold for requires", "threshold", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"}, nil)
+	if err != nil {
+		return l, err
+	}
+	l.actionGuarLet, err = model_logic.NewLogic(k.actionGuarLet, model_logic.LogicTypeLet, "Compute intermediate value for guarantees", "computed", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "total + 1"}, nil)
+	if err != nil {
+		return l, err
+	}
+	l.actionSafetyLet, err = model_logic.NewLogic(k.actionSafetyLet, model_logic.LogicTypeLet, "Compute safety limit", "limit", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "100"}, nil)
+	if err != nil {
+		return l, err
+	}
+
 	// Query requires (3).
 	l.queryRequire1, err = model_logic.NewLogic(k.queryRequire1, model_logic.LogicTypeAssessment, "Order must exist for query", "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order \\in Orders"}, nil)
 	if err != nil {
@@ -1101,6 +1157,16 @@ func buildLogic(k testKeys) (testLogic, error) {
 		return l, err
 	}
 	l.queryGuarantee3, err = model_logic.NewLogic(k.queryGuarantee3, model_logic.LogicTypeQuery, "Returns full order details", "details", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.toJSON()"}, nil)
+	if err != nil {
+		return l, err
+	}
+
+	// Query let logic.
+	l.queryRequireLet, err = model_logic.NewLogic(k.queryRequireLet, model_logic.LogicTypeLet, "Compute threshold for query requires", "threshold", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "5"}, nil)
+	if err != nil {
+		return l, err
+	}
+	l.queryGuarLet, err = model_logic.NewLogic(k.queryGuarLet, model_logic.LogicTypeLet, "Compute intermediate value for query output", "computed", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "order.total + 1"}, nil)
 	if err != nil {
 		return l, err
 	}
@@ -1404,12 +1470,12 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 
 	// --- Actions ---
 
-	// actionProcess: rich (3 requires, 3 guarantees, 3 safety, 3 params).
+	// actionProcess: rich (1 let + 3 requires, 1 let + 3 guarantees, 1 let + 3 safety, 3 params).
 	actionProcess, err := model_state.NewAction(
 		k.actionProcess, "Process Order", "Processes the order for fulfillment.",
-		[]model_logic.Logic{l.actionRequire1, l.actionRequire2, l.actionRequire3},
-		[]model_logic.Logic{l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
-		[]model_logic.Logic{l.actionSafety1, l.actionSafety2, l.actionSafety3},
+		[]model_logic.Logic{l.actionRequireLet, l.actionRequire1, l.actionRequire2, l.actionRequire3},
+		[]model_logic.Logic{l.actionGuarLet, l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
+		[]model_logic.Logic{l.actionSafetyLet, l.actionSafety1, l.actionSafety2, l.actionSafety3},
 		[]model_state.Parameter{p.quantity, p.priority, p.tags},
 	)
 	if err != nil {
@@ -1441,11 +1507,11 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 
 	// --- Queries ---
 
-	// queryStatus: rich (3 requires, 3 guarantees, 3 params).
+	// queryStatus: rich (1 let + 3 requires, 1 let + 3 guarantees, 3 params).
 	queryStatus, err := model_state.NewQuery(
 		k.queryStatus, "Get Status", "Returns the current status of the order.",
-		[]model_logic.Logic{l.queryRequire1, l.queryRequire2, l.queryRequire3},
-		[]model_logic.Logic{l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
+		[]model_logic.Logic{l.queryRequireLet, l.queryRequire1, l.queryRequire2, l.queryRequire3},
+		[]model_logic.Logic{l.queryGuarLet, l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
 		[]model_state.Parameter{p.productId, p.items, p.format},
 	)
 	if err != nil {

@@ -269,6 +269,38 @@ func (s *LogicTestSuite) TestValidate() {
 			},
 			errstr: "must not have a target",
 		},
+		// Let validation.
+		{
+			testName: "valid let kind",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeLet,
+				Description: "Local total.",
+				Target:      "total",
+				Spec:        validSpec(),
+			},
+		},
+		{
+			testName: "error let missing target",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeLet,
+				Description: "Local value.",
+				Spec:        validSpec(),
+			},
+			errstr: "requires a non-empty target",
+		},
+		{
+			testName: "error let target starts with underscore",
+			logic: Logic{
+				Key:         validKey,
+				Type:        LogicTypeLet,
+				Description: "Local value.",
+				Target:      "_hidden",
+				Spec:        validSpec(),
+			},
+			errstr: "starting with '_'",
+		},
 	}
 	for _, tt := range tests {
 		s.T().Run(tt.testName, func(t *testing.T) {
@@ -318,6 +350,12 @@ func (s *LogicTestSuite) TestNew() {
 	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
 	s.NoError(err)
 	s.Equal("result", logic.Target)
+
+	// Test let with target.
+	logic, err = NewLogic(validKey, LogicTypeLet, "Local variable.", "myVar", validSpecWithBody("1 + 2"), nil)
+	s.NoError(err)
+	s.Equal("myVar", logic.Target)
+	s.Equal(LogicTypeLet, logic.Type)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", validSpec(), nil)

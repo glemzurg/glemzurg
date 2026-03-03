@@ -143,7 +143,7 @@ func (suite *AttributeSuite) TestValidate() {
 				Name:       "Name",
 				Invariants: []model_logic.Logic{wrongKindInvariant},
 			},
-			errstr: "logic kind must be 'assessment'",
+			errstr: "logic kind must be 'assessment' or 'let'",
 		},
 		{
 			testName: "error invariant invalid logic missing key",
@@ -160,6 +160,29 @@ func (suite *AttributeSuite) TestValidate() {
 				},
 			},
 			errstr: "attribute invariant 0",
+		},
+		{
+			testName: "valid with let in invariants",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+					validInvariant,
+				},
+			},
+		},
+		{
+			testName: "error duplicate let target in attribute invariants",
+			attribute: Attribute{
+				Key:  validKey,
+				Name: "Name",
+				Invariants: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
 		},
 	}
 	for _, tt := range tests {

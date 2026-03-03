@@ -168,7 +168,7 @@ func (suite *ActionSuite) TestValidate() {
 					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
-			errstr: "requires 0: logic kind must be 'assessment'",
+			errstr: "requires 0: logic kind must be 'assessment' or 'let'",
 		},
 		{
 			testName: "error guarantee wrong kind",
@@ -179,7 +179,7 @@ func (suite *ActionSuite) TestValidate() {
 					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Set x to 1.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
-			errstr: "guarantee 0: logic kind must be 'state_change'",
+			errstr: "guarantee 0: logic kind must be 'state_change' or 'let'",
 		},
 		{
 			testName: "error safety rule wrong kind",
@@ -190,7 +190,7 @@ func (suite *ActionSuite) TestValidate() {
 					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeAssessment, "x must stay positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 				},
 			},
-			errstr: "safety rule 0: logic kind must be 'safety_rule'",
+			errstr: "safety rule 0: logic kind must be 'safety_rule' or 'let'",
 		},
 		{
 			testName: "error duplicate guarantee target",
@@ -203,6 +203,87 @@ func (suite *ActionSuite) TestValidate() {
 				},
 			},
 			errstr: "duplicate target",
+		},
+		// Let in logic lists.
+		{
+			testName: "valid action with let in requires",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+				},
+			},
+		},
+		{
+			testName: "valid action with let in guarantees",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local value.", "localVar", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+				},
+			},
+		},
+		{
+			testName: "valid action with let in safety rules",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				SafetyRules: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeLet, "Local value.", "localVar", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeSafetyRule, "x must stay positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.x' > 0"}, nil)),
+				},
+			},
+		},
+		{
+			testName: "error duplicate let target in requires",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Requires: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
+		},
+		{
+			testName: "error duplicate let target in guarantees",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
+		},
+		{
+			testName: "error let target collides with state_change target in guarantees",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				Guarantees: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeStateChange, "Set x.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local x.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"x\"",
+		},
+		{
+			testName: "error duplicate let target in safety rules",
+			action: Action{
+				Key:  validKey,
+				Name: "Name",
+				SafetyRules: []model_logic.Logic{
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
+					helper.Must(model_logic.NewLogic(safetyKey, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+				},
+			},
+			errstr: "duplicate let target \"a\"",
 		},
 	}
 	for _, tt := range tests {

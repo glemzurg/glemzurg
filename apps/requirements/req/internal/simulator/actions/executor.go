@@ -6,6 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
@@ -162,6 +163,10 @@ func (e *ActionExecutor) ExecuteAction(
 			continue
 		}
 		safetyBindings := e.bindingsBuilder.BuildForInstance(targetInstance)
+		// Inject let bindings from the same safety rule list.
+		for name, value := range sr.LetBindings {
+			safetyBindings.Set(name, value, evaluator.NamespaceLocal)
+		}
 		result := evaluator.Eval(sr.Expression, safetyBindings)
 
 		if result.IsError() {
@@ -229,7 +234,15 @@ func (e *ActionExecutor) executeActionInContext(
 	// Step 1: Check preconditions (Requires)
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
+	// Pass 1: Evaluate all let bindings in requires (in order).
+	if err := evalLetBindings(action.Requires, bindings, "action", action.Name, "requires"); err != nil {
+		return err
+	}
+	// Pass 2: Evaluate non-let assessment items.
 	for i, req := range action.Requires {
+		if req.Type == model_logic.LogicTypeLet {
+			continue
+		}
 		expr := req.Spec.Expression
 		if expr == nil {
 			return fmt.Errorf("action %s requires[%d]: expression not lowered", action.Name, i)
@@ -249,7 +262,15 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 
 	// Step 2: Evaluate guarantees.
+	// Pass 1: Evaluate all let bindings in guarantees (in order).
+	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
+		return err
+	}
+	// Pass 2: Evaluate non-let state_change items.
 	for i, guar := range action.Guarantees {
+		if guar.Type == model_logic.LogicTypeLet {
+			continue
+		}
 		// Check re-entrancy constraint.
 		if !ctx.CanMutate(instance.ID) {
 			return fmt.Errorf("re-entrant mutation on instance %d in action %s: instance already has primed values from another action", instance.ID, action.Name)
@@ -272,7 +293,28 @@ func (e *ActionExecutor) executeActionInContext(
 	}
 
 	// Step 3: Collect safety rules (must contain primed variables).
+	// Pass 1: Evaluate all let bindings in safety rules and capture them.
+	letBindings := make(map[string]object.Object)
 	for i, rule := range action.SafetyRules {
+		if rule.Type != model_logic.LogicTypeLet {
+			continue
+		}
+		expr := rule.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("action %s safety_rule[%d] (let): expression not lowered", action.Name, i)
+		}
+		result := evaluator.Eval(expr, bindings)
+		if result.IsError() {
+			return fmt.Errorf("action %s safety_rule[%d] (let %q) evaluation error: %s", action.Name, i, rule.Target, result.Error.Inspect())
+		}
+		bindings.Set(rule.Target, result.Value, evaluator.NamespaceLocal)
+		letBindings[rule.Target] = result.Value
+	}
+	// Pass 2: Collect non-let safety rules with let bindings snapshot.
+	for i, rule := range action.SafetyRules {
+		if rule.Type == model_logic.LogicTypeLet {
+			continue
+		}
 		expr := rule.Spec.Expression
 		if expr == nil {
 			return fmt.Errorf("action %s safety_rule[%d]: expression not lowered", action.Name, i)
@@ -282,6 +324,15 @@ func (e *ActionExecutor) executeActionInContext(
 			return fmt.Errorf("action %s safety_rule[%d]: SafetyRules must reference primed variables", action.Name, i)
 		}
 
+		// Copy current letBindings for deferred evaluation.
+		var capturedLetBindings map[string]object.Object
+		if len(letBindings) > 0 {
+			capturedLetBindings = make(map[string]object.Object, len(letBindings))
+			for k, v := range letBindings {
+				capturedLetBindings[k] = v
+			}
+		}
+
 		ctx.AddSafetyRule(DeferredSafetyRule{
 			Expression:         expr,
 			InstanceID:         instance.ID,
@@ -289,9 +340,30 @@ func (e *ActionExecutor) executeActionInContext(
 			SourceName:         action.Name,
 			Index:              i,
 			OriginalExpression: rule.Spec.Specification,
+			LetBindings:        capturedLetBindings,
 		})
 	}
 
+	return nil
+}
+
+// evalLetBindings evaluates all LogicTypeLet items in a logic list in order,
+// adding each result to bindings. Non-let items are skipped.
+func evalLetBindings(logics []model_logic.Logic, bindings *evaluator.Bindings, ownerType, ownerName, listName string) error {
+	for i, logic := range logics {
+		if logic.Type != model_logic.LogicTypeLet {
+			continue
+		}
+		expr := logic.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("%s %s %s[%d] (let): expression not lowered", ownerType, ownerName, listName, i)
+		}
+		result := evaluator.Eval(expr, bindings)
+		if result.IsError() {
+			return fmt.Errorf("%s %s %s[%d] (let %q) evaluation error: %s", ownerType, ownerName, listName, i, logic.Target, result.Error.Inspect())
+		}
+		bindings.Set(logic.Target, result.Value, evaluator.NamespaceLocal)
+	}
 	return nil
 }
 
@@ -360,7 +432,15 @@ func (e *ActionExecutor) executeQueryInContext(
 	// Step 1: Check preconditions
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
+	// Pass 1: Evaluate all let bindings in requires (in order).
+	if err := evalLetBindings(query.Requires, bindings, "query", query.Name, "requires"); err != nil {
+		return nil, err
+	}
+	// Pass 2: Evaluate non-let assessment items.
 	for i, req := range query.Requires {
+		if req.Type == model_logic.LogicTypeLet {
+			continue
+		}
 		expr := req.Spec.Expression
 		if expr == nil {
 			return nil, fmt.Errorf("query %s requires[%d]: expression not lowered", query.Name, i)
@@ -382,7 +462,15 @@ func (e *ActionExecutor) executeQueryInContext(
 	// Step 2: Evaluate guarantees
 	outputs := make(map[string]object.Object)
 
+	// Pass 1: Evaluate all let bindings in guarantees (in order).
+	if err := evalLetBindings(query.Guarantees, bindings, "query", query.Name, "guarantee"); err != nil {
+		return nil, err
+	}
+	// Pass 2: Evaluate non-let query items.
 	for i, guar := range query.Guarantees {
+		if guar.Type == model_logic.LogicTypeLet {
+			continue
+		}
 		if guar.Target == "" {
 			return nil, fmt.Errorf("query %s guarantee[%d]: target must be set", query.Name, i)
 		}
