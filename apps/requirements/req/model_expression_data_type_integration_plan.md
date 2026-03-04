@@ -403,25 +403,25 @@ go test ./internal/notation/...
 
 **Goal:** Enable the human parser to read `precise_type:` from YAML and populate `DataType.TypeSpec`.
 
-**Packages touched:** `internal/parser/`
+**Packages touched:** `internal/parser_human/`
 
-**Test command:** `go test ./internal/parser/...`
+**Test command:** `go test ./internal/parser_human/...`
 
 ### 3A: Fix Compile Errors from Stage 1
 
 The human parser calls `NewLogic()`, `NewModel()`, and `model_data_type.New()` — all signatures changed. Fix these first.
 
-**Modified file: `internal/parser/class.go`**
+**Modified file: `internal/parser_human/class.go`**
 - All `NewLogic()` calls: wrap Notation/Specification/nil into `model_spec.ExpressionSpec{Notation: "tla_plus", Specification: spec}`, pass `nil` for TargetTypeSpec
 - All `model_data_type.New()` calls: pass `nil` for TypeSpec (initially — step 3B adds real parsing)
 - All struct literal Logic construction: update to use new fields (`Spec: model_spec.ExpressionSpec{...}`)
 
-**Modified file: `internal/parser/model.go`** (or wherever NewModel is called)
+**Modified file: `internal/parser_human/model.go`** (or wherever NewModel is called)
 - Add `nil` for namedSets parameter
 
 ### 3B: Parse `precise_type:` Field on Attributes
 
-**Modified file: `internal/parser/class.go`**
+**Modified file: `internal/parser_human/class.go`**
 
 In `attributeFromYamlData()`:
 - Read `"precise_type"` from YAML map (optional field)
@@ -446,7 +446,7 @@ Same pattern for parameters in actions, queries, events. Parameters read `"rules
 
 ### 3D: Parse Named Sets
 
-**Modified file: `internal/parser/model.go`** (or new `internal/parser/named_set.go`)
+**Modified file: `internal/parser_human/model.go`** (or new `internal/parser_human/named_set.go`)
 
 Read `"named_sets"` from model-level YAML:
 ```yaml
@@ -465,7 +465,7 @@ Parse each into `model_named_set.NamedSet`:
 
 ### 3E: Parse Attribute Invariants
 
-**Modified file: `internal/parser/class.go`**
+**Modified file: `internal/parser_human/class.go`**
 
 In `attributeFromYamlData()`:
 - Read `"invariants"` from YAML map (optional field, list of objects)
@@ -498,7 +498,7 @@ When the human parser writes model back to files, TypeSpec, NamedSet, and attrib
 
 ```bash
 cd /workspaces/glemzurg/apps/requirements/req
-go test ./internal/parser/...
+go test ./internal/parser_human/...
 ```
 
 ---

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
@@ -162,7 +162,7 @@ func (sw *SourceWatcher) updateModelFromJSON() error {
 
 // updateModelFromYAML parses a model from YAML source files.
 func (sw *SourceWatcher) updateModelFromYAML() error {
-	parsedModel, err := parser.Parse(sw.modelPath)
+	parsedModel, err := parser_human.Parse(sw.modelPath)
 	if err != nil {
 		return err
 	}

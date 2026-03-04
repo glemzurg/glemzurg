@@ -53,7 +53,7 @@ Before considering the parser_ai complete for a task, do an examination that eve
 
 4. The human parser (do fourth)
 
-The human parser (apps/requirements/req/internal/parser) is a custom markdown yaml data format. Ensure all the data that goes in and out is explored in the tests for a class. And then the round-trip test will confirm that everything works well together. It uses the test_helper.GetTestModel(), not the strict model, but that model should *not* be updated to fix a bug in the parser project. That model is meant to explore the constraints and the flexibility of the req_model tree. 
+The human parser (apps/requirements/req/internal/parser_human) is a custom markdown yaml data format. Ensure all the data that goes in and out is explored in the tests for a class. And then the round-trip test will confirm that everything works well together. It uses the test_helper.GetTestModel(), not the strict model, but that model should *not* be updated to fix a bug in the parser project. That model is meant to explore the constraints and the flexibility of the req_model tree. 
 
 -----------------------------
 

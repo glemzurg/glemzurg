@@ -1,26 +1,26 @@
-package parser
+package parser_human
 
 import (
 	"strconv"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey, filename, contents string) (generalization model_use_case.Generalization, err error) {
+func parseActorGeneralization(generalizationSubKey, filename, contents string) (generalization model_actor.Generalization, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return model_use_case.Generalization{}, err
+		return model_actor.Generalization{}, err
 	}
 
 	// Unmarshal into a format that can be easily checked for informative error messages.
 	yamlData := map[string]any{}
 	if err := yaml.Unmarshal([]byte(parsedFile.Data), yamlData); err != nil {
-		return model_use_case.Generalization{}, errors.WithStack(err)
+		return model_actor.Generalization{}, errors.WithStack(err)
 	}
 
 	isComplete := true
@@ -36,19 +36,19 @@ func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey,
 	}
 
 	// Construct the identity key for this generalization.
-	generalizationKey, err := identity.NewUseCaseGeneralizationKey(subdomainKey, generalizationSubKey)
+	generalizationKey, err := identity.NewActorGeneralizationKey(generalizationSubKey)
 	if err != nil {
-		return model_use_case.Generalization{}, errors.WithStack(err)
+		return model_actor.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization, err = model_use_case.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
+	generalization, err = model_actor.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
 	if err != nil {
-		return model_use_case.Generalization{}, err
+		return model_actor.Generalization{}, err
 	}
 	return generalization, nil
 }
 
-func generateUseCaseGeneralizationContent(generalization model_use_case.Generalization) string {
+func generateActorGeneralizationContent(generalization model_actor.Generalization) string {
 	yamlStr := ""
 	if generalization.IsComplete != true {
 		yamlStr += "is_complete: " + strconv.FormatBool(generalization.IsComplete) + "\n"

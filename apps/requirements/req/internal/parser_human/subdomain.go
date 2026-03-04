@@ -1,4 +1,4 @@
-package parser
+package parser_human
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"

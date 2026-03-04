@@ -1,29 +1,29 @@
-package parser
+package parser_human
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
-	t_GENERALIZATION_PATH_OK  = "test_files/generalization"
-	t_GENERALIZATION_PATH_ERR = t_GENERALIZATION_PATH_OK + "/err"
+	t_USE_CASE_GENERALIZATION_PATH_OK  = "test_files/use_case_generalization"
+	t_USE_CASE_GENERALIZATION_PATH_ERR = t_USE_CASE_GENERALIZATION_PATH_OK + "/err"
 )
 
-func TestGeneralizationSuite(t *testing.T) {
-	suite.Run(t, new(GeneralizationFileSuite))
+func TestUseCaseGeneralizationSuite(t *testing.T) {
+	suite.Run(t, new(UseCaseGeneralizationFileSuite))
 }
 
-type GeneralizationFileSuite struct {
+type UseCaseGeneralizationFileSuite struct {
 	suite.Suite
 }
 
-func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
+func (suite *UseCaseGeneralizationFileSuite) TestParseUseCaseGeneralizationFiles() {
 
 	// Create a parent subdomain key for testing.
 	domainKey, err := identity.NewDomainKey("test_domain")
@@ -33,14 +33,14 @@ func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
 
 	generalizationSubKey := "generalization_key"
 
-	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERALIZATION_PATH_OK)
+	testDataFiles, err := t_ContentsForAllMdFiles(t_USE_CASE_GENERALIZATION_PATH_OK)
 	assert.Nil(suite.T(), err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		var expected, actual model_class.Generalization
+		var expected, actual model_use_case.Generalization
 
-		actual, err := parseClassGeneralization(subdomainKey, generalizationSubKey, testData.Filename, testData.Contents)
+		actual, err := parseUseCaseGeneralization(subdomainKey, generalizationSubKey, testData.Filename, testData.Contents)
 		assert.Nil(suite.T(), err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
@@ -49,7 +49,7 @@ func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
 		assert.Equal(suite.T(), expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
-		generated := generateGeneralizationContent(actual)
+		generated := generateUseCaseGeneralizationContent(actual)
 		assert.Equal(suite.T(), testData.Contents, generated, testName)
 	}
 }
