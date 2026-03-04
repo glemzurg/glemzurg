@@ -1,12 +1,12 @@
 {
 // Package parser provides a minimal TLA+ expression parser.
-// This parser directly produces internal/notation/ast nodes.
+// This parser directly produces internal/notation/tla_plus/ast nodes.
 package parser
 
 import (
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
 
 }
@@ -723,7 +723,7 @@ TupleIndexSuffix <- "[" ws? index:Expression ws? "]" {
 // - ExistingValue before Identifier (@ is a special symbol)
 // - Literal before Identifier (TRUE/FALSE are keywords, not identifiers)
 // - Identifier last (catch-all for names)
-AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetLiteral / IfThenElse / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
+AtomicExpr <- ParenExpr / TupleLiteral / RecordExpr / SetFilter / SetLiteral / IfThenElse / CaseExpr / FunctionCall / ExistingValue / Literal / Identifier
 
 // Parenthesized expression - creates ParenExpr node to preserve parentheses
 ParenExpr <- "(" ws? expr:Expression ws? ")" {
@@ -731,8 +731,18 @@ ParenExpr <- "(" ws? expr:Expression ws? ")" {
 }
 
 // =============================================================================
-// Set Literals
+// Set Literals and Set Filter
 // =============================================================================
+
+// SetFilter: {x ∈ S : P} - set comprehension that filters elements from a set.
+// Must be tried BEFORE SetLiteral because both start with '{'.
+// The disambiguator is the membership operator followed by ':' predicate.
+SetFilter <- "{" ws? membership:SetMembershipExpr ws? ":" ws? predicate:Expression ws? "}" {
+	return &ast.SetFilter{
+		Membership: membership.(ast.Expression),
+		Predicate:  predicate.(ast.Expression),
+	}, nil
+}
 
 // SetLiteral: {expr1, expr2, ...} or {} (empty set)
 SetLiteral <- "{" ws? elems:SetElements? ws? "}" {
@@ -793,15 +803,20 @@ TupleElements <- first:Expression rest:( ws? "," ws? expr:Expression )* {
 // The colon after the first identifier disambiguates: [name: Type] vs [name |-> value].
 RecordExpr <- RecordAltered / RecordTypeExpr / RecordInstance
 
-// RecordAltered: [identifier EXCEPT !.field = expr, ...]
+// RecordAltered: [base EXCEPT !.field = expr, ...]
+// The base can be an identifier or a nested RecordAltered (for chaining).
 // Pattern: [r EXCEPT !.count = @ + 1, !.total = @ * 2]
-RecordAltered <- "[" ws? id:Identifier ws+ "EXCEPT" ws+ alts:FieldAlterations ws? "]" {
+// Chained: [[r EXCEPT !.x = 1] EXCEPT !.y = 2]
+RecordAltered <- "[" ws? base:RecordAlteredBase ws+ "EXCEPT" ws+ alts:FieldAlterations ws? "]" {
 	alterations := alts.([]*ast.FieldAlteration)
 	return &ast.RecordAltered{
-		Identifier:  id.(*ast.Identifier),
+		Base:        base.(ast.Expression),
 		Alterations: alterations,
 	}, nil
 }
+
+// RecordAlteredBase: the base expression before EXCEPT — either a nested RecordAltered or an Identifier.
+RecordAlteredBase <- RecordAltered / Identifier
 
 // FieldAlterations: comma-separated list of !.field = expr
 FieldAlterations <- first:FieldAlteration rest:( ws? "," ws? alt:FieldAlteration )* {

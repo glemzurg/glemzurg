@@ -589,14 +589,10 @@ func raiseStringIndex(e *me.StringIndex, ctx *RaiseContext) (ast.Expression, err
 // --- Record alteration raising ---
 
 func raiseRecordUpdate(e *me.RecordUpdate, ctx *RaiseContext) (ast.Expression, error) {
-	// The base must resolve to an identifier for RecordAltered.
+	// The base can be any expression (identifier, another RecordAltered, etc.).
 	base, err := Raise(e.Base, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("RecordUpdate.Base: %w", err)
-	}
-	baseIdent, ok := base.(*ast.Identifier)
-	if !ok {
-		return nil, fmt.Errorf("RecordUpdate.Base: expected identifier, got %T", base)
 	}
 
 	alts := make([]*ast.FieldAlteration, len(e.Alterations))
@@ -610,7 +606,7 @@ func raiseRecordUpdate(e *me.RecordUpdate, ctx *RaiseContext) (ast.Expression, e
 			Expression: val,
 		}
 	}
-	return &ast.RecordAltered{Identifier: baseIdent, Alterations: alts}, nil
+	return &ast.RecordAltered{Base: base, Alterations: alts}, nil
 }
 
 // --- Control flow raising ---

@@ -471,7 +471,7 @@ func (s *PrintTestSuite) TestPrintCaseExprWrapsImplies() {
 
 func (s *PrintTestSuite) TestPrintRecordAltered() {
 	s.Equal("[r EXCEPT !.x = 1, !.y = 2]", Print(&RecordAltered{
-		Identifier: &Identifier{Value: "r"},
+		Base: &Identifier{Value: "r"},
 		Alterations: []*FieldAlteration{
 			{Field: &FieldAccess{Member: "x"}, Expression: NewNumberLiteral("1")},
 			{Field: &FieldAccess{Member: "y"}, Expression: NewNumberLiteral("2")},

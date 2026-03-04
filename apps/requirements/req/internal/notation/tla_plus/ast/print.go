@@ -232,7 +232,7 @@ func (p *printer) print(expr Expression) string {
 	case *RecordAltered:
 		var sb strings.Builder
 		sb.WriteString("[")
-		sb.WriteString(e.Identifier.Value)
+		sb.WriteString(p.print(e.Base))
 		sb.WriteString(" EXCEPT ")
 		for i, alt := range e.Alterations {
 			if i > 0 {

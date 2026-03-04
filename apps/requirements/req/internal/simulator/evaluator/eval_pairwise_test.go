@@ -473,7 +473,7 @@ func (s *PairwiseSuite) TestRecordExcept_WithArithmetic() {
 	bindings.Set("x", record, NamespaceGlobal)
 
 	node := &ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "x"},
+		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field: &ast.FieldIdentifier{Identifier: nil, Member: "value"},
@@ -502,7 +502,7 @@ func (s *PairwiseSuite) TestRecordExcept_WithIfElse() {
 	bindings.Set("x", record, NamespaceGlobal)
 
 	node := &ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "x"},
+		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field: &ast.FieldIdentifier{Identifier: nil, Member: "value"},
@@ -598,7 +598,7 @@ func (s *PairwiseSuite) TestError_InAssignment_UndefinedVariable() {
 func (s *PairwiseSuite) TestError_InRecordAltered_UndefinedVariable() {
 	// [nonexistent EXCEPT !.field = 1] - record not defined
 	node := &ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "nonexistent"},
+		Base: &ast.Identifier{Value: "nonexistent"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "field"},

@@ -78,7 +78,8 @@ func (s *StressIntegrationTestSuite) TestPrecedenceThroughEval() {
 	}
 }
 
-// TestNegationVsPowerEval characterizes whether -2^2 is -(2^2)=-4 or (-2)^2=4.
+// TestNegationVsPowerEval verifies -2^2 = -(2^2) = -4.
+// In TLA+ negation has lower precedence than power.
 func (s *StressIntegrationTestSuite) TestNegationVsPowerEval() {
 	expr, err := parser.ParseExpression("-2 ^ 2")
 	s.Require().NoError(err, "parsing -2 ^ 2")
@@ -86,11 +87,7 @@ func (s *StressIntegrationTestSuite) TestNegationVsPowerEval() {
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "evaluating -2 ^ 2: %v", result.Error)
-
-	// Capture actual behavior. If -(2^2), result is -4. If (-2)^2, result is 4.
-	val := result.Value.Inspect()
-	s.True(val == "-4" || val == "4",
-		"expected either -4 (negation wraps power) or 4 (negation binds tighter), got %s", val)
+	s.Equal("-4", result.Value.Inspect(), "-2^2 must be -(2^2) = -4")
 }
 
 // TestNegationInFractionEval characterizes whether -3/4 is -(3/4) or (-3)/4.
@@ -200,9 +197,35 @@ func (s *StressIntegrationTestSuite) TestSetMembershipOperations() {
 	}
 }
 
-// NOTE: Set filter syntax {x ∈ S : P(x)} is NOT supported by the parser grammar.
-// The AST type SetFilter exists but there is no PEG rule to parse it.
-// This is a known limitation / potential future feature.
+// =============================================================================
+// Set filter (set comprehension) evaluation
+// =============================================================================
+
+func (s *StressIntegrationTestSuite) TestSetFilterEval() {
+	tests := []struct {
+		input    string
+		expected string
+		desc     string
+	}{
+		{`{x \in {1, 2, 3, 4, 5} : x > 3}`, "{4, 5}", "filter elements > 3"},
+		{`{x \in {1, 2, 3} : x = 2}`, "{2}", "filter for equality"},
+		{`{x \in {1, 2, 3} : FALSE}`, "{}", "filter with FALSE predicate (empty result)"},
+		{`{x \in {1, 2, 3} : TRUE}`, "{1, 2, 3}", "filter with TRUE predicate (all elements)"},
+		{`{x \in {} : x > 0}`, "{}", "filter over empty set"},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.desc, func() {
+			expr, err := parser.ParseExpression(tt.input)
+			s.Require().NoError(err, "parsing %q", tt.input)
+
+			bindings := NewBindings()
+			result := EvalAST(expr, bindings)
+			s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
+			s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
+		})
+	}
+}
 
 // =============================================================================
 // Record and tuple evaluation

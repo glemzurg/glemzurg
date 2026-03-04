@@ -86,7 +86,7 @@ func (suite *RecordAlteredSuite) TestString() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			r := &RecordAltered{
-				Identifier:  &Identifier{Value: tt.identifier},
+				Base: &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
 			assert.Equal(t, tt.expected, r.String())
@@ -131,7 +131,7 @@ func (suite *RecordAlteredSuite) TestAscii() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			r := &RecordAltered{
-				Identifier:  &Identifier{Value: tt.identifier},
+				Base: &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
 			assert.Equal(t, tt.expected, r.Ascii())
@@ -149,7 +149,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `valid single alteration`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{
 					{
 						Field:      &FieldIdentifier{Identifier: nil, Member: `val`},
@@ -161,7 +161,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `valid multiple alterations`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{
 					{
 						Field:      &FieldIdentifier{Identifier: nil, Member: `val`},
@@ -177,7 +177,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 
 		// Errors.
 		{
-			testName: `error missing identifier`,
+			testName: `error missing base`,
 			r: &RecordAltered{
 				Alterations: []*FieldAlteration{
 					{
@@ -186,12 +186,12 @@ func (suite *RecordAlteredSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Identifier`,
+			errstr: `Base`,
 		},
 		{
-			testName: `error empty identifier`,
+			testName: `error empty identifier in base`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: ``},
+				Base: &Identifier{Value: ``},
 				Alterations: []*FieldAlteration{
 					{
 						Field:      &FieldIdentifier{Identifier: nil, Member: `val`},
@@ -204,14 +204,14 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `error missing alterations`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 			},
 			errstr: `Alterations`,
 		},
 		{
 			testName: `error empty alterations`,
 			r: &RecordAltered{
-				Identifier:  &Identifier{Value: `chan`},
+				Base:        &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{},
 			},
 			errstr: `Alterations`,
@@ -219,7 +219,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `error nil alteration`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{
 					nil,
 				},
@@ -229,7 +229,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `error nil field in alteration`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{
 					{
 						Field:      nil,
@@ -242,7 +242,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `error nil expression in alteration`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{
 					{
 						Field:      &FieldIdentifier{Identifier: nil, Member: `val`},
@@ -255,7 +255,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		{
 			testName: `error missing member in field`,
 			r: &RecordAltered{
-				Identifier: &Identifier{Value: `chan`},
+				Base: &Identifier{Value: `chan`},
 				Alterations: []*FieldAlteration{
 					{
 						Field:      &FieldIdentifier{Identifier: nil, Member: ``},
@@ -281,7 +281,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 func (suite *RecordAlteredSuite) TestExpressionNode() {
 	// Verify that RecordAltered implements the expressionNode interface method.
 	r := &RecordAltered{
-		Identifier: &Identifier{Value: `chan`},
+		Base: &Identifier{Value: `chan`},
 		Alterations: []*FieldAlteration{
 			{
 				Field:      &FieldIdentifier{Identifier: nil, Member: `val`},

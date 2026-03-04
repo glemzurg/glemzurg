@@ -140,17 +140,17 @@ func (s *StressBackslashTestSuite) TestSetDifferenceWithOtherOperators() {
 	}
 }
 
-// TestSetDifferenceNoSpaces tests that set difference works with minimal whitespace.
-func (s *StressBackslashTestSuite) TestSetDifferenceNoSpaces() {
-	// Note: The PEG grammar uses `ws?` around the `\` operator,
-	// so whitespace is optional.
+// TestSetDifferenceRequiresWhitespace tests that set difference requires
+// whitespace around the `\` operator to distinguish it from \-prefix symbols
+// like \in, \cup, etc.
+func (s *StressBackslashTestSuite) TestSetDifferenceRequiresWhitespace() {
 	tests := []struct {
 		input       string
 		desc        string
 		shouldParse bool
 	}{
 		{`A \ B`, "standard spacing", true},
-		{`A \B`, "no space after backslash — might conflict with lookahead", false},
+		{`A \B`, "no space after backslash — must fail", false},
 	}
 
 	for _, tt := range tests {
@@ -159,15 +159,7 @@ func (s *StressBackslashTestSuite) TestSetDifferenceNoSpaces() {
 			if tt.shouldParse {
 				s.NoError(err, "should parse: %q", tt.input)
 			} else {
-				// `A \B` — the `\` is followed by `B`, which is NOT in the
-				// negative lookahead list (only lowercase letters and `/`).
-				// So `\B` could be interpreted as set difference with `B`.
-				// Or it could fail. Characterize the behavior.
-				if err != nil {
-					s.T().Logf("NOTICE: %q fails to parse (characterizing)", tt.input)
-				} else {
-					s.T().Logf("NOTICE: %q parses successfully (characterizing)", tt.input)
-				}
+				s.Error(err, "set difference without whitespace must fail: %q", tt.input)
 			}
 		})
 	}

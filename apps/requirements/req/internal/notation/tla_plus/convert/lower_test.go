@@ -595,7 +595,7 @@ func (s *LowerTestSuite) TestLowerFieldAccess() {
 
 func (s *LowerTestSuite) TestLowerRecordAltered() {
 	result, err := Lower(&ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "self"},
+		Base: &ast.Identifier{Value: "self"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field:      &ast.FieldAccess{Member: "count"},
@@ -613,7 +613,7 @@ func (s *LowerTestSuite) TestLowerRecordAltered() {
 func (s *LowerTestSuite) TestLowerRecordAlteredWithExistingValue() {
 	// [self EXCEPT !.count = @ + 1]
 	result, err := Lower(&ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "self"},
+		Base: &ast.Identifier{Value: "self"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field: &ast.FieldAccess{Member: "count"},

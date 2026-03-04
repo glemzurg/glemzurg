@@ -685,10 +685,10 @@ func lowerFieldAccess(e *ast.FieldAccess, ctx *LowerContext) (*me.FieldAccess, e
 // --- Record alteration lowering ---
 
 func lowerRecordAltered(e *ast.RecordAltered, ctx *LowerContext) (*me.RecordUpdate, error) {
-	// The identifier is the record being altered.
-	base, err := Lower(e.Identifier, ctx)
+	// The base expression is the record being altered.
+	base, err := Lower(e.Base, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("RecordAltered.Identifier: %w", err)
+		return nil, fmt.Errorf("RecordAltered.Base: %w", err)
 	}
 
 	alts := make([]me.FieldAlteration, len(e.Alterations))

@@ -121,13 +121,29 @@ func (s *StressRecordExceptTestSuite) TestRecordExceptWithComplexValues() {
 	}
 }
 
-// TestChainedExceptFails verifies that chaining EXCEPT expressions is NOT
-// supported. The grammar requires an Identifier (not an arbitrary expression)
-// as the base record in EXCEPT, so `[[r EXCEPT ...] EXCEPT ...]` fails.
-func (s *StressRecordExceptTestSuite) TestChainedExceptFails() {
+// TestChainedExcept verifies that chaining EXCEPT expressions is supported.
+// The grammar accepts a nested RecordAltered as the base, so
+// `[[r EXCEPT !.x = 1] EXCEPT !.y = 2]` produces a nested RecordAltered.
+func (s *StressRecordExceptTestSuite) TestChainedExcept() {
 	input := `[[r EXCEPT !.x = 1] EXCEPT !.y = 2]`
-	_, err := ParseExpression(input)
-	s.Error(err, "chained EXCEPT should fail: base must be an identifier, not an expression")
+	expr, err := ParseExpression(input)
+	s.NoError(err, "chained EXCEPT should parse")
+
+	outer, ok := expr.(*ast.RecordAltered)
+	s.True(ok, "expected RecordAltered, got %T", expr)
+	s.Len(outer.Alterations, 1)
+	s.Equal("y", outer.Alterations[0].Field.Member)
+
+	// The base of the outer EXCEPT should itself be a RecordAltered.
+	inner, ok := outer.Base.(*ast.RecordAltered)
+	s.True(ok, "base should be RecordAltered, got %T", outer.Base)
+	s.Len(inner.Alterations, 1)
+	s.Equal("x", inner.Alterations[0].Field.Member)
+
+	// The innermost base should be an Identifier.
+	ident, ok := inner.Base.(*ast.Identifier)
+	s.True(ok, "innermost base should be Identifier, got %T", inner.Base)
+	s.Equal("r", ident.Value)
 }
 
 // TestRecordFieldAccess tests field access on records.

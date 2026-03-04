@@ -114,29 +114,19 @@ func (s *StressPrecedenceTestSuite) TestNegationBinding() {
 	}
 }
 
-// TestNegationVsPower tests -x ^ 2: is it -(x^2) or (-x)^2?
-// Negation is at level 12, power at level 14. Since NegationExpr calls down
-// to DivisionExpr → ... → FractionExpr → PowerExpr, negation wraps the entire
-// power expression: -(x^2).
+// TestNegationVsPower tests -x ^ 2: in TLA+ negation has lower precedence
+// than power, so this MUST parse as -(x^2), NOT (-x)^2.
 func (s *StressPrecedenceTestSuite) TestNegationVsPower() {
 	expr, err := ParseExpression("-x ^ 2")
 	s.Require().NoError(err)
 
-	// Should be UnaryNegation wrapping a power expression
+	// Must be UnaryNegation wrapping a power expression: -(x^2)
 	neg, ok := expr.(*ast.UnaryNegation)
-	if ok {
-		// -(x^2): negation wraps power
-		inner, ok := neg.Right.(*ast.RealInfixExpression)
-		s.Require().True(ok, "inner should be power expression, got %T", neg.Right)
-		s.Equal("^", inner.Operator)
-	} else {
-		// If it's not a negation at top, it might be (-x)^2
-		power, ok := expr.(*ast.RealInfixExpression)
-		s.Require().True(ok, "expected either UnaryNegation or RealInfixExpression, got %T", expr)
-		s.Equal("^", power.Operator)
-		_, ok = power.Left.(*ast.UnaryNegation)
-		s.True(ok, "left of power should be negation")
-	}
+	s.Require().True(ok, "expected UnaryNegation at top level, got %T", expr)
+
+	inner, ok := neg.Right.(*ast.RealInfixExpression)
+	s.Require().True(ok, "inner should be power expression, got %T", neg.Right)
+	s.Equal("^", inner.Operator)
 }
 
 // TestExplicitParenthesizedNegation verifies -(x ^ 2) is always unambiguous.

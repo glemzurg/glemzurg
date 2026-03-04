@@ -12,9 +12,10 @@ type FieldAlteration struct {
 }
 
 // RecordAltered represents an EXCEPT expression that alters fields of a record.
-// Pattern: [identifier EXCEPT !.field1 = expr1, !.field2 = expr2, ...]
+// Pattern: [base EXCEPT !.field1 = expr1, !.field2 = expr2, ...]
+// The base can be any expression, enabling chaining: [[r EXCEPT !.x = 1] EXCEPT !.y = 2]
 type RecordAltered struct {
-	Identifier  *Identifier        `validate:"required"`     // The record identifier
+	Base        Expression         `validate:"required"`       // The base expression (typically an identifier or another RecordAltered)
 	Alterations []*FieldAlteration `validate:"required,min=1"` // At least one field alteration
 }
 
@@ -23,7 +24,7 @@ func (r *RecordAltered) expressionNode() {}
 func (r *RecordAltered) String() (value string) {
 	var out bytes.Buffer
 	out.WriteString("[")
-	out.WriteString(r.Identifier.String())
+	out.WriteString(r.Base.String())
 	out.WriteString(" EXCEPT ")
 	for i, alt := range r.Alterations {
 		if i > 0 {
@@ -40,7 +41,7 @@ func (r *RecordAltered) String() (value string) {
 func (r *RecordAltered) Ascii() (value string) {
 	var out bytes.Buffer
 	out.WriteString("[")
-	out.WriteString(r.Identifier.Ascii())
+	out.WriteString(r.Base.Ascii())
 	out.WriteString(" EXCEPT ")
 	for i, alt := range r.Alterations {
 		if i > 0 {
@@ -58,8 +59,8 @@ func (r *RecordAltered) Validate() error {
 	if err := _validate.Struct(r); err != nil {
 		return err
 	}
-	if err := r.Identifier.Validate(); err != nil {
-		return fmt.Errorf("Identifier: %w", err)
+	if err := r.Base.Validate(); err != nil {
+		return fmt.Errorf("Base: %w", err)
 	}
 	for i, alt := range r.Alterations {
 		if alt == nil {

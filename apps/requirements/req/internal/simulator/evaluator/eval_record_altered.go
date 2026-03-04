@@ -5,10 +5,10 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
-// evalRecordAltered evaluates an EXCEPT expression [id EXCEPT !.field = expr, ...].
+// evalRecordAltered evaluates an EXCEPT expression [base EXCEPT !.field = expr, ...].
 func evalRecordAltered(node *ast.RecordAltered, bindings *Bindings) *EvalResult {
-	// Evaluate the base record
-	baseResult := EvalAST(node.Identifier, bindings)
+	// Evaluate the base record (can be identifier, another EXCEPT, etc.)
+	baseResult := EvalAST(node.Base, bindings)
 	if baseResult.IsError() {
 		return baseResult
 	}

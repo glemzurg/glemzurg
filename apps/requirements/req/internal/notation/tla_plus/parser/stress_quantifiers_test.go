@@ -173,3 +173,41 @@ func (s *StressQuantifierTestSuite) TestQuantifierMalformed() {
 		})
 	}
 }
+
+// TestSetFilter tests set filter (set comprehension) parsing: {x ∈ S : P}.
+func (s *StressQuantifierTestSuite) TestSetFilter() {
+	tests := []struct {
+		input string
+		desc  string
+	}{
+		{`{x \in {1, 2, 3} : x > 1}`, "basic set filter with ASCII"},
+		{`{x ∈ {1, 2, 3} : x > 1}`, "basic set filter with Unicode"},
+		{`{x \in S : x > 0 /\ x < 10}`, "complex filter predicate"},
+		{`{x \in 1..10 : x > 5}`, "range in filter"},
+		{`{x \in {1, 2, 3, 4, 5} : x > 3}`, "filter with literal set"},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.desc, func() {
+			expr, err := ParseExpression(tt.input)
+			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+
+			_, ok := expr.(*ast.SetFilter)
+			s.True(ok, "expected SetFilter, got %T for %q", expr, tt.input)
+		})
+	}
+}
+
+// TestSetFilterWithNestedQuantifier tests set filter with quantifier in predicate.
+func (s *StressQuantifierTestSuite) TestSetFilterWithNestedQuantifier() {
+	input := `{x \in {1, 2, 3} : \E y \in {2, 3, 4} : x = y}`
+	expr, err := ParseExpression(input)
+	s.NoError(err, "set filter with nested quantifier should parse")
+
+	sf, ok := expr.(*ast.SetFilter)
+	s.True(ok, "expected SetFilter, got %T", expr)
+
+	// Predicate should be a Quantifier
+	_, ok = sf.Predicate.(*ast.Quantifier)
+	s.True(ok, "predicate should be Quantifier, got %T", sf.Predicate)
+}

@@ -210,7 +210,7 @@ func walkIdentifiers(expr ast.Expression, result map[string]bool) {
 
 	// Record altered (EXCEPT).
 	case *ast.RecordAltered:
-		walkIdentifiers(e.Identifier, result)
+		walkIdentifiers(e.Base, result)
 		for _, alt := range e.Alterations {
 			walkIdentifiers(alt.Expression, result)
 		}

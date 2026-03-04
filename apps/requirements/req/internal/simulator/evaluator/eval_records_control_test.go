@@ -102,7 +102,7 @@ func (s *RecordsControlSuite) TestRecordExcept_SimpleUpdate() {
 	bindings.Set("x", record, NamespaceGlobal)
 
 	node := &ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "x"},
+		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "value"},
@@ -133,7 +133,7 @@ func (s *RecordsControlSuite) TestRecordExcept_MultipleUpdates() {
 	bindings.Set("x", record, NamespaceGlobal)
 
 	node := &ast.RecordAltered{
-		Identifier: &ast.Identifier{Value: "x"},
+		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
 				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "a"},

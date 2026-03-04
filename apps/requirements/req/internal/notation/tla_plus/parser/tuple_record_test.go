@@ -260,7 +260,7 @@ func (s *TupleRecordSuite) TestRecordAltered_Single() {
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
-	s.Equal("r", altered.Identifier.Value)
+	s.Equal("r", altered.Base.(*ast.Identifier).Value)
 	s.Equal(1, len(altered.Alterations))
 	s.Equal("count", altered.Alterations[0].Field.Member)
 }
@@ -271,7 +271,7 @@ func (s *TupleRecordSuite) TestRecordAltered_Multiple() {
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
-	s.Equal("record", altered.Identifier.Value)
+	s.Equal("record", altered.Base.(*ast.Identifier).Value)
 	s.Equal(3, len(altered.Alterations))
 	s.Equal("field1", altered.Alterations[0].Field.Member)
 	s.Equal("field2", altered.Alterations[1].Field.Member)
