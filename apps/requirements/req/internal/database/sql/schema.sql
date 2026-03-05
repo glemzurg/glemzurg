@@ -16,9 +16,9 @@ COMMENT ON COLUMN model.details IS 'A summary description.';
 --------------------------------------------------------------
 
 CREATE TYPE notation AS ENUM ('tla_plus');
-COMMENT ON TYPE notation IS 'The notation used for a logic specification.';
+COMMENT ON TYPE notation IS 'The notation used for a logic or type specification.';
 
-CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value');
+CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let');
 COMMENT ON TYPE logic_type IS 'The kind of logic specification, each has different rules for well-formedness.';
 
 CREATE TABLE logic (
@@ -30,6 +30,8 @@ CREATE TABLE logic (
   target text NOT NULL,
   notation notation NOT NULL,
   specification text DEFAULT NULL,
+  target_type_notation notation DEFAULT NULL,
+  target_type_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -43,6 +45,8 @@ COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
 COMMENT ON COLUMN logic.target IS 'When this logic sets a value, the identifier of the value to set.';
 COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
+COMMENT ON COLUMN logic.target_type_notation IS 'Optional notation for the declared type of the logic target (e.g., tla_plus).';
+COMMENT ON COLUMN logic.target_type_specification IS 'Optional type specification string for the logic target (e.g., Int, STRING).';
 
 --------------------------------------------------------------
 
@@ -74,6 +78,32 @@ COMMENT ON COLUMN global_function.model_key IS 'The model this function is part 
 COMMENT ON COLUMN global_function.logic_key IS 'The logic of the function.';
 COMMENT ON COLUMN global_function.name IS 'The name of the function, fitting for the notation of the logic.';
 COMMENT ON COLUMN global_function.parameters IS 'The parameters of the function, fitting for the notation of the logic.';
+
+--------------------------------------------------------------
+
+CREATE TABLE named_set (
+  model_key text NOT NULL,
+  set_key text NOT NULL,
+  name text NOT NULL,
+  description text NOT NULL,
+  notation notation NOT NULL,
+  specification text NOT NULL,
+  type_spec_notation notation DEFAULT NULL,
+  type_spec_specification text DEFAULT NULL,
+  PRIMARY KEY (model_key, set_key),
+  UNIQUE (model_key, name),
+  CONSTRAINT fk_named_set_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE named_set IS 'A reusable named set definition at the model level, referenced from behavioral logic via named_set_ref expressions.';
+COMMENT ON COLUMN named_set.model_key IS 'The model this named set is part of.';
+COMMENT ON COLUMN named_set.set_key IS 'The internal ID of the named set.';
+COMMENT ON COLUMN named_set.name IS 'The unique name of the named set within the model.';
+COMMENT ON COLUMN named_set.description IS 'Optional description of the named set.';
+COMMENT ON COLUMN named_set.notation IS 'The notation used for the set specification (e.g., tla_plus).';
+COMMENT ON COLUMN named_set.specification IS 'The formal specification of the set contents.';
+COMMENT ON COLUMN named_set.type_spec_notation IS 'Optional notation for a precise type specification.';
+COMMENT ON COLUMN named_set.type_spec_specification IS 'Optional precise type specification string.';
 
 --------------------------------------------------------------
 
@@ -210,6 +240,8 @@ CREATE TABLE data_type (
   collection_unique boolean DEFAULT NULL,
   collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
   collection_max bigint CHECK (collection_max > 0) DEFAULT NULL,
+  type_spec_notation notation DEFAULT NULL,
+  type_spec_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, data_type_key),
   CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -221,6 +253,8 @@ COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic v
 COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
 COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set if maximum set.';
 COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
+COMMENT ON COLUMN data_type.type_spec_notation IS 'Optional notation for a precise type specification (e.g., tla_plus).';
+COMMENT ON COLUMN data_type.type_spec_specification IS 'Optional precise type specification string (e.g., Seq(Int), SUBSET STRING).';
 
 --------------------------------------------------------------
 
@@ -454,6 +488,22 @@ COMMENT ON TABLE class_invariant IS 'An invariant that is forever true objects o
 COMMENT ON COLUMN class_invariant.model_key IS 'The model this invariant is part of.';
 COMMENT ON COLUMN class_invariant.class_key IS 'The class this invariant is part of.';
 COMMENT ON COLUMN class_invariant.logic_key IS 'The logic of the invariant.';
+
+--------------------------------------------------------------
+
+CREATE TABLE attribute_invariant (
+  model_key text NOT NULL,
+  attribute_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, attribute_key, logic_key),
+  CONSTRAINT fk_attr_invariant_attribute FOREIGN KEY (model_key, attribute_key) REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE,
+  CONSTRAINT fk_attr_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE attribute_invariant IS 'Join table linking attributes to their invariant logic predicates.';
+COMMENT ON COLUMN attribute_invariant.model_key IS 'The model this attribute invariant belongs to.';
+COMMENT ON COLUMN attribute_invariant.attribute_key IS 'The attribute this invariant constrains.';
+COMMENT ON COLUMN attribute_invariant.logic_key IS 'The logic predicate that must hold for the attribute value.';
 
 --------------------------------------------------------------
 
@@ -1010,97 +1060,3 @@ COMMENT ON COLUMN scenario_step.to_object_key IS 'The destination of a step.';
 COMMENT ON COLUMN scenario_step.event_key IS 'A leaf step that changes state.';
 COMMENT ON COLUMN scenario_step.query_key IS 'A leaf step that does not change state.';
 COMMENT ON COLUMN scenario_step.scenario_ref_key IS 'A leaf step that is another scenario.';
-
---------------------------------------------------------------
-
-CREATE TYPE expression_node_type AS ENUM (
-    -- Literals
-    'bool_literal', 'int_literal', 'rational_literal', 'string_literal',
-    'set_literal', 'tuple_literal', 'record_literal', 'set_constant',
-    -- References
-    'self_ref', 'attribute_ref', 'local_var', 'prior_field_value', 'next_state',
-    -- Binary operators
-    'binary_arith', 'binary_logic', 'compare', 'set_op', 'set_compare',
-    'bag_op', 'bag_compare', 'membership',
-    -- Unary operators
-    'negate', 'not',
-    -- Collections
-    'field_access', 'tuple_index', 'record_update', 'field_alteration',
-    'string_index', 'string_concat', 'tuple_concat',
-    -- Control flow
-    'if_then_else', 'case', 'case_branch',
-    -- Quantifiers
-    'quantifier', 'set_filter', 'set_range',
-    -- Calls
-    'action_call', 'global_call', 'builtin_call'
-);
-
-CREATE TABLE expression_node (
-    model_key           text NOT NULL,
-    expression_node_key text NOT NULL,
-    logic_key           text NOT NULL,
-    parent_node_key     text DEFAULT NULL,
-    sort_order          int NOT NULL,
-    node_type           expression_node_type NOT NULL,
-
-    -- Scalar values (used by literals and leaf nodes, NULL otherwise).
-    bool_value          boolean DEFAULT NULL,
-    int_value           bigint DEFAULT NULL,
-    numerator           bigint DEFAULT NULL,
-    denominator         bigint DEFAULT NULL,
-    string_value        text DEFAULT NULL,
-
-    -- Operator enums (used by binary/unary operator nodes).
-    operator            text DEFAULT NULL,
-
-    -- Model references (foreign keys to other model entities).
-    attribute_key       text DEFAULT NULL,
-    action_key          text DEFAULT NULL,
-    global_function_key text DEFAULT NULL,
-    builtin_module      text DEFAULT NULL,
-    builtin_function    text DEFAULT NULL,
-
-    -- Quantifier metadata.
-    quantifier_kind     text DEFAULT NULL,
-    variable_name       text DEFAULT NULL,
-
-    -- Set constant kind.
-    set_constant_kind   text DEFAULT NULL,
-
-    -- Membership negation.
-    negated             boolean DEFAULT NULL,
-
-    PRIMARY KEY (model_key, expression_node_key),
-    CONSTRAINT fk_expr_parent FOREIGN KEY (model_key, parent_node_key)
-        REFERENCES expression_node (model_key, expression_node_key) ON DELETE CASCADE,
-    CONSTRAINT fk_expr_logic FOREIGN KEY (model_key, logic_key)
-        REFERENCES logic (model_key, logic_key) ON DELETE CASCADE,
-    CONSTRAINT fk_expr_attribute FOREIGN KEY (model_key, attribute_key)
-        REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE,
-    CONSTRAINT fk_expr_action FOREIGN KEY (model_key, action_key)
-        REFERENCES action (model_key, action_key) ON DELETE CASCADE,
-    CONSTRAINT fk_expr_global_function FOREIGN KEY (model_key, global_function_key)
-        REFERENCES global_function (model_key, global_function_key) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE expression_node IS 'A node in a structured expression tree attached to a logic.';
-COMMENT ON COLUMN expression_node.expression_node_key IS 'Unique ID for this node within the model.';
-COMMENT ON COLUMN expression_node.logic_key IS 'The logic this expression belongs to.';
-COMMENT ON COLUMN expression_node.parent_node_key IS 'Parent node, NULL for root.';
-COMMENT ON COLUMN expression_node.sort_order IS 'Ordering among siblings (e.g. left=0, right=1).';
-COMMENT ON COLUMN expression_node.node_type IS 'The kind of expression node.';
-COMMENT ON COLUMN expression_node.bool_value IS 'Boolean literal value.';
-COMMENT ON COLUMN expression_node.int_value IS 'Integer literal value.';
-COMMENT ON COLUMN expression_node.numerator IS 'Rational literal numerator.';
-COMMENT ON COLUMN expression_node.denominator IS 'Rational literal denominator.';
-COMMENT ON COLUMN expression_node.string_value IS 'Multipurpose string: literal value, field name, variable name.';
-COMMENT ON COLUMN expression_node.operator IS 'Operator enum string for binary/unary nodes.';
-COMMENT ON COLUMN expression_node.attribute_key IS 'FK to attribute for attribute_ref nodes.';
-COMMENT ON COLUMN expression_node.action_key IS 'FK to action for action_call nodes.';
-COMMENT ON COLUMN expression_node.global_function_key IS 'FK to global_function for global_call nodes.';
-COMMENT ON COLUMN expression_node.builtin_module IS 'Module name for builtin_call nodes.';
-COMMENT ON COLUMN expression_node.builtin_function IS 'Function name for builtin_call nodes.';
-COMMENT ON COLUMN expression_node.quantifier_kind IS 'forall or exists for quantifier nodes.';
-COMMENT ON COLUMN expression_node.variable_name IS 'Bound variable name for quantifier/set_filter nodes.';
-COMMENT ON COLUMN expression_node.set_constant_kind IS 'nat, int, real, or boolean for set_constant nodes.';
-COMMENT ON COLUMN expression_node.negated IS 'Whether membership is negated (not-in).';
