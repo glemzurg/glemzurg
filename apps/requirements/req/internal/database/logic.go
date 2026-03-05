@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 
 	"github.com/pkg/errors"
 )
@@ -12,6 +13,8 @@ import (
 // Populate a golang struct from a database row.
 func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 	var keyStr string
+	var targetTypeNotation *string
+	var targetTypeSpecification *string
 
 	if err = scanner.Scan(
 		&keyStr,
@@ -20,6 +23,8 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		&logic.Target,
 		&logic.Spec.Notation,
 		&logic.Spec.Specification,
+		&targetTypeNotation,
+		&targetTypeSpecification,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -31,6 +36,19 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 	logic.Key, err = identity.ParseKey(keyStr)
 	if err != nil {
 		return err
+	}
+
+	// Reconstitute TargetTypeSpec if present.
+	if targetTypeNotation != nil && *targetTypeNotation != "" {
+		spec := ""
+		if targetTypeSpecification != nil {
+			spec = *targetTypeSpecification
+		}
+		ts := model_spec.TypeSpec{
+			Notation:      *targetTypeNotation,
+			Specification: spec,
+		}
+		logic.TargetTypeSpec = &ts
 	}
 
 	return nil
@@ -49,12 +67,14 @@ func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic mod
 			return nil
 		},
 		`SELECT
-			logic_key     ,
-			logic_type    ,
-			description   ,
-			target        ,
-			notation      ,
-			specification
+			logic_key                  ,
+			logic_type                 ,
+			description                ,
+			target                     ,
+			notation                   ,
+			specification              ,
+			target_type_notation       ,
+			target_type_specification
 		FROM
 			logic
 		WHERE
@@ -79,17 +99,27 @@ func AddLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err erro
 // UpdateLogic updates a logic in the database.
 func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOrder int) (err error) {
 
+	// Extract target type spec fields.
+	var ttNotation *string
+	var ttSpecification *string
+	if logic.TargetTypeSpec != nil {
+		ttNotation = &logic.TargetTypeSpec.Notation
+		ttSpecification = &logic.TargetTypeSpec.Specification
+	}
+
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE
 			logic
 		SET
-			logic_type    = $3 ,
-			description   = $4 ,
-			target        = $5 ,
-			notation      = $6 ,
-			specification = $7 ,
-			sort_order    = $8
+			logic_type                = $3  ,
+			description               = $4  ,
+			target                    = $5  ,
+			notation                  = $6  ,
+			specification             = $7  ,
+			sort_order                = $8  ,
+			target_type_notation      = $9  ,
+			target_type_specification = $10
 		WHERE
 			model_key = $1
 		AND
@@ -101,7 +131,9 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 		logic.Target,
 		logic.Spec.Notation,
 		logic.Spec.Specification,
-		sortOrder)
+		sortOrder,
+		ttNotation,
+		ttSpecification)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -144,12 +176,14 @@ func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, er
 			return nil
 		},
 		`SELECT
-			logic_key     ,
-			logic_type    ,
-			description   ,
-			target        ,
-			notation      ,
-			specification
+			logic_key                  ,
+			logic_type                 ,
+			description                ,
+			target                     ,
+			notation                   ,
+			specification              ,
+			target_type_notation       ,
+			target_type_specification
 		FROM
 			logic
 		WHERE
@@ -171,16 +205,23 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO logic (model_key, logic_key, logic_type, description, target, notation, specification, sort_order) VALUES `
-	args := make([]interface{}, 0, len(logics)*8)
+	query := `INSERT INTO logic (model_key, logic_key, logic_type, description, target, notation, specification, sort_order, target_type_notation, target_type_specification) VALUES `
+	args := make([]interface{}, 0, len(logics)*10)
 	for i, logic := range logics {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 8
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
-		// Map empty target to nil for NULL in the database.
-		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()])
+		base := i * 10
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
+
+		var ttNotation *string
+		var ttSpecification *string
+		if logic.TargetTypeSpec != nil {
+			ttNotation = &logic.TargetTypeSpec.Notation
+			ttSpecification = &logic.TargetTypeSpec.Specification
+		}
+
+		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()], ttNotation, ttSpecification)
 	}
 
 	_, err = dbExec(dbOrTx, query, args...)

@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -125,6 +126,19 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 				}
 			}
 		}
+		// Collect attribute invariant logics with sort_order = slice index.
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, attr := range class.Attributes {
+						for i, inv := range attr.Invariants {
+							sortOrders[inv.Key.String()] = i
+						}
+						allLogics = append(allLogics, attr.Invariants...)
+					}
+				}
+			}
+		}
 		if err = AddLogics(tx, modelKey, allLogics, sortOrders); err != nil {
 			return err
 		}
@@ -145,6 +159,17 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 		}
 		if err = AddGlobalFunctions(tx, modelKey, gfSlice); err != nil {
 			return err
+		}
+
+		// Add named set rows (must be inserted before expression_node due to FK).
+		if len(model.NamedSets) > 0 {
+			nsSlice := make([]model_named_set.NamedSet, 0, len(model.NamedSets))
+			for _, ns := range model.NamedSets {
+				nsSlice = append(nsSlice, ns)
+			}
+			if err = AddNamedSets(tx, modelKey, nsSlice); err != nil {
+				return err
+			}
 		}
 
 		// Collect actor generalizations into a slice (must be inserted before actors due to FK).
@@ -272,6 +297,20 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 			return err
 		}
 
+		// Collect attribute invariant join rows from attribute invariants (must be inserted after attributes due to FK).
+		attrInvariantsMap := make(map[identity.Key][]identity.Key)
+		for _, domain := range model.Domains {
+			for _, subdomain := range domain.Subdomains {
+				for _, class := range subdomain.Classes {
+					for _, attr := range class.Attributes {
+						for _, inv := range attr.Invariants {
+							attrInvariantsMap[attr.Key] = append(attrInvariantsMap[attr.Key], inv.Key)
+						}
+					}
+				}
+			}
+		}
+
 		// Collect data types from attributes and query parameters (must be inserted before attributes/query_parameter due to FK).
 		dataTypes := make(map[string]model_data_type.DataType)
 		for _, attrs := range attributesMap {
@@ -314,6 +353,11 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 
 		// Bulk insert attributes.
 		if err = AddAttributes(tx, modelKey, attributesMap); err != nil {
+			return err
+		}
+
+		// Insert attribute invariant join rows (must be after attributes due to FK).
+		if err = AddAttributeInvariants(tx, modelKey, attrInvariantsMap); err != nil {
 			return err
 		}
 
@@ -700,6 +744,18 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			}
 		}
 
+		// Named sets — load and stitch expression data.
+		namedSetSlice, err := QueryNamedSets(tx, modelKey)
+		if err != nil {
+			return err
+		}
+		if len(namedSetSlice) > 0 {
+			model.NamedSets = make(map[identity.Key]model_named_set.NamedSet, len(namedSetSlice))
+			for _, ns := range namedSetSlice {
+				model.NamedSets[ns.Key] = ns
+			}
+		}
+
 		// Actor generalizations - returns slice, convert to map.
 		actorGeneralizationsSlice, err := QueryActorGeneralizations(tx, modelKey)
 		if err != nil {
@@ -814,6 +870,12 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 
 		// Class invariants grouped by class key.
 		classInvariantsMap, err := QueryClassInvariants(tx, modelKey)
+		if err != nil {
+			return err
+		}
+
+		// Attribute invariants grouped by attribute key.
+		attrInvariantsMap, err := QueryAttributeInvariants(tx, modelKey)
 		if err != nil {
 			return err
 		}
@@ -1016,6 +1078,13 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 				// Stitch data type from data types table.
 				if dt, ok := dataTypes[attr.Key.String()]; ok {
 					attrs[i].DataType = &dt
+				}
+				// Stitch attribute invariants from logic data.
+				if invKeys, ok := attrInvariantsMap[attr.Key]; ok {
+					attrs[i].Invariants = make([]model_logic.Logic, len(invKeys))
+					for j, key := range invKeys {
+						attrs[i].Invariants[j] = logicsByKey[key]
+					}
 				}
 				// Load class indexes for this attribute.
 				indexNums, err := LoadClassAttributeIndexes(tx, modelKey, classKey, attr.Key)

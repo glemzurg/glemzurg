@@ -142,6 +142,11 @@ update to https://github.com/go-playground/validator
   - the tla itself would deifne the parameters for events, actions, etc. 
     - all data flow 
 
+- traceability
+  - one thing to another
+  - hash values, identify if changed
+  - indicate that a human has verified
+
 - make a tla prover?
   - https://proofs.tlapl.us/doc/web/content/Home.html
   - isolate which tla grammar is really for the prover:

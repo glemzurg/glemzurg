@@ -51,6 +51,9 @@ type exprNodeRow struct {
 
 	// Membership negation.
 	negated *bool
+
+	// Named set reference.
+	namedSetKey *string
 }
 
 // scanExprNode scans a database row into an exprNodeRow.
@@ -78,6 +81,7 @@ func scanExprNode(scanner Scanner) (row exprNodeRow, err error) {
 		&row.variableName,
 		&row.setConstantKind,
 		&row.negated,
+		&row.namedSetKey,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
@@ -128,7 +132,8 @@ func QueryExpressionNodes(dbOrTx DbOrTx, modelKey string) (expressions map[ident
 			quantifier_kind,
 			variable_name,
 			set_constant_kind,
-			negated
+			negated,
+			named_set_key
 		FROM
 			expression_node
 		WHERE
@@ -521,6 +526,14 @@ func (ctx *rebuildContext) buildNode(key string) (me.Expression, error) {
 			Args:     args,
 		}, nil
 
+	// --- Named set references ---
+	case me.NodeNamedSetRef:
+		setKey, err := identity.ParseKey(derefString(row.namedSetKey))
+		if err != nil {
+			return nil, fmt.Errorf("named_set_ref: %w", err)
+		}
+		return &me.NamedSetRef{SetKey: setKey}, nil
+
 	default:
 		return nil, fmt.Errorf("unknown expression node type: %q", row.nodeType)
 	}
@@ -833,6 +846,10 @@ func flattenExprRecursive(logicKey identity.Key, parentKey *string, expr me.Expr
 			flattenExprRecursive(logicKey, &nodeKey, arg, i, rows, counter, "")
 		}
 		return nodeKey
+
+	// --- Named set references ---
+	case *me.NamedSetRef:
+		row.namedSetKey = exprStrPtr(n.SetKey.String())
 	}
 
 	// Leaf node (no children added above).
@@ -885,18 +902,18 @@ func AddExpressionNodes(dbOrTx DbOrTx, modelKey string, rows []exprNodeRow) (err
 		return nil
 	}
 
-	query := `INSERT INTO expression_node (model_key, expression_node_key, logic_key, parent_node_key, sort_order, node_type, bool_value, int_value, numerator, denominator, string_value, operator, attribute_key, action_key, global_function_key, builtin_module, builtin_function, quantifier_kind, variable_name, set_constant_kind, negated) VALUES `
-	args := make([]interface{}, 0, len(rows)*21)
+	query := `INSERT INTO expression_node (model_key, expression_node_key, logic_key, parent_node_key, sort_order, node_type, bool_value, int_value, numerator, denominator, string_value, operator, attribute_key, action_key, global_function_key, builtin_module, builtin_function, quantifier_kind, variable_name, set_constant_kind, negated, named_set_key) VALUES `
+	args := make([]interface{}, 0, len(rows)*22)
 
 	for i, row := range rows {
 		if i > 0 {
 			query += ", "
 		}
-		base := i * 21
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+		base := i * 22
+		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			base+1, base+2, base+3, base+4, base+5, base+6, base+7,
 			base+8, base+9, base+10, base+11, base+12, base+13, base+14,
-			base+15, base+16, base+17, base+18, base+19, base+20, base+21)
+			base+15, base+16, base+17, base+18, base+19, base+20, base+21, base+22)
 
 		args = append(args,
 			modelKey,
@@ -920,6 +937,7 @@ func AddExpressionNodes(dbOrTx DbOrTx, modelKey string, rows []exprNodeRow) (err
 			row.variableName,
 			row.setConstantKind,
 			row.negated,
+			row.namedSetKey,
 		)
 	}
 

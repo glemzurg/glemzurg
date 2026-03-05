@@ -254,6 +254,56 @@ func (suite *LogicSuite) TestQuery() {
 	}, logics)
 }
 
+func (suite *LogicSuite) TestAddLetType() {
+
+	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "Int"}
+	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
+		Key:            suite.logicKey,
+		Type:           model_logic.LogicTypeLet,
+		Description:    "Compute threshold",
+		Target:         "threshold",
+		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"},
+		TargetTypeSpec: &ts,
+	})
+	assert.Nil(suite.T(), err)
+
+	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), model_logic.Logic{
+		Key:            suite.logicKey,
+		Type:           model_logic.LogicTypeLet,
+		Description:    "Compute threshold",
+		Target:         "threshold",
+		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"},
+		TargetTypeSpec: &model_spec.TypeSpec{Notation: "tla_plus", Specification: "Int"},
+	}, logic)
+}
+
+func (suite *LogicSuite) TestAddWithTargetTypeSpec() {
+
+	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"}
+	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
+		Key:            suite.logicKey,
+		Type:           model_logic.LogicTypeAssessment,
+		Description:    "Description",
+		Target:         "",
+		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		TargetTypeSpec: &ts,
+	})
+	assert.Nil(suite.T(), err)
+
+	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), model_logic.Logic{
+		Key:            suite.logicKey,
+		Type:           model_logic.LogicTypeAssessment,
+		Description:    "Description",
+		Target:         "",
+		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		TargetTypeSpec: &model_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"},
+	}, logic)
+}
+
 //==================================================
 // Test objects for other tests.
 //==================================================

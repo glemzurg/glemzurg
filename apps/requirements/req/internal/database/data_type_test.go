@@ -7,6 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -278,6 +279,52 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 			CollectionMax:    t_IntPtr(20),
 		},
 	}, dataTypes)
+}
+
+func (suite *DataTypeSuite) TestAddWithTypeSpec() {
+
+	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:            "key",
+		CollectionType: "atomic",
+		TypeSpec:       &ts,
+	})
+	assert.Nil(suite.T(), err)
+
+	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), model_data_type.DataType{
+		Key:            "key",
+		CollectionType: "atomic",
+		TypeSpec:       &model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"},
+	}, dataType)
+}
+
+func (suite *DataTypeSuite) TestUpdateTypeSpec() {
+
+	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
+	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:            "key",
+		CollectionType: "atomic",
+		TypeSpec:       &ts,
+	})
+	assert.Nil(suite.T(), err)
+
+	// Update to remove TypeSpec.
+	err = UpdateDataType(suite.db, suite.model.Key, model_data_type.DataType{
+		Key:            "key",
+		CollectionType: "record",
+		TypeSpec:       nil,
+	})
+	assert.Nil(suite.T(), err)
+
+	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), model_data_type.DataType{
+		Key:            "key",
+		CollectionType: "record",
+		TypeSpec:       nil,
+	}, dataType)
 }
 
 //==================================================
