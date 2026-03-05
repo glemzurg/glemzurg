@@ -8,14 +8,16 @@ A bit of business logic.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| logic_key | text |  | false | [public.invariant](public.invariant.md) [public.global_function](public.global_function.md) [public.attribute](public.attribute.md) [public.class_invariant](public.class_invariant.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) [public.guard](public.guard.md) [public.action_require](public.action_require.md) [public.action_guarantee](public.action_guarantee.md) [public.action_safety](public.action_safety.md) |  | The internal ID. |
-| model_key | text |  | false | [public.invariant](public.invariant.md) [public.global_function](public.global_function.md) [public.attribute](public.attribute.md) [public.class_invariant](public.class_invariant.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) [public.guard](public.guard.md) [public.action_require](public.action_require.md) [public.action_guarantee](public.action_guarantee.md) [public.action_safety](public.action_safety.md) | [public.model](public.model.md) | The model this logic is part of. |
+| logic_key | text |  | false | [public.invariant](public.invariant.md) [public.global_function](public.global_function.md) [public.attribute](public.attribute.md) [public.class_invariant](public.class_invariant.md) [public.attribute_invariant](public.attribute_invariant.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) [public.guard](public.guard.md) [public.action_require](public.action_require.md) [public.action_guarantee](public.action_guarantee.md) [public.action_safety](public.action_safety.md) |  | The internal ID. |
+| model_key | text |  | false | [public.invariant](public.invariant.md) [public.global_function](public.global_function.md) [public.attribute](public.attribute.md) [public.class_invariant](public.class_invariant.md) [public.attribute_invariant](public.attribute_invariant.md) [public.query_require](public.query_require.md) [public.query_guarantee](public.query_guarantee.md) [public.guard](public.guard.md) [public.action_require](public.action_require.md) [public.action_guarantee](public.action_guarantee.md) [public.action_safety](public.action_safety.md) | [public.model](public.model.md) | The model this logic is part of. |
 | sort_order | integer |  | false |  |  | Often part of a list of logics that are sorted. |
 | logic_type | logic_type |  | false |  |  | The kind of logic, each has different rules for what well-formed looks like. |
 | description | text |  | false |  |  | The casual readable form of the logic. |
 | target | text |  | false |  |  | When this logic sets a value, the identifier of the value to set. |
 | notation | notation |  | false |  |  | The type of notation used for the specification. |
 | specification | text |  | true |  |  | The unambiguous form of the logic. |
+| target_type_notation | notation |  | true |  |  | Optional notation for the declared type of the logic target (e.g., tla_plus). |
+| target_type_specification | text |  | true |  |  | Optional type specification string for the logic target (e.g., Int, STRING). |
 
 ## Constraints
 

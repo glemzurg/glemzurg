@@ -120,6 +120,18 @@
           "type": "text",
           "nullable": true,
           "comment": "The unambiguous form of the logic."
+        },
+        {
+          "name": "target_type_notation",
+          "type": "notation",
+          "nullable": true,
+          "comment": "Optional notation for the declared type of the logic target (e.g., tla_plus)."
+        },
+        {
+          "name": "target_type_specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "Optional type specification string for the logic target (e.g., Int, STRING)."
         }
       ],
       "indexes": [
@@ -420,6 +432,178 @@
           "type": "UNIQUE",
           "def": "UNIQUE (model_key, name)",
           "table": "public.global_function",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.named_set",
+      "type": "BASE TABLE",
+      "comment": "A reusable named set definition at the model level, referenced from behavioral logic via named_set_ref expressions.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this named set is part of."
+        },
+        {
+          "name": "set_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The internal ID of the named set."
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "comment": "The unique name of the named set within the model."
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": false,
+          "comment": "Optional description of the named set."
+        },
+        {
+          "name": "notation",
+          "type": "notation",
+          "nullable": false,
+          "comment": "The notation used for the set specification (e.g., tla_plus)."
+        },
+        {
+          "name": "specification",
+          "type": "text",
+          "nullable": false,
+          "comment": "The formal specification of the set contents."
+        },
+        {
+          "name": "type_spec_notation",
+          "type": "notation",
+          "nullable": true,
+          "comment": "Optional notation for a precise type specification."
+        },
+        {
+          "name": "type_spec_specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "Optional precise type specification string."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "named_set_pkey",
+          "def": "CREATE UNIQUE INDEX named_set_pkey ON public.named_set USING btree (model_key, set_key)",
+          "table": "public.named_set",
+          "columns": [
+            "model_key",
+            "set_key"
+          ]
+        },
+        {
+          "name": "named_set_model_key_name_key",
+          "def": "CREATE UNIQUE INDEX named_set_model_key_name_key ON public.named_set USING btree (model_key, name)",
+          "table": "public.named_set",
+          "columns": [
+            "model_key",
+            "name"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "named_set_description_not_null",
+          "type": "n",
+          "def": "NOT NULL description",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "description"
+          ]
+        },
+        {
+          "name": "named_set_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "named_set_name_not_null",
+          "type": "n",
+          "def": "NOT NULL name",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "name"
+          ]
+        },
+        {
+          "name": "named_set_notation_not_null",
+          "type": "n",
+          "def": "NOT NULL notation",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "notation"
+          ]
+        },
+        {
+          "name": "named_set_set_key_not_null",
+          "type": "n",
+          "def": "NOT NULL set_key",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "set_key"
+          ]
+        },
+        {
+          "name": "named_set_specification_not_null",
+          "type": "n",
+          "def": "NOT NULL specification",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "specification"
+          ]
+        },
+        {
+          "name": "fk_named_set_model",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE",
+          "table": "public.named_set",
+          "referenced_table": "model",
+          "columns": [
+            "model_key"
+          ],
+          "referenced_columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "named_set_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, set_key)",
+          "table": "public.named_set",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "set_key"
+          ]
+        },
+        {
+          "name": "named_set_model_key_name_key",
+          "type": "UNIQUE",
+          "def": "UNIQUE (model_key, name)",
+          "table": "public.named_set",
           "referenced_table": "",
           "columns": [
             "model_key",
@@ -1131,6 +1315,18 @@
           "type": "bigint",
           "nullable": true,
           "comment": "If a collection and there is a maximum number of items, the maximum."
+        },
+        {
+          "name": "type_spec_notation",
+          "type": "notation",
+          "nullable": true,
+          "comment": "Optional notation for a precise type specification (e.g., tla_plus)."
+        },
+        {
+          "name": "type_spec_specification",
+          "type": "text",
+          "nullable": true,
+          "comment": "Optional precise type specification string (e.g., Seq(Int), SUBSET STRING)."
         }
       ],
       "indexes": [
@@ -2515,6 +2711,117 @@
           "columns": [
             "model_key",
             "class_key",
+            "logic_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "public.attribute_invariant",
+      "type": "BASE TABLE",
+      "comment": "Join table linking attributes to their invariant logic predicates.",
+      "columns": [
+        {
+          "name": "model_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The model this attribute invariant belongs to."
+        },
+        {
+          "name": "attribute_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The attribute this invariant constrains."
+        },
+        {
+          "name": "logic_key",
+          "type": "text",
+          "nullable": false,
+          "comment": "The logic predicate that must hold for the attribute value."
+        }
+      ],
+      "indexes": [
+        {
+          "name": "attribute_invariant_pkey",
+          "def": "CREATE UNIQUE INDEX attribute_invariant_pkey ON public.attribute_invariant USING btree (model_key, attribute_key, logic_key)",
+          "table": "public.attribute_invariant",
+          "columns": [
+            "model_key",
+            "attribute_key",
+            "logic_key"
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "name": "attribute_invariant_attribute_key_not_null",
+          "type": "n",
+          "def": "NOT NULL attribute_key",
+          "table": "public.attribute_invariant",
+          "referenced_table": "",
+          "columns": [
+            "attribute_key"
+          ]
+        },
+        {
+          "name": "attribute_invariant_logic_key_not_null",
+          "type": "n",
+          "def": "NOT NULL logic_key",
+          "table": "public.attribute_invariant",
+          "referenced_table": "",
+          "columns": [
+            "logic_key"
+          ]
+        },
+        {
+          "name": "attribute_invariant_model_key_not_null",
+          "type": "n",
+          "def": "NOT NULL model_key",
+          "table": "public.attribute_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key"
+          ]
+        },
+        {
+          "name": "fk_attr_invariant_logic",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE",
+          "table": "public.attribute_invariant",
+          "referenced_table": "logic",
+          "columns": [
+            "model_key",
+            "logic_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "logic_key"
+          ]
+        },
+        {
+          "name": "fk_attr_invariant_attribute",
+          "type": "FOREIGN KEY",
+          "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE",
+          "table": "public.attribute_invariant",
+          "referenced_table": "attribute",
+          "columns": [
+            "model_key",
+            "attribute_key"
+          ],
+          "referenced_columns": [
+            "model_key",
+            "attribute_key"
+          ]
+        },
+        {
+          "name": "attribute_invariant_pkey",
+          "type": "PRIMARY KEY",
+          "def": "PRIMARY KEY (model_key, attribute_key, logic_key)",
+          "table": "public.attribute_invariant",
+          "referenced_table": "",
+          "columns": [
+            "model_key",
+            "attribute_key",
             "logic_key"
           ]
         }
@@ -6007,6 +6314,19 @@
       "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
     },
     {
+      "table": "public.named_set",
+      "columns": [
+        "model_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.model",
+      "parent_columns": [
+        "model_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key) REFERENCES model(model_key) ON DELETE CASCADE"
+    },
+    {
       "table": "public.domain",
       "columns": [
         "model_key"
@@ -6426,6 +6746,36 @@
       ],
       "parent_cardinality": "exactly_one",
       "def": "FOREIGN KEY (model_key, class_key) REFERENCES class(model_key, class_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.attribute_invariant",
+      "columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.logic",
+      "parent_columns": [
+        "model_key",
+        "logic_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key) ON DELETE CASCADE"
+    },
+    {
+      "table": "public.attribute_invariant",
+      "columns": [
+        "model_key",
+        "attribute_key"
+      ],
+      "cardinality": "zero_or_more",
+      "parent_table": "public.attribute",
+      "parent_columns": [
+        "model_key",
+        "attribute_key"
+      ],
+      "parent_cardinality": "exactly_one",
+      "def": "FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key) ON DELETE CASCADE"
     },
     {
       "table": "public.association",
@@ -7293,6 +7643,7 @@
       "name": "public.logic_type",
       "values": [
         "assessment",
+        "let",
         "query",
         "safety_rule",
         "state_change",

@@ -8,8 +8,8 @@ An attribute of a class.
 
 | Name | Type | Default | Nullable | Children | Parents | Comment |
 | ---- | ---- | ------- | -------- | -------- | ------- | ------- |
-| model_key | text |  | false | [public.class_index](public.class_index.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
-| attribute_key | text |  | false | [public.class_index](public.class_index.md) |  | The internal ID. |
+| model_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) | [public.logic](public.logic.md) [public.data_type](public.data_type.md) [public.class](public.class.md) | The model this class attribute is part of. |
+| attribute_key | text |  | false | [public.class_index](public.class_index.md) [public.attribute_invariant](public.attribute_invariant.md) |  | The internal ID. |
 | class_key | text |  | false |  | [public.class](public.class.md) | The class this attribute is part of. |
 | name | text |  | false |  |  | The unique name of the attribute within the class. |
 | details | text |  | true |  |  | A summary description. |
