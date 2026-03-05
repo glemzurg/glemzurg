@@ -45,9 +45,9 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 		if tsSpecification != nil {
 			spec = *tsSpecification
 		}
-		ts := model_spec.TypeSpec{
-			Notation:      *tsNotation,
-			Specification: spec,
+		ts, err := model_spec.NewTypeSpec(*tsNotation, spec, nil)
+		if err != nil {
+			return err
 		}
 		dataType.TypeSpec = &ts
 	}

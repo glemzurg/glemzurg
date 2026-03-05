@@ -13,6 +13,8 @@ import (
 // Populate a golang struct from a database row.
 func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 	var keyStr string
+	var notation string
+	var specification string
 	var targetTypeNotation *string
 	var targetTypeSpecification *string
 
@@ -21,8 +23,8 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		&logic.Type,
 		&logic.Description,
 		&logic.Target,
-		&logic.Spec.Notation,
-		&logic.Spec.Specification,
+		&notation,
+		&specification,
 		&targetTypeNotation,
 		&targetTypeSpecification,
 	); err != nil {
@@ -38,15 +40,21 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 		return err
 	}
 
+	// Construct ExpressionSpec via constructor (nil parseFunc — parsing happens at higher layers).
+	logic.Spec, err = model_spec.NewExpressionSpec(notation, specification, nil)
+	if err != nil {
+		return err
+	}
+
 	// Reconstitute TargetTypeSpec if present.
 	if targetTypeNotation != nil && *targetTypeNotation != "" {
 		spec := ""
 		if targetTypeSpecification != nil {
 			spec = *targetTypeSpecification
 		}
-		ts := model_spec.TypeSpec{
-			Notation:      *targetTypeNotation,
-			Specification: spec,
+		ts, err := model_spec.NewTypeSpec(*targetTypeNotation, spec, nil)
+		if err != nil {
+			return err
 		}
 		logic.TargetTypeSpec = &ts
 	}

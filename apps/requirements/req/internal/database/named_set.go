@@ -13,6 +13,8 @@ import (
 // Populate a golang struct from a database row.
 func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 	var keyStr string
+	var notation string
+	var specification string
 	var typeSpecNotation *string
 	var typeSpecSpecification *string
 
@@ -20,8 +22,8 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 		&keyStr,
 		&ns.Name,
 		&ns.Description,
-		&ns.Spec.Notation,
-		&ns.Spec.Specification,
+		&notation,
+		&specification,
 		&typeSpecNotation,
 		&typeSpecSpecification,
 	); err != nil {
@@ -37,15 +39,21 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 		return err
 	}
 
+	// Construct ExpressionSpec via constructor (nil parseFunc — parsing happens at higher layers).
+	ns.Spec, err = model_spec.NewExpressionSpec(notation, specification, nil)
+	if err != nil {
+		return err
+	}
+
 	// Reconstitute TypeSpec if present.
 	if typeSpecNotation != nil && *typeSpecNotation != "" {
 		spec := ""
 		if typeSpecSpecification != nil {
 			spec = *typeSpecSpecification
 		}
-		ts := model_spec.TypeSpec{
-			Notation:      *typeSpecNotation,
-			Specification: spec,
+		ts, err := model_spec.NewTypeSpec(*typeSpecNotation, spec, nil)
+		if err != nil {
+			return err
 		}
 		ns.TypeSpec = &ts
 	}

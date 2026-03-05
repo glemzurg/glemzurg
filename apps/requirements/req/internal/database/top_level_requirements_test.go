@@ -30,28 +30,32 @@ func (suite *RequirementsSuite) SetupTest() {
 
 func (suite *RequirementsSuite) TestWriteRead() {
 
-	input := test_helper.GetTestModel()
+	original := test_helper.GetTestModel()
 
 	// Validate the model tree before testing.
-	err := input.Validate()
+	err := original.Validate()
 	assert.Nil(suite.T(), err, "input model should be valid")
 
 	// Nothing in database yet.
-	output, err := ReadModel(suite.db, input.Key)
+	output, err := ReadModel(suite.db, original.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), output)
 
 	// Write model to the database.
-	err = WriteModel(suite.db, input)
+	err = WriteModel(suite.db, original)
 	assert.Nil(suite.T(), err)
 
 	// Write model to the database a second time, should be safe (idempotent).
-	err = WriteModel(suite.db, input)
+	err = WriteModel(suite.db, original)
 	assert.Nil(suite.T(), err)
 
 	// Read model from the database.
-	output, err = ReadModel(suite.db, input.Key)
+	output, err = ReadModel(suite.db, original.Key)
 	assert.Nil(suite.T(), err)
+
+	// The database layer stores only specification text, not parsed expression
+	// trees. Strip expressions from the input so comparisons match.
+	input := test_helper.StripExpressions(original)
 
 	// Compare progressively larger slices of the model tree to isolate mismatches.
 	// Each check focuses on a specific layer so failures point to the right area.
