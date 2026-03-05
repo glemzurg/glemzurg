@@ -4,6 +4,39 @@ This plan implements the design in `model_expression_data_type_integration.md`. 
 
 ---
 
+## Current Status (as of 2026-03-05)
+
+| Stage | Status | Notes |
+|-------|--------|-------|
+| **1A** ExpressionSpec/TypeSpec | **DONE** | `model_spec/` package with constructors, parse func support |
+| **1B** model_expression_type | **DONE** | Full type hierarchy with validation |
+| **1C** Logic → ExpressionSpec | **DONE** | `Spec ExpressionSpec` + `TargetTypeSpec *TypeSpec` on Logic |
+| **1D** TypeSpec on DataType | **DONE** | `TypeSpec *model_spec.TypeSpec` on DataType |
+| **1E** NamedSet entity | **DONE** | `model_named_set/` package + `NamedSets` field on Model |
+| **1F** NamedSetRef node | **DONE** | `NamedSetRef` expression node in `model_expression` |
+| **1G** Attribute Invariants | **DONE** | `Invariants` field + `SetInvariants()` on Attribute |
+| **1G-ii** Test model invariants | **DONE** | 3 sets of attribute invariants with let-type logic |
+| **1H** Simulator alignment | **DONE** | Uses `logic.Spec.Expression` throughout |
+| **1I** Test helper updates | **DONE** | Uses ExpressionSpec constructors, includes lowering |
+| **1J** Stage 1 verified | **DONE** | All req_model + test_helper + simulator tests pass |
+| **Stage 2** Notation parsing | **DONE** | `ConvertToExpressionType` + `RaiseType` with tests |
+| **Stage 3** parser_human | **DONE** | Named sets, attribute invariants, let type, target_type_spec, lowering |
+| **Stage 4** parser_ai | **DONE** | Full round-trip support: named sets, attribute invariants, let type, target_type_spec, schemas updated |
+| **Stage 5** Database | **NOT STARTED** | No schema changes, no new tables, `let` not in logic_type enum |
+| **Stage 6** req_flat/generate | **COMPILES** | Passes tests against current model, but no new entity support |
+| **Stage 7** Full integration | **BLOCKED** | Waiting on Stage 5 |
+
+**Additional work done beyond original plan:**
+- `LogicTypeLet` ("let") — local variable definitions in requires/guarantees/safety_rules/invariants. Fully supported in model, test helper, parser_human, and parser_ai. NOT yet in database `logic_type` enum.
+- Two-phase expression lowering in both parsers (Phase 1: parse with nil parseFunc, Phase 2: re-create with full LowerContext). Implemented via `lower_expressions.go` in both parser_human and parser_ai.
+- `ExpressionParseFunc` on `ExpressionSpec`/`TypeSpec` constructors — enables deferred parsing with context.
+- Primed value documentation in schemas — safety_rules are the only context where primed values are allowed.
+- `convert.LowerModel()` called in test_helper to ensure test model expressions are lowered.
+
+**Next step:** Stage 5 (Database) — add `let` to `logic_type` enum, create `named_set` table, `attribute_invariant` table, `expression_type` table, add `target_type_*` columns to `logic` table.
+
+---
+
 ## Stage 1: req_model Tree — Data Structures
 
 **Goal:** Get the model types right. This is the source of truth — everything downstream follows.
@@ -904,7 +937,7 @@ These are deferred to future sessions:
 
 2. **Simulator type checker integration** — Using declared ExpressionTypes as type hints in the HM inference engine. Requires the full pipeline to exist first.
 
-3. **LET/IN shared local variables** — New field on Action/Query for shared local definitions. Separate structural change.
+3. ~~**LET/IN shared local variables**~~ — DONE. `LogicTypeLet` implemented as a new logic type. Let bindings can appear in requires, guarantees, safety_rules, and invariants. Fully supported in model, test helper, parser_human, parser_ai (including JSON schemas). NOT yet in database `logic_type` enum (deferred to Stage 5).
 
 4. **ObjectClassKey migration** — Changing `Atomic.ObjectClassKey` from `*string` to `*identity.Key`. Small cleanup.
 
@@ -912,7 +945,7 @@ These are deferred to future sessions:
 
 6. ~~**TLA+ lowering/raising passes**~~ — DONE. The full lowering pipeline (`ast.Expression` → `model_expression.Expression`) is implemented in `notation/tla_plus/convert/`. See [Completed: TLA+ Lowering Pass](#completed-tla-lowering-pass) below for details.
 
-7. **Test model enrichment** — Adding precise types, named sets, and TargetTypeSpecs to the test models for comprehensive end-to-end testing. Should happen incrementally as each stage completes.
+7. **Test model enrichment** — PARTIALLY DONE. TargetTypeSpecs and attribute invariants (with let types) are in the test models. Named sets are NOT yet in the test model (`NamedSets: nil`). Precise types on DataType (`DataType.TypeSpec`) are NOT yet in the test models.
 
 8. **Enumeration ordering** (design doc Gap 6) — `DataType.EnumOrdered *bool` should control whether comparison operators are valid on enum values. The expression type checker should enforce this.
 
