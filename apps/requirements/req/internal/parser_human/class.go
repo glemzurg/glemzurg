@@ -292,7 +292,11 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", model_spec.ExpressionSpec{Notation: "tla_plus", Specification: specification}, nil)
+				spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+			if err != nil {
+				return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
+			}
+			logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}
@@ -339,6 +343,16 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			indexNums)
 		if err != nil {
 			return model_class.Attribute{}, err
+		}
+
+		// Parse attribute invariants.
+		attrInvariants, err := logicListFromYamlData(attributeData, "invariants",
+			model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
+		if err != nil {
+			return model_class.Attribute{}, errors.Wrap(err, "attribute invariants")
+		}
+		if len(attrInvariants) > 0 {
+			attribute.SetInvariants(attrInvariants)
 		}
 	}
 
@@ -663,12 +677,14 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 		}
 	}
 
-	logic := model_logic.Logic{
-		Key:         guardKey,
-		Type:        model_logic.LogicTypeAssessment,
-		Description: details,
-		Target:      "",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: specification},
+	spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	if err != nil {
+		return model_state.Guard{}, errors.Wrap(err, "guard expression spec")
+	}
+
+	logic, err := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, details, "", spec, nil)
+	if err != nil {
+		return model_state.Guard{}, errors.Wrap(err, "guard logic")
 	}
 
 	guard, err = model_state.NewGuard(
@@ -849,18 +865,39 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		target, _ := itemMap["target"].(string)
 		specification, _ := itemMap["specification"].(string)
 
+		// Detect let type override.
+		itemType := logicType
+		if typeStr, ok := itemMap["type"].(string); ok && typeStr == "let" {
+			itemType = model_logic.LogicTypeLet
+		}
+
 		key, err := newKey(parentKey, strconv.Itoa(i))
 		if err != nil {
 			return nil, errors.Wrapf(err, "%s[%d]", field, i)
 		}
 
-		logics = append(logics, model_logic.Logic{
-			Key:         key,
-			Type:        logicType,
-			Description: details,
-			Target:      target,
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: specification},
-		})
+		// Use constructors — Phase 1 uses nil parseFunc; Phase 2 re-lowers with full context.
+		spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "%s[%d] expression spec", field, i)
+		}
+
+		// Parse optional target_type_spec.
+		var targetTypeSpec *model_spec.TypeSpec
+		if tsStr, ok := itemMap["target_type_spec"].(string); ok && tsStr != "" {
+			ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
+			if err != nil {
+				return nil, errors.Wrapf(err, "%s[%d] target type spec", field, i)
+			}
+			targetTypeSpec = &ts
+		}
+
+		logic, err := model_logic.NewLogic(key, itemType, details, target, spec, targetTypeSpec)
+		if err != nil {
+			return nil, errors.Wrapf(err, "%s[%d]", field, i)
+		}
+
+		logics = append(logics, logic)
 	}
 	return logics, nil
 }
@@ -1018,6 +1055,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 				}
 				attrBuilder.AddIntSliceField("index_nums", intNums)
 			}
+			generateLogicSequence(attrBuilder, "invariants", attr.Invariants)
 			attrsBuilder.AddMappingField(attr.Key.SubKey, attrBuilder)
 		}
 		builder.AddMappingField("attributes", attrsBuilder)
@@ -1121,7 +1159,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			guard := class.Guards[key]
 			guardBuilder := NewYamlBuilder()
 			guardBuilder.AddField("details", guard.Logic.Description)
-			guardBuilder.AddField("specification", guard.Logic.Spec.Specification)
+			guardBuilder.AddQuotedField("specification", guard.Logic.Spec.Specification)
 			guardsBuilder.AddMappingField(guard.Name, guardBuilder)
 		}
 		builder.AddMappingField("guards", guardsBuilder)
@@ -1234,9 +1272,15 @@ func generateLogicSequence(builder *YamlBuilder, field string, logics []model_lo
 	items := make([]*YamlBuilder, 0, len(logics))
 	for _, logic := range logics {
 		logicBuilder := NewYamlBuilder()
+		if logic.Type == model_logic.LogicTypeLet {
+			logicBuilder.AddField("type", "let")
+		}
 		logicBuilder.AddField("details", logic.Description)
 		logicBuilder.AddField("target", logic.Target)
-		logicBuilder.AddField("specification", logic.Spec.Specification)
+		logicBuilder.AddQuotedField("specification", logic.Spec.Specification)
+		if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
+			logicBuilder.AddField("target_type_spec", logic.TargetTypeSpec.Specification)
+		}
 		items = append(items, logicBuilder)
 	}
 	builder.AddSequenceOfMappings(field, items)

@@ -34,7 +34,10 @@ Logic objects are embedded sub-objects within action, query, state machine, clas
 
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| `notation` | string | none | Formal notation used (e.g., `"tla_plus"`) |
+| `type` | string | enum: `assessment`, `state_change`, `query`, `safety_rule`, `value`, `let` | The kind of logic specification |
+| `target` | string | `minLength: 1` | Target identifier (required for `state_change`, `query`, `let`) |
+| `target_type_spec` | string | none | TLA+ type declaration for the target (e.g., `"Int"`, `"STRING"`) |
+| `notation` | string | enum: `tla_plus` | Formal notation used |
 | `specification` | string | none | Formal specification in the given notation |
 
 ## Common Schema Violations
@@ -98,12 +101,6 @@ Logic objects are embedded sub-objects within action, query, state machine, clas
 ### 4. Additional Properties Not Allowed
 
 ```json
-// WRONG: 'type' is not in the schema
-{
-    "description": "Value must be positive",
-    "type": "precondition"
-}
-
 // WRONG: 'name' is not in the schema
 {
     "description": "Value must be positive",
@@ -116,13 +113,30 @@ Logic objects are embedded sub-objects within action, query, state machine, clas
 }
 ```
 
+### 5. Invalid Type Value
+
+```json
+// WRONG: 'precondition' is not a valid type
+{
+    "description": "Value must be positive",
+    "type": "precondition"
+}
+
+// CORRECT: Valid type values
+{
+    "description": "Value must be positive",
+    "type": "assessment"
+}
+```
+
 ## Troubleshooting Checklist
 
 1. **Check required fields**: The `description` field must be present and non-empty
-2. **Check field names**: Only `description`, `notation`, and `specification` are allowed
+2. **Check field names**: Only `description`, `type`, `target`, `target_type_spec`, `notation`, and `specification` are allowed
 3. **Check field types**: All fields must be strings
-4. **Remove extra fields**: Any field not in the schema will cause a violation
-5. **Check nesting**: Ensure the logic object is at the correct level in the parent file
+4. **Check type values**: `type` must be one of: `assessment`, `state_change`, `query`, `safety_rule`, `value`, `let`
+5. **Remove extra fields**: Any field not in the schema will cause a violation
+6. **Check nesting**: Ensure the logic object is at the correct level in the parent file
 
 ## Valid Examples
 

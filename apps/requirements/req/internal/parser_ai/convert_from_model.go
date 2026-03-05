@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
@@ -33,6 +34,7 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 		Actors:               make(map[string]*inputActor),
 		ActorGeneralizations: make(map[string]*inputActorGeneralization),
 		GlobalFunctions:      make(map[string]*inputGlobalFunction),
+		NamedSets:            make(map[string]*inputNamedSet),
 		Domains:              make(map[string]*inputDomain),
 		DomainAssociations:   make(map[string]*inputDomainAssociation),
 		ClassAssociations:    make(map[string]*inputClassAssociation),
@@ -54,6 +56,12 @@ func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
 	for key, gf := range model.GlobalFunctions {
 		converted := convertGlobalFunctionFromModel(&gf)
 		result.GlobalFunctions["_"+key.SubKey] = converted
+	}
+
+	// Convert named sets
+	for key, ns := range model.NamedSets {
+		converted := convertNamedSetFromModel(&ns)
+		result.NamedSets[key.SubKey] = converted
 	}
 
 	// Convert domains
@@ -432,6 +440,7 @@ func convertAttributeFromModel(attr *model_class.Attribute) *inputAttribute {
 		dp := convertLogicFromModel(attr.DerivationPolicy)
 		result.DerivationPolicy = &dp
 	}
+	result.Invariants = convertLogicsFromModel(attr.Invariants)
 	return result
 }
 
@@ -587,13 +596,31 @@ func convertQueryFromModel(query *model_state.Query) *inputQuery {
 
 // convertLogicFromModel converts a model_logic.Logic to an inputLogic.
 func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
-	return inputLogic{
+	result := inputLogic{
 		Type:          logic.Type,
 		Description:   logic.Description,
 		Target:        logic.Target,
 		Notation:      logic.Spec.Notation,
 		Specification: logic.Spec.Specification,
 	}
+	if logic.TargetTypeSpec != nil && logic.TargetTypeSpec.Specification != "" {
+		result.TargetTypeSpec = logic.TargetTypeSpec.Specification
+	}
+	return result
+}
+
+// convertNamedSetFromModel converts a model_named_set.NamedSet to an inputNamedSet.
+func convertNamedSetFromModel(ns *model_named_set.NamedSet) *inputNamedSet {
+	result := &inputNamedSet{
+		Name:          ns.Name,
+		Description:   ns.Description,
+		Notation:      ns.Spec.Notation,
+		Specification: ns.Spec.Specification,
+	}
+	if ns.TypeSpec != nil && ns.TypeSpec.Specification != "" {
+		result.TypeSpec = ns.TypeSpec.Specification
+	}
+	return result
 }
 
 // convertLogicsFromModel converts a slice of model_logic.Logic to a slice of inputLogic.

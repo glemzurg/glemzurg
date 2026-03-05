@@ -25,8 +25,10 @@
                     "Key": "domain/test_domain/subdomain/test_subdomain/class/class_key/query/getbalance/qrequire/0",
                     "Type": "assessment",
                     "Description": "The account must exist.",
-                    "Notation": "tla_plus",
-                    "Specification": "accountId \\in DOMAIN self.accounts"
+                    "Spec": {
+                        "Notation": "tla_plus",
+                        "Specification": "accountId \\in DOMAIN self.accounts"
+                    }
                 }
             ],
             "Guarantees": [
@@ -35,8 +37,10 @@
                     "Type": "query",
                     "Description": "Returns the balance for the account.",
                     "Target": "balance",
-                    "Notation": "tla_plus",
-                    "Specification": "self.accounts[accountId].balance"
+                    "Spec": {
+                        "Notation": "tla_plus",
+                        "Specification": "self.accounts[accountId].balance"
+                    }
                 }
             ]
         },

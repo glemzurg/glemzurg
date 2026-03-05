@@ -21,10 +21,10 @@ queries:
               rules: Nat
         requires:
             - details: The account must exist.
-              specification: accountId \in DOMAIN self.accounts
+              specification: "accountId \\in DOMAIN self.accounts"
         guarantees:
             - details: Returns the balance for the account.
               target: balance
-              specification: self.accounts[accountId].balance
+              specification: "self.accounts[accountId].balance"
     ListAccounts:
         details: Lists all accounts.

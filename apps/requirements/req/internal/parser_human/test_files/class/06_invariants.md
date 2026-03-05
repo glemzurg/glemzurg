@@ -15,5 +15,5 @@ And even more.
 actor_key: actor_key
 invariants:
     - details: All instances must have a valid state.
-      specification: self.state \in {"active", "inactive"}
+      specification: "self.state \\in {\"active\", \"inactive\"}"
     - details: Balance cannot be negative.

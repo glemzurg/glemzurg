@@ -244,6 +244,13 @@ const (
 	ErrUseCaseSharedInvalidJSON       = 20003
 	ErrUseCaseSharedSchemaViolation   = 20004
 
+	// Named set errors (22xxx)
+	ErrNamedSetNameRequired     = 22001
+	ErrNamedSetNameEmpty        = 22002
+	ErrNamedSetInvalidJSON      = 22003
+	ErrNamedSetSchemaViolation  = 22004
+	ErrNamedSetNameNoUnderscore = 22005
+
 	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion
 	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
 	ErrConvModelValidation       = 21002 // Model validation failed after conversion

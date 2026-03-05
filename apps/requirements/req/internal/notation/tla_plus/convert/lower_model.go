@@ -16,11 +16,11 @@ import (
 // It returns the first error encountered, leaving the model partially populated.
 func LowerModel(model *req_model.Model) error {
 	// Build model-level lookup maps for global functions and named sets.
-	globalFunctions := buildGlobalFunctionMap(model)
-	namedSets := buildNamedSetMap(model)
+	globalFunctions := BuildGlobalFunctionMap(model)
+	namedSets := BuildNamedSetMap(model)
 
 	// Build cross-class action lookup (AllActions) across the entire model.
-	allActions := buildAllActionsMap(model)
+	allActions := BuildAllActionsMap(model)
 
 	// 1. Lower model-level invariants (no class context).
 	modelCtx := &LowerContext{
@@ -85,9 +85,9 @@ func lowerClass(
 	allActions map[string]identity.Key,
 ) error {
 	// Build class-level context maps.
-	attrNames := buildAttributeNameMap(class)
-	actionNames := buildActionNameMap(class)
-	queryNames := buildQueryNameMap(class)
+	attrNames := BuildAttributeNameMap(class)
+	actionNames := BuildActionNameMap(class)
+	queryNames := BuildQueryNameMap(class)
 
 	classCtx := &LowerContext{
 		ClassKey:        class.Key,
@@ -157,7 +157,7 @@ func lowerAttribute(attr *model_class.Attribute, baseCtx *LowerContext) error {
 
 func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 	// Actions have parameters that become local vars.
-	ctx := contextWithParameters(baseCtx, action.Parameters)
+	ctx := ContextWithParameters(baseCtx, action.Parameters)
 
 	for i := range action.Requires {
 		if err := lowerLogicSpec(&action.Requires[i].Spec, ctx); err != nil {
@@ -178,7 +178,7 @@ func lowerAction(action *model_state.Action, baseCtx *LowerContext) error {
 }
 
 func lowerQuery(query *model_state.Query, baseCtx *LowerContext) error {
-	ctx := contextWithParameters(baseCtx, query.Parameters)
+	ctx := ContextWithParameters(baseCtx, query.Parameters)
 
 	for i := range query.Requires {
 		if err := lowerLogicSpec(&query.Requires[i].Spec, ctx); err != nil {
@@ -194,7 +194,7 @@ func lowerQuery(query *model_state.Query, baseCtx *LowerContext) error {
 }
 
 // contextWithParameters creates a child context with action/query parameters added.
-func contextWithParameters(base *LowerContext, params []model_state.Parameter) *LowerContext {
+func ContextWithParameters(base *LowerContext, params []model_state.Parameter) *LowerContext {
 	if len(params) == 0 {
 		return base
 	}
@@ -237,7 +237,7 @@ func lowerLogicSpec(spec *model_spec.ExpressionSpec, ctx *LowerContext) error {
 
 // --- Map builders ---
 
-func buildGlobalFunctionMap(model *req_model.Model) map[string]identity.Key {
+func BuildGlobalFunctionMap(model *req_model.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.GlobalFunctions))
 	for _, gf := range model.GlobalFunctions {
 		m[gf.Name] = gf.Key
@@ -245,7 +245,7 @@ func buildGlobalFunctionMap(model *req_model.Model) map[string]identity.Key {
 	return m
 }
 
-func buildNamedSetMap(model *req_model.Model) map[string]identity.Key {
+func BuildNamedSetMap(model *req_model.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.NamedSets))
 	for _, ns := range model.NamedSets {
 		m[ns.Name] = ns.Key
@@ -253,7 +253,7 @@ func buildNamedSetMap(model *req_model.Model) map[string]identity.Key {
 	return m
 }
 
-func buildAllActionsMap(model *req_model.Model) map[string]identity.Key {
+func BuildAllActionsMap(model *req_model.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key)
 	for _, domain := range model.Domains {
 		dName := domain.Name
@@ -281,7 +281,7 @@ func buildAllActionsMap(model *req_model.Model) map[string]identity.Key {
 	return m
 }
 
-func buildAttributeNameMap(class *model_class.Class) map[string]identity.Key {
+func BuildAttributeNameMap(class *model_class.Class) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(class.Attributes))
 	for _, attr := range class.Attributes {
 		m[attr.Name] = attr.Key
@@ -289,7 +289,7 @@ func buildAttributeNameMap(class *model_class.Class) map[string]identity.Key {
 	return m
 }
 
-func buildActionNameMap(class *model_class.Class) map[string]identity.Key {
+func BuildActionNameMap(class *model_class.Class) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(class.Actions))
 	for _, action := range class.Actions {
 		m[action.Name] = action.Key
@@ -297,7 +297,7 @@ func buildActionNameMap(class *model_class.Class) map[string]identity.Key {
 	return m
 }
 
-func buildQueryNameMap(class *model_class.Class) map[string]identity.Key {
+func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(class.Queries))
 	for _, query := range class.Queries {
 		m[query.Name] = query.Key

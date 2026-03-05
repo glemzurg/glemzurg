@@ -34,6 +34,11 @@ func readModel(inputModelPath string) (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	// Phase 2: lower all expressions with full context.
+	if err := lowerAllExpressions(modelPtr); err != nil {
+		return req_model.Model{}, err
+	}
+
 	return *modelPtr, nil
 }
 
@@ -54,6 +59,7 @@ func readModelTree(modelDir string) (*inputModel, error) {
 	model.Actors = make(map[string]*inputActor)
 	model.ActorGeneralizations = make(map[string]*inputActorGeneralization)
 	model.GlobalFunctions = make(map[string]*inputGlobalFunction)
+	model.NamedSets = make(map[string]*inputNamedSet)
 	model.Domains = make(map[string]*inputDomain)
 	model.DomainAssociations = make(map[string]*inputDomainAssociation)
 	model.ClassAssociations = make(map[string]*inputClassAssociation)
@@ -173,6 +179,36 @@ func readModelTree(modelDir string) (*inputModel, error) {
 				return nil, err
 			}
 			model.GlobalFunctions[key] = gf
+		}
+	}
+
+	// Read named sets
+	nsDir := filepath.Join(modelDir, "named_sets")
+	if entries, err := os.ReadDir(nsDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			name := entry.Name()
+			if !strings.HasSuffix(name, ".nset.json") {
+				continue
+			}
+			key := strings.TrimSuffix(name, ".nset.json")
+			filePath := filepath.Join(nsDir, name)
+
+			if err := ValidateKey(key, "named_set_key", filePath); err != nil {
+				return nil, err
+			}
+
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			ns, err := parseNamedSet(content, filePath)
+			if err != nil {
+				return nil, err
+			}
+			model.NamedSets[key] = ns
 		}
 	}
 
@@ -549,6 +585,36 @@ func readClassTree(classDir string) (*inputClass, error) {
 				return nil, err
 			}
 			class.Invariants = append(class.Invariants, *logic)
+		}
+	}
+
+	// Read attribute invariants (per attribute subdirectory)
+	for attrKey, attr := range class.Attributes {
+		attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
+		if entries, err := os.ReadDir(attrInvariantsDir); err == nil {
+			names := make([]string, 0, len(entries))
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				if strings.HasSuffix(entry.Name(), ".invariant.json") {
+					names = append(names, entry.Name())
+				}
+			}
+			sort.Strings(names)
+			for _, name := range names {
+				filePath := filepath.Join(attrInvariantsDir, name)
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					return nil, err
+				}
+				logic, err := parseLogic(content, filePath)
+				if err != nil {
+					return nil, err
+				}
+				attr.Invariants = append(attr.Invariants, *logic)
+			}
+			class.Attributes[attrKey] = attr
 		}
 	}
 

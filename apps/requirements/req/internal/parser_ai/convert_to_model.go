@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
@@ -25,28 +26,47 @@ func convErr(code int, msg, file string) *ParseError {
 // The input model is assumed to have been validated by readModelTree.
 // This function performs the conversion and validates the resulting req_model.Model.
 func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error) {
-	result := &req_model.Model{
-		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
-		Name:                 input.Name,
-		Details:              input.Details,
-		Actors:               make(map[identity.Key]model_actor.Actor),
-		ActorGeneralizations: make(map[identity.Key]model_actor.Generalization),
-		GlobalFunctions:      make(map[identity.Key]model_logic.GlobalFunction),
-		Domains:              make(map[identity.Key]model_domain.Domain),
-		DomainAssociations:   make(map[identity.Key]model_domain.Association),
-		ClassAssociations:    make(map[identity.Key]model_class.Association),
+	// Convert invariants
+	invariants, err := convertInvariantsToModel(input.Invariants)
+	if err != nil {
+		return nil, err
 	}
 
-	// Convert invariants
-	result.Invariants = convertInvariantsToModel(input.Invariants)
-
 	// Convert global functions
+	globalFunctions := make(map[identity.Key]model_logic.GlobalFunction)
 	for key, gf := range input.GlobalFunctions {
 		converted, err := convertGlobalFunctionToModel(key, gf)
 		if err != nil {
 			return nil, err
 		}
-		result.GlobalFunctions[converted.Key] = converted
+		globalFunctions[converted.Key] = converted
+	}
+
+	// Convert named sets
+	var namedSets map[identity.Key]model_named_set.NamedSet
+	if len(input.NamedSets) > 0 {
+		namedSets = make(map[identity.Key]model_named_set.NamedSet)
+		for key, ns := range input.NamedSets {
+			converted, err := convertNamedSetToModel(key, ns)
+			if err != nil {
+				return nil, err
+			}
+			namedSets[converted.Key] = converted
+		}
+	}
+
+	result := &req_model.Model{
+		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
+		Name:                 input.Name,
+		Details:              input.Details,
+		Invariants:           invariants,
+		GlobalFunctions:      globalFunctions,
+		NamedSets:            namedSets,
+		Actors:               make(map[identity.Key]model_actor.Actor),
+		ActorGeneralizations: make(map[identity.Key]model_actor.Generalization),
+		Domains:              make(map[identity.Key]model_domain.Domain),
+		DomainAssociations:   make(map[identity.Key]model_domain.Association),
+		ClassAssociations:    make(map[identity.Key]model_class.Association),
 	}
 
 	// Convert actors
@@ -107,21 +127,23 @@ func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error
 }
 
 // convertInvariantsToModel converts a slice of inputLogic to model_logic.Logic for model invariants.
-func convertInvariantsToModel(invariants []inputLogic) []model_logic.Logic {
+func convertInvariantsToModel(invariants []inputLogic) ([]model_logic.Logic, error) {
 	if len(invariants) == 0 {
-		return nil
+		return nil, nil
 	}
 	result := make([]model_logic.Logic, len(invariants))
 	for i, inv := range invariants {
-		invKey, _ := identity.NewInvariantKey(fmt.Sprintf("%d", i))
-		result[i] = model_logic.Logic{
-			Key:         invKey,
-			Type:        model_logic.LogicTypeAssessment,
-			Description: inv.Description,
-			Spec:        model_spec.ExpressionSpec{Notation: inv.Notation, Specification: inv.Specification},
+		invKey, err := identity.NewInvariantKey(fmt.Sprintf("%d", i))
+		if err != nil {
+			return nil, convErr(ErrConvKeyConstruction, fmt.Sprintf("failed to create invariant key '%d': %s", i, err.Error()), "model.json")
 		}
+		logic, err := convertLogicToModel(&inv, resolveLogicType(&inv, model_logic.LogicTypeAssessment), invKey)
+		if err != nil {
+			return nil, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert invariant %d: %s", i, err.Error()), "model.json")
+		}
+		result[i] = logic
 	}
-	return result
+	return result, nil
 }
 
 // convertGlobalFunctionToModel converts an inputGlobalFunction to a model_logic.GlobalFunction.
@@ -135,19 +157,52 @@ func convertGlobalFunctionToModel(keyStr string, gf *inputGlobalFunction) (model
 		).WithField("key")
 	}
 
-	logic := model_logic.Logic{
-		Key:         key,
-		Type:        model_logic.LogicTypeValue,
-		Description: gf.Logic.Description,
-		Spec:        model_spec.ExpressionSpec{Notation: gf.Logic.Notation, Specification: gf.Logic.Specification},
+	gfFile := fmt.Sprintf("global_functions/%s.gfunc.json", keyStr)
+
+	logic, err := convertLogicToModel(&gf.Logic, model_logic.LogicTypeValue, key)
+	if err != nil {
+		return model_logic.GlobalFunction{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert global function logic: %s", err.Error()), gfFile)
 	}
 
-	return model_logic.GlobalFunction{
-		Key:        key,
-		Name:       gf.Name,
-		Parameters: gf.Parameters,
-		Logic:      logic,
-	}, nil
+	result, err := model_logic.NewGlobalFunction(key, gf.Name, gf.Parameters, logic)
+	if err != nil {
+		return model_logic.GlobalFunction{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create global function: %s", err.Error()), gfFile)
+	}
+	return result, nil
+}
+
+// convertNamedSetToModel converts an inputNamedSet to a model_named_set.NamedSet.
+func convertNamedSetToModel(keyStr string, ns *inputNamedSet) (model_named_set.NamedSet, error) {
+	nsFile := fmt.Sprintf("named_sets/%s.nset.json", keyStr)
+
+	key, err := identity.NewNamedSetKey(keyStr)
+	if err != nil {
+		return model_named_set.NamedSet{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create named set key '%s': %s", keyStr, err.Error()),
+			nsFile,
+		).WithField("key")
+	}
+
+	spec, err := model_spec.NewExpressionSpec(ns.Notation, ns.Specification, nil)
+	if err != nil {
+		return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set spec: %s", err.Error()), nsFile)
+	}
+
+	var typeSpec *model_spec.TypeSpec
+	if ns.TypeSpec != "" {
+		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, ns.TypeSpec, nil)
+		if err != nil {
+			return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set type spec: %s", err.Error()), nsFile)
+		}
+		typeSpec = &ts
+	}
+
+	result, err := model_named_set.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
+	if err != nil {
+		return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set: %s", err.Error()), nsFile)
+	}
+	return result, nil
 }
 
 // convertActorToModel converts an inputActor to a model_actor.Actor.
@@ -763,7 +818,11 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 	}
 
 	// Convert class invariants
-	result.SetInvariants(convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey))
+	classInvariants, err := convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	if err != nil {
+		return model_class.Class{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
+	}
+	result.SetInvariants(classInvariants)
 
 	// Convert state machine if present
 	if class.StateMachine != nil {
@@ -833,14 +892,20 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 				classFile,
 			).WithField(fmt.Sprintf("attributes.%s.derivation_policy", keyStr))
 		}
-		dp := model_logic.Logic{
-			Key:         dpKey,
-			Type:        model_logic.LogicTypeValue,
-			Description: attr.DerivationPolicy.Description,
-			Spec:        model_spec.ExpressionSpec{Notation: attr.DerivationPolicy.Notation, Specification: attr.DerivationPolicy.Specification},
+		dp, err := convertLogicToModel(attr.DerivationPolicy, model_logic.LogicTypeValue, dpKey)
+		if err != nil {
+			return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert derivation policy for attribute '%s': %s", keyStr, err.Error()), classFile)
 		}
 		result.DerivationPolicy = &dp
 	}
+
+	// Convert attribute invariants
+	attrInvariants, err := convertLogicsToModel(attr.Invariants, model_logic.LogicTypeAssessment, attrKey, identity.NewAttributeInvariantKey)
+	if err != nil {
+		return model_class.Attribute{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert attribute '%s' invariants: %s", keyStr, err.Error()), classFile)
+	}
+	result.SetInvariants(attrInvariants)
+
 	return result, nil
 }
 
@@ -935,15 +1000,14 @@ func convertStateMachineToModel(sm *inputStateMachine, actions map[string]*input
 			).WithField(fmt.Sprintf("guards.%s", guardKeyStr))
 		}
 
-		converted := model_state.Guard{
-			Key:  guardKey,
-			Name: guard.Name,
-			Logic: model_logic.Logic{
-				Key:         guardKey,
-				Type:        model_logic.LogicTypeAssessment,
-				Description: guard.Logic.Description,
-				Spec:        model_spec.ExpressionSpec{Notation: guard.Logic.Notation, Specification: guard.Logic.Specification},
-			},
+		guardLogic, err := convertLogicToModel(&guard.Logic, model_logic.LogicTypeAssessment, guardKey)
+		if err != nil {
+			return convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert guard '%s' logic: %s", guardKeyStr, err.Error()), smFile)
+		}
+
+		converted, err := model_state.NewGuard(guardKey, guard.Name, guardLogic)
+		if err != nil {
+			return convErr(ErrConvModelValidation, fmt.Sprintf("failed to create guard '%s': %s", guardKeyStr, err.Error()), smFile)
 		}
 
 		class.Guards[converted.Key] = converted
@@ -1065,14 +1129,27 @@ func convertActionToModel(keyStr string, action *inputAction, classKey identity.
 		).WithField("key")
 	}
 
+	requires, err := convertLogicsToModel(action.Requires, model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey)
+	if err != nil {
+		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action requires: %s", err.Error()), actionFile)
+	}
+	guarantees, err := convertLogicsToModel(action.Guarantees, model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey)
+	if err != nil {
+		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action guarantees: %s", err.Error()), actionFile)
+	}
+	safetyRules, err := convertLogicsToModel(action.SafetyRules, model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey)
+	if err != nil {
+		return model_state.Action{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert action safety rules: %s", err.Error()), actionFile)
+	}
+
 	return model_state.Action{
 		Key:         actionKey,
 		Name:        action.Name,
 		Details:     action.Details,
 		Parameters:  convertParametersToModel(action.Parameters),
-		Requires:    convertLogicsToModel(action.Requires, model_logic.LogicTypeAssessment, actionKey, identity.NewActionRequireKey),
-		Guarantees:  convertLogicsToModel(action.Guarantees, model_logic.LogicTypeStateChange, actionKey, identity.NewActionGuaranteeKey),
-		SafetyRules: convertLogicsToModel(action.SafetyRules, model_logic.LogicTypeSafetyRule, actionKey, identity.NewActionSafetyKey),
+		Requires:    requires,
+		Guarantees:  guarantees,
+		SafetyRules: safetyRules,
 	}, nil
 }
 
@@ -1089,45 +1166,76 @@ func convertQueryToModel(keyStr string, query *inputQuery, classKey identity.Key
 		).WithField("key")
 	}
 
+	requires, err := convertLogicsToModel(query.Requires, model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey)
+	if err != nil {
+		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query requires: %s", err.Error()), queryFile)
+	}
+	guarantees, err := convertLogicsToModel(query.Guarantees, model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey)
+	if err != nil {
+		return model_state.Query{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert query guarantees: %s", err.Error()), queryFile)
+	}
+
 	return model_state.Query{
 		Key:        queryKey,
 		Name:       query.Name,
 		Details:    query.Details,
 		Parameters: convertParametersToModel(query.Parameters),
-		Requires:   convertLogicsToModel(query.Requires, model_logic.LogicTypeAssessment, queryKey, identity.NewQueryRequireKey),
-		Guarantees: convertLogicsToModel(query.Guarantees, model_logic.LogicTypeQuery, queryKey, identity.NewQueryGuaranteeKey),
+		Requires:   requires,
+		Guarantees: guarantees,
 	}, nil
 }
 
-// convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
-func convertLogicToModel(input *inputLogic, logicType string, parentKey identity.Key) model_logic.Logic {
-	return model_logic.Logic{
-		Key:         parentKey,
-		Type:        logicType,
-		Description: input.Description,
-		Target:      input.Target,
-		Spec:        model_spec.ExpressionSpec{Notation: input.Notation, Specification: input.Specification},
+// resolveLogicType returns the logic type from the input if specified as "let",
+// otherwise returns the default type for the context.
+func resolveLogicType(input *inputLogic, defaultType string) string {
+	if input.Type == model_logic.LogicTypeLet {
+		return model_logic.LogicTypeLet
 	}
+	return defaultType
+}
+
+// convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
+func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.Key) (model_logic.Logic, error) {
+	spec, err := model_spec.NewExpressionSpec(input.Notation, input.Specification, nil)
+	if err != nil {
+		return model_logic.Logic{}, fmt.Errorf("failed to create expression spec: %w", err)
+	}
+
+	var targetTypeSpec *model_spec.TypeSpec
+	if input.TargetTypeSpec != "" {
+		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, input.TargetTypeSpec, nil)
+		if err != nil {
+			return model_logic.Logic{}, fmt.Errorf("failed to create target type spec: %w", err)
+		}
+		targetTypeSpec = &ts
+	}
+
+	logic, err := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
+	if err != nil {
+		return model_logic.Logic{}, err
+	}
+	return logic, nil
 }
 
 // convertLogicsToModel converts a slice of inputLogic to a slice of model_logic.Logic.
 // keyFactory creates the identity key for each logic entry using the parent key and an index-based sub-key.
-func convertLogicsToModel(logics []inputLogic, logicType string, parentKey identity.Key, keyFactory func(identity.Key, string) (identity.Key, error)) []model_logic.Logic {
+func convertLogicsToModel(logics []inputLogic, logicType string, parentKey identity.Key, keyFactory func(identity.Key, string) (identity.Key, error)) ([]model_logic.Logic, error) {
 	if len(logics) == 0 {
-		return nil
+		return nil, nil
 	}
 	result := make([]model_logic.Logic, len(logics))
 	for i, logic := range logics {
-		logicKey, _ := keyFactory(parentKey, fmt.Sprintf("%d", i))
-		result[i] = model_logic.Logic{
-			Key:         logicKey,
-			Type:        logicType,
-			Description: logic.Description,
-			Target:      logic.Target,
-			Spec:        model_spec.ExpressionSpec{Notation: logic.Notation, Specification: logic.Specification},
+		logicKey, err := keyFactory(parentKey, fmt.Sprintf("%d", i))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create logic key %d: %w", i, err)
 		}
+		converted, err := convertLogicToModel(&logic, resolveLogicType(&logic, logicType), logicKey)
+		if err != nil {
+			return nil, fmt.Errorf("logic %d: %w", i, err)
+		}
+		result[i] = converted
 	}
-	return result
+	return result, nil
 }
 
 // convertParametersToModel converts a slice of inputParameter to a slice of model_state.Parameter.

@@ -18,6 +18,7 @@ type inputModel struct {
 	Actors               map[string]*inputActor               `json:"-"`
 	ActorGeneralizations map[string]*inputActorGeneralization `json:"-"`
 	GlobalFunctions      map[string]*inputGlobalFunction      `json:"-"`
+	NamedSets            map[string]*inputNamedSet            `json:"-"`
 	Domains              map[string]*inputDomain              `json:"-"`
 	DomainAssociations   map[string]*inputDomainAssociation   `json:"-"`
 	ClassAssociations    map[string]*inputClassAssociation    `json:"-"`

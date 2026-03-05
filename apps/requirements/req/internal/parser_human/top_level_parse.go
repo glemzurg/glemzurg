@@ -375,6 +375,12 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		}
 	}
 
+	// Phase 2: Re-create all ExpressionSpecs with full lowering context so that
+	// Expression trees are populated via constructors.
+	if err := lowerAllExpressions(&model); err != nil {
+		return req_model.Model{}, errors.Wrap(err, "failed to lower expressions")
+	}
+
 	return model, nil
 }
 

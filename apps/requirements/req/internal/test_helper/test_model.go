@@ -447,6 +447,13 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	// Lower all expressions with full model context so Expression trees are populated.
+	// Uses the tolerant approach (via NewExpressionSpec) that matches what parser_human
+	// does — parse failures leave Expression as nil rather than returning an error.
+	if err := lowerTestModelExpressions(&model); err != nil {
+		return req_model.Model{}, err
+	}
+
 	return model, nil
 }
 
@@ -808,19 +815,19 @@ func buildKeys() (testKeys, error) {
 	k.guardLogic3 = k.guardInStock
 
 	// Invariants.
-	k.invariant1, err = identity.NewInvariantKey("0")
+	k.invariantLet, err = identity.NewInvariantKey("0")
 	if err != nil {
 		return k, err
 	}
-	k.invariant2, err = identity.NewInvariantKey("1")
+	k.invariant1, err = identity.NewInvariantKey("1")
 	if err != nil {
 		return k, err
 	}
-	k.invariant3, err = identity.NewInvariantKey("2")
+	k.invariant2, err = identity.NewInvariantKey("2")
 	if err != nil {
 		return k, err
 	}
-	k.invariantLet, err = identity.NewInvariantKey("3")
+	k.invariant3, err = identity.NewInvariantKey("3")
 	if err != nil {
 		return k, err
 	}
