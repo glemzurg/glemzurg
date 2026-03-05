@@ -138,6 +138,21 @@ Logic objects are embedded sub-objects within action, query, state machine, clas
 5. **Remove extra fields**: Any field not in the schema will cause a violation
 6. **Check nesting**: Ensure the logic object is at the correct level in the parent file
 
+## Primed Values and the Target Field
+
+The `target` field separates the left-hand side of an assignment from the specification, so the specification contains only the right-hand-side value expression.
+
+For example, for the TLA+ expression `self.log' = Append(self.log, amount)`:
+- `target` = `"log"` (the attribute being set)
+- `specification` = `"Append(self.log, amount)"` (just the RHS)
+
+**Primed values in specifications:**
+- **`state_change`** (guarantees): NO primes — the target captures the LHS
+- **`query`**: NO primes — the target captures the output name
+- **`assessment`** (requires): NO primes — preconditions check current state only
+- **`safety_rule`**: YES, primes ARE allowed (e.g., `"inventory' >= 0"`) to express constraints over both prior and new state
+- **`value`**, **`let`**: NO primes
+
 ## Valid Examples
 
 ### Minimal Valid Logic Object
@@ -146,19 +161,47 @@ Logic objects are embedded sub-objects within action, query, state machine, clas
 {"description": "Order total must be positive"}
 ```
 
-### Logic Object with Formal Specification
-
-```json
-{"description": "User must be authenticated", "notation": "tla_plus", "specification": "user.authenticated = TRUE"}
-```
-
-### Complete Valid Logic Object
+### Guarantee (state_change) — Target Separates LHS
 
 ```json
 {
-    "description": "Account balance must not go negative",
+    "description": "The log is updated with the new amount",
+    "target": "log",
     "notation": "tla_plus",
-    "specification": "account.balance >= 0"
+    "specification": "Append(self.log, amount)"
+}
+```
+
+### Safety Rule — Primed Values Allowed
+
+```json
+{
+    "description": "Inventory cannot go negative",
+    "notation": "tla_plus",
+    "specification": "inventory' >= 0"
+}
+```
+
+### Let Binding — Local Variable Definition
+
+```json
+{
+    "type": "let",
+    "description": "Compute the threshold value",
+    "target": "threshold",
+    "target_type_spec": "Int",
+    "notation": "tla_plus",
+    "specification": "10"
+}
+```
+
+### Assessment (Require) — No Primes
+
+```json
+{
+    "description": "User must be authenticated",
+    "notation": "tla_plus",
+    "specification": "user.authenticated = TRUE"
 }
 ```
 

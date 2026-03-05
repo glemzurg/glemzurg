@@ -36,7 +36,7 @@
     },
     "requires": {
       "type": "array",
-      "description": "Preconditions that must be true before the query can execute. Each item is a logic specification with a description and optional formal notation. Items may also be 'let' bindings that define local variables for use by subsequent items.",
+      "description": "Preconditions that must be true before the query can execute. Each item is a logic specification with a description and optional formal notation. Specifications must not contain primed values. Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
@@ -66,7 +66,7 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation."
+            "description": "Optional formal specification in the given notation. Must not contain primed values."
           }
         },
         "required": ["description"],
@@ -75,7 +75,7 @@
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions describing what the query returns. Each guarantee defines one output via its 'target' field (the output identifier name). The 'specification' is the value expression only. Each output identifier can only appear once per query. Items may also be 'let' bindings that define local variables for use by subsequent items.",
+      "description": "Postconditions describing what the query returns. Each guarantee defines one output via its 'target' field (the output identifier name). The target separates the output name so the specification contains only the value expression with no primed values. Each output identifier can only appear once per query. Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
@@ -105,7 +105,7 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. This represents only the value expression."
+            "description": "Optional formal specification in the given notation. This must be only the value expression with no primed values. The output identifier is captured by the 'target' field."
           }
         },
         "required": ["description", "target"],
