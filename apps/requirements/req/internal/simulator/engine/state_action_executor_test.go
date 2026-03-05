@@ -5,6 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
@@ -14,6 +15,22 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
+
+// stateActionOrderSpec parses a TLA+ expression in the context of the Order class
+// used by state action tests, with attributes: exit_count, entry_count.
+func stateActionOrderSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		AttributeNames: map[string]identity.Key{
+			"exit_count":  helper.Must(identity.NewAttributeKey(classKey, "exit_count")),
+			"entry_count": helper.Must(identity.NewAttributeKey(classKey, "entry_count")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
 
 type StateActionExecutorSuite struct {
 	suite.Suite
@@ -38,7 +55,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/exit/on_exit")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionExitKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.exit_count + 1"}, nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", stateActionOrderSpec("self.exit_count + 1"), nil))
 	actionExit := helper.Must(model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionExit := helper.Must(model_state.NewStateAction(stateActionKey, actionExitKey, "exit"))
@@ -87,7 +104,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/entry/on_entry")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionEntryKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.entry_count + 1"}, nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", stateActionOrderSpec("self.entry_count + 1"), nil))
 	actionEntry := helper.Must(model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionEntry := helper.Must(model_state.NewStateAction(stateActionKey, actionEntryKey, "entry"))

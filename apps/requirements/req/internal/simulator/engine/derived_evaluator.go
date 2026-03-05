@@ -34,10 +34,10 @@ type DerivedAttributeEvaluator struct {
 }
 
 // NewDerivedAttributeEvaluator creates a new evaluator by scanning the model
-// for attributes with DerivationPolicy. The model must have been lowered
-// (LowerModel called) so that ExpressionSpec.Expression fields are populated.
+// for attributes with DerivationPolicy. The model's ExpressionSpec.Expression
+// fields must be populated (via parse functions passed to constructors).
 // Returns an error if:
-//   - any DerivationPolicy expression is not lowered
+//   - any DerivationPolicy expression is not parsed (ParseOk() == false)
 //   - any DerivationPolicy expression contains primed variables
 func NewDerivedAttributeEvaluator(
 	model *req_model.Model,

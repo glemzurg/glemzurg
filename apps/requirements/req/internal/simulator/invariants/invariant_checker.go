@@ -53,8 +53,8 @@ type parsedGuarantee struct {
 }
 
 // NewInvariantChecker creates a new invariant checker from a model.
-// The model must have been lowered (LowerModel called) so that
-// ExpressionSpec.Expression fields are populated.
+// The model's ExpressionSpec.Expression fields must be populated
+// (via parse functions passed to constructors).
 func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
 		model:                model,
@@ -64,14 +64,12 @@ func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
 		classNameMap:         make(map[identity.Key]string),
 	}
 
-	// Load model invariants from pre-lowered expressions
+	// Load model invariants from pre-parsed expressions.
+	// Invariants with nil Expression (unparsed or empty) are silently skipped.
 	for i, inv := range model.Invariants {
 		expr := inv.Spec.Expression
 		if expr == nil {
-			if inv.Spec.Specification == "" {
-				continue // Skip empty specs
-			}
-			return nil, fmt.Errorf("model invariant %d: expression not lowered", i)
+			continue // Skip unparsed or empty specs
 		}
 		isLet := inv.Type == model_logic.LogicTypeLet
 		// Only non-let invariants are checked for primed variables

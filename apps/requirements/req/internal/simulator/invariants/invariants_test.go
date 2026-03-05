@@ -1,7 +1,6 @@
 package invariants
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -34,6 +33,30 @@ func mustKey(s string) identity.Key {
 		panic(err)
 	}
 	return k
+}
+
+// parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
+func parsedSpec(tla string) model_spec.ExpressionSpec {
+	pf := convert.NewExpressionParseFunc(nil)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
+// orderSpec parses a TLA+ expression in the context of the Order class
+// used by createTestModel, with attributes: status, amount, name.
+func orderSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		AttributeNames: map[string]identity.Key{
+			"status": helper.Must(identity.NewAttributeKey(classKey, "status")),
+			"amount": helper.Must(identity.NewAttributeKey(classKey, "amount")),
+			"name":   helper.Must(identity.NewAttributeKey(classKey, "name")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
 }
 
 // Helper to create a basic model with a class
@@ -99,11 +122,11 @@ func createTestModel() *req_model.Model {
 	// Create an action with a post-condition guarantee
 	actionKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order/action/complete")
 	requires := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionRequireKey(actionKey, "0")), model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.status = \"active\""}, nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionRequireKey(actionKey, "0")), model_logic.LogicTypeAssessment, "Precondition.", "", orderSpec("self.status = \"active\""), nil)),
 	}
 	guarantees := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), model_logic.LogicTypeStateChange, "Postcondition.", "status", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "\"completed\""}, nil)), // This is a primed assignment, not a post-condition
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "1")), model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount + 1"}, nil)), // A second guarantee on a different attribute
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"completed\""), nil)), // This is a primed assignment, not a post-condition
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "1")), model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 1"), nil)), // A second guarantee on a different attribute
 	}
 	completeAction := helper.Must(model_state.NewAction(actionKey, "complete", "", requires, guarantees, nil, nil))
 
@@ -134,17 +157,13 @@ func createTestModel() *req_model.Model {
 
 	// Create the model
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always true.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)),
 	}
 	model := helper.Must(req_model.NewModel("test_model", "TestModel", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
-	m := &model
-	if err := convert.LowerModel(m); err != nil {
-		panic(fmt.Sprintf("LowerModel failed: %v", err))
-	}
-	return m
+	return &model
 }
 
 // Test: DataTypeChecker detects unparsed data types
@@ -410,16 +429,12 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 // Test: InvariantChecker model invariant that fails
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always false.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "FALSE"}, nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil)),
 	}
 	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
-	m := &model
-	if err := convert.LowerModel(m); err != nil {
-		panic(fmt.Sprintf("LowerModel failed: %v", err))
-	}
 
-	checker, err := NewInvariantChecker(m)
+	checker, err := NewInvariantChecker(&model)
 	s.NoError(err)
 
 	simState := state.NewSimulationState()
@@ -431,32 +446,29 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	s.Equal(ViolationTypeModelInvariant, violations[0].Type)
 }
 
-// Test: Invalid TLA+ expression is caught during LowerModel, not during NewInvariantChecker.
+// Test: Invalid TLA+ expression results in ParseOk() == false (no expression parsed).
 func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
+	spec := parsedSpec("this is not valid TLA+")
+	// Invalid TLA+ silently produces nil Expression.
+	s.False(spec.ParseOk())
+
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Invalid expression.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "this is not valid TLA+"}, nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Invalid expression.", "", spec, nil)),
 	}
 	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
-	// LowerModel should fail for invalid TLA+ expression.
-	err := convert.LowerModel(&model)
-	s.Error(err)
+	// The checker should handle nil Expression (skip unparsed invariants).
+	checker, err := NewInvariantChecker(&model)
+	s.NoError(err)
+	s.Equal(0, checker.GetModelInvariantCount()) // Unparsed invariants are not counted.
 }
 
 // Test: CheckAllInvariants combines data type and TLA+ checks
 func (s *InvariantsSuite) TestCheckAllInvariants() {
 	model := createTestModel()
 
-	// Update model invariant to check something real
-	model.Invariants = []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always true.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil)),
-	}
-	// Re-lower after replacing invariants.
-	if err := convert.LowerModel(model); err != nil {
-		panic(fmt.Sprintf("LowerModel failed: %v", err))
-	}
-
+	// Update model invariant to check something real (already parsed via parsedSpec in createTestModel).
 	invChecker, err := NewInvariantChecker(model)
 	s.NoError(err)
 
@@ -554,20 +566,9 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	s.False(v3.HasViolations(), "Value 50 should pass")
 }
 
-// Test: InvariantChecker rejects model invariants containing primed variables.
-// Primed variables in model-level invariants are caught either during lowering
-// (if the identifier is unresolved) or during NewInvariantChecker (if resolved
-// but primed). We test both paths.
+// Test: Primed variables in model-level invariants fail to parse without class context.
 func (s *InvariantsSuite) TestInvariantCheckerRejectsPrimedInvariants() {
-	// Case 1: Primed unresolved identifier caught during LowerModel.
-	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Primed variable check.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x' > 0"}, nil)),
-	}
-	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
-	model.Domains = map[identity.Key]model_domain.Domain{}
-
-	err := convert.LowerModel(&model)
-	s.Error(err)
-	// The error is about unresolved identifier (caught before primed check).
-	s.Contains(err.Error(), "unresolved identifier")
+	// Primed unresolved identifier fails to parse (no class context).
+	spec := parsedSpec("x' > 0")
+	s.False(spec.ParseOk()) // Cannot parse primed variable without class context.
 }

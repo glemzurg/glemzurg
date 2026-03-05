@@ -88,20 +88,47 @@ func (s *TypeSpecTestSuite) TestValidate() {
 }
 
 func (s *TypeSpecTestSuite) TestNew() {
-	// Valid construction.
+	// Valid construction with nil parseFunc.
 	spec, err := NewTypeSpec("tla_plus", "Nat", nil)
 	s.NoError(err)
 	s.Equal("tla_plus", spec.Notation)
 	s.Equal("Nat", spec.Specification)
 	s.Nil(spec.ExpressionType)
+	s.False(spec.ParseOk())
 
-	// With expression type.
-	spec, err = NewTypeSpec("tla_plus", "Nat", &model_expression_type.IntegerType{})
+	// With parseFunc that succeeds.
+	parseFunc := func(spec string) (model_expression_type.ExpressionType, string) {
+		return &model_expression_type.IntegerType{}, "Int"
+	}
+	spec, err = NewTypeSpec("tla_plus", "Nat", parseFunc)
 	s.NoError(err)
 	s.NotNil(spec.ExpressionType)
+	s.True(spec.ParseOk())
+	s.Equal("Int", spec.Specification) // Normalized.
+
+	// With parseFunc that fails (returns nil).
+	failFunc := func(spec string) (model_expression_type.ExpressionType, string) {
+		return nil, ""
+	}
+	spec, err = NewTypeSpec("tla_plus", "Nat", failFunc)
+	s.NoError(err)
+	s.Nil(spec.ExpressionType)
+	s.False(spec.ParseOk())
+	s.Equal("Nat", spec.Specification) // Unchanged.
 
 	// Invalid notation.
 	_, err = NewTypeSpec("", "Nat", nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Notation")
+
+	// Empty specification skips parseFunc.
+	called := false
+	trackFunc := func(spec string) (model_expression_type.ExpressionType, string) {
+		called = true
+		return nil, ""
+	}
+	spec, err = NewTypeSpec("tla_plus", "", trackFunc)
+	s.NoError(err)
+	s.False(called)
+	s.False(spec.ParseOk())
 }

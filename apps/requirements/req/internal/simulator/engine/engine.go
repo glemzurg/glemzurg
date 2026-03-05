@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
@@ -64,12 +63,9 @@ type SimulationEngine struct {
 }
 
 // NewSimulationEngine creates and wires up all simulation components.
+// The model must have its ExpressionSpec.Expression fields already populated
+// (e.g., via parse functions passed to ExpressionSpec constructors).
 func NewSimulationEngine(model *req_model.Model, config SimulationConfig) (*SimulationEngine, error) {
-	// Lower all TLA+ expressions to model_expression nodes.
-	if err := convert.LowerModel(model); err != nil {
-		return nil, fmt.Errorf("lowering model expressions: %w", err)
-	}
-
 	rng := rand.New(rand.NewSource(config.RandomSeed))
 
 	// Apply surface area filtering.

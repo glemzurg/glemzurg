@@ -88,15 +88,47 @@ func (s *ExpressionSpecTestSuite) TestValidate() {
 }
 
 func (s *ExpressionSpecTestSuite) TestNew() {
-	// Valid construction.
+	// Valid construction with nil parseFunc.
 	spec, err := NewExpressionSpec("tla_plus", "x > 0", nil)
 	s.NoError(err)
 	s.Equal("tla_plus", spec.Notation)
 	s.Equal("x > 0", spec.Specification)
 	s.Nil(spec.Expression)
+	s.False(spec.ParseOk())
 
 	// Invalid notation.
 	_, err = NewExpressionSpec("", "x > 0", nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Notation")
+
+	// Valid construction with parseFunc that succeeds.
+	parseFunc := func(spec string) (model_expression.Expression, string) {
+		return &model_expression.BoolLiteral{Value: true}, "TRUE"
+	}
+	spec, err = NewExpressionSpec("tla_plus", "true", parseFunc)
+	s.NoError(err)
+	s.Equal("TRUE", spec.Specification) // Normalized.
+	s.NotNil(spec.Expression)
+	s.True(spec.ParseOk())
+
+	// Valid construction with parseFunc that fails (returns nil).
+	failFunc := func(spec string) (model_expression.Expression, string) {
+		return nil, ""
+	}
+	spec, err = NewExpressionSpec("tla_plus", "invalid", failFunc)
+	s.NoError(err)
+	s.Equal("invalid", spec.Specification) // Unchanged.
+	s.Nil(spec.Expression)
+	s.False(spec.ParseOk())
+
+	// Empty specification skips parseFunc.
+	called := false
+	trackFunc := func(spec string) (model_expression.Expression, string) {
+		called = true
+		return nil, ""
+	}
+	spec, err = NewExpressionSpec("tla_plus", "", trackFunc)
+	s.NoError(err)
+	s.False(called)
+	s.False(spec.ParseOk())
 }

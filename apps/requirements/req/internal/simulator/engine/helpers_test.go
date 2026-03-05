@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"fmt"
-
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
@@ -36,7 +34,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount + 10"}, nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 10"), nil))
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
@@ -102,6 +100,44 @@ func testItemClass() (model_class.Class, identity.Key) {
 	return class, classKey
 }
 
+// parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
+func parsedSpec(tla string) model_spec.ExpressionSpec {
+	pf := convert.NewExpressionParseFunc(nil)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
+// counterSpec parses a TLA+ expression in the context of the standard Counter class
+// with attribute: count.
+func counterSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/d/subdomain/s/class/counter")
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		AttributeNames: map[string]identity.Key{
+			"count": helper.Must(identity.NewAttributeKey(classKey, "count")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
+// orderSpec parses a TLA+ expression in the context of the standard Order class
+// with attributes: amount, status.
+func orderSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	ctx := &convert.LowerContext{
+		ClassKey:       classKey,
+		AttributeNames: map[string]identity.Key{
+			"amount": helper.Must(identity.NewAttributeKey(classKey, "amount")),
+			"status": helper.Must(identity.NewAttributeKey(classKey, "status")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
 // testModel builds a minimal model with the given classes.
 func testModel(classes ...struct {
 	class model_class.Class
@@ -128,11 +164,7 @@ func testModel(classes ...struct {
 		domainKey: domain,
 	}
 
-	m := &model
-	if err := convert.LowerModel(m); err != nil {
-		panic(fmt.Sprintf("LowerModel failed: %v", err))
-	}
-	return m
+	return &model
 }
 
 // classEntry is a helper for testModel's variadic parameter.
@@ -146,19 +178,10 @@ func classEntry(class model_class.Class, key identity.Key) struct {
 	}{class, key}
 }
 
-// lowerClass wraps a class in a temporary model and lowers all expressions.
-// Returns the class with lowered expressions.
-func lowerClass(class model_class.Class, classKey identity.Key) model_class.Class {
-	m := testModel(classEntry(class, classKey))
-	// testModel already calls LowerModel, so just extract the class back.
-	for _, domain := range m.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for _, c := range subdomain.Classes {
-				return c
-			}
-		}
-	}
-	panic("no class found after lowering")
+// lowerClass is kept for compatibility — returns the class as-is since expressions
+// are now parsed at construction time via parsedSpec().
+func lowerClass(class model_class.Class, _ identity.Key) model_class.Class {
+	return class
 }
 
 // testSubdomainKey returns the standard test subdomain key.
