@@ -1,31 +1,30 @@
-package parser_ai
+package convert
 
 import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 )
 
-// lowerAllExpressions walks the model tree and re-creates all ExpressionSpecs
-// using convert.NewExpressionParseFunc with full context. This runs after
-// ConvertToModel to parse all TLA+ expressions with proper identifier resolution.
-func lowerAllExpressions(model *req_model.Model) error {
+// LowerAllExpressions walks the model tree and re-creates all ExpressionSpecs
+// using NewExpressionParseFunc with full context. This is the tolerant approach:
+// parse failures leave Expression as nil rather than returning an error.
+func LowerAllExpressions(model *req_model.Model) error {
 	// Build model-level lookup maps.
-	globalFunctions := convert.BuildGlobalFunctionMap(model)
-	namedSets := convert.BuildNamedSetMap(model)
-	allActions := convert.BuildAllActionsMap(model)
+	globalFunctions := BuildGlobalFunctionMap(model)
+	namedSets := BuildNamedSetMap(model)
+	allActions := BuildAllActionsMap(model)
 
 	// 1. Lower model-level invariants (no class context).
-	modelCtx := &convert.LowerContext{
+	modelCtx := &LowerContext{
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
 		AllActions:      allActions,
 	}
-	modelPF := convert.NewExpressionParseFunc(modelCtx)
+	modelPF := NewExpressionParseFunc(modelCtx)
 	for i := range model.Invariants {
 		if err := relowerSpec(&model.Invariants[i].Spec, modelPF); err != nil {
 			return fmt.Errorf("model invariant %d: %w", i, err)
@@ -38,13 +37,13 @@ func lowerAllExpressions(model *req_model.Model) error {
 		for _, p := range gf.Parameters {
 			params[p] = true
 		}
-		gfCtx := &convert.LowerContext{
+		gfCtx := &LowerContext{
 			GlobalFunctions: globalFunctions,
 			NamedSets:       namedSets,
 			AllActions:      allActions,
 			Parameters:      params,
 		}
-		gfPF := convert.NewExpressionParseFunc(gfCtx)
+		gfPF := NewExpressionParseFunc(gfCtx)
 		if err := relowerSpec(&gf.Logic.Spec, gfPF); err != nil {
 			return fmt.Errorf("global function %q: %w", gfKey.String(), err)
 		}
@@ -63,7 +62,7 @@ func lowerAllExpressions(model *req_model.Model) error {
 	for dKey, domain := range model.Domains {
 		for sKey, subdomain := range domain.Subdomains {
 			for cKey, class := range subdomain.Classes {
-				if err := lowerClassExpressions(&class, globalFunctions, namedSets, allActions); err != nil {
+				if err := lowerAllClassExpressions(&class, globalFunctions, namedSets, allActions); err != nil {
 					return fmt.Errorf("class %q: %w", cKey.String(), err)
 				}
 				subdomain.Classes[cKey] = class
@@ -76,14 +75,14 @@ func lowerAllExpressions(model *req_model.Model) error {
 	return nil
 }
 
-// lowerClassExpressions re-creates all ExpressionSpecs in a class with full context.
-func lowerClassExpressions(class *model_class.Class, globalFunctions, namedSets, allActions map[string]identity.Key) error {
+// lowerAllClassExpressions re-creates all ExpressionSpecs in a class with full context.
+func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSets, allActions map[string]identity.Key) error {
 	// Build class-level context maps.
-	attrNames := convert.BuildAttributeNameMap(class)
-	actionNames := convert.BuildActionNameMap(class)
-	queryNames := convert.BuildQueryNameMap(class)
+	attrNames := BuildAttributeNameMap(class)
+	actionNames := BuildActionNameMap(class)
+	queryNames := BuildQueryNameMap(class)
 
-	classCtx := &convert.LowerContext{
+	classCtx := &LowerContext{
 		ClassKey:        class.Key,
 		AttributeNames:  attrNames,
 		ActionNames:     actionNames,
@@ -92,7 +91,7 @@ func lowerClassExpressions(class *model_class.Class, globalFunctions, namedSets,
 		NamedSets:       namedSets,
 		AllActions:      allActions,
 	}
-	classPF := convert.NewExpressionParseFunc(classCtx)
+	classPF := NewExpressionParseFunc(classCtx)
 
 	// Class invariants.
 	for i := range class.Invariants {
@@ -126,8 +125,8 @@ func lowerClassExpressions(class *model_class.Class, globalFunctions, namedSets,
 
 	// Actions.
 	for actKey, action := range class.Actions {
-		actCtx := convert.ContextWithParameters(classCtx, action.Parameters)
-		actPF := convert.NewExpressionParseFunc(actCtx)
+		actCtx := ContextWithParameters(classCtx, action.Parameters)
+		actPF := NewExpressionParseFunc(actCtx)
 
 		for i := range action.Requires {
 			if err := relowerSpec(&action.Requires[i].Spec, actPF); err != nil {
@@ -149,8 +148,8 @@ func lowerClassExpressions(class *model_class.Class, globalFunctions, namedSets,
 
 	// Queries.
 	for qKey, query := range class.Queries {
-		qCtx := convert.ContextWithParameters(classCtx, query.Parameters)
-		qPF := convert.NewExpressionParseFunc(qCtx)
+		qCtx := ContextWithParameters(classCtx, query.Parameters)
+		qPF := NewExpressionParseFunc(qCtx)
 
 		for i := range query.Requires {
 			if err := relowerSpec(&query.Requires[i].Spec, qPF); err != nil {

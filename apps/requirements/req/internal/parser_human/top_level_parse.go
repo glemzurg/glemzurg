@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -377,7 +378,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 
 	// Phase 2: Re-create all ExpressionSpecs with full lowering context so that
 	// Expression trees are populated via constructors.
-	if err := lowerAllExpressions(&model); err != nil {
+	if err := convert.LowerAllExpressions(&model); err != nil {
 		return req_model.Model{}, errors.Wrap(err, "failed to lower expressions")
 	}
 

@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 )
 
@@ -34,8 +35,8 @@ func readModel(inputModelPath string) (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
-	// Phase 2: lower all expressions with full context.
-	if err := lowerAllExpressions(modelPtr); err != nil {
+	// Lower all expressions with full context.
+	if err := convert.LowerAllExpressions(modelPtr); err != nil {
 		return req_model.Model{}, err
 	}
 

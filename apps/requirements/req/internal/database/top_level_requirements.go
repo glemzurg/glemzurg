@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
@@ -1283,6 +1284,11 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 			if err = model.SetClassAssociations(allClassAssocs); err != nil {
 				return err
 			}
+		}
+
+		// Parse all TLA+ expressions with full model context.
+		if err = convert.LowerAllExpressions(&model); err != nil {
+			return err
 		}
 
 		return nil
