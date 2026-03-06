@@ -15,6 +15,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
+// _EXPRESSION_RETURNED_NIL is the error message used when an expression evaluates to nil.
+const _EXPRESSION_RETURNED_NIL = "expression returned nil"
+
 // ActionResult holds the result of executing an action.
 type ActionResult struct {
 	// InstanceID is the primary instance the action was executed on.
@@ -147,7 +150,7 @@ func (e *ActionExecutor) ExecuteAction(
 		}
 
 		if !isTrueBoolean(result.Value) {
-			msg := "expression returned nil"
+			msg := _EXPRESSION_RETURNED_NIL
 			if result.Value != nil {
 				msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -178,7 +181,7 @@ func (e *ActionExecutor) ExecuteAction(
 		}
 
 		if !isTrueBoolean(result.Value) {
-			msg := "expression returned nil"
+			msg := _EXPRESSION_RETURNED_NIL
 			if result.Value != nil {
 				msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -400,7 +403,7 @@ func (e *ActionExecutor) ExecuteQuery(
 		}
 
 		if !isTrueBoolean(result.Value) {
-			msg := "expression returned nil"
+			msg := _EXPRESSION_RETURNED_NIL
 			if result.Value != nil {
 				msg = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}

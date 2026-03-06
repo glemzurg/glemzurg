@@ -394,9 +394,12 @@ func (v ViolationErrors) ByType(t ViolationType) ViolationErrors {
 func (v ViolationErrors) TLAViolations() ViolationErrors {
 	var result ViolationErrors
 	for _, violation := range v {
+		//nolint:exhaustive // Only TLA+ violation types are relevant here.
 		switch violation.Type {
 		case ViolationTypeModelInvariant, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
 			result = append(result, violation)
+		default:
+			// Not a TLA+ violation; skip.
 		}
 	}
 	return result
@@ -406,9 +409,12 @@ func (v ViolationErrors) TLAViolations() ViolationErrors {
 func (v ViolationErrors) DataTypeViolations() ViolationErrors {
 	var result ViolationErrors
 	for _, violation := range v {
+		//nolint:exhaustive // Only data type violation types are relevant here.
 		switch violation.Type {
 		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness:
 			result = append(result, violation)
+		default:
+			// Not a data type violation; skip.
 		}
 	}
 	return result
@@ -418,12 +424,15 @@ func (v ViolationErrors) DataTypeViolations() ViolationErrors {
 func (v ViolationErrors) LivenessViolations() ViolationErrors {
 	var result ViolationErrors
 	for _, violation := range v {
+		//nolint:exhaustive // Only liveness violation types are relevant here.
 		switch violation.Type {
 		case ViolationTypeLivenessClassNotInstantiated,
 			ViolationTypeLivenessAttributeNotWritten,
 			ViolationTypeLivenessAssociationNotLinked,
 			ViolationTypeLivenessAttributeNotRead:
 			result = append(result, violation)
+		default:
+			// Not a liveness violation; skip.
 		}
 	}
 	return result

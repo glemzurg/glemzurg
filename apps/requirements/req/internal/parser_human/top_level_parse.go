@@ -16,6 +16,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// _DEFAULT_SUBDOMAIN_NAME is the name used for the default subdomain created for each domain.
+const _DEFAULT_SUBDOMAIN_NAME = "default"
+
 func Parse(modelPath string) (model core.Model, err error) {
 	log.Printf("Parse files in '%s'", modelPath)
 
@@ -159,7 +162,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 				// Determine which subdomain to use (explicit or default).
 				subdomainName := toParseFile.Subdomain
 				if subdomainName == "" {
-					subdomainName = "default"
+					subdomainName = _DEFAULT_SUBDOMAIN_NAME
 				}
 				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 				if !ok {
@@ -191,7 +194,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 				// Determine which subdomain to use (explicit or default).
 				subdomainName := toParseFile.Subdomain
 				if subdomainName == "" {
-					subdomainName = "default"
+					subdomainName = _DEFAULT_SUBDOMAIN_NAME
 				}
 				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 				if !ok {
@@ -226,7 +229,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 			}
 
 			// Give each domain a default subdomain.
-			defaultSubdomainKey, err := identity.NewSubdomainKey(domain.Key, "default")
+			defaultSubdomainKey, err := identity.NewSubdomainKey(domain.Key, _DEFAULT_SUBDOMAIN_NAME)
 			if err != nil {
 				return core.Model{}, errors.WithStack(err)
 			}
@@ -241,7 +244,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 			model.Domains[domain.Key] = domain
 			domainKeysBySubKey[toParseFile.Domain] = domain.Key
 			// Track default subdomain by path for lookup.
-			subdomainKeysByPath[toParseFile.Domain+"/default"] = defaultSubdomainKey
+			subdomainKeysByPath[toParseFile.Domain+"/"+_DEFAULT_SUBDOMAIN_NAME] = defaultSubdomainKey
 
 		case _EXT_SUBDOMAIN:
 			// Find the domain for this subdomain.
@@ -272,7 +275,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 			// Determine which subdomain to use (explicit or default).
 			subdomainName := toParseFile.Subdomain
 			if subdomainName == "" {
-				subdomainName = "default"
+				subdomainName = _DEFAULT_SUBDOMAIN_NAME
 			}
 			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
@@ -318,7 +321,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 			// Determine which subdomain to use (explicit or default).
 			subdomainName := toParseFile.Subdomain
 			if subdomainName == "" {
-				subdomainName = "default"
+				subdomainName = _DEFAULT_SUBDOMAIN_NAME
 			}
 			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
@@ -358,7 +361,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 	// but if it was never populated, it should be removed.
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {
-			if subdomainKey.SubKey == "default" && isEmptySubdomain(subdomain) {
+			if subdomainKey.SubKey == _DEFAULT_SUBDOMAIN_NAME && isEmptySubdomain(subdomain) {
 				delete(domain.Subdomains, subdomainKey)
 			}
 		}

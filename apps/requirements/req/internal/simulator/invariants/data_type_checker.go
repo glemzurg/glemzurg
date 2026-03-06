@@ -12,6 +12,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
+// _BOUND_TYPE_UNCONSTRAINED is the span bound type indicating no constraint.
+const _BOUND_TYPE_UNCONSTRAINED = "unconstrained"
+
+// _BOUND_TYPE_CLOSED is the span bound type indicating an inclusive boundary.
+const _BOUND_TYPE_CLOSED = "closed"
+
 // DataTypeChecker validates attribute values against their data type constraints.
 // It checks:
 //   - Required (non-nullable) attributes are not nil
@@ -261,12 +267,12 @@ func (c *DataTypeChecker) checkSpanConstraint(
 	rangeStr := formatSpanRange(span)
 
 	// Check lower bound
-	if span.LowerType != "unconstrained" && span.LowerValue != nil {
+	if span.LowerType != _BOUND_TYPE_UNCONSTRAINED && span.LowerValue != nil {
 		lowerRat := spanValueToRat(span.LowerValue, span.LowerDenominator)
 
 		cmp := valueRat.Cmp(lowerRat)
 		switch span.LowerType {
-		case "closed":
+		case _BOUND_TYPE_CLOSED:
 			// Closed: value >= lower
 			if cmp < 0 {
 				return NewSpanConstraintViolation(
@@ -292,12 +298,12 @@ func (c *DataTypeChecker) checkSpanConstraint(
 	}
 
 	// Check upper bound
-	if span.HigherType != "unconstrained" && span.HigherValue != nil {
+	if span.HigherType != _BOUND_TYPE_UNCONSTRAINED && span.HigherValue != nil {
 		higherRat := spanValueToRat(span.HigherValue, span.HigherDenominator)
 
 		cmp := valueRat.Cmp(higherRat)
 		switch span.HigherType {
-		case "closed":
+		case _BOUND_TYPE_CLOSED:
 			// Closed: value <= higher
 			if cmp > 0 {
 				return NewSpanConstraintViolation(
@@ -343,12 +349,12 @@ func formatSpanRange(span *model_data_type.AtomicSpan) string {
 	var lowerBracket, higherBracket string
 
 	// Lower bound
-	if span.LowerType == "unconstrained" {
+	if span.LowerType == _BOUND_TYPE_UNCONSTRAINED {
 		lower = "-∞"
 		lowerBracket = "("
 	} else {
 		lower = formatSpanValue(span.LowerValue, span.LowerDenominator)
-		if span.LowerType == "closed" {
+		if span.LowerType == _BOUND_TYPE_CLOSED {
 			lowerBracket = "["
 		} else {
 			lowerBracket = "("
@@ -356,12 +362,12 @@ func formatSpanRange(span *model_data_type.AtomicSpan) string {
 	}
 
 	// Higher bound
-	if span.HigherType == "unconstrained" {
+	if span.HigherType == _BOUND_TYPE_UNCONSTRAINED {
 		higher = "+∞"
 		higherBracket = ")"
 	} else {
 		higher = formatSpanValue(span.HigherValue, span.HigherDenominator)
-		if span.HigherType == "closed" {
+		if span.HigherType == _BOUND_TYPE_CLOSED {
 			higherBracket = "]"
 		} else {
 			higherBracket = ")"

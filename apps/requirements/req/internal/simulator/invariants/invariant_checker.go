@@ -13,6 +13,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
+// _EXPRESSION_RETURNED_NIL is the error message used when an expression evaluates to nil.
+const _EXPRESSION_RETURNED_NIL = "expression returned nil"
+
 // InvariantChecker evaluates invariants against simulation state.
 // It checks:
 //   - Model-level invariants (Model.Invariants)
@@ -143,7 +146,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		if !isTrueBoolean(result.Value) {
 			var message string
 			if result.Value == nil {
-				message = "expression returned nil"
+				message = _EXPRESSION_RETURNED_NIL
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -202,7 +205,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 		if !isTrueBoolean(result.Value) {
 			var message string
 			if result.Value == nil {
-				message = "expression returned nil"
+				message = _EXPRESSION_RETURNED_NIL
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -264,7 +267,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 		if !isTrueBoolean(result.Value) {
 			var message string
 			if result.Value == nil {
-				message = "expression returned nil"
+				message = _EXPRESSION_RETURNED_NIL
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}

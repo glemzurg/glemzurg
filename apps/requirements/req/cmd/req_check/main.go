@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -27,9 +28,9 @@ func main() {
 
 	// Validate required argument
 	if modelPath == "" {
-		fmt.Println("Error: model path is required")
-		fmt.Println("Usage: req_check <model_path>")
-		fmt.Println("       req_check -path <model_path>")
+		log.Println("Error: model path is required")
+		log.Println("Usage: req_check <model_path>")
+		log.Println("       req_check -path <model_path>")
 		os.Exit(1)
 	}
 
@@ -40,19 +41,19 @@ func main() {
 	_ = slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	// Show configuration
-	fmt.Printf("\nConfiguration:\n")
-	fmt.Printf("  model path: %s\n", modelPath)
-	fmt.Printf("  model: %s\n", model)
-	fmt.Println()
+	log.Printf("Configuration:")
+	log.Printf("  model path: %s", modelPath)
+	log.Printf("  model: %s", model)
+	log.Println()
 
 	// Validate the model
 	err := validateModel(modelPath, model)
 	if err != nil {
-		fmt.Printf("Validation failed: %+v\n\n", err)
+		log.Printf("Validation failed: %+v", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Validation passed!")
+	log.Println("Validation passed!")
 	os.Exit(0)
 }
 
@@ -62,7 +63,7 @@ func validateModel(modelPath, model string) error {
 	// Read the input model into core.Model
 	var parsedModel *core.Model
 
-	fmt.Println("Reading and validating model from ai/json format...")
+	log.Println("Reading and validating model from ai/json format...")
 	m, err := parser_ai.ReadModel(modelPath)
 	if err != nil {
 		return fmt.Errorf("failed to read/validate ai/json model: %w", err)
@@ -70,7 +71,7 @@ func validateModel(modelPath, model string) error {
 	parsedModel = &m
 
 	// Validate the req_model
-	fmt.Println("Validating core...")
+	log.Println("Validating core...")
 	if err := parsedModel.Validate(); err != nil {
 		return fmt.Errorf("req_model validation failed: %w", err)
 	}

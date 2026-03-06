@@ -5,6 +5,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
+// _OP_AND is the Unicode conjunction operator (logical AND).
+const _OP_AND = "∧"
+
+// _OP_OR is the Unicode disjunction operator (logical OR).
+const _OP_OR = "∨"
+
 // evalLogicInfix evaluates a logic infix expression (∧, ∨, ⇒, ≡).
 func evalLogicInfix(node *ast.LogicInfixExpression, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
@@ -19,11 +25,11 @@ func evalLogicInfix(node *ast.LogicInfixExpression, bindings *Bindings) *EvalRes
 
 	// Short-circuit evaluation for AND and OR
 	switch node.Operator {
-	case "∧", "/\\":
+	case _OP_AND, "/\\":
 		if !leftBool.Value() {
 			return NewEvalResult(FALSE)
 		}
-	case "∨", "\\/":
+	case _OP_OR, "\\/":
 		if leftBool.Value() {
 			return NewEvalResult(TRUE)
 		}
@@ -41,9 +47,9 @@ func evalLogicInfix(node *ast.LogicInfixExpression, bindings *Bindings) *EvalRes
 
 	var result bool
 	switch node.Operator {
-	case "∧", "/\\":
+	case _OP_AND, "/\\":
 		result = leftBool.Value() && rightBool.Value()
-	case "∨", "\\/":
+	case _OP_OR, "\\/":
 		result = leftBool.Value() || rightBool.Value()
 	case "⇒", "=>":
 		// A => B is equivalent to !A || B

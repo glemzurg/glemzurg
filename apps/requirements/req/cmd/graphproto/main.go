@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/goccy/go-graphviz"
 )
@@ -248,5 +248,5 @@ func main() {
 	if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(buf.String())
+	os.Stdout.WriteString(buf.String() + "\n")
 }

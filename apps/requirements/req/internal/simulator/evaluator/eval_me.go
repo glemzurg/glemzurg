@@ -365,6 +365,14 @@ func evalMEBinaryLogic(n *me.BinaryLogic, bindings *Bindings) *EvalResult {
 		if leftBool.Value() {
 			return NewEvalResult(TRUE)
 		}
+	case me.LogicImplies:
+		if !leftBool.Value() {
+			return NewEvalResult(TRUE)
+		}
+	case me.LogicEquiv:
+		// No short-circuit possible for equivalence.
+	default:
+		return NewEvalError("unknown logic operator: %s", n.Op)
 	}
 
 	rightResult := Eval(n.Right, bindings)
@@ -432,6 +440,9 @@ func evalMECompare(n *me.Compare, bindings *Bindings) *EvalResult {
 		result = cmp <= 0
 	case me.CompareGte:
 		result = cmp >= 0
+	case me.CompareEq, me.CompareNeq:
+		// Already handled above; should not reach here.
+		return NewEvalError("unexpected equality operator in numeric comparison: %s", n.Op)
 	default:
 		return NewEvalError("unknown comparison operator: %s", n.Op)
 	}

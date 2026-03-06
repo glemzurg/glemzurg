@@ -229,7 +229,9 @@ func needsParens(childPrec, parentPrec int, pos childPosition, parentAssoc assoc
 		return pos == posLeft
 	case assocNone:
 		return true
-	default: // prefix, postfix
+	case assocPrefix, assocPostfix:
+		return false
+	default:
 		return false
 	}
 }

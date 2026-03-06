@@ -4,6 +4,8 @@ package model_bridge
 
 import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
+const _UNKNOWN = "unknown"
+
 // ExpressionSource identifies where a TLA+ expression originates in the model.
 type ExpressionSource int
 
@@ -42,7 +44,7 @@ func (s ExpressionSource) String() string {
 	case SourceGuardCondition:
 		return "guard_condition"
 	default:
-		return "unknown"
+		return _UNKNOWN
 	}
 }
 

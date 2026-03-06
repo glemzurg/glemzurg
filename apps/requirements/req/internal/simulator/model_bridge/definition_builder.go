@@ -27,12 +27,14 @@ const (
 
 func (k GuaranteeKind) String() string {
 	switch k {
+	case GuaranteeUnknown:
+		return _UNKNOWN
 	case GuaranteePrimedAssignment:
 		return "primed_assignment"
 	case GuaranteePostCondition:
 		return "post_condition"
 	default:
-		return "unknown"
+		return _UNKNOWN
 	}
 }
 

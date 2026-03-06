@@ -8,6 +8,9 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
+// _LOGIC_TYPE_QUERY is the logic type string for query logic.
+const _LOGIC_TYPE_QUERY = "query"
+
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
 	Type           string `json:"type,omitempty"`
@@ -103,7 +106,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 
 	// Target validation based on logic type (when type is specified).
 	switch logic.Type {
-	case "state_change", "query", "let":
+	case "state_change", _LOGIC_TYPE_QUERY, "let":
 		if logic.Target == "" {
 			return NewParseError(
 				ErrLogicTargetRequired,
@@ -111,7 +114,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 				filename,
 			).WithField("target")
 		}
-		if (logic.Type == "query" || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
+		if (logic.Type == _LOGIC_TYPE_QUERY || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
 			return NewParseError(
 				ErrLogicTargetNoLeadUnderscore,
 				logic.Type+" logic target '"+logic.Target+"' cannot start with '_' — use a plain identifier name",

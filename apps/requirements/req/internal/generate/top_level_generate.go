@@ -1,7 +1,7 @@
 package generate
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -17,7 +17,7 @@ func GenerateMdFromModel(debug bool, outputPath string, parsedModel core.Model) 
 		return err
 	}
 
-	fmt.Println()
+	log.Println()
 
 	// Use FileWriter to write to filesystem via ContentWriter interface.
 	writer := NewFileWriter(outputPath)
@@ -26,7 +26,7 @@ func GenerateMdFromModel(debug bool, outputPath string, parsedModel core.Model) 
 		return err
 	}
 
-	fmt.Println()
+	log.Println()
 
 	return nil
 }
