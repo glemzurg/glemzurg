@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
-func WriteModel(model req_model.Model, outputModelPath string) error {
+func WriteModel(model core.Model, outputModelPath string) error {
 
 	inputModel, err := ConvertFromModel(&model)
 	if err != nil {

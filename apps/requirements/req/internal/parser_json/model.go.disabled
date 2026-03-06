@@ -2,10 +2,10 @@ package parser_json
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 )
 
 // modelInOut is the documentation summary of a set of requirements.
@@ -21,8 +21,8 @@ type modelInOut struct {
 }
 
 // ToRequirements converts the modelInOut to requirements.Requirements.
-func (m modelInOut) ToRequirements() (req_model.Model, error) {
-	model := req_model.Model{
+func (m modelInOut) ToRequirements() (core.Model, error) {
+	model := core.Model{
 		Key:     m.Key,
 		Name:    m.Name,
 		Details: m.Details,
@@ -32,7 +32,7 @@ func (m modelInOut) ToRequirements() (req_model.Model, error) {
 	for _, a := range m.Actors {
 		actor, err := a.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if model.Actors == nil {
 			model.Actors = make(map[identity.Key]model_actor.Actor)
@@ -44,7 +44,7 @@ func (m modelInOut) ToRequirements() (req_model.Model, error) {
 	for _, d := range m.Domains {
 		domain, err := d.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if model.Domains == nil {
 			model.Domains = make(map[identity.Key]model_domain.Domain)
@@ -56,7 +56,7 @@ func (m modelInOut) ToRequirements() (req_model.Model, error) {
 	for _, da := range m.DomainAssociations {
 		domainAssoc, err := da.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if model.DomainAssociations == nil {
 			model.DomainAssociations = make(map[identity.Key]model_domain.Association)
@@ -68,7 +68,7 @@ func (m modelInOut) ToRequirements() (req_model.Model, error) {
 	for _, a := range m.Associations {
 		assoc, err := a.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if model.ClassAssociations == nil {
 			model.ClassAssociations = make(map[identity.Key]model_class.Association)
@@ -79,8 +79,8 @@ func (m modelInOut) ToRequirements() (req_model.Model, error) {
 	return model, nil
 }
 
-// FromRequirements creates a modelInOut from req_model.Model.
-func FromRequirementsModel(r req_model.Model) modelInOut {
+// FromRequirements creates a modelInOut from core.Model.
+func FromRequirementsModel(r core.Model) modelInOut {
 	m := modelInOut{
 		Key:     r.Key,
 		Name:    r.Name,

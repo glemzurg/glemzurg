@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
@@ -65,7 +65,7 @@ type SimulationEngine struct {
 // NewSimulationEngine creates and wires up all simulation components.
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
-func NewSimulationEngine(model *req_model.Model, config SimulationConfig) (*SimulationEngine, error) {
+func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
 	rng := rand.New(rand.NewSource(config.RandomSeed))
 
 	// Apply surface area filtering.

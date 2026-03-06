@@ -3,7 +3,7 @@ package model_bridge
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 )
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.

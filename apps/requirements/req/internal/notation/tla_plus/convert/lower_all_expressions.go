@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 )
 
 // LowerAllExpressions walks the model tree and re-creates all ExpressionSpecs
 // using NewExpressionParseFunc with full context. This is the tolerant approach:
 // parse failures leave Expression as nil rather than returning an error.
-func LowerAllExpressions(model *req_model.Model) error {
+func LowerAllExpressions(model *core.Model) error {
 	// Build model-level lookup maps.
 	globalFunctions := BuildGlobalFunctionMap(model)
 	namedSets := BuildNamedSetMap(model)

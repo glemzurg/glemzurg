@@ -3,7 +3,7 @@ package ast
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

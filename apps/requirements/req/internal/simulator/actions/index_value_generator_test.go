@@ -7,8 +7,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"

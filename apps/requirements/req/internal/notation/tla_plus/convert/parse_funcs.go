@@ -4,8 +4,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 )
 
 // NewExpressionParseFunc creates an ExpressionParseFunc that uses the TLA+ parser

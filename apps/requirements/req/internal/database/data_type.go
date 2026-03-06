@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 
 	"github.com/pkg/errors"
 )

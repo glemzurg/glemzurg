@@ -2,7 +2,7 @@ package surface
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 

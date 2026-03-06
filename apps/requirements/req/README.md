@@ -7,27 +7,12 @@
 
 todo:
 
-
-deeply examine the data type to expression type separation
-
-- give classes invariants
-- give attributes invariants
-- move error codes to req_model
-  - req_model to core
-
-- md - flat - generate
-- update the md file output
-    - include tla+
-    - prepare the md output to be complete
-      - update the scenarios to use the logic
-      - update the use cases if needed
-
-  - replace all fmt.Errorf() with errors.Errorf()
-
 add linters in a way that AI will make use of them:
   add complexity linter to req
+  replace all fmt.Errorf() with errors.Errorf()
 
 update ai parser to be an ai desitned cli:
+  - move error codes to req_model
   https://grok.com/c/e1be5ee4-1771-499f-9d52-4cb80e9c3b46?rid=36cf9e90-0129-47a9-9437-aab9eb24c280
 
 feb (in parallel)

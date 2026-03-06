@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )

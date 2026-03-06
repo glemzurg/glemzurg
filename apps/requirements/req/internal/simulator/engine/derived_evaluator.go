@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -40,7 +40,7 @@ type DerivedAttributeEvaluator struct {
 //   - any DerivationPolicy expression is not parsed (ParseOk() == false)
 //   - any DerivationPolicy expression contains primed variables
 func NewDerivedAttributeEvaluator(
-	model *req_model.Model,
+	model *core.Model,
 	simState *state.SimulationState,
 	relationCtx *evaluator.RelationContext,
 ) (*DerivedAttributeEvaluator, error) {

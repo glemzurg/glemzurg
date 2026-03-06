@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

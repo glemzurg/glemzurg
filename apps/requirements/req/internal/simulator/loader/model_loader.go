@@ -1,4 +1,4 @@
-// Package loader provides JSON serialization and deserialization for req_model.Model.
+// Package loader provides JSON serialization and deserialization for core.Model.
 package loader
 
 import (
@@ -6,22 +6,22 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/pkg/errors"
 )
 
-// LoadModel reads a JSON file and returns a req_model.Model.
+// LoadModel reads a JSON file and returns a core.Model.
 // After deserialization, it re-parses DataTypeRules for any attributes
 // where DataType is nil and DataTypeRules is non-empty, then validates
 // the model.
-func LoadModel(path string) (*req_model.Model, error) {
+func LoadModel(path string) (*core.Model, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading model file: %w", err)
 	}
 
-	var model req_model.Model
+	var model core.Model
 	if err := json.Unmarshal(data, &model); err != nil {
 		return nil, fmt.Errorf("parsing model JSON: %w", err)
 	}
@@ -38,8 +38,8 @@ func LoadModel(path string) (*req_model.Model, error) {
 	return &model, nil
 }
 
-// SaveModel writes a req_model.Model to a JSON file.
-func SaveModel(model *req_model.Model, path string) error {
+// SaveModel writes a core.Model to a JSON file.
+func SaveModel(model *core.Model, path string) error {
 	data, err := json.MarshalIndent(model, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshaling model: %w", err)
@@ -54,7 +54,7 @@ func SaveModel(model *req_model.Model, path string) error {
 
 // reParseDataTypes walks all classes and re-parses DataTypeRules for any
 // attributes where DataType is nil but DataTypeRules is non-empty.
-func reParseDataTypes(model *req_model.Model) error {
+func reParseDataTypes(model *core.Model) error {
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {
 			for classKey, class := range subdomain.Classes {

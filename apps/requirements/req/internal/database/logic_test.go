@@ -6,9 +6,9 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -24,7 +24,7 @@ func TestLogicSuite(t *testing.T) {
 type LogicSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     req_model.Model
+	model     core.Model
 	logicKey  identity.Key
 	logicKeyB identity.Key
 }

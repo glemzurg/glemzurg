@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -22,7 +22,7 @@ func TestAtomicSpanSuite(t *testing.T) {
 type AtomicSpanSuite struct {
 	suite.Suite
 	db        *sql.DB
-	model     req_model.Model
+	model     core.Model
 	dataType  model_data_type.DataType
 	dataTypeB model_data_type.DataType
 	atomic    model_data_type.Atomic

@@ -15,7 +15,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
 // Supported input formats
@@ -138,8 +138,8 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 	sourcePath := filepath.Join(rootSourcePath, model)
 	outputPath := filepath.Join(rootOutputPath, model)
 
-	// Step 1: Read the input model into req_model.Model
-	var parsedModel *req_model.Model
+	// Step 1: Read the input model into core.Model
+	var parsedModel *core.Model
 
 	switch inputFormat {
 	case InputFormatDataYAML:

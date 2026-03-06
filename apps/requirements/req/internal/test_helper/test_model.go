@@ -5,16 +5,16 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 )
 
 // newSpec creates a TLA+ ExpressionSpec via the constructor. The parse function is nil,
@@ -169,7 +169,7 @@ type testKeys struct {
 // Create a very elaborate model that can be used for testing in various packages around the system.
 // Every single class in req_model is represented, and every kind of relationship.
 // Each parent has 3 of each kind of child, except one parent of each type has no children.
-func GetTestModel() req_model.Model {
+func GetTestModel() core.Model {
 	model, err := buildTestModel()
 	if err != nil {
 		panic("failed to build test model: " + err.Error())
@@ -180,7 +180,7 @@ func GetTestModel() req_model.Model {
 	return model
 }
 
-func GetStrictTestModel() req_model.Model {
+func GetStrictTestModel() core.Model {
 	// Add any data so that there are no incomplete parts of the model.
 	// For example the ai input package forces all classes to have attributes,
 	// but that is not needed by other parts of the system.
@@ -352,89 +352,89 @@ func GetStrictTestModel() req_model.Model {
 	return model
 }
 
-func buildTestModel() (req_model.Model, error) {
+func buildTestModel() (core.Model, error) {
 	k, err := buildKeys()
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	logic, err := buildLogic(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	globalFuncs, err := buildGlobalFunctions(k, logic)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	namedSets, err := buildNamedSets(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	params, err := buildParameters()
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	sm, err := buildStateMachine(k, logic, params)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	attrs, err := buildAttributes(k, logic)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	classes, err := buildClasses(k, attrs, sm, logic)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	gens, err := buildClassGeneralizations(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	assocs, err := buildAssociations(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	scenarios, err := buildScenarios(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	useCases, err := buildUseCases(k, scenarios)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	actors, actorGens, err := buildActors(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	domainAssocs, err := buildDomainAssociations(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	subdomains, err := buildSubdomains(k, classes, gens, useCases, assocs)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	domains, err := buildDomains(k, subdomains)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	// Assemble the model.
-	model, err := req_model.NewModel(
+	model, err := core.NewModel(
 		"test_model",
 		"Test Model",
 		"A comprehensive test model with every type represented.",
@@ -443,7 +443,7 @@ func buildTestModel() (req_model.Model, error) {
 		namedSets,
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	model.Actors = actors
@@ -453,14 +453,14 @@ func buildTestModel() (req_model.Model, error) {
 
 	// Set class associations — routes them to the appropriate level (model/domain/subdomain).
 	if err := model.SetClassAssociations(assocs.all); err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	// Lower all expressions with full model context so Expression trees are populated.
 	// Uses the tolerant approach (via NewExpressionSpec) that matches what parser_human
 	// does — parse failures leave Expression as nil rather than returning an error.
 	if err := convert.LowerAllExpressions(&model); err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	return model, nil

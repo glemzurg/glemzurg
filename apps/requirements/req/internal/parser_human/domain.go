@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

@@ -3,7 +3,7 @@ package model_bridge
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 )
 
@@ -66,7 +66,7 @@ func NewLoader() *Loader {
 // LoadFromModel extracts all TLA+ expressions from a model, parses them,
 // and registers them in a new registry.
 // Returns the populated registry and any errors that occurred.
-func (l *Loader) LoadFromModel(model *req_model.Model) *LoadResult {
+func (l *Loader) LoadFromModel(model *core.Model) *LoadResult {
 	result := &LoadResult{
 		Registry: registry.NewRegistry(),
 		Results:  make([]*BuildResult, 0),
@@ -135,7 +135,7 @@ func (l *Loader) LoadIntoRegistry(expressions []ExtractedExpression, reg *regist
 
 // MustLoadFromModel is like LoadFromModel but panics if any errors occur.
 // Useful for tests and static initialization.
-func (l *Loader) MustLoadFromModel(model *req_model.Model) *LoadResult {
+func (l *Loader) MustLoadFromModel(model *core.Model) *LoadResult {
 	result := l.LoadFromModel(model)
 	if result.HasErrors() {
 		panic(fmt.Sprintf("failed to load model: %v", result.Errors))
@@ -145,7 +145,7 @@ func (l *Loader) MustLoadFromModel(model *req_model.Model) *LoadResult {
 
 // LoadFromModelStrict loads from a model and returns an error if any
 // expression fails to load.
-func (l *Loader) LoadFromModelStrict(model *req_model.Model) (*LoadResult, error) {
+func (l *Loader) LoadFromModelStrict(model *core.Model) (*LoadResult, error) {
 	result := l.LoadFromModel(model)
 	if result.HasErrors() {
 		return result, fmt.Errorf("failed to load %d expressions: %v", result.ErrorCount(), result.Errors[0])

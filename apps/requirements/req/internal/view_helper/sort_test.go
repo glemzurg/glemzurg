@@ -5,9 +5,9 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

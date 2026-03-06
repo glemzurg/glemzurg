@@ -1,8 +1,8 @@
 package model_bridge
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 // ExtractFromModel extracts all TLA+ expressions from the model.
@@ -12,7 +12,7 @@ import (
 //   - Action requires/guarantees (Requires, Guarantees)
 //   - Query requires/guarantees (Requires, Guarantees)
 //   - Guard conditions (Guard.Logic)
-func ExtractFromModel(model *req_model.Model) []ExtractedExpression {
+func ExtractFromModel(model *core.Model) []ExtractedExpression {
 	var expressions []ExtractedExpression
 
 	// Extract model-level invariants (global scope, no key)
@@ -45,7 +45,7 @@ func ExtractFromModel(model *req_model.Model) []ExtractedExpression {
 }
 
 // extractModelInvariants extracts invariants from the model level.
-func extractModelInvariants(model *req_model.Model) []ExtractedExpression {
+func extractModelInvariants(model *core.Model) []ExtractedExpression {
 	expressions := make([]ExtractedExpression, 0, len(model.Invariants))
 
 	for i, inv := range model.Invariants {
@@ -62,7 +62,7 @@ func extractModelInvariants(model *req_model.Model) []ExtractedExpression {
 }
 
 // extractGlobalFunctions extracts global function definitions from the model.
-func extractGlobalFunctions(model *req_model.Model) []ExtractedExpression {
+func extractGlobalFunctions(model *core.Model) []ExtractedExpression {
 	expressions := make([]ExtractedExpression, 0, len(model.GlobalFunctions))
 
 	for _, gf := range model.GlobalFunctions {

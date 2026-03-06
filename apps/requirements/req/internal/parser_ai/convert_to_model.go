@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 )
 
 // convErr creates a ParseError for conversion-time errors with the given error code, message, and file context.
@@ -22,10 +22,10 @@ func convErr(code int, msg, file string) *ParseError {
 	return NewParseError(code, msg, file)
 }
 
-// ConvertToModel converts an inputModel to a req_model.Model.
+// ConvertToModel converts an inputModel to a core.Model.
 // The input model is assumed to have been validated by readModelTree.
-// This function performs the conversion and validates the resulting req_model.Model.
-func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error) {
+// This function performs the conversion and validates the resulting core.Model.
+func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 	// Convert invariants
 	invariants, err := convertInvariantsToModel(input.Invariants)
 	if err != nil {
@@ -55,7 +55,7 @@ func ConvertToModel(input *inputModel, modelKey string) (*req_model.Model, error
 		}
 	}
 
-	result := &req_model.Model{
+	result := &core.Model{
 		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
 		Name:                 input.Name,
 		Details:              input.Details,

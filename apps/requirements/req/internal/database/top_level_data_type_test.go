@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -25,7 +25,7 @@ func TestTopLevelDataTypeSuite(t *testing.T) {
 type TopLevelDataTypeSuite struct {
 	suite.Suite
 	db    *sql.DB
-	model req_model.Model
+	model core.Model
 }
 
 func (suite *TopLevelDataTypeSuite) SetupTest() {

@@ -4,12 +4,12 @@ import (
 	"io"
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 )
 
 // ContentWriter is an interface for writing generated content.
@@ -20,7 +20,7 @@ type ContentWriter interface {
 }
 
 // GenerateMdToWriter generates markdown documentation to a ContentWriter.
-func GenerateMdToWriter(debug bool, parsedModel req_model.Model, writer ContentWriter) error {
+func GenerateMdToWriter(debug bool, parsedModel core.Model, writer ContentWriter) error {
 	// Create the flattened requirements from the model.
 	reqs := req_flat.NewRequirements(parsedModel)
 

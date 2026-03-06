@@ -4,20 +4,20 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 )
 
-// ConvertFromModel converts a req_model.Model to an inputModel.
+// ConvertFromModel converts a core.Model to an inputModel.
 // It first validates the source model, then performs the conversion.
-func ConvertFromModel(model *req_model.Model) (*inputModel, error) {
+func ConvertFromModel(model *core.Model) (*inputModel, error) {
 	// Validate the source model
 	if err := model.Validate(); err != nil {
 		return nil, convErr(

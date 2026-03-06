@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 )
 
 // Diagnostic represents a non-fatal issue found during surface analysis.
@@ -17,7 +17,7 @@ type Diagnostic struct {
 }
 
 // CallerData holds simulator-local SentBy/CalledBy metadata.
-// This data is a simulator concern, not part of the core req_model.
+// This data is a simulator concern, not part of the core core.
 type CallerData struct {
 	// EventSentBy maps event keys to class keys that send them.
 	EventSentBy map[identity.Key][]identity.Key
@@ -32,7 +32,7 @@ type CallerData struct {
 // orphaned multiplicity constraints, etc.
 //
 // callerData is optional (nil means no caller data available).
-func Diagnose(resolved *ResolvedSurface, model *req_model.Model, callerData *CallerData) []Diagnostic {
+func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerData) []Diagnostic {
 	var diagnostics []Diagnostic
 
 	allAssocs := model.GetClassAssociations()
@@ -122,7 +122,7 @@ func Diagnose(resolved *ResolvedSurface, model *req_model.Model, callerData *Cal
 }
 
 // diagnoseCallerData produces diagnostics related to SentBy/CalledBy metadata.
-func diagnoseCallerData(resolved *ResolvedSurface, model *req_model.Model, cd *CallerData) []Diagnostic {
+func diagnoseCallerData(resolved *ResolvedSurface, model *core.Model, cd *CallerData) []Diagnostic {
 	var diagnostics []Diagnostic
 
 	// 6. All events internal: class where ALL events have SentBy pointing to in-scope classes.
@@ -195,7 +195,7 @@ func diagnoseCallerData(resolved *ResolvedSurface, model *req_model.Model, cd *C
 }
 
 // findClassInModel looks up a class by key in the full model.
-func findClassInModel(classKey identity.Key, model *req_model.Model) (*model_class.Class, bool) {
+func findClassInModel(classKey identity.Key, model *core.Model) (*model_class.Class, bool) {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			if class, ok := subdomain.Classes[classKey]; ok {

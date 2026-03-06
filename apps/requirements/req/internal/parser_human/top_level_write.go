@@ -6,17 +6,17 @@ import (
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 
 	"github.com/pkg/errors"
 )
 
-// Write writes a req_model.Model to the filesystem in the data/yaml format.
+// Write writes a core.Model to the filesystem in the data/yaml format.
 // This is the inverse operation of Parse.
 // The outputPath is the root directory where the model will be written.
-func Write(model req_model.Model, outputPath string) error {
+func Write(model core.Model, outputPath string) error {
 
 	// Validate the model before writing.
 	if err := model.Validate(); err != nil {

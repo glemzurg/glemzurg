@@ -6,8 +6,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,7 +23,7 @@ func TestDomainSuite(t *testing.T) {
 type DomainSuite struct {
 	suite.Suite
 	db         *sql.DB
-	model      req_model.Model
+	model      core.Model
 	domainKey  identity.Key
 	domainKeyB identity.Key
 }

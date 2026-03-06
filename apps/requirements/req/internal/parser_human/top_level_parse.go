@@ -7,23 +7,23 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
-func Parse(modelPath string) (model req_model.Model, err error) {
+func Parse(modelPath string) (model core.Model, err error) {
 	log.Printf("Parse files in '%s'", modelPath)
 
 	// First, gather every thing we expect we need to parse, and what kind of entity it is.
 
 	toParseFiles, err := findFilesToParse(modelPath)
 	if err != nil {
-		return req_model.Model{}, errors.WithStack(err)
+		return core.Model{}, errors.WithStack(err)
 	}
 
 	for _, toParseFile := range toParseFiles {
@@ -32,12 +32,12 @@ func Parse(modelPath string) (model req_model.Model, err error) {
 
 	model, err = parseForDatabase(modelPath, toParseFiles)
 	if err != nil {
-		return req_model.Model{}, errors.WithStack(err)
+		return core.Model{}, errors.WithStack(err)
 	}
 
 	// Verify the model is well-formed after the parse.
 	if err = model.Validate(); err != nil {
-		return req_model.Model{}, errors.WithStack(err)
+		return core.Model{}, errors.WithStack(err)
 	}
 
 	return model, nil
@@ -86,7 +86,7 @@ func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) 
 	return toParseFiles, nil
 }
 
-func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_model.Model, err error) {
+func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.Model, err error) {
 
 	// Ensure are sorted in the order by which they may need information from prior objects.
 	// This is for foreign keys.
@@ -109,7 +109,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		// Load the file data.
 		contentBytes, err := os.ReadFile(toParseFile.PathAbs)
 		if err != nil {
-			return req_model.Model{}, errors.WithStack(err)
+			return core.Model{}, errors.WithStack(err)
 		}
 
 		// Trim any space on it.
@@ -121,7 +121,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		case _EXT_MODEL:
 			model, err = parseModel(modelKey, toParseFile.PathRel, contents)
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 			// Initialize maps.
 			model.Actors = make(map[identity.Key]model_actor.Actor)
@@ -133,7 +133,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		case _EXT_ACTOR:
 			actor, err := parseActor(toParseFile.Actor, toParseFile.PathRel, contents)
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 			model.Actors[actor.Key] = actor
 
@@ -142,7 +142,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				// Actor generalization (under actors/ directory).
 				actorGen, err := parseActorGeneralization(toParseFile.Generalization, toParseFile.PathRel, contents)
 				if err != nil {
-					return req_model.Model{}, err
+					return core.Model{}, err
 				}
 				if model.ActorGeneralizations == nil {
 					model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
@@ -152,7 +152,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				// Use case generalization (under use_cases/ directory).
 				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 				if !ok {
-					return req_model.Model{}, errors.Errorf("domain '%s' not found for use case generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+					return core.Model{}, errors.Errorf("domain '%s' not found for use case generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
 				}
 				domain := model.Domains[domainKey]
 
@@ -163,16 +163,16 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				}
 				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 				if !ok {
-					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+					return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
 				}
 				subdomain, ok := domain.Subdomains[subdomainKey]
 				if !ok {
-					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+					return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
 				}
 
 				generalization, err := parseUseCaseGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
 				if err != nil {
-					return req_model.Model{}, err
+					return core.Model{}, err
 				}
 				if subdomain.UseCaseGeneralizations == nil {
 					subdomain.UseCaseGeneralizations = make(map[identity.Key]model_use_case.Generalization)
@@ -184,7 +184,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				// Class generalization (under classes/ or domain/subdomain directory).
 				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 				if !ok {
-					return req_model.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
+					return core.Model{}, errors.Errorf("domain '%s' not found for generalization '%s'", toParseFile.Domain, toParseFile.Generalization)
 				}
 				domain := model.Domains[domainKey]
 
@@ -195,16 +195,16 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 				}
 				subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 				if !ok {
-					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+					return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
 				}
 				subdomain, ok := domain.Subdomains[subdomainKey]
 				if !ok {
-					return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
+					return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for generalization '%s'", subdomainName, toParseFile.Domain, toParseFile.Generalization)
 				}
 
 				generalization, err := parseClassGeneralization(subdomainKey, toParseFile.Generalization, toParseFile.PathRel, contents)
 				if err != nil {
-					return req_model.Model{}, err
+					return core.Model{}, err
 				}
 				if subdomain.Generalizations == nil {
 					subdomain.Generalizations = make(map[identity.Key]model_class.Generalization)
@@ -217,7 +217,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 		case _EXT_DOMAIN:
 			domain, associations, err := parseDomain(toParseFile.Domain, toParseFile.PathRel, contents)
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 
 			// Add associations to model level.
@@ -228,11 +228,11 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			// Give each domain a default subdomain.
 			defaultSubdomainKey, err := identity.NewSubdomainKey(domain.Key, "default")
 			if err != nil {
-				return req_model.Model{}, errors.WithStack(err)
+				return core.Model{}, errors.WithStack(err)
 			}
 			subdomain, err := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "", "")
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 				defaultSubdomainKey: subdomain,
@@ -247,13 +247,13 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			// Find the domain for this subdomain.
 			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' not found for subdomain '%s'", toParseFile.Domain, toParseFile.Subdomain)
+				return core.Model{}, errors.Errorf("domain '%s' not found for subdomain '%s'", toParseFile.Domain, toParseFile.Subdomain)
 			}
 			domain := model.Domains[domainKey]
 
 			subdomain, err := parseSubdomain(domainKey, toParseFile.Subdomain, toParseFile.PathRel, contents)
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 
 			domain.Subdomains[subdomain.Key] = subdomain
@@ -265,7 +265,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			// Need to find the domain for this class.
 			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' not found for class '%s'", toParseFile.Domain, toParseFile.Class)
+				return core.Model{}, errors.Errorf("domain '%s' not found for class '%s'", toParseFile.Domain, toParseFile.Class)
 			}
 			domain := model.Domains[domainKey]
 
@@ -276,11 +276,11 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for class '%s'", subdomainName, toParseFile.Domain, toParseFile.Class)
+				return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for class '%s'", subdomainName, toParseFile.Domain, toParseFile.Class)
 			}
 			subdomain, ok := domain.Subdomains[subdomainKey]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for class '%s'", subdomainName, toParseFile.Domain, toParseFile.Class)
+				return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for class '%s'", subdomainName, toParseFile.Domain, toParseFile.Class)
 			}
 
 			// Extract just the class subkey from the full class path (domain/classname -> classname).
@@ -291,7 +291,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 
 			class, associations, err := parseClass(subdomainKey, classSubKey, toParseFile.PathRel, contents)
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 
 			// Collect associations for distribution after all classes are parsed.
@@ -311,7 +311,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			// Need to find the domain for this use case.
 			domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("domain '%s' not found for use case '%s'", toParseFile.Domain, toParseFile.UseCase)
+				return core.Model{}, errors.Errorf("domain '%s' not found for use case '%s'", toParseFile.Domain, toParseFile.UseCase)
 			}
 			domain := model.Domains[domainKey]
 
@@ -322,11 +322,11 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			}
 			subdomainKey, ok := subdomainKeysByPath[toParseFile.Domain+"/"+subdomainName]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case '%s'", subdomainName, toParseFile.Domain, toParseFile.UseCase)
+				return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case '%s'", subdomainName, toParseFile.Domain, toParseFile.UseCase)
 			}
 			subdomain, ok := domain.Subdomains[subdomainKey]
 			if !ok {
-				return req_model.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case '%s'", subdomainName, toParseFile.Domain, toParseFile.UseCase)
+				return core.Model{}, errors.Errorf("subdomain '%s' not found in domain '%s' for use case '%s'", subdomainName, toParseFile.Domain, toParseFile.UseCase)
 			}
 
 			// Extract just the use case subkey from the full use case path (domain/usecasename -> usecasename).
@@ -337,7 +337,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 
 			useCase, err := parseUseCase(subdomainKey, useCaseSubKey, toParseFile.PathRel, contents)
 			if err != nil {
-				return req_model.Model{}, err
+				return core.Model{}, err
 			}
 
 			// Add the use case to the subdomain.
@@ -349,7 +349,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 			model.Domains[domainKey] = domain
 
 		default:
-			return req_model.Model{}, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
+			return core.Model{}, errors.WithStack(errors.Errorf(`unknown filetype: '%s'`, toParseFile.FileType))
 		}
 	}
 
@@ -372,14 +372,14 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model req_mo
 	// Distribute class associations to the correct level (model, domain, subdomain).
 	if len(allClassAssociations) > 0 {
 		if err := model.SetClassAssociations(allClassAssociations); err != nil {
-			return req_model.Model{}, errors.Wrap(err, "failed to set class associations")
+			return core.Model{}, errors.Wrap(err, "failed to set class associations")
 		}
 	}
 
 	// Phase 2: Re-create all ExpressionSpecs with full lowering context so that
 	// Expression trees are populated via constructors.
 	if err := convert.LowerAllExpressions(&model); err != nil {
-		return req_model.Model{}, errors.Wrap(err, "failed to lower expressions")
+		return core.Model{}, errors.Wrap(err, "failed to lower expressions")
 	}
 
 	return model, nil

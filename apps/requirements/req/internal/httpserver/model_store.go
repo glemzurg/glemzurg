@@ -5,13 +5,13 @@ import (
 	"sync"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
 // ModelStore manages in-memory models and their generated markdown content.
 type ModelStore struct {
 	mu       sync.RWMutex
-	models   map[string]*req_model.Model  // Keyed by model name
+	models   map[string]*core.Model  // Keyed by model name
 	markdown map[string]map[string][]byte // model -> file -> content
 	css      map[string][]byte            // model -> CSS content
 	svg      map[string]map[string][]byte // model -> file -> SVG content
@@ -20,7 +20,7 @@ type ModelStore struct {
 // NewModelStore creates a new model store.
 func NewModelStore() *ModelStore {
 	return &ModelStore{
-		models:   make(map[string]*req_model.Model),
+		models:   make(map[string]*core.Model),
 		markdown: make(map[string]map[string][]byte),
 		css:      make(map[string][]byte),
 		svg:      make(map[string]map[string][]byte),
@@ -28,7 +28,7 @@ func NewModelStore() *ModelStore {
 }
 
 // SetModel stores a model and regenerates its content.
-func (s *ModelStore) SetModel(name string, model *req_model.Model) error {
+func (s *ModelStore) SetModel(name string, model *core.Model) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (s *ModelStore) SetModel(name string, model *req_model.Model) error {
 }
 
 // GetModel returns a model by name.
-func (s *ModelStore) GetModel(name string) (*req_model.Model, bool) {
+func (s *ModelStore) GetModel(name string) (*core.Model, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	model, ok := s.models[name]
@@ -99,7 +99,7 @@ func (s *ModelStore) ListModels() []string {
 }
 
 // generateContent generates markdown, SVG, and CSS content for a model.
-func (s *ModelStore) generateContent(name string, model *req_model.Model) (map[string][]byte, map[string][]byte, []byte, error) {
+func (s *ModelStore) generateContent(name string, model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
 	mdContent := make(map[string][]byte)
 	svgContent := make(map[string][]byte)
 

@@ -2,14 +2,14 @@ package parser_json
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 )
 
-// UnpackRequirements converts a req_model.Model into a tree of parser_json objects.
-func UnpackRequirements(reqs req_model.Model) modelInOut {
+// UnpackRequirements converts a core.Model into a tree of parser_json objects.
+func UnpackRequirements(reqs core.Model) modelInOut {
 	tree := modelInOut{
 		Key:     reqs.Key,
 		Name:    reqs.Name,
@@ -39,9 +39,9 @@ func UnpackRequirements(reqs req_model.Model) modelInOut {
 	return tree
 }
 
-// PackRequirements converts a tree of parser_json objects back into req_model.Model.
-func PackRequirements(tree modelInOut) (req_model.Model, error) {
-	reqs := req_model.Model{
+// PackRequirements converts a tree of parser_json objects back into core.Model.
+func PackRequirements(tree modelInOut) (core.Model, error) {
+	reqs := core.Model{
 		Key:     tree.Key,
 		Name:    tree.Name,
 		Details: tree.Details,
@@ -51,7 +51,7 @@ func PackRequirements(tree modelInOut) (req_model.Model, error) {
 	for _, a := range tree.Actors {
 		actor, err := a.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if reqs.Actors == nil {
 			reqs.Actors = make(map[identity.Key]model_actor.Actor)
@@ -63,7 +63,7 @@ func PackRequirements(tree modelInOut) (req_model.Model, error) {
 	for _, d := range tree.Domains {
 		domain, err := d.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if reqs.Domains == nil {
 			reqs.Domains = make(map[identity.Key]model_domain.Domain)
@@ -75,7 +75,7 @@ func PackRequirements(tree modelInOut) (req_model.Model, error) {
 	for _, da := range tree.DomainAssociations {
 		domainAssoc, err := da.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if reqs.DomainAssociations == nil {
 			reqs.DomainAssociations = make(map[identity.Key]model_domain.Association)
@@ -87,7 +87,7 @@ func PackRequirements(tree modelInOut) (req_model.Model, error) {
 	for _, a := range tree.Associations {
 		assoc, err := a.ToRequirements()
 		if err != nil {
-			return req_model.Model{}, err
+			return core.Model{}, err
 		}
 		if reqs.ClassAssociations == nil {
 			reqs.ClassAssociations = make(map[identity.Key]model_class.Association)

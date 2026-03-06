@@ -2,7 +2,7 @@ package parser_json
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 // stateActionInOut is a action that triggers when a state is entered or exited or happens perpetually.

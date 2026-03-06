@@ -5,16 +5,16 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 // LowerModel walks the entire model tree, parsing and lowering every ExpressionSpec
 // that has a TLA+ specification string into a model_expression.Expression.
 // It returns the first error encountered, leaving the model partially populated.
-func LowerModel(model *req_model.Model) error {
+func LowerModel(model *core.Model) error {
 	// Build model-level lookup maps for global functions and named sets.
 	globalFunctions := BuildGlobalFunctionMap(model)
 	namedSets := BuildNamedSetMap(model)
@@ -237,7 +237,7 @@ func lowerLogicSpec(spec *model_spec.ExpressionSpec, ctx *LowerContext) error {
 
 // --- Map builders ---
 
-func BuildGlobalFunctionMap(model *req_model.Model) map[string]identity.Key {
+func BuildGlobalFunctionMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.GlobalFunctions))
 	for _, gf := range model.GlobalFunctions {
 		m[gf.Name] = gf.Key
@@ -245,7 +245,7 @@ func BuildGlobalFunctionMap(model *req_model.Model) map[string]identity.Key {
 	return m
 }
 
-func BuildNamedSetMap(model *req_model.Model) map[string]identity.Key {
+func BuildNamedSetMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key, len(model.NamedSets))
 	for _, ns := range model.NamedSets {
 		m[ns.Name] = ns.Key
@@ -253,7 +253,7 @@ func BuildNamedSetMap(model *req_model.Model) map[string]identity.Key {
 	return m
 }
 
-func BuildAllActionsMap(model *req_model.Model) map[string]identity.Key {
+func BuildAllActionsMap(model *core.Model) map[string]identity.Key {
 	m := make(map[string]identity.Key)
 	for _, domain := range model.Domains {
 		dName := domain.Name

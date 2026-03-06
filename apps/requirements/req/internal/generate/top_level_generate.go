@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 
 	"github.com/pkg/errors"
 )
 
 // GenerateMdFromModel generates markdown documentation from an already-parsed model.
-func GenerateMdFromModel(debug bool, outputPath string, parsedModel req_model.Model) (err error) {
+func GenerateMdFromModel(debug bool, outputPath string, parsedModel core.Model) (err error) {
 
 	// Create necessary output paths if we don't have them.
 	if err = createMissingPaths([]string{outputPath}); err != nil {

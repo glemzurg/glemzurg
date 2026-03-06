@@ -5,13 +5,13 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -26,11 +26,11 @@ func TestConvertSuite(t *testing.T) {
 	suite.Run(t, new(ConvertSuite))
 }
 
-// TestConvertFromModelMinimal tests converting a minimal valid req_model.Model to inputModel.
+// TestConvertFromModelMinimal tests converting a minimal valid core.Model to inputModel.
 func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	t := suite.T()
 
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "Model details", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "Model details", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = make(map[identity.Key]model_domain.Domain)
 	model := &m
@@ -44,7 +44,7 @@ func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	assert.Empty(t, input.ClassAssociations)
 }
 
-// TestConvertToModelMinimal tests converting a minimal inputModel to req_model.Model.
+// TestConvertToModelMinimal tests converting a minimal inputModel to core.Model.
 func (suite *ConvertSuite) TestConvertToModelMinimal() {
 	t := suite.T()
 
@@ -73,7 +73,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithActor() {
 
 	actor := helper.Must(model_actor.NewActor(actorKey, "Customer", "Customer details", "person", nil, nil, ""))
 
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = map[identity.Key]model_actor.Actor{
 		actorKey: actor,
 	}
@@ -160,7 +160,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 	actor := helper.Must(model_actor.NewActor(actorKey, "Customer", "", "person", nil, nil, ""))
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = map[identity.Key]model_actor.Actor{
 		actorKey: actor,
 	}
@@ -321,7 +321,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	}
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -470,7 +470,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	}
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -600,7 +600,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	}
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -734,7 +734,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	}
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -993,7 +993,7 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 func (suite *ConvertSuite) TestConvertFromModelValidationError() {
 	t := suite.T()
 
-	model := &req_model.Model{
+	model := &core.Model{
 		Key:  "", // Invalid - empty key
 		Name: "Test Model",
 	}
@@ -1006,7 +1006,7 @@ func (suite *ConvertSuite) TestConvertFromModelValidationError() {
 // TestConvertToModelValidationError tests that req_model validation catches errors
 // when there are issues not caught by tree validation (safety net).
 // Note: Since tree validation now runs in readModelTree before ConvertToModel is called,
-// the error here comes from req_model.Validate() as a safety net.
+// the error here comes from core.Validate() as a safety net.
 func (suite *ConvertSuite) TestConvertToModelValidationError() {
 	t := suite.T()
 
@@ -1087,7 +1087,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	}
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
@@ -1215,7 +1215,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	))
 
 	// Build model
-	m := helper.Must(req_model.NewModel("testmodel", "Test Model", "", nil, nil, nil))
+	m := helper.Must(core.NewModel("testmodel", "Test Model", "", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = map[identity.Key]model_domain.Domain{
 		domain1Key: domain1,

@@ -6,14 +6,14 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 type LowerModelTestSuite struct {
@@ -42,7 +42,7 @@ func mustSpec(spec string) model_spec.ExpressionSpec {
 }
 
 // buildTestModel creates a minimal model that exercises all LowerModel paths.
-func buildTestModel() *req_model.Model {
+func buildTestModel() *core.Model {
 	// Keys.
 	domainKey := mustKey(identity.NewDomainKey("d"))
 	subKey := mustKey(identity.NewSubdomainKey(domainKey, "s"))
@@ -146,7 +146,7 @@ func buildTestModel() *req_model.Model {
 	}
 
 	// Build model.
-	model := &req_model.Model{
+	model := &core.Model{
 		Key:        "test",
 		Name:       "Test",
 		Invariants: []model_logic.Logic{modelInvariant},
@@ -426,7 +426,7 @@ func (s *LowerModelTestSuite) TestLowerModelAllExpressionsValidate() {
 }
 
 // getClassFromModel navigates the model tree to get the single class.
-func getClassFromModel(model *req_model.Model) model_class.Class {
+func getClassFromModel(model *core.Model) model_class.Class {
 	for _, domain := range model.Domains {
 		for _, subdomain := range domain.Subdomains {
 			for _, class := range subdomain.Classes {

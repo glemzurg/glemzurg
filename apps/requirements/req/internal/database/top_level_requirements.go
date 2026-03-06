@@ -5,19 +5,19 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 )
 
-func WriteModel(db *sql.DB, model req_model.Model) (err error) {
+func WriteModel(db *sql.DB, model core.Model) (err error) {
 
 	// Validate the model tree before writing to database.
 	if err = model.Validate(); err != nil {
@@ -678,7 +678,7 @@ func WriteModel(db *sql.DB, model req_model.Model) (err error) {
 	return nil
 }
 
-func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
+func ReadModel(db *sql.DB, modelKey string) (model core.Model, err error) {
 
 	// Read from within a transaction.
 	err = dbTransaction(db, func(tx *sql.Tx) (err error) {
@@ -1294,7 +1294,7 @@ func ReadModel(db *sql.DB, modelKey string) (model req_model.Model, err error) {
 		return nil
 	})
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	return model, nil

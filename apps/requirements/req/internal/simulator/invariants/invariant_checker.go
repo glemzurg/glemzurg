@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -20,7 +20,7 @@ import (
 //   - Query post-condition guarantees
 type InvariantChecker struct {
 	// model is the requirements model containing invariant definitions
-	model *req_model.Model
+	model *core.Model
 
 	// parsedInvariantItems caches pre-lowered model invariant items (both let and assessment).
 	parsedInvariantItems []parsedInvariantItem
@@ -55,7 +55,7 @@ type parsedGuarantee struct {
 // NewInvariantChecker creates a new invariant checker from a model.
 // The model's ExpressionSpec.Expression fields must be populated
 // (via parse functions passed to constructors).
-func NewInvariantChecker(model *req_model.Model) (*InvariantChecker, error) {
+func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 	checker := &InvariantChecker{
 		model:                model,
 		parsedInvariantItems: make([]parsedInvariantItem, 0, len(model.Invariants)),

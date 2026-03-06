@@ -5,9 +5,9 @@ import (
 	"math/big"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -25,7 +25,7 @@ type DataTypeChecker struct {
 
 // NewDataTypeChecker creates a new data type checker from a model.
 // Returns an error if any class attribute has an unparsed DataType.
-func NewDataTypeChecker(model *req_model.Model) (*DataTypeChecker, ViolationList) {
+func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationList) {
 	checker := &DataTypeChecker{
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}

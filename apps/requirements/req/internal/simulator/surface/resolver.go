@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 )
 
 // ResolvedSurface is the concrete output of resolving a SurfaceSpecification
@@ -30,7 +30,7 @@ type ResolvedSurface struct {
 // Resolve resolves a SurfaceSpecification against a model,
 // producing the concrete set of classes, associations, and invariants
 // for simulation.
-func Resolve(spec *SurfaceSpecification, model *req_model.Model) (*ResolvedSurface, error) {
+func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, error) {
 	// Validate spec keys exist in model.
 	if spec != nil {
 		if err := spec.Validate(model); err != nil {
@@ -139,7 +139,7 @@ func Resolve(spec *SurfaceSpecification, model *req_model.Model) (*ResolvedSurfa
 }
 
 // addAllNonRealizedClasses adds all classes from non-realized domains.
-func addAllNonRealizedClasses(model *req_model.Model, resolved *ResolvedSurface) {
+func addAllNonRealizedClasses(model *core.Model, resolved *ResolvedSurface) {
 	for _, domain := range model.Domains {
 		if domain.Realized {
 			continue

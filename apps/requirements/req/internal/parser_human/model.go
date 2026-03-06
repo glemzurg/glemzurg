@@ -6,20 +6,20 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
-func parseModel(key, filename, contents string) (model req_model.Model, err error) {
+func parseModel(key, filename, contents string) (model core.Model, err error) {
 
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	// Parse the YAML data section for invariants, global functions, and named sets.
@@ -30,7 +30,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 	if parsedFile.Data != "" {
 		yamlData := map[string]any{}
 		if err := yaml.Unmarshal([]byte(parsedFile.Data), &yamlData); err != nil {
-			return req_model.Model{}, errors.WithStack(err)
+			return core.Model{}, errors.WithStack(err)
 		}
 
 		// Parse invariants using logicListFromYamlData with a wrapper for NewInvariantKey.
@@ -40,20 +40,20 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 		invariants, err = logicListFromYamlData(yamlData, "invariants",
 			model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc)
 		if err != nil {
-			return req_model.Model{}, errors.Wrap(err, "model invariants")
+			return core.Model{}, errors.Wrap(err, "model invariants")
 		}
 
 		// Parse global functions (written as a list in YAML, stored as a map in the model).
 		if gfsAny, found := yamlData["global_functions"]; found {
 			gfsList, ok := gfsAny.([]any)
 			if !ok {
-				return req_model.Model{}, errors.Errorf("global_functions must be a list")
+				return core.Model{}, errors.Errorf("global_functions must be a list")
 			}
 			globalFunctions = make(map[identity.Key]model_logic.GlobalFunction, len(gfsList))
 			for _, gfAny := range gfsList {
 				gfMap, ok := gfAny.(map[string]any)
 				if !ok {
-					return req_model.Model{}, errors.Errorf("each global_function must be a map")
+					return core.Model{}, errors.Errorf("each global_function must be a map")
 				}
 
 				name := ""
@@ -64,7 +64,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 				// Build the key from the lowercase name.
 				gfKey, err := identity.NewGlobalFunctionKey(strings.ToLower(name))
 				if err != nil {
-					return req_model.Model{}, errors.WithStack(err)
+					return core.Model{}, errors.WithStack(err)
 				}
 
 				// Parse parameters.
@@ -72,7 +72,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 				if p, ok := gfMap["parameters"]; ok {
 					paramsList, ok := p.([]any)
 					if !ok {
-						return req_model.Model{}, errors.Errorf("global function parameters must be a list")
+						return core.Model{}, errors.Errorf("global function parameters must be a list")
 					}
 					for _, param := range paramsList {
 						parameters = append(parameters, param.(string))
@@ -91,17 +91,17 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 
 				spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 				if err != nil {
-					return req_model.Model{}, errors.Wrapf(err, "global function %q expression spec", name)
+					return core.Model{}, errors.Wrapf(err, "global function %q expression spec", name)
 				}
 
 				logic, err := model_logic.NewLogic(gfKey, model_logic.LogicTypeValue, description, "", spec, nil)
 				if err != nil {
-					return req_model.Model{}, errors.Wrapf(err, "global function %q logic", name)
+					return core.Model{}, errors.Wrapf(err, "global function %q logic", name)
 				}
 
 				gf, err := model_logic.NewGlobalFunction(gfKey, name, parameters, logic)
 				if err != nil {
-					return req_model.Model{}, errors.Wrapf(err, "global function %q", name)
+					return core.Model{}, errors.Wrapf(err, "global function %q", name)
 				}
 				globalFunctions[gfKey] = gf
 			}
@@ -111,13 +111,13 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 		if nsAny, found := yamlData["named_sets"]; found {
 			nsList, ok := nsAny.([]any)
 			if !ok {
-				return req_model.Model{}, errors.Errorf("named_sets must be a list")
+				return core.Model{}, errors.Errorf("named_sets must be a list")
 			}
 			namedSets = make(map[identity.Key]model_named_set.NamedSet, len(nsList))
 			for _, nsItemAny := range nsList {
 				nsMap, ok := nsItemAny.(map[string]any)
 				if !ok {
-					return req_model.Model{}, errors.Errorf("each named_set must be a map")
+					return core.Model{}, errors.Errorf("each named_set must be a map")
 				}
 
 				name := ""
@@ -127,7 +127,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 
 				nsKey, err := identity.NewNamedSetKey(strings.ToLower(strings.TrimPrefix(name, "_")))
 				if err != nil {
-					return req_model.Model{}, errors.WithStack(err)
+					return core.Model{}, errors.WithStack(err)
 				}
 
 				description := ""
@@ -142,21 +142,21 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 
 				spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 				if err != nil {
-					return req_model.Model{}, errors.Wrapf(err, "named set %q expression spec", name)
+					return core.Model{}, errors.Wrapf(err, "named set %q expression spec", name)
 				}
 
 				var typeSpec *model_spec.TypeSpec
 				if tsStr, ok := nsMap["type_spec"].(string); ok && tsStr != "" {
 					ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
 					if err != nil {
-						return req_model.Model{}, errors.Wrapf(err, "named set %q type spec", name)
+						return core.Model{}, errors.Wrapf(err, "named set %q type spec", name)
 					}
 					typeSpec = &ts
 				}
 
 				ns, err := model_named_set.NewNamedSet(nsKey, name, description, spec, typeSpec)
 				if err != nil {
-					return req_model.Model{}, errors.Wrapf(err, "named set %q", name)
+					return core.Model{}, errors.Wrapf(err, "named set %q", name)
 				}
 				namedSets[nsKey] = ns
 			}
@@ -170,7 +170,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 		markdown += "\n\n" + parsedFile.UmlComment
 	}
 
-	model, err = req_model.NewModel(
+	model, err = core.NewModel(
 		strings.TrimSpace(strings.ToLower(key)),
 		parsedFile.Title,
 		markdown,
@@ -179,13 +179,13 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 		namedSets,
 	)
 	if err != nil {
-		return req_model.Model{}, errors.Wrap(err, "failed to create model")
+		return core.Model{}, errors.Wrap(err, "failed to create model")
 	}
 
 	return model, nil
 }
 
-func generateModelContent(model req_model.Model) string {
+func generateModelContent(model core.Model) string {
 	builder := NewYamlBuilder()
 
 	// Generate invariants YAML.

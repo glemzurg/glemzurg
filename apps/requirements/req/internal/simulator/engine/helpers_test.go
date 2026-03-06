@@ -4,12 +4,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 // mustKey parses a key string or panics.
@@ -142,7 +142,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 func testModel(classes ...struct {
 	class model_class.Class
 	key   identity.Key
-}) *req_model.Model {
+}) *core.Model {
 	subdomainKey := mustKey("domain/d/subdomain/s")
 	domainKey := mustKey("domain/d")
 
@@ -159,7 +159,7 @@ func testModel(classes ...struct {
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil, nil))
+	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

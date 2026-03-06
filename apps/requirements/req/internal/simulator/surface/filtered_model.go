@@ -2,16 +2,16 @@ package surface
 
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 )
 
 // BuildFilteredModel creates a new Model containing only the classes,
 // associations, and invariants from the resolved surface. The original
 // model is not modified.
-func BuildFilteredModel(original *req_model.Model, resolved *ResolvedSurface) (*req_model.Model, error) {
-	filtered, err := req_model.NewModel(original.Key, original.Name, original.Details, resolved.ModelInvariants, original.GlobalFunctions, original.NamedSets)
+func BuildFilteredModel(original *core.Model, resolved *ResolvedSurface) (*core.Model, error) {
+	filtered, err := core.NewModel(original.Key, original.Name, original.Details, resolved.ModelInvariants, original.GlobalFunctions, original.NamedSets)
 	if err != nil {
 		return nil, err
 	}

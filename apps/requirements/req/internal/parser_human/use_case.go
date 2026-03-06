@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

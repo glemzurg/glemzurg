@@ -3,7 +3,7 @@ package ast
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
 )
 
 // ConvertToExpressionType converts a TLA+ AST expression into a structural ExpressionType.

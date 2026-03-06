@@ -3,7 +3,7 @@ package actions
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"

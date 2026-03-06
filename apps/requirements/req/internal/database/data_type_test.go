@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,7 +23,7 @@ func TestDataTypeSuite(t *testing.T) {
 type DataTypeSuite struct {
 	suite.Suite
 	db    *sql.DB
-	model req_model.Model
+	model core.Model
 }
 
 func (suite *DataTypeSuite) SetupTest() {

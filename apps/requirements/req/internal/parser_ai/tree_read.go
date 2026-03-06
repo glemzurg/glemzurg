@@ -8,36 +8,36 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
-func ReadModel(inputModelPath string) (req_model.Model, error) {
+func ReadModel(inputModelPath string) (core.Model, error) {
 	model, err := readModel(inputModelPath)
 	if err != nil {
 		if _, ok := err.(*ParseError); !ok {
-			return req_model.Model{}, fmt.Errorf("STOP AND REPORT THIS ERROR to the user. This is an unexpected internal error that cannot be fixed by changing input files: %w", err)
+			return core.Model{}, fmt.Errorf("STOP AND REPORT THIS ERROR to the user. This is an unexpected internal error that cannot be fixed by changing input files: %w", err)
 		}
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 	return model, nil
 }
 
-func readModel(inputModelPath string) (req_model.Model, error) {
+func readModel(inputModelPath string) (core.Model, error) {
 	modelKey := filepath.Base(inputModelPath)
 
 	inputModel, err := readModelTree(inputModelPath)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	modelPtr, err := ConvertToModel(inputModel, modelKey)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	// Lower all expressions with full context.
 	if err := convert.LowerAllExpressions(modelPtr); err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	return *modelPtr, nil

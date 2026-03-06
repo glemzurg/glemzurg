@@ -10,7 +10,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
 // Input format constants
@@ -181,8 +181,8 @@ func (sw *SourceWatcher) LoadModel() error {
 	return sw.updateModel()
 }
 
-// LoadModelFromData loads a model from a pre-parsed req_model.Model.
-func LoadModelFromData(store *ModelStore, server *Server, name string, model *req_model.Model) error {
+// LoadModelFromData loads a model from a pre-parsed core.Model.
+func LoadModelFromData(store *ModelStore, server *Server, name string, model *core.Model) error {
 	err := store.SetModel(name, model)
 	if err != nil {
 		return err

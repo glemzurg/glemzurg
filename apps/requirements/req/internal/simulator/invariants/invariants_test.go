@@ -6,13 +6,13 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -60,7 +60,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 }
 
 // Helper to create a basic model with a class
-func createTestModel() *req_model.Model {
+func createTestModel() *core.Model {
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
 
 	// Create a data type for status (enumeration)
@@ -159,7 +159,7 @@ func createTestModel() *req_model.Model {
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil)),
 	}
-	model := helper.Must(req_model.NewModel("test_model", "TestModel", "", invariants, nil, nil))
+	model := helper.Must(core.NewModel("test_model", "TestModel", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -187,7 +187,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil, nil))
+	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	checker, violations := NewDataTypeChecker(&model)
@@ -431,7 +431,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil)),
 	}
-	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
+	model := helper.Must(core.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	checker, err := NewInvariantChecker(&model)
@@ -455,7 +455,7 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Invalid expression.", "", spec, nil)),
 	}
-	model := helper.Must(req_model.NewModel("test", "Test", "", invariants, nil, nil))
+	model := helper.Must(core.NewModel("test", "Test", "", invariants, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	// The checker should handle nil Expression (skip unparsed invariants).
@@ -535,7 +535,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{subdomainKey: subdomain}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil, nil))
+	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{domainKey: domain}
 
 	checker, violations := NewDataTypeChecker(&model)

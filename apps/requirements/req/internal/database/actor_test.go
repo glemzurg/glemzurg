@@ -6,8 +6,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,7 +23,7 @@ func TestActorSuite(t *testing.T) {
 type ActorSuite struct {
 	suite.Suite
 	db                      *sql.DB
-	model                   req_model.Model
+	model                   core.Model
 	actorKey                identity.Key
 	actorKeyB               identity.Key
 	actorGeneralizationKey  identity.Key

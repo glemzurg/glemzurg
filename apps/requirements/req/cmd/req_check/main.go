@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
 func main() {
@@ -59,8 +59,8 @@ func main() {
 // validateModel reads and validates a model from ai/json format.
 func validateModel(modelPath, model string) error {
 
-	// Read the input model into req_model.Model
-	var parsedModel *req_model.Model
+	// Read the input model into core.Model
+	var parsedModel *core.Model
 
 	fmt.Println("Reading and validating model from ai/json format...")
 	m, err := parser_ai.ReadModel(modelPath)
@@ -70,7 +70,7 @@ func validateModel(modelPath, model string) error {
 	parsedModel = &m
 
 	// Validate the req_model
-	fmt.Println("Validating req_model...")
+	fmt.Println("Validating core...")
 	if err := parsedModel.Validate(); err != nil {
 		return fmt.Errorf("req_model validation failed: %w", err)
 	}

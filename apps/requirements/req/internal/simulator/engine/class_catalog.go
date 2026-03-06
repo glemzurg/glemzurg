@@ -4,9 +4,9 @@ import (
 	"sort"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/surface"
 )
 
@@ -50,7 +50,7 @@ type ClassCatalog struct {
 }
 
 // NewClassCatalog builds a class catalog from the model.
-func NewClassCatalog(model *req_model.Model) *ClassCatalog {
+func NewClassCatalog(model *core.Model) *ClassCatalog {
 	catalog := &ClassCatalog{
 		classes:        make(map[identity.Key]*ClassInfo),
 		classAssocs:    make(map[identity.Key][]AssociationInfo),

@@ -7,7 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 )
 
 // RaiseContext provides the inverse name-resolution mappings for raising
