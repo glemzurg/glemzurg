@@ -7,18 +7,18 @@ linters:
     - exhaustive
     - forbidigo
     - goconst
-  #   - gocritic
+    - gocritic
     - godot
     - gosec
     - intrange
     - misspell
-  #   - modernize
+    - modernize
     - nilnil
     - noctx
     - recvcheck
-  #   # - revive
+    - revive
     - rowserrcheck
-  #   # - testifylint
+    - testifylint
     - unconvert
     - unparam
     - whitespace
@@ -34,6 +34,8 @@ linters:
       - linters:
           - goconst
           - forbidigo
+          - gocritic
+          - revive
         path: .*_test\.go$
     paths:
       - .*\.generated\.go$
