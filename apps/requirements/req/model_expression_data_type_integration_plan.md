@@ -22,18 +22,18 @@ This plan implements the design in `model_expression_data_type_integration.md`. 
 | **Stage 2** Notation parsing | **DONE** | `ConvertToExpressionType` + `RaiseType` with tests |
 | **Stage 3** parser_human | **DONE** | Named sets, attribute invariants, let type, target_type_spec, lowering |
 | **Stage 4** parser_ai | **DONE** | Full round-trip support: named sets, attribute invariants, let type, target_type_spec, schemas updated |
-| **Stage 5** Database | **NOT STARTED** | No schema changes, no new tables, `let` not in logic_type enum |
-| **Stage 6** req_flat/generate | **COMPILES** | Passes tests against current model, but no new entity support |
-| **Stage 7** Full integration | **BLOCKED** | Waiting on Stage 5 |
+| **Stage 5** Database | **DONE** | Schema updated, named_set/attribute_invariant tables, let enum, expression lowering in ReadModel |
+| **Stage 6** req_flat/generate | **DONE** | All tests pass |
+| **Stage 7** Full integration | **DONE** | `go test ./...` passes |
 
 **Additional work done beyond original plan:**
-- `LogicTypeLet` ("let") — local variable definitions in requires/guarantees/safety_rules/invariants. Fully supported in model, test helper, parser_human, and parser_ai. NOT yet in database `logic_type` enum.
-- Two-phase expression lowering in both parsers (Phase 1: parse with nil parseFunc, Phase 2: re-create with full LowerContext). Implemented via `lower_expressions.go` in both parser_human and parser_ai.
+- `LogicTypeLet` ("let") — local variable definitions in requires/guarantees/safety_rules/invariants. Fully supported across all layers.
+- Expression lowering consolidated into `convert.LowerAllExpressions()` — called by parser_human, parser_ai, test_helper, and database ReadModel. Eliminated three duplicate `lower_expressions.go` files.
 - `ExpressionParseFunc` on `ExpressionSpec`/`TypeSpec` constructors — enables deferred parsing with context.
 - Primed value documentation in schemas — safety_rules are the only context where primed values are allowed.
-- `convert.LowerModel()` called in test_helper to ensure test model expressions are lowered.
+- **Design change:** Parsed expression trees (intermediate representation) are NOT stored in the database. The `expression_node` table was removed from the design. Instead, `ReadModel` calls `convert.LowerAllExpressions()` after tree assembly to parse all TLA+ specifications with full context.
 
-**Next step:** Stage 5 (Database) — add `let` to `logic_type` enum, create `named_set` table, `attribute_invariant` table, `expression_type` table, add `target_type_*` columns to `logic` table.
+**All stages complete.** The plan is fully implemented.
 
 ---
 
@@ -688,191 +688,71 @@ go test ./internal/parser_ai/...
 
 **Test command:** `go test ./internal/database/... -dbtests`
 
-### 5A: Schema Changes
+### 5A: Schema Changes — DONE
 
 **Modified file: `internal/database/sql/schema.sql`**
 
-1. Add `expression_type_kind` enum:
+**Design change:** The `expression_node` and `expression_type` tables were removed from the design. Parsed expression trees (intermediate representation) are NOT stored in the database. Instead, specification text is stored as notation+specification string pairs, and expressions are parsed at load time via `convert.LowerAllExpressions()`.
+
+What was actually implemented:
+
+1. Added `let` to `logic_type` enum:
 ```sql
-CREATE TYPE expression_type_kind AS ENUM (
-    'boolean', 'integer', 'rational', 'string', 'enum',
-    'set', 'sequence', 'bag', 'tuple', 'record',
-    'function', 'object', 'named_set_ref'
-);
+CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let');
 ```
 
-2. Add `expression_type` table (adjacency list, same pattern as `expression_node`):
-```sql
-CREATE TABLE expression_type (
-    model_key           text NOT NULL,
-    expression_type_key text NOT NULL,
-    parent_type_key     text DEFAULT NULL,
-    sort_order          int NOT NULL,
-    type_kind           expression_type_kind NOT NULL,
-    enum_value          text DEFAULT NULL,
-    field_name          text DEFAULT NULL,
-    object_class_key    text DEFAULT NULL,
-    named_set_key       text DEFAULT NULL,
-    element_unique      boolean DEFAULT NULL,
-    PRIMARY KEY (model_key, expression_type_key),
-    -- FKs...
-);
-```
+2. Added `named_set` table with `type_spec_notation` and `type_spec_specification` columns.
 
-3. Add columns to `data_type` table:
-```sql
-ALTER TABLE data_type
-    ADD COLUMN expression_type_notation text DEFAULT NULL,
-    ADD COLUMN expression_type_specification text DEFAULT NULL,
-    ADD COLUMN expression_type_key text DEFAULT NULL;
-    -- FK to expression_type
-```
+3. Added `attribute_invariant` join table (same pattern as `class_invariant`).
 
-4. Add columns to `logic` table:
-```sql
-ALTER TABLE logic
-    ADD COLUMN target_type_notation text DEFAULT NULL,
-    ADD COLUMN target_type_specification text DEFAULT NULL,
-    ADD COLUMN target_type_key text DEFAULT NULL;
-    -- FK to expression_type
-```
+4. Added `target_type_notation` and `target_type_specification` columns to `logic` table.
 
-5. Add `named_set` table:
-```sql
-CREATE TABLE named_set (
-    model_key     text NOT NULL,
-    set_key       text NOT NULL,
-    name          text NOT NULL,
-    description   text NOT NULL DEFAULT '',
-    notation      text NOT NULL DEFAULT 'tla_plus',
-    specification text NOT NULL DEFAULT '',
-    PRIMARY KEY (model_key, set_key),
-    UNIQUE (model_key, name),
-    -- FK to model
-);
-```
+5. Added `type_spec_notation` and `type_spec_specification` columns to `data_type` table.
 
-6. Add `attribute_invariant` join table (same pattern as `class_invariant`):
-```sql
-CREATE TABLE attribute_invariant (
-    model_key     text NOT NULL,
-    attribute_key text NOT NULL,
-    logic_key     text NOT NULL,
-    sort_order    int  NOT NULL,
-    PRIMARY KEY (model_key, logic_key),
-    FOREIGN KEY (model_key, attribute_key) REFERENCES attribute(model_key, attribute_key),
-    FOREIGN KEY (model_key, logic_key) REFERENCES logic(model_key, logic_key)
-);
-COMMENT ON TABLE attribute_invariant IS 'Join table linking attributes to their invariant logic predicates.';
-COMMENT ON COLUMN attribute_invariant.model_key IS 'The model this attribute invariant belongs to.';
-COMMENT ON COLUMN attribute_invariant.attribute_key IS 'The attribute this invariant constrains.';
-COMMENT ON COLUMN attribute_invariant.logic_key IS 'The logic predicate that must hold for the attribute value.';
-COMMENT ON COLUMN attribute_invariant.sort_order IS 'Ordering of invariants within an attribute.';
-```
+6. NOT implemented: `expression_type` table, `expression_node` changes (removed from design).
 
-Comments on every table, column, and custom type following existing patterns.
+### 5B: New Data Access File — named_set.go — DONE
 
-7. Update `expression_node_type` enum — add `'named_set_ref'`:
-```sql
-ALTER TYPE expression_node_type ADD VALUE 'named_set_ref';
-```
+**New file: `internal/database/named_set.go`** — `scanNamedSet`, `LoadNamedSet`, `AddNamedSet`/`AddNamedSets`, `QueryNamedSets`, `RemoveNamedSet`. Handles ExpressionSpec and optional TypeSpec reconstruction via constructors with nil parseFunc.
 
-8. Add `named_set_key` column to `expression_node` table for `NamedSetRef` nodes:
-```sql
-ALTER TABLE expression_node
-    ADD COLUMN named_set_key text DEFAULT NULL;
--- FK to named_set
-COMMENT ON COLUMN expression_node.named_set_key IS 'FK to named_set for named_set_ref nodes.';
-```
+**New file: `internal/database/named_set_test.go`** — round-trip tests.
 
-### 5B: New Data Access File — expression_type.go
+### 5C: New Data Access File — attribute_invariant.go — DONE
 
-**New file: `internal/database/expression_type.go`**
+**New file: `internal/database/attribute_invariant.go`** — `LoadAttributeInvariant`, `AddAttributeInvariant`/`AddAttributeInvariants`, `QueryAttributeInvariants` (grouped by attribute key), `RemoveAttributeInvariant`.
 
-Following `expression_node.go` pattern:
-- `scanExpressionType()` — scan row into flat struct
-- `FlattenExpressionType()` — walk ExpressionType tree → flat rows (topological order)
-- `AddExpressionTypes()` — bulk insert
-- `QueryExpressionTypes()` — load all rows for a model
-- `RebuildExpressionType()` — flat rows → ExpressionType tree
+**New file: `internal/database/attribute_invariant_test.go`** — round-trip tests.
 
-**New file: `internal/database/expression_type_test.go`** — insert/load round-trip test.
+### 5D: Update data_type.go — DONE
 
-### 5C: New Data Access File — named_set.go
+Added `type_spec_notation` and `type_spec_specification` nullable columns to scan/insert/update. TypeSpec reconstructed via `NewTypeSpec()` constructor.
 
-**New file: `internal/database/named_set.go`**
+### 5E: Update logic.go — DONE
 
-Following standard pattern:
-- `scanNamedSet()` — scan row
-- `AddNamedSet()` / `AddNamedSets()` — insert
-- `QueryNamedSets()` — load all for model
-- `RemoveNamedSets()` — delete all for model
+Added `target_type_notation` and `target_type_specification` nullable columns to scan/insert/update. TargetTypeSpec reconstructed via `NewTypeSpec()` constructor.
 
-**New file: `internal/database/named_set_test.go`** — test.
+### 5F: Update top_level_requirements.go — DONE
 
-### 5D: New Data Access File — attribute_invariant.go
+**WriteModel:** Collects and inserts named_set rows, attribute invariant logic entries + join rows.
 
-**New file: `internal/database/attribute_invariant.go`**
+**ReadModel:** Loads named_sets, loads attribute_invariant join rows, stitches invariant Logic slices onto Attributes. After full tree assembly, calls `convert.LowerAllExpressions(&model)` to parse all TLA+ expressions with full context.
 
-Following the `class_invariant.go` pattern:
-- `scanAttributeInvariant()` — scan row into struct with model_key, attribute_key, logic_key, sort_order
-- `AddAttributeInvariants()` — bulk insert rows linking attribute to its invariant logic entries
-- `QueryAttributeInvariants()` — load all rows for a model (grouped by attribute_key for stitching)
-- `RemoveAttributeInvariants()` — delete all for model
+### 5G: Expression Lowering Consolidation — DONE (beyond original plan)
 
-**New file: `internal/database/attribute_invariant_test.go`** — insert/load round-trip test.
+Three nearly-identical `lower_expressions.go` files (in parser_human, parser_ai, test_helper) were consolidated into a single shared function:
 
-### 5E: Update data_type.go
+**New file: `internal/notation/tla_plus/convert/lower_all_expressions.go`** — `LowerAllExpressions(model *req_model.Model) error`
 
-**Modified file: `internal/database/data_type.go`**
+All four consumers (parser_human, parser_ai, test_helper, database) now call `convert.LowerAllExpressions()`. The three duplicate files and the `StripExpressions` workaround were deleted (~730 lines removed).
 
-Add three new nullable columns to scan/insert/update:
-- `expression_type_notation` — `*string`
-- `expression_type_specification` — `*string`
-- `expression_type_key` — `*string`
+### 5H: Regenerate Database Docs — DONE
 
-### 5F: Update logic.go
-
-**Modified file: `internal/database/logic.go`**
-
-Add three new nullable columns:
-- `target_type_notation` — `*string`
-- `target_type_specification` — `*string`
-- `target_type_key` — `*string`
-
-### 5G: Update top_level_requirements.go
-
-**Modified file: `internal/database/top_level_requirements.go`**
-
-**WriteModel:**
-- Collect expression types from all DataTypes and Logic TargetTypeSpecs
-- Flatten and bulk insert expression_type rows (before data_type inserts, since data_type references expression_type)
-- Collect and insert named_set rows
-- Insert named_set expression_nodes (NamedSet.Spec.Expression)
-- Insert named_set expression_types (NamedSet.TypeSpec)
-- Collect attribute invariant logic entries from all Attributes across all Classes; insert into `logic` table
-- Insert `attribute_invariant` join rows linking each attribute to its invariant logic keys
-- Insert expression_node rows for attribute invariant Logic objects (if they have Expression trees)
-
-**ReadModel:**
-- Load expression_type rows, rebuild trees
-- Stitch ExpressionType onto DataType objects (via expression_type_key)
-- Stitch TargetTypeSpec onto Logic objects (via target_type_key)
-- Load named_sets, stitch Expression and TypeSpec from their respective tables
-- Load `attribute_invariant` join rows, load associated Logic objects, stitch invariant Logic slices onto Attribute objects (grouped by attribute_key)
-
-### 5H: Regenerate Database Docs
-
-```bash
-rm -rf docs/dbdoc/*
-./doc.sh
-```
-
-### 5I: Verify Stage 5
+### 5I: Verify Stage 5 — DONE
 
 ```bash
 cd /workspaces/glemzurg/apps/requirements/req
-go test ./internal/database/... -dbtests
+go test ./internal/database/... -dbtests  # PASS
+go test ./...                              # PASS
 ```
 
 ---
