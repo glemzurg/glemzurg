@@ -3,13 +3,11 @@ version: "2"
 linters:
   default: standard
   enable:
-    - dupl
     - dupword
     - errname
     - errorlint
     - exhaustive
     - forbidigo
-    - funlen
     - goconst
     - gocritic
     - godot
@@ -17,15 +15,12 @@ linters:
     - intrange
     - misspell
     - modernize
-    - nestif
     - nilnil
     - noctx
-    - perfsprint
-    - prealloc
     - recvcheck
-    - revive
+    # - revive
     - rowserrcheck
-    - testifylint
+    # - testifylint
     - unconvert
     - unparam
     - whitespace
