@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -34,7 +34,7 @@ func (s *BuiltinsSuite) TestSeqHead_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -51,7 +51,7 @@ func (s *BuiltinsSuite) TestSeqHead_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "empty")
@@ -73,7 +73,7 @@ func (s *BuiltinsSuite) TestSeqTail_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -96,7 +96,7 @@ func (s *BuiltinsSuite) TestSeqAppend_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -119,7 +119,7 @@ func (s *BuiltinsSuite) TestSeqLen_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -136,7 +136,7 @@ func (s *BuiltinsSuite) TestSeqLen_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -161,7 +161,7 @@ func (s *BuiltinsSuite) TestStackPush_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -186,7 +186,7 @@ func (s *BuiltinsSuite) TestStackPop_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -203,7 +203,7 @@ func (s *BuiltinsSuite) TestStackPop_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "empty")
@@ -227,7 +227,7 @@ func (s *BuiltinsSuite) TestQueueEnqueue_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -252,7 +252,7 @@ func (s *BuiltinsSuite) TestQueueDequeue_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -269,7 +269,7 @@ func (s *BuiltinsSuite) TestQueueDequeue_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "empty")
@@ -372,7 +372,7 @@ func (s *BuiltinsSuite) TestUnknownBuiltin() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "unknown builtin")
@@ -386,7 +386,7 @@ func (s *BuiltinsSuite) TestWrongArgCount() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "requires 1 argument")
@@ -402,7 +402,7 @@ func (s *BuiltinsSuite) TestWrongArgType() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "requires Tuple")

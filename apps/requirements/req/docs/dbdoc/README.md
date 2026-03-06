@@ -5,15 +5,16 @@
 | Name | Columns | Comment | Type |
 | ---- | ------- | ------- | ---- |
 | [public.model](public.model.md) | 3 | A fully distinct semantic model, separate from all others. | BASE TABLE |
-| [public.logic](public.logic.md) | 8 | A bit of business logic. | BASE TABLE |
+| [public.logic](public.logic.md) | 10 | A bit of business logic. | BASE TABLE |
 | [public.invariant](public.invariant.md) | 2 | An invariant that is forever true in the model. | BASE TABLE |
 | [public.global_function](public.global_function.md) | 4 | A global function used to describe simulation and code generation. | BASE TABLE |
+| [public.named_set](public.named_set.md) | 8 | A reusable named set definition at the model level, referenced from behavioral logic via named_set_ref expressions. | BASE TABLE |
 | [public.domain](public.domain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.subdomain](public.subdomain.md) | 6 | A bucket for parts of a model. | BASE TABLE |
 | [public.domain_association](public.domain_association.md) | 5 | A semantic relationship between two domains. | BASE TABLE |
 | [public.actor_generalization](public.actor_generalization.md) | 7 | A relationship between actors indicating super classes and subclasses. | BASE TABLE |
 | [public.actor](public.actor.md) | 8 | A role that a person or system can take who uses the system. Actors are outside of subdomains. | BASE TABLE |
-| [public.data_type](public.data_type.md) | 6 | A data type for use in a class attribute or action parameter. | BASE TABLE |
+| [public.data_type](public.data_type.md) | 8 | A data type for use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic](public.data_type_atomic.md) | 6 | An atomic type that backs a data type for eventual use in a class attribute or action parameter. | BASE TABLE |
 | [public.data_type_atomic_enum_value](public.data_type_atomic_enum_value.md) | 4 | A value of an attribute that is an enum. | BASE TABLE |
 | [public.data_type_atomic_span](public.data_type_atomic_span.md) | 10 | The definition of a span for an atomic data type. | BASE TABLE |
@@ -23,6 +24,7 @@
 | [public.attribute](public.attribute.md) | 10 | An attribute of a class. | BASE TABLE |
 | [public.class_index](public.class_index.md) | 4 | A unique identity for a class, may be multiple attributes together for the identity. | BASE TABLE |
 | [public.class_invariant](public.class_invariant.md) | 3 | An invariant that is forever true objects of a class. | BASE TABLE |
+| [public.attribute_invariant](public.attribute_invariant.md) | 3 | Join table linking attributes to their invariant logic predicates. | BASE TABLE |
 | [public.association](public.association.md) | 12 | A semantic relationship between typed instances. | BASE TABLE |
 | [public.query](public.query.md) | 5 | A business logic query of a class that does not change the state of a class. | BASE TABLE |
 | [public.query_parameter](public.query_parameter.md) | 7 | A parameter of a query. | BASE TABLE |
@@ -56,7 +58,7 @@
 | public.collection_type | atomic, ordered, queue, record, stack, unordered |
 | public.constraint_type | enumeration, object, reference, span, unconstrained |
 | public.leaf_type | delete, event, query, scenario |
-| public.logic_type | assessment, query, safety_rule, state_change, value |
+| public.logic_type | assessment, let, query, safety_rule, state_change, value |
 | public.notation | tla_plus |
 | public.scenario_object_name_style | id, name, unnamed |
 | public.share_type | extend, include |

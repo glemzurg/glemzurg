@@ -10,11 +10,12 @@ import (
 
 // inputLogic represents a formal logic specification in JSON.
 type inputLogic struct {
-	Type          string `json:"type,omitempty"`
-	Description   string `json:"description"`
-	Target        string `json:"target,omitempty"`
-	Notation      string `json:"notation,omitempty"`
-	Specification string `json:"specification,omitempty"`
+	Type           string `json:"type,omitempty"`
+	Description    string `json:"description"`
+	Target         string `json:"target,omitempty"`
+	TargetTypeSpec string `json:"target_type_spec,omitempty"`
+	Notation       string `json:"notation,omitempty"`
+	Specification  string `json:"specification,omitempty"`
 }
 
 // logicSchema is the compiled JSON schema for logic objects.
@@ -102,18 +103,18 @@ func validateLogic(logic *inputLogic, filename string) error {
 
 	// Target validation based on logic type (when type is specified).
 	switch logic.Type {
-	case "state_change", "query":
+	case "state_change", "query", "let":
 		if logic.Target == "" {
 			return NewParseError(
 				ErrLogicTargetRequired,
-				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name",
+				"logic of type '"+logic.Type+"' requires a non-empty 'target' field — for state_change this is the attribute SubKey being set, for query this is the output identifier name, for let this is the local variable name",
 				filename,
 			).WithField("target")
 		}
-		if logic.Type == "query" && strings.HasPrefix(logic.Target, "_") {
+		if (logic.Type == "query" || logic.Type == "let") && strings.HasPrefix(logic.Target, "_") {
 			return NewParseError(
 				ErrLogicTargetNoLeadUnderscore,
-				"query logic target '"+logic.Target+"' cannot start with '_' — use a plain identifier name",
+				logic.Type+" logic target '"+logic.Target+"' cannot start with '_' — use a plain identifier name",
 				filename,
 			).WithField("target")
 		}
@@ -121,7 +122,7 @@ func validateLogic(logic *inputLogic, filename string) error {
 		if logic.Target != "" {
 			return NewParseError(
 				ErrLogicTargetNotAllowed,
-				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change and query types use target",
+				"logic of type '"+logic.Type+"' must not have a 'target' field, got '"+logic.Target+"' — only state_change, query, and let types use target",
 				filename,
 			).WithField("target")
 		}

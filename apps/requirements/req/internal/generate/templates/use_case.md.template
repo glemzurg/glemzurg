@@ -14,6 +14,10 @@
 
 {{ .UseCase.Details }}
 
+{{ if .UseCase.ReadOnly -}}
+*Read-only use case*
+
+{{ end -}}
 {{ if or (ne .UseCase.SuperclassOfKey nil) (ne .UseCase.SubclassOfKey nil) -}}
 ## Generalizations
 
@@ -33,6 +37,22 @@
 {{ end }}
 {{- end }}
 
+{{- $includes := use_case_includes $reqs .UseCase.Key -}}
+{{- $extendedBy := use_case_extended_by $reqs .UseCase.Key -}}
+{{ if or (ne $includes nil) (ne $extendedBy nil) -}}
+## Relationships
+
+{{ if ne $includes nil -}}
+{{ range $includes -}}
+- «{{ .ShareType }}» [{{ .UseCase.Name }}]({{ filename "use_case" .UseCase.Key "" ".md" }})
+{{ end }}
+{{ end -}}
+{{ if ne $extendedBy nil -}}
+{{ range $extendedBy -}}
+- «{{ .ShareType }}» by [{{ .UseCase.Name }}]({{ filename "use_case" .UseCase.Key "" ".md" }})
+{{ end }}
+{{ end -}}
+{{ end -}}
 ## Scenarios
 
 Flows of interest.

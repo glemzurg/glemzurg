@@ -19,6 +19,7 @@ const (
 	KEY_TYPE_DOMAIN_ASSOCIATION   = "dassociation"
 	KEY_TYPE_GLOBAL_FUNCTION      = "gfunc"
 	KEY_TYPE_INVARIANT            = "invariant"
+	KEY_TYPE_NAMED_SET            = "nset"
 
 	// Keys with domain parents.
 	KEY_TYPE_SUBDOMAIN = "subdomain"
@@ -44,6 +45,7 @@ const (
 
 	// Keys with class attribute parents.
 	KEY_TYPE_ATTRIBUTE_DERIVATION = "aderive"
+	KEY_TYPE_ATTRIBUTE_INVARIANT  = "ainvariant"
 
 	// Keys with state parents.
 	KEY_TYPE_STATE_ACTION = "saction"
@@ -88,6 +90,10 @@ func NewGlobalFunctionKey(subKey string) (key Key, err error) {
 	}
 
 	return newRootKey(KEY_TYPE_GLOBAL_FUNCTION, subKey)
+}
+
+func NewNamedSetKey(subKey string) (key Key, err error) {
+	return newRootKey(KEY_TYPE_NAMED_SET, subKey)
 }
 
 func NewInvariantKey(subKey string) (key Key, err error) {
@@ -392,6 +398,19 @@ func NewAttributeDerivationKey(attributeKey Key, subKey string) (key Key, err er
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'aderive' key", attributeKey.GetKeyType())
 	}
 	return newKey(attributeKey.String(), KEY_TYPE_ATTRIBUTE_DERIVATION, subKey)
+}
+
+func NewAttributeInvariantKey(attributeKey Key, subKey string) (key Key, err error) {
+	// The parent must be an attribute.
+	if attributeKey.GetKeyType() != KEY_TYPE_ATTRIBUTE {
+		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'ainvariant' key", attributeKey.GetKeyType())
+	}
+	if subKey != "" {
+		if _, err := strconv.Atoi(subKey); err != nil {
+			return Key{}, errors.Errorf("attribute invariant key must be a valid integer")
+		}
+	}
+	return newKey(attributeKey.String(), KEY_TYPE_ATTRIBUTE_INVARIANT, subKey)
 }
 
 func NewStateActionKey(stateKey Key, when, subKey string) (key Key, err error) {

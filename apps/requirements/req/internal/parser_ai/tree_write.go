@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
-func WriteModel(model req_model.Model, outputModelPath string) error {
+func WriteModel(model core.Model, outputModelPath string) error {
 
 	inputModel, err := ConvertFromModel(&model)
 	if err != nil {
@@ -85,6 +85,19 @@ func writeModelTree(model *inputModel, modelDir string) error {
 		}
 		for key, gf := range model.GlobalFunctions {
 			if err := writeJSON(filepath.Join(gfDir, key+".json"), gf); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Write named sets
+	if len(model.NamedSets) > 0 {
+		nsDir := filepath.Join(modelDir, "named_sets")
+		if err := os.MkdirAll(nsDir, 0755); err != nil {
+			return err
+		}
+		for key, ns := range model.NamedSets {
+			if err := writeJSON(filepath.Join(nsDir, key+".nset.json"), ns); err != nil {
 				return err
 			}
 		}
@@ -278,6 +291,22 @@ func writeClassTree(class *inputClass, classDir string) error {
 			filename := fmt.Sprintf("%03d.invariant.json", i+1)
 			if err := writeJSON(filepath.Join(invariantsDir, filename), inv); err != nil {
 				return err
+			}
+		}
+	}
+
+	// Write attribute invariants (per attribute subdirectory)
+	for attrKey, attr := range class.Attributes {
+		if len(attr.Invariants) > 0 {
+			attrInvariantsDir := filepath.Join(classDir, "attributes", attrKey, "invariants")
+			if err := os.MkdirAll(attrInvariantsDir, 0755); err != nil {
+				return err
+			}
+			for i, inv := range attr.Invariants {
+				filename := fmt.Sprintf("%03d.invariant.json", i+1)
+				if err := writeJSON(filepath.Join(attrInvariantsDir, filename), inv); err != nil {
+					return err
+				}
 			}
 		}
 	}

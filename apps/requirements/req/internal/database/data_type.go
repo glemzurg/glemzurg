@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 
 	"github.com/pkg/errors"
 )
@@ -20,6 +21,8 @@ func collectionMinForDB(min *int) *int {
 
 // Populate a golang struct from a database row.
 func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err error) {
+	var tsNotation *string
+	var tsSpecification *string
 
 	if err = scanner.Scan(
 		&dataType.Key,
@@ -27,11 +30,26 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 		&dataType.CollectionUnique,
 		&dataType.CollectionMin,
 		&dataType.CollectionMax,
+		&tsNotation,
+		&tsSpecification,
 	); err != nil {
 		if err.Error() == _POSTGRES_NOT_FOUND {
 			err = ErrNotFound
 		}
 		return err // Do not wrap in stack here. It will be wrapped in the database calls.
+	}
+
+	// Reconstitute TypeSpec if present.
+	if tsNotation != nil && *tsNotation != "" {
+		spec := ""
+		if tsSpecification != nil {
+			spec = *tsSpecification
+		}
+		ts, err := model_spec.NewTypeSpec(*tsNotation, spec, nil)
+		if err != nil {
+			return err
+		}
+		dataType.TypeSpec = &ts
 	}
 
 	return nil
@@ -60,11 +78,13 @@ func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_d
 			return nil
 		},
 		`SELECT
-			data_type_key     ,
-			collection_type   ,
-			collection_unique ,
-			collection_min    ,
-			collection_max
+			data_type_key          ,
+			collection_type        ,
+			collection_unique      ,
+			collection_min         ,
+			collection_max         ,
+			type_spec_notation     ,
+			type_spec_specification
 		FROM
 			data_type
 		WHERE
@@ -93,16 +113,26 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 		return err
 	}
 
+	// Extract type spec fields.
+	var tsNotation *string
+	var tsSpecification *string
+	if dataType.TypeSpec != nil {
+		tsNotation = &dataType.TypeSpec.Notation
+		tsSpecification = &dataType.TypeSpec.Specification
+	}
+
 	// Add the data.
 	_, err = dbExec(dbOrTx, `
 		INSERT INTO data_type
 			(
-				model_key         ,
-				data_type_key     ,
-				collection_type   ,
-				collection_unique ,
-				collection_min    ,
-				collection_max
+				model_key              ,
+				data_type_key          ,
+				collection_type        ,
+				collection_unique      ,
+				collection_min         ,
+				collection_max         ,
+				type_spec_notation     ,
+				type_spec_specification
 			)
 		VALUES
 			(
@@ -111,14 +141,18 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 				$3,
 				$4,
 				$5,
-				$6
+				$6,
+				$7,
+				$8
 			)`,
 		modelKey,
 		dataTypeKey,
 		dataType.CollectionType,
 		dataType.CollectionUnique,
 		collectionMinForDB(dataType.CollectionMin),
-		dataType.CollectionMax)
+		dataType.CollectionMax,
+		tsNotation,
+		tsSpecification)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -139,14 +173,24 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 		return err
 	}
 
+	// Extract type spec fields.
+	var tsNotation *string
+	var tsSpecification *string
+	if dataType.TypeSpec != nil {
+		tsNotation = &dataType.TypeSpec.Notation
+		tsSpecification = &dataType.TypeSpec.Specification
+	}
+
 	// Update the data.
 	_, err = dbExec(dbOrTx, `
 		UPDATE data_type
 		SET
-			collection_type   = $3,
-			collection_unique = $4,
-			collection_min    = $5,
-			collection_max    = $6
+			collection_type         = $3,
+			collection_unique       = $4,
+			collection_min          = $5,
+			collection_max          = $6,
+			type_spec_notation      = $7,
+			type_spec_specification = $8
 		WHERE
 			data_type_key = $2
 		AND
@@ -156,7 +200,9 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 		dataType.CollectionType,
 		dataType.CollectionUnique,
 		collectionMinForDB(dataType.CollectionMin),
-		dataType.CollectionMax)
+		dataType.CollectionMax,
+		tsNotation,
+		tsSpecification)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -215,11 +261,13 @@ func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []model_data_type
 			return nil
 		},
 		`SELECT
-			data_type_key     ,
-			collection_type   ,
-			collection_unique ,
-			collection_min    ,
-			collection_max
+			data_type_key          ,
+			collection_type        ,
+			collection_unique      ,
+			collection_min         ,
+			collection_max         ,
+			type_spec_notation     ,
+			type_spec_specification
 		FROM
 			data_type
 		WHERE
@@ -246,27 +294,35 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, len(dataTypes)*6)
+	args := make([]interface{}, 0, len(dataTypes)*8)
 	valueStrings := make([]string, 0, len(dataTypes))
 	for i, dt := range dataTypes {
 		dataTypeKey, err := preenKey(dt.Key)
 		if err != nil {
 			return err
 		}
-		args = append(args, modelKey, dataTypeKey, dt.CollectionType, dt.CollectionUnique, collectionMinForDB(dt.CollectionMin), dt.CollectionMax)
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
+		var tsNotation *string
+		var tsSpecification *string
+		if dt.TypeSpec != nil {
+			tsNotation = &dt.TypeSpec.Notation
+			tsSpecification = &dt.TypeSpec.Specification
+		}
+		args = append(args, modelKey, dataTypeKey, dt.CollectionType, dt.CollectionUnique, collectionMinForDB(dt.CollectionMin), dt.CollectionMax, tsNotation, tsSpecification)
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", i*8+1, i*8+2, i*8+3, i*8+4, i*8+5, i*8+6, i*8+7, i*8+8))
 	}
 
 	// Build the query
 	query := fmt.Sprintf(`
 		INSERT INTO data_type
 			(
-				model_key         ,
-				data_type_key     ,
-				collection_type   ,
-				collection_unique ,
-				collection_min    ,
-				collection_max
+				model_key              ,
+				data_type_key          ,
+				collection_type        ,
+				collection_unique      ,
+				collection_min         ,
+				collection_max         ,
+				type_spec_notation     ,
+				type_spec_specification
 			)
 		VALUES %s`, strings.Join(valueStrings, ", "))
 

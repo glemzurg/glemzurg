@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -12,7 +12,7 @@ func evalTupleInfix(node *ast.TupleInfixExpression, bindings *Bindings) *EvalRes
 	}
 
 	// Evaluate first operand to start the result
-	firstResult := Eval(node.Operands[0], bindings)
+	firstResult := EvalAST(node.Operands[0], bindings)
 	if firstResult.IsError() {
 		return firstResult
 	}
@@ -24,7 +24,7 @@ func evalTupleInfix(node *ast.TupleInfixExpression, bindings *Bindings) *EvalRes
 
 	// Concatenate remaining operands
 	for i := 1; i < len(node.Operands); i++ {
-		opResult := Eval(node.Operands[i], bindings)
+		opResult := EvalAST(node.Operands[i], bindings)
 		if opResult.IsError() {
 			return opResult
 		}

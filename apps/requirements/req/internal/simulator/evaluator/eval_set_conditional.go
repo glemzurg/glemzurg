@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -21,7 +21,7 @@ func evalSetConditional(node *ast.SetConditional, bindings *Bindings) *EvalResul
 	varName := varIdent.Value
 
 	// Evaluate the source set
-	setResult := Eval(membership.Right, bindings)
+	setResult := EvalAST(membership.Right, bindings)
 	if setResult.IsError() {
 		return setResult
 	}
@@ -37,7 +37,7 @@ func evalSetConditional(node *ast.SetConditional, bindings *Bindings) *EvalResul
 		childBindings := NewEnclosedBindings(bindings)
 		childBindings.Set(varName, elem, NamespaceLocal)
 
-		predResult := Eval(node.Predicate, childBindings)
+		predResult := EvalAST(node.Predicate, childBindings)
 		if predResult.IsError() {
 			return predResult
 		}

@@ -5,14 +5,13 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -164,6 +163,10 @@ func (e *ActionExecutor) ExecuteAction(
 			continue
 		}
 		safetyBindings := e.bindingsBuilder.BuildForInstance(targetInstance)
+		// Inject let bindings from the same safety rule list.
+		for name, value := range sr.LetBindings {
+			safetyBindings.Set(name, value, evaluator.NamespaceLocal)
+		}
 		result := evaluator.Eval(sr.Expression, safetyBindings)
 
 		if result.IsError() {
@@ -231,13 +234,21 @@ func (e *ActionExecutor) executeActionInContext(
 	// Step 1: Check preconditions (Requires)
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
+	// Pass 1: Evaluate all let bindings in requires (in order).
+	if err := evalLetBindings(action.Requires, bindings, "action", action.Name, "requires"); err != nil {
+		return err
+	}
+	// Pass 2: Evaluate non-let assessment items.
 	for i, req := range action.Requires {
-		expr, err := parser.ParseExpression(req.Specification)
-		if err != nil {
-			return fmt.Errorf("action %s requires[%d] parse error: %w", action.Name, i, err)
+		if req.Type == model_logic.LogicTypeLet {
+			continue
+		}
+		expr := req.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("action %s requires[%d]: expression not lowered", action.Name, i)
 		}
 
-		if model_bridge.ContainsAnyPrimed(expr) {
+		if model_bridge.ContainsAnyPrimedME(expr) {
 			return fmt.Errorf("action %s requires[%d]: Requires must not contain primed variables", action.Name, i)
 		}
 
@@ -246,63 +257,80 @@ func (e *ActionExecutor) executeActionInContext(
 			return fmt.Errorf("action %s requires[%d] evaluation error: %s", action.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Specification)
+			return fmt.Errorf("action %s precondition failed: requires[%d] = %s", action.Name, i, req.Spec.Specification)
 		}
 	}
 
 	// Step 2: Evaluate guarantees.
+	// Pass 1: Evaluate all let bindings in guarantees (in order).
+	if err := evalLetBindings(action.Guarantees, bindings, "action", action.Name, "guarantee"); err != nil {
+		return err
+	}
+	// Pass 2: Evaluate non-let state_change items.
 	for i, guar := range action.Guarantees {
+		if guar.Type == model_logic.LogicTypeLet {
+			continue
+		}
 		// Check re-entrancy constraint.
 		if !ctx.CanMutate(instance.ID) {
 			return fmt.Errorf("re-entrant mutation on instance %d in action %s: instance already has primed values from another action", instance.ID, action.Name)
 		}
 
-		if guar.Target != "" {
-			// Target is set: use it directly as the field name.
-			// The specification is the RHS value expression only.
-			if guar.Specification == "" {
-				return fmt.Errorf("action %s guarantee[%d]: target %q is set but specification is empty", action.Name, i, guar.Target)
-			}
-			expr, err := parser.ParseExpression(guar.Specification)
-			if err != nil {
-				return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
-			}
-			rhsValue := evaluator.Eval(expr, bindings)
-			if rhsValue.IsError() {
-				return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", action.Name, i, rhsValue.Error.Inspect())
-			}
-			if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
-				return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
-			}
-		} else {
-			// Legacy: extract field name from primed TLA+ expression.
-			expr, err := parser.ParseExpression(guar.Specification)
-			if err != nil {
-				return fmt.Errorf("action %s guarantee[%d] parse error: %w", action.Name, i, err)
-			}
-			kind := model_bridge.ClassifyGuarantee(expr)
-			if kind != model_bridge.GuaranteePrimedAssignment {
-				return fmt.Errorf("action %s guarantee[%d]: Guarantees must be primed assignments only (e.g., self.field' = expr); use SafetyRules for boolean assertions", action.Name, i)
-			}
-			fieldName, rhsValue, err := evaluatePrimedAssignment(expr, bindings)
-			if err != nil {
-				return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
-			}
-			if err := ctx.RecordPrimedAssignment(instance.ID, fieldName, rhsValue); err != nil {
-				return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
-			}
+		if guar.Target == "" {
+			return fmt.Errorf("action %s guarantee[%d]: target must be set", action.Name, i)
+		}
+		expr := guar.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("action %s guarantee[%d]: expression not lowered", action.Name, i)
+		}
+		rhsValue := evaluator.Eval(expr, bindings)
+		if rhsValue.IsError() {
+			return fmt.Errorf("action %s guarantee[%d] evaluation error: %s", action.Name, i, rhsValue.Error.Inspect())
+		}
+		if err := ctx.RecordPrimedAssignment(instance.ID, guar.Target, rhsValue.Value); err != nil {
+			return fmt.Errorf("action %s guarantee[%d]: %w", action.Name, i, err)
 		}
 	}
 
 	// Step 3: Collect safety rules (must contain primed variables).
+	// Pass 1: Evaluate all let bindings in safety rules and capture them.
+	letBindings := make(map[string]object.Object)
 	for i, rule := range action.SafetyRules {
-		expr, err := parser.ParseExpression(rule.Specification)
-		if err != nil {
-			return fmt.Errorf("action %s safety_rule[%d] parse error: %w", action.Name, i, err)
+		if rule.Type != model_logic.LogicTypeLet {
+			continue
+		}
+		expr := rule.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("action %s safety_rule[%d] (let): expression not lowered", action.Name, i)
+		}
+		result := evaluator.Eval(expr, bindings)
+		if result.IsError() {
+			return fmt.Errorf("action %s safety_rule[%d] (let %q) evaluation error: %s", action.Name, i, rule.Target, result.Error.Inspect())
+		}
+		bindings.Set(rule.Target, result.Value, evaluator.NamespaceLocal)
+		letBindings[rule.Target] = result.Value
+	}
+	// Pass 2: Collect non-let safety rules with let bindings snapshot.
+	for i, rule := range action.SafetyRules {
+		if rule.Type == model_logic.LogicTypeLet {
+			continue
+		}
+		expr := rule.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("action %s safety_rule[%d]: expression not lowered", action.Name, i)
 		}
 
-		if !model_bridge.ContainsAnyPrimed(expr) {
+		if !model_bridge.ContainsAnyPrimedME(expr) {
 			return fmt.Errorf("action %s safety_rule[%d]: SafetyRules must reference primed variables", action.Name, i)
+		}
+
+		// Copy current letBindings for deferred evaluation.
+		var capturedLetBindings map[string]object.Object
+		if len(letBindings) > 0 {
+			capturedLetBindings = make(map[string]object.Object, len(letBindings))
+			for k, v := range letBindings {
+				capturedLetBindings[k] = v
+			}
 		}
 
 		ctx.AddSafetyRule(DeferredSafetyRule{
@@ -311,10 +339,31 @@ func (e *ActionExecutor) executeActionInContext(
 			SourceKey:          action.Key,
 			SourceName:         action.Name,
 			Index:              i,
-			OriginalExpression: rule.Specification,
+			OriginalExpression: rule.Spec.Specification,
+			LetBindings:        capturedLetBindings,
 		})
 	}
 
+	return nil
+}
+
+// evalLetBindings evaluates all LogicTypeLet items in a logic list in order,
+// adding each result to bindings. Non-let items are skipped.
+func evalLetBindings(logics []model_logic.Logic, bindings *evaluator.Bindings, ownerType, ownerName, listName string) error {
+	for i, logic := range logics {
+		if logic.Type != model_logic.LogicTypeLet {
+			continue
+		}
+		expr := logic.Spec.Expression
+		if expr == nil {
+			return fmt.Errorf("%s %s %s[%d] (let): expression not lowered", ownerType, ownerName, listName, i)
+		}
+		result := evaluator.Eval(expr, bindings)
+		if result.IsError() {
+			return fmt.Errorf("%s %s %s[%d] (let %q) evaluation error: %s", ownerType, ownerName, listName, i, logic.Target, result.Error.Inspect())
+		}
+		bindings.Set(logic.Target, result.Value, evaluator.NamespaceLocal)
+	}
 	return nil
 }
 
@@ -383,13 +432,21 @@ func (e *ActionExecutor) executeQueryInContext(
 	// Step 1: Check preconditions
 	bindings := e.bindingsBuilder.BuildForInstanceWithVariables(instance, parameters)
 
+	// Pass 1: Evaluate all let bindings in requires (in order).
+	if err := evalLetBindings(query.Requires, bindings, "query", query.Name, "requires"); err != nil {
+		return nil, err
+	}
+	// Pass 2: Evaluate non-let assessment items.
 	for i, req := range query.Requires {
-		expr, err := parser.ParseExpression(req.Specification)
-		if err != nil {
-			return nil, fmt.Errorf("query %s requires[%d] parse error: %w", query.Name, i, err)
+		if req.Type == model_logic.LogicTypeLet {
+			continue
+		}
+		expr := req.Spec.Expression
+		if expr == nil {
+			return nil, fmt.Errorf("query %s requires[%d]: expression not lowered", query.Name, i)
 		}
 
-		if model_bridge.ContainsAnyPrimed(expr) {
+		if model_bridge.ContainsAnyPrimedME(expr) {
 			return nil, fmt.Errorf("query %s requires[%d]: Requires must not contain primed variables", query.Name, i)
 		}
 
@@ -398,54 +455,34 @@ func (e *ActionExecutor) executeQueryInContext(
 			return nil, fmt.Errorf("query %s requires[%d] evaluation error: %s", query.Name, i, result.Error.Inspect())
 		}
 		if !isTrueBoolean(result.Value) {
-			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Specification)
+			return nil, fmt.Errorf("query %s precondition failed: requires[%d] = %s", query.Name, i, req.Spec.Specification)
 		}
 	}
 
 	// Step 2: Evaluate guarantees
 	outputs := make(map[string]object.Object)
 
+	// Pass 1: Evaluate all let bindings in guarantees (in order).
+	if err := evalLetBindings(query.Guarantees, bindings, "query", query.Name, "guarantee"); err != nil {
+		return nil, err
+	}
+	// Pass 2: Evaluate non-let query items.
 	for i, guar := range query.Guarantees {
-		if guar.Target != "" {
-			// Target is set: use it directly as the output name.
-			// The specification is the value expression only.
-			if guar.Specification == "" {
-				return nil, fmt.Errorf("query %s guarantee[%d]: target %q is set but specification is empty", query.Name, i, guar.Target)
-			}
-			expr, err := parser.ParseExpression(guar.Specification)
-			if err != nil {
-				return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
-			}
-			rhsValue := evaluator.Eval(expr, bindings)
-			if rhsValue.IsError() {
-				return nil, fmt.Errorf("query %s guarantee[%d] evaluation error: %s", query.Name, i, rhsValue.Error.Inspect())
-			}
-			outputs[guar.Target] = rhsValue.Value
-		} else {
-			// Legacy: extract output name from primed TLA+ expression.
-			expr, err := parser.ParseExpression(guar.Specification)
-			if err != nil {
-				return nil, fmt.Errorf("query %s guarantee[%d] parse error: %w", query.Name, i, err)
-			}
-			kind := model_bridge.ClassifyGuarantee(expr)
-			if kind == model_bridge.GuaranteePrimedAssignment {
-				outputName, rhsValue, err := evaluatePrimedAssignment(expr, bindings)
-				if err != nil {
-					return nil, fmt.Errorf("query %s guarantee[%d]: %w", query.Name, i, err)
-				}
-				outputs[outputName] = rhsValue
-			} else if kind == model_bridge.GuaranteePostCondition {
-				ctx.AddPostCondition(DeferredPostCondition{
-					Expression:         expr,
-					InstanceID:         instance.ID,
-					SourceKey:          query.Key,
-					SourceName:         query.Name,
-					SourceType:         "query",
-					Index:              i,
-					OriginalExpression: guar.Specification,
-				})
-			}
+		if guar.Type == model_logic.LogicTypeLet {
+			continue
 		}
+		if guar.Target == "" {
+			return nil, fmt.Errorf("query %s guarantee[%d]: target must be set", query.Name, i)
+		}
+		expr := guar.Spec.Expression
+		if expr == nil {
+			return nil, fmt.Errorf("query %s guarantee[%d]: expression not lowered", query.Name, i)
+		}
+		rhsValue := evaluator.Eval(expr, bindings)
+		if rhsValue.IsError() {
+			return nil, fmt.Errorf("query %s guarantee[%d] evaluation error: %s", query.Name, i, rhsValue.Error.Inspect())
+		}
+		outputs[guar.Target] = rhsValue.Value
 	}
 
 	return outputs, nil
@@ -640,61 +677,6 @@ func isTrueBoolean(obj object.Object) bool {
 		return false
 	}
 	return b.Value()
-}
-
-// evaluatePrimedAssignment handles a guarantee expression that the classifier
-// identified as a primed assignment (e.g., "self.count' = self.count + 1").
-// The parser produces a BinaryEquality node for these. We extract the field name
-// from the primed LHS and evaluate the RHS to get the new value.
-//
-// Supported LHS patterns:
-//   - Primed(FieldAccess(Identifier("self"), "field")) → field name is "field"
-//   - Primed(Identifier("name")) → field name is "name" (for query outputs like result')
-func evaluatePrimedAssignment(
-	expr ast.Expression,
-	bindings *evaluator.Bindings,
-) (string, object.Object, error) {
-	eq, ok := expr.(*ast.BinaryEquality)
-	if !ok || eq.Operator != "=" {
-		return "", nil, fmt.Errorf("expected primed assignment (x' = expr), got %T", expr)
-	}
-
-	// Extract the field name from the primed LHS
-	fieldName, err := extractPrimedFieldName(eq.Left)
-	if err != nil {
-		return "", nil, fmt.Errorf("invalid primed LHS: %w", err)
-	}
-
-	// Evaluate the RHS
-	result := evaluator.Eval(eq.Right, bindings)
-	if result.IsError() {
-		return "", nil, fmt.Errorf("evaluation error: %s", result.Error.Inspect())
-	}
-
-	return fieldName, result.Value, nil
-}
-
-// extractPrimedFieldName extracts the target field name from a primed LHS expression.
-// For "self.count'" the AST is Primed(FieldAccess(Identifier("self"), "count")) → returns "count".
-// For "result'" the AST is Primed(Identifier("result")) → returns "result".
-func extractPrimedFieldName(expr ast.Expression) (string, error) {
-	primed, ok := expr.(*ast.Primed)
-	if !ok {
-		return "", fmt.Errorf("expected Primed expression, got %T", expr)
-	}
-
-	switch base := primed.Base.(type) {
-	case *ast.FieldAccess:
-		// self.field' → field name is the Member
-		return base.Member, nil
-
-	case *ast.Identifier:
-		// result' → field name is the identifier value
-		return base.Value, nil
-
-	default:
-		return "", fmt.Errorf("unsupported primed base type: %T", primed.Base)
-	}
 }
 
 // createPostConditionViolation creates a violation from a deferred post-condition.

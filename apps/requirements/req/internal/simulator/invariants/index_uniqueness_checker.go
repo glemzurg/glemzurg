@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -30,7 +30,7 @@ type IndexUniquenessChecker struct {
 }
 
 // NewIndexUniquenessChecker creates a new index uniqueness checker from a model.
-func NewIndexUniquenessChecker(model *req_model.Model) *IndexUniquenessChecker {
+func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 	checker := &IndexUniquenessChecker{
 		classIndexes: make(map[identity.Key]*ClassIndexInfo),
 	}

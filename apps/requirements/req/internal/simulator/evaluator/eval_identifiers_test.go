@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -23,7 +23,7 @@ func (s *IdentifiersSuite) TestIdentifier_Simple() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -34,7 +34,7 @@ func (s *IdentifiersSuite) TestIdentifier_NotFound() {
 	node := &ast.Identifier{Value: "undefined_var"}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "identifier not found")
@@ -50,7 +50,7 @@ func (s *IdentifiersSuite) TestIdentifier_NestedScope() {
 	// Create inner scope
 	inner := NewEnclosedBindings(outer)
 
-	result := Eval(node, inner)
+	result := EvalAST(node, inner)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -68,7 +68,7 @@ func (s *IdentifiersSuite) TestIdentifier_ShadowedInInnerScope() {
 	inner := NewEnclosedBindings(outer)
 	inner.Set("x", object.NewNatural(20), NamespaceLocal)
 
-	result := Eval(node, inner)
+	result := EvalAST(node, inner)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -89,7 +89,7 @@ func (s *IdentifiersSuite) TestIdentifier_Self() {
 	bindings := NewBindings()
 	innerBindings := bindings.WithSelf(selfRecord)
 
-	result := Eval(node, innerBindings)
+	result := EvalAST(node, innerBindings)
 
 	s.False(result.IsError())
 	record := result.Value.(*object.Record)
@@ -100,7 +100,7 @@ func (s *IdentifiersSuite) TestIdentifier_SelfNotDefined() {
 	node := &ast.Identifier{Value: "self"}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "self is not defined")
@@ -123,7 +123,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_Simple() {
 	bindings := NewBindings()
 	bindings.Set("person", personRecord, NamespaceGlobal)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -144,7 +144,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_FieldNotFound() {
 	bindings := NewBindings()
 	bindings.Set("person", personRecord, NamespaceGlobal)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "field not found")
@@ -160,7 +160,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_NotARecord() {
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "requires Record")
@@ -181,7 +181,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_ExclamationMember() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(existingRecord)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
@@ -197,7 +197,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_ExclamationOutsideExcept() {
 
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "EXCEPT context")
@@ -212,7 +212,7 @@ func (s *IdentifiersSuite) TestExistingValue_Simple() {
 	bindings := NewBindings()
 	bindings.SetExistingValue(existingValue)
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -223,7 +223,7 @@ func (s *IdentifiersSuite) TestExistingValue_OutsideExceptContext() {
 	node := &ast.ExistingValue{}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "EXCEPT context")
@@ -239,7 +239,7 @@ func (s *IdentifiersSuite) TestExistingValue_NestedScope() {
 	// Inner scope should inherit existing value
 	inner := NewEnclosedBindings(outer)
 
-	result := Eval(node, inner)
+	result := EvalAST(node, inner)
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,7 +53,7 @@ func (s *IntegrationTestSuite) TestLiterals() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}
@@ -101,7 +101,7 @@ func (s *IntegrationTestSuite) TestArithmetic() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}
@@ -150,7 +150,7 @@ func (s *IntegrationTestSuite) TestComparison() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 
 		b, ok := result.Value.(*object.Boolean)
@@ -201,7 +201,7 @@ func (s *IntegrationTestSuite) TestLogic() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 
 		b, ok := result.Value.(*object.Boolean)
@@ -243,7 +243,7 @@ func (s *IntegrationTestSuite) TestSets() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}
@@ -276,7 +276,7 @@ func (s *IntegrationTestSuite) TestSetMembership() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 
 		b, ok := result.Value.(*object.Boolean)
@@ -311,7 +311,7 @@ func (s *IntegrationTestSuite) TestQuantifiers() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 
 		b, ok := result.Value.(*object.Boolean)
@@ -342,7 +342,7 @@ func (s *IntegrationTestSuite) TestTuples() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}
@@ -353,7 +353,7 @@ func (s *IntegrationTestSuite) TestTupleIndex() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("20", result.Value.Inspect())
 }
@@ -368,7 +368,7 @@ func (s *IntegrationTestSuite) TestRecords() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 
 	record, ok := result.Value.(*object.Record)
@@ -387,7 +387,7 @@ func (s *IntegrationTestSuite) TestRecordFieldAccess() {
 	expr, err := parser.ParseExpression("r.x + r.y")
 	s.NoError(err)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("30", result.Value.Inspect())
 }
@@ -401,7 +401,7 @@ func (s *IntegrationTestSuite) TestRecordExcept() {
 	expr, err := parser.ParseExpression("[r EXCEPT !.count = @ + 1]")
 	s.NoError(err)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 
 	record, ok := result.Value.(*object.Record)
@@ -429,7 +429,7 @@ func (s *IntegrationTestSuite) TestIfThenElse() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}
@@ -442,7 +442,7 @@ func (s *IntegrationTestSuite) TestCaseExpression() {
 	expr, err := parser.ParseExpression("CASE x > 0 -> 1 [] x < 0 -> -1 [] OTHER -> 0")
 	s.NoError(err)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	s.Equal("0", result.Value.Inspect())
 }
@@ -474,7 +474,7 @@ func (s *IntegrationTestSuite) TestBuiltinFunctionCalls() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}
@@ -506,7 +506,7 @@ func (s *IntegrationTestSuite) TestComplexExpressions() {
 		s.NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
-		result := Eval(expr, bindings)
+		result := EvalAST(expr, bindings)
 		s.False(result.IsError(), "evaluating %q: %v", tt.input, result.Error)
 		s.Equal(tt.expected, result.Value.Inspect(), "evaluating %q", tt.input)
 	}

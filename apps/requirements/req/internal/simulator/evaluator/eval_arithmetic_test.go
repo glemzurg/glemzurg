@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -27,7 +27,7 @@ func (s *ArithmeticSuite) TestAddition_Natural() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -43,7 +43,7 @@ func (s *ArithmeticSuite) TestAddition_Integer() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -59,7 +59,7 @@ func (s *ArithmeticSuite) TestAddition_Real() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -75,7 +75,7 @@ func (s *ArithmeticSuite) TestAddition_MixedTypes() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -93,7 +93,7 @@ func (s *ArithmeticSuite) TestSubtraction_Natural() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -109,7 +109,7 @@ func (s *ArithmeticSuite) TestSubtraction_NegativeResult() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -128,7 +128,7 @@ func (s *ArithmeticSuite) TestMultiplication_Natural() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -144,7 +144,7 @@ func (s *ArithmeticSuite) TestMultiplication_ByZero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -160,7 +160,7 @@ func (s *ArithmeticSuite) TestMultiplication_Real() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -178,7 +178,7 @@ func (s *ArithmeticSuite) TestDivision_Natural() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -194,7 +194,7 @@ func (s *ArithmeticSuite) TestDivision_WithSlash() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -210,7 +210,7 @@ func (s *ArithmeticSuite) TestDivision_FractionalResult() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -226,7 +226,7 @@ func (s *ArithmeticSuite) TestDivision_ByZero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "division by zero")
@@ -249,7 +249,7 @@ func (s *ArithmeticSuite) TestDivision_RealLeftOperand() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -272,7 +272,7 @@ func (s *ArithmeticSuite) TestDivision_RealRightOperand() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -295,7 +295,7 @@ func (s *ArithmeticSuite) TestDivision_SlashWithRealLeftOperand() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -316,7 +316,7 @@ func (s *ArithmeticSuite) TestDivision_SlashWithRealRightOperand() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -344,7 +344,7 @@ func (s *ArithmeticSuite) TestDivision_SameRealDividedBySelf() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -372,7 +372,7 @@ func (s *ArithmeticSuite) TestDivision_BothRealOperands() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -392,7 +392,7 @@ func (s *ArithmeticSuite) TestModulo_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -408,7 +408,7 @@ func (s *ArithmeticSuite) TestModulo_EvenDivision() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -431,7 +431,7 @@ func (s *ArithmeticSuite) TestNested_Expression() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(outer, bindings)
+	result := EvalAST(outer, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -457,7 +457,7 @@ func (s *ArithmeticSuite) TestNested_DeepExpression() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(outer, bindings)
+	result := EvalAST(outer, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -479,7 +479,7 @@ func (s *ArithmeticSuite) TestPower_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -495,7 +495,7 @@ func (s *ArithmeticSuite) TestPower_Zero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -511,7 +511,7 @@ func (s *ArithmeticSuite) TestPower_One() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -527,7 +527,7 @@ func (s *ArithmeticSuite) TestPower_FractionalBase() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -543,7 +543,7 @@ func (s *ArithmeticSuite) TestPower_LargeExponent() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -559,7 +559,7 @@ func (s *ArithmeticSuite) TestPower_ZeroBase() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -575,7 +575,7 @@ func (s *ArithmeticSuite) TestPower_ZeroToZero_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "0^0 is undefined")
@@ -590,7 +590,7 @@ func (s *ArithmeticSuite) TestPower_NegativeExponent_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "non-negative")
@@ -605,7 +605,7 @@ func (s *ArithmeticSuite) TestPower_SquareRoot() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -621,7 +621,7 @@ func (s *ArithmeticSuite) TestPower_CubeRoot() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -637,7 +637,7 @@ func (s *ArithmeticSuite) TestPower_FractionalExponentWithNumerator() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -653,7 +653,7 @@ func (s *ArithmeticSuite) TestPower_FractionalBaseWithRoot() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -669,7 +669,7 @@ func (s *ArithmeticSuite) TestPower_IrrationalResult_Real() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -694,7 +694,7 @@ func (s *ArithmeticSuite) TestPower_RealBase() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -717,7 +717,7 @@ func (s *ArithmeticSuite) TestPower_RealExponent() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -745,7 +745,7 @@ func (s *ArithmeticSuite) TestPower_BothReal() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -765,7 +765,7 @@ func (s *ArithmeticSuite) TestModulo_FractionalLeft_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "integer operands")
@@ -780,7 +780,7 @@ func (s *ArithmeticSuite) TestModulo_FractionalRight_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "integer operands")
@@ -795,7 +795,7 @@ func (s *ArithmeticSuite) TestModulo_BothFractional_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "integer operands")
@@ -810,7 +810,7 @@ func (s *ArithmeticSuite) TestModulo_ByZero_Error() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "zero")
@@ -827,7 +827,7 @@ func (s *ArithmeticSuite) TestUnknownOperator() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "unknown")

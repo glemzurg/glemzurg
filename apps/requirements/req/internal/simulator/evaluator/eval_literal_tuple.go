@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -10,7 +10,7 @@ func evalTupleLiteral(node *ast.TupleLiteral, bindings *Bindings) *EvalResult {
 	elements := make([]object.Object, 0, len(node.Elements))
 
 	for _, elemExpr := range node.Elements {
-		result := Eval(elemExpr, bindings)
+		result := EvalAST(elemExpr, bindings)
 		if result.IsError() {
 			return result
 		}

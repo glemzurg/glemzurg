@@ -6,8 +6,8 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,7 +23,7 @@ func TestGlobalFunctionSuite(t *testing.T) {
 type GlobalFunctionSuite struct {
 	suite.Suite
 	db     *sql.DB
-	model  req_model.Model
+	model  core.Model
 	logic  model_logic.Logic
 	logicB model_logic.Logic
 	gfKey  identity.Key

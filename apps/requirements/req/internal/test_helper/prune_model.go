@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 )
 
 // PruneToModelOnly returns a copy of the model with only its direct children:
 // actors, actor generalizations, domains (with empty subdomains), domain associations,
 // invariants, and global functions. No class associations.
-func PruneToModelOnly(model req_model.Model) req_model.Model {
+func PruneToModelOnly(model core.Model) core.Model {
 	model.ClassAssociations = nil
 
 	// Strip subdomains from each domain, keeping only the domain-level fields.
@@ -36,7 +36,7 @@ func PruneToModelOnly(model req_model.Model) req_model.Model {
 // attributes. Includes subdomains, classes with attributes, and class generalizations.
 // No class associations, no states/events/guards/actions/queries/transitions,
 // no use cases, no use case generalizations.
-func PruneToClassAttributes(model req_model.Model) req_model.Model {
+func PruneToClassAttributes(model core.Model) core.Model {
 	model.ClassAssociations = nil
 
 	for domainKey, domain := range model.Domains {
@@ -69,7 +69,7 @@ func PruneToClassAttributes(model req_model.Model) req_model.Model {
 // associations. Includes subdomains, classes with attributes, class generalizations,
 // and class associations at all levels (subdomain, domain, and model).
 // No states/events/guards/actions/queries/transitions, no use cases.
-func PruneToClassAssociations(model req_model.Model) req_model.Model {
+func PruneToClassAssociations(model core.Model) core.Model {
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {
 			subdomain.UseCases = nil
@@ -98,7 +98,7 @@ func PruneToClassAssociations(model req_model.Model) req_model.Model {
 // machine. Includes subdomains, classes with attributes, class generalizations,
 // class associations, and all state machine parts (states, events, guards, actions,
 // queries, transitions). No use cases or use case generalizations.
-func PruneToStateMachine(model req_model.Model) req_model.Model {
+func PruneToStateMachine(model core.Model) core.Model {
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {
 			subdomain.UseCases = nil
@@ -114,7 +114,7 @@ func PruneToStateMachine(model req_model.Model) req_model.Model {
 
 // PruneToNoSteps returns a copy of the model with everything except scenario steps.
 // All scenarios have their Steps set to nil.
-func PruneToNoSteps(model req_model.Model) req_model.Model {
+func PruneToNoSteps(model core.Model) core.Model {
 	for domainKey, domain := range model.Domains {
 		for subdomainKey, subdomain := range domain.Subdomains {
 			for useCaseKey, useCase := range subdomain.UseCases {
@@ -140,7 +140,7 @@ type LocatedScenario struct {
 
 // ExtractScenarios walks the model tree and returns all scenarios as a sorted slice.
 // Each entry includes a path like "domain > subdomain > use_case > scenario" for diagnostics.
-func ExtractScenarios(model req_model.Model) []LocatedScenario {
+func ExtractScenarios(model core.Model) []LocatedScenario {
 	var result []LocatedScenario
 
 	for domainKey, domain := range model.Domains {

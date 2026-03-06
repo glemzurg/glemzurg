@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +38,7 @@ func TestNumberLiterals(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bindings := NewBindings()
-			result := Eval(tt.node, bindings)
+			result := EvalAST(tt.node, bindings)
 
 			assert.False(t, result.IsError(), "unexpected error: %v", result.Error)
 			num := result.Value.(*object.Number)

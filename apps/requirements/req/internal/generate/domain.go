@@ -3,15 +3,15 @@ package generate
 import (
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 
 	"github.com/pkg/errors"
 )
 
-func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model, domain model_domain.Domain) (contents string, err error) {
+func generateDomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain) (contents string, err error) {
 
 	// Gather all classes from all subdomains for sorting.
 	var allClasses []model_class.Class
@@ -36,7 +36,7 @@ func generateDomainMdContents(reqs *req_flat.Requirements, model req_model.Model
 
 	contents, err = generateFromTemplate(_domainMdTemplate, struct {
 		Reqs       *req_flat.Requirements
-		Model      req_model.Model
+		Model      core.Model
 		Domain     model_domain.Domain
 		Classes    []model_class.Class
 		Subdomains []model_domain.Subdomain

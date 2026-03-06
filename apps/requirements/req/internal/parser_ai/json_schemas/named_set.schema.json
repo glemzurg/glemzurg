@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "named_set.schema.json",
+  "title": "Named Set",
+  "description": "Schema for a named set object. Named sets define reusable set definitions at the model level that can be referenced from behavioral logic (requires, guarantees, etc.). A named set must have a name starting with underscore (e.g., '_ValidStatuses', '_AllowedRoles') and a description. It may optionally include a formal specification and type specification.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the named set. Must start with an underscore (e.g., '_ValidStatuses', '_AllowedRoles'). This is required and must be non-empty.",
+      "minLength": 1,
+      "pattern": "^_"
+    },
+    "description": {
+      "type": "string",
+      "description": "A human-readable description of the named set."
+    },
+    "notation": {
+      "type": "string",
+      "description": "Optional formal notation system used for the specification. Currently the only supported value is 'tla_plus' (TLA+ notation).",
+      "enum": ["tla_plus"]
+    },
+    "specification": {
+      "type": "string",
+      "description": "Optional formal specification defining the set contents in the given notation (e.g., '{\"pending\", \"active\", \"complete\"}')."
+    },
+    "type_spec": {
+      "type": "string",
+      "description": "Optional type specification for the set (e.g., 'SUBSET STRING', 'SUBSET Int'). Declares the TLA+ type of the set."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

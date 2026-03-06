@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -20,7 +20,7 @@ func evalFunctionCall(node *ast.FunctionCall, bindings *Bindings) *EvalResult {
 	// Evaluate all arguments
 	args := make([]object.Object, len(node.Args))
 	for i, argExpr := range node.Args {
-		result := Eval(argExpr, bindings)
+		result := EvalAST(argExpr, bindings)
 		if result.IsError() {
 			return result
 		}

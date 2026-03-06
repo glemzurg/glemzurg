@@ -3,7 +3,7 @@ package typechecker
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
@@ -783,8 +783,8 @@ func (tc *TypeChecker) inferRecordInstance(n *ast.RecordInstance, env *TypeEnv) 
 }
 
 func (tc *TypeChecker) inferRecordAltered(n *ast.RecordAltered, env *TypeEnv) (*TypedNode, error) {
-	// RecordAltered has Identifier (the base record) and Alterations
-	record, err := tc.infer(n.Identifier, env)
+	// RecordAltered has Base (the base record expression) and Alterations
+	record, err := tc.infer(n.Base, env)
 	if err != nil {
 		return nil, err
 	}

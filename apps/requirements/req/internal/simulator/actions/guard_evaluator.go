@@ -3,10 +3,9 @@ package actions
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
@@ -32,16 +31,15 @@ func (g *GuardEvaluator) EvaluateGuard(
 ) (bool, error) {
 	bindings := g.bindingsBuilder.BuildForInstance(instance)
 
-	if guard.Logic.Specification == "" {
-		return true, nil // No specification means guard always passes
+	expr := guard.Logic.Spec.Expression
+	if expr == nil {
+		if guard.Logic.Spec.Specification == "" {
+			return true, nil // No specification means guard always passes
+		}
+		return false, fmt.Errorf("guard %s: expression not lowered", guard.Name)
 	}
 
-	expr, err := parser.ParseExpression(guard.Logic.Specification)
-	if err != nil {
-		return false, fmt.Errorf("guard %s parse error: %w", guard.Name, err)
-	}
-
-	if model_bridge.ContainsAnyPrimed(expr) {
+	if model_bridge.ContainsAnyPrimedME(expr) {
 		return false, fmt.Errorf("guard %s: guards must not contain primed variables", guard.Name)
 	}
 

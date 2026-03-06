@@ -1,18 +1,18 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // evalTupleIndex evaluates tuple[index].
 func evalTupleIndex(node *ast.ExpressionTupleIndex, bindings *Bindings) *EvalResult {
-	tupleResult := Eval(node.Tuple, bindings)
+	tupleResult := EvalAST(node.Tuple, bindings)
 	if tupleResult.IsError() {
 		return tupleResult
 	}
 
-	indexResult := Eval(node.Index, bindings)
+	indexResult := EvalAST(node.Index, bindings)
 	if indexResult.IsError() {
 		return indexResult
 	}

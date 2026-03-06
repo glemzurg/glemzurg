@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 )
@@ -875,7 +875,7 @@ func evalTypedAssignment(typed *typechecker.TypedNode, bindings *Bindings) *Eval
 		valueResult = evalTypedNode(typed.Children[0], bindings)
 	} else {
 		// Fallback for untyped value
-		valueResult = Eval(n.Value, bindings)
+		valueResult = EvalAST(n.Value, bindings)
 	}
 
 	if valueResult.IsError() {

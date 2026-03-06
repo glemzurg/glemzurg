@@ -31,7 +31,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	err = WriteModel(input, tempDir)
 	suite.Require().Nil(err, "writing model should succeed")
 
-	// Read from the temporary folder and convert back to req_model.Model.
+	// Read from the temporary folder and convert back to core.Model.
 	output, err := ReadModel(tempDir)
 	suite.Require().Nil(err, "reading model should succeed")
 

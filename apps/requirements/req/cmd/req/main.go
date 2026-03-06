@@ -13,9 +13,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
 // Supported input formats
@@ -138,13 +138,13 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 	sourcePath := filepath.Join(rootSourcePath, model)
 	outputPath := filepath.Join(rootOutputPath, model)
 
-	// Step 1: Read the input model into req_model.Model
-	var parsedModel *req_model.Model
+	// Step 1: Read the input model into core.Model
+	var parsedModel *core.Model
 
 	switch inputFormat {
 	case InputFormatDataYAML:
 		fmt.Println("Reading model from data/yaml format...")
-		m, err := parser.Parse(sourcePath)
+		m, err := parser_human.Parse(sourcePath)
 		if err != nil {
 			return fmt.Errorf("failed to parse data/yaml model: %w", err)
 		}
@@ -199,7 +199,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 
 	case OutputFormatDataYAML:
 		fmt.Println("Converting to data/yaml format...")
-		if err := parser.Write(*parsedModel, outputPath); err != nil {
+		if err := parser_human.Write(*parsedModel, outputPath); err != nil {
 			return fmt.Errorf("failed to write data/yaml model: %w", err)
 		}
 		fmt.Printf("Model written to: %s\n", outputPath)

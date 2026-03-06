@@ -4,23 +4,22 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
 
-// derivedAttrInfo holds a parsed DerivationPolicy expression for one attribute.
+// derivedAttrInfo holds a pre-lowered DerivationPolicy expression for one attribute.
 type derivedAttrInfo struct {
 	attrName   string
-	expression ast.Expression
+	expression me.Expression
 }
 
 // DerivedAttributeEvaluator computes derived attribute values on-demand.
-// It parses all DerivationPolicy expressions at construction and evaluates
+// It loads all DerivationPolicy expressions at construction and evaluates
 // them when an instance's derived attributes are requested.
 type DerivedAttributeEvaluator struct {
 	// byClass maps class key -> list of derived attribute info for that class.
@@ -35,11 +34,13 @@ type DerivedAttributeEvaluator struct {
 }
 
 // NewDerivedAttributeEvaluator creates a new evaluator by scanning the model
-// for attributes with DerivationPolicy. Returns an error if:
-//   - any DerivationPolicy specification fails to parse
-//   - any DerivationPolicy specification contains primed variables
+// for attributes with DerivationPolicy. The model's ExpressionSpec.Expression
+// fields must be populated (via parse functions passed to constructors).
+// Returns an error if:
+//   - any DerivationPolicy expression is not parsed (ParseOk() == false)
+//   - any DerivationPolicy expression contains primed variables
 func NewDerivedAttributeEvaluator(
-	model *req_model.Model,
+	model *core.Model,
 	simState *state.SimulationState,
 	relationCtx *evaluator.RelationContext,
 ) (*DerivedAttributeEvaluator, error) {
@@ -57,15 +58,18 @@ func NewDerivedAttributeEvaluator(
 						continue
 					}
 
-					expr, err := parser.ParseExpression(attr.DerivationPolicy.Specification)
-					if err != nil {
+					expr := attr.DerivationPolicy.Spec.Expression
+					if expr == nil {
+						if attr.DerivationPolicy.Spec.Specification == "" {
+							continue // Skip empty specs
+						}
 						return nil, fmt.Errorf(
-							"class %s attribute %s DerivationPolicy parse error: %w",
-							class.Name, attr.Name, err,
+							"class %s attribute %s DerivationPolicy: expression not lowered",
+							class.Name, attr.Name,
 						)
 					}
 
-					if model_bridge.ContainsAnyPrimed(expr) {
+					if model_bridge.ContainsAnyPrimedME(expr) {
 						return nil, fmt.Errorf(
 							"class %s attribute %s DerivationPolicy must not contain primed variables",
 							class.Name, attr.Name,

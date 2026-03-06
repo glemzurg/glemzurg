@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -13,8 +13,8 @@ import (
 // DeferredPostCondition holds a post-condition guarantee to check after all
 // primed assignments have been applied.
 type DeferredPostCondition struct {
-	// Expression is the parsed TLA+ post-condition expression.
-	Expression ast.Expression
+	// Expression is the lowered post-condition expression.
+	Expression me.Expression
 
 	// InstanceID identifies the instance this post-condition applies to.
 	InstanceID state.InstanceID
@@ -39,8 +39,8 @@ type DeferredPostCondition struct {
 // have been applied. Safety rules are boolean assertions that must reference
 // primed variables.
 type DeferredSafetyRule struct {
-	// Expression is the parsed TLA+ safety rule expression.
-	Expression ast.Expression
+	// Expression is the lowered safety rule expression.
+	Expression me.Expression
 
 	// InstanceID identifies the instance this safety rule applies to.
 	InstanceID state.InstanceID
@@ -56,6 +56,11 @@ type DeferredSafetyRule struct {
 
 	// OriginalExpression is the original TLA+ string (for error messages).
 	OriginalExpression string
+
+	// LetBindings contains let variable values computed before this safety rule
+	// in the same list. These are added to the evaluation bindings when the
+	// safety rule is evaluated after primed assignments are applied.
+	LetBindings map[string]object.Object
 }
 
 // ExecutionContext tracks the state of an action execution chain.

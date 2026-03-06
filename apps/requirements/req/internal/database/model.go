@@ -1,13 +1,13 @@
 package database
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanModel(scanner Scanner, model *req_model.Model) (err error) {
+func scanModel(scanner Scanner, model *core.Model) (err error) {
 	if err = scanner.Scan(
 		&model.Key,
 		&model.Name,
@@ -23,12 +23,12 @@ func scanModel(scanner Scanner, model *req_model.Model) (err error) {
 }
 
 // LoadModel loads a model from the database
-func LoadModel(dbOrTx DbOrTx, modelKey string) (model req_model.Model, err error) {
+func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	// Query the database.
@@ -50,14 +50,14 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model req_model.Model, err error
 			model_key = $1`,
 		modelKey)
 	if err != nil {
-		return req_model.Model{}, errors.WithStack(err)
+		return core.Model{}, errors.WithStack(err)
 	}
 
 	return model, nil
 }
 
 // AddModel adds a model to the database.
-func AddModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
+func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err := preenKey(model.Key)
@@ -90,7 +90,7 @@ func AddModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
 }
 
 // UpdateModel updates a model in the database.
-func UpdateModel(dbOrTx DbOrTx, model req_model.Model) (err error) {
+func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 
 	// Keys should be preened so they collide correctly.
 	modelKey, err := preenKey(model.Key)
@@ -141,13 +141,13 @@ func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 }
 
 // QueryModels loads all models from the database
-func QueryModels(dbOrTx DbOrTx) (models []req_model.Model, err error) {
+func QueryModels(dbOrTx DbOrTx) (models []core.Model, err error) {
 
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var model req_model.Model
+			var model core.Model
 			if err = scanModel(scanner, &model); err != nil {
 				return errors.WithStack(err)
 			}

@@ -5,14 +5,33 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
 )
+
+// productSpec parses a TLA+ expression in the context of a Product class
+// with attributes: price, double_price, derived_field.
+func productSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/d/subdomain/s/class/product")
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		AttributeNames: map[string]identity.Key{
+			"price":         helper.Must(identity.NewAttributeKey(classKey, "price")),
+			"double_price":  helper.Must(identity.NewAttributeKey(classKey, "double_price")),
+			"derived_field": helper.Must(identity.NewAttributeKey(classKey, "derived_field")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
 
 type DerivedEvaluatorSuite struct {
 	suite.Suite
@@ -34,7 +53,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDoublePriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/double_price")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/10"), model_logic.LogicTypeValue, "Double the price.", "", model_logic.NotationTLAPlus, "self.price * 2"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/10"), model_logic.LogicTypeValue, "Double the price.", "", productSpec("self.price * 2"), nil))
 
 	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false, "", nil))
 	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false, "", nil))
@@ -74,12 +93,13 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 }
 
 // TestDerivedAttributeEmptySpecification verifies that NewDerivedAttributeEvaluator
-// returns an error when an attribute has a DerivationPolicy with an empty Specification.
+// silently skips an attribute with a DerivationPolicy that has an empty Specification.
+// After LowerModel, empty specs remain with nil Expression and are skipped.
 func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeValue, "A derived field.", "", model_logic.NotationTLAPlus, ""))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeValue, "A derived field.", "", helper.Must(model_spec.NewExpressionSpec("tla_plus", "", nil)), nil))
 
 	attrDerived := helper.Must(model_class.NewAttribute(attrKey, "derivedField", "", "", &derivationLogic, false, "", nil))
 
@@ -99,9 +119,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.Error(err)
-	s.Nil(dae)
-	s.Contains(err.Error(), "DerivationPolicy parse error")
+	s.NoError(err)
+	s.NotNil(dae)
+	// Empty specification is silently skipped — no derived attributes.
+	s.False(dae.HasDerivedAttributes())
 }
 
 // TestDerivedAttributeRejectsPrimedVars verifies that NewDerivedAttributeEvaluator
@@ -111,7 +132,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDerivedKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/12"), model_logic.LogicTypeValue, "A derived field.", "", model_logic.NotationTLAPlus, "self.price'"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/12"), model_logic.LogicTypeValue, "A derived field.", "", productSpec("self.price'"), nil))
 
 	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false, "", nil))
 	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "derivedField", "", "", &derivationLogic, false, "", nil))
@@ -146,7 +167,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	attrPriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/price")
 	attrDoublePriceKey := mustKey("domain/d/subdomain/s/class/product/attribute/double_price")
 
-	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/13"), model_logic.LogicTypeValue, "Double the price.", "", model_logic.NotationTLAPlus, "self.price * 2"))
+	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/13"), model_logic.LogicTypeValue, "Double the price.", "", productSpec("self.price * 2"), nil))
 
 	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false, "", nil))
 	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false, "", nil))

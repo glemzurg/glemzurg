@@ -3,16 +3,16 @@ package generate
 import (
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 
 	"github.com/pkg/errors"
 )
 
-func generateSubdomainMdContents(reqs *req_flat.Requirements, model req_model.Model, domain model_domain.Domain, subdomain model_domain.Subdomain) (contents string, err error) {
+func generateSubdomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, subdomain model_domain.Subdomain) (contents string, err error) {
 
 	// Gather classes for sorting.
 	var allClasses []model_class.Class
@@ -34,7 +34,7 @@ func generateSubdomainMdContents(reqs *req_flat.Requirements, model req_model.Mo
 
 	contents, err = generateFromTemplate(_subdomainMdTemplate, struct {
 		Reqs      *req_flat.Requirements
-		Model     req_model.Model
+		Model     core.Model
 		Domain    model_domain.Domain
 		Subdomain model_domain.Subdomain
 		Classes   []model_class.Class

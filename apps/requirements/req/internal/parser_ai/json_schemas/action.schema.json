@@ -36,19 +36,28 @@
     },
     "requires": {
       "type": "array",
-      "description": "Preconditions that must be true before the action can execute. Each item is a logic specification with a description and optional formal notation.",
+      "description": "Preconditions that must be true before the action can execute. Each item is a logic specification with a description and optional formal notation. Specifications must not contain primed values (primes are only allowed in safety_rules). Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator.",
-            "enum": ["assessment"]
+            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "enum": ["assessment", "let"]
           },
           "description": {
             "type": "string",
             "description": "A precondition statement. Describe what must be true for this action to execute correctly.",
             "minLength": 1
+          },
+          "target": {
+            "type": "string",
+            "description": "Required for 'let' type: the local variable name. Must not start with '_'. Must be omitted or empty for 'assessment' type.",
+            "minLength": 1
+          },
+          "target_type_spec": {
+            "type": "string",
+            "description": "Optional TLA+ type declaration for the target (e.g., 'Int', 'STRING'). Only meaningful for 'let' type."
           },
           "notation": {
             "type": "string",
@@ -57,7 +66,7 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation."
+            "description": "Optional formal specification in the given notation. Must not contain primed values (primes are only allowed in safety_rules)."
           }
         },
         "required": ["description"],
@@ -66,14 +75,14 @@
     },
     "guarantees": {
       "type": "array",
-      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey). The 'specification' is the right-hand-side value expression only (no primed LHS). Each attribute can only be set once per action.",
+      "description": "Postconditions that will be true after the action executes successfully. Each guarantee sets one attribute via its 'target' field (the lowercase attribute SubKey). The target separates the left-hand side so the specification contains only the right-hand-side value expression with no primed values (e.g., for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'). Each attribute can only be set once per action. Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator.",
-            "enum": ["state_change"]
+            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "enum": ["state_change", "let"]
           },
           "description": {
             "type": "string",
@@ -82,8 +91,12 @@
           },
           "target": {
             "type": "string",
-            "description": "Required. The lowercase attribute SubKey being set by this guarantee (e.g., 'shipping', 'status'). Must match an attribute on the action's owning class. Each target can only appear once per action.",
+            "description": "Required. For 'state_change': the lowercase attribute SubKey being set (e.g., 'shipping', 'status'). For 'let': the local variable name. Must not start with '_'.",
             "minLength": 1
+          },
+          "target_type_spec": {
+            "type": "string",
+            "description": "Optional TLA+ type declaration for the target (e.g., 'Int', 'STRING'). Only meaningful for 'let' type."
           },
           "notation": {
             "type": "string",
@@ -92,7 +105,7 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. This represents only the right-hand-side value expression (not the primed assignment)."
+            "description": "Optional formal specification in the given notation. This must be only the right-hand-side value expression with no primed values. The left-hand side is captured by the 'target' field. For example, for 'self.log' = Append(self.log, amount)', use target='log' and specification='Append(self.log, amount)'."
           }
         },
         "required": ["description", "target"],
@@ -101,19 +114,28 @@
     },
     "safety_rules": {
       "type": "array",
-      "description": "Safety rules that must always hold during and after the action. Each item is a logic specification.",
+      "description": "Safety rules that must always hold during and after the action. Each item is a boolean constraint that MAY reference primed values (e.g., 'inventory' >= 0') to express constraints over both prior and new state. This is the only logic context where primed values are allowed in specifications. Items may also be 'let' bindings that define local variables for use by subsequent items.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "description": "Optional logic kind discriminator.",
-            "enum": ["safety_rule"]
+            "description": "Optional logic kind discriminator. Use 'let' for local variable definitions.",
+            "enum": ["safety_rule", "let"]
           },
           "description": {
             "type": "string",
             "description": "A safety rule statement.",
             "minLength": 1
+          },
+          "target": {
+            "type": "string",
+            "description": "Required for 'let' type: the local variable name. Must not start with '_'. Must be omitted or empty for 'safety_rule' type.",
+            "minLength": 1
+          },
+          "target_type_spec": {
+            "type": "string",
+            "description": "Optional TLA+ type declaration for the target (e.g., 'Int', 'STRING'). Only meaningful for 'let' type."
           },
           "notation": {
             "type": "string",
@@ -122,7 +144,7 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation."
+            "description": "Optional formal specification in the given notation. Safety rule specifications MAY contain primed values (e.g., 'inventory' >= 0') to express constraints over both prior and new state."
           }
         },
         "required": ["description"],

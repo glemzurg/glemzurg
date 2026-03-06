@@ -5,8 +5,9 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 )
 
@@ -459,6 +460,151 @@ func ContainsAnyPrimed(expr ast.Expression) bool {
 		return false
 	case *ast.ScopedCall:
 		return ContainsAnyPrimed(e.Parameter)
+
+	default:
+		return false
+	}
+}
+
+// ContainsAnyPrimedME recursively walks a model_expression tree to detect any NextState node.
+// This is the model_expression equivalent of ContainsAnyPrimed for AST nodes.
+func ContainsAnyPrimedME(expr me.Expression) bool {
+	if expr == nil {
+		return false
+	}
+
+	switch e := expr.(type) {
+	case *me.NextState:
+		return true
+
+	// Leaf nodes.
+	case *me.IntLiteral, *me.RationalLiteral, *me.BoolLiteral, *me.StringLiteral,
+		*me.SetConstant, *me.SelfRef, *me.AttributeRef, *me.LocalVar,
+		*me.PriorFieldValue, *me.NamedSetRef:
+		return false
+
+	// Binary operators.
+	case *me.BinaryArith:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.BinaryLogic:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.Compare:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.SetOp:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.SetCompare:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.BagOp:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.BagCompare:
+		return ContainsAnyPrimedME(e.Left) || ContainsAnyPrimedME(e.Right)
+	case *me.Membership:
+		return ContainsAnyPrimedME(e.Element) || ContainsAnyPrimedME(e.Set)
+
+	// Unary operators.
+	case *me.Negate:
+		return ContainsAnyPrimedME(e.Expr)
+	case *me.Not:
+		return ContainsAnyPrimedME(e.Expr)
+
+	// Access and indexing.
+	case *me.FieldAccess:
+		return ContainsAnyPrimedME(e.Base)
+	case *me.TupleIndex:
+		return ContainsAnyPrimedME(e.Tuple) || ContainsAnyPrimedME(e.Index)
+	case *me.StringIndex:
+		return ContainsAnyPrimedME(e.Str) || ContainsAnyPrimedME(e.Index)
+	case *me.RecordUpdate:
+		if ContainsAnyPrimedME(e.Base) {
+			return true
+		}
+		for _, alt := range e.Alterations {
+			if ContainsAnyPrimedME(alt.Value) {
+				return true
+			}
+		}
+		return false
+
+	// Concatenation.
+	case *me.StringConcat:
+		for _, op := range e.Operands {
+			if ContainsAnyPrimedME(op) {
+				return true
+			}
+		}
+		return false
+	case *me.TupleConcat:
+		for _, op := range e.Operands {
+			if ContainsAnyPrimedME(op) {
+				return true
+			}
+		}
+		return false
+
+	// Conditionals.
+	case *me.IfThenElse:
+		return ContainsAnyPrimedME(e.Condition) || ContainsAnyPrimedME(e.Then) || ContainsAnyPrimedME(e.Else)
+	case *me.Case:
+		for _, branch := range e.Branches {
+			if ContainsAnyPrimedME(branch.Condition) || ContainsAnyPrimedME(branch.Result) {
+				return true
+			}
+		}
+		return ContainsAnyPrimedME(e.Otherwise)
+
+	// Quantification and filtering.
+	case *me.Quantifier:
+		return ContainsAnyPrimedME(e.Domain) || ContainsAnyPrimedME(e.Predicate)
+	case *me.SetFilter:
+		return ContainsAnyPrimedME(e.Set) || ContainsAnyPrimedME(e.Predicate)
+	case *me.SetRange:
+		return ContainsAnyPrimedME(e.Start) || ContainsAnyPrimedME(e.End)
+
+	// Literals with expression children.
+	case *me.SetLiteral:
+		for _, elem := range e.Elements {
+			if ContainsAnyPrimedME(elem) {
+				return true
+			}
+		}
+		return false
+	case *me.TupleLiteral:
+		for _, elem := range e.Elements {
+			if ContainsAnyPrimedME(elem) {
+				return true
+			}
+		}
+		return false
+	case *me.RecordLiteral:
+		for _, field := range e.Fields {
+			if ContainsAnyPrimedME(field.Value) {
+				return true
+			}
+		}
+		return false
+
+	// Calls.
+	case *me.BuiltinCall:
+		for _, arg := range e.Args {
+			if ContainsAnyPrimedME(arg) {
+				return true
+			}
+		}
+		return false
+	case *me.GlobalCall:
+		for _, arg := range e.Args {
+			if ContainsAnyPrimedME(arg) {
+				return true
+			}
+		}
+		return false
+	case *me.ActionCall:
+		for _, arg := range e.Args {
+			if ContainsAnyPrimedME(arg) {
+				return true
+			}
+		}
+		return false
 
 	default:
 		return false

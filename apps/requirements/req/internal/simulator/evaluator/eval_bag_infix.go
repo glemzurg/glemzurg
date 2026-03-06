@@ -1,18 +1,18 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // evalBagInfix evaluates a bag infix expression (⊕, ⊖).
 func evalBagInfix(node *ast.BagInfix, bindings *Bindings) *EvalResult {
-	leftResult := Eval(node.Left, bindings)
+	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult
 	}
 
-	rightResult := Eval(node.Right, bindings)
+	rightResult := EvalAST(node.Right, bindings)
 	if rightResult.IsError() {
 		return rightResult
 	}

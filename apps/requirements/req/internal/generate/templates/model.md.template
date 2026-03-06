@@ -40,7 +40,10 @@ The domains of this model.
 {{ if ne .Model.Invariants nil -}}
 {{ range .Model.Invariants -}}
 - {{ .Description }}
-{{ if ne .Specification "" }}    - {{ .Specification }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
+{{ end -}}
+{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
 {{ end -}}
 {{ end }}
 {{- else -}}
@@ -52,10 +55,23 @@ The domains of this model.
 {{ if ne .Model.GlobalFunctions nil -}}
 {{ range .Model.GlobalFunctions -}}
 - **{{ .Name }}**{{ if ne .Parameters nil }}({{ range $i, $p := .Parameters }}{{ if $i }}, {{ end }}{{ $p }}{{ end }}){{ end }} — {{ .Logic.Description }}
-{{ if ne .Logic.Specification "" }}    - {{ .Logic.Specification }}
+{{ if ne .Logic.Spec.Specification "" }}    - {{ .Logic.Spec.Specification }}
 {{ end -}}
 {{ end }}
 {{- else -}}
 *No global functions*
 {{- end }}
 
+## Named Sets
+
+{{ if ne .Model.NamedSets nil -}}
+{{ range .Model.NamedSets -}}
+- **{{ .Name }}** — {{ .Description }}
+{{ if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ end -}}
+{{ if ne .TypeSpec nil }}    - Type: {{ .TypeSpec.Specification }}
+{{ end -}}
+{{ end }}
+{{- else -}}
+*No named sets*
+{{- end }}

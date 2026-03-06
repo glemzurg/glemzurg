@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -14,7 +14,7 @@ func evalStringInfix(node *ast.StringInfixExpression, bindings *Bindings) *EvalR
 	// Evaluate and concatenate all operands
 	var result string
 	for i, operand := range node.Operands {
-		opResult := Eval(operand, bindings)
+		opResult := EvalAST(operand, bindings)
 		if opResult.IsError() {
 			return opResult
 		}

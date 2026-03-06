@@ -1,9 +1,9 @@
 package surface
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
 // ScopeInvariants filters model invariants to those relevant to the given
@@ -30,7 +30,7 @@ func ScopeInvariantsWithAllClasses(
 	allClassNames map[string]bool,
 ) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	for _, inv := range invariants {
-		expr, err := parser.ParseExpression(inv.Specification)
+		expr, err := parser.ParseExpression(inv.Spec.Specification)
 		if err != nil {
 			// If we can't parse it, include it — better safe than sorry.
 			included = append(included, inv)
@@ -210,7 +210,7 @@ func walkIdentifiers(expr ast.Expression, result map[string]bool) {
 
 	// Record altered (EXCEPT).
 	case *ast.RecordAltered:
-		walkIdentifiers(e.Identifier, result)
+		walkIdentifiers(e.Base, result)
 		for _, alt := range e.Alterations {
 			walkIdentifiers(alt.Expression, result)
 		}

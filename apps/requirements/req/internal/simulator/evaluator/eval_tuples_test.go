@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +32,7 @@ func (s *TuplesSuite) TestTupleIndex_First() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -53,7 +53,7 @@ func (s *TuplesSuite) TestTupleIndex_Middle() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -74,7 +74,7 @@ func (s *TuplesSuite) TestTupleIndex_OutOfBounds() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "out of bounds")
@@ -98,7 +98,7 @@ func (s *TuplesSuite) TestSeqHead_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -117,7 +117,7 @@ func (s *TuplesSuite) TestSeqHead_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.True(result.IsError())
 	s.Contains(result.Error.Message, "empty")
@@ -141,7 +141,7 @@ func (s *TuplesSuite) TestSeqTail_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -164,7 +164,7 @@ func (s *TuplesSuite) TestSeqTail_SingleElement() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -189,7 +189,7 @@ func (s *TuplesSuite) TestSeqAppend_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -212,7 +212,7 @@ func (s *TuplesSuite) TestSeqAppend_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -238,7 +238,7 @@ func (s *TuplesSuite) TestSeqLen_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -257,7 +257,7 @@ func (s *TuplesSuite) TestSeqLen_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -287,7 +287,7 @@ func (s *TuplesSuite) TestTupleConcat_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -312,7 +312,7 @@ func (s *TuplesSuite) TestTupleConcat_Empty() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -337,7 +337,7 @@ func (s *TuplesSuite) TestTupleConcat_ThreeOperands() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
 	s.Equal(3, tuple.Len())
@@ -368,7 +368,7 @@ func (s *TuplesSuite) TestTupleConcat_WithVariables() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
 	s.Equal(3, tuple.Len())
@@ -387,7 +387,7 @@ func (s *TuplesSuite) TestStringConcat_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
 	s.Equal("helloworld", str.Value())
@@ -405,7 +405,7 @@ func (s *TuplesSuite) TestStringConcat_ThreeStrings() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
 	s.Equal("abc", str.Value())
@@ -425,7 +425,7 @@ func (s *TuplesSuite) TestStringConcat_WithVariables() {
 		},
 	}
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
 	s.Equal("foobar", str.Value())
@@ -442,7 +442,7 @@ func (s *TuplesSuite) TestStringConcat_EmptyString() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
 	s.Equal("hello", str.Value())
@@ -466,7 +466,7 @@ func (s *TuplesSuite) TestStackPush_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -492,7 +492,7 @@ func (s *TuplesSuite) TestStackPop_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -517,7 +517,7 @@ func (s *TuplesSuite) TestQueueEnqueue_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	tuple := result.Value.(*object.Tuple)
@@ -541,7 +541,7 @@ func (s *TuplesSuite) TestQueueDequeue_Simple() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)
@@ -570,7 +570,7 @@ func (s *TuplesSuite) TestNested_HeadOfTail() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	num := result.Value.(*object.Number)

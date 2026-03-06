@@ -3,11 +3,13 @@ package engine
 import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 )
 
 // mustKey parses a key string or panics.
@@ -32,7 +34,7 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	transCloseKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_logic.NotationTLAPlus, "self.amount + 10"))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 10"), nil))
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	eventClose := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
@@ -98,11 +100,49 @@ func testItemClass() (model_class.Class, identity.Key) {
 	return class, classKey
 }
 
+// parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
+func parsedSpec(tla string) model_spec.ExpressionSpec {
+	pf := convert.NewExpressionParseFunc(nil)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
+// counterSpec parses a TLA+ expression in the context of the standard Counter class
+// with attribute: count.
+func counterSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/d/subdomain/s/class/counter")
+	ctx := &convert.LowerContext{
+		ClassKey: classKey,
+		AttributeNames: map[string]identity.Key{
+			"count": helper.Must(identity.NewAttributeKey(classKey, "count")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
+// orderSpec parses a TLA+ expression in the context of the standard Order class
+// with attributes: amount, status.
+func orderSpec(tla string) model_spec.ExpressionSpec {
+	classKey := mustKey("domain/d/subdomain/s/class/order")
+	ctx := &convert.LowerContext{
+		ClassKey:       classKey,
+		AttributeNames: map[string]identity.Key{
+			"amount": helper.Must(identity.NewAttributeKey(classKey, "amount")),
+			"status": helper.Must(identity.NewAttributeKey(classKey, "status")),
+		},
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	return spec
+}
+
 // testModel builds a minimal model with the given classes.
 func testModel(classes ...struct {
 	class model_class.Class
 	key   identity.Key
-}) *req_model.Model {
+}) *core.Model {
 	subdomainKey := mustKey("domain/d/subdomain/s")
 	domainKey := mustKey("domain/d")
 
@@ -119,7 +159,7 @@ func testModel(classes ...struct {
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(req_model.NewModel("test", "Test", "", nil, nil))
+	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -136,6 +176,12 @@ func classEntry(class model_class.Class, key identity.Key) struct {
 		class model_class.Class
 		key   identity.Key
 	}{class, key}
+}
+
+// lowerClass is kept for compatibility — returns the class as-is since expressions
+// are now parsed at construction time via parsedSpec().
+func lowerClass(class model_class.Class, _ identity.Key) model_class.Class {
+	return class
 }
 
 // testSubdomainKey returns the standard test subdomain key.

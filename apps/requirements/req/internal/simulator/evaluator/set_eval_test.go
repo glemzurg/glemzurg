@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,7 +25,7 @@ func (s *SetEvalSuite) TestSetLiteral_Empty() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -38,7 +38,7 @@ func (s *SetEvalSuite) TestSetLiteral_Integers() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -55,7 +55,7 @@ func (s *SetEvalSuite) TestSetLiteral_WithVariables() {
 	bindings.Set("y", object.NewInteger(20), NamespaceGlobal)
 	bindings.Set("z", object.NewInteger(30), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -69,7 +69,7 @@ func (s *SetEvalSuite) TestSetLiteral_Duplicates() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -86,7 +86,7 @@ func (s *SetEvalSuite) TestSetRange_Simple() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -99,7 +99,7 @@ func (s *SetEvalSuite) TestSetRange_Single() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -113,7 +113,7 @@ func (s *SetEvalSuite) TestSetRange_Empty() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -129,7 +129,7 @@ func (s *SetEvalSuite) TestSetRange_WithVariables() {
 	bindings.Set("x", object.NewInteger(3), NamespaceGlobal)
 	bindings.Set("y", object.NewInteger(7), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -146,7 +146,7 @@ func (s *SetEvalSuite) TestSetMembership_In_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -159,7 +159,7 @@ func (s *SetEvalSuite) TestSetMembership_In_False() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -172,7 +172,7 @@ func (s *SetEvalSuite) TestSetMembership_NotIn_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -185,7 +185,7 @@ func (s *SetEvalSuite) TestSetMembership_NotIn_False() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -198,7 +198,7 @@ func (s *SetEvalSuite) TestSetMembership_InRange() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -215,7 +215,7 @@ func (s *SetEvalSuite) TestSetUnion() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -228,7 +228,7 @@ func (s *SetEvalSuite) TestSetIntersection() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -241,7 +241,7 @@ func (s *SetEvalSuite) TestSetDifference() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -255,7 +255,7 @@ func (s *SetEvalSuite) TestSetOperations_Chained() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -272,7 +272,7 @@ func (s *SetEvalSuite) TestSetComparison_SubsetEq_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -286,7 +286,7 @@ func (s *SetEvalSuite) TestSetComparison_SubsetEq_Equal() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -299,7 +299,7 @@ func (s *SetEvalSuite) TestSetComparison_SubsetEq_False() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -313,7 +313,7 @@ func (s *SetEvalSuite) TestSetComparison_Subset_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -327,7 +327,7 @@ func (s *SetEvalSuite) TestSetComparison_Subset_EqualSets() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -340,7 +340,7 @@ func (s *SetEvalSuite) TestSetComparison_SupersetEq_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -353,7 +353,7 @@ func (s *SetEvalSuite) TestSetComparison_Superset_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -371,7 +371,7 @@ func (s *SetEvalSuite) TestCombined_RangeUnion() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	set, ok := result.Value.(*object.Set)
@@ -385,7 +385,7 @@ func (s *SetEvalSuite) TestCombined_MembershipInUnion() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)

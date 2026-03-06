@@ -14,6 +14,8 @@ A data type for use in a class attribute or action parameter.
 | collection_unique | boolean |  | true |  |  | If a collection, is this collection unique. |
 | collection_min | bigint |  | true |  |  | If a collection and there is a minimum number of items, the minimum. Always set if maximum set. |
 | collection_max | bigint |  | true |  |  | If a collection and there is a maximum number of items, the maximum. |
+| type_spec_notation | notation |  | true |  |  | Optional notation for a precise type specification (e.g., tla_plus). |
+| type_spec_specification | text |  | true |  |  | Optional precise type specification string (e.g., Seq(Int), SUBSET STRING). |
 
 ## Constraints
 

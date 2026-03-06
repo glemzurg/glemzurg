@@ -16,9 +16,9 @@ COMMENT ON COLUMN model.details IS 'A summary description.';
 --------------------------------------------------------------
 
 CREATE TYPE notation AS ENUM ('tla_plus');
-COMMENT ON TYPE notation IS 'The notation used for a logic specification.';
+COMMENT ON TYPE notation IS 'The notation used for a logic or type specification.';
 
-CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value');
+CREATE TYPE logic_type AS ENUM ('assessment', 'state_change', 'query', 'safety_rule', 'value', 'let');
 COMMENT ON TYPE logic_type IS 'The kind of logic specification, each has different rules for well-formedness.';
 
 CREATE TABLE logic (
@@ -30,6 +30,8 @@ CREATE TABLE logic (
   target text NOT NULL,
   notation notation NOT NULL,
   specification text DEFAULT NULL,
+  target_type_notation notation DEFAULT NULL,
+  target_type_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, logic_key),
   CONSTRAINT fk_logic_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -43,6 +45,8 @@ COMMENT ON COLUMN logic.description IS 'The casual readable form of the logic.';
 COMMENT ON COLUMN logic.target IS 'When this logic sets a value, the identifier of the value to set.';
 COMMENT ON COLUMN logic.notation IS 'The type of notation used for the specification.';
 COMMENT ON COLUMN logic.specification IS 'The unambiguous form of the logic.';
+COMMENT ON COLUMN logic.target_type_notation IS 'Optional notation for the declared type of the logic target (e.g., tla_plus).';
+COMMENT ON COLUMN logic.target_type_specification IS 'Optional type specification string for the logic target (e.g., Int, STRING).';
 
 --------------------------------------------------------------
 
@@ -74,6 +78,32 @@ COMMENT ON COLUMN global_function.model_key IS 'The model this function is part 
 COMMENT ON COLUMN global_function.logic_key IS 'The logic of the function.';
 COMMENT ON COLUMN global_function.name IS 'The name of the function, fitting for the notation of the logic.';
 COMMENT ON COLUMN global_function.parameters IS 'The parameters of the function, fitting for the notation of the logic.';
+
+--------------------------------------------------------------
+
+CREATE TABLE named_set (
+  model_key text NOT NULL,
+  set_key text NOT NULL,
+  name text NOT NULL,
+  description text NOT NULL,
+  notation notation NOT NULL,
+  specification text NOT NULL,
+  type_spec_notation notation DEFAULT NULL,
+  type_spec_specification text DEFAULT NULL,
+  PRIMARY KEY (model_key, set_key),
+  UNIQUE (model_key, name),
+  CONSTRAINT fk_named_set_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE named_set IS 'A reusable named set definition at the model level, referenced from behavioral logic via named_set_ref expressions.';
+COMMENT ON COLUMN named_set.model_key IS 'The model this named set is part of.';
+COMMENT ON COLUMN named_set.set_key IS 'The internal ID of the named set.';
+COMMENT ON COLUMN named_set.name IS 'The unique name of the named set within the model.';
+COMMENT ON COLUMN named_set.description IS 'Optional description of the named set.';
+COMMENT ON COLUMN named_set.notation IS 'The notation used for the set specification (e.g., tla_plus).';
+COMMENT ON COLUMN named_set.specification IS 'The formal specification of the set contents.';
+COMMENT ON COLUMN named_set.type_spec_notation IS 'Optional notation for a precise type specification.';
+COMMENT ON COLUMN named_set.type_spec_specification IS 'Optional precise type specification string.';
 
 --------------------------------------------------------------
 
@@ -210,6 +240,8 @@ CREATE TABLE data_type (
   collection_unique boolean DEFAULT NULL,
   collection_min bigint CHECK (collection_min > 0) DEFAULT NULL,
   collection_max bigint CHECK (collection_max > 0) DEFAULT NULL,
+  type_spec_notation notation DEFAULT NULL,
+  type_spec_specification text DEFAULT NULL,
   PRIMARY KEY (model_key, data_type_key),
   CONSTRAINT fk_data_type_model FOREIGN KEY (model_key) REFERENCES model (model_key) ON DELETE CASCADE
 );
@@ -221,6 +253,8 @@ COMMENT ON COLUMN data_type.collection_type IS 'Whether a collection or atomic v
 COMMENT ON COLUMN data_type.collection_unique IS 'If a collection, is this collection unique.';
 COMMENT ON COLUMN data_type.collection_min IS 'If a collection and there is a minimum number of items, the minimum. Always set if maximum set.';
 COMMENT ON COLUMN data_type.collection_max IS 'If a collection and there is a maximum number of items, the maximum.';
+COMMENT ON COLUMN data_type.type_spec_notation IS 'Optional notation for a precise type specification (e.g., tla_plus).';
+COMMENT ON COLUMN data_type.type_spec_specification IS 'Optional precise type specification string (e.g., Seq(Int), SUBSET STRING).';
 
 --------------------------------------------------------------
 
@@ -454,6 +488,22 @@ COMMENT ON TABLE class_invariant IS 'An invariant that is forever true objects o
 COMMENT ON COLUMN class_invariant.model_key IS 'The model this invariant is part of.';
 COMMENT ON COLUMN class_invariant.class_key IS 'The class this invariant is part of.';
 COMMENT ON COLUMN class_invariant.logic_key IS 'The logic of the invariant.';
+
+--------------------------------------------------------------
+
+CREATE TABLE attribute_invariant (
+  model_key text NOT NULL,
+  attribute_key text NOT NULL,
+  logic_key text NOT NULL,
+  PRIMARY KEY (model_key, attribute_key, logic_key),
+  CONSTRAINT fk_attr_invariant_attribute FOREIGN KEY (model_key, attribute_key) REFERENCES attribute (model_key, attribute_key) ON DELETE CASCADE,
+  CONSTRAINT fk_attr_invariant_logic FOREIGN KEY (model_key, logic_key) REFERENCES logic (model_key, logic_key) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE attribute_invariant IS 'Join table linking attributes to their invariant logic predicates.';
+COMMENT ON COLUMN attribute_invariant.model_key IS 'The model this attribute invariant belongs to.';
+COMMENT ON COLUMN attribute_invariant.attribute_key IS 'The attribute this invariant constrains.';
+COMMENT ON COLUMN attribute_invariant.logic_key IS 'The logic predicate that must hold for the attribute value.';
 
 --------------------------------------------------------------
 

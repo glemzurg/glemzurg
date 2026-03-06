@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,7 +26,7 @@ func (s *QuantifierEvalSuite) TestForAll_AllTrue() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -40,7 +40,7 @@ func (s *QuantifierEvalSuite) TestForAll_SomeFalse() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -54,7 +54,7 @@ func (s *QuantifierEvalSuite) TestForAll_EmptySet() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -68,7 +68,7 @@ func (s *QuantifierEvalSuite) TestForAll_WithRange() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -82,7 +82,7 @@ func (s *QuantifierEvalSuite) TestForAll_ASCII() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -100,7 +100,7 @@ func (s *QuantifierEvalSuite) TestExists_SomeTrue() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -114,7 +114,7 @@ func (s *QuantifierEvalSuite) TestExists_NoneTrue() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -128,7 +128,7 @@ func (s *QuantifierEvalSuite) TestExists_EmptySet() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -142,7 +142,7 @@ func (s *QuantifierEvalSuite) TestExists_WithRange() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -156,7 +156,7 @@ func (s *QuantifierEvalSuite) TestExists_ASCII() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -181,7 +181,7 @@ func (s *QuantifierEvalSuite) TestForAll_WithExternalVariable() {
 	}), NamespaceGlobal)
 	bindings.Set("threshold", object.NewInteger(4), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -202,7 +202,7 @@ func (s *QuantifierEvalSuite) TestExists_WithExternalVariable() {
 	}), NamespaceGlobal)
 	bindings.Set("target", object.NewInteger(2), NamespaceGlobal)
 
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -221,7 +221,7 @@ func (s *QuantifierEvalSuite) TestNested_ForAllExists_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -236,7 +236,7 @@ func (s *QuantifierEvalSuite) TestNested_ForAllExists_False() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -251,7 +251,7 @@ func (s *QuantifierEvalSuite) TestNested_ExistsForAll_True() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -266,7 +266,7 @@ func (s *QuantifierEvalSuite) TestNested_ExistsForAll_False() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -284,7 +284,7 @@ func (s *QuantifierEvalSuite) TestForAll_ComplexPredicate() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -298,7 +298,7 @@ func (s *QuantifierEvalSuite) TestForAll_ImpliesPredicate() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -312,7 +312,7 @@ func (s *QuantifierEvalSuite) TestExists_OrPredicate() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -330,7 +330,7 @@ func (s *QuantifierEvalSuite) TestForAll_ArithmeticPredicate() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)
@@ -344,7 +344,7 @@ func (s *QuantifierEvalSuite) TestExists_ArithmeticPredicate() {
 	s.NoError(err)
 
 	bindings := NewBindings()
-	result := Eval(expr, bindings)
+	result := EvalAST(expr, bindings)
 
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
 	b, ok := result.Value.(*object.Boolean)

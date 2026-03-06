@@ -5,9 +5,9 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -195,7 +195,7 @@ func (s *EngineSuite) TestStopOnViolation() {
 	// Add an invariant that will fail: "FALSE".
 	model := testModel(classEntry(orderClass, orderKey))
 	invariantKey := helper.Must(identity.NewInvariantKey("0"))
-	invariantLogic := helper.Must(model_logic.NewLogic(invariantKey, model_logic.LogicTypeAssessment, "Always false.", "", model_logic.NotationTLAPlus, "FALSE"))
+	invariantLogic := helper.Must(model_logic.NewLogic(invariantKey, model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil))
 	model.Invariants = []model_logic.Logic{invariantLogic}
 
 	config := SimulationConfig{

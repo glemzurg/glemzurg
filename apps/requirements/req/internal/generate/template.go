@@ -12,18 +12,24 @@ import (
 	"text/template"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_flat"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 
 	"github.com/pkg/errors"
 )
+
+// UseCaseShare pairs a share type with the related use case for template rendering.
+type UseCaseShare struct {
+	ShareType string
+	UseCase   model_use_case.UseCase
+}
 
 //go:embed templates/*
 var _templateFS embed.FS
@@ -358,6 +364,51 @@ var _funcMap = template.FuncMap{
 	"use_case_generalization_subclasses": func(reqs *req_flat.Requirements, key identity.Key) (values []model_use_case.UseCase) {
 		lookup := reqs.UseCaseGeneralizationSubclassesLookup()
 		return lookup[key.String()]
+	},
+	// use_case_includes returns the mud-level use cases that a sea-level use case includes or extends.
+	// Each result has ShareType ("include" or "extend") and the UseCase.
+	"use_case_includes": func(reqs *req_flat.Requirements, key identity.Key) (results []UseCaseShare) {
+		subdomainLookup := reqs.UseCaseSubdomainLookup()
+		subdomain, found := subdomainLookup[key.String()]
+		if !found {
+			return nil
+		}
+		mudShares, found := subdomain.UseCaseShares[key]
+		if !found {
+			return nil
+		}
+		useCaseLookup := reqs.UseCaseLookup()
+		for mudKey, share := range mudShares {
+			if uc, ok := useCaseLookup[mudKey.String()]; ok {
+				results = append(results, UseCaseShare{ShareType: share.ShareType, UseCase: uc})
+			}
+		}
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].UseCase.Key.String() < results[j].UseCase.Key.String()
+		})
+		return results
+	},
+	// use_case_extended_by returns the sea-level use cases that include or extend a mud-level use case.
+	"use_case_extended_by": func(reqs *req_flat.Requirements, key identity.Key) (results []UseCaseShare) {
+		subdomainLookup := reqs.UseCaseSubdomainLookup()
+		subdomain, found := subdomainLookup[key.String()]
+		if !found {
+			return nil
+		}
+		useCaseLookup := reqs.UseCaseLookup()
+		for seaKey, mudShares := range subdomain.UseCaseShares {
+			for mudKey, share := range mudShares {
+				if mudKey == key {
+					if uc, ok := useCaseLookup[seaKey.String()]; ok {
+						results = append(results, UseCaseShare{ShareType: share.ShareType, UseCase: uc})
+					}
+				}
+			}
+		}
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].UseCase.Key.String() < results[j].UseCase.Key.String()
+		})
+		return results
 	},
 	"class_indexes": func(attributes map[identity.Key]model_class.Attribute) (indexes [][]string) {
 		// Group attribute names by index number.

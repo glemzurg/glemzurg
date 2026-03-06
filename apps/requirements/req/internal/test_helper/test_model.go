@@ -4,15 +4,41 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_actor"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 )
+
+// newSpec creates a TLA+ ExpressionSpec via the constructor. The parse function is nil,
+// so expressions remain unparsed (ParseOk=false). This is appropriate for the test model
+// which contains domain-specific expressions that require class context to parse.
+func newSpec(specification string) model_spec.ExpressionSpec {
+	spec, err := model_spec.NewExpressionSpec("tla_plus", specification, nil)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create ExpressionSpec: %v", err))
+	}
+	return spec
+}
+
+// parsedSpec creates a TLA+ ExpressionSpec via the constructor with a parse function
+// that uses an empty LowerContext. This is suitable for expressions that can parse
+// without class context (literals, arithmetic, comparisons, conditionals).
+func parsedSpec(specification string) model_spec.ExpressionSpec {
+	pf := convert.NewExpressionParseFunc(nil)
+	spec, err := model_spec.NewExpressionSpec("tla_plus", specification, pf)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create ExpressionSpec: %v", err))
+	}
+	return spec
+}
 
 // testKeys holds all identity keys used throughout the test model.
 type testKeys struct {
@@ -71,26 +97,46 @@ type testKeys struct {
 	actionGuarantee1, actionGuarantee2, actionGuarantee3 identity.Key
 	actionSafety1, actionSafety2, actionSafety3          identity.Key
 
+	// Let keys for actions.
+	actionRequireLet  identity.Key
+	actionGuarLet     identity.Key
+	actionSafetyLet   identity.Key
+
 	// Logic keys for queries.
 	queryRequire1, queryRequire2, queryRequire3       identity.Key
 	queryGuarantee1, queryGuarantee2, queryGuarantee3 identity.Key
+
+	// Let keys for queries.
+	queryRequireLet  identity.Key
+	queryGuarLet     identity.Key
 
 	// Logic keys for guard.
 	guardLogic1, guardLogic2, guardLogic3 identity.Key
 
 	// Invariant keys (model-level).
 	invariant1, invariant2, invariant3 identity.Key
+	invariantLet                       identity.Key // Model-level let invariant.
 
 	// Class invariant keys.
 	classInv1, classInv2, classInv3 identity.Key // Order class (3 invariants).
 	classInv4, classInv5            identity.Key // Product class (2 invariants).
 	classInv6                       identity.Key // Warehouse class (1 invariant).
+	classInvLet                     identity.Key // Order class let invariant.
+
+	// Attribute invariant keys.
+	attrInv1, attrInv2, attrInv3 identity.Key // Total attribute (3 invariants).
+	attrInv4, attrInv5           identity.Key // Status attribute (2 invariants).
+	attrInv6                     identity.Key // Product name attribute (1 invariant).
+	attrInvLet                   identity.Key // Total attribute let invariant.
 
 	// Derivation key.
 	derivation1 identity.Key
 
 	// Global function keys.
 	globalFunc1, globalFunc2, globalFunc3 identity.Key
+
+	// Named set keys.
+	namedSet1, namedSet2 identity.Key
 
 	// Use case keys.
 	ucPlaceOrder, ucViewOrder, ucManageOrder, ucCancelOrder, uc5, uc6 identity.Key
@@ -123,7 +169,7 @@ type testKeys struct {
 // Create a very elaborate model that can be used for testing in various packages around the system.
 // Every single class in req_model is represented, and every kind of relationship.
 // Each parent has 3 of each kind of child, except one parent of each type has no children.
-func GetTestModel() req_model.Model {
+func GetTestModel() core.Model {
 	model, err := buildTestModel()
 	if err != nil {
 		panic("failed to build test model: " + err.Error())
@@ -134,7 +180,7 @@ func GetTestModel() req_model.Model {
 	return model
 }
 
-func GetStrictTestModel() req_model.Model {
+func GetStrictTestModel() core.Model {
 	// Add any data so that there are no incomplete parts of the model.
 	// For example the ai input package forces all classes to have attributes,
 	// but that is not needed by other parts of the system.
@@ -306,92 +352,98 @@ func GetStrictTestModel() req_model.Model {
 	return model
 }
 
-func buildTestModel() (req_model.Model, error) {
+func buildTestModel() (core.Model, error) {
 	k, err := buildKeys()
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	logic, err := buildLogic(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	globalFuncs, err := buildGlobalFunctions(k, logic)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
+	}
+
+	namedSets, err := buildNamedSets(k)
+	if err != nil {
+		return core.Model{}, err
 	}
 
 	params, err := buildParameters()
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	sm, err := buildStateMachine(k, logic, params)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	attrs, err := buildAttributes(k, logic)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	classes, err := buildClasses(k, attrs, sm, logic)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	gens, err := buildClassGeneralizations(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	assocs, err := buildAssociations(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	scenarios, err := buildScenarios(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	useCases, err := buildUseCases(k, scenarios)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	actors, actorGens, err := buildActors(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	domainAssocs, err := buildDomainAssociations(k)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	subdomains, err := buildSubdomains(k, classes, gens, useCases, assocs)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	domains, err := buildDomains(k, subdomains)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	// Assemble the model.
-	model, err := req_model.NewModel(
+	model, err := core.NewModel(
 		"test_model",
 		"Test Model",
 		"A comprehensive test model with every type represented.",
 		logic.invariants,
 		globalFuncs,
+		namedSets,
 	)
 	if err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
 	}
 
 	model.Actors = actors
@@ -401,7 +453,14 @@ func buildTestModel() (req_model.Model, error) {
 
 	// Set class associations — routes them to the appropriate level (model/domain/subdomain).
 	if err := model.SetClassAssociations(assocs.all); err != nil {
-		return req_model.Model{}, err
+		return core.Model{}, err
+	}
+
+	// Lower all expressions with full model context so Expression trees are populated.
+	// Uses the tolerant approach (via NewExpressionSpec) that matches what parser_human
+	// does — parse failures leave Expression as nil rather than returning an error.
+	if err := convert.LowerAllExpressions(&model); err != nil {
+		return core.Model{}, err
 	}
 
 	return model, nil
@@ -709,6 +768,20 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	// Action let keys.
+	k.actionRequireLet, err = identity.NewActionRequireKey(k.actionProcess, "let_req_threshold")
+	if err != nil {
+		return k, err
+	}
+	k.actionGuarLet, err = identity.NewActionGuaranteeKey(k.actionProcess, "let_guar_computed")
+	if err != nil {
+		return k, err
+	}
+	k.actionSafetyLet, err = identity.NewActionSafetyKey(k.actionProcess, "let_safety_limit")
+	if err != nil {
+		return k, err
+	}
+
 	// Query logic keys.
 	k.queryRequire1, err = identity.NewQueryRequireKey(k.queryStatus, "order_exists")
 	if err != nil {
@@ -735,21 +808,35 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	// Query let keys.
+	k.queryRequireLet, err = identity.NewQueryRequireKey(k.queryStatus, "let_req_threshold")
+	if err != nil {
+		return k, err
+	}
+	k.queryGuarLet, err = identity.NewQueryGuaranteeKey(k.queryStatus, "let_guar_computed")
+	if err != nil {
+		return k, err
+	}
+
 	// Guard logic keys (guard key IS the logic key for guards).
 	k.guardLogic1 = k.guardHasItems
 	k.guardLogic2 = k.guardIsValid
 	k.guardLogic3 = k.guardInStock
 
 	// Invariants.
-	k.invariant1, err = identity.NewInvariantKey("0")
+	k.invariantLet, err = identity.NewInvariantKey("0")
 	if err != nil {
 		return k, err
 	}
-	k.invariant2, err = identity.NewInvariantKey("1")
+	k.invariant1, err = identity.NewInvariantKey("1")
 	if err != nil {
 		return k, err
 	}
-	k.invariant3, err = identity.NewInvariantKey("2")
+	k.invariant2, err = identity.NewInvariantKey("2")
+	if err != nil {
+		return k, err
+	}
+	k.invariant3, err = identity.NewInvariantKey("3")
 	if err != nil {
 		return k, err
 	}
@@ -779,6 +866,42 @@ func buildKeys() (testKeys, error) {
 	if err != nil {
 		return k, err
 	}
+	k.classInvLet, err = identity.NewClassInvariantKey(k.classOrder, "3")
+	if err != nil {
+		return k, err
+	}
+
+	// Attribute invariants — Total (3).
+	k.attrInv1, err = identity.NewAttributeInvariantKey(k.attrTotal, "0")
+	if err != nil {
+		return k, err
+	}
+	k.attrInv2, err = identity.NewAttributeInvariantKey(k.attrTotal, "1")
+	if err != nil {
+		return k, err
+	}
+	k.attrInv3, err = identity.NewAttributeInvariantKey(k.attrTotal, "2")
+	if err != nil {
+		return k, err
+	}
+	k.attrInvLet, err = identity.NewAttributeInvariantKey(k.attrTotal, "3")
+	if err != nil {
+		return k, err
+	}
+	// Attribute invariants — Status (2).
+	k.attrInv4, err = identity.NewAttributeInvariantKey(k.attrStatus, "0")
+	if err != nil {
+		return k, err
+	}
+	k.attrInv5, err = identity.NewAttributeInvariantKey(k.attrStatus, "1")
+	if err != nil {
+		return k, err
+	}
+	// Attribute invariants — Product name (1).
+	k.attrInv6, err = identity.NewAttributeInvariantKey(k.attrProductName, "0")
+	if err != nil {
+		return k, err
+	}
 
 	// Derivation.
 	k.derivation1, err = identity.NewAttributeDerivationKey(k.attrTotal, "sum_line_items")
@@ -796,6 +919,16 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 	k.globalFunc3, err = identity.NewGlobalFunctionKey("_Count")
+	if err != nil {
+		return k, err
+	}
+
+	// Named sets.
+	k.namedSet1, err = identity.NewNamedSetKey("valid_statuses")
+	if err != nil {
+		return k, err
+	}
+	k.namedSet2, err = identity.NewNamedSetKey("order_types")
 	if err != nil {
 		return k, err
 	}
@@ -960,9 +1093,18 @@ type testLogic struct {
 	actionGuarantee1, actionGuarantee2, actionGuarantee3 model_logic.Logic
 	actionSafety1, actionSafety2, actionSafety3          model_logic.Logic
 
+	// Action let logic.
+	actionRequireLet  model_logic.Logic
+	actionGuarLet     model_logic.Logic
+	actionSafetyLet   model_logic.Logic
+
 	// Query logic.
 	queryRequire1, queryRequire2, queryRequire3       model_logic.Logic
 	queryGuarantee1, queryGuarantee2, queryGuarantee3 model_logic.Logic
+
+	// Query let logic.
+	queryRequireLet  model_logic.Logic
+	queryGuarLet     model_logic.Logic
 
 	// Model-level.
 	invariants     []model_logic.Logic
@@ -975,6 +1117,11 @@ type testLogic struct {
 	classInvariants1 []model_logic.Logic // Order (3).
 	classInvariants2 []model_logic.Logic // Product (2).
 	classInvariants3 []model_logic.Logic // Warehouse (1).
+
+	// Attribute-level invariants.
+	attrInvariants1 []model_logic.Logic // Total (3).
+	attrInvariants2 []model_logic.Logic // Status (2).
+	attrInvariants3 []model_logic.Logic // Product name (1).
 }
 
 func buildLogic(k testKeys) (testLogic, error) {
@@ -982,153 +1129,246 @@ func buildLogic(k testKeys) (testLogic, error) {
 	var err error
 
 	// Guard logic.
-	l.guard1, err = model_logic.NewLogic(k.guardLogic1, model_logic.LogicTypeAssessment, "Order has at least one line item", "", "tla_plus", "Len(order.lineItems) > 0")
+	l.guard1, err = model_logic.NewLogic(k.guardLogic1, model_logic.LogicTypeAssessment, "Order has at least one line item", "", parsedSpec("Len(order.lineItems) > 0"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.guard2, err = model_logic.NewLogic(k.guardLogic2, model_logic.LogicTypeAssessment, "Order passes validation rules", "", "tla_plus", "order.isValid = TRUE")
+	l.guard2, err = model_logic.NewLogic(k.guardLogic2, model_logic.LogicTypeAssessment, "Order passes validation rules", "", parsedSpec("order.isValid = TRUE"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.guard3, err = model_logic.NewLogic(k.guardLogic3, model_logic.LogicTypeAssessment, "All items are in stock", "", "tla_plus", "\\A item \\in order.items : item.inStock")
+	l.guard3, err = model_logic.NewLogic(k.guardLogic3, model_logic.LogicTypeAssessment, "All items are in stock", "", parsedSpec("\\A item \\in order.items : item.inStock"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Action requires (3).
-	l.actionRequire1, err = model_logic.NewLogic(k.actionRequire1, model_logic.LogicTypeAssessment, "Order must exist", "", "tla_plus", "order \\in Orders")
+	l.actionRequire1, err = model_logic.NewLogic(k.actionRequire1, model_logic.LogicTypeAssessment, "Order must exist", "", parsedSpec("order \\in Orders"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionRequire2, err = model_logic.NewLogic(k.actionRequire2, model_logic.LogicTypeAssessment, "Quantity must be positive", "", "tla_plus", "quantity > 0")
+	l.actionRequire2, err = model_logic.NewLogic(k.actionRequire2, model_logic.LogicTypeAssessment, "Quantity must be positive", "", parsedSpec("quantity > 0"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionRequire3, err = model_logic.NewLogic(k.actionRequire3, model_logic.LogicTypeAssessment, "Customer must be active", "", "tla_plus", "customer.active = TRUE")
+	l.actionRequire3, err = model_logic.NewLogic(k.actionRequire3, model_logic.LogicTypeAssessment, "Customer must be active", "", parsedSpec("customer.active = TRUE"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Action guarantees (3).
-	l.actionGuarantee1, err = model_logic.NewLogic(k.actionGuarantee1, model_logic.LogicTypeStateChange, "Order state becomes processing", "status", "tla_plus", "\"processing\"")
+	actionGuarantee1TypeSpec, err := model_spec.NewTypeSpec("tla_plus", "STRING", nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionGuarantee2, err = model_logic.NewLogic(k.actionGuarantee2, model_logic.LogicTypeStateChange, "Inventory is decremented", "total", "tla_plus", "total - quantity")
+	l.actionGuarantee1, err = model_logic.NewLogic(k.actionGuarantee1, model_logic.LogicTypeStateChange, "Order state becomes processing", "status", parsedSpec("\"processing\""), &actionGuarantee1TypeSpec)
 	if err != nil {
 		return l, err
 	}
-	l.actionGuarantee3, err = model_logic.NewLogic(k.actionGuarantee3, model_logic.LogicTypeStateChange, "Status field is updated", "order_date", "tla_plus", "Now")
+	l.actionGuarantee2, err = model_logic.NewLogic(k.actionGuarantee2, model_logic.LogicTypeStateChange, "Inventory is decremented", "total", parsedSpec("total - quantity"), nil)
+	if err != nil {
+		return l, err
+	}
+	l.actionGuarantee3, err = model_logic.NewLogic(k.actionGuarantee3, model_logic.LogicTypeStateChange, "Status field is updated", "order_date", parsedSpec("Now"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Action safety rules (3).
-	l.actionSafety1, err = model_logic.NewLogic(k.actionSafety1, model_logic.LogicTypeSafetyRule, "Cannot process already processing order", "", "tla_plus", "order.state /= \"processing\"")
+	l.actionSafety1, err = model_logic.NewLogic(k.actionSafety1, model_logic.LogicTypeSafetyRule, "Cannot process already processing order", "", parsedSpec("order.state /= \"processing\""), nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionSafety2, err = model_logic.NewLogic(k.actionSafety2, model_logic.LogicTypeSafetyRule, "Inventory cannot go negative", "", "tla_plus", "inventory' >= 0")
+	l.actionSafety2, err = model_logic.NewLogic(k.actionSafety2, model_logic.LogicTypeSafetyRule, "Inventory cannot go negative", "", parsedSpec("inventory' >= 0"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.actionSafety3, err = model_logic.NewLogic(k.actionSafety3, model_logic.LogicTypeSafetyRule, "Closed orders cannot change", "", "tla_plus", "order.state /= \"closed\"")
+	l.actionSafety3, err = model_logic.NewLogic(k.actionSafety3, model_logic.LogicTypeSafetyRule, "Closed orders cannot change", "", parsedSpec("order.state /= \"closed\""), nil)
+	if err != nil {
+		return l, err
+	}
+
+	// Action let logic.
+	actionRequireLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	if err != nil {
+		return l, err
+	}
+	l.actionRequireLet, err = model_logic.NewLogic(k.actionRequireLet, model_logic.LogicTypeLet, "Compute threshold for requires", "threshold", parsedSpec("10"), &actionRequireLetTypeSpec)
+	if err != nil {
+		return l, err
+	}
+	l.actionGuarLet, err = model_logic.NewLogic(k.actionGuarLet, model_logic.LogicTypeLet, "Compute intermediate value for guarantees", "computed", parsedSpec("total + 1"), nil)
+	if err != nil {
+		return l, err
+	}
+	l.actionSafetyLet, err = model_logic.NewLogic(k.actionSafetyLet, model_logic.LogicTypeLet, "Compute safety limit", "limit", parsedSpec("100"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Query requires (3).
-	l.queryRequire1, err = model_logic.NewLogic(k.queryRequire1, model_logic.LogicTypeAssessment, "Order must exist for query", "", "tla_plus", "order \\in Orders")
+	l.queryRequire1, err = model_logic.NewLogic(k.queryRequire1, model_logic.LogicTypeAssessment, "Order must exist for query", "", parsedSpec("order \\in Orders"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryRequire2, err = model_logic.NewLogic(k.queryRequire2, model_logic.LogicTypeAssessment, "User must be authorized", "", "tla_plus", "user.hasPermission(\"read\")")
+	l.queryRequire2, err = model_logic.NewLogic(k.queryRequire2, model_logic.LogicTypeAssessment, "User must be authorized", "", parsedSpec("user.hasPermission(\"read\")"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryRequire3, err = model_logic.NewLogic(k.queryRequire3, model_logic.LogicTypeAssessment, "Order must not be deleted", "", "tla_plus", "order.deleted = FALSE")
+	l.queryRequire3, err = model_logic.NewLogic(k.queryRequire3, model_logic.LogicTypeAssessment, "Order must not be deleted", "", parsedSpec("order.deleted = FALSE"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Query guarantees (3).
-	l.queryGuarantee1, err = model_logic.NewLogic(k.queryGuarantee1, model_logic.LogicTypeQuery, "Returns current status", "status", "tla_plus", "order.state")
+	queryGuarantee1TypeSpec, err := model_spec.NewTypeSpec("tla_plus", "STRING", nil)
 	if err != nil {
 		return l, err
 	}
-	l.queryGuarantee2, err = model_logic.NewLogic(k.queryGuarantee2, model_logic.LogicTypeQuery, "Returns last update timestamp", "timestamp", "tla_plus", "order.updatedAt")
+	l.queryGuarantee1, err = model_logic.NewLogic(k.queryGuarantee1, model_logic.LogicTypeQuery, "Returns current status", "status", parsedSpec("order.state"), &queryGuarantee1TypeSpec)
 	if err != nil {
 		return l, err
 	}
-	l.queryGuarantee3, err = model_logic.NewLogic(k.queryGuarantee3, model_logic.LogicTypeQuery, "Returns full order details", "details", "tla_plus", "order.toJSON()")
+	l.queryGuarantee2, err = model_logic.NewLogic(k.queryGuarantee2, model_logic.LogicTypeQuery, "Returns last update timestamp", "timestamp", parsedSpec("order.updatedAt"), nil)
+	if err != nil {
+		return l, err
+	}
+	l.queryGuarantee3, err = model_logic.NewLogic(k.queryGuarantee3, model_logic.LogicTypeQuery, "Returns full order details", "details", parsedSpec("order.toJSON()"), nil)
+	if err != nil {
+		return l, err
+	}
+
+	// Query let logic.
+	l.queryRequireLet, err = model_logic.NewLogic(k.queryRequireLet, model_logic.LogicTypeLet, "Compute threshold for query requires", "threshold", parsedSpec("5"), nil)
+	if err != nil {
+		return l, err
+	}
+	l.queryGuarLet, err = model_logic.NewLogic(k.queryGuarLet, model_logic.LogicTypeLet, "Compute intermediate value for query output", "computed", parsedSpec("order.total + 1"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Invariants (3).
-	inv1, err := model_logic.NewLogic(k.invariant1, model_logic.LogicTypeAssessment, "Order total must be non-negative", "", "tla_plus", "\\A o \\in Orders : o.total >= 0")
+	inv1, err := model_logic.NewLogic(k.invariant1, model_logic.LogicTypeAssessment, "Order total must be non-negative", "", parsedSpec("\\A o \\in Orders : o.total >= 0"), nil)
 	if err != nil {
 		return l, err
 	}
-	inv2, err := model_logic.NewLogic(k.invariant2, model_logic.LogicTypeAssessment, "Every order has a customer", "", "tla_plus", "\\A o \\in Orders : o.customer /= NULL")
+	inv2, err := model_logic.NewLogic(k.invariant2, model_logic.LogicTypeAssessment, "Every order has a customer", "", parsedSpec("\\A o \\in Orders : o.customer /= NULL"), nil)
 	if err != nil {
 		return l, err
 	}
-	inv3, err := model_logic.NewLogic(k.invariant3, model_logic.LogicTypeAssessment, "Order IDs are unique", "", "tla_plus", "\\A o1, o2 \\in Orders : o1 /= o2 => o1.id /= o2.id")
+	inv3, err := model_logic.NewLogic(k.invariant3, model_logic.LogicTypeAssessment, "Order IDs are unique", "", parsedSpec("\\A o1, o2 \\in Orders : o1 /= o2 => o1.id /= o2.id"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.invariants = []model_logic.Logic{inv1, inv2, inv3}
+	invLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	if err != nil {
+		return l, err
+	}
+	invLet, err := model_logic.NewLogic(k.invariantLet, model_logic.LogicTypeLet, "Compute order count for invariants", "orderCount", parsedSpec("10"), &invLetTypeSpec)
+	if err != nil {
+		return l, err
+	}
+	l.invariants = []model_logic.Logic{invLet, inv1, inv2, inv3}
 
 	// Class-level invariants — Order (3).
-	cInv1, err := model_logic.NewLogic(k.classInv1, model_logic.LogicTypeAssessment, "Order total matches line item sum", "", "tla_plus", "self.total = Sum({li.price : li \\in self.lineItems})")
+	cInv1, err := model_logic.NewLogic(k.classInv1, model_logic.LogicTypeAssessment, "Order total matches line item sum", "", newSpec("self.total = Sum({li.price : li \\in self.lineItems})"), nil)
 	if err != nil {
 		return l, err
 	}
-	cInv2, err := model_logic.NewLogic(k.classInv2, model_logic.LogicTypeAssessment, "Order must have at least one line item", "", "tla_plus", "Len(self.lineItems) > 0")
+	cInv2, err := model_logic.NewLogic(k.classInv2, model_logic.LogicTypeAssessment, "Order must have at least one line item", "", newSpec("Len(self.lineItems) > 0"), nil)
 	if err != nil {
 		return l, err
 	}
-	cInv3, err := model_logic.NewLogic(k.classInv3, model_logic.LogicTypeAssessment, "Order status is valid", "", "tla_plus", "self.status \\in {\"new\", \"processing\", \"complete\"}")
+	cInv3, err := model_logic.NewLogic(k.classInv3, model_logic.LogicTypeAssessment, "Order status is valid", "", newSpec("self.status \\in {\"new\", \"processing\", \"complete\"}"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.classInvariants1 = []model_logic.Logic{cInv1, cInv2, cInv3}
+	classInvLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	if err != nil {
+		return l, err
+	}
+	cInvLet, err := model_logic.NewLogic(k.classInvLet, model_logic.LogicTypeLet, "Compute line item total for class invariants", "lineItemTotal", parsedSpec("5"), &classInvLetTypeSpec)
+	if err != nil {
+		return l, err
+	}
+	l.classInvariants1 = []model_logic.Logic{cInvLet, cInv1, cInv2, cInv3}
 
 	// Class-level invariants — Product (2).
-	cInv4, err := model_logic.NewLogic(k.classInv4, model_logic.LogicTypeAssessment, "Product name is non-empty", "", "tla_plus", "Len(self.name) > 0")
+	cInv4, err := model_logic.NewLogic(k.classInv4, model_logic.LogicTypeAssessment, "Product name is non-empty", "", newSpec("Len(self.name) > 0"), nil)
 	if err != nil {
 		return l, err
 	}
-	cInv5, err := model_logic.NewLogic(k.classInv5, model_logic.LogicTypeAssessment, "Product price is non-negative", "", "tla_plus", "self.price >= 0")
+	cInv5, err := model_logic.NewLogic(k.classInv5, model_logic.LogicTypeAssessment, "Product price is non-negative", "", newSpec("self.price >= 0"), nil)
 	if err != nil {
 		return l, err
 	}
 	l.classInvariants2 = []model_logic.Logic{cInv4, cInv5}
 
 	// Class-level invariants — Warehouse (1).
-	cInv6, err := model_logic.NewLogic(k.classInv6, model_logic.LogicTypeAssessment, "Warehouse capacity is positive", "", "tla_plus", "self.capacity > 0")
+	cInv6, err := model_logic.NewLogic(k.classInv6, model_logic.LogicTypeAssessment, "Warehouse capacity is positive", "", newSpec("self.capacity > 0"), nil)
 	if err != nil {
 		return l, err
 	}
 	l.classInvariants3 = []model_logic.Logic{cInv6}
 
+	// Attribute-level invariants — Total (3).
+	aInv1, err := model_logic.NewLogic(k.attrInv1, model_logic.LogicTypeAssessment, "Total must be non-negative", "", newSpec("self.total >= 0"), nil)
+	if err != nil {
+		return l, err
+	}
+	aInv2, err := model_logic.NewLogic(k.attrInv2, model_logic.LogicTypeAssessment, "Total must not exceed one million", "", newSpec("self.total <= 1000000"), nil)
+	if err != nil {
+		return l, err
+	}
+	aInv3, err := model_logic.NewLogic(k.attrInv3, model_logic.LogicTypeAssessment, "Total must be a multiple of the cent", "", newSpec("self.total * 100 \\in Int"), nil)
+	if err != nil {
+		return l, err
+	}
+	attrInvLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	if err != nil {
+		return l, err
+	}
+	aInvLet, err := model_logic.NewLogic(k.attrInvLet, model_logic.LogicTypeLet, "Compute cents for attribute invariants", "cents", parsedSpec("100"), &attrInvLetTypeSpec)
+	if err != nil {
+		return l, err
+	}
+	l.attrInvariants1 = []model_logic.Logic{aInvLet, aInv1, aInv2, aInv3}
+
+	// Attribute-level invariants — Status (2).
+	aInv4, err := model_logic.NewLogic(k.attrInv4, model_logic.LogicTypeAssessment, "Status must be a known value", "", newSpec("self.status \\in {\"new\", \"processing\", \"complete\"}"), nil)
+	if err != nil {
+		return l, err
+	}
+	aInv5, err := model_logic.NewLogic(k.attrInv5, model_logic.LogicTypeAssessment, "Status must not be empty", "", newSpec("self.status /= \"\""), nil)
+	if err != nil {
+		return l, err
+	}
+	l.attrInvariants2 = []model_logic.Logic{aInv4, aInv5}
+
+	// Attribute-level invariants — Product name (1).
+	aInv6, err := model_logic.NewLogic(k.attrInv6, model_logic.LogicTypeAssessment, "Product name must not be empty", "", newSpec("Len(self.name) > 0"), nil)
+	if err != nil {
+		return l, err
+	}
+	l.attrInvariants3 = []model_logic.Logic{aInv6}
+
 	// Derivation with empty specification (tests empty spec path).
-	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", "tla_plus", "_Sum(things)")
+	l.derivation, err = model_logic.NewLogic(k.derivation1, model_logic.LogicTypeValue, "Sum of line item prices", "", parsedSpec("_Sum(things)"), nil)
 	if err != nil {
 		return l, err
 	}
 
 	// Global function logic.
-	l.globalFunc1Log, err = model_logic.NewLogic(k.globalFunc1, model_logic.LogicTypeValue, "Returns maximum of two values", "", "tla_plus", "IF x > y THEN x ELSE y")
+	l.globalFunc1Log, err = model_logic.NewLogic(k.globalFunc1, model_logic.LogicTypeValue, "Returns maximum of two values", "", parsedSpec("IF x > y THEN x ELSE y"), nil)
 	if err != nil {
 		return l, err
 	}
-	l.globalFunc2Log, err = model_logic.NewLogic(k.globalFunc2, model_logic.LogicTypeValue, "Returns the input unchanged", "", "tla_plus", "")
+	l.globalFunc2Log, err = model_logic.NewLogic(k.globalFunc2, model_logic.LogicTypeValue, "Returns the input unchanged", "", newSpec(""), nil)
 	if err != nil {
 		return l, err
 	}
-	l.globalFunc3Log, err = model_logic.NewLogic(k.globalFunc3, model_logic.LogicTypeValue, "Counts elements in a set", "", "tla_plus", "Cardinality(s)")
+	l.globalFunc3Log, err = model_logic.NewLogic(k.globalFunc3, model_logic.LogicTypeValue, "Counts elements in a set", "", parsedSpec("Cardinality(s)"), nil)
 	if err != nil {
 		return l, err
 	}
@@ -1161,6 +1401,33 @@ func buildGlobalFunctions(k testKeys, l testLogic) (map[identity.Key]model_logic
 		k.globalFunc1: gf1,
 		k.globalFunc2: gf2,
 		k.globalFunc3: gf3,
+	}, nil
+}
+
+// =========================================================================
+// Named sets
+// =========================================================================
+
+func buildNamedSets(k testKeys) (map[identity.Key]model_named_set.NamedSet, error) {
+	// Named set with a spec and type spec.
+	typeSpec1, err := model_spec.NewTypeSpec("tla_plus", "SUBSET STRING", nil)
+	if err != nil {
+		return nil, err
+	}
+	ns1, err := model_named_set.NewNamedSet(k.namedSet1, "_Valid_Statuses", "The set of valid order statuses.", parsedSpec("{\"pending\", \"active\", \"closed\"}"), &typeSpec1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Named set without a type spec.
+	ns2, err := model_named_set.NewNamedSet(k.namedSet2, "_Order_Types", "The set of order types.", parsedSpec("{\"standard\", \"express\"}"), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[identity.Key]model_named_set.NamedSet{
+		k.namedSet1: ns1,
+		k.namedSet2: ns2,
 	}, nil
 }
 
@@ -1331,12 +1598,12 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 
 	// --- Actions ---
 
-	// actionProcess: rich (3 requires, 3 guarantees, 3 safety, 3 params).
+	// actionProcess: rich (1 let + 3 requires, 1 let + 3 guarantees, 1 let + 3 safety, 3 params).
 	actionProcess, err := model_state.NewAction(
 		k.actionProcess, "Process Order", "Processes the order for fulfillment.",
-		[]model_logic.Logic{l.actionRequire1, l.actionRequire2, l.actionRequire3},
-		[]model_logic.Logic{l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
-		[]model_logic.Logic{l.actionSafety1, l.actionSafety2, l.actionSafety3},
+		[]model_logic.Logic{l.actionRequireLet, l.actionRequire1, l.actionRequire2, l.actionRequire3},
+		[]model_logic.Logic{l.actionGuarLet, l.actionGuarantee1, l.actionGuarantee2, l.actionGuarantee3},
+		[]model_logic.Logic{l.actionSafetyLet, l.actionSafety1, l.actionSafety2, l.actionSafety3},
 		[]model_state.Parameter{p.quantity, p.priority, p.tags},
 	)
 	if err != nil {
@@ -1368,11 +1635,11 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 
 	// --- Queries ---
 
-	// queryStatus: rich (3 requires, 3 guarantees, 3 params).
+	// queryStatus: rich (1 let + 3 requires, 1 let + 3 guarantees, 3 params).
 	queryStatus, err := model_state.NewQuery(
 		k.queryStatus, "Get Status", "Returns the current status of the order.",
-		[]model_logic.Logic{l.queryRequire1, l.queryRequire2, l.queryRequire3},
-		[]model_logic.Logic{l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
+		[]model_logic.Logic{l.queryRequireLet, l.queryRequire1, l.queryRequire2, l.queryRequire3},
+		[]model_logic.Logic{l.queryGuarLet, l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
 		[]model_state.Parameter{p.productId, p.items, p.format},
 	)
 	if err != nil {
@@ -1497,6 +1764,11 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	if err != nil {
 		return a, err
 	}
+
+	// Set attribute invariants.
+	a.total.SetInvariants(l.attrInvariants1)
+	a.status.SetInvariants(l.attrInvariants2)
+	a.productName.SetInvariants(l.attrInvariants3)
 
 	return a, nil
 }

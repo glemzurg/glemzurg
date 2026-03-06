@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,7 +28,7 @@ func (s *LogicEqualitySuite) TestNumberEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -42,7 +42,7 @@ func (s *LogicEqualitySuite) TestNumberEqual_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -56,7 +56,7 @@ func (s *LogicEqualitySuite) TestNumberNotEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -70,7 +70,7 @@ func (s *LogicEqualitySuite) TestNumberNotEqual_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -85,7 +85,7 @@ func (s *LogicEqualitySuite) TestNumberEqual_DifferentKindsSameValue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -103,7 +103,7 @@ func (s *LogicEqualitySuite) TestStringEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -117,7 +117,7 @@ func (s *LogicEqualitySuite) TestStringEqual_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -131,7 +131,7 @@ func (s *LogicEqualitySuite) TestStringNotEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -149,7 +149,7 @@ func (s *LogicEqualitySuite) TestBooleanEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -163,7 +163,7 @@ func (s *LogicEqualitySuite) TestBooleanEqual_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -177,7 +177,7 @@ func (s *LogicEqualitySuite) TestBooleanNotEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -196,7 +196,7 @@ func (s *LogicEqualitySuite) TestSetEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -211,7 +211,7 @@ func (s *LogicEqualitySuite) TestSetEqual_DifferentOrder() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -226,7 +226,7 @@ func (s *LogicEqualitySuite) TestSetEqual_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -241,7 +241,7 @@ func (s *LogicEqualitySuite) TestSetNotEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -268,7 +268,7 @@ func (s *LogicEqualitySuite) TestTupleEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -289,7 +289,7 @@ func (s *LogicEqualitySuite) TestTupleEqual_DifferentOrder() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -311,7 +311,7 @@ func (s *LogicEqualitySuite) TestTupleEqual_DifferentLength() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -340,7 +340,7 @@ func (s *LogicEqualitySuite) TestRecordEqual_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -365,7 +365,7 @@ func (s *LogicEqualitySuite) TestRecordEqual_DifferentFieldOrder() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -388,7 +388,7 @@ func (s *LogicEqualitySuite) TestRecordEqual_DifferentValue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -407,7 +407,7 @@ func (s *LogicEqualitySuite) TestCrossTypeEqual_NumberVsString() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -422,7 +422,7 @@ func (s *LogicEqualitySuite) TestCrossTypeEqual_BooleanVsNumber() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -437,7 +437,7 @@ func (s *LogicEqualitySuite) TestCrossTypeNotEqual_NumberVsBoolean() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -456,7 +456,7 @@ func (s *LogicEqualitySuite) TestNotEqual_SlashEquals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -471,7 +471,7 @@ func (s *LogicEqualitySuite) TestNotEqual_Hash() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())

@@ -1,7 +1,7 @@
 package evaluator
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -21,7 +21,7 @@ func evalLogicBoundQuantifier(node *ast.LogicBoundQuantifier, bindings *Bindings
 	varName := varIdent.Value
 
 	// Evaluate the set
-	setResult := Eval(membership.Right, bindings)
+	setResult := EvalAST(membership.Right, bindings)
 	if setResult.IsError() {
 		return setResult
 	}
@@ -40,7 +40,7 @@ func evalLogicBoundQuantifier(node *ast.LogicBoundQuantifier, bindings *Bindings
 			childBindings := NewEnclosedBindings(bindings)
 			childBindings.Set(varName, elem, NamespaceLocal)
 
-			predResult := Eval(node.Predicate, childBindings)
+			predResult := EvalAST(node.Predicate, childBindings)
 			if predResult.IsError() {
 				return predResult
 			}
@@ -62,7 +62,7 @@ func evalLogicBoundQuantifier(node *ast.LogicBoundQuantifier, bindings *Bindings
 			childBindings := NewEnclosedBindings(bindings)
 			childBindings.Set(varName, elem, NamespaceLocal)
 
-			predResult := Eval(node.Predicate, childBindings)
+			predResult := EvalAST(node.Predicate, childBindings)
 			if predResult.IsError() {
 				return predResult
 			}

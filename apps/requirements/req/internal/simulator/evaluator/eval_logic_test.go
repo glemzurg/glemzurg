@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -26,7 +26,7 @@ func (s *LogicSuite) TestAnd_TrueTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -41,7 +41,7 @@ func (s *LogicSuite) TestAnd_TrueFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -56,7 +56,7 @@ func (s *LogicSuite) TestAnd_FalseTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -71,7 +71,7 @@ func (s *LogicSuite) TestAnd_FalseFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -88,7 +88,7 @@ func (s *LogicSuite) TestOr_TrueTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -103,7 +103,7 @@ func (s *LogicSuite) TestOr_TrueFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -118,7 +118,7 @@ func (s *LogicSuite) TestOr_FalseFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -134,7 +134,7 @@ func (s *LogicSuite) TestNot_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -148,7 +148,7 @@ func (s *LogicSuite) TestNot_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -166,7 +166,7 @@ func (s *LogicSuite) TestImplication_TrueTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -182,7 +182,7 @@ func (s *LogicSuite) TestImplication_TrueFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -198,7 +198,7 @@ func (s *LogicSuite) TestImplication_FalseTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -214,7 +214,7 @@ func (s *LogicSuite) TestImplication_FalseFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -232,7 +232,7 @@ func (s *LogicSuite) TestEquivalence_TrueTrue() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -248,7 +248,7 @@ func (s *LogicSuite) TestEquivalence_TrueFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -264,7 +264,7 @@ func (s *LogicSuite) TestEquivalence_FalseFalse() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -282,7 +282,7 @@ func (s *LogicSuite) TestComparison_LessThan() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -298,7 +298,7 @@ func (s *LogicSuite) TestComparison_LessThan_False() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -314,7 +314,7 @@ func (s *LogicSuite) TestComparison_GreaterThan() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -330,7 +330,7 @@ func (s *LogicSuite) TestComparison_LessThanOrEqual() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -346,7 +346,7 @@ func (s *LogicSuite) TestComparison_GreaterThanOrEqual() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -362,7 +362,7 @@ func (s *LogicSuite) TestComparison_Real() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -385,7 +385,7 @@ func (s *LogicSuite) TestNested_AndOr() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(outer, bindings)
+	result := EvalAST(outer, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -405,7 +405,7 @@ func (s *LogicSuite) TestNested_NotAnd() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(outer, bindings)
+	result := EvalAST(outer, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)
@@ -433,7 +433,7 @@ func (s *LogicSuite) TestComparison_InLogic() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	b := result.Value.(*object.Boolean)

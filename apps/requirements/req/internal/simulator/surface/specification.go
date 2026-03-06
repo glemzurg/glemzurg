@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 )
 
 // SurfaceSpecification defines the scope of a simulation run.
@@ -37,7 +37,7 @@ func (s *SurfaceSpecification) IsEmpty() bool {
 }
 
 // Validate checks that all keys in the specification exist in the model.
-func (s *SurfaceSpecification) Validate(model *req_model.Model) error {
+func (s *SurfaceSpecification) Validate(model *core.Model) error {
 	// Build lookup sets from the model.
 	domainKeys := make(map[identity.Key]bool)
 	subdomainKeys := make(map[identity.Key]bool)

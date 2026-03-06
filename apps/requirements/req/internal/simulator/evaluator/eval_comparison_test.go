@@ -3,7 +3,7 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/ast"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,7 +28,7 @@ func (s *ComparisonSuite) TestLessThan_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -42,7 +42,7 @@ func (s *ComparisonSuite) TestLessThan_False_Greater() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -56,7 +56,7 @@ func (s *ComparisonSuite) TestLessThan_False_Equal() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -71,7 +71,7 @@ func (s *ComparisonSuite) TestLessThan_NegativeNumbers() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -86,7 +86,7 @@ func (s *ComparisonSuite) TestLessThan_Zero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -101,7 +101,7 @@ func (s *ComparisonSuite) TestLessThan_Rationals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -116,7 +116,7 @@ func (s *ComparisonSuite) TestLessThan_MixedTypes() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -134,7 +134,7 @@ func (s *ComparisonSuite) TestGreaterThan_True() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -148,7 +148,7 @@ func (s *ComparisonSuite) TestGreaterThan_False_Less() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -162,7 +162,7 @@ func (s *ComparisonSuite) TestGreaterThan_False_Equal() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -177,7 +177,7 @@ func (s *ComparisonSuite) TestGreaterThan_NegativeNumbers() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -192,7 +192,7 @@ func (s *ComparisonSuite) TestGreaterThan_Zero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -207,7 +207,7 @@ func (s *ComparisonSuite) TestGreaterThan_Rationals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -225,7 +225,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Less() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -239,7 +239,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Equal() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -253,7 +253,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Greater() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -268,7 +268,7 @@ func (s *ComparisonSuite) TestLessOrEqual_NegativeNumbers() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -283,7 +283,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Rationals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -298,7 +298,7 @@ func (s *ComparisonSuite) TestLessOrEqual_RationalLessThanInteger() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -316,7 +316,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Greater() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -330,7 +330,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Equal() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -344,7 +344,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Less() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.False(result.Value.(*object.Boolean).Value())
@@ -359,7 +359,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Zero() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -374,7 +374,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Rationals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -389,7 +389,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_IntegerEqualToRational() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -412,7 +412,7 @@ func (s *ComparisonSuite) TestComparison_WithArithmetic() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -435,7 +435,7 @@ func (s *ComparisonSuite) TestComparison_BothSidesArithmetic() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -454,7 +454,7 @@ func (s *ComparisonSuite) TestComparison_WithPower() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -481,7 +481,7 @@ func (s *ComparisonSuite) TestComparison_InAndExpression() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -504,7 +504,7 @@ func (s *ComparisonSuite) TestComparison_InOrExpression() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -527,7 +527,7 @@ func (s *ComparisonSuite) TestComparison_InImplication() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -545,7 +545,7 @@ func (s *ComparisonSuite) TestComparison_NegatedComparison() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -564,7 +564,7 @@ func (s *ComparisonSuite) TestComparison_LargeNumbers() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
@@ -579,7 +579,7 @@ func (s *ComparisonSuite) TestComparison_VerySmallRationals() {
 	}
 	bindings := NewBindings()
 
-	result := Eval(node, bindings)
+	result := EvalAST(node, bindings)
 
 	s.False(result.IsError())
 	s.True(result.Value.(*object.Boolean).Value())
