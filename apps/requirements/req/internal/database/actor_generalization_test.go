@@ -29,7 +29,6 @@ type ActorGeneralizationSuite struct {
 }
 
 func (suite *ActorGeneralizationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -42,13 +41,12 @@ func (suite *ActorGeneralizationSuite) SetupTest() {
 }
 
 func (suite *ActorGeneralizationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), generalization)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO actor_generalization
 			(
 				model_key,
@@ -85,7 +83,6 @@ func (suite *ActorGeneralizationSuite) TestLoad() {
 }
 
 func (suite *ActorGeneralizationSuite) TestAdd() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -109,7 +106,6 @@ func (suite *ActorGeneralizationSuite) TestAdd() {
 }
 
 func (suite *ActorGeneralizationSuite) TestAddNulls() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -133,7 +129,6 @@ func (suite *ActorGeneralizationSuite) TestAddNulls() {
 }
 
 func (suite *ActorGeneralizationSuite) TestUpdate() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -167,7 +162,6 @@ func (suite *ActorGeneralizationSuite) TestUpdate() {
 }
 
 func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -201,7 +195,6 @@ func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
 }
 
 func (suite *ActorGeneralizationSuite) TestRemove() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -221,7 +214,6 @@ func (suite *ActorGeneralizationSuite) TestRemove() {
 }
 
 func (suite *ActorGeneralizationSuite) TestQuery() {
-
 	err := AddActorGeneralizations(suite.db, suite.model.Key, []model_actor.Generalization{
 		{
 			Key:        suite.generalizationKeyB,
@@ -269,7 +261,6 @@ func (suite *ActorGeneralizationSuite) TestQuery() {
 //==================================================
 
 func t_AddActorGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_actor.Generalization) {
-
 	err := AddActorGeneralization(dbOrTx, modelKey, model_actor.Generalization{
 		Key:        generalizationKey,
 		Name:       generalizationKey.String(),

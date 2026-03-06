@@ -37,7 +37,6 @@ type AttributeInvariantSuite struct {
 }
 
 func (suite *AttributeInvariantSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -61,13 +60,12 @@ func (suite *AttributeInvariantSuite) SetupTest() {
 }
 
 func (suite *AttributeInvariantSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no attribute_invariant join row yet.
 	_, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the attribute_invariant join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO attribute_invariant
 			(model_key, attribute_key, logic_key)
 		VALUES
@@ -85,7 +83,6 @@ func (suite *AttributeInvariantSuite) TestLoad() {
 }
 
 func (suite *AttributeInvariantSuite) TestAdd() {
-
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -95,7 +92,6 @@ func (suite *AttributeInvariantSuite) TestAdd() {
 }
 
 func (suite *AttributeInvariantSuite) TestRemove() {
-
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -108,7 +104,6 @@ func (suite *AttributeInvariantSuite) TestRemove() {
 }
 
 func (suite *AttributeInvariantSuite) TestQuery() {
-
 	err := AddAttributeInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKeyB, suite.logicKey},
 	})

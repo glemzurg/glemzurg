@@ -30,7 +30,6 @@ type NamedSetSuite struct {
 }
 
 func (suite *NamedSetSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -43,13 +42,12 @@ func (suite *NamedSetSuite) SetupTest() {
 }
 
 func (suite *NamedSetSuite) TestLoad() {
-
 	// Nothing in database yet.
 	_, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the named set row with raw SQL.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO named_set
 			(model_key, set_key, name, description, notation, specification)
 		VALUES
@@ -68,7 +66,6 @@ func (suite *NamedSetSuite) TestLoad() {
 }
 
 func (suite *NamedSetSuite) TestAdd() {
-
 	err := AddNamedSet(suite.db, suite.model.Key, model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
@@ -88,7 +85,6 @@ func (suite *NamedSetSuite) TestAdd() {
 }
 
 func (suite *NamedSetSuite) TestAddWithTypeSpec() {
-
 	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
 	err := AddNamedSet(suite.db, suite.model.Key, model_named_set.NamedSet{
 		Key:         suite.nsKey,
@@ -111,7 +107,6 @@ func (suite *NamedSetSuite) TestAddWithTypeSpec() {
 }
 
 func (suite *NamedSetSuite) TestRemove() {
-
 	err := AddNamedSet(suite.db, suite.model.Key, model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
@@ -129,7 +124,6 @@ func (suite *NamedSetSuite) TestRemove() {
 }
 
 func (suite *NamedSetSuite) TestQuery() {
-
 	err := AddNamedSets(suite.db, suite.model.Key, []model_named_set.NamedSet{
 		{
 			Key:         suite.nsKeyB,

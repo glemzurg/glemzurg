@@ -37,7 +37,6 @@ func (suite *TopLevelDataTypeSuite) SetupTest() {
 }
 
 func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
-
 	// The nested child and grandchild keys are created on the insertion.
 
 	// Add to database

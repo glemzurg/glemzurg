@@ -5,7 +5,7 @@ import (
 )
 
 // StringIndex represents string indexing.
-// Pattern: string[index]
+// Pattern: string[index].
 type StringIndex struct {
 	Str   Expression `validate:"required"` // Must be String
 	Index Expression `validate:"required"` // Must be Natural

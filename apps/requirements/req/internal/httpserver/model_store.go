@@ -35,7 +35,7 @@ func (s *ModelStore) SetModel(name string, model *core.Model) error {
 	s.models[name] = model
 
 	// Generate markdown content in memory
-	mdContent, svgContent, cssContent, err := s.generateContent(name, model)
+	mdContent, svgContent, cssContent, err := s.generateContent(model)
 	if err != nil {
 		return err
 	}
@@ -99,14 +99,14 @@ func (s *ModelStore) ListModels() []string {
 }
 
 // generateContent generates markdown, SVG, and CSS content for a model.
-func (s *ModelStore) generateContent(name string, model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
+func (s *ModelStore) generateContent(model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
 	// Use the generate package to create content in memory
 	collector := &ContentCollector{
 		Markdown: make(map[string][]byte),
 		SVG:      make(map[string][]byte),
 	}
 
-	err := generate.GenerateMdToWriter(false, *model, collector)
+	err := generate.GenerateMdToWriter(*model, collector)
 	if err != nil {
 		return nil, nil, nil, err
 	}

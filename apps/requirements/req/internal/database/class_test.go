@@ -37,7 +37,6 @@ type ClassSuite struct {
 }
 
 func (suite *ClassSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -56,14 +55,13 @@ func (suite *ClassSuite) SetupTest() {
 }
 
 func (suite *ClassSuite) TestLoad() {
-
 	// Nothing in database yet.
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), subdomainKey)
 	assert.Empty(suite.T(), class)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class
 			(
 				model_key,
@@ -106,7 +104,6 @@ func (suite *ClassSuite) TestLoad() {
 }
 
 func (suite *ClassSuite) TestAdd() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -133,7 +130,6 @@ func (suite *ClassSuite) TestAdd() {
 }
 
 func (suite *ClassSuite) TestAddNulls() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -160,7 +156,6 @@ func (suite *ClassSuite) TestAddNulls() {
 }
 
 func (suite *ClassSuite) TestUpdate() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -198,7 +193,6 @@ func (suite *ClassSuite) TestUpdate() {
 }
 
 func (suite *ClassSuite) TestUpdateNulls() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -236,7 +230,6 @@ func (suite *ClassSuite) TestUpdateNulls() {
 }
 
 func (suite *ClassSuite) TestRemove() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:        suite.classKey,
 		Name:       "Name",
@@ -256,7 +249,6 @@ func (suite *ClassSuite) TestRemove() {
 }
 
 func (suite *ClassSuite) TestQuery() {
-
 	err := AddClasses(suite.db, suite.model.Key, map[identity.Key][]model_class.Class{
 		suite.subdomain.Key: {
 			{
@@ -312,7 +304,6 @@ func (suite *ClassSuite) TestQuery() {
 //==================================================
 
 func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, classKey identity.Key) (class model_class.Class) {
-
 	err := AddClass(dbOrTx, modelKey, subdomainKey, model_class.Class{
 		Key:        classKey,
 		Name:       classKey.String(),
@@ -329,7 +320,6 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey ident
 }
 
 func (suite *ClassSuite) TestVerifyTestObjects() {
-
 	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, suite.classKey)
 	assert.Equal(suite.T(), model_class.Class{
 		Key:        suite.classKey,

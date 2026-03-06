@@ -35,9 +35,8 @@ func scanDomain(scanner Scanner, domain *model_domain.Domain) (err error) {
 	return nil
 }
 
-// LoadDomain loads a domain from the database
+// LoadDomain loads a domain from the database.
 func LoadDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain model_domain.Domain, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -75,9 +74,8 @@ func AddDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err 
 
 // UpdateDomain updates a domain in the database.
 func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			domain
 		SET
@@ -104,9 +102,8 @@ func UpdateDomain(dbOrTx DbOrTx, modelKey string, domain model_domain.Domain) (e
 
 // RemoveDomain deletes a domain from the database.
 func RemoveDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				domain
 			WHERE
@@ -122,9 +119,8 @@ func RemoveDomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (err e
 	return nil
 }
 
-// QueryDomains loads all domains from the database
+// QueryDomains loads all domains from the database.
 func QueryDomains(dbOrTx DbOrTx, modelKey string) (domains []model_domain.Domain, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -173,7 +169,7 @@ func AddDomains(dbOrTx DbOrTx, modelKey string, domains []model_domain.Domain) (
 		args = append(args, modelKey, domain.Key.String(), domain.Name, domain.Details, domain.Realized, domain.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

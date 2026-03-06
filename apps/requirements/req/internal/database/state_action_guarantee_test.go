@@ -39,7 +39,6 @@ type ActionGuaranteeSuite struct {
 }
 
 func (suite *ActionGuaranteeSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +58,12 @@ func (suite *ActionGuaranteeSuite) SetupTest() {
 }
 
 func (suite *ActionGuaranteeSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no action_guarantee join row yet.
 	_, err := LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the action_guarantee join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action_guarantee
 			(model_key, action_key, logic_key)
 		VALUES
@@ -83,7 +81,6 @@ func (suite *ActionGuaranteeSuite) TestLoad() {
 }
 
 func (suite *ActionGuaranteeSuite) TestAdd() {
-
 	err := AddActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -93,7 +90,6 @@ func (suite *ActionGuaranteeSuite) TestAdd() {
 }
 
 func (suite *ActionGuaranteeSuite) TestRemove() {
-
 	err := AddActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -106,7 +102,6 @@ func (suite *ActionGuaranteeSuite) TestRemove() {
 }
 
 func (suite *ActionGuaranteeSuite) TestQuery() {
-
 	err := AddActionGuarantees(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})

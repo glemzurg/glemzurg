@@ -2451,7 +2451,6 @@ func buildSubdomains(
 	uc testUseCases,
 	assocs testAssociations,
 ) (map[identity.Key]model_domain.Subdomain, error) {
-
 	// Subdomain A: rich (3+ classes, 3 generalizations, 4 use cases, 3 uc gens, 3 class assocs, 3 shares).
 	subdomainA, err := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "order subdomain")
 	if err != nil {

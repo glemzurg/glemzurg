@@ -35,7 +35,6 @@ func scanQueryRequire(scanner Scanner, queryKeyPtr *identity.Key, logicKeyPtr *i
 
 // LoadQueryRequire loads a query require join row from the database.
 func LoadQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var loadedQueryKey identity.Key
 
 	err = dbQueryRow(
@@ -77,8 +76,7 @@ func AddQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logi
 
 // RemoveQueryRequire deletes a query require join row from the database.
 func RemoveQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			query_require
 		WHERE
@@ -99,7 +97,6 @@ func RemoveQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, l
 
 // QueryQueryRequires loads all query require logic keys from the database, grouped by query key.
 func QueryQueryRequires(dbOrTx DbOrTx, modelKey string) (requires map[identity.Key][]identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -159,7 +156,7 @@ func AddQueryRequires(dbOrTx DbOrTx, modelKey string, requires map[identity.Key]
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

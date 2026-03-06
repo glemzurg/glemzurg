@@ -93,7 +93,6 @@ func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -277,7 +276,6 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
-
 	problemDomainKey, err := NewDomainKey("problem1")
 	assert.NoError(suite.T(), err)
 
@@ -348,7 +346,6 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewSubdomainKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -405,7 +402,6 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -471,7 +467,6 @@ func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionRequireKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -537,7 +532,6 @@ func (suite *KeyTypeSuite) TestNewActionRequireKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -603,7 +597,6 @@ func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -669,7 +662,6 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -735,7 +727,6 @@ func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -801,7 +792,6 @@ func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewUseCaseKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -858,7 +848,6 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewClassKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -918,7 +907,6 @@ func (suite *KeyTypeSuite) TestNewClassKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -978,7 +966,6 @@ func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewScenarioKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1041,7 +1028,6 @@ func (suite *KeyTypeSuite) TestNewScenarioKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1107,7 +1093,6 @@ func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1173,7 +1158,6 @@ func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewStateKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1236,7 +1220,6 @@ func (suite *KeyTypeSuite) TestNewStateKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewEventKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1299,7 +1282,6 @@ func (suite *KeyTypeSuite) TestNewEventKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewGuardKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1362,7 +1344,6 @@ func (suite *KeyTypeSuite) TestNewGuardKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1425,7 +1406,6 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewQueryKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1488,7 +1468,6 @@ func (suite *KeyTypeSuite) TestNewQueryKey() {
 }
 
 func (suite *KeyTypeSuite) TestClassInvariant() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1557,7 +1536,6 @@ func (suite *KeyTypeSuite) TestClassInvariant() {
 }
 
 func (suite *KeyTypeSuite) TestNewAttributeKey() {
-
 	domainKey, err := NewDomainKey("domain1")
 	assert.NoError(suite.T(), err)
 
@@ -1620,7 +1598,6 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
-
 	// Create keys for testing.
 	domain1Key := helper.Must(NewDomainKey("domain1"))
 	domain2Key := helper.Must(NewDomainKey("domain2"))
@@ -1863,7 +1840,6 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewStateActionKey() {
-
 	domainKey := helper.Must(NewDomainKey("domain1"))
 	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
@@ -1938,7 +1914,6 @@ func (suite *KeyTypeSuite) TestNewStateActionKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewTransitionKey() {
-
 	domainKey := helper.Must(NewDomainKey("domain1"))
 	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))

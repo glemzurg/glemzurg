@@ -35,7 +35,6 @@ func scanActionRequire(scanner Scanner, actionKeyPtr *identity.Key, logicKeyPtr 
 
 // LoadActionRequire loads an action require join row from the database.
 func LoadActionRequire(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var loadedActionKey identity.Key
 
 	err = dbQueryRow(
@@ -77,8 +76,7 @@ func AddActionRequire(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, lo
 
 // RemoveActionRequire deletes an action require join row from the database.
 func RemoveActionRequire(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			action_require
 		WHERE
@@ -99,7 +97,6 @@ func RemoveActionRequire(dbOrTx DbOrTx, modelKey string, actionKey identity.Key,
 
 // QueryActionRequires loads all action require logic keys from the database, grouped by action key.
 func QueryActionRequires(dbOrTx DbOrTx, modelKey string) (requires map[identity.Key][]identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -159,7 +156,7 @@ func AddActionRequires(dbOrTx DbOrTx, modelKey string, requires map[identity.Key
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

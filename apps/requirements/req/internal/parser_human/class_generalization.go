@@ -11,7 +11,6 @@ import (
 )
 
 func parseClassGeneralization(subdomainKey identity.Key, generalizationSubKey, filename, contents string) (generalization model_class.Generalization, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_class.Generalization{}, err

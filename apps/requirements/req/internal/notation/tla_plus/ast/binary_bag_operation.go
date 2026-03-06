@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Bag operation operators
+// Bag operation operators.
 const (
 	BagOperatorUnion       = `⊕` // Bag union (U+2295 CIRCLED PLUS)
 	BagOperatorSubtraction = `⊖` // Bag subtraction (U+2296 CIRCLED MINUS)

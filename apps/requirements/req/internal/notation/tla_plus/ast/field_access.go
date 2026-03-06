@@ -12,7 +12,7 @@ import (
 // For backwards compatibility:
 // - If Identifier is set (non-nil), it is used as the base
 // - If Base is set (non-nil), it is used as the base
-// - If both are nil, "!" (existing value) is the base
+// - If both are nil, "!" (existing value) is the base.
 type FieldAccess struct {
 	// Base is the expression being accessed (can be any expression for chaining).
 	// Takes precedence over Identifier if both are set.

@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Quantifier operators
+// Quantifier operators.
 const (
 	QuantifierForAll = "∀" // Universal quantifier
 	QuantifierExists = "∃" // Existential quantifier
@@ -21,7 +21,7 @@ const (
 )
 
 // Quantifier is a quantified logic expression over a set.
-// Examples: ∀x ∈ S : p, ∃x ∈ S : p
+// Examples: ∀x ∈ S : p, ∃x ∈ S : p.
 type Quantifier struct {
 	Quantifier string     `validate:"required,oneof=∀ ∃"` // The quantifier, e.g., ∀, ∃
 	Membership Expression `validate:"required"`           // The membership test (must be Membership)

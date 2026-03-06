@@ -40,9 +40,8 @@ func scanUseCaseActor(scanner Scanner, useCaseKeyPtr, actorKeyPtr *identity.Key,
 	return nil
 }
 
-// LoadUseCaseActor loads a use case actor from the database
+// LoadUseCaseActor loads a use case actor from the database.
 func LoadUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key) (actor model_use_case.Actor, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -86,9 +85,8 @@ func AddUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, ac
 
 // UpdateUseCaseActor updates a use case actor in the database.
 func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key, actor model_use_case.Actor) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			use_case_actor
 		SET
@@ -112,9 +110,8 @@ func UpdateUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key,
 
 // RemoveUseCaseActor deletes a use case actor from the database.
 func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, actorKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			use_case_actor
 		WHERE
@@ -133,9 +130,8 @@ func RemoveUseCaseActor(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key,
 	return nil
 }
 
-// QueryUseCaseActors loads all use case actors from the database
+// QueryUseCaseActors loads all use case actors from the database.
 func QueryUseCaseActors(dbOrTx DbOrTx, modelKey string) (actors map[identity.Key]map[identity.Key]model_use_case.Actor, err error) {
-
 	actors = make(map[identity.Key]map[identity.Key]model_use_case.Actor)
 
 	// Query the database.
@@ -199,7 +195,7 @@ func AddUseCaseActors(dbOrTx DbOrTx, modelKey string, actors map[identity.Key]ma
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

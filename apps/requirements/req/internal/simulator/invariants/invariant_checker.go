@@ -47,7 +47,7 @@ type parsedInvariantItem struct {
 	spec          string        // Original specification string for error messages.
 }
 
-// parsedGuarantee holds a lowered guarantee expression with its metadata
+// parsedGuarantee holds a lowered guarantee expression with its metadata.
 type parsedGuarantee struct {
 	expression me.Expression
 	spec       string // original specification string for error messages

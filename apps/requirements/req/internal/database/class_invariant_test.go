@@ -37,7 +37,6 @@ type ClassInvariantSuite struct {
 }
 
 func (suite *ClassInvariantSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -56,13 +55,12 @@ func (suite *ClassInvariantSuite) SetupTest() {
 }
 
 func (suite *ClassInvariantSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no class_invariant join row yet.
 	_, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the class_invariant join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class_invariant
 			(model_key, class_key, logic_key)
 		VALUES
@@ -80,7 +78,6 @@ func (suite *ClassInvariantSuite) TestLoad() {
 }
 
 func (suite *ClassInvariantSuite) TestAdd() {
-
 	err := AddClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -90,7 +87,6 @@ func (suite *ClassInvariantSuite) TestAdd() {
 }
 
 func (suite *ClassInvariantSuite) TestRemove() {
-
 	err := AddClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -103,7 +99,6 @@ func (suite *ClassInvariantSuite) TestRemove() {
 }
 
 func (suite *ClassInvariantSuite) TestQuery() {
-
 	err := AddClassInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.classKey: {suite.logicKeyB, suite.logicKey},
 	})

@@ -30,7 +30,6 @@ type DataTypeFieldSuite struct {
 }
 
 func (suite *DataTypeFieldSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -43,13 +42,12 @@ func (suite *DataTypeFieldSuite) SetupTest() {
 }
 
 func (suite *DataTypeFieldSuite) TestLoad() {
-
 	// Nothing in database yet.
 	fields, err := LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), fields)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO data_type_field
 			(
 				model_key,
@@ -90,7 +88,6 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 }
 
 func (suite *DataTypeFieldSuite) TestAdd() {
-
 	err := AddField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_DATA_type_key"}, // Test case-insensitive..
@@ -110,7 +107,6 @@ func (suite *DataTypeFieldSuite) TestAdd() {
 }
 
 func (suite *DataTypeFieldSuite) TestUpdate() {
-
 	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
@@ -136,7 +132,6 @@ func (suite *DataTypeFieldSuite) TestUpdate() {
 }
 
 func (suite *DataTypeFieldSuite) TestRemove() {
-
 	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
@@ -152,7 +147,6 @@ func (suite *DataTypeFieldSuite) TestRemove() {
 }
 
 func (suite *DataTypeFieldSuite) TestQuery() {
-
 	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameB",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},

@@ -52,8 +52,7 @@ type fileToParse struct {
 }
 
 func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, err error) {
-
-	// Get the extention, that is the file type.
+	// Get the extension, that is the file type.
 	fileType := filepath.Ext(pathRel)
 
 	// If this is a generalization, then the filename is the details of the generalization.
@@ -179,7 +178,6 @@ func sortFilesToParse(filesToParse []fileToParse) {
 }
 
 func lessThanFilesToParse(fileA, fileB fileToParse) (less bool) {
-
 	// Sort first by file type.
 	sortValueA := _extSortValue[fileA.FileType]
 	sortValueB := _extSortValue[fileB.FileType]

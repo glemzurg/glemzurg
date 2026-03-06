@@ -13,7 +13,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
 
-// Input format constants
+// Input format constants.
 const (
 	InputFormatDataYAML = "data/yaml"
 	InputFormatAIJSON   = "ai/json"

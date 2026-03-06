@@ -80,7 +80,6 @@ func NewDomainKey(subKey string) (key Key, err error) {
 }
 
 func NewGlobalFunctionKey(subKey string) (key Key, err error) {
-
 	// The subKey is the function name that must start with an underscore, but the key type is just "gfunc" without the underscore.
 	if subKey != "" {
 		if !strings.HasPrefix(subKey, "_") {

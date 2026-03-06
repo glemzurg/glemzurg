@@ -22,7 +22,6 @@ func EvalTyped(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
 
 func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
 	switch n := typed.Node.(type) {
-
 	// === Literals ===
 	// Literals don't need type info - just evaluate directly
 
@@ -54,7 +53,7 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 		return evalSetLiteralEnum(n)
 
 	case *ast.SetRange:
-		return evalSetRange(n, bindings)
+		return evalSetRange(n)
 
 	case *ast.SetConstant:
 		return evalSetConstant(n)

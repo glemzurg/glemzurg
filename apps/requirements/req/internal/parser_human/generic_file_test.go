@@ -23,7 +23,6 @@ type FileSuite struct {
 }
 
 func (suite *FileSuite) TestParseFiles() {
-
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERIC_PATH_OK)
 	assert.Nil(suite.T(), err)
 
@@ -46,7 +45,6 @@ func (suite *FileSuite) TestParseFiles() {
 }
 
 func (suite *FileSuite) TestParseFilesErr() {
-
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERIC_PATH_ERR)
 	assert.Nil(suite.T(), err)
 

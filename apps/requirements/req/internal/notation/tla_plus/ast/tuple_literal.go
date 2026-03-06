@@ -6,7 +6,7 @@ import (
 )
 
 // TupleLiteral represents a tuple with zero or more elements.
-// Pattern: <<3, 7, 3>> or <<>> for empty tuple
+// Pattern: <<3, 7, 3>> or <<>> for empty tuple.
 type TupleLiteral struct {
 	Elements []Expression // Can be empty
 }

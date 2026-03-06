@@ -164,7 +164,7 @@ func (s *StateTestSuite) TestAddLink() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -179,7 +179,7 @@ func (s *StateTestSuite) TestRemoveLink() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -201,7 +201,7 @@ func (s *StateTestSuite) TestGetLinkedForward() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line1 := state.CreateInstance(lineKey, object.NewRecord())
@@ -221,7 +221,7 @@ func (s *StateTestSuite) TestGetLinkedReverse() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -238,7 +238,7 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -297,7 +297,7 @@ func (s *StateTestSuite) TestClone() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 	stateKey := s.createStateKey("orders", "management", "order", "pending")
 
 	order := state.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
@@ -417,7 +417,7 @@ func (s *StateTestSuite) TestBindingsBuilder_AddAssociation() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	builder := NewBindingsBuilder(state)
 	builder.AddAssociation(
@@ -504,16 +504,16 @@ func (s *StateTestSuite) createStateKey(domain, subdomain, class, stateName stri
 	return stateKey
 }
 
-func (s *StateTestSuite) createAssociationKey(domain, subdomain, fromClass, toClass, name string) identity.Key {
-	domainKey, err := identity.NewDomainKey(domain)
+func (s *StateTestSuite) createAssociationKey() identity.Key {
+	domainKey, err := identity.NewDomainKey("orders")
 	s.Require().NoError(err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, subdomain)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "management")
 	s.Require().NoError(err)
-	fromClassKey, err := identity.NewClassKey(subdomainKey, fromClass)
+	fromClassKey, err := identity.NewClassKey(subdomainKey, "order")
 	s.Require().NoError(err)
-	toClassKey, err := identity.NewClassKey(subdomainKey, toClass)
+	toClassKey, err := identity.NewClassKey(subdomainKey, "line")
 	s.Require().NoError(err)
-	assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, name)
+	assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "lines")
 	s.Require().NoError(err)
 	return assocKey
 }

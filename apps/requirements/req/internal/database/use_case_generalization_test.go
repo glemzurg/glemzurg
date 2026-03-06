@@ -32,7 +32,6 @@ type UseCaseGeneralizationSuite struct {
 }
 
 func (suite *UseCaseGeneralizationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -47,14 +46,13 @@ func (suite *UseCaseGeneralizationSuite) SetupTest() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), subdomainKey)
 	assert.Empty(suite.T(), generalization)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO use_case_generalization
 			(
 				model_key,
@@ -94,7 +92,6 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestAdd() {
-
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -119,7 +116,6 @@ func (suite *UseCaseGeneralizationSuite) TestAdd() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestAddNulls() {
-
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -144,7 +140,6 @@ func (suite *UseCaseGeneralizationSuite) TestAddNulls() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestUpdate() {
-
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -179,7 +174,6 @@ func (suite *UseCaseGeneralizationSuite) TestUpdate() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
-
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -214,7 +208,6 @@ func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestRemove() {
-
 	err := AddUseCaseGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -235,7 +228,6 @@ func (suite *UseCaseGeneralizationSuite) TestRemove() {
 }
 
 func (suite *UseCaseGeneralizationSuite) TestQuery() {
-
 	err := AddUseCaseGeneralizations(suite.db, suite.model.Key, map[identity.Key][]model_use_case.Generalization{
 		suite.subdomain.Key: {
 			{
@@ -287,7 +279,6 @@ func (suite *UseCaseGeneralizationSuite) TestQuery() {
 //==================================================
 
 func t_AddUseCaseGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, generalizationKey identity.Key) (generalization model_use_case.Generalization) {
-
 	err := AddUseCaseGeneralization(dbOrTx, modelKey, subdomainKey, model_use_case.Generalization{
 		Key:        generalizationKey,
 		Name:       generalizationKey.String(),

@@ -11,7 +11,6 @@ import (
 )
 
 func WriteModel(model core.Model, outputModelPath string) error {
-
 	inputModel, err := ConvertFromModel(&model)
 	if err != nil {
 		return err
@@ -110,7 +109,7 @@ func writeModelTree(model *inputModel, modelDir string) error {
 			return err
 		}
 		for _, assoc := range model.ClassAssociations {
-			filename := classAssociationFilename(assoc, AssocLevelModel)
+			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
@@ -165,7 +164,7 @@ func writeDomainTree(domain *inputDomain, domainDir string) error {
 			return err
 		}
 		for _, assoc := range domain.ClassAssociations {
-			filename := classAssociationFilename(assoc, AssocLevelDomain)
+			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
@@ -207,7 +206,7 @@ func writeSubdomainTree(subdomain *inputSubdomain, subdomainDir string) error {
 			return err
 		}
 		for _, assoc := range subdomain.ClassAssociations {
-			filename := classAssociationFilename(assoc, AssocLevelSubdomain)
+			filename := classAssociationFilename(assoc)
 			if err := writeJSON(filepath.Join(assocDir, filename), assoc); err != nil {
 				return err
 			}
@@ -375,7 +374,7 @@ func writeUseCaseTree(useCase *inputUseCase, useCaseDir string) error {
 	return nil
 }
 
-func classAssociationFilename(assoc *inputClassAssociation, level AssociationLevel) string {
+func classAssociationFilename(assoc *inputClassAssociation) string {
 	from := strings.ReplaceAll(assoc.FromClassKey, "/", ".")
 	to := strings.ReplaceAll(assoc.ToClassKey, "/", ".")
 	name := strings.ToLower(strings.ReplaceAll(assoc.Name, " ", "_"))
@@ -388,5 +387,5 @@ func writeJSON(filename string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filename, data, 0644)
+	return os.WriteFile(filename, data, 0600)
 }

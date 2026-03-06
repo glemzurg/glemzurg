@@ -25,7 +25,6 @@ func (fc *t_FileContents) verify(fileLocation string) (err error) {
 }
 
 func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error) {
-
 	// Keep track of the file and expected test results.
 	fileLookup := map[string]t_FileContents{}
 
@@ -36,7 +35,6 @@ func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error)
 
 	for _, file := range files {
 		if !file.IsDir() {
-
 			filename := filepath.Join(path, strings.ToLower(file.Name()))
 			content, err := os.ReadFile(filename)
 			if err != nil {
@@ -70,14 +68,12 @@ func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error)
 
 			default:
 				return nil, errors.WithStack(errors.Errorf(`Non-test file found in test folder: '%s'`, filename))
-
 			}
 		}
 	}
 
 	// Everything in a simple format.
 	for baseFilename, fileContents := range fileLookup {
-
 		// Any parts missing is failure.
 		if err := fileContents.verify(path + "/" + baseFilename); err != nil {
 			return nil, errors.WithStack(err)

@@ -34,7 +34,6 @@ type EventSuite struct {
 }
 
 func (suite *EventSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,14 +49,13 @@ func (suite *EventSuite) SetupTest() {
 }
 
 func (suite *EventSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), event)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO event
 			(
 				model_key,
@@ -88,7 +86,6 @@ func (suite *EventSuite) TestLoad() {
 }
 
 func (suite *EventSuite) TestAdd() {
-
 	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "Name",
@@ -107,7 +104,6 @@ func (suite *EventSuite) TestAdd() {
 }
 
 func (suite *EventSuite) TestUpdate() {
-
 	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "Name",
@@ -133,7 +129,6 @@ func (suite *EventSuite) TestUpdate() {
 }
 
 func (suite *EventSuite) TestRemove() {
-
 	err := AddEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "Name",
@@ -151,7 +146,6 @@ func (suite *EventSuite) TestRemove() {
 }
 
 func (suite *EventSuite) TestQuery() {
-
 	err := AddEvents(suite.db, suite.model.Key, map[identity.Key][]model_state.Event{
 		suite.class.Key: {
 			{
@@ -191,7 +185,6 @@ func (suite *EventSuite) TestQuery() {
 //==================================================
 
 func t_AddEvent(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey identity.Key) (event model_state.Event) {
-
 	err := AddEvent(dbOrTx, modelKey, classKey, model_state.Event{
 		Key:     eventKey,
 		Name:    eventKey.String(),

@@ -8,20 +8,20 @@ linters:
     - forbidigo
     - goconst
   #   - gocritic
-  #   - godot
-  #   - gosec
-  #   - intrange
-  #   - misspell
+    - godot
+    - gosec
+    - intrange
+    - misspell
   #   - modernize
-  #   - nilnil
-  #   - noctx
-  #   - recvcheck
+    - nilnil
+    - noctx
+    - recvcheck
   #   # - revive
-  #   - rowserrcheck
+    - rowserrcheck
   #   # - testifylint
-  #   - unconvert
-  #   - unparam
-  #   - whitespace
+    - unconvert
+    - unparam
+    - whitespace
 
   exclusions:
     generated: lax

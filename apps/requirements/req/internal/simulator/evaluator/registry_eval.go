@@ -31,7 +31,7 @@ type EvalContext struct {
 	Class      string
 }
 
-// Global eval context (set by pipeline before evaluation)
+// Global eval context (set by pipeline before evaluation).
 var globalEvalContext *EvalContext
 
 // SetEvalContext sets the global eval context for registry-based evaluation.

@@ -124,7 +124,6 @@ func scanStep(scanner Scanner) (row stepRow, err error) {
 
 // LoadStep loads a single step from the database.
 func LoadStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (scenarioKey identity.Key, parentStepKey *identity.Key, sortOrder int, step model_scenario.Step, err error) {
-
 	// Query the database.
 	var row stepRow
 	err = dbQueryRow(
@@ -171,7 +170,6 @@ func AddStep(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, parentSte
 
 // UpdateStep updates a step in the database.
 func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenario.Step) (err error) {
-
 	// Handle optional key pointers.
 	var leafTypePtr *string
 	if step.LeafType != nil {
@@ -212,7 +210,7 @@ func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenar
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			scenario_step
 		SET
@@ -251,9 +249,8 @@ func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenar
 
 // RemoveStep deletes a step from the database. CASCADE will delete children.
 func RemoveStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			scenario_step
 		WHERE
@@ -271,7 +268,6 @@ func RemoveStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (err error
 
 // QuerySteps loads all steps for a model and reconstructs them into trees keyed by scenario key.
 func QuerySteps(dbOrTx DbOrTx, modelKey string) (steps map[identity.Key]*model_scenario.Step, err error) {
-
 	// Collect all flat rows.
 	var rows []stepRow
 
@@ -310,7 +306,7 @@ func QuerySteps(dbOrTx DbOrTx, modelKey string) (steps map[identity.Key]*model_s
 	}
 
 	if len(rows) == 0 {
-		return nil, nil
+		return make(map[identity.Key]*model_scenario.Step), nil
 	}
 
 	// Build the trees from flat rows.
@@ -489,7 +485,7 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 		)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -17,7 +17,6 @@ import (
 )
 
 func parseClass(subdomainKey identity.Key, classSubKey, filename, contents string) (class model_class.Class, associations []model_class.Association, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_class.Class{}, nil, err
@@ -232,8 +231,8 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 	}
 
 	transitions := make(map[identity.Key]model_state.Transition)
-	for i, transitionAny := range transitionsData {
-		transition, err := transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup, classKey, i, transitionAny)
+	for _, transitionAny := range transitionsData {
+		transition, err := transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup, classKey, transitionAny)
 		if err != nil {
 			return model_class.Class{}, nil, err
 		}
@@ -245,7 +244,6 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 }
 
 func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAny any) (attribute model_class.Attribute, err error) {
-
 	attributeData, ok := attributeAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
@@ -322,7 +320,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			indexNumsAnyList := indexNumsAny.([]any)
 			for _, indexNumAny := range indexNumsAnyList {
 				indexNumInt := indexNumAny.(int)
-				indexNums = append(indexNums, uint(indexNumInt))
+				indexNums = append(indexNums, uint(indexNumInt)) //nolint:gosec // indexNumInt is a small index from parsed YAML data, no overflow risk
 			}
 		}
 
@@ -360,7 +358,6 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 }
 
 func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int, associationAny any) (association model_class.Association, err error) {
-
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
@@ -515,7 +512,6 @@ func determineAssociationParent(subdomainKey, fromClassKey, toClassKey identity.
 }
 
 func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identity.Key, name string, stateAny any) (state model_state.State, err error) {
-
 	// Construct the state key.
 	stateKey, err := identity.NewStateKey(classKey, strings.ToLower(name))
 	if err != nil {
@@ -580,7 +576,6 @@ func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identit
 				}
 
 				actions = append(actions, action)
-
 			}
 		}
 	}
@@ -601,7 +596,6 @@ func stateFromYamlData(actionKeyLookup map[string]identity.Key, classKey identit
 }
 
 func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event model_state.Event, err error) {
-
 	// Construct the event key.
 	eventKey, err := identity.NewEventKey(classKey, strings.ToLower(name))
 	if err != nil {
@@ -654,7 +648,6 @@ func eventFromYamlData(classKey identity.Key, name string, eventAny any) (event 
 }
 
 func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard model_state.Guard, err error) {
-
 	// Construct the guard key.
 	guardKey, err := identity.NewGuardKey(classKey, strings.ToLower(name))
 	if err != nil {
@@ -699,7 +692,6 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 }
 
 func actionFromYamlData(classKey identity.Key, name string, actionAny any) (action model_state.Action, err error) {
-
 	// Construct the action key.
 	actionKey, err := identity.NewActionKey(classKey, strings.ToLower(name))
 	if err != nil {
@@ -777,7 +769,6 @@ func actionFromYamlData(classKey identity.Key, name string, actionAny any) (acti
 }
 
 func queryFromYamlData(classKey identity.Key, name string, queryAny any) (query model_state.Query, err error) {
-
 	// Construct the query key.
 	queryKey, err := identity.NewQueryKey(classKey, strings.ToLower(name))
 	if err != nil {
@@ -902,8 +893,7 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 	return logics, nil
 }
 
-func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup map[string]identity.Key, classKey identity.Key, index int, transitionAny any) (transition model_state.Transition, err error) {
-
+func transitionFromYamlData(stateKeyLookup, eventKeyLookup, guardKeyLookup, actionKeyLookup map[string]identity.Key, classKey identity.Key, transitionAny any) (transition model_state.Transition, err error) {
 	transitionData, ok := transitionAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
@@ -1051,7 +1041,7 @@ func generateClassContent(class model_class.Class, associations []model_class.As
 			if len(attr.IndexNums) > 0 {
 				intNums := make([]int, len(attr.IndexNums))
 				for i, n := range attr.IndexNums {
-					intNums[i] = int(n)
+					intNums[i] = int(n) //nolint:gosec // n is a small index number from model attributes, no overflow risk
 				}
 				attrBuilder.AddIntSliceField("index_nums", intNums)
 			}

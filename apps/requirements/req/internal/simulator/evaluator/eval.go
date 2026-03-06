@@ -77,7 +77,6 @@ func (r *EvalResult) HasPrimedBindings() bool {
 // model_expression.Expression type to the appropriate handler.
 func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	switch n := node.(type) {
-
 	// === Literals ===
 	case *me.IntLiteral:
 		return evalIntLiteral(n)
@@ -106,7 +105,7 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	case *me.LocalVar:
 		return evalLocalVar(n, bindings)
 	case *me.PriorFieldValue:
-		return evalPriorFieldValue(n, bindings)
+		return evalPriorFieldValue(bindings)
 	case *me.NextState:
 		return evalNextState(n, bindings)
 	case *me.NamedSetRef:
@@ -168,7 +167,7 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	case *me.GlobalCall:
 		return evalMEGlobalCall(n, bindings)
 	case *me.ActionCall:
-		return evalMEActionCall(n, bindings)
+		return evalMEActionCall(n)
 
 	default:
 		return NewEvalError("unknown model expression type: %T", node)
@@ -185,7 +184,6 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 // Other nodes can be evaluated but are typically sub-expressions.
 func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 	switch n := node.(type) {
-
 	// === Root Nodes ===
 	case *ast.Assignment:
 		return evalAssignment(n, bindings)
@@ -212,7 +210,7 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 	case *ast.SetLiteral:
 		return evalSetLiteral(n, bindings)
 	case *ast.SetRange:
-		return evalSetRange(n, bindings)
+		return evalSetRange(n)
 	case *ast.SetRangeExpr:
 		return evalSetRangeExpr(n, bindings)
 	case *ast.SetConstant:
@@ -284,7 +282,7 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 
 	// === Calls ===
 	case *ast.CallExpression:
-		return evalCallExpression(n, bindings)
+		return evalCallExpression(n)
 	case *ast.FunctionCall:
 		return evalFunctionCall(n, bindings)
 

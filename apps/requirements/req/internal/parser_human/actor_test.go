@@ -23,7 +23,6 @@ type ActorFileSuite struct {
 }
 
 func (suite *ActorFileSuite) TestParseActorFiles() {
-
 	key := "actor_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_ACTOR_PATH_OK)

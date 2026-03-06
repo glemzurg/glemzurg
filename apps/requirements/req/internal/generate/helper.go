@@ -51,7 +51,7 @@ func firstSentence(para string) string {
 	}
 
 	runes := []rune(para)
-	for i := 0; i < len(runes); i++ {
+	for i := range runes {
 		if runes[i] == '.' || runes[i] == '!' || runes[i] == '?' {
 			// Check if it's an abbreviation
 			isAbbrev := false
@@ -99,4 +99,3 @@ func firstSentence(para string) string {
 	// No sentence-ending punctuation found; return the whole paragraph
 	return para
 }
-

@@ -13,7 +13,7 @@ func (tc *TypeChecker) addBuiltins() {
 	// === Sequence Operations ===
 
 	// _Seq!Head : ∀a. Tuple[a] → a
-	tc.addPolymorphicBuiltin("_Seq!Head", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!Head", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Tuple{Element: a}},
@@ -22,7 +22,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Seq!Tail : ∀a. Tuple[a] → Tuple[a]
-	tc.addPolymorphicBuiltin("_Seq!Tail", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!Tail", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Tuple{Element: a}},
@@ -31,7 +31,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Seq!Append : ∀a. (Tuple[a], a) → Tuple[a]
-	tc.addPolymorphicBuiltin("_Seq!Append", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!Append", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Tuple{Element: a}, a},
@@ -40,7 +40,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Seq!Len : ∀a. Tuple[a] → Number
-	tc.addPolymorphicBuiltin("_Seq!Len", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!Len", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Tuple{Element: a}},
@@ -49,7 +49,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Seq!SubSeq : ∀a. (Tuple[a], Number, Number) → Tuple[a]
-	tc.addPolymorphicBuiltin("_Seq!SubSeq", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!SubSeq", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Tuple{Element: a}, types.Number{}, types.Number{}},
@@ -59,7 +59,7 @@ func (tc *TypeChecker) addBuiltins() {
 
 	// _Seq!SelectSeq : ∀a. (Tuple[a], (a → Boolean)) → Tuple[a]
 	// Note: Simplified - higher-order functions need special handling
-	tc.addPolymorphicBuiltin("_Seq!SelectSeq", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!SelectSeq", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{
@@ -71,7 +71,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Seq!Concat : ∀a. (Tuple[a], Tuple[a]) → Tuple[a]
-	tc.addPolymorphicBuiltin("_Seq!Concat", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Seq!Concat", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Tuple{Element: a}, types.Tuple{Element: a}},
@@ -82,7 +82,7 @@ func (tc *TypeChecker) addBuiltins() {
 	// === Bag Operations ===
 
 	// _Bags!SetToBag : ∀a. Set[a] → Bag[a]
-	tc.addPolymorphicBuiltin("_Bags!SetToBag", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!SetToBag", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Set{Element: a}},
@@ -91,7 +91,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Bags!BagToSet : ∀a. Bag[a] → Set[a]
-	tc.addPolymorphicBuiltin("_Bags!BagToSet", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!BagToSet", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Bag{Element: a}},
@@ -100,7 +100,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Bags!BagIn : ∀a. (a, Bag[a]) → Boolean
-	tc.addPolymorphicBuiltin("_Bags!BagIn", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!BagIn", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{a, types.Bag{Element: a}},
@@ -109,7 +109,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Bags!EmptyBag : ∀a. () → Bag[a]
-	tc.addPolymorphicBuiltin("_Bags!EmptyBag", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!EmptyBag", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{},
@@ -118,7 +118,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Bags!CopiesIn : ∀a. (a, Bag[a]) → Number
-	tc.addPolymorphicBuiltin("_Bags!CopiesIn", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!CopiesIn", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{a, types.Bag{Element: a}},
@@ -127,7 +127,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Bags!BagCardinality : ∀a. Bag[a] → Number
-	tc.addPolymorphicBuiltin("_Bags!BagCardinality", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!BagCardinality", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Bag{Element: a}},
@@ -136,7 +136,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _Bags!BagUnion : ∀a. Set[Bag[a]] → Bag[a]
-	tc.addPolymorphicBuiltin("_Bags!BagUnion", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_Bags!BagUnion", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Set{Element: types.Bag{Element: a}}},
@@ -147,7 +147,7 @@ func (tc *TypeChecker) addBuiltins() {
 	// === FiniteSet Operations ===
 
 	// _FiniteSet!Cardinality : ∀a. Set[a] → Number
-	tc.addPolymorphicBuiltin("_FiniteSet!Cardinality", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_FiniteSet!Cardinality", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Set{Element: a}},
@@ -156,7 +156,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _FiniteSet!IsFiniteSet : ∀a. Set[a] → Boolean
-	tc.addPolymorphicBuiltin("_FiniteSet!IsFiniteSet", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_FiniteSet!IsFiniteSet", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Set{Element: a}},
@@ -165,7 +165,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _FiniteSet!CHOOSE : ∀a. Set[a] → a
-	tc.addPolymorphicBuiltin("_FiniteSet!CHOOSE", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_FiniteSet!CHOOSE", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Set{Element: a}},
@@ -176,7 +176,7 @@ func (tc *TypeChecker) addBuiltins() {
 	// === TLC Operations ===
 
 	// _TLC!Print : ∀a. (String, a) → a
-	tc.addPolymorphicBuiltin("_TLC!Print", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_TLC!Print", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.String{}, a},
@@ -185,7 +185,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _TLC!PrintT : ∀a. a → Boolean
-	tc.addPolymorphicBuiltin("_TLC!PrintT", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_TLC!PrintT", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{a},
@@ -194,7 +194,7 @@ func (tc *TypeChecker) addBuiltins() {
 	})
 
 	// _TLC!Assert : ∀a. (Boolean, a) → Boolean
-	tc.addPolymorphicBuiltin("_TLC!Assert", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("_TLC!Assert", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{types.Boolean{}, a},
@@ -242,7 +242,7 @@ func (tc *TypeChecker) addBuiltins() {
 	// DOMAIN for tuples/sequences returns a set of numbers (indices)
 	// DOMAIN for functions returns the domain set
 	// We use Any type since DOMAIN is highly polymorphic
-	tc.addPolymorphicBuiltin("DOMAIN", 1, func(tvs []types.TypeVar) types.Function {
+	tc.addPolymorphicBuiltin("DOMAIN", func(tvs []types.TypeVar) types.Function {
 		a := tvs[0]
 		return types.Function{
 			Params: []types.Type{a},
@@ -252,11 +252,12 @@ func (tc *TypeChecker) addBuiltins() {
 }
 
 // addPolymorphicBuiltin adds a polymorphic builtin with the given number of type variables.
-func (tc *TypeChecker) addPolymorphicBuiltin(name string, numTypeVars int, makeType func([]types.TypeVar) types.Function) {
+func (tc *TypeChecker) addPolymorphicBuiltin(name string, makeType func([]types.TypeVar) types.Function) {
 	// Create type variables
+	numTypeVars := 1
 	tvs := make([]types.TypeVar, numTypeVars)
 	varIDs := make([]int, numTypeVars)
-	for i := 0; i < numTypeVars; i++ {
+	for i := range numTypeVars {
 		tv := types.NewTypeVar("")
 		tvs[i] = tv
 		varIDs[i] = tv.ID

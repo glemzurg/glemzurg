@@ -39,7 +39,6 @@ type AttributeSuite struct {
 }
 
 func (suite *AttributeSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -63,14 +62,13 @@ func (suite *AttributeSuite) SetupTest() {
 }
 
 func (suite *AttributeSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), attribute)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO attribute
 			(
 				model_key,
@@ -113,7 +111,6 @@ func (suite *AttributeSuite) TestLoad() {
 }
 
 func (suite *AttributeSuite) TestAdd() {
-
 	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
@@ -142,7 +139,6 @@ func (suite *AttributeSuite) TestAdd() {
 }
 
 func (suite *AttributeSuite) TestAddNulls() {
-
 	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
@@ -169,7 +165,6 @@ func (suite *AttributeSuite) TestAddNulls() {
 }
 
 func (suite *AttributeSuite) TestUpdate() {
-
 	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
@@ -209,7 +204,6 @@ func (suite *AttributeSuite) TestUpdate() {
 }
 
 func (suite *AttributeSuite) TestUpdateNulls() {
-
 	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
@@ -249,7 +243,6 @@ func (suite *AttributeSuite) TestUpdateNulls() {
 }
 
 func (suite *AttributeSuite) TestRemove() {
-
 	err := AddAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
@@ -272,7 +265,6 @@ func (suite *AttributeSuite) TestRemove() {
 }
 
 func (suite *AttributeSuite) TestQuery() {
-
 	err := AddAttributes(suite.db, suite.model.Key, map[identity.Key][]model_class.Attribute{
 		suite.class.Key: {
 			{
@@ -330,7 +322,6 @@ func (suite *AttributeSuite) TestQuery() {
 //==================================================
 
 func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (attribute model_class.Attribute) {
-
 	err := AddAttribute(dbOrTx, modelKey, classKey, model_class.Attribute{
 		Key:              attributeKey,
 		Name:             attributeKey.String(),
@@ -349,7 +340,6 @@ func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey ident
 }
 
 func (suite *AttributeSuite) TestVerifyTestObjects() {
-
 	attribute := t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.attributeKey)
 	assert.Equal(suite.T(), model_class.Attribute{
 		Key:              suite.attributeKey,

@@ -24,7 +24,6 @@ type ModelFileSuite struct {
 }
 
 func (suite *ModelFileSuite) TestParseModelFiles() {
-
 	key := "model_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_MODEL_PATH_OK)

@@ -15,7 +15,6 @@ import (
 )
 
 func parseModel(key, filename, contents string) (model core.Model, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return core.Model{}, err
@@ -245,4 +244,3 @@ func generateModelContent(model core.Model) string {
 
 	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), "", dataStr)
 }
-

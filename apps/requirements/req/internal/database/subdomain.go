@@ -42,9 +42,8 @@ func scanSubdomain(scanner Scanner, domainKeyPtr *identity.Key, subdomain *model
 	return nil
 }
 
-// LoadSubdomain loads a subdomain from the database
+// LoadSubdomain loads a subdomain from the database.
 func LoadSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (domainKey identity.Key, subdomain model_domain.Subdomain, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -84,9 +83,8 @@ func AddSubdomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdom
 
 // UpdateSubdomain updates a subdomain in the database.
 func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subdomain) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			subdomain
 		SET
@@ -111,9 +109,8 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subd
 
 // RemoveSubdomain deletes a subdomain from the database.
 func RemoveSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				subdomain
 			WHERE
@@ -129,9 +126,8 @@ func RemoveSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) 
 	return nil
 }
 
-// QuerySubdomains loads all subdomains from the database
+// QuerySubdomains loads all subdomains from the database.
 func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[identity.Key][]model_domain.Subdomain, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -195,7 +191,7 @@ func AddSubdomains(dbOrTx DbOrTx, modelKey string, subdomains map[identity.Key][
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

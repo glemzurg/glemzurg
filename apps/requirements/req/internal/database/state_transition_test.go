@@ -42,7 +42,6 @@ type TransitionSuite struct {
 }
 
 func (suite *TransitionSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -67,14 +66,13 @@ func (suite *TransitionSuite) SetupTest() {
 }
 
 func (suite *TransitionSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), transition)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO transition
 			(
 				model_key,
@@ -117,7 +115,6 @@ func (suite *TransitionSuite) TestLoad() {
 }
 
 func (suite *TransitionSuite) TestAdd() {
-
 	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateA.Key,
@@ -144,7 +141,6 @@ func (suite *TransitionSuite) TestAdd() {
 }
 
 func (suite *TransitionSuite) TestAddNulls() {
-
 	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: nil,
@@ -171,7 +167,6 @@ func (suite *TransitionSuite) TestAddNulls() {
 }
 
 func (suite *TransitionSuite) TestUpdate() {
-
 	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateA.Key,
@@ -209,7 +204,6 @@ func (suite *TransitionSuite) TestUpdate() {
 }
 
 func (suite *TransitionSuite) TestUpdateNulls() {
-
 	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateA.Key,
@@ -247,7 +241,6 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 }
 
 func (suite *TransitionSuite) TestRemove() {
-
 	err := AddTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateA.Key,
@@ -269,7 +262,6 @@ func (suite *TransitionSuite) TestRemove() {
 }
 
 func (suite *TransitionSuite) TestQuery() {
-
 	err := AddTransitions(suite.db, suite.model.Key, map[identity.Key][]model_state.Transition{
 		suite.class.Key: {
 			{

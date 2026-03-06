@@ -35,7 +35,6 @@ func scanActionSafety(scanner Scanner, actionKeyPtr *identity.Key, logicKeyPtr *
 
 // LoadActionSafety loads an action safety join row from the database.
 func LoadActionSafety(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var loadedActionKey identity.Key
 
 	err = dbQueryRow(
@@ -77,8 +76,7 @@ func AddActionSafety(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, log
 
 // RemoveActionSafety deletes an action safety join row from the database.
 func RemoveActionSafety(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			action_safety
 		WHERE
@@ -99,7 +97,6 @@ func RemoveActionSafety(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, 
 
 // QueryActionSafeties loads all action safety logic keys from the database, grouped by action key.
 func QueryActionSafeties(dbOrTx DbOrTx, modelKey string) (safeties map[identity.Key][]identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -159,7 +156,7 @@ func AddActionSafeties(dbOrTx DbOrTx, modelKey string, safeties map[identity.Key
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

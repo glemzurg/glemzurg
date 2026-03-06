@@ -19,7 +19,6 @@ type RoundTripSuite struct {
 }
 
 func (suite *RoundTripSuite) TestRoundTrip() {
-
 	input := test_helper.GetStrictTestModel()
 
 	// Validate the model before writing.

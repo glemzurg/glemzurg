@@ -34,7 +34,6 @@ type GuardSuite struct {
 }
 
 func (suite *GuardSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -54,14 +53,13 @@ func (suite *GuardSuite) SetupTest() {
 }
 
 func (suite *GuardSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), guard)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO guard
 			(
 				model_key,
@@ -89,7 +87,6 @@ func (suite *GuardSuite) TestLoad() {
 }
 
 func (suite *GuardSuite) TestAdd() {
-
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
@@ -106,7 +103,6 @@ func (suite *GuardSuite) TestAdd() {
 }
 
 func (suite *GuardSuite) TestUpdate() {
-
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
@@ -129,7 +125,6 @@ func (suite *GuardSuite) TestUpdate() {
 }
 
 func (suite *GuardSuite) TestRemove() {
-
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
@@ -146,7 +141,6 @@ func (suite *GuardSuite) TestRemove() {
 }
 
 func (suite *GuardSuite) TestQuery() {
-
 	err := AddGuards(suite.db, suite.model.Key, map[identity.Key][]model_state.Guard{
 		suite.class.Key: {
 			{
@@ -182,7 +176,6 @@ func (suite *GuardSuite) TestQuery() {
 //==================================================
 
 func t_AddGuard(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey identity.Key) (guard model_state.Guard) {
-
 	// Logic row must exist before guard (FK constraint).
 	t_AddLogic(t, dbOrTx, modelKey, guardKey)
 

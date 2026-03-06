@@ -13,7 +13,7 @@ type FieldAlteration struct {
 
 // RecordAltered represents an EXCEPT expression that alters fields of a record.
 // Pattern: [base EXCEPT !.field1 = expr1, !.field2 = expr2, ...]
-// The base can be any expression, enabling chaining: [[r EXCEPT !.x = 1] EXCEPT !.y = 2]
+// The base can be any expression, enabling chaining: [[r EXCEPT !.x = 1] EXCEPT !.y = 2].
 type RecordAltered struct {
 	Base        Expression         `validate:"required"`       // The base expression (typically an identifier or another RecordAltered)
 	Alterations []*FieldAlteration `validate:"required,min=1"` // At least one field alteration

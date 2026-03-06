@@ -21,7 +21,7 @@ func TestStressPrecedenceSuite(t *testing.T) {
 // === Power right-associativity (level 14) ===
 
 // TestPowerRightAssociativity verifies that ^ is right-associative:
-// 2 ^ 3 ^ 4 = 2 ^ (3 ^ 4), NOT (2 ^ 3) ^ 4
+// 2 ^ 3 ^ 4 = 2 ^ (3 ^ 4), NOT (2 ^ 3) ^ 4.
 func (s *StressPrecedenceTestSuite) TestPowerRightAssociativity() {
 	expr, err := ParseExpression("2 ^ 3 ^ 4")
 	s.Require().NoError(err)

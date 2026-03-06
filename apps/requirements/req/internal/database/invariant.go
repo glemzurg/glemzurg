@@ -10,7 +10,6 @@ import (
 
 // LoadInvariant loads an invariant logic key from the database.
 func LoadInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (key identity.Key, err error) {
-
 	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
@@ -53,8 +52,7 @@ func AddInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err er
 
 // RemoveInvariant deletes an invariant join row from the database.
 func RemoveInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			invariant
 		WHERE
@@ -72,7 +70,6 @@ func RemoveInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err
 
 // QueryInvariants loads all invariant logic keys from the database for a given model.
 func QueryInvariants(dbOrTx DbOrTx, modelKey string) (keys []identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -122,7 +119,7 @@ func AddInvariants(dbOrTx DbOrTx, modelKey string, logicKeys []identity.Key) (er
 		args = append(args, modelKey, logicKey.String())
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

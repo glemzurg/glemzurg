@@ -12,7 +12,6 @@ import (
 )
 
 func parseDomain(domainSubKey, filename, contents string) (domain model_domain.Domain, associations []model_domain.Association, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_domain.Domain{}, nil, err
@@ -64,7 +63,6 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 }
 
 func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, associationAny any) (association model_domain.Association, err error) {
-
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.

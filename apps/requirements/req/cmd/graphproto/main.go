@@ -224,7 +224,6 @@ AssocClass -> dummy [style=dashed];}
 // `
 
 func main() {
-
 	// Example call: go run main.go > graph.svg
 
 	ctx := context.Background()

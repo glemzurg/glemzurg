@@ -3,13 +3,13 @@ package parser_ai
 // Error codes for AI input validation errors.
 // Each error type has a unique identifier for programmatic handling.
 const (
-	// Model errors (1xxx)
+	// Model errors (1xxx).
 	ErrModelNameRequired    = 1001
 	ErrModelNameEmpty       = 1002
 	ErrModelInvalidJSON     = 1003
 	ErrModelSchemaViolation = 1004
 
-	// Actor errors (2xxx)
+	// Actor errors (2xxx).
 	ErrActorNameRequired    = 2001
 	ErrActorNameEmpty       = 2002
 	ErrActorTypeRequired    = 2003
@@ -19,7 +19,7 @@ const (
 	ErrActorDuplicateKey    = 2007
 	ErrActorFilenameInvalid = 2008
 
-	// Domain errors (3xxx)
+	// Domain errors (3xxx).
 	ErrDomainNameRequired    = 3001
 	ErrDomainNameEmpty       = 3002
 	ErrDomainInvalidJSON     = 3003
@@ -27,7 +27,7 @@ const (
 	ErrDomainDuplicateKey    = 3005
 	ErrDomainDirInvalid      = 3006
 
-	// Subdomain errors (4xxx)
+	// Subdomain errors (4xxx).
 	ErrSubdomainNameRequired    = 4001
 	ErrSubdomainNameEmpty       = 4002
 	ErrSubdomainInvalidJSON     = 4003
@@ -35,7 +35,7 @@ const (
 	ErrSubdomainDuplicateKey    = 4005
 	ErrSubdomainDirInvalid      = 4006
 
-	// Class errors (5xxx)
+	// Class errors (5xxx).
 	ErrClassNameRequired       = 5001
 	ErrClassNameEmpty          = 5002
 	ErrClassInvalidJSON        = 5003
@@ -47,7 +47,7 @@ const (
 	ErrClassIndexInvalid       = 5009
 	ErrClassIndexAttrNotFound  = 5010
 
-	// Association errors (6xxx)
+	// Association errors (6xxx).
 	ErrAssocNameRequired        = 6001
 	ErrAssocNameEmpty           = 6002
 	ErrAssocInvalidJSON         = 6003
@@ -63,7 +63,7 @@ const (
 	ErrAssocFilenameInvalid     = 6013
 	ErrAssocDuplicateKey        = 6014
 
-	// State machine errors (7xxx)
+	// State machine errors (7xxx).
 	ErrStateMachineInvalidJSON     = 7001
 	ErrStateMachineSchemaViolation = 7002
 	ErrStateNameRequired           = 7003
@@ -90,7 +90,7 @@ const (
 	ErrTransitionActionNotFound    = 7024
 	ErrTransitionInitialToFinal    = 7025
 
-	// Action errors (8xxx)
+	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001
 	ErrActionNameEmpty       = 8002
 	ErrActionInvalidJSON     = 8003
@@ -98,7 +98,7 @@ const (
 	ErrActionDuplicateKey    = 8005
 	ErrActionFilenameInvalid = 8006
 
-	// Query errors (9xxx)
+	// Query errors (9xxx).
 	ErrQueryNameRequired    = 9001
 	ErrQueryNameEmpty       = 9002
 	ErrQueryInvalidJSON     = 9003
@@ -106,7 +106,7 @@ const (
 	ErrQueryDuplicateKey    = 9005
 	ErrQueryFilenameInvalid = 9006
 
-	// Class generalization errors (10xxx)
+	// Class generalization errors (10xxx).
 	ErrClassGenNameRequired         = 10001
 	ErrClassGenNameEmpty            = 10002
 	ErrClassGenInvalidJSON          = 10003
@@ -121,7 +121,7 @@ const (
 	ErrClassGenSubclassDuplicate    = 10012
 	ErrClassGenSuperclassIsSubclass = 10013
 
-	// Actor generalization errors (12xxx)
+	// Actor generalization errors (12xxx).
 	ErrActorGenNameRequired       = 12001
 	ErrActorGenNameEmpty          = 12002
 	ErrActorGenInvalidJSON        = 12003
@@ -130,7 +130,7 @@ const (
 	ErrActorGenSubclassesRequired = 12006
 	ErrActorGenSubclassesEmpty    = 12007
 
-	// Use case generalization errors (13xxx)
+	// Use case generalization errors (13xxx).
 	ErrUseCaseGenNameRequired       = 13001
 	ErrUseCaseGenNameEmpty          = 13002
 	ErrUseCaseGenInvalidJSON        = 13003
@@ -139,7 +139,7 @@ const (
 	ErrUseCaseGenSubclassesRequired = 13006
 	ErrUseCaseGenSubclassesEmpty    = 13007
 
-	// Logic errors (14xxx)
+	// Logic errors (14xxx).
 	ErrLogicDescriptionRequired    = 14001
 	ErrLogicDescriptionEmpty       = 14002
 	ErrLogicInvalidJSON            = 14003
@@ -148,13 +148,13 @@ const (
 	ErrLogicTargetNotAllowed       = 14006
 	ErrLogicTargetNoLeadUnderscore = 14007
 
-	// Parameter errors (15xxx)
+	// Parameter errors (15xxx).
 	ErrParamNameRequired    = 15001
 	ErrParamNameEmpty       = 15002
 	ErrParamInvalidJSON     = 15003
 	ErrParamSchemaViolation = 15004
 
-	// Global function errors (16xxx)
+	// Global function errors (16xxx).
 	ErrGlobalFuncNameRequired     = 16001
 	ErrGlobalFuncNameEmpty        = 16002
 	ErrGlobalFuncInvalidJSON      = 16003
@@ -163,7 +163,7 @@ const (
 	ErrGlobalFuncParamEmpty       = 16006
 	ErrGlobalFuncLogicRequired    = 16007
 
-	// Domain association errors (17xxx)
+	// Domain association errors (17xxx).
 	ErrDomainAssocProblemKeyRequired  = 17001
 	ErrDomainAssocProblemKeyEmpty     = 17002
 	ErrDomainAssocSolutionKeyRequired = 17003
@@ -171,7 +171,7 @@ const (
 	ErrDomainAssocInvalidJSON         = 17005
 	ErrDomainAssocSchemaViolation     = 17006
 
-	// Tree validation errors (11xxx) - cross-reference and structural integrity
+	// Tree validation errors (11xxx) - cross-reference and structural integrity.
 	ErrTreeClassActorNotFound           = 11001 // Class references an actor that doesn't exist
 	ErrTreeAssocFromClassNotFound       = 11002 // Association from_class_key not found
 	ErrTreeAssocToClassNotFound         = 11003 // Association to_class_key not found
@@ -190,7 +190,7 @@ const (
 	ErrTreeAssocMultiplicityInvalid     = 11016 // Invalid multiplicity format
 	ErrTreeAssocClassSameAsEndpoint     = 11025 // Association class cannot be the same as from or to class
 
-	// Tree completeness errors (11017+) - ensure model is complete enough for AI guidance
+	// Tree completeness errors (11017+) - ensure model is complete enough for AI guidance.
 	ErrTreeModelNoActors             = 11017 // Model must have at least one actor defined
 	ErrTreeModelNoDomains            = 11018 // Model must have at least one domain defined
 	ErrTreeDomainNoSubdomains        = 11019 // Domain must have at least one subdomain defined
@@ -200,31 +200,31 @@ const (
 	ErrTreeClassNoStateMachine       = 11023 // Class must have a state machine defined
 	ErrTreeStateMachineNoTransitions = 11024 // State machine must have at least one transition defined
 
-	// Key format errors (11026+) - keys derived from filenames must be well-formed
+	// Key format errors (11026+) - keys derived from filenames must be well-formed.
 	ErrKeyInvalidFormat              = 11026 // Key has invalid format (must be lowercase snake_case)
 	ErrAssocFilenameInvalidFormat    = 11027 // Association filename has invalid format
 	ErrAssocFilenameInvalidComponent = 11028 // Association filename has invalid component (must be snake_case)
 
-	// Unreferenced entity errors (11029+) - entities must be used
+	// Unreferenced entity errors (11029+) - entities must be used.
 	ErrTreeActionUnreferenced = 11029 // Action is defined but not referenced by any state or transition
 
-	// Subdomain naming errors (11030+)
+	// Subdomain naming errors (11030+).
 	ErrTreeSingleSubdomainNotDefault    = 11030 // Single subdomain must be named "default"
 	ErrTreeMultipleSubdomainsHasDefault = 11031 // Multiple subdomains cannot include one named "default"
 
 	// Additional tree-level errors (11032+)
-	// Domain association tree errors
+	// Domain association tree errors.
 	ErrTreeDomainAssocDomainNotFound = 11032 // Domain association references a domain that doesn't exist
 
-	// Actor generalization tree errors
+	// Actor generalization tree errors.
 	ErrTreeActorGenActorNotFound = 11033 // Actor generalization references an actor that doesn't exist
 
-	// Scenario/step tree errors
+	// Scenario/step tree errors.
 	ErrTreeScenarioStepObjectNotFound = 11034 // Scenario step references an object key that doesn't exist
 	ErrTreeScenarioStepEventNotFound  = 11035 // Scenario step references an event that doesn't exist on the referenced class
 	ErrTreeScenarioStepQueryNotFound  = 11036 // Scenario step references a query that doesn't exist on the referenced class
 
-	// Use case errors (18xxx)
+	// Use case errors (18xxx).
 	ErrUseCaseNameRequired    = 18001
 	ErrUseCaseNameEmpty       = 18002
 	ErrUseCaseInvalidJSON     = 18003
@@ -232,26 +232,26 @@ const (
 	ErrUseCaseLevelRequired   = 18005
 	ErrUseCaseLevelInvalid    = 18006
 
-	// Scenario errors (19xxx)
+	// Scenario errors (19xxx).
 	ErrScenarioNameRequired    = 19001
 	ErrScenarioNameEmpty       = 19002
 	ErrScenarioInvalidJSON     = 19003
 	ErrScenarioSchemaViolation = 19004
 
-	// Use case shared errors (20xxx)
+	// Use case shared errors (20xxx).
 	ErrUseCaseSharedShareTypeRequired = 20001
 	ErrUseCaseSharedShareTypeEmpty    = 20002
 	ErrUseCaseSharedInvalidJSON       = 20003
 	ErrUseCaseSharedSchemaViolation   = 20004
 
-	// Named set errors (22xxx)
+	// Named set errors (22xxx).
 	ErrNamedSetNameRequired     = 22001
 	ErrNamedSetNameEmpty        = 22002
 	ErrNamedSetInvalidJSON      = 22003
 	ErrNamedSetSchemaViolation  = 22004
 	ErrNamedSetNameNoUnderscore = 22005
 
-	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion
+	// Conversion errors (21xxx) - errors during inputModel to/from req_model conversion.
 	ErrConvKeyConstruction       = 21001 // Identity key construction failed during conversion
 	ErrConvModelValidation       = 21002 // Model validation failed after conversion
 	ErrConvMultiplicityInvalid   = 21003 // Multiplicity parsing failed during conversion

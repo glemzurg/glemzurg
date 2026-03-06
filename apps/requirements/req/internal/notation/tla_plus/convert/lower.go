@@ -57,11 +57,11 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 	switch e := expr.(type) {
 	// --- Literals ---
 	case *ast.BooleanLiteral:
-		return lowerBooleanLiteral(e)
+		return lowerBooleanLiteral(e), nil
 	case *ast.NumberLiteral:
 		return lowerNumberLiteral(e)
 	case *ast.StringLiteral:
-		return lowerStringLiteral(e)
+		return lowerStringLiteral(e), nil
 	case *ast.Fraction:
 		return lowerFraction(e, ctx)
 
@@ -69,13 +69,13 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 	case *ast.SetLiteral:
 		return lowerSetLiteral(e, ctx)
 	case *ast.SetLiteralEnum:
-		return lowerSetLiteralEnum(e)
+		return lowerSetLiteralEnum(e), nil
 	case *ast.SetLiteralInt:
-		return lowerSetLiteralInt(e)
+		return lowerSetLiteralInt(e), nil
 	case *ast.SetConstant:
 		return lowerSetConstant(e)
 	case *ast.SetRange:
-		return lowerSetRange(e)
+		return lowerSetRange(e), nil
 	case *ast.SetRangeExpr:
 		return lowerSetRangeExpr(e, ctx)
 	case *ast.TupleLiteral:
@@ -172,8 +172,8 @@ func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 
 // --- Literal lowering ---
 
-func lowerBooleanLiteral(e *ast.BooleanLiteral) (*me.BoolLiteral, error) {
-	return &me.BoolLiteral{Value: e.Value}, nil
+func lowerBooleanLiteral(e *ast.BooleanLiteral) *me.BoolLiteral {
+	return &me.BoolLiteral{Value: e.Value}
 }
 
 func lowerNumberLiteral(e *ast.NumberLiteral) (*me.IntLiteral, error) {
@@ -191,8 +191,8 @@ func lowerNumberLiteral(e *ast.NumberLiteral) (*me.IntLiteral, error) {
 	return &me.IntLiteral{Value: v}, nil
 }
 
-func lowerStringLiteral(e *ast.StringLiteral) (*me.StringLiteral, error) {
-	return &me.StringLiteral{Value: e.Value}, nil
+func lowerStringLiteral(e *ast.StringLiteral) *me.StringLiteral {
+	return &me.StringLiteral{Value: e.Value}
 }
 
 func lowerFraction(e *ast.Fraction, ctx *LowerContext) (me.Expression, error) {
@@ -231,20 +231,20 @@ func lowerSetLiteral(e *ast.SetLiteral, ctx *LowerContext) (*me.SetLiteral, erro
 	return &me.SetLiteral{Elements: elems}, nil
 }
 
-func lowerSetLiteralEnum(e *ast.SetLiteralEnum) (*me.SetLiteral, error) {
+func lowerSetLiteralEnum(e *ast.SetLiteralEnum) *me.SetLiteral {
 	elems := make([]me.Expression, len(e.Values))
 	for i, v := range e.Values {
 		elems[i] = &me.StringLiteral{Value: v}
 	}
-	return &me.SetLiteral{Elements: elems}, nil
+	return &me.SetLiteral{Elements: elems}
 }
 
-func lowerSetLiteralInt(e *ast.SetLiteralInt) (*me.SetLiteral, error) {
+func lowerSetLiteralInt(e *ast.SetLiteralInt) *me.SetLiteral {
 	elems := make([]me.Expression, len(e.Values))
 	for i, v := range e.Values {
 		elems[i] = &me.IntLiteral{Value: big.NewInt(int64(v))}
 	}
-	return &me.SetLiteral{Elements: elems}, nil
+	return &me.SetLiteral{Elements: elems}
 }
 
 func lowerSetConstant(e *ast.SetConstant) (*me.SetConstant, error) {
@@ -262,11 +262,11 @@ func lowerSetConstant(e *ast.SetConstant) (*me.SetConstant, error) {
 	}
 }
 
-func lowerSetRange(e *ast.SetRange) (*me.SetRange, error) {
+func lowerSetRange(e *ast.SetRange) *me.SetRange {
 	return &me.SetRange{
 		Start: &me.IntLiteral{Value: big.NewInt(int64(e.Start))},
 		End:   &me.IntLiteral{Value: big.NewInt(int64(e.End))},
-	}, nil
+	}
 }
 
 func lowerSetRangeExpr(e *ast.SetRangeExpr, ctx *LowerContext) (*me.SetRange, error) {

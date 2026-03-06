@@ -25,9 +25,8 @@ func scanAtomicEnum(scanner Scanner, dataTypeKeyPtr *string, atomicEnum *model_d
 	return nil
 }
 
-// LoadAtomicEnums loads all atomic enums for a data type from the database
+// LoadAtomicEnums loads all atomic enums for a data type from the database.
 func LoadAtomicEnums(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomicEnums map[string][]model_data_type.AtomicEnum, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -80,7 +79,6 @@ func LoadAtomicEnums(dbOrTx DbOrTx, modelKey, dataTypeKey string) (atomicEnums m
 
 // AddAtomicEnum adds an atomic enum to the database.
 func AddAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicEnum model_data_type.AtomicEnum) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -92,7 +90,7 @@ func AddAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicEnum model
 	}
 
 	// Add the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			INSERT INTO data_type_atomic_enum_value
 				(
 					model_key    ,
@@ -120,7 +118,6 @@ func AddAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicEnum model
 
 // UpdateAtomicEnum updates an atomic enum in the database.
 func UpdateAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, oldValue string, atomicEnum model_data_type.AtomicEnum) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -132,7 +129,7 @@ func UpdateAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, oldValue string, ato
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			data_type_atomic_enum_value
 		SET
@@ -158,7 +155,6 @@ func UpdateAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, oldValue string, ato
 
 // RemoveAtomicEnum deletes an atomic enum from the database.
 func RemoveAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, value string) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -170,7 +166,7 @@ func RemoveAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, value string) (err e
 	}
 
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			data_type_atomic_enum_value
 		WHERE
@@ -189,9 +185,8 @@ func RemoveAtomicEnum(dbOrTx DbOrTx, modelKey, dataTypeKey, value string) (err e
 	return nil
 }
 
-// QueryAtomicEnums loads all atomic enums from the database
+// QueryAtomicEnums loads all atomic enums from the database.
 func QueryAtomicEnums(dbOrTx DbOrTx, modelKey string) (atomicEnums map[string][]model_data_type.AtomicEnum, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -278,6 +273,6 @@ func BulkInsertAtomicEnums(dbOrTx DbOrTx, modelKey string, atomicEnums map[strin
 		VALUES %s`, strings.Join(valueStrings, ", "))
 
 	// Execute
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	return errors.WithStack(err)
 }

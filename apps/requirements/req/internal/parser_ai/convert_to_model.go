@@ -826,7 +826,7 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 
 	// Convert state machine if present
 	if class.StateMachine != nil {
-		if err := convertStateMachineToModel(class.StateMachine, class.Actions, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
+		if err := convertStateMachineToModel(class.StateMachine, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
 			return model_class.Class{}, err
 		}
 	}
@@ -868,7 +868,7 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 	for i, index := range indexes {
 		for _, attrKeyInIndex := range index {
 			if attrKeyInIndex == keyStr {
-				indexNums = append(indexNums, uint(i))
+				indexNums = append(indexNums, uint(i)) //nolint:gosec // index i is bounded by slice length, no overflow possible
 				break
 			}
 		}
@@ -910,7 +910,7 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 }
 
 // convertStateMachineToModel converts an inputStateMachine to populate a Class's state machine fields.
-func convertStateMachineToModel(sm *inputStateMachine, actions map[string]*inputAction, class *model_class.Class, classKey identity.Key, domainKeyStr, subdomainKeyStr, classKeyStr string) error {
+func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class, classKey identity.Key, domainKeyStr, subdomainKeyStr, classKeyStr string) error {
 	smFile := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKeyStr, subdomainKeyStr, classKeyStr)
 
 	// Convert states

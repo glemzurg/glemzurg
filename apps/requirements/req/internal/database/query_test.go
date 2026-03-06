@@ -34,7 +34,6 @@ type QuerySuite struct {
 }
 
 func (suite *QuerySuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,14 +49,13 @@ func (suite *QuerySuite) SetupTest() {
 }
 
 func (suite *QuerySuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), query)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO query
 			(
 				model_key,
@@ -88,7 +86,6 @@ func (suite *QuerySuite) TestLoad() {
 }
 
 func (suite *QuerySuite) TestAdd() {
-
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
@@ -107,7 +104,6 @@ func (suite *QuerySuite) TestAdd() {
 }
 
 func (suite *QuerySuite) TestUpdate() {
-
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
@@ -133,7 +129,6 @@ func (suite *QuerySuite) TestUpdate() {
 }
 
 func (suite *QuerySuite) TestRemove() {
-
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
@@ -151,7 +146,6 @@ func (suite *QuerySuite) TestRemove() {
 }
 
 func (suite *QuerySuite) TestQuery() {
-
 	err := AddQueries(suite.db, suite.model.Key, map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{
@@ -191,7 +185,6 @@ func (suite *QuerySuite) TestQuery() {
 //==================================================
 
 func t_AddQuery(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, queryKey identity.Key) (query model_state.Query) {
-
 	err := AddQuery(dbOrTx, modelKey, classKey, model_state.Query{
 		Key:     queryKey,
 		Name:    queryKey.String(),
@@ -206,7 +199,6 @@ func t_AddQuery(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.
 }
 
 func (suite *QuerySuite) TestVerifyTestObjects() {
-
 	query := t_AddQuery(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.queryKey)
 	assert.Equal(suite.T(), model_state.Query{
 		Key:     suite.queryKey,

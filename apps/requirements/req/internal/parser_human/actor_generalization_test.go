@@ -23,7 +23,6 @@ type ActorGeneralizationFileSuite struct {
 }
 
 func (suite *ActorGeneralizationFileSuite) TestParseActorGeneralizationFiles() {
-
 	generalizationSubKey := "generalization_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_ACTOR_GENERALIZATION_PATH_OK)

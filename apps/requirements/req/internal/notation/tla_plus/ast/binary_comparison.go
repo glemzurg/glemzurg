@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Comparison operators
+// Comparison operators.
 const (
 	ComparisonLessThan           = "<" // Less than
 	ComparisonGreaterThan        = ">" // Greater than

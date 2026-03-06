@@ -61,9 +61,8 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_
 	return nil
 }
 
-// LoadUseCase loads a use case from the database
+// LoadUseCase loads a use case from the database.
 func LoadUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (subdomainKey identity.Key, useCase model_use_case.UseCase, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -107,7 +106,6 @@ func AddUseCase(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, useCa
 
 // UpdateUseCase updates a use case in the database.
 func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCase) (err error) {
-
 	// We may or may not have optional key pointers.
 	var superclassOfKeyPtr *string
 	if useCase.SuperclassOfKey != nil {
@@ -121,7 +119,7 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			use_case
 		SET
@@ -154,9 +152,8 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 
 // RemoveUseCase deletes a use case from the database.
 func RemoveUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			use_case
 		WHERE
@@ -174,7 +171,6 @@ func RemoveUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (err
 
 // QueryUseCases loads all use cases from the database.
 func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.Key]identity.Key, useCases []model_use_case.UseCase, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -246,7 +242,7 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, superclassOfKeyPtr, subclassOfKeyPtr, uc.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

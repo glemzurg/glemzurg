@@ -26,7 +26,7 @@ func TestInvariantsSuite(t *testing.T) {
 	suite.Run(t, new(InvariantsSuite))
 }
 
-// Helper to create an identity.Key from a string
+// Helper to create an identity.Key from a string.
 func mustKey(s string) identity.Key {
 	k, err := identity.ParseKey(s)
 	if err != nil {
@@ -59,7 +59,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 	return spec
 }
 
-// Helper to create a basic model with a class
+// Helper to create a basic model with a class.
 func createTestModel() *core.Model {
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
 
@@ -166,7 +166,7 @@ func createTestModel() *core.Model {
 	return &model
 }
 
-// Test: DataTypeChecker detects unparsed data types
+// Test: DataTypeChecker detects unparsed data types.
 func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
@@ -198,7 +198,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	s.Equal("bad", violations[0].AttributeName)
 }
 
-// Test: DataTypeChecker validates required attributes
+// Test: DataTypeChecker validates required attributes.
 func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -229,7 +229,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	s.True(foundRequiredViolation, "Should detect missing required attribute 'status'")
 }
 
-// Test: DataTypeChecker validates span constraints
+// Test: DataTypeChecker validates span constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -259,7 +259,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	s.True(foundSpanViolation, "Should detect amount exceeding span constraint")
 }
 
-// Test: DataTypeChecker validates enumeration constraints
+// Test: DataTypeChecker validates enumeration constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -289,7 +289,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 	s.True(foundEnumViolation, "Should detect status not in enumeration")
 }
 
-// Test: DataTypeChecker passes for valid instance
+// Test: DataTypeChecker passes for valid instance.
 func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -312,7 +312,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	s.False(instanceViolations.HasViolations())
 }
 
-// Test: DataTypeChecker handles nullable attributes correctly
+// Test: DataTypeChecker handles nullable attributes correctly.
 func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -335,7 +335,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	s.False(instanceViolations.HasViolations())
 }
 
-// Test: Violation types and messages
+// Test: Violation types and messages.
 func (s *InvariantsSuite) TestViolationTypes() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
@@ -378,7 +378,7 @@ func (s *InvariantsSuite) TestViolationTypes() {
 	s.Contains(v6.Message, "unparsed")
 }
 
-// Test: ViolationErrors filtering
+// Test: ViolationErrors filtering.
 func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
@@ -404,7 +404,7 @@ func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 	s.Len(dataType, 3)
 }
 
-// Test: InvariantChecker creation
+// Test: InvariantChecker creation.
 func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 	model := createTestModel()
 	checker, err := NewInvariantChecker(model)
@@ -413,7 +413,7 @@ func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 	s.Equal(1, checker.GetModelInvariantCount())
 }
 
-// Test: InvariantChecker model invariant that passes
+// Test: InvariantChecker model invariant that passes.
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	model := createTestModel()
 	checker, err := NewInvariantChecker(model)
@@ -426,7 +426,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	s.False(violations.HasViolations())
 }
 
-// Test: InvariantChecker model invariant that fails
+// Test: InvariantChecker model invariant that fails.
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil)),
@@ -464,7 +464,7 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 	s.Equal(0, checker.GetModelInvariantCount()) // Unparsed invariants are not counted.
 }
 
-// Test: CheckAllInvariants combines data type and TLA+ checks
+// Test: CheckAllInvariants combines data type and TLA+ checks.
 func (s *InvariantsSuite) TestCheckAllInvariants() {
 	model := createTestModel()
 
@@ -495,7 +495,7 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 	s.True(dtv.HasViolations())
 }
 
-// Test: Span with open bounds
+// Test: Span with open bounds.
 func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 

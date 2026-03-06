@@ -31,7 +31,6 @@ type ActorSuite struct {
 }
 
 func (suite *ActorSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,13 +49,12 @@ func (suite *ActorSuite) SetupTest() {
 }
 
 func (suite *ActorSuite) TestLoad() {
-
 	// Nothing in database yet.
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), actor)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO actor
 			(
 				model_key,
@@ -96,7 +94,6 @@ func (suite *ActorSuite) TestLoad() {
 }
 
 func (suite *ActorSuite) TestAdd() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -122,7 +119,6 @@ func (suite *ActorSuite) TestAdd() {
 }
 
 func (suite *ActorSuite) TestAddNulls() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -148,7 +144,6 @@ func (suite *ActorSuite) TestAddNulls() {
 }
 
 func (suite *ActorSuite) TestUpdate() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -185,7 +180,6 @@ func (suite *ActorSuite) TestUpdate() {
 }
 
 func (suite *ActorSuite) TestUpdateNulls() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -222,7 +216,6 @@ func (suite *ActorSuite) TestUpdateNulls() {
 }
 
 func (suite *ActorSuite) TestRemove() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -243,7 +236,6 @@ func (suite *ActorSuite) TestRemove() {
 }
 
 func (suite *ActorSuite) TestQuery() {
-
 	err := AddActors(suite.db, suite.model.Key, []model_actor.Actor{
 		{
 			Key:             suite.actorKeyB,
@@ -295,7 +287,6 @@ func (suite *ActorSuite) TestQuery() {
 //==================================================
 
 func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor model_actor.Actor) {
-
 	err := AddActor(dbOrTx, modelKey, model_actor.Actor{
 		Key:        actorKey,
 		Name:       actorKey.String(),
@@ -312,7 +303,6 @@ func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey string, actorKey identity.
 }
 
 func (suite *ActorSuite) TestVerifyTestObjects() {
-
 	actor := t_AddActor(suite.T(), suite.db, suite.model.Key, suite.actorKey)
 	assert.Equal(suite.T(), model_actor.Actor{
 		Key:        suite.actorKey,

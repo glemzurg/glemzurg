@@ -56,7 +56,7 @@ func (s *StressNestingTestSuite) TestDeepArithmeticChains() {
 		s.Run(tt.desc, func() {
 			// Build: 1 op 2 op 3 op ... op N
 			parts := make([]string, tt.count)
-			for i := 0; i < tt.count; i++ {
+			for i := range tt.count {
 				parts[i] = fmt.Sprintf("%d", i+1)
 			}
 			input := strings.Join(parts, " "+tt.op+" ")
@@ -81,7 +81,7 @@ func (s *StressNestingTestSuite) TestDeepLogicChains() {
 		s.Run(tt.desc, func() {
 			// Build: a /\ b /\ c /\ ...
 			parts := make([]string, tt.count)
-			for i := 0; i < tt.count; i++ {
+			for i := range tt.count {
 				parts[i] = fmt.Sprintf("x%d", i)
 			}
 			input := strings.Join(parts, " "+tt.op+" ")
@@ -106,11 +106,11 @@ func (s *StressNestingTestSuite) TestDeepNestedIF() {
 		s.Run(tt.desc, func() {
 			// Build: IF TRUE THEN IF TRUE THEN ... THEN 1 ELSE 2 ... ELSE n+1
 			var b strings.Builder
-			for i := 0; i < tt.depth; i++ {
+			for range tt.depth {
 				b.WriteString("IF TRUE THEN ")
 			}
 			b.WriteString("1")
-			for i := 0; i < tt.depth; i++ {
+			for i := range tt.depth {
 				b.WriteString(fmt.Sprintf(" ELSE %d", i+2))
 			}
 			_, err := ParseExpression(b.String())
@@ -134,11 +134,11 @@ func (s *StressNestingTestSuite) TestDeepNestedTuples() {
 		s.Run(tt.desc, func() {
 			// Build: <<1, <<2, <<3, <<4>>>>>>
 			var b strings.Builder
-			for i := 0; i < tt.depth; i++ {
+			for i := range tt.depth {
 				b.WriteString(fmt.Sprintf("<<%d, ", i+1))
 			}
 			b.WriteString(fmt.Sprintf("%d", tt.depth+1))
-			for i := 0; i < tt.depth; i++ {
+			for range tt.depth {
 				b.WriteString(">>")
 			}
 			_, err := ParseExpression(b.String())
@@ -161,11 +161,11 @@ func (s *StressNestingTestSuite) TestDeepNestedSets() {
 		s.Run(tt.desc, func() {
 			// Build: {1, {2, {3, {4}}}}
 			var b strings.Builder
-			for i := 0; i < tt.depth; i++ {
+			for i := range tt.depth {
 				b.WriteString(fmt.Sprintf("{%d, ", i+1))
 			}
 			b.WriteString(fmt.Sprintf("%d", tt.depth+1))
-			for i := 0; i < tt.depth; i++ {
+			for range tt.depth {
 				b.WriteString("}")
 			}
 			_, err := ParseExpression(b.String())
@@ -185,7 +185,7 @@ func (s *StressNestingTestSuite) TestDeepNestedRecords() {
 func (s *StressNestingTestSuite) TestDeepSetUnionChain() {
 	// Build: {1} ∪ {2} ∪ {3} ∪ ... ∪ {10}
 	parts := make([]string, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		parts[i] = fmt.Sprintf("{%d}", i+1)
 	}
 	input := strings.Join(parts, " ∪ ")

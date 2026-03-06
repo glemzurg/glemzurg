@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
@@ -18,13 +19,13 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
 
-// Supported input formats
+// Supported input formats.
 const (
 	InputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	InputFormatAIJSON   = "ai/json"   // AI format (JSON files)
 )
 
-// Supported output formats
+// Supported output formats.
 const (
 	OutputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	OutputFormatMD       = "md"        // Markdown documentation
@@ -32,7 +33,6 @@ const (
 )
 
 func main() {
-
 	// Example calls:
 	// Default: data/yaml to md
 	//   $GOBIN/req -rootsource example/models -rootoutput example/output/models -model model_a
@@ -132,9 +132,8 @@ func main() {
 	os.Exit(0)
 }
 
-// processConversion handles the input/output conversion based on formats
-func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
-
+// processConversion handles the input/output conversion based on formats.
+func processConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
 	sourcePath := filepath.Join(rootSourcePath, model)
 	outputPath := filepath.Join(rootOutputPath, model)
 
@@ -182,7 +181,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 	case OutputFormatMD:
 		log.Println("Generating markdown output...")
 		// Use the already-parsed model to generate markdown
-		err := generate.GenerateMdFromModel(debug, outputPath, *parsedModel)
+		err := generate.GenerateMdFromModel(outputPath, *parsedModel)
 		if err != nil {
 			return fmt.Errorf("failed to generate markdown: %w", err)
 		}
@@ -238,5 +237,12 @@ func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 
 	// Start the HTTP server
 	log.Printf("Server ready at http://localhost:%s/%s/model.md", port, model)
-	log.Fatal(http.ListenAndServe(":"+port, server.Handler()))
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      server.Handler(),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }

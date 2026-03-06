@@ -5,7 +5,7 @@ import (
 )
 
 // IfThenElse represents an IF-THEN-ELSE expression.
-// Pattern: IF logic THEN expression ELSE expression
+// Pattern: IF logic THEN expression ELSE expression.
 type IfThenElse struct {
 	Condition Expression `validate:"required"` // Must be Boolean
 	Then      Expression `validate:"required"`

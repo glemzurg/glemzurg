@@ -36,7 +36,7 @@ func buildChainTestComponents(
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
@@ -185,7 +185,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)

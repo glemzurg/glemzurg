@@ -22,19 +22,17 @@ type ModelSuite struct {
 }
 
 func (suite *ModelSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 }
 
 func (suite *ModelSuite) TestLoad() {
-
 	// Nothing in database yet.
 	model, err := LoadModel(suite.db, "Key")
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), model)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO model
 			(
 				model_key,
@@ -60,7 +58,6 @@ func (suite *ModelSuite) TestLoad() {
 }
 
 func (suite *ModelSuite) TestAdd() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
@@ -78,7 +75,6 @@ func (suite *ModelSuite) TestAdd() {
 }
 
 func (suite *ModelSuite) TestUpdate() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
@@ -103,7 +99,6 @@ func (suite *ModelSuite) TestUpdate() {
 }
 
 func (suite *ModelSuite) TestRemove() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
@@ -120,7 +115,6 @@ func (suite *ModelSuite) TestRemove() {
 }
 
 func (suite *ModelSuite) TestQuery() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "keyx",
 		Name:    "NameX",

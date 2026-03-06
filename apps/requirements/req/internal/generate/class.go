@@ -8,7 +8,6 @@ import (
 )
 
 func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Class) (contents string, err error) {
-
 	// Create the lookups of keys to meaningful values.
 
 	contents, err = generateFromTemplate(_classMdTemplate, struct {
@@ -25,8 +24,7 @@ func generateClassMdContents(reqs *req_flat.Requirements, class model_class.Clas
 	return contents, nil
 }
 
-func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_class.Class) (svgContents string, dotContents string, err error) {
-
+func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_class.Class) (svgContents string, err error) {
 	// Create the lookups of keys to meaningful values.
 	eventNameLookup := map[string]string{}
 	for _, event := range class.Events {
@@ -41,7 +39,7 @@ func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_clas
 		actionNameLookup[action.Key.String()] = action.Name
 	}
 
-	dotContents, err = generateFromTemplate(_classStateDotTemplate, struct {
+	dotContents, err := generateFromTemplate(_classStateDotTemplate, struct {
 		Reqs               *req_flat.Requirements
 		Class              model_class.Class
 		EventNameLookup    map[string]string
@@ -55,21 +53,20 @@ func generateClassStateSvgContents(reqs *req_flat.Requirements, class model_clas
 		ActionNameLookup:   actionNameLookup,
 	})
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	svgContents, err = graphvizDotToSvg(dotContents)
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
-	return svgContents, dotContents, nil
+	return svgContents, nil
 }
 
 // This is the class graph on a domain and class pages.
-func generateClassesSvgContents(reqs *req_flat.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (svgContents string, dotContents string, err error) {
-
-	dotContents, err = generateFromTemplate(_classesDotTemplate, struct {
+func generateClassesSvgContents(reqs *req_flat.Requirements, generalizations []model_class.Generalization, classes []model_class.Class, associations []model_class.Association) (svgContents string, err error) {
+	dotContents, err := generateFromTemplate(_classesDotTemplate, struct {
 		Reqs            *req_flat.Requirements
 		Generalizations []model_class.Generalization
 		Classes         []model_class.Class
@@ -81,13 +78,13 @@ func generateClassesSvgContents(reqs *req_flat.Requirements, generalizations []m
 		Associations:    associations,
 	})
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
 	svgContents, err = graphvizDotToSvg(dotContents)
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
 
-	return svgContents, dotContents, nil
+	return svgContents, nil
 }

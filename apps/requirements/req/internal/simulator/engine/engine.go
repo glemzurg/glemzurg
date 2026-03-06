@@ -66,7 +66,7 @@ type SimulationEngine struct {
 // The model must have its ExpressionSpec.Expression fields already populated
 // (e.g., via parse functions passed to ExpressionSpec constructors).
 func NewSimulationEngine(model *core.Model, config SimulationConfig) (*SimulationEngine, error) {
-	rng := rand.New(rand.NewSource(config.RandomSeed))
+	rng := rand.New(rand.NewSource(config.RandomSeed)) //nolint:gosec // simulation uses deterministic seeded RNG
 
 	// Apply surface area filtering.
 	activeModel := model
@@ -164,7 +164,7 @@ func NewSimulationEngine(model *core.Model, config SimulationConfig) (*Simulatio
 func (e *SimulationEngine) Run() (*SimulationResult, error) {
 	result := &SimulationResult{}
 
-	for step := 0; step < e.config.MaxSteps; step++ {
+	for step := range e.config.MaxSteps {
 		// Pick the next action.
 		pending, err := e.selector.SelectAction(e.simState)
 		if err != nil {

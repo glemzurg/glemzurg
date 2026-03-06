@@ -34,7 +34,6 @@ type ActionSuite struct {
 }
 
 func (suite *ActionSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,14 +49,13 @@ func (suite *ActionSuite) SetupTest() {
 }
 
 func (suite *ActionSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), action)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action
 			(
 				model_key,
@@ -88,7 +86,6 @@ func (suite *ActionSuite) TestLoad() {
 }
 
 func (suite *ActionSuite) TestAdd() {
-
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
@@ -107,7 +104,6 @@ func (suite *ActionSuite) TestAdd() {
 }
 
 func (suite *ActionSuite) TestUpdate() {
-
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
@@ -133,7 +129,6 @@ func (suite *ActionSuite) TestUpdate() {
 }
 
 func (suite *ActionSuite) TestRemove() {
-
 	err := AddAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
@@ -151,7 +146,6 @@ func (suite *ActionSuite) TestRemove() {
 }
 
 func (suite *ActionSuite) TestQuery() {
-
 	err := AddActions(suite.db, suite.model.Key, map[identity.Key][]model_state.Action{
 		suite.class.Key: {
 			{
@@ -191,7 +185,6 @@ func (suite *ActionSuite) TestQuery() {
 //==================================================
 
 func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionKey identity.Key) (action model_state.Action) {
-
 	err := AddAction(dbOrTx, modelKey, classKey, model_state.Action{
 		Key:     actionKey,
 		Name:    actionKey.String(),

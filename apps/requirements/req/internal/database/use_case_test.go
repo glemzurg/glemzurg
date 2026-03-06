@@ -34,7 +34,6 @@ type UseCaseSuite struct {
 }
 
 func (suite *UseCaseSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -51,14 +50,13 @@ func (suite *UseCaseSuite) SetupTest() {
 }
 
 func (suite *UseCaseSuite) TestLoad() {
-
 	// Nothing in database yet.
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), subdomainKey)
 	assert.Empty(suite.T(), useCase)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO use_case
 			(
 				model_key,
@@ -104,7 +102,6 @@ func (suite *UseCaseSuite) TestLoad() {
 }
 
 func (suite *UseCaseSuite) TestAdd() {
-
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
 		Key:             suite.useCaseKey,
 		Name:            "Name",
@@ -133,7 +130,6 @@ func (suite *UseCaseSuite) TestAdd() {
 }
 
 func (suite *UseCaseSuite) TestAddNulls() {
-
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
 		Key:             suite.useCaseKey,
 		Name:            "Name",
@@ -162,7 +158,6 @@ func (suite *UseCaseSuite) TestAddNulls() {
 }
 
 func (suite *UseCaseSuite) TestUpdate() {
-
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
 		Key:             suite.useCaseKey,
 		Name:            "Name",
@@ -203,7 +198,6 @@ func (suite *UseCaseSuite) TestUpdate() {
 }
 
 func (suite *UseCaseSuite) TestUpdateNulls() {
-
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
 		Key:             suite.useCaseKey,
 		Name:            "Name",
@@ -244,7 +238,6 @@ func (suite *UseCaseSuite) TestUpdateNulls() {
 }
 
 func (suite *UseCaseSuite) TestRemove() {
-
 	err := AddUseCase(suite.db, suite.model.Key, suite.subdomain.Key, model_use_case.UseCase{
 		Key:        suite.useCaseKey,
 		Name:       "Name",
@@ -265,7 +258,6 @@ func (suite *UseCaseSuite) TestRemove() {
 }
 
 func (suite *UseCaseSuite) TestQuery() {
-
 	err := AddUseCases(suite.db, suite.model.Key, map[identity.Key]identity.Key{
 		suite.useCaseKeyB: suite.subdomain.Key,
 		suite.useCaseKey:  suite.subdomain.Key,
@@ -328,7 +320,6 @@ func (suite *UseCaseSuite) TestQuery() {
 //==================================================
 
 func t_AddUseCase(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, useCaseKey identity.Key) (useCase model_use_case.UseCase) {
-
 	err := AddUseCase(dbOrTx, modelKey, subdomainKey, model_use_case.UseCase{
 		Key:        useCaseKey,
 		Name:       useCaseKey.String(),

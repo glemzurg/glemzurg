@@ -499,7 +499,7 @@ func (s *NumberLiteralSuite) TestParenExpr_WithFraction() {
 	s.Equal("3/4", num.Inspect())
 }
 
-// Helper function to convert int to string
+// Helper function to convert int to string.
 func intToString(n int) string {
 	if n < 0 {
 		return "-" + intToString(-n)

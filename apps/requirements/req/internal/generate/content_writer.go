@@ -20,7 +20,7 @@ type ContentWriter interface {
 }
 
 // GenerateMdToWriter generates markdown documentation to a ContentWriter.
-func GenerateMdToWriter(debug bool, parsedModel core.Model, writer ContentWriter) error {
+func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error {
 	// Create the flattened requirements from the model.
 	reqs := req_flat.NewRequirements(parsedModel)
 
@@ -28,11 +28,11 @@ func GenerateMdToWriter(debug bool, parsedModel core.Model, writer ContentWriter
 	reqs.PrepLookups()
 
 	// Generate files to writer.
-	return generateFilesToWriter(debug, reqs, writer)
+	return generateFilesToWriter(reqs, writer)
 }
 
 // generateFilesToWriter generates all files and writes them to the ContentWriter.
-func generateFilesToWriter(debug bool, reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
 	// Write CSS
 	if err := writer.WriteCSS([]byte(_MD_CSS)); err != nil {
 		return err
@@ -44,7 +44,7 @@ func generateFilesToWriter(debug bool, reqs *req_flat.Requirements, writer Conte
 	}
 
 	// Generate model files
-	if err := generateModelFilesToWriter(debug, reqs, writer); err != nil {
+	if err := generateModelFilesToWriter(reqs, writer); err != nil {
 		return err
 	}
 
@@ -54,17 +54,17 @@ func generateFilesToWriter(debug bool, reqs *req_flat.Requirements, writer Conte
 	}
 
 	// Generate domain files
-	if err := generateDomainFilesToWriter(debug, reqs, writer); err != nil {
+	if err := generateDomainFilesToWriter(reqs, writer); err != nil {
 		return err
 	}
 
 	// Generate subdomain files
-	if err := generateSubdomainFilesToWriter(debug, reqs, writer); err != nil {
+	if err := generateSubdomainFilesToWriter(reqs, writer); err != nil {
 		return err
 	}
 
 	// Generate class files
-	if err := generateClassFilesToWriter(debug, reqs, writer); err != nil {
+	if err := generateClassFilesToWriter(reqs, writer); err != nil {
 		return err
 	}
 
@@ -98,7 +98,7 @@ func writeSupportImagesToWriter(writer ContentWriter) error {
 }
 
 // generateModelFilesToWriter generates model files to a ContentWriter.
-func generateModelFilesToWriter(debug bool, reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateModelFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
 	model := reqs.Model
 
 	// Get actors as a sorted slice.
@@ -138,7 +138,7 @@ func generateModelFilesToWriter(debug bool, reqs *req_flat.Requirements, writer 
 	}
 
 	// Generate domains diagram.
-	svgContents, _, err := generateDomainsSvgContents(reqs, domains, associations)
+	svgContents, err := generateDomainsSvgContents(reqs, domains, associations)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func generateActorFilesToWriter(reqs *req_flat.Requirements, writer ContentWrite
 }
 
 // generateDomainFilesToWriter generates domain files to a ContentWriter.
-func generateDomainFilesToWriter(debug bool, reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
 	domainLookup, _ := reqs.DomainLookup()
 
 	for _, domain := range domainLookup {
@@ -187,7 +187,7 @@ func generateDomainFilesToWriter(debug bool, reqs *req_flat.Requirements, writer
 		if hasMultipleSubdomains {
 			// Generate subdomains diagram.
 			subdomainsFilename := convertKeyToFilename("domain", domain.Key.String(), "subdomains", ".svg")
-			svgContents, _, err := generateSubdomainsSvgContents(reqs, domain)
+			svgContents, err := generateSubdomainsSvgContents(reqs, domain)
 			if err != nil {
 				return err
 			}
@@ -216,7 +216,7 @@ func generateDomainFilesToWriter(debug bool, reqs *req_flat.Requirements, writer
 			if err != nil {
 				return err
 			}
-			useCasesSvgContents, _, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
+			useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
 			if err != nil {
 				return err
 			}
@@ -227,7 +227,7 @@ func generateDomainFilesToWriter(debug bool, reqs *req_flat.Requirements, writer
 			// Generate classes diagram.
 			generalizations, classes, classAssociations := reqs.RegardingClasses(domainClasses)
 			classesFilename := convertKeyToFilename("domain", domain.Key.String(), "classes", ".svg")
-			classesSvgContents, _, err := generateClassesSvgContents(reqs, generalizations, classes, classAssociations)
+			classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, classes, classAssociations)
 			if err != nil {
 				return err
 			}
@@ -241,7 +241,7 @@ func generateDomainFilesToWriter(debug bool, reqs *req_flat.Requirements, writer
 }
 
 // generateSubdomainFilesToWriter generates subdomain files to a ContentWriter.
-func generateSubdomainFilesToWriter(debug bool, reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateSubdomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
 	domainLookup, _ := reqs.DomainLookup()
 
 	for _, domain := range domainLookup {
@@ -278,7 +278,7 @@ func generateSubdomainFilesToWriter(debug bool, reqs *req_flat.Requirements, wri
 			if err != nil {
 				return err
 			}
-			useCasesSvgContents, _, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
+			useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
 			if err != nil {
 				return err
 			}
@@ -289,7 +289,7 @@ func generateSubdomainFilesToWriter(debug bool, reqs *req_flat.Requirements, wri
 			// Generate classes diagram.
 			generalizations, classes, associations := reqs.RegardingClasses(subdomainClasses)
 			classesFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "classes", ".svg")
-			classesSvgContents, _, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
+			classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
 			if err != nil {
 				return err
 			}
@@ -303,7 +303,7 @@ func generateSubdomainFilesToWriter(debug bool, reqs *req_flat.Requirements, wri
 }
 
 // generateClassFilesToWriter generates class files to a ContentWriter.
-func generateClassFilesToWriter(debug bool, reqs *req_flat.Requirements, writer ContentWriter) error {
+func generateClassFilesToWriter(reqs *req_flat.Requirements, writer ContentWriter) error {
 	classLookup, _ := reqs.ClassLookup()
 
 	for _, class := range classLookup {
@@ -320,7 +320,7 @@ func generateClassFilesToWriter(debug bool, reqs *req_flat.Requirements, writer 
 		// Generate classes diagram.
 		generalizations, classes, associations := reqs.RegardingClasses([]model_class.Class{class})
 		classesSvgFilename := convertKeyToFilename("class", class.Key.String(), "", ".svg")
-		classesSvgContents, _, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
+		classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
 		if err != nil {
 			return err
 		}
@@ -331,7 +331,7 @@ func generateClassFilesToWriter(debug bool, reqs *req_flat.Requirements, writer 
 		// State Machine diagram.
 		if len(class.States) > 0 {
 			statesSvgFilename := convertKeyToFilename("class", class.Key.String(), "states", ".svg")
-			statesSvgContents, _, err := generateClassStateSvgContents(reqs, class)
+			statesSvgContents, err := generateClassStateSvgContents(reqs, class)
 			if err != nil {
 				return err
 			}

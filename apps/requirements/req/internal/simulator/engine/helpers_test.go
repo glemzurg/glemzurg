@@ -109,7 +109,8 @@ func parsedSpec(tla string) model_spec.ExpressionSpec {
 
 // counterSpec parses a TLA+ expression in the context of the standard Counter class
 // with attribute: count.
-func counterSpec(tla string) model_spec.ExpressionSpec {
+func counterSpec() model_spec.ExpressionSpec {
+	tla := "self.count + 1"
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,

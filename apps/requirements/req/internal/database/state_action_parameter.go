@@ -54,7 +54,6 @@ func scanActionParameter(scanner Scanner, actionKeyPtr *identity.Key, param *mod
 
 // LoadActionParameter loads an action parameter from the database.
 func LoadActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, parameterKey string) (param model_state.Parameter, err error) {
-
 	var loadedActionKey identity.Key
 	var sortOrder int
 
@@ -101,14 +100,13 @@ func AddActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, 
 
 // UpdateActionParameter updates an action parameter in the database.
 func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-
 	paramKey, err := preenKey(param.Name)
 	if err != nil {
 		return errors.Wrapf(err, "parameter name '%s'", param.Name)
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			action_parameter
 		SET
@@ -138,9 +136,8 @@ func UpdateActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Ke
 
 // RemoveActionParameter deletes an action parameter from the database.
 func RemoveActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, parameterKey string) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			action_parameter
 		WHERE
@@ -161,7 +158,6 @@ func RemoveActionParameter(dbOrTx DbOrTx, modelKey string, actionKey identity.Ke
 
 // QueryActionParameters loads all action parameters from the database, grouped by action key.
 func QueryActionParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.Key][]model_state.Parameter, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -233,7 +229,7 @@ func AddActionParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key
 		}
 	}
 
-	_, err = dbExec(dbOrTx, sqlQuery, args...)
+	err = dbExec(dbOrTx, sqlQuery, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

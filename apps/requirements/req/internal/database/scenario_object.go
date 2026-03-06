@@ -52,9 +52,8 @@ func scanObject(scanner Scanner, scenarioKeyPtr *identity.Key, object *model_sce
 	return nil
 }
 
-// LoadObject loads a scenario object from the database
+// LoadObject loads a scenario object from the database.
 func LoadObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (scenarioKey identity.Key, object model_scenario.Object, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -97,9 +96,8 @@ func AddObject(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, object 
 
 // UpdateObject updates a scenario object in the database.
 func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			scenario_object
 		SET
@@ -130,9 +128,8 @@ func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) 
 
 // RemoveObject deletes a scenario object from the database.
 func RemoveObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				scenario_object
 			WHERE
@@ -148,9 +145,8 @@ func RemoveObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (err e
 	return nil
 }
 
-// QueryObjects loads all scenario objects from the database grouped by scenario key
+// QueryObjects loads all scenario objects from the database grouped by scenario key.
 func QueryObjects(dbOrTx DbOrTx, modelKey string) (objects map[identity.Key][]model_scenario.Object, err error) {
-
 	objects = make(map[identity.Key][]model_scenario.Object)
 
 	// Query the database.
@@ -214,7 +210,7 @@ func AddObjects(dbOrTx DbOrTx, modelKey string, objects map[identity.Key][]model
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -24,7 +24,6 @@ type SubdomainFileSuite struct {
 }
 
 func (suite *SubdomainFileSuite) TestParseSubdomainFiles() {
-
 	// Create a parent domain key for testing.
 	domainKey, err := identity.NewDomainKey("test_domain")
 	assert.Nil(suite.T(), err)

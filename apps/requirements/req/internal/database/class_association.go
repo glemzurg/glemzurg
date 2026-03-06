@@ -68,9 +68,8 @@ func scanAssociation(scanner Scanner, association *model_class.Association) (err
 	return nil
 }
 
-// LoadAssociation loads a association from the database
+// LoadAssociation loads a association from the database.
 func LoadAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (association model_class.Association, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -115,7 +114,6 @@ func AddAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Asso
 
 // UpdateAssociation updates a association in the database.
 func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.Association) (err error) {
-
 	// We may or may not have an association class.
 	var associationClassKeyPtr *string
 	if association.AssociationClassKey != nil {
@@ -124,7 +122,7 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			association
 		SET
@@ -163,9 +161,8 @@ func UpdateAssociation(dbOrTx DbOrTx, modelKey string, association model_class.A
 
 // RemoveAssociation deletes a association from the database.
 func RemoveAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			association
 		WHERE
@@ -181,9 +178,8 @@ func RemoveAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.K
 	return nil
 }
 
-// QueryAssociations loads all association from the database
+// QueryAssociations loads all association from the database.
 func QueryAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_class.Association, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -246,7 +242,7 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 		args = append(args, modelKey, assoc.Key.String(), assoc.Name, assoc.Details, assoc.FromClassKey.String(), assoc.FromMultiplicity.LowerBound, assoc.FromMultiplicity.HigherBound, assoc.ToClassKey.String(), assoc.ToMultiplicity.LowerBound, assoc.ToMultiplicity.HigherBound, associationClassKeyPtr, assoc.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

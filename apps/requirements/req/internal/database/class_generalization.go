@@ -46,7 +46,6 @@ func scanGeneralization(scanner Scanner, subdomainKeyPtr *identity.Key, generali
 
 // LoadGeneralization loads a generalization from the database.
 func LoadGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (subdomainKey identity.Key, generalization model_class.Generalization, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -88,9 +87,8 @@ func AddGeneralization(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key
 
 // UpdateGeneralization updates a generalization in the database.
 func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_class.Generalization) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			class_generalization
 		SET
@@ -119,9 +117,8 @@ func UpdateGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_c
 
 // RemoveGeneralization deletes a generalization from the database.
 func RemoveGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				class_generalization
 			WHERE
@@ -139,7 +136,6 @@ func RemoveGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey iden
 
 // QueryGeneralizations loads all generalizations from the database grouped by subdomain key.
 func QueryGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations map[identity.Key][]model_class.Generalization, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -203,7 +199,7 @@ func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations map[iden
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Arithmetic operators
+// Arithmetic operators.
 const (
 	ArithmeticOperatorAdd      = "+" // Addition
 	ArithmeticOperatorSubtract = "-" // Subtraction

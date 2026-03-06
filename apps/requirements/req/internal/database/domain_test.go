@@ -29,7 +29,6 @@ type DomainSuite struct {
 }
 
 func (suite *DomainSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -42,13 +41,12 @@ func (suite *DomainSuite) SetupTest() {
 }
 
 func (suite *DomainSuite) TestLoad() {
-
 	// Nothing in database yet.
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), domain)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO domain
 			(
 				model_key,
@@ -82,7 +80,6 @@ func (suite *DomainSuite) TestLoad() {
 }
 
 func (suite *DomainSuite) TestAdd() {
-
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
@@ -104,7 +101,6 @@ func (suite *DomainSuite) TestAdd() {
 }
 
 func (suite *DomainSuite) TestUpdate() {
-
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
@@ -135,7 +131,6 @@ func (suite *DomainSuite) TestUpdate() {
 }
 
 func (suite *DomainSuite) TestRemove() {
-
 	err := AddDomain(suite.db, suite.model.Key, model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
@@ -154,7 +149,6 @@ func (suite *DomainSuite) TestRemove() {
 }
 
 func (suite *DomainSuite) TestQuery() {
-
 	err := AddDomains(suite.db, suite.model.Key, []model_domain.Domain{
 		{
 			Key:        suite.domainKeyB,
@@ -198,7 +192,6 @@ func (suite *DomainSuite) TestQuery() {
 //==================================================
 
 func t_AddDomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identity.Key) (domain model_domain.Domain) {
-
 	err := AddDomain(dbOrTx, modelKey, model_domain.Domain{
 		Key:        domainKey,
 		Name:       domainKey.String(),

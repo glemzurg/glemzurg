@@ -7,7 +7,7 @@ import (
 
 // BuiltinCall represents a call to a builtin function.
 // Pattern: _Module!Function(args...)
-// Examples: _Seq!Head(tuple), _Bags!CopiesIn(elem, bag)
+// Examples: _Seq!Head(tuple), _Bags!CopiesIn(elem, bag).
 type BuiltinCall struct {
 	Name string       `validate:"required"` // e.g., "_Seq!Head"
 	Args []Expression `validate:"required"` // Arguments (can be empty slice)

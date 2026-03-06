@@ -14,7 +14,7 @@ const _superHighIndexNumForSort = 100000
 // Sort order:
 // 1. By index number (attributes with indexes come first, sorted by first index)
 // 2. Non-derived attributes before derived attributes
-// 3. By name alphabetically
+// 3. By name alphabetically.
 func SortAttributes(attributes []model_class.Attribute) {
 	sort.Slice(attributes, func(i, j int) bool {
 		// First, if one has an index and another doesn't use the index.

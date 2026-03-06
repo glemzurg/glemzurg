@@ -35,10 +35,8 @@ type UseCaseShare struct {
 var _templateFS embed.FS
 
 func init() {
-
 	// Walk through the embedded file system to find and parse all .template files.
 	err := fs.WalkDir(_templateFS, "templates", func(path string, d fs.DirEntry, err error) error {
-
 		// Report any error walking into this path.
 		if err != nil {
 			return errors.WithStack(err)
@@ -439,7 +437,6 @@ var _funcMap = template.FuncMap{
 
 // Split multi-line bullets into sub bullets.
 func splitBulletTextIntoMainAndSubBullets(bulletText string) (mainBullet string, subBullets []string) {
-
 	// If the text we want to put in a bullet is multiple lines,
 	// every line after the first is a subbullet.
 
@@ -472,7 +469,6 @@ func convertKeyToFilename(objType, key, suffix, ext string) (filename string) {
 }
 
 func generateFromTemplate(template *template.Template, data any) (contents string, err error) {
-
 	// Create a buffer to hold the output.
 	var buf bytes.Buffer
 

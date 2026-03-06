@@ -47,7 +47,6 @@ func Parse(modelPath string) (model core.Model, err error) {
 }
 
 func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) {
-
 	// We need to walk from the root to deeper into the file tree to find everything.
 	root, err := filepath.Abs(modelPath)
 	if err != nil {
@@ -55,7 +54,6 @@ func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) 
 	}
 
 	err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-
 		// There was an error walking to this path.
 		if err != nil {
 			return errors.WithStack(err)
@@ -90,7 +88,6 @@ func findFilesToParse(modelPath string) (toParseFiles []fileToParse, err error) 
 }
 
 func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.Model, err error) {
-
 	// Ensure are sorted in the order by which they may need information from prior objects.
 	// This is for foreign keys.
 	sortFilesToParse(filesToParse)
@@ -108,7 +105,6 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 	// Now, parse each file according to its type.
 
 	for _, toParseFile := range filesToParse {
-
 		// Load the file data.
 		contentBytes, err := os.ReadFile(toParseFile.PathAbs)
 		if err != nil {
@@ -120,7 +116,6 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 
 		// Handle each kind of file differently.
 		switch toParseFile.FileType {
-
 		case _EXT_MODEL:
 			model, err = parseModel(modelKey, toParseFile.PathRel, contents)
 			if err != nil {

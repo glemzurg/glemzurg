@@ -38,7 +38,6 @@ type ObjectSuite struct {
 }
 
 func (suite *ObjectSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -57,14 +56,13 @@ func (suite *ObjectSuite) SetupTest() {
 }
 
 func (suite *ObjectSuite) TestLoad() {
-
 	// Nothing in database yet.
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), scenarioKey)
 	assert.Empty(suite.T(), object)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO scenario_object
 			(
 				model_key,
@@ -107,7 +105,6 @@ func (suite *ObjectSuite) TestLoad() {
 }
 
 func (suite *ObjectSuite) TestAdd() {
-
 	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
@@ -134,7 +131,6 @@ func (suite *ObjectSuite) TestAdd() {
 }
 
 func (suite *ObjectSuite) TestUpdate() {
-
 	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
@@ -172,7 +168,6 @@ func (suite *ObjectSuite) TestUpdate() {
 }
 
 func (suite *ObjectSuite) TestRemove() {
-
 	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
@@ -194,7 +189,6 @@ func (suite *ObjectSuite) TestRemove() {
 }
 
 func (suite *ObjectSuite) TestQuery() {
-
 	err := AddObjects(suite.db, suite.model.Key, map[identity.Key][]model_scenario.Object{
 		suite.scenario.Key: {
 			{
@@ -251,7 +245,6 @@ func (suite *ObjectSuite) TestQuery() {
 //==================================================
 
 func t_AddObject(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, objectKey identity.Key, objectNumber uint, classKey identity.Key) (object model_scenario.Object) {
-
 	err := AddObject(dbOrTx, modelKey, scenarioKey, model_scenario.Object{
 		Key:          objectKey,
 		ObjectNumber: objectNumber,

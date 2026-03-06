@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Set operation operators
+// Set operation operators.
 const (
 	SetOperatorUnion        = `∪`
 	SetOperatorIntersection = `∩`

@@ -20,9 +20,8 @@ type t_TestFile struct {
 // t_ContentsForAllJSONFiles reads all JSON test file pairs from a directory.
 // Files are expected to be named like:
 // - 01_basic.input.json (the input file)
-// - 01_basic.expected.json (the expected parsed output)
+// - 01_basic.expected.json (the expected parsed output).
 func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
-
 	// Keep track of the file and expected test results.
 	fileLookup := map[string]t_TestFile{}
 
@@ -111,7 +110,7 @@ type t_TestFileError struct {
 // t_ContentsForAllErrorJSONFiles reads all JSON error test file pairs from a directory.
 // Files are expected to be named like:
 // - 01_missing_name.err.json (the input file that should cause an error)
-// - 01_missing_name.expected.json (the expected error details)
+// - 01_missing_name.expected.json (the expected error details).
 func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, err error) {
 	files, err := os.ReadDir(path)
 	if err != nil {

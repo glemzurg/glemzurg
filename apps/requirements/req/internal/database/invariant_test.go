@@ -31,7 +31,6 @@ type InvariantSuite struct {
 }
 
 func (suite *InvariantSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -46,13 +45,12 @@ func (suite *InvariantSuite) SetupTest() {
 }
 
 func (suite *InvariantSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no invariant join row yet.
 	_, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the invariant join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO invariant
 			(model_key, logic_key)
 		VALUES
@@ -66,7 +64,6 @@ func (suite *InvariantSuite) TestLoad() {
 }
 
 func (suite *InvariantSuite) TestAdd() {
-
 	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
 
@@ -76,7 +73,6 @@ func (suite *InvariantSuite) TestAdd() {
 }
 
 func (suite *InvariantSuite) TestRemove() {
-
 	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
 
@@ -89,7 +85,6 @@ func (suite *InvariantSuite) TestRemove() {
 }
 
 func (suite *InvariantSuite) TestQuery() {
-
 	err := AddInvariants(suite.db, suite.model.Key, []identity.Key{
 		suite.invariantKeyB,
 		suite.invariantKey,

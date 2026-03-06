@@ -6,7 +6,7 @@ import (
 )
 
 // SetRange is a set of consecutive integers from Start to End (inclusive).
-// Pattern: -5 .. 5 represents the set {-5, -4, -3, ..., 5}
+// Pattern: -5 .. 5 represents the set {-5, -4, -3, ..., 5}.
 type SetRange struct {
 	Start int `validate:"ltefield=End"` // The starting integer (inclusive)
 	End   int ``                        // The ending integer (inclusive)

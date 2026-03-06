@@ -54,9 +54,8 @@ func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 	return nil
 }
 
-// LoadActor loads a actor from the database
+// LoadActor loads a actor from the database.
 func LoadActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor model_actor.Actor, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -96,7 +95,6 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err erro
 
 // UpdateActor updates a actor in the database.
 func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
-
 	// We may or may not have optional key pointers.
 	var superclassOfKeyPtr *string
 	if actor.SuperclassOfKey != nil {
@@ -110,7 +108,7 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			actor
 		SET
@@ -141,9 +139,8 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 
 // RemoveActor deletes a actor from the database.
 func RemoveActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				actor
 			WHERE
@@ -159,9 +156,8 @@ func RemoveActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (err err
 	return nil
 }
 
-// QueryActors loads all actors from the database
+// QueryActors loads all actors from the database.
 func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -224,7 +220,7 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, superclassOfKeyPtr, subclassOfKeyPtr, actor.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

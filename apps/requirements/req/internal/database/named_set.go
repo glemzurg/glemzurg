@@ -63,7 +63,6 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 
 // LoadNamedSet loads a named set from the database.
 func LoadNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (ns model_named_set.NamedSet, err error) {
-
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -102,8 +101,7 @@ func AddNamedSet(dbOrTx DbOrTx, modelKey string, ns model_named_set.NamedSet) (e
 
 // RemoveNamedSet deletes a named set row from the database.
 func RemoveNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			named_set
 		WHERE
@@ -121,7 +119,6 @@ func RemoveNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (err er
 
 // QueryNamedSets loads all named sets from the database for a given model.
 func QueryNamedSets(dbOrTx DbOrTx, modelKey string) (nss []model_named_set.NamedSet, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -186,7 +183,7 @@ func AddNamedSets(dbOrTx DbOrTx, modelKey string, nss []model_named_set.NamedSet
 			tsSpecification)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

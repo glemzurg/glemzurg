@@ -12,7 +12,7 @@ type FieldBinding struct {
 }
 
 // RecordInstance represents a record literal with field bindings.
-// Pattern: [a ↦ 1, b ↦ 2, c ↦ 3]
+// Pattern: [a ↦ 1, b ↦ 2, c ↦ 3].
 type RecordInstance struct {
 	Bindings []*FieldBinding `validate:"required,min=1"` // At least one field binding
 }

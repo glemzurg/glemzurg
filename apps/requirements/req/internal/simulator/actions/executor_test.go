@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -38,25 +37,11 @@ func mustKey(s string) identity.Key {
 
 // --- Helper: build a minimal executor for tests ---
 
-func buildTestExecutor(simState *state.SimulationState, model *core.Model) (*ActionExecutor, error) {
+func buildTestExecutor(simState *state.SimulationState) *ActionExecutor {
 	bb := state.NewBindingsBuilder(simState)
 	ge := NewGuardEvaluator(bb)
 
-	var ic *invariants.InvariantChecker
-	if model != nil {
-		var err error
-		ic, err = invariants.NewInvariantChecker(model)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var dc *invariants.DataTypeChecker
-	if model != nil {
-		dc, _ = invariants.NewDataTypeChecker(model)
-	}
-
-	return NewActionExecutor(bb, ic, dc, nil, ge, nil), nil
+	return NewActionExecutor(bb, nil, nil, nil, ge, nil)
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
@@ -209,7 +194,7 @@ func (s *ActionsSuite) TestExecutionContextReentrancyGuard() {
 func (s *ActionsSuite) TestExecutionContextDepthLimit() {
 	ctx := NewExecutionContext()
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		err := ctx.IncrementDepth()
 		s.NoError(err)
 	}
@@ -252,8 +237,7 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 	attrs.Set("count", object.NewInteger(10))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	result, err := exec.ExecuteAction(action, instance, nil)
 	s.NoError(err)
@@ -288,8 +272,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 	attrs.Set("status", object.NewString("open"))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	result, err := exec.ExecuteAction(action, instance, nil)
 	s.NoError(err)
@@ -322,10 +305,9 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 	attrs.Set("status", object.NewString("closed")) // already closed
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
-	_, err = exec.ExecuteAction(action, instance, nil)
+	_, err := exec.ExecuteAction(action, instance, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "precondition failed")
 }
@@ -349,8 +331,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 	attrs.Set("amount", object.NewInteger(0))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	params := map[string]object.Object{
 		"amount": object.NewInteger(500),
@@ -386,8 +367,7 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	attrs.Set("amount", object.NewInteger(50))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	result, err := exec.ExecuteQuery(query, instance, nil)
 	s.NoError(err)
@@ -414,10 +394,9 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 	attrs.Set("amount", object.NewInteger(50))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
-	_, err = exec.ExecuteQuery(query, instance, nil)
+	_, err := exec.ExecuteQuery(query, instance, nil)
 	s.NoError(err)
 
 	// State should be unchanged
@@ -448,10 +427,9 @@ func (s *ActionsSuite) TestExecuteQueryPreconditionFails() {
 	attrs.Set("amount", object.NewInteger(50))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
-	_, err = exec.ExecuteQuery(query, instance, nil)
+	_, err := exec.ExecuteQuery(query, instance, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "precondition failed")
 }
@@ -532,8 +510,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/order/state/open")
 	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	eventCloseKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	event := class.Events[eventCloseKey]
@@ -583,8 +560,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 	})
 
 	simState := state.NewSimulationState()
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	eventObj := class.Events[eventCreateKey]
 
@@ -631,8 +607,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 	instance := simState.CreateInstance(classKey, attrs)
 	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	eventObj := class.Events[eventDeleteKey]
 
@@ -656,13 +631,12 @@ func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
 	stateClosedKey := mustKey("domain/d/subdomain/s/class/order/state/closed")
 	_ = simState.SetStateMachineState(instance.ID, stateClosedKey)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	eventCloseKey := mustKey("domain/d/subdomain/s/class/order/event/close")
 	event := class.Events[eventCloseKey]
 
-	_, err = exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "no transitions")
 }
@@ -731,8 +705,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	instance := simState.CreateInstance(classKey, attrs)
 	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventReviewKey]
 	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
@@ -800,11 +773,10 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	instance := simState.CreateInstance(classKey, attrs)
 	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventKey]
-	_, err = exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "non-determinism")
 }
@@ -848,11 +820,10 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	instance := simState.CreateInstance(classKey, attrs)
 	_ = simState.SetStateMachineState(instance.ID, stateOpenKey)
 
-	exec, err := buildTestExecutor(simState, nil)
-	s.NoError(err)
+	exec := buildTestExecutor(simState)
 
 	event := class.Events[eventKey]
-	_, err = exec.ExecuteTransition(class, event, instance, nil, nil, nil)
+	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "deadlock")
 }
@@ -942,7 +913,7 @@ func (s *ActionsSuite) TestBindParametersMissing() {
 
 func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 	binder := NewParameterBinder()
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
 	lowerValue := 10
 	higherValue := 20
@@ -964,7 +935,7 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 
 	paramDefs := []model_state.Parameter{countParam}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		result := binder.GenerateRandomParameters(paramDefs, rng)
 		s.Contains(result, "count")
 		num, ok := result["count"].(*object.Number)
@@ -976,7 +947,7 @@ func (s *ActionsSuite) TestGenerateRandomParametersSpan() {
 
 func (s *ActionsSuite) TestGenerateRandomParametersEnum() {
 	binder := NewParameterBinder()
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
 	colorParam := helper.Must(model_state.NewParameter("color", "{red, green, blue}"))
 	colorParam.DataType = &model_data_type.DataType{
@@ -996,7 +967,7 @@ func (s *ActionsSuite) TestGenerateRandomParametersEnum() {
 
 	allowedValues := map[string]bool{"red": true, "green": true, "blue": true}
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		result := binder.GenerateRandomParameters(paramDefs, rng)
 		str, ok := result["color"].(*object.String)
 		s.True(ok)
@@ -1006,7 +977,7 @@ func (s *ActionsSuite) TestGenerateRandomParametersEnum() {
 
 func (s *ActionsSuite) TestGenerateRandomParametersNoType() {
 	binder := NewParameterBinder()
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed intentional for test reproducibility
 
 	paramDefs := []model_state.Parameter{
 		helper.Must(model_state.NewParameter("x", "unknown")),
@@ -1058,10 +1029,9 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	executor, err := buildTestExecutor(simState, nil)
-	s.Require().NoError(err)
+	executor := buildTestExecutor(simState)
 
-	_, err = executor.ExecuteAction(action, instance, nil)
+	_, err := executor.ExecuteAction(action, instance, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Requires must not contain primed variables")
 }
@@ -1084,10 +1054,9 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	executor, err := buildTestExecutor(simState, nil)
-	s.Require().NoError(err)
+	executor := buildTestExecutor(simState)
 
-	_, err = executor.ExecuteAction(action, instance, nil)
+	_, err := executor.ExecuteAction(action, instance, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "SafetyRules must reference primed variables")
 }
@@ -1119,8 +1088,7 @@ func (s *ActionsSuite) TestActionSafetyRulesPass() {
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	executor, err := buildTestExecutor(simState, nil)
-	s.Require().NoError(err)
+	executor := buildTestExecutor(simState)
 
 	result, err := executor.ExecuteAction(action, instance, nil)
 	s.Require().NoError(err)
@@ -1151,8 +1119,7 @@ func (s *ActionsSuite) TestActionSafetyRuleViolation() {
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	executor, err := buildTestExecutor(simState, nil)
-	s.Require().NoError(err)
+	executor := buildTestExecutor(simState)
 
 	result, err := executor.ExecuteAction(action, instance, nil)
 	s.Require().NoError(err)
@@ -1218,10 +1185,9 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 	attrs.Set("count", object.NewInteger(5))
 	instance := simState.CreateInstance(classKey, attrs)
 
-	executor, err := buildTestExecutor(simState, nil)
-	s.Require().NoError(err)
+	executor := buildTestExecutor(simState)
 
-	_, err = executor.ExecuteQuery(query, instance, nil)
+	_, err := executor.ExecuteQuery(query, instance, nil)
 	s.Error(err)
 	s.Contains(err.Error(), "Requires must not contain primed variables")
 }

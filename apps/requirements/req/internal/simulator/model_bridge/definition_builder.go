@@ -21,7 +21,7 @@ const (
 	// These define state changes or outputs.
 	GuaranteePrimedAssignment
 	// GuaranteePostCondition is a boolean invariant that must be TRUE after state changes.
-	// Example: `record'.count > record.count`
+	// Example: `record'.count > record.count`.
 	GuaranteePostCondition
 )
 
@@ -641,7 +641,7 @@ func (b *DefinitionBuilder) buildGuardExpression(
 }
 
 // extractClassScope extracts domain, subdomain, and class from an action/query/guard key.
-// The key format is: domain/DOMAIN_NAME/subdomain/SUBDOMAIN_NAME/class/CLASS_NAME/[action|query|guard]/NAME
+// The key format is: domain/DOMAIN_NAME/subdomain/SUBDOMAIN_NAME/class/CLASS_NAME/[action|query|guard]/NAME.
 func extractClassScope(key *identity.Key) (domain, subdomain, class string, err error) {
 	// Get the parent key string which should be the class key
 	parentKeyStr := key.ParentKey

@@ -39,7 +39,6 @@ type ActionRequireSuite struct {
 }
 
 func (suite *ActionRequireSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +58,12 @@ func (suite *ActionRequireSuite) SetupTest() {
 }
 
 func (suite *ActionRequireSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no action_require join row yet.
 	_, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the action_require join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action_require
 			(model_key, action_key, logic_key)
 		VALUES
@@ -83,7 +81,6 @@ func (suite *ActionRequireSuite) TestLoad() {
 }
 
 func (suite *ActionRequireSuite) TestAdd() {
-
 	err := AddActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -93,7 +90,6 @@ func (suite *ActionRequireSuite) TestAdd() {
 }
 
 func (suite *ActionRequireSuite) TestRemove() {
-
 	err := AddActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -106,7 +102,6 @@ func (suite *ActionRequireSuite) TestRemove() {
 }
 
 func (suite *ActionRequireSuite) TestQuery() {
-
 	err := AddActionRequires(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})

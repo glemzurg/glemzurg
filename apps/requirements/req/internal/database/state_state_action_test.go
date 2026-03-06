@@ -37,7 +37,6 @@ type StateActionSuite struct {
 }
 
 func (suite *StateActionSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -56,14 +55,13 @@ func (suite *StateActionSuite) SetupTest() {
 }
 
 func (suite *StateActionSuite) TestLoad() {
-
 	// Nothing in database yet.
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), stateKey)
 	assert.Empty(suite.T(), stateAction)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO state_action
 			(
 				model_key,
@@ -94,7 +92,6 @@ func (suite *StateActionSuite) TestLoad() {
 }
 
 func (suite *StateActionSuite) TestAdd() {
-
 	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
@@ -113,7 +110,6 @@ func (suite *StateActionSuite) TestAdd() {
 }
 
 func (suite *StateActionSuite) TestUpdate() {
-
 	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
@@ -139,7 +135,6 @@ func (suite *StateActionSuite) TestUpdate() {
 }
 
 func (suite *StateActionSuite) TestRemove() {
-
 	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
@@ -157,7 +152,6 @@ func (suite *StateActionSuite) TestRemove() {
 }
 
 func (suite *StateActionSuite) TestQuery() {
-
 	err := AddStateActions(suite.db, suite.model.Key, map[identity.Key][]model_state.StateAction{
 		suite.state.Key: {
 			{

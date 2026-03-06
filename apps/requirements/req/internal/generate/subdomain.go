@@ -13,7 +13,6 @@ import (
 )
 
 func generateSubdomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, subdomain model_domain.Subdomain) (contents string, err error) {
-
 	// Gather classes for sorting.
 	var allClasses []model_class.Class
 	for _, class := range subdomain.Classes {

@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Set comparison operators
+// Set comparison operators.
 const (
 	SetComparisonEqual      = "="
 	SetComparisonNotEqual   = "≠"

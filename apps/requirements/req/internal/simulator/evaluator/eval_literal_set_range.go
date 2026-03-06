@@ -6,7 +6,7 @@ import (
 )
 
 // evalSetRange evaluates a range set (e.g., 1..10).
-func evalSetRange(node *ast.SetRange, bindings *Bindings) *EvalResult {
+func evalSetRange(node *ast.SetRange) *EvalResult {
 	elements := make([]object.Object, 0, node.End-node.Start+1)
 
 	for i := node.Start; i <= node.End; i++ {

@@ -39,7 +39,6 @@ type ActionSafetySuite struct {
 }
 
 func (suite *ActionSafetySuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +58,12 @@ func (suite *ActionSafetySuite) SetupTest() {
 }
 
 func (suite *ActionSafetySuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no action_safety join row yet.
 	_, err := LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the action_safety join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action_safety
 			(model_key, action_key, logic_key)
 		VALUES
@@ -83,7 +81,6 @@ func (suite *ActionSafetySuite) TestLoad() {
 }
 
 func (suite *ActionSafetySuite) TestAdd() {
-
 	err := AddActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -93,7 +90,6 @@ func (suite *ActionSafetySuite) TestAdd() {
 }
 
 func (suite *ActionSafetySuite) TestRemove() {
-
 	err := AddActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -106,7 +102,6 @@ func (suite *ActionSafetySuite) TestRemove() {
 }
 
 func (suite *ActionSafetySuite) TestQuery() {
-
 	err := AddActionSafeties(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})

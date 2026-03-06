@@ -31,7 +31,6 @@ type DomainAssociationSuite struct {
 }
 
 func (suite *DomainAssociationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -46,13 +45,12 @@ func (suite *DomainAssociationSuite) SetupTest() {
 }
 
 func (suite *DomainAssociationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), association)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO domain_association
 			(
 				model_key,
@@ -83,7 +81,6 @@ func (suite *DomainAssociationSuite) TestLoad() {
 }
 
 func (suite *DomainAssociationSuite) TestAdd() {
-
 	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
@@ -103,7 +100,6 @@ func (suite *DomainAssociationSuite) TestAdd() {
 }
 
 func (suite *DomainAssociationSuite) TestUpdate() {
-
 	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
@@ -132,7 +128,6 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 }
 
 func (suite *DomainAssociationSuite) TestRemove() {
-
 	err := AddDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
@@ -150,7 +145,6 @@ func (suite *DomainAssociationSuite) TestRemove() {
 }
 
 func (suite *DomainAssociationSuite) TestQuery() {
-
 	err := AddDomainAssociations(suite.db, suite.model.Key, []model_domain.Association{
 		{
 			Key:               suite.associationKeyB,

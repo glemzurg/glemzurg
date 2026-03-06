@@ -120,7 +120,7 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // homeHandler displays a list of available models.
-func (s *Server) homeHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	models := s.store.ListModels()
 
 	var list strings.Builder

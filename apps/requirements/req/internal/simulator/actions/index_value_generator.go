@@ -8,7 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 )
 
@@ -20,7 +19,6 @@ func generateIndexSafeValues(
 	attrs *object.Record,
 	indexInfo *invariants.ClassIndexInfo,
 	existingInstances []*state.ClassInstance,
-	class model_class.Class,
 	rng *rand.Rand,
 ) error {
 	for _, indexDef := range indexInfo.Indexes {
@@ -46,7 +44,7 @@ func generateIndexSafeValues(
 		const maxRetries = 100
 		found := false
 
-		for attempt := 0; attempt < maxRetries; attempt++ {
+		for range maxRetries {
 			// Generate random values for non-preset indexed attributes
 			for i, attrName := range indexDef.AttrNames {
 				if preSet[attrName] {
@@ -123,7 +121,7 @@ func deterministicFallback(
 
 				default:
 					// Unconstrained — try sequential integers
-					for seq := int64(0); seq < 1000; seq++ {
+					for seq := range int64(1000) {
 						attrs.Set(attrName, object.NewInteger(seq))
 						getter := func(name string) object.Object {
 							return attrs.Get(name)
@@ -136,7 +134,7 @@ func deterministicFallback(
 				}
 			} else {
 				// No data type — try sequential integers
-				for seq := int64(0); seq < 1000; seq++ {
+				for seq := range int64(1000) {
 					attrs.Set(attrName, object.NewInteger(seq))
 					getter := func(name string) object.Object {
 						return attrs.Get(name)

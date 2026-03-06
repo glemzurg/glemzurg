@@ -3,7 +3,7 @@ package ast
 import "bytes"
 
 // Assignment represents a single state assignment.
-// Pattern: identifier' = expression
+// Pattern: identifier' = expression.
 type Assignment struct {
 	Target *Identifier `validate:"required"`
 	Value  Expression  `validate:"required"`

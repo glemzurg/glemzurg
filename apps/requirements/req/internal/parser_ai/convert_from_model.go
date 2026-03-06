@@ -66,14 +66,7 @@ func ConvertFromModel(model *core.Model) (*inputModel, error) {
 
 	// Convert domains
 	for key, domain := range model.Domains {
-		converted, err := convertDomainFromModel(&domain)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to convert domain '%s': %s", key.SubKey, err.Error()),
-				fmt.Sprintf("domains/%s/domain.json", key.SubKey),
-			)
-		}
+		converted := convertDomainFromModel(&domain)
 		result.Domains[key.SubKey] = converted
 	}
 
@@ -146,7 +139,7 @@ func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAs
 }
 
 // convertDomainFromModel converts a model_domain.Domain to an inputDomain.
-func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
+func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
 	result := &inputDomain{
 		Name:              domain.Name,
 		Details:           domain.Details,
@@ -158,14 +151,7 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 
 	// Convert subdomains
 	for key, subdomain := range domain.Subdomains {
-		converted, err := convertSubdomainFromModel(&subdomain, domain.Key)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to convert subdomain '%s': %s", key.SubKey, err.Error()),
-				fmt.Sprintf("domains/%s/subdomains/%s/subdomain.json", domain.Key.SubKey, key.SubKey),
-			)
-		}
+		converted := convertSubdomainFromModel(&subdomain)
 		result.Subdomains[key.SubKey] = converted
 	}
 
@@ -175,11 +161,11 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 		result.ClassAssociations[key.SubKey3] = converted
 	}
 
-	return result, nil
+	return result
 }
 
 // convertSubdomainFromModel converts a model_domain.Subdomain to an inputSubdomain.
-func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey identity.Key) (*inputSubdomain, error) {
+func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomain {
 	result := &inputSubdomain{
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
@@ -194,14 +180,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 
 	// Convert classes
 	for key, class := range subdomain.Classes {
-		converted, err := convertClassFromModel(&class)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to convert class '%s': %s", key.SubKey, err.Error()),
-				fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey.SubKey, subdomain.Key.SubKey, key.SubKey),
-			)
-		}
+		converted := convertClassFromModel(&class)
 		result.Classes[key.SubKey] = converted
 	}
 
@@ -241,7 +220,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 		result.ClassAssociations[key.SubKey3] = converted
 	}
 
-	return result, nil
+	return result
 }
 
 // convertUseCaseFromModel converts a model_use_case.UseCase to an inputUseCase.
@@ -368,7 +347,7 @@ func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, u
 }
 
 // convertClassFromModel converts a model_class.Class to an inputClass.
-func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
+func convertClassFromModel(class *model_class.Class) *inputClass {
 	result := &inputClass{
 		Name:       class.Name,
 		Details:    class.Details,
@@ -398,7 +377,7 @@ func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
 		}
 	}
 	// Convert map to slice
-	for i := uint(0); i < uint(len(indexMap)); i++ {
+	for i := range uint(len(indexMap)) {
 		if attrs, ok := indexMap[i]; ok {
 			result.Indexes = append(result.Indexes, attrs)
 		}
@@ -424,7 +403,7 @@ func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
 		result.Queries[key.SubKey] = converted
 	}
 
-	return result, nil
+	return result
 }
 
 // convertAttributeFromModel converts a model_class.Attribute to an inputAttribute.
@@ -727,7 +706,7 @@ func extractDomainScopedKey(classKey identity.Key) string {
 	// Parse to find subdomain and class
 	parts := splitKeyPath(keyStr)
 	var subdomainName, className string
-	for i := 0; i < len(parts)-1; i++ {
+	for i := range len(parts) - 1 {
 		if parts[i] == identity.KEY_TYPE_SUBDOMAIN && i+1 < len(parts) {
 			subdomainName = parts[i+1]
 		}
@@ -745,7 +724,7 @@ func extractModelScopedKey(classKey identity.Key) string {
 	keyStr := classKey.String()
 	parts := splitKeyPath(keyStr)
 	var domainName, subdomainName, className string
-	for i := 0; i < len(parts)-1; i++ {
+	for i := range len(parts) - 1 {
 		if parts[i] == identity.KEY_TYPE_DOMAIN && i+1 < len(parts) {
 			domainName = parts[i+1]
 		}

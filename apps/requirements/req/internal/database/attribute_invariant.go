@@ -10,7 +10,6 @@ import (
 
 // LoadAttributeInvariant loads an attribute invariant logic key from the database.
 func LoadAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
@@ -56,8 +55,7 @@ func AddAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey identity
 
 // RemoveAttributeInvariant deletes an attribute invariant join row from the database.
 func RemoveAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			attribute_invariant
 		WHERE
@@ -79,7 +77,6 @@ func RemoveAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey ident
 // QueryAttributeInvariants loads all attribute invariant logic keys from the database,
 // grouped by attribute key. Within each attribute, results are ordered by logic sort_order.
 func QueryAttributeInvariants(dbOrTx DbOrTx, modelKey string) (result map[identity.Key][]identity.Key, err error) {
-
 	result = make(map[identity.Key][]identity.Key)
 
 	err = dbQuery(
@@ -146,7 +143,7 @@ func AddAttributeInvariants(dbOrTx DbOrTx, modelKey string, attrInvariants map[i
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

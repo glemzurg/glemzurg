@@ -34,7 +34,6 @@ type StateSuite struct {
 }
 
 func (suite *StateSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,14 +49,13 @@ func (suite *StateSuite) SetupTest() {
 }
 
 func (suite *StateSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), classKey)
 	assert.Empty(suite.T(), state)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO state
 			(
 				model_key,
@@ -91,7 +89,6 @@ func (suite *StateSuite) TestLoad() {
 }
 
 func (suite *StateSuite) TestAdd() {
-
 	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        suite.stateKey,
 		Name:       "Name",
@@ -112,7 +109,6 @@ func (suite *StateSuite) TestAdd() {
 }
 
 func (suite *StateSuite) TestUpdate() {
-
 	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        suite.stateKey,
 		Name:       "Name",
@@ -141,7 +137,6 @@ func (suite *StateSuite) TestUpdate() {
 }
 
 func (suite *StateSuite) TestRemove() {
-
 	err := AddState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        suite.stateKey,
 		Name:       "Name",
@@ -160,7 +155,6 @@ func (suite *StateSuite) TestRemove() {
 }
 
 func (suite *StateSuite) TestQuery() {
-
 	err := AddStates(suite.db, suite.model.Key, map[identity.Key][]model_state.State{
 		suite.class.Key: {
 			{
@@ -204,7 +198,6 @@ func (suite *StateSuite) TestQuery() {
 //==================================================
 
 func t_AddState(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey identity.Key) (state model_state.State) {
-
 	err := AddState(dbOrTx, modelKey, classKey, model_state.State{
 		Key:        stateKey,
 		Name:       stateKey.String(),

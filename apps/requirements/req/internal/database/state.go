@@ -42,9 +42,8 @@ func scanState(scanner Scanner, classKeyPtr *identity.Key, state *model_state.St
 	return nil
 }
 
-// LoadState loads a state from the database
+// LoadState loads a state from the database.
 func LoadState(dbOrTx DbOrTx, modelKey string, stateKey identity.Key) (classKey identity.Key, state model_state.State, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -84,9 +83,8 @@ func AddState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model
 
 // UpdateState updates a state in the database.
 func UpdateState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			state
 		SET
@@ -114,9 +112,8 @@ func UpdateState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state mo
 
 // RemoveState deletes a state from the database.
 func RemoveState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			state
 		WHERE
@@ -135,9 +132,8 @@ func RemoveState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey
 	return nil
 }
 
-// QueryStates loads all state from the database
+// QueryStates loads all state from the database.
 func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[identity.Key][]model_state.State, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -201,7 +197,7 @@ func AddStates(dbOrTx DbOrTx, modelKey string, states map[identity.Key][]model_s
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

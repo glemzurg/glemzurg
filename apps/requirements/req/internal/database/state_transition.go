@@ -83,9 +83,8 @@ func scanTransition(scanner Scanner, classKeyPtr *identity.Key, transition *mode
 	return nil
 }
 
-// LoadTransition loads a transition from the database
+// LoadTransition loads a transition from the database.
 func LoadTransition(dbOrTx DbOrTx, modelKey string, transitionKey identity.Key) (classKey identity.Key, transition model_state.Transition, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -128,7 +127,6 @@ func AddTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transi
 
 // UpdateTransition updates a transition in the database.
 func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transition model_state.Transition) (err error) {
-
 	// We may or may not have a from state.
 	var fromStateKeyPtr *string
 	if transition.FromStateKey != nil {
@@ -155,7 +153,7 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, tra
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			transition
 		SET
@@ -189,9 +187,8 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, tra
 
 // RemoveTransition deletes a transition from the database.
 func RemoveTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transitionKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			transition
 		WHERE
@@ -210,9 +207,8 @@ func RemoveTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, tra
 	return nil
 }
 
-// QueryTransitions loads all transition from the database
+// QueryTransitions loads all transition from the database.
 func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[identity.Key][]model_state.Transition, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -299,7 +295,7 @@ func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

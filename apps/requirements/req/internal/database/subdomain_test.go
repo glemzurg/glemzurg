@@ -30,7 +30,6 @@ type SubdomainSuite struct {
 }
 
 func (suite *SubdomainSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -44,14 +43,13 @@ func (suite *SubdomainSuite) SetupTest() {
 }
 
 func (suite *SubdomainSuite) TestLoad() {
-
 	// Nothing in database yet.
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), domainKey)
 	assert.Empty(suite.T(), subdomain)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO subdomain
 			(
 				model_key,
@@ -85,7 +83,6 @@ func (suite *SubdomainSuite) TestLoad() {
 }
 
 func (suite *SubdomainSuite) TestAdd() {
-
 	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        suite.subdomainKey,
 		Name:       "Name",
@@ -106,7 +103,6 @@ func (suite *SubdomainSuite) TestAdd() {
 }
 
 func (suite *SubdomainSuite) TestUpdate() {
-
 	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        suite.subdomainKey,
 		Name:       "Name",
@@ -135,7 +131,6 @@ func (suite *SubdomainSuite) TestUpdate() {
 }
 
 func (suite *SubdomainSuite) TestRemove() {
-
 	err := AddSubdomain(suite.db, suite.model.Key, suite.domain.Key, model_domain.Subdomain{
 		Key:        suite.subdomainKey,
 		Name:       "Name",
@@ -154,7 +149,6 @@ func (suite *SubdomainSuite) TestRemove() {
 }
 
 func (suite *SubdomainSuite) TestQuery() {
-
 	err := AddSubdomains(suite.db, suite.model.Key, map[identity.Key][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{
@@ -198,7 +192,6 @@ func (suite *SubdomainSuite) TestQuery() {
 //==================================================
 
 func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdomainKey identity.Key) (subdomain model_domain.Subdomain) {
-
 	err := AddSubdomain(dbOrTx, modelKey, domainKey, model_domain.Subdomain{
 		Key:        subdomainKey,
 		Name:       subdomainKey.String(),

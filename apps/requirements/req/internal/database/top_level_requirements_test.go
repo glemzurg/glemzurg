@@ -22,14 +22,11 @@ type RequirementsSuite struct {
 }
 
 func (suite *RequirementsSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
-
 }
 
 func (suite *RequirementsSuite) TestWriteRead() {
-
 	original := test_helper.GetTestModel()
 
 	// Validate the model tree before testing.

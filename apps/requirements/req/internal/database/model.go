@@ -22,9 +22,8 @@ func scanModel(scanner Scanner, model *core.Model) (err error) {
 	return nil
 }
 
-// LoadModel loads a model from the database
+// LoadModel loads a model from the database.
 func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -58,7 +57,6 @@ func LoadModel(dbOrTx DbOrTx, modelKey string) (model core.Model, err error) {
 
 // AddModel adds a model to the database.
 func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err := preenKey(model.Key)
 	if err != nil {
@@ -66,7 +64,7 @@ func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	}
 
 	// Add the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		INSERT INTO model
 			(
 				model_key ,
@@ -91,7 +89,6 @@ func AddModel(dbOrTx DbOrTx, model core.Model) (err error) {
 
 // UpdateModel updates a model in the database.
 func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err := preenKey(model.Key)
 	if err != nil {
@@ -99,7 +96,7 @@ func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			model
 		SET
@@ -119,7 +116,6 @@ func UpdateModel(dbOrTx DbOrTx, model core.Model) (err error) {
 
 // RemoveModel deletes a model from the database.
 func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -127,7 +123,7 @@ func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 	}
 
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			model
 		WHERE
@@ -140,9 +136,8 @@ func RemoveModel(dbOrTx DbOrTx, modelKey string) (err error) {
 	return nil
 }
 
-// QueryModels loads all models from the database
+// QueryModels loads all models from the database.
 func QueryModels(dbOrTx DbOrTx) (models []core.Model, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,

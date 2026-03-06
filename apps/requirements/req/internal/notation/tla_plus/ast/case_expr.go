@@ -6,7 +6,7 @@ import (
 )
 
 // CaseBranch represents a single branch in a CASE expression.
-// Pattern: condition → expression
+// Pattern: condition → expression.
 type CaseBranch struct {
 	Condition Expression `validate:"required"` // Must be Boolean
 	Result    Expression `validate:"required"`

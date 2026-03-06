@@ -34,7 +34,6 @@ type AssociationSuite struct {
 }
 
 func (suite *AssociationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -49,13 +48,12 @@ func (suite *AssociationSuite) SetupTest() {
 }
 
 func (suite *AssociationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), association)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO association
 			(
 				model_key,
@@ -105,7 +103,6 @@ func (suite *AssociationSuite) TestLoad() {
 }
 
 func (suite *AssociationSuite) TestAdd() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -135,7 +132,6 @@ func (suite *AssociationSuite) TestAdd() {
 }
 
 func (suite *AssociationSuite) TestAddNulls() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -165,7 +161,6 @@ func (suite *AssociationSuite) TestAddNulls() {
 }
 
 func (suite *AssociationSuite) TestUpdate() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -208,7 +203,6 @@ func (suite *AssociationSuite) TestUpdate() {
 }
 
 func (suite *AssociationSuite) TestUpdateNulls() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -251,7 +245,6 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 }
 
 func (suite *AssociationSuite) TestRemove() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -274,7 +267,6 @@ func (suite *AssociationSuite) TestRemove() {
 }
 
 func (suite *AssociationSuite) TestQuery() {
-
 	// Create a second association key
 	associationKeyX := helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.classB.Key, suite.classC.Key, "test association x"))
 

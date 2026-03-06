@@ -10,7 +10,6 @@ import (
 )
 
 func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_scenario.Scenario) (contents string, err error) {
-
 	eventLookup := reqs.EventLookup()
 	scenarioLookup := reqs.ScenarioLookup()
 	objectLookup := reqs.ObjectLookup()
@@ -22,7 +21,6 @@ func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_sce
 	var actors []string
 	if len(scenario.Objects) > 0 {
 		for _, obj := range scenario.Objects {
-
 			// Get fully populated object for proper name construction.
 			object, found := objectLookup[obj.Key.String()]
 			if !found {
@@ -70,7 +68,6 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 			}
 
 			switch *stmt.LeafType {
-
 			case model_scenario.LEAF_TYPE_EVENT:
 
 				fromObject, found := objectLookup[stmt.FromObjectKey.String()]

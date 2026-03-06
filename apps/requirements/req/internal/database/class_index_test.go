@@ -33,7 +33,6 @@ type ClassIndexSuite struct {
 }
 
 func (suite *ClassIndexSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -47,13 +46,12 @@ func (suite *ClassIndexSuite) SetupTest() {
 }
 
 func (suite *ClassIndexSuite) TestLoad() {
-
 	// Nothing in database yet.
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
 	assert.Empty(suite.T(), indexes)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class_index
 			(
 				model_key,
@@ -83,7 +81,6 @@ func (suite *ClassIndexSuite) TestLoad() {
 }
 
 func (suite *ClassIndexSuite) TestAdd() {
-
 	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
 	assert.Nil(suite.T(), err)
 
@@ -96,7 +93,6 @@ func (suite *ClassIndexSuite) TestAdd() {
 }
 
 func (suite *ClassIndexSuite) TestRemove() {
-
 	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
 	assert.Nil(suite.T(), err)
 

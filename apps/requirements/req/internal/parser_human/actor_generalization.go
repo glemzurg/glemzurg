@@ -11,7 +11,6 @@ import (
 )
 
 func parseActorGeneralization(generalizationSubKey, filename, contents string) (generalization model_actor.Generalization, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_actor.Generalization{}, err

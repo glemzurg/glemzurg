@@ -104,7 +104,7 @@ func validateDomainCompleteness(domainKey string, domain *inputDomain) error {
 
 // validateSubdomainNaming validates subdomain naming rules:
 // - If there's only one subdomain, it must be named "default"
-// - If there are multiple subdomains, none can be named "default"
+// - If there are multiple subdomains, none can be named "default".
 func validateSubdomainNaming(domainKey string, domain *inputDomain) error {
 	subdomainCount := len(domain.Subdomains)
 
@@ -231,7 +231,7 @@ func validateDomainTree(model *inputModel, domainKey string, domain *inputDomain
 
 	// Validate domain-level associations
 	for assocKey, assoc := range domain.ClassAssociations {
-		if err := validateDomainAssociation(model, domainKey, domain, assocKey, assoc); err != nil {
+		if err := validateDomainAssociation(domainKey, domain, assocKey, assoc); err != nil {
 			return err
 		}
 	}
@@ -546,7 +546,7 @@ func validateModelDomainAssociation(model *inputModel, key string, da *inputDoma
 	return nil
 }
 
-// validateActorGeneralizationTree validates that actor generalizations reference real actors
+// validateActorGeneralizationTree validates that actor generalizations reference real actors.
 func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inputActorGeneralization) error {
 	genPath := fmt.Sprintf("actor_generalizations/%s.agen.json", genKey)
 
@@ -670,7 +670,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 
 // validateDomainAssociation validates an association at the domain level.
 // Keys include subdomain to disambiguate (subdomain/class).
-func validateDomainAssociation(model *inputModel, domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
+func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/associations/%s.assoc.json", domainKey, assocKey)
 
 	// Parse from_class_key (subdomain/class format)

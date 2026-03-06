@@ -45,7 +45,7 @@ func SaveModel(model *core.Model, path string) error {
 		return fmt.Errorf("marshaling model: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("writing model file: %w", err)
 	}
 

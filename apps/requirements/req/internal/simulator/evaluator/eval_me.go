@@ -152,7 +152,7 @@ func evalLocalVar(n *me.LocalVar, bindings *Bindings) *EvalResult {
 	return NewEvalResult(value)
 }
 
-func evalPriorFieldValue(n *me.PriorFieldValue, bindings *Bindings) *EvalResult {
+func evalPriorFieldValue(bindings *Bindings) *EvalResult {
 	value := bindings.GetExistingValue()
 	if value == nil {
 		return NewEvalError("@ used outside of EXCEPT context")
@@ -964,7 +964,7 @@ func evalMEGlobalCall(n *me.GlobalCall, bindings *Bindings) *EvalResult {
 	return fn(args)
 }
 
-func evalMEActionCall(n *me.ActionCall, bindings *Bindings) *EvalResult {
+func evalMEActionCall(n *me.ActionCall) *EvalResult {
 	// Action calls are not yet implemented in the model_expression evaluator.
 	return NewEvalError("action calls not yet implemented: %s", n.ActionKey.String())
 }

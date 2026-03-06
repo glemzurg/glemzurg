@@ -49,7 +49,6 @@ func (suite *ScenarioSuite) SetupTest() {
 }
 
 func (suite *ScenarioSuite) TestLoad() {
-
 	// Nothing in database yet.
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
@@ -57,7 +56,7 @@ func (suite *ScenarioSuite) TestLoad() {
 	assert.Empty(suite.T(), scenario)
 
 	// Insert a scenario directly.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO scenario
 			(
 				model_key,
@@ -88,7 +87,6 @@ func (suite *ScenarioSuite) TestLoad() {
 }
 
 func (suite *ScenarioSuite) TestAdd() {
-
 	scenarioToAdd := model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "Name",
@@ -109,7 +107,6 @@ func (suite *ScenarioSuite) TestAdd() {
 }
 
 func (suite *ScenarioSuite) TestUpdate() {
-
 	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "Name",
@@ -135,7 +132,6 @@ func (suite *ScenarioSuite) TestUpdate() {
 }
 
 func (suite *ScenarioSuite) TestRemove() {
-
 	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "Name",
@@ -153,7 +149,6 @@ func (suite *ScenarioSuite) TestRemove() {
 }
 
 func (suite *ScenarioSuite) TestQueryScenarios() {
-
 	err := AddScenarios(suite.db, suite.model.Key, map[identity.Key][]model_scenario.Scenario{
 		suite.useCase.Key: {
 			{
@@ -193,7 +188,6 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 //==================================================
 
 func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, useCaseKey identity.Key) (scenario model_scenario.Scenario) {
-
 	err := AddScenario(dbOrTx, modelKey, useCaseKey, model_scenario.Scenario{
 		Key:     scenarioKey,
 		Name:    scenarioKey.String(),

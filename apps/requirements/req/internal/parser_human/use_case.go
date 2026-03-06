@@ -16,7 +16,6 @@ import (
 // Note: sort is still used in generateUseCaseContent for actor keys
 
 func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents string) (useCase model_use_case.UseCase, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_use_case.UseCase{}, err
@@ -176,7 +175,7 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 }
 
 func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (object model_scenario.Object, err error) {
-	objectNum := uint(objectI + 1)
+	objectNum := uint(objectI + 1) //nolint:gosec // objectI is a small slice index from parsed YAML data, no overflow risk
 
 	objectSubKey := ""
 	name := ""

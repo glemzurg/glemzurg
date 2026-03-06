@@ -16,7 +16,7 @@ type LogicInfixBagSuite struct {
 }
 
 // Helper to create a BuiltinCall that returns a Bag (simulating _Bags!SetToBag)
-// Uses Identifier as a placeholder argument since SetLiteralInt doesn't implement Expression
+// Uses Identifier as a placeholder argument since SetLiteralInt doesn't implement Expression.
 func makeLogicBagCall(name string) *BuiltinCall {
 	return &BuiltinCall{
 		Name: "_Bags!SetToBag",

@@ -18,7 +18,6 @@ import (
 )
 
 func WriteModel(db *sql.DB, model core.Model) (err error) {
-
 	// Validate the model tree before writing to database.
 	if err = model.Validate(); err != nil {
 		return err
@@ -26,7 +25,6 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 
 	// Everything should be written in order, as a transaction.
 	err = dbTransaction(db, func(tx *sql.Tx) (err error) {
-
 		modelKey := model.Key
 
 		// Clear out the prior model first.
@@ -673,10 +671,8 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 }
 
 func ReadModel(db *sql.DB, modelKey string) (model core.Model, err error) {
-
 	// Read from within a transaction.
 	err = dbTransaction(db, func(tx *sql.Tx) (err error) {
-
 		// Model.
 		model, err = LoadModel(tx, modelKey)
 		if err != nil {

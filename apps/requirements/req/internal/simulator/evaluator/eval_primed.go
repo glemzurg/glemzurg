@@ -13,7 +13,7 @@ import (
 // For field access like record.field':
 // - First get the root variable name (record)
 // - Look up its primed value if available
-// - Then evaluate the field access chain on that value
+// - Then evaluate the field access chain on that value.
 func evalPrimed(node *ast.Primed, bindings *Bindings) *EvalResult {
 	switch base := node.Base.(type) {
 	case *ast.Identifier:

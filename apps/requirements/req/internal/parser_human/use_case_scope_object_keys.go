@@ -103,7 +103,7 @@ func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Ke
 // expandAttributeKey converts a short attribute key format to a full identity key.
 // Supported formats:
 // - "class/attribute" - uses the provided subdomain
-// - "domainFolder/class/attribute" - the domainFolder is ignored, uses the current subdomain
+// - "domainFolder/class/attribute" - the domainFolder is ignored, uses the current subdomain.
 func expandAttributeKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -143,7 +143,7 @@ func expandAttributeKey(subdomainKey identity.Key, shortKey string) (identity.Ke
 // when only a bare scenario name is given).
 // Supported formats:
 // - "scenarioName" - same use case as the current scenario (preferred)
-// - "useCase/scenario/scenarioName" - explicit form
+// - "useCase/scenario/scenarioName" - explicit form.
 func expandScenarioKey(subdomainKey identity.Key, scenarioKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -176,7 +176,7 @@ func expandScenarioKey(subdomainKey identity.Key, scenarioKey identity.Key, shor
 // expandEventKey converts a short event key format to a full identity key.
 // Supported formats:
 // - "class/eventname" - compact form (preferred)
-// - "class/event/eventname" - explicit form
+// - "class/event/eventname" - explicit form.
 func expandEventKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -212,7 +212,7 @@ func expandEventKey(subdomainKey identity.Key, shortKey string) (identity.Key, e
 // expandQueryKey converts a short query key format to a full identity key.
 // Supported formats:
 // - "class/queryname" - compact form (preferred)
-// - "class/query/queryname" - explicit form
+// - "class/query/queryname" - explicit form.
 func expandQueryKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 

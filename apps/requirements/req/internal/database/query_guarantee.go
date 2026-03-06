@@ -35,7 +35,6 @@ func scanQueryGuarantee(scanner Scanner, queryKeyPtr *identity.Key, logicKeyPtr 
 
 // LoadQueryGuarantee loads a query guarantee join row from the database.
 func LoadQueryGuarantee(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var loadedQueryKey identity.Key
 
 	err = dbQueryRow(
@@ -77,8 +76,7 @@ func AddQueryGuarantee(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, lo
 
 // RemoveQueryGuarantee deletes a query guarantee join row from the database.
 func RemoveQueryGuarantee(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			query_guarantee
 		WHERE
@@ -99,7 +97,6 @@ func RemoveQueryGuarantee(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 
 // QueryQueryGuarantees loads all query guarantee logic keys from the database, grouped by query key.
 func QueryQueryGuarantees(dbOrTx DbOrTx, modelKey string) (guarantees map[identity.Key][]identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -159,7 +156,7 @@ func AddQueryGuarantees(dbOrTx DbOrTx, modelKey string, guarantees map[identity.
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

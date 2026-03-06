@@ -15,7 +15,6 @@ func normalizeWhitespace(value string) (normalized string) {
 }
 
 func preenKey(key string) (preened string, err error) {
-
 	preened = key
 	preened = strings.ToLower(preened)
 	preened = strings.TrimSpace(preened)

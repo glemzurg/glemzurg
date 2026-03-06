@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	// Example call:
 	//   $GOBIN/req_check /path/to/ai_models/model_a
 
@@ -47,7 +46,7 @@ func main() {
 	log.Println()
 
 	// Validate the model
-	err := validateModel(modelPath, model)
+	err := validateModel(modelPath)
 	if err != nil {
 		log.Printf("Validation failed: %+v", err)
 		os.Exit(1)
@@ -58,8 +57,7 @@ func main() {
 }
 
 // validateModel reads and validates a model from ai/json format.
-func validateModel(modelPath, model string) error {
-
+func validateModel(modelPath string) error {
 	// Read the input model into core.Model
 	var parsedModel *core.Model
 

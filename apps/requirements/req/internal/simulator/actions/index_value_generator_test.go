@@ -64,19 +64,19 @@ func makeIndexInfo(classKey identity.Key, indexes []invariants.IndexDefinition) 
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesNoIndexes() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	indexInfo := makeIndexInfo(classKey, nil) // no indexes
 	attrs := object.NewRecord()
-	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
 
-	err := generateIndexSafeValues(attrs, indexInfo, nil, class, rng)
+
+	err := generateIndexSafeValues(attrs, indexInfo, nil, rng)
 	s.NoError(err)
 }
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	idAttr := spanAttrDef("id", 1, 10000)
 	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
@@ -93,10 +93,10 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 	existAttrs.Set("id", object.NewInteger(42))
 	simState.CreateInstance(classKey, existAttrs)
 
-	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
+
 	newAttrs := object.NewRecord()
 
-	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
+	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
 	s.NoError(err)
 
 	// The generated id should not be 42
@@ -107,7 +107,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	colorAttr := enumAttrDef("color", []string{"red", "green", "blue"})
 	indexInfo := makeIndexInfo(classKey, []invariants.IndexDefinition{
@@ -128,10 +128,10 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 	a2.Set("color", object.NewString("green"))
 	simState.CreateInstance(classKey, a2)
 
-	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
+
 	newAttrs := object.NewRecord()
 
-	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
+	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
 	s.NoError(err)
 
 	// The generated color should be "blue" (the only unused value)
@@ -144,7 +144,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	// Only 2 possible enum values
 	colorAttr := enumAttrDef("color", []string{"red", "green"})
@@ -166,17 +166,17 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 	a2.Set("color", object.NewString("green"))
 	simState.CreateInstance(classKey, a2)
 
-	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
+
 	newAttrs := object.NewRecord()
 
-	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
+	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
 	s.Error(err, "Should fail when all enum values are exhausted")
 	s.Contains(err.Error(), "unable to generate unique")
 }
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	emailAttr := enumAttrDef("email", []string{"a@b.com", "c@d.com", "e@f.com"})
 	tenantAttr := enumAttrDef("tenant", []string{"acme", "globex"})
@@ -199,10 +199,10 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 	a1.Set("tenant", object.NewString("acme"))
 	simState.CreateInstance(classKey, a1)
 
-	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
+
 	newAttrs := object.NewRecord()
 
-	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
+	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
 	s.NoError(err)
 
 	// The generated tuple should not be (a@b.com, acme)
@@ -213,7 +213,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesPresetAttribute() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 
 	emailAttr := enumAttrDef("email", []string{"a@b.com", "c@d.com"})
 	tenantAttr := enumAttrDef("tenant", []string{"acme", "globex"})
@@ -235,13 +235,13 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesPresetAttribute() {
 	a1.Set("tenant", object.NewString("acme"))
 	simState.CreateInstance(classKey, a1)
 
-	class := helper.Must(model_class.NewClass(classKey, "C", "", nil, nil, nil, ""))
+
 
 	// Pre-set email to "a@b.com" — generator should pick a different tenant
 	newAttrs := object.NewRecord()
 	newAttrs.Set("email", object.NewString("a@b.com"))
 
-	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), class, rng)
+	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
 	s.NoError(err)
 
 	// Email should still be what we pre-set

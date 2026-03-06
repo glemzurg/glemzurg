@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// IdentifierEvalSuite tests end-to-end: parse -> evaluate for identifiers
+// IdentifierEvalSuite tests end-to-end: parse -> evaluate for identifiers.
 func TestIdentifierEvalSuite(t *testing.T) {
 	suite.Run(t, new(IdentifierEvalSuite))
 }

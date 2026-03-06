@@ -34,7 +34,6 @@ type UseCaseActorSuite struct {
 }
 
 func (suite *UseCaseActorSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -48,13 +47,12 @@ func (suite *UseCaseActorSuite) SetupTest() {
 }
 
 func (suite *UseCaseActorSuite) TestLoad() {
-
 	// Nothing in database yet.
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), actor)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO use_case_actor
 			(
 				model_key,
@@ -80,7 +78,6 @@ func (suite *UseCaseActorSuite) TestLoad() {
 }
 
 func (suite *UseCaseActorSuite) TestAdd() {
-
 	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlComment",
 	})
@@ -94,7 +91,6 @@ func (suite *UseCaseActorSuite) TestAdd() {
 }
 
 func (suite *UseCaseActorSuite) TestUpdate() {
-
 	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlComment",
 	})
@@ -113,7 +109,6 @@ func (suite *UseCaseActorSuite) TestUpdate() {
 }
 
 func (suite *UseCaseActorSuite) TestRemove() {
-
 	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlComment",
 	})
@@ -128,7 +123,6 @@ func (suite *UseCaseActorSuite) TestRemove() {
 }
 
 func (suite *UseCaseActorSuite) TestQuery() {
-
 	err := AddUseCaseActors(suite.db, suite.model.Key, map[identity.Key]map[identity.Key]model_use_case.Actor{
 		suite.useCase.Key: {
 			suite.class.Key: {

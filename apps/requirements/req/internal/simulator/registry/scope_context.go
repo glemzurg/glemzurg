@@ -177,7 +177,7 @@ func (sc *ScopeContext) resolveClassCall(call *ast.CallExpression) (DefinitionKe
 }
 
 // countCallDepth counts how many scope parts are specified in the call.
-// 0 = FuncName(), 1 = Class!FuncName(), 2 = Subdomain!Class!FuncName(), 3 = Domain!Subdomain!Class!FuncName()
+// 0 = FuncName(), 1 = Class!FuncName(), 2 = Subdomain!Class!FuncName(), 3 = Domain!Subdomain!Class!FuncName().
 func (sc *ScopeContext) countCallDepth(call *ast.CallExpression) int {
 	count := 0
 	if call.Domain != nil {

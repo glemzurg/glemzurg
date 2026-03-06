@@ -33,7 +33,6 @@ type UseCaseSharedSuite struct {
 }
 
 func (suite *UseCaseSharedSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -47,13 +46,12 @@ func (suite *UseCaseSharedSuite) SetupTest() {
 }
 
 func (suite *UseCaseSharedSuite) TestLoad() {
-
 	// Nothing in database yet.
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), useCaseShared)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO use_case_shared
 			(
 				model_key,
@@ -82,7 +80,6 @@ func (suite *UseCaseSharedSuite) TestLoad() {
 }
 
 func (suite *UseCaseSharedSuite) TestAdd() {
-
 	err := AddUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key, model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
@@ -98,7 +95,6 @@ func (suite *UseCaseSharedSuite) TestAdd() {
 }
 
 func (suite *UseCaseSharedSuite) TestUpdate() {
-
 	err := AddUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key, model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
@@ -120,7 +116,6 @@ func (suite *UseCaseSharedSuite) TestUpdate() {
 }
 
 func (suite *UseCaseSharedSuite) TestRemove() {
-
 	err := AddUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key, model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
@@ -136,7 +131,6 @@ func (suite *UseCaseSharedSuite) TestRemove() {
 }
 
 func (suite *UseCaseSharedSuite) TestQuery() {
-
 	err := AddUseCaseShareds(suite.db, suite.model.Key, map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 		suite.seaUseCase.Key: {
 			suite.mudUseCase.Key: {

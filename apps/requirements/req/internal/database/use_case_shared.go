@@ -41,9 +41,8 @@ func scanUseCaseShared(scanner Scanner, seaLevelKeyPtr, mudlevelKeyPtr *identity
 	return nil
 }
 
-// LoadUseCaseShared loads a use case from the database
+// LoadUseCaseShared loads a use case from the database.
 func LoadUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key) (useCaseShared model_use_case.UseCaseShared, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -88,9 +87,8 @@ func AddUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, 
 
 // UpdateUseCaseShared updates a use case in the database.
 func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key, useCaseShared model_use_case.UseCaseShared) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			use_case_shared
 		SET
@@ -116,9 +114,8 @@ func UpdateUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Ke
 
 // RemoveUseCaseShared deletes a use case from the database.
 func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Key, mudLevelKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			use_case_shared
 		WHERE
@@ -137,9 +134,8 @@ func RemoveUseCaseShared(dbOrTx DbOrTx, modelKey string, seaLevelKey identity.Ke
 	return nil
 }
 
-// QueryUseCaseShareds loads all use case from the database
+// QueryUseCaseShareds loads all use case from the database.
 func QueryUseCaseShareds(dbOrTx DbOrTx, modelKey string) (useCaseShareds map[identity.Key]map[identity.Key]model_use_case.UseCaseShared, err error) {
-
 	useCaseShareds = make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
 
 	// Query the database.
@@ -204,7 +200,7 @@ func AddUseCaseShareds(dbOrTx DbOrTx, modelKey string, useCaseShareds map[identi
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

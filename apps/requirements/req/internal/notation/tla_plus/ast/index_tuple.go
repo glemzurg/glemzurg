@@ -5,7 +5,7 @@ import (
 )
 
 // TupleIndex represents tuple/array indexing.
-// Pattern: tuple[index]
+// Pattern: tuple[index].
 type TupleIndex struct {
 	Tuple Expression `validate:"required"` // Must be Tuple
 	Index Expression `validate:"required"` // Must be Natural

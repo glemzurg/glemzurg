@@ -125,7 +125,7 @@ func (s *ModelLoaderSuite) TestNonExistentFile() {
 
 func (s *ModelLoaderSuite) TestInvalidJSON() {
 	path := filepath.Join(s.tempDir, "bad.json")
-	err := os.WriteFile(path, []byte("not json"), 0644)
+	err := os.WriteFile(path, []byte("not json"), 0600)
 	s.Require().NoError(err)
 
 	_, err = LoadModel(path)
@@ -136,7 +136,7 @@ func (s *ModelLoaderSuite) TestInvalidJSON() {
 func (s *ModelLoaderSuite) TestInvalidModel() {
 	// A model with no Key should fail validation.
 	path := filepath.Join(s.tempDir, "invalid.json")
-	err := os.WriteFile(path, []byte(`{"Name": "Test"}`), 0644)
+	err := os.WriteFile(path, []byte(`{"Name": "Test"}`), 0600)
 	s.Require().NoError(err)
 
 	_, err = LoadModel(path)

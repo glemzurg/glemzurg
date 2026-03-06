@@ -46,7 +46,6 @@ func scanUseCaseGeneralization(scanner Scanner, subdomainKeyPtr *identity.Key, g
 
 // LoadUseCaseGeneralization loads a use case generalization from the database.
 func LoadUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (subdomainKey identity.Key, generalization model_use_case.Generalization, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -88,9 +87,8 @@ func AddUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, subdomainKey ident
 
 // UpdateUseCaseGeneralization updates a use case generalization in the database.
 func UpdateUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_use_case.Generalization) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			use_case_generalization
 		SET
@@ -119,9 +117,8 @@ func UpdateUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalization 
 
 // RemoveUseCaseGeneralization deletes a use case generalization from the database.
 func RemoveUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				use_case_generalization
 			WHERE
@@ -139,7 +136,6 @@ func RemoveUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationK
 
 // QueryUseCaseGeneralizations loads all use case generalizations from the database grouped by subdomain key.
 func QueryUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations map[identity.Key][]model_use_case.Generalization, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -203,7 +199,7 @@ func AddUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations m
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

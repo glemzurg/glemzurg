@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// String operators
+// String operators.
 const (
 	StringOperatorConcat = "∘" // Concatenation (U+2218 RING OPERATOR)
 )

@@ -34,7 +34,7 @@ type FunctionCall struct {
 
 func (f *FunctionCall) expressionNode() {}
 
-// FullName returns the complete scoped name as a string (e.g., "Domain!Subdomain!Class!Action")
+// FullName returns the complete scoped name as a string (e.g., "Domain!Subdomain!Class!Action").
 func (f *FunctionCall) FullName() string {
 	parts := make([]string, 0, len(f.ScopePath)+1)
 	for _, seg := range f.ScopePath {

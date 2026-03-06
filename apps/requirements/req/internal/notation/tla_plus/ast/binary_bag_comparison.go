@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Bag comparison operators
+// Bag comparison operators.
 const (
 	BagComparisonProperSubBag = "⊏" // Proper subbag (U+228F SQUARE IMAGE OF)
 	BagComparisonSubBag       = "⊑" // Subbag or equal (U+2291 SQUARE IMAGE OF OR EQUAL TO)

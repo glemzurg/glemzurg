@@ -582,7 +582,7 @@ func (e *ActionExecutor) ExecuteTransition(
 		if e.indexChecker != nil && e.rng != nil {
 			if indexInfo := e.indexChecker.GetClassIndexInfo(class.Key); indexInfo != nil {
 				existingInstances := simState.InstancesByClass(class.Key)
-				if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, class, e.rng); err != nil {
+				if err := generateIndexSafeValues(newAttrs, indexInfo, existingInstances, e.rng); err != nil {
 					return nil, fmt.Errorf("failed to generate index-safe values for class %s: %w", class.Name, err)
 				}
 			}

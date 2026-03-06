@@ -17,7 +17,6 @@ import (
 // This is the inverse operation of Parse.
 // The outputPath is the root directory where the model will be written.
 func Write(model core.Model, outputPath string) error {
-
 	// Validate the model before writing.
 	if err := model.Validate(); err != nil {
 		return errors.Wrap(err, "model validation failed")
@@ -31,7 +30,7 @@ func Write(model core.Model, outputPath string) error {
 	// Write the model file (this.model).
 	modelContent := generateModelContent(model)
 	modelPath := filepath.Join(outputPath, "this"+_EXT_MODEL)
-	if err := os.WriteFile(modelPath, []byte(modelContent), 0644); err != nil {
+	if err := os.WriteFile(modelPath, []byte(modelContent), 0600); err != nil {
 		return errors.Wrap(err, "failed to write model file")
 	}
 
@@ -45,7 +44,7 @@ func Write(model core.Model, outputPath string) error {
 		for _, actor := range model.Actors {
 			actorContent := generateActorContent(actor)
 			actorPath := filepath.Join(actorsDir, actor.Key.SubKey+_EXT_ACTOR)
-			if err := os.WriteFile(actorPath, []byte(actorContent), 0644); err != nil {
+			if err := os.WriteFile(actorPath, []byte(actorContent), 0600); err != nil {
 				return errors.Wrapf(err, "failed to write actor file: %s", actor.Key.SubKey)
 			}
 		}
@@ -53,7 +52,7 @@ func Write(model core.Model, outputPath string) error {
 		for _, actorGen := range model.ActorGeneralizations {
 			genContent := generateActorGeneralizationContent(actorGen)
 			genPath := filepath.Join(actorsDir, actorGen.Key.SubKey+_EXT_GENERALIZATION)
-			if err := os.WriteFile(genPath, []byte(genContent), 0644); err != nil {
+			if err := os.WriteFile(genPath, []byte(genContent), 0600); err != nil {
 				return errors.Wrapf(err, "failed to write actor generalization file: %s", actorGen.Key.SubKey)
 			}
 		}
@@ -87,7 +86,6 @@ func buildDomainAssociationsLookup(associations map[identity.Key]model_domain.As
 
 // writeDomain writes a domain and its contents to the filesystem.
 func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDomain map[string][]model_domain.Association, classAssocsByClass map[string][]model_class.Association) error {
-
 	// Create the domain directory using the domain's subkey.
 	domainDir := filepath.Join(outputPath, domain.Key.SubKey)
 	if err := os.MkdirAll(domainDir, 0755); err != nil {
@@ -100,7 +98,7 @@ func writeDomain(outputPath string, domain model_domain.Domain, domainAssocsByDo
 	// Write the domain file (this.domain).
 	domainContent := generateDomainContent(domain, associations)
 	domainPath := filepath.Join(domainDir, "this"+_EXT_DOMAIN)
-	if err := os.WriteFile(domainPath, []byte(domainContent), 0644); err != nil {
+	if err := os.WriteFile(domainPath, []byte(domainContent), 0600); err != nil {
 		return errors.Wrapf(err, "failed to write domain file: %s", domain.Key.SubKey)
 	}
 
@@ -134,7 +132,7 @@ func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, 
 	// Write this.subdomain file.
 	subdomainContent := generateSubdomainContent(subdomain)
 	subdomainPath := filepath.Join(subdomainDir, "this"+_EXT_SUBDOMAIN)
-	if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0644); err != nil {
+	if err := os.WriteFile(subdomainPath, []byte(subdomainContent), 0600); err != nil {
 		return errors.Wrapf(err, "failed to write subdomain file: %s", subdomain.Key.SubKey)
 	}
 
@@ -151,7 +149,6 @@ func writeExplicitSubdomain(domainDir string, subdomain model_domain.Subdomain, 
 // For explicit subdomains, the baseDir is the subdomain directory.
 // classAssocsByClass is a pre-built lookup of all class associations (from all levels) grouped by from-class key.
 func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, classAssocsByClass map[string][]model_class.Association) error {
-
 	// Write classes and generalizations to classes/ directory if there are any.
 	if len(subdomain.Classes) > 0 || len(subdomain.Generalizations) > 0 {
 		classesDir := filepath.Join(baseDir, "classes")
@@ -163,7 +160,7 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 		for _, gen := range subdomain.Generalizations {
 			genContent := generateGeneralizationContent(gen)
 			genPath := filepath.Join(classesDir, gen.Key.SubKey+_EXT_GENERALIZATION)
-			if err := os.WriteFile(genPath, []byte(genContent), 0644); err != nil {
+			if err := os.WriteFile(genPath, []byte(genContent), 0600); err != nil {
 				return errors.Wrapf(err, "failed to write generalization file: %s", gen.Key.SubKey)
 			}
 		}
@@ -173,7 +170,7 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 			associations := classAssocsByClass[class.Key.String()]
 			classContent := generateClassContent(class, associations)
 			classPath := filepath.Join(classesDir, class.Key.SubKey+_EXT_CLASS)
-			if err := os.WriteFile(classPath, []byte(classContent), 0644); err != nil {
+			if err := os.WriteFile(classPath, []byte(classContent), 0600); err != nil {
 				return errors.Wrapf(err, "failed to write class file: %s", class.Key.SubKey)
 			}
 		}
@@ -190,7 +187,7 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 		for _, gen := range subdomain.UseCaseGeneralizations {
 			genContent := generateUseCaseGeneralizationContent(gen)
 			genPath := filepath.Join(useCasesDir, gen.Key.SubKey+_EXT_GENERALIZATION)
-			if err := os.WriteFile(genPath, []byte(genContent), 0644); err != nil {
+			if err := os.WriteFile(genPath, []byte(genContent), 0600); err != nil {
 				return errors.Wrapf(err, "failed to write use case generalization file: %s", gen.Key.SubKey)
 			}
 		}
@@ -198,7 +195,7 @@ func writeSubdomainContents(baseDir string, subdomain model_domain.Subdomain, cl
 		for _, useCase := range subdomain.UseCases {
 			useCaseContent := generateUseCaseContent(useCase)
 			useCasePath := filepath.Join(useCasesDir, useCase.Key.SubKey+_EXT_USE_CASE)
-			if err := os.WriteFile(useCasePath, []byte(useCaseContent), 0644); err != nil {
+			if err := os.WriteFile(useCasePath, []byte(useCaseContent), 0600); err != nil {
 				return errors.Wrapf(err, "failed to write use case file: %s", useCase.Key.SubKey)
 			}
 		}

@@ -39,7 +39,6 @@ type QueryRequireSuite struct {
 }
 
 func (suite *QueryRequireSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +58,12 @@ func (suite *QueryRequireSuite) SetupTest() {
 }
 
 func (suite *QueryRequireSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no query_require join row yet.
 	_, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the query_require join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO query_require
 			(model_key, query_key, logic_key)
 		VALUES
@@ -83,7 +81,6 @@ func (suite *QueryRequireSuite) TestLoad() {
 }
 
 func (suite *QueryRequireSuite) TestAdd() {
-
 	err := AddQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -93,7 +90,6 @@ func (suite *QueryRequireSuite) TestAdd() {
 }
 
 func (suite *QueryRequireSuite) TestRemove() {
-
 	err := AddQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
 
@@ -106,7 +102,6 @@ func (suite *QueryRequireSuite) TestRemove() {
 }
 
 func (suite *QueryRequireSuite) TestQuery() {
-
 	err := AddQueryRequires(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKeyB, suite.logicKey},
 	})

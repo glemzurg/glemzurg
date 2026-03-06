@@ -10,8 +10,7 @@ import (
 )
 
 // GenerateMdFromModel generates markdown documentation from an already-parsed model.
-func GenerateMdFromModel(debug bool, outputPath string, parsedModel core.Model) (err error) {
-
+func GenerateMdFromModel(outputPath string, parsedModel core.Model) (err error) {
 	// Create necessary output paths if we don't have them.
 	if err = createMissingPaths([]string{outputPath}); err != nil {
 		return err
@@ -21,7 +20,7 @@ func GenerateMdFromModel(debug bool, outputPath string, parsedModel core.Model) 
 
 	// Use FileWriter to write to filesystem via ContentWriter interface.
 	writer := NewFileWriter(outputPath)
-	err = GenerateMdToWriter(debug, parsedModel, writer)
+	err = GenerateMdToWriter(parsedModel, writer)
 	if err != nil {
 		return err
 	}

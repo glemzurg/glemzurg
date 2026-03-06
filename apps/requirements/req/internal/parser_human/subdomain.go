@@ -8,7 +8,6 @@ import (
 )
 
 func parseSubdomain(domainKey identity.Key, subdomainSubKey, filename, contents string) (subdomain model_domain.Subdomain, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_domain.Subdomain{}, err

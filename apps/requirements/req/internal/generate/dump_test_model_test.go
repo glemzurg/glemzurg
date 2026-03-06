@@ -19,19 +19,18 @@ func (d discardWriter) WriteCSS(_ []byte) error                { return nil }
 // runtime errors (missing fields, type mismatches) without writing files.
 func TestGenerateTemplates(t *testing.T) {
 	model := test_helper.GetTestModel()
-	err := GenerateMdToWriter(false, model, discardWriter{})
+	err := GenerateMdToWriter(model, discardWriter{})
 	assert.NoError(t, err, "GenerateMdToWriter should succeed with test model")
 }
 
 func TestDumpTestModel(t *testing.T) {
-
 	t.Skip("DumpTestModel is a utility for dumping the test model to a directory for manual inspection; not a real test")
 
 	model := test_helper.GetTestModel()
 
 	// Write to the dump folder within this package for manual inspection.
 	outputDir := "/workspaces/glemzurg/test_model_dump"
-	err := GenerateMdFromModel(true, outputDir, model)
+	err := GenerateMdFromModel(outputDir, model)
 	assert.NoError(t, err, "GenerateMdFromModel should succeed")
 
 	fmt.Printf("Model written to: %s\n", outputDir)

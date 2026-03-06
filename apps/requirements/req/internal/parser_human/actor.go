@@ -9,7 +9,6 @@ import (
 )
 
 func parseActor(actorSubKey, filename, contents string) (actor model_actor.Actor, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_actor.Actor{}, err

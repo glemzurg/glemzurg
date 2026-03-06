@@ -34,7 +34,7 @@ func (s RebuildStrategy) String() string {
 // 1. Type-check the definition body
 // 2. Set def.TypedBody and def.ReturnType
 // 3. Record dependencies via registry.AddDependency
-// 4. Return any type error encountered
+// 4. Return any type error encountered.
 type TypeCheckFunc func(def *Definition, tc *typechecker.TypeChecker, scopeCtx *ScopeContext) error
 
 // RebuildError contains all type errors encountered during rebuild.
@@ -193,14 +193,14 @@ func (r *Registry) topologicalSort(keys []DefinitionKey) []DefinitionKey {
 	inProgress := make(map[DefinitionKey]struct{})
 	var result []DefinitionKey
 
-	var visit func(key DefinitionKey) bool
-	visit = func(key DefinitionKey) bool {
+	var visit func(key DefinitionKey)
+	visit = func(key DefinitionKey) {
 		if _, done := visited[key]; done {
-			return true
+			return
 		}
 		if _, cycling := inProgress[key]; cycling {
 			// Cycle detected - just continue (cyclic deps will error during type-check)
-			return true
+			return
 		}
 
 		inProgress[key] = struct{}{}
@@ -218,7 +218,6 @@ func (r *Registry) topologicalSort(keys []DefinitionKey) []DefinitionKey {
 		delete(inProgress, key)
 		visited[key] = struct{}{}
 		result = append(result, key)
-		return true
 	}
 
 	for _, key := range keys {

@@ -11,7 +11,6 @@ import (
 )
 
 func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey, filename, contents string) (generalization model_use_case.Generalization, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_use_case.Generalization{}, err

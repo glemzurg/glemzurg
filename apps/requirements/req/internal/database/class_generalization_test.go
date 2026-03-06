@@ -32,7 +32,6 @@ type GeneralizationSuite struct {
 }
 
 func (suite *GeneralizationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -47,14 +46,13 @@ func (suite *GeneralizationSuite) SetupTest() {
 }
 
 func (suite *GeneralizationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), subdomainKey)
 	assert.Empty(suite.T(), generalization)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class_generalization
 			(
 				model_key,
@@ -94,7 +92,6 @@ func (suite *GeneralizationSuite) TestLoad() {
 }
 
 func (suite *GeneralizationSuite) TestAdd() {
-
 	err := AddGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -119,7 +116,6 @@ func (suite *GeneralizationSuite) TestAdd() {
 }
 
 func (suite *GeneralizationSuite) TestAddNulls() {
-
 	err := AddGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -144,7 +140,6 @@ func (suite *GeneralizationSuite) TestAddNulls() {
 }
 
 func (suite *GeneralizationSuite) TestUpdate() {
-
 	err := AddGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -179,7 +174,6 @@ func (suite *GeneralizationSuite) TestUpdate() {
 }
 
 func (suite *GeneralizationSuite) TestUpdateNulls() {
-
 	err := AddGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -214,7 +208,6 @@ func (suite *GeneralizationSuite) TestUpdateNulls() {
 }
 
 func (suite *GeneralizationSuite) TestRemove() {
-
 	err := AddGeneralization(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -235,7 +228,6 @@ func (suite *GeneralizationSuite) TestRemove() {
 }
 
 func (suite *GeneralizationSuite) TestQuery() {
-
 	err := AddGeneralizations(suite.db, suite.model.Key, map[identity.Key][]model_class.Generalization{
 		suite.subdomain.Key: {
 			{
@@ -287,7 +279,6 @@ func (suite *GeneralizationSuite) TestQuery() {
 //==================================================
 
 func t_AddGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, generalizationKey identity.Key) (generalization model_class.Generalization) {
-
 	err := AddGeneralization(dbOrTx, modelKey, subdomainKey, model_class.Generalization{
 		Key:        generalizationKey,
 		Name:       generalizationKey.String(),

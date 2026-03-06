@@ -257,10 +257,10 @@ func (tc *TypeChecker) infer(node ast.Node, env *TypeEnv) (*TypedNode, error) {
 		return &TypedNode{Node: n, Type: types.Set{Element: types.Number{}}}, nil
 
 	case *ast.SetLiteralEnum:
-		return tc.inferSetLiteralEnum(n, env)
+		return tc.inferSetLiteralEnum(n)
 
 	case *ast.SetRange:
-		return tc.inferSetRange(n, env)
+		return tc.inferSetRange(n)
 
 	case *ast.SetInfix:
 		return tc.inferSetInfix(n, env)
@@ -269,7 +269,7 @@ func (tc *TypeChecker) infer(node ast.Node, env *TypeEnv) (*TypedNode, error) {
 		return tc.inferSetConditional(n, env)
 
 	case *ast.SetConstant:
-		return tc.inferSetConstant(n, env)
+		return tc.inferSetConstant(n)
 
 	// === Tuples ===
 
@@ -325,7 +325,7 @@ func (tc *TypeChecker) infer(node ast.Node, env *TypeEnv) (*TypedNode, error) {
 	// === Special ===
 
 	case *ast.ExistingValue:
-		return tc.inferExistingValue(n, env)
+		return tc.inferExistingValue(n)
 
 	default:
 		return nil, &TypeError{Node: node, Message: fmt.Sprintf("unsupported node type: %T", node)}
@@ -549,7 +549,7 @@ func (tc *TypeChecker) inferLogicInfixBag(n *ast.LogicInfixBag, env *TypeEnv) (*
 	}, nil
 }
 
-func (tc *TypeChecker) inferSetLiteralEnum(n *ast.SetLiteralEnum, env *TypeEnv) (*TypedNode, error) {
+func (tc *TypeChecker) inferSetLiteralEnum(n *ast.SetLiteralEnum) (*TypedNode, error) {
 	// SetLiteralEnum has []string Values, so it's always a Set[String]
 	if len(n.Values) == 0 {
 		// Empty set has polymorphic element type
@@ -564,7 +564,7 @@ func (tc *TypeChecker) inferSetLiteralEnum(n *ast.SetLiteralEnum, env *TypeEnv) 
 	}, nil
 }
 
-func (tc *TypeChecker) inferSetRange(n *ast.SetRange, env *TypeEnv) (*TypedNode, error) {
+func (tc *TypeChecker) inferSetRange(n *ast.SetRange) (*TypedNode, error) {
 	// SetRange has Start and End as int fields, so it's always Set[Number]
 	return &TypedNode{
 		Node: n,
@@ -643,7 +643,7 @@ func (tc *TypeChecker) inferSetConditional(n *ast.SetConditional, env *TypeEnv) 
 	}, nil
 }
 
-func (tc *TypeChecker) inferSetConstant(n *ast.SetConstant, env *TypeEnv) (*TypedNode, error) {
+func (tc *TypeChecker) inferSetConstant(n *ast.SetConstant) (*TypedNode, error) {
 	// Constants like BOOLEAN, Nat, Int, Real
 	switch n.Value {
 	case "BOOLEAN":
@@ -1080,10 +1080,7 @@ func (tc *TypeChecker) inferCallExpressionWithRegistry(n *ast.CallExpression, en
 
 	// Get arguments from the call - they could be in Parameter field as a tuple/record
 	// or could be multiple positional arguments
-	args, err := tc.extractCallArguments(n, env)
-	if err != nil {
-		return nil, err
-	}
+	args := tc.extractCallArguments(n)
 
 	// Check argument count
 	if len(args) != len(paramTypes) {
@@ -1119,18 +1116,18 @@ func (tc *TypeChecker) inferCallExpressionWithRegistry(n *ast.CallExpression, en
 
 // extractCallArguments extracts the argument list from a call expression.
 // Arguments can be in Parameter field as individual expressions.
-func (tc *TypeChecker) extractCallArguments(n *ast.CallExpression, env *TypeEnv) ([]ast.Expression, error) {
+func (tc *TypeChecker) extractCallArguments(n *ast.CallExpression) []ast.Expression {
 	if n.Parameter == nil {
-		return nil, nil // No arguments
+		return nil // No arguments
 	}
 
 	// Check if Parameter is a tuple literal (multiple args)
 	if tuple, ok := n.Parameter.(*ast.TupleLiteral); ok {
-		return tuple.Elements, nil
+		return tuple.Elements
 	}
 
 	// Single argument
-	return []ast.Expression{n.Parameter}, nil
+	return []ast.Expression{n.Parameter}
 }
 
 // inferCallExpressionLegacy is the original implementation for backward compatibility.
@@ -1187,7 +1184,7 @@ func (tc *TypeChecker) inferCallExpressionLegacy(n *ast.CallExpression, env *Typ
 	}, nil
 }
 
-func (tc *TypeChecker) inferExistingValue(n *ast.ExistingValue, env *TypeEnv) (*TypedNode, error) {
+func (tc *TypeChecker) inferExistingValue(n *ast.ExistingValue) (*TypedNode, error) {
 	// ExistingValue (@) references the current value in an update context
 	// Its type depends on the context - we use a fresh type variable
 	// that will be unified based on usage

@@ -41,9 +41,8 @@ func scanAction(scanner Scanner, classKeyPtr *identity.Key, action *model_state.
 	return nil
 }
 
-// LoadAction loads a action from the database
+// LoadAction loads a action from the database.
 func LoadAction(dbOrTx DbOrTx, modelKey string, actionKey identity.Key) (classKey identity.Key, action model_state.Action, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -82,9 +81,8 @@ func AddAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action mod
 
 // UpdateAction updates a action in the database.
 func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action model_state.Action) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			action
 		SET
@@ -110,9 +108,8 @@ func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action 
 
 // RemoveAction deletes a action from the database.
 func RemoveAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			action
 		WHERE
@@ -131,9 +128,8 @@ func RemoveAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionK
 	return nil
 }
 
-// QueryActions loads all action from the database
+// QueryActions loads all action from the database.
 func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[identity.Key][]model_state.Action, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -196,7 +192,7 @@ func AddActions(dbOrTx DbOrTx, modelKey string, actions map[identity.Key][]model
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -42,14 +43,12 @@ type DbOrTx interface {
 
 // NewDb gives a consistent connection to all code in the package.
 func NewDb() (db *sql.DB, err error) {
-
 	// Avoid race conditions in this code.
 	_dbMutex.Lock()
 	defer _dbMutex.Unlock()
 
 	// We may need to instantiate the connection.
 	if _db == nil {
-
 		// Instantiate the single database connection.
 		connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", _HOST, _PORT, _user, _password, _database)
 		if _db, err = sql.Open(_DRIVER, connStr); err != nil {
@@ -61,13 +60,12 @@ func NewDb() (db *sql.DB, err error) {
 }
 
 // dbExec processes a single sql statement.
-func dbExec(dbOrTx DbOrTx, query string, args ...interface{}) (result sql.Result, err error) {
-
-	if result, err = dbOrTx.Exec(query, args...); err != nil {
-		return nil, errors.WithStack(err)
+func dbExec(dbOrTx DbOrTx, query string, args ...interface{}) error {
+	if _, err := dbOrTx.Exec(query, args...); err != nil {
+		return errors.WithStack(err)
 	}
 
-	return result, nil
+	return nil
 }
 
 // Scanner is any object that can scan a row of a SQL query result (*sql.Row and *sql.Rows).
@@ -80,7 +78,6 @@ type RowHandleFunc func(scanner Scanner) (err error)
 
 // dbQuery runs a multi-row return sql statement and handles each row of the results with the method passed in.
 func dbQuery(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...interface{}) (err error) {
-
 	// Make the query.
 	rows, err := dbOrTx.Query(query, args...)
 	if err != nil {
@@ -95,12 +92,15 @@ func dbQuery(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...i
 		}
 	}
 
+	if err = rows.Err(); err != nil {
+		return errors.WithStack(err)
+	}
+
 	return nil
 }
 
 // dbQueryRow runs a single-row return sql query statement.
 func dbQueryRow(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...interface{}) (err error) {
-
 	// Query the row.
 	row := dbOrTx.QueryRow(query, args...)
 
@@ -117,9 +117,8 @@ type dbTransactionFunc func(tx *sql.Tx) (err error)
 
 // dbTransaction processes the method passed in all in the context of a single SQL transaction.
 func dbTransaction(db *sql.DB, transactionFunc dbTransactionFunc) (err error) {
-
 	// Start a transaction.
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return errors.WithStack(err)
 	}

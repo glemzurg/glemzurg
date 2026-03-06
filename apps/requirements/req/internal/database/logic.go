@@ -64,7 +64,6 @@ func scanLogic(scanner Scanner, logic *model_logic.Logic) (err error) {
 
 // LoadLogic loads a logic from the database.
 func LoadLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (logic model_logic.Logic, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -106,7 +105,6 @@ func AddLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic) (err erro
 
 // UpdateLogic updates a logic in the database.
 func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOrder int) (err error) {
-
 	// Extract target type spec fields.
 	var ttNotation *string
 	var ttSpecification *string
@@ -116,7 +114,7 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			logic
 		SET
@@ -151,9 +149,8 @@ func UpdateLogic(dbOrTx DbOrTx, modelKey string, logic model_logic.Logic, sortOr
 
 // RemoveLogic deletes a logic from the database.
 func RemoveLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			logic
 		WHERE
@@ -171,7 +168,6 @@ func RemoveLogic(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err err
 
 // QueryLogics loads all logics from the database for a given model.
 func QueryLogics(dbOrTx DbOrTx, modelKey string) (logics []model_logic.Logic, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -232,7 +228,7 @@ func AddLogics(dbOrTx DbOrTx, modelKey string, logics []model_logic.Logic, sortO
 		args = append(args, modelKey, logic.Key.String(), logic.Type, logic.Description, logic.Target, logic.Spec.Notation, logic.Spec.Specification, sortOrders[logic.Key.String()], ttNotation, ttSpecification)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

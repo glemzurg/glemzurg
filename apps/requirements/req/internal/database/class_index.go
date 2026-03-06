@@ -20,9 +20,8 @@ func scanClassIndex(scanner Scanner, indexNumPtr *uint) (err error) {
 	return nil
 }
 
-// LoadClassAttributeIndexes loads the indexes on a specific attribute from the database
+// LoadClassAttributeIndexes loads the indexes on a specific attribute from the database.
 func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (indexNums []uint, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -57,9 +56,8 @@ func LoadClassAttributeIndexes(dbOrTx DbOrTx, modelKey string, classKey identity
 
 // AddClassIndex adds a attribute to the database.
 func AddClassIndex(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key, indexNum uint) (err error) {
-
 	// Add the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			INSERT INTO class_index
 				(
 					model_key     ,
@@ -87,9 +85,8 @@ func AddClassIndex(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attrib
 
 // RemoveClassIndex deletes a attribute from the database.
 func RemoveClassIndex(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key, indexNum uint) (err error) {
-
 	// Add the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM class_index
 			WHERE
 				model_key = $1

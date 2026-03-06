@@ -10,7 +10,6 @@ import (
 
 // LoadClassInvariant loads a class invariant logic key from the database.
 func LoadClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
@@ -56,8 +55,7 @@ func AddClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key, lo
 
 // RemoveClassInvariant deletes a class invariant join row from the database.
 func RemoveClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			class_invariant
 		WHERE
@@ -79,7 +77,6 @@ func RemoveClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key,
 // QueryClassInvariants loads all class invariant logic keys from the database,
 // grouped by class key. Within each class, results are ordered by logic sort_order.
 func QueryClassInvariants(dbOrTx DbOrTx, modelKey string) (result map[identity.Key][]identity.Key, err error) {
-
 	result = make(map[identity.Key][]identity.Key)
 
 	err = dbQuery(
@@ -146,7 +143,7 @@ func AddClassInvariants(dbOrTx DbOrTx, modelKey string, classInvariants map[iden
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

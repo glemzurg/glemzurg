@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Tuple operators
+// Tuple operators.
 const (
 	TupleOperatorConcat = "∘" // Concatenation (U+2218 RING OPERATOR)
 )

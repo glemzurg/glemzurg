@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Membership operators
+// Membership operators.
 const (
 	MembershipOperatorIn    = "∈"
 	MembershipOperatorNotIn = "∉"

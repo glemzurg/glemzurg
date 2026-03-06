@@ -38,7 +38,6 @@ func scanActorGeneralization(scanner Scanner, generalization *model_actor.Genera
 
 // LoadActorGeneralization loads an actor generalization from the database.
 func LoadActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_actor.Generalization, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -77,9 +76,8 @@ func AddActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization model
 
 // UpdateActorGeneralization updates an actor generalization in the database.
 func UpdateActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_actor.Generalization) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			actor_generalization
 		SET
@@ -108,9 +106,8 @@ func UpdateActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization mo
 
 // RemoveActorGeneralization deletes an actor generalization from the database.
 func RemoveActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				actor_generalization
 			WHERE
@@ -128,7 +125,6 @@ func RemoveActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey
 
 // QueryActorGeneralizations loads all actor generalizations from the database.
 func QueryActorGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []model_actor.Generalization, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -178,7 +174,7 @@ func AddActorGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []m
 		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

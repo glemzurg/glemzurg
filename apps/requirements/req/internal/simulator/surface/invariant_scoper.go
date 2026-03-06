@@ -220,6 +220,5 @@ func walkIdentifiers(expr ast.Expression, result map[string]bool) {
 			walkIdentifiers(branch.Result, result)
 		}
 		walkIdentifiers(e.Other, result)
-
 	}
 }

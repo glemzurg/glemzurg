@@ -23,7 +23,6 @@ type DomainFileSuite struct {
 }
 
 func (suite *DomainFileSuite) TestParseDomainFiles() {
-
 	key := "domain_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_DOMAIN_PATH_OK)

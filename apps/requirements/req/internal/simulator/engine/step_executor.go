@@ -50,7 +50,7 @@ func (e *StepExecutor) Execute(
 ) (*SimulationStep, error) {
 	// Handle "do" actions separately — they don't involve state transitions.
 	if pending.IsDo {
-		return e.executeDo(pending, simState, stepNumber)
+		return e.executeDo(pending, stepNumber)
 	}
 
 	return e.executeTransition(pending, simState, stepNumber)
@@ -59,7 +59,6 @@ func (e *StepExecutor) Execute(
 // executeDo handles a "do" state action — runs the action on the instance.
 func (e *StepExecutor) executeDo(
 	pending *PendingAction,
-	simState *state.SimulationState,
 	stepNumber int,
 ) (*SimulationStep, error) {
 	step := &SimulationStep{

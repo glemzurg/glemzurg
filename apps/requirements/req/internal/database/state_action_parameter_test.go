@@ -34,7 +34,6 @@ type ActionParameterSuite struct {
 }
 
 func (suite *ActionParameterSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,13 +49,12 @@ func (suite *ActionParameterSuite) SetupTest() {
 }
 
 func (suite *ActionParameterSuite) TestLoad() {
-
 	// Nothing in database yet.
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 	assert.Empty(suite.T(), param)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action_parameter
 			(
 				model_key,
@@ -87,7 +85,6 @@ func (suite *ActionParameterSuite) TestLoad() {
 }
 
 func (suite *ActionParameterSuite) TestAdd() {
-
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
@@ -103,7 +100,6 @@ func (suite *ActionParameterSuite) TestAdd() {
 }
 
 func (suite *ActionParameterSuite) TestUpdate() {
-
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
@@ -125,7 +121,6 @@ func (suite *ActionParameterSuite) TestUpdate() {
 }
 
 func (suite *ActionParameterSuite) TestRemove() {
-
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
@@ -141,7 +136,6 @@ func (suite *ActionParameterSuite) TestRemove() {
 }
 
 func (suite *ActionParameterSuite) TestQuery() {
-
 	err := AddActionParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.actionKey: {
 			{
@@ -176,8 +170,7 @@ func (suite *ActionParameterSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string, sortOrder int) (param model_state.Parameter) {
-
+func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
 	assert.Nil(t, err)
 
@@ -194,8 +187,7 @@ func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKe
 }
 
 func (suite *ActionParameterSuite) TestVerifyTestObjects() {
-
-	param := t_AddActionParameter(suite.T(), suite.db, suite.model.Key, suite.actionKey, "Amount", 0)
+	param := t_AddActionParameter(suite.T(), suite.db, suite.model.Key, suite.actionKey, "Amount")
 	assert.Equal(suite.T(), model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",

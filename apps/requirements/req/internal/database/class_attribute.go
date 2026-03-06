@@ -84,7 +84,6 @@ func scanAttribute(scanner Scanner, classKeyPtr *identity.Key, attribute *model_
 // The returned Attribute will have DerivationPolicy as a stub (Key only);
 // the full Logic is stitched in top_level_requirements.go.
 func LoadAttribute(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key) (classKey identity.Key, attribute model_class.Attribute, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -128,9 +127,8 @@ func AddAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribu
 
 // UpdateAttribute updates a attribute in the database.
 func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attribute model_class.Attribute) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			attribute
 		SET
@@ -166,9 +164,8 @@ func UpdateAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 
 // RemoveAttribute deletes a attribute from the database.
 func RemoveAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attributeKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			attribute
 		WHERE
@@ -191,7 +188,6 @@ func RemoveAttribute(dbOrTx DbOrTx, modelKey string, classKey identity.Key, attr
 // The returned Attributes will have DerivationPolicy as a stub (Key only);
 // the full Logic is stitched in top_level_requirements.go.
 func QueryAttributes(dbOrTx DbOrTx, modelKey string) (attributes map[identity.Key][]model_class.Attribute, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -259,7 +255,7 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

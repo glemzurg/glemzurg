@@ -40,9 +40,8 @@ func scanGuard(scanner Scanner, classKeyPtr *identity.Key, guard *model_state.Gu
 	return nil
 }
 
-// LoadGuard loads a guard from the database
+// LoadGuard loads a guard from the database.
 func LoadGuard(dbOrTx DbOrTx, modelKey string, guardKey identity.Key) (classKey identity.Key, guard model_state.Guard, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -80,9 +79,8 @@ func AddGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard model
 
 // UpdateGuard updates a guard in the database.
 func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard model_state.Guard) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			guard
 		SET
@@ -106,9 +104,8 @@ func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard mo
 
 // RemoveGuard deletes a guard from the database.
 func RemoveGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			guard
 		WHERE
@@ -127,9 +124,8 @@ func RemoveGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey
 	return nil
 }
 
-// QueryGuards loads all guard from the database
+// QueryGuards loads all guard from the database.
 func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[identity.Key][]model_state.Guard, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -191,7 +187,7 @@ func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_s
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

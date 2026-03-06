@@ -35,7 +35,6 @@ func scanActionGuarantee(scanner Scanner, actionKeyPtr *identity.Key, logicKeyPt
 
 // LoadActionGuarantee loads an action guarantee join row from the database.
 func LoadActionGuarantee(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var loadedActionKey identity.Key
 
 	err = dbQueryRow(
@@ -77,8 +76,7 @@ func AddActionGuarantee(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, 
 
 // RemoveActionGuarantee deletes an action guarantee join row from the database.
 func RemoveActionGuarantee(dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			action_guarantee
 		WHERE
@@ -99,7 +97,6 @@ func RemoveActionGuarantee(dbOrTx DbOrTx, modelKey string, actionKey identity.Ke
 
 // QueryActionGuarantees loads all action guarantee logic keys from the database, grouped by action key.
 func QueryActionGuarantees(dbOrTx DbOrTx, modelKey string) (guarantees map[identity.Key][]identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -159,7 +156,7 @@ func AddActionGuarantees(dbOrTx DbOrTx, modelKey string, guarantees map[identity
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

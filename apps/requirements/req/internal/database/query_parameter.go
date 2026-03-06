@@ -68,7 +68,6 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 
 // LoadQueryParameter loads a query parameter from the database.
 func LoadQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, parameterKey string) (param model_state.Parameter, err error) {
-
 	var loadedQueryKey identity.Key
 	var sortOrder int
 
@@ -115,14 +114,13 @@ func AddQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, pa
 
 // UpdateQueryParameter updates a query parameter in the database.
 func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-
 	paramKey, err := preenKey(param.Name)
 	if err != nil {
 		return errors.Wrapf(err, "parameter name '%s'", param.Name)
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			query_parameter
 		SET
@@ -152,9 +150,8 @@ func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 
 // RemoveQueryParameter deletes a query parameter from the database.
 func RemoveQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, parameterKey string) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			query_parameter
 		WHERE
@@ -175,7 +172,6 @@ func RemoveQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 
 // QueryQueryParameters loads all query parameters from the database, grouped by query key.
 func QueryQueryParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.Key][]model_state.Parameter, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -247,7 +243,7 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 		}
 	}
 
-	_, err = dbExec(dbOrTx, sqlQuery, args...)
+	err = dbExec(dbOrTx, sqlQuery, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

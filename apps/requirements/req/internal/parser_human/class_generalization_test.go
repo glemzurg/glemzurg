@@ -24,7 +24,6 @@ type GeneralizationFileSuite struct {
 }
 
 func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
-
 	// Create a parent subdomain key for testing.
 	domainKey, err := identity.NewDomainKey("test_domain")
 	assert.Nil(suite.T(), err)

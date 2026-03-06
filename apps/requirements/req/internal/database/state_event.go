@@ -41,9 +41,8 @@ func scanEvent(scanner Scanner, classKeyPtr *identity.Key, event *model_state.Ev
 	return nil
 }
 
-// LoadEvent loads a event from the database
+// LoadEvent loads a event from the database.
 func LoadEvent(dbOrTx DbOrTx, modelKey string, eventKey identity.Key) (classKey identity.Key, event model_state.Event, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -82,9 +81,8 @@ func AddEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model
 
 // UpdateEvent updates a event in the database.
 func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			event
 		SET
@@ -110,9 +108,8 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event mo
 
 // RemoveEvent deletes a event from the database.
 func RemoveEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			event
 		WHERE
@@ -131,9 +128,8 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey
 	return nil
 }
 
-// QueryEvents loads all event from the database
+// QueryEvents loads all event from the database.
 func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[identity.Key][]model_state.Event, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -196,7 +192,7 @@ func AddEvents(dbOrTx DbOrTx, modelKey string, events map[identity.Key][]model_s
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

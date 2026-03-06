@@ -38,7 +38,6 @@ func scanGlobalFunction(scanner Scanner, gf *model_logic.GlobalFunction) (err er
 // The returned GlobalFunction will not have Specification populated;
 // that is stitched in top_level_requirements.go.
 func LoadGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (gf model_logic.GlobalFunction, err error) {
-
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -74,8 +73,7 @@ func AddGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalFunc
 
 // UpdateGlobalFunction updates a global function row in the database.
 func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalFunction) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			global_function
 		SET
@@ -98,8 +96,7 @@ func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalF
 
 // RemoveGlobalFunction deletes a global function row from the database.
 func RemoveGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			global_function
 		WHERE
@@ -119,7 +116,6 @@ func RemoveGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key)
 // The returned GlobalFunctions will not have Specification populated;
 // that is stitched in top_level_requirements.go.
 func QueryGlobalFunctions(dbOrTx DbOrTx, modelKey string) (gfs []model_logic.GlobalFunction, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -169,7 +165,7 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 			pq.Array(gf.Parameters))
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

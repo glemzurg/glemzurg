@@ -2,7 +2,7 @@ package ast
 
 import "bytes"
 
-// Negation operator
+// Negation operator.
 const (
 	NegationOperator = "-" // Unary negation
 )

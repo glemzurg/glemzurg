@@ -54,7 +54,6 @@ func scanEventParameter(scanner Scanner, eventKeyPtr *identity.Key, param *model
 
 // LoadEventParameter loads an event parameter from the database.
 func LoadEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, parameterKey string) (param model_state.Parameter, err error) {
-
 	var loadedEventKey identity.Key
 	var sortOrder int
 
@@ -101,14 +100,13 @@ func AddEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, pa
 
 // UpdateEventParameter updates an event parameter in the database.
 func UpdateEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-
 	paramKey, err := preenKey(param.Name)
 	if err != nil {
 		return errors.Wrapf(err, "parameter name '%s'", param.Name)
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			event_parameter
 		SET
@@ -138,9 +136,8 @@ func UpdateEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key,
 
 // RemoveEventParameter deletes an event parameter from the database.
 func RemoveEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key, parameterKey string) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			event_parameter
 		WHERE
@@ -161,7 +158,6 @@ func RemoveEventParameter(dbOrTx DbOrTx, modelKey string, eventKey identity.Key,
 
 // QueryEventParameters loads all event parameters from the database, grouped by event key.
 func QueryEventParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.Key][]model_state.Parameter, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -233,7 +229,7 @@ func AddEventParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 		}
 	}
 
-	_, err = dbExec(dbOrTx, sqlQuery, args...)
+	err = dbExec(dbOrTx, sqlQuery, args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -6,7 +6,7 @@ import (
 
 // evalCallExpression evaluates a function call.
 // TODO: This needs integration with the custom TLA+ block registry.
-func evalCallExpression(node *ast.CallExpression, bindings *Bindings) *EvalResult {
+func evalCallExpression(node *ast.CallExpression) *EvalResult {
 	// Build the full function name
 	var fullName string
 	if node.Domain != nil {

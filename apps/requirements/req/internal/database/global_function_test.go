@@ -31,7 +31,6 @@ type GlobalFunctionSuite struct {
 }
 
 func (suite *GlobalFunctionSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -46,13 +45,12 @@ func (suite *GlobalFunctionSuite) SetupTest() {
 }
 
 func (suite *GlobalFunctionSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no global function row yet.
 	_, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert the global function row with raw SQL.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO global_function
 			(model_key, logic_key, name, parameters)
 		VALUES
@@ -70,7 +68,6 @@ func (suite *GlobalFunctionSuite) TestLoad() {
 }
 
 func (suite *GlobalFunctionSuite) TestAdd() {
-
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -88,7 +85,6 @@ func (suite *GlobalFunctionSuite) TestAdd() {
 }
 
 func (suite *GlobalFunctionSuite) TestAddNulls() {
-
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -106,7 +102,6 @@ func (suite *GlobalFunctionSuite) TestAddNulls() {
 }
 
 func (suite *GlobalFunctionSuite) TestUpdate() {
-
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -131,7 +126,6 @@ func (suite *GlobalFunctionSuite) TestUpdate() {
 }
 
 func (suite *GlobalFunctionSuite) TestUpdateNulls() {
-
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -156,7 +150,6 @@ func (suite *GlobalFunctionSuite) TestUpdateNulls() {
 }
 
 func (suite *GlobalFunctionSuite) TestRemove() {
-
 	err := AddGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -173,7 +166,6 @@ func (suite *GlobalFunctionSuite) TestRemove() {
 }
 
 func (suite *GlobalFunctionSuite) TestQuery() {
-
 	err := AddGlobalFunctions(suite.db, suite.model.Key, []model_logic.GlobalFunction{
 		{
 			Key:        suite.gfKeyB,

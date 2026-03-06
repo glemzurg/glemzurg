@@ -43,7 +43,6 @@ type StepSuite struct {
 }
 
 func (suite *StepSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -65,7 +64,7 @@ func (suite *StepSuite) SetupTest() {
 
 	// Pre-create step keys.
 	suite.stepKeys = nil
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		k := helper.Must(identity.NewScenarioStepKey(suite.scenario.Key, fmt.Sprintf("%d", i)))
 		suite.stepKeys = append(suite.stepKeys, k)
 	}
@@ -80,13 +79,12 @@ func (suite *StepSuite) stepKey(i int) identity.Key {
 func t_strPtr(s string) *string { return &s }
 
 func (suite *StepSuite) TestLoad() {
-
 	// Nothing in database yet.
 	_, _, _, _, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 
 	// Insert a step directly with raw SQL.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO scenario_step
 			(
 				model_key,
@@ -141,7 +139,6 @@ func (suite *StepSuite) TestLoad() {
 }
 
 func (suite *StepSuite) TestAdd() {
-
 	step := model_scenario.Step{
 		Key:           suite.stepKey(0),
 		StepType:      model_scenario.STEP_TYPE_LEAF,
@@ -164,7 +161,6 @@ func (suite *StepSuite) TestAdd() {
 }
 
 func (suite *StepSuite) TestAddWithParent() {
-
 	// Add root step.
 	rootStep := model_scenario.Step{
 		Key:      suite.stepKey(0),
@@ -197,7 +193,6 @@ func (suite *StepSuite) TestAddWithParent() {
 }
 
 func (suite *StepSuite) TestUpdate() {
-
 	// Add initial step.
 	step := model_scenario.Step{
 		Key:           suite.stepKey(0),
@@ -230,7 +225,6 @@ func (suite *StepSuite) TestUpdate() {
 }
 
 func (suite *StepSuite) TestRemove() {
-
 	step := model_scenario.Step{
 		Key:           suite.stepKey(0),
 		StepType:      model_scenario.STEP_TYPE_LEAF,
@@ -251,7 +245,6 @@ func (suite *StepSuite) TestRemove() {
 }
 
 func (suite *StepSuite) TestQuerySteps() {
-
 	// Build a tree: sequence > [event leaf, query leaf]
 	rootStep := model_scenario.Step{
 		Key:      suite.stepKey(0),
