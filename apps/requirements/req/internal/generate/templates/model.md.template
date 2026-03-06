@@ -40,7 +40,10 @@ The domains of this model.
 {{ if ne .Model.Invariants nil -}}
 {{ range .Model.Invariants -}}
 - {{ .Description }}
-{{ if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
+{{ if ne .Target "" }}    - LET {{ .Target }} = {{ if ne .Spec.Specification "" }}{{ .Spec.Specification }}{{ else }}???{{ end }}
+{{ if ne .TargetTypeSpec nil }}    - Type: {{ .TargetTypeSpec.Specification }}
+{{ end -}}
+{{ else if ne .Spec.Specification "" }}    - {{ .Spec.Specification }}
 {{ end -}}
 {{ end }}
 {{- else -}}
