@@ -98,7 +98,8 @@ func (s *RegistryTestSuite) TestGet() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
 
-	r.RegisterClassFunction("A", "B", "C", "F", body, nil)
+	_, err := r.RegisterClassFunction("A", "B", "C", "F", body, nil)
+	s.Require().NoError(err)
 
 	def, ok := r.Get("A!B!C!F")
 	s.True(ok)
@@ -131,10 +132,11 @@ func (s *RegistryTestSuite) TestDelete() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
 
-	r.RegisterGlobalFunction("Test", body, nil)
+	_, err := r.RegisterGlobalFunction("Test", body, nil)
+	s.Require().NoError(err)
 	s.Equal(1, r.Count())
 
-	err := r.Delete("_Test")
+	err = r.Delete("_Test")
 	s.NoError(err)
 	s.Equal(0, r.Count())
 
@@ -228,7 +230,8 @@ func (s *RegistryTestSuite) TestNewScopeContext() {
 func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
-	r.RegisterGlobalFunction("GlobalFunc", body, nil)
+	_, err := r.RegisterGlobalFunction("GlobalFunc", body, nil)
+	s.Require().NoError(err)
 
 	// Can call global from any scope
 	ctx := NewClassScopeContext(r, "A", "B", "C")
@@ -247,7 +250,8 @@ func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
-	r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	s.Require().NoError(err)
 
 	// From class scope, just use function name
 	ctx := NewClassScopeContext(r, "DomainA", "SubB", "ClassC")
@@ -265,7 +269,8 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
-	r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	s.Require().NoError(err)
 
 	// From subdomain scope, need Class!Func
 	ctx := NewSubdomainScopeContext(r, "DomainA", "SubB")
@@ -284,7 +289,8 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
-	r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	s.Require().NoError(err)
 
 	// From domain scope, need Subdomain!Class!Func
 	ctx := NewDomainScopeContext(r, "DomainA")
@@ -304,7 +310,8 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
-	r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	s.Require().NoError(err)
 
 	// From global scope, need full path
 	ctx := NewGlobalScopeContext(r)
@@ -325,7 +332,8 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
 func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
-	r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
+	s.Require().NoError(err)
 
 	// From class scope, cannot use Class!Func (that requires subdomain scope)
 	ctx := NewClassScopeContext(r, "DomainA", "SubB", "ClassC")
@@ -335,7 +343,7 @@ func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
 		FunctionName: &ast.Identifier{Value: "Func"},
 	}
 
-	_, _, err := ctx.ResolveCall(call)
+	_, _, err = ctx.ResolveCall(call)
 	s.Error(err)
 	s.Contains(err.Error(), "scope mismatch")
 }
@@ -348,8 +356,10 @@ func (s *RegistryTestSuite) TestAddDependency() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
 
-	r.RegisterGlobalFunction("A", body, nil)
-	r.RegisterGlobalFunction("B", body, nil)
+	_, err := r.RegisterGlobalFunction("A", body, nil)
+	s.Require().NoError(err)
+	_, err = r.RegisterGlobalFunction("B", body, nil)
+	s.Require().NoError(err)
 
 	r.AddDependency("_A", "_B") // A depends on B
 
@@ -365,9 +375,12 @@ func (s *RegistryTestSuite) TestFindTransitiveDependents() {
 	body := ast.NewIntLiteral(1)
 
 	// A -> B -> C (A depends on B, B depends on C)
-	r.RegisterGlobalFunction("A", body, nil)
-	r.RegisterGlobalFunction("B", body, nil)
-	r.RegisterGlobalFunction("C", body, nil)
+	_, err := r.RegisterGlobalFunction("A", body, nil)
+	s.Require().NoError(err)
+	_, err = r.RegisterGlobalFunction("B", body, nil)
+	s.Require().NoError(err)
+	_, err = r.RegisterGlobalFunction("C", body, nil)
+	s.Require().NoError(err)
 
 	r.AddDependency("_A", "_B")
 	r.AddDependency("_B", "_C")
@@ -383,8 +396,10 @@ func (s *RegistryTestSuite) TestInvalidateDefinition() {
 	r := NewRegistry()
 	body := ast.NewIntLiteral(1)
 
-	r.RegisterGlobalFunction("A", body, nil)
-	r.RegisterGlobalFunction("B", body, nil)
+	_, err := r.RegisterGlobalFunction("A", body, nil)
+	s.Require().NoError(err)
+	_, err = r.RegisterGlobalFunction("B", body, nil)
+	s.Require().NoError(err)
 
 	r.AddDependency("_A", "_B")
 

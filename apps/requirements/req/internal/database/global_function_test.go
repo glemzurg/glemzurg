@@ -205,20 +205,3 @@ func (suite *GlobalFunctionSuite) TestQuery() {
 }
 
 //==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddGlobalFunction(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key, name string, parameters []string) model_logic.GlobalFunction {
-
-	err := AddGlobalFunction(dbOrTx, modelKey, model_logic.GlobalFunction{
-		Key:        logicKey,
-		Name:       name,
-		Parameters: parameters,
-	})
-	assert.Nil(t, err)
-
-	gf, err := LoadGlobalFunction(dbOrTx, modelKey, logicKey)
-	assert.Nil(t, err)
-
-	return gf
-}

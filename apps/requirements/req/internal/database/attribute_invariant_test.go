@@ -122,16 +122,3 @@ func (suite *AttributeInvariantSuite) TestQuery() {
 }
 
 //==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddAttributeInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, attributeKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddAttributeInvariant(dbOrTx, modelKey, attributeKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadAttributeInvariant(dbOrTx, modelKey, attributeKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

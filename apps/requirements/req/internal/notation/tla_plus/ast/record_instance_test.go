@@ -231,7 +231,7 @@ func (suite *RecordInstanceSuite) TestValidate() {
 			r: &RecordInstance{
 				Bindings: []*FieldBinding{nil},
 			},
-			errstr: `Bindings[0]`,
+			errstr: `bindings[0]`,
 		},
 		{
 			testName: `error nil field in binding`,

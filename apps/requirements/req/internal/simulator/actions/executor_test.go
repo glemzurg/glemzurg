@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -167,29 +166,6 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	})
 
 	return class, classKey
-}
-
-// testModel wraps a class into a minimal model.
-func testModel(class model_class.Class, classKey identity.Key) *core.Model {
-	subdomainKey := mustKey("domain/d/subdomain/s")
-	domainKey := mustKey("domain/d")
-
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
-	subdomain.Classes = map[identity.Key]model_class.Class{
-		classKey: class,
-	}
-
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
-	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
-		subdomainKey: subdomain,
-	}
-
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
-	model.Domains = map[identity.Key]model_domain.Domain{
-		domainKey: domain,
-	}
-
-	return &model
 }
 
 // ========================================================================

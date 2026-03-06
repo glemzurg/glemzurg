@@ -182,7 +182,7 @@ func (suite *TupleLiteralSuite) TestValidate() {
 			t: &TupleLiteral{
 				Elements: []Expression{nil},
 			},
-			errstr: `Elements[0]`,
+			errstr: `elements[0]`,
 		},
 		{
 			testName: `error nil element in middle`,
@@ -193,7 +193,7 @@ func (suite *TupleLiteralSuite) TestValidate() {
 					NewIntLiteral(3),
 				},
 			},
-			errstr: `Elements[1]`,
+			errstr: `elements[1]`,
 		},
 		{
 			testName: `error invalid element`,

@@ -395,7 +395,7 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 					nil,
 				},
 			},
-			errstr: `Operands[1]`,
+			errstr: `operands[1]`,
 		},
 		{
 			testName: `error invalid operand element`,

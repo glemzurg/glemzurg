@@ -375,7 +375,7 @@ func raiseNamedSetRef(e *me.NamedSetRef, ctx *RaiseContext) (ast.Expression, err
 func raiseNegate(e *me.Negate, ctx *RaiseContext) (ast.Expression, error) {
 	inner, err := Raise(e.Expr, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Negate: %w", err)
+		return nil, fmt.Errorf("negate: %w", err)
 	}
 	return ast.NewNegation(inner), nil
 }
@@ -383,7 +383,7 @@ func raiseNegate(e *me.Negate, ctx *RaiseContext) (ast.Expression, error) {
 func raiseNot(e *me.Not, ctx *RaiseContext) (ast.Expression, error) {
 	inner, err := Raise(e.Expr, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Not: %w", err)
+		return nil, fmt.Errorf("not: %w", err)
 	}
 	return &ast.UnaryLogic{Operator: "¬", Right: inner}, nil
 }

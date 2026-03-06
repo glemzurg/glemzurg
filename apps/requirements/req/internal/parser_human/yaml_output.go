@@ -371,12 +371,3 @@ func formatYamlField(key, value string, indent int) string {
 	return indentStr + key + ": " + value + "\n"
 }
 
-// formatYamlFieldQuoted formats a YAML field with quoted value.
-// Always quotes the value, even if it doesn't need it.
-func formatYamlFieldQuoted(key, value string, indent int) string {
-	if value == "" {
-		return ""
-	}
-	indentStr := strings.Repeat(" ", indent)
-	return indentStr + key + ": \"" + value + "\"\n"
-}

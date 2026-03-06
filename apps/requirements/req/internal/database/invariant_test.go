@@ -103,18 +103,3 @@ func (suite *InvariantSuite) TestQuery() {
 		suite.invariantKeyB,
 	}, keys)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.Key) identity.Key {
-
-	err := AddInvariant(dbOrTx, modelKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadInvariant(dbOrTx, modelKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

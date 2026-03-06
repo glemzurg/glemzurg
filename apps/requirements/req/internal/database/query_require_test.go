@@ -118,18 +118,3 @@ func (suite *QueryRequireSuite) TestQuery() {
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddQueryRequire(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddQueryRequire(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadQueryRequire(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

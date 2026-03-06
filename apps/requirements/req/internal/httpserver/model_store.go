@@ -100,9 +100,6 @@ func (s *ModelStore) ListModels() []string {
 
 // generateContent generates markdown, SVG, and CSS content for a model.
 func (s *ModelStore) generateContent(name string, model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
-	mdContent := make(map[string][]byte)
-	svgContent := make(map[string][]byte)
-
 	// Use the generate package to create content in memory
 	collector := &ContentCollector{
 		Markdown: make(map[string][]byte),
@@ -114,8 +111,8 @@ func (s *ModelStore) generateContent(name string, model *core.Model) (map[string
 		return nil, nil, nil, err
 	}
 
-	mdContent = collector.Markdown
-	svgContent = collector.SVG
+	mdContent := collector.Markdown
+	svgContent := collector.SVG
 
 	// Generate CSS
 	var cssBuffer bytes.Buffer

@@ -1,7 +1,6 @@
 package parser_human
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -247,18 +246,3 @@ func generateModelContent(model core.Model) string {
 	return generateFileContent(prependMarkdownTitle(model.Name, model.Details), "", dataStr)
 }
 
-// yamlQuote wraps a string in appropriate YAML quotes.
-// Uses single quotes if the string contains backslashes (to preserve TLA+ notation like \sqsubseteq),
-// double quotes if it contains special unicode, or no quotes if plain.
-func yamlQuote(s string) string {
-	if strings.ContainsRune(s, '\\') {
-		return "'" + s + "'"
-	}
-	// Check if string contains non-ASCII characters that need quoting.
-	for _, r := range s {
-		if r > 127 {
-			return fmt.Sprintf("%q", s)
-		}
-	}
-	return s
-}

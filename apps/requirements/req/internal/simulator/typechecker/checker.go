@@ -175,26 +175,6 @@ func (tc *TypeChecker) instantiate(scheme types.Scheme) types.Type {
 	return freshVars.Apply(scheme.Type)
 }
 
-// generalize creates a type scheme by quantifying over free type variables
-// that are not free in the environment.
-func (tc *TypeChecker) generalize(t types.Type, env *TypeEnv) types.Scheme {
-	// Apply current substitution first
-	t = tc.subst.Apply(t)
-
-	freeInType := t.FreeTypeVars()
-	freeInEnv := env.FreeTypeVars()
-
-	// Quantify variables free in type but not in environment
-	var toQuantify []int
-	for id := range freeInType {
-		if _, inEnv := freeInEnv[id]; !inEnv {
-			toQuantify = append(toQuantify, id)
-		}
-	}
-
-	return types.Scheme{TypeVars: toQuantify, Type: t}
-}
-
 // unify unifies two types and updates the substitution.
 func (tc *TypeChecker) unify(t1, t2 types.Type) error {
 	newSubst, err := UnifyWithSubst(t1, t2, tc.subst)
@@ -995,7 +975,7 @@ func (tc *TypeChecker) inferCase(n *ast.ExpressionCase, env *TypeEnv) (*TypedNod
 			return nil, err
 		}
 		if err := tc.unify(resultTyped.Type, resultType); err != nil {
-			return nil, &TypeError{Node: n, Message: fmt.Sprintf("case branches must have same type")}
+			return nil, &TypeError{Node: n, Message: "case branches must have same type"}
 		}
 
 		children = append(children, condTyped, resultTyped)
@@ -1008,7 +988,7 @@ func (tc *TypeChecker) inferCase(n *ast.ExpressionCase, env *TypeEnv) (*TypedNod
 			return nil, err
 		}
 		if err := tc.unify(otherTyped.Type, resultType); err != nil {
-			return nil, &TypeError{Node: n, Message: fmt.Sprintf("case OTHER branch must match other branches")}
+			return nil, &TypeError{Node: n, Message: "case OTHER branch must match other branches"}
 		}
 		children = append(children, otherTyped)
 	}

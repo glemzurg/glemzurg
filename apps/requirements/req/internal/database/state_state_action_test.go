@@ -191,22 +191,3 @@ func (suite *StateActionSuite) TestQuery() {
 		},
 	}, stateActions)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddStateAction(t *testing.T, dbOrTx DbOrTx, modelKey string, stateKey identity.Key, stateActionKey identity.Key, actionKey identity.Key, when string) (stateAction model_state.StateAction) {
-
-	err := AddStateAction(dbOrTx, modelKey, stateKey, model_state.StateAction{
-		Key:       stateActionKey,
-		ActionKey: actionKey,
-		When:      when,
-	})
-	assert.Nil(t, err)
-
-	_, stateAction, err = LoadStateAction(dbOrTx, modelKey, stateActionKey)
-	assert.Nil(t, err)
-
-	return stateAction
-}

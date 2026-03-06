@@ -83,7 +83,7 @@ func generateFilesToWriter(debug bool, reqs *req_flat.Requirements, writer Conte
 
 // WriteCSS writes CSS content to an io.Writer.
 func WriteCSS(w io.Writer) {
-	w.Write([]byte(_MD_CSS))
+	_, _ = w.Write([]byte(_MD_CSS))
 }
 
 // writeSupportImagesToWriter writes support images to a ContentWriter.

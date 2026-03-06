@@ -64,7 +64,7 @@ func (e *CaseExpr) Validate() error {
 	}
 	for i, branch := range e.Branches {
 		if branch == nil {
-			return fmt.Errorf("Branches[%d]: is nil", i)
+			return fmt.Errorf("branches[%d]: is nil", i)
 		}
 		if err := branch.Condition.Validate(); err != nil {
 			return fmt.Errorf("Branches[%d].Condition: %w", i, err)
@@ -75,7 +75,7 @@ func (e *CaseExpr) Validate() error {
 	}
 	if e.Other != nil {
 		if err := e.Other.Validate(); err != nil {
-			return fmt.Errorf("Other: %w", err)
+			return fmt.Errorf("other: %w", err)
 		}
 	}
 	return nil

@@ -437,9 +437,7 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 		actionParamsMap := make(map[identity.Key][]model_state.Parameter)
 		for _, actionList := range actionsMap {
 			for _, action := range actionList {
-				for _, param := range action.Parameters {
-					actionParamsMap[action.Key] = append(actionParamsMap[action.Key], param)
-				}
+				actionParamsMap[action.Key] = append(actionParamsMap[action.Key], action.Parameters...)
 			}
 		}
 		if err = AddActionParameters(tx, modelKey, actionParamsMap); err != nil {
@@ -519,9 +517,7 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 		queryParamsMap := make(map[identity.Key][]model_state.Parameter)
 		for _, queryList := range queriesMap {
 			for _, query := range queryList {
-				for _, param := range query.Parameters {
-					queryParamsMap[query.Key] = append(queryParamsMap[query.Key], param)
-				}
+				queryParamsMap[query.Key] = append(queryParamsMap[query.Key], query.Parameters...)
 			}
 		}
 		if err = AddQueryParameters(tx, modelKey, queryParamsMap); err != nil {
@@ -558,9 +554,7 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 		eventParamsMap := make(map[identity.Key][]model_state.Parameter)
 		for _, eventList := range eventsMap {
 			for _, event := range eventList {
-				for _, param := range event.Parameters {
-					eventParamsMap[event.Key] = append(eventParamsMap[event.Key], param)
-				}
+				eventParamsMap[event.Key] = append(eventParamsMap[event.Key], event.Parameters...)
 			}
 		}
 		if err = AddEventParameters(tx, modelKey, eventParamsMap); err != nil {

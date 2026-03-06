@@ -40,7 +40,6 @@ type EvalResultAdapter interface {
 // It bridges the evaluator to the registry for function calls.
 type RuntimeAdapter struct {
 	registry *Registry
-	evalFn   func(typed *typechecker.TypedNode, bindings interface{}) *EvalResultAdapter
 }
 
 // NewRuntimeAdapter creates a new runtime adapter for registry-based evaluation.

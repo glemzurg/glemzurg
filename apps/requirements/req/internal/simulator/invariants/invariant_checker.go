@@ -49,7 +49,6 @@ type parsedGuarantee struct {
 	expression me.Expression
 	spec       string // original specification string for error messages
 	index      int    // Index in the original guarantees array
-	isPrimed   bool   // True if this is a primed assignment, false if post-condition
 }
 
 // NewInvariantChecker creates a new invariant checker from a model.

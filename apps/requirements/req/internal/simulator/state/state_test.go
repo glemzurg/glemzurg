@@ -280,7 +280,8 @@ func (s *StateTestSuite) TestClearStateMachineState() {
 
 	instance := state.CreateInstance(classKey, object.NewRecord())
 
-	state.SetStateMachineState(instance.ID, stateKey)
+	err := state.SetStateMachineState(instance.ID, stateKey)
+	s.Require().NoError(err)
 	state.ClearStateMachineState(instance.ID)
 
 	_, ok := state.GetStateMachineState(instance.ID)
@@ -304,7 +305,8 @@ func (s *StateTestSuite) TestClone() {
 	}))
 	line := state.CreateInstance(lineKey, object.NewRecord())
 	state.AddLink(assocKey, order.ID, line.ID)
-	state.SetStateMachineState(order.ID, stateKey)
+	err := state.SetStateMachineState(order.ID, stateKey)
+	s.Require().NoError(err)
 
 	// Clone the state
 	cloned := state.Clone()
@@ -322,7 +324,8 @@ func (s *StateTestSuite) TestClone() {
 	s.Equal(stateKey, clonedState)
 
 	// Verify independence - modify original
-	state.UpdateInstanceField(order.ID, "status", object.NewString("shipped"))
+	err = state.UpdateInstanceField(order.ID, "status", object.NewString("shipped"))
+	s.Require().NoError(err)
 	s.Equal("pending", clonedOrder.GetAttribute("status").(*object.String).Value())
 }
 

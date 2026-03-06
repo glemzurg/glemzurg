@@ -225,7 +225,7 @@ func (suite *StringInfixExpressionSuite) TestValidate() {
 					nil,
 				},
 			},
-			errstr: `Operands[1]`,
+			errstr: `operands[1]`,
 		},
 	}
 	for _, tt := range tests {

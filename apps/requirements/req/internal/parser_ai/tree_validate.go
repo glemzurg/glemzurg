@@ -1020,8 +1020,8 @@ func validateMultiplicity(mult string) error {
 		// If upper is not *, compare numerically
 		if upper != "*" {
 			var lowerNum, upperNum int
-			fmt.Sscanf(lower, "%d", &lowerNum)
-			fmt.Sscanf(upper, "%d", &upperNum)
+			_, _ = fmt.Sscanf(lower, "%d", &lowerNum)
+			_, _ = fmt.Sscanf(upper, "%d", &upperNum)
 			if upperNum < lowerNum {
 				return fmt.Errorf("upper bound %d cannot be less than lower bound %d", upperNum, lowerNum)
 			}

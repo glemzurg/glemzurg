@@ -51,7 +51,7 @@ func (f *FieldAccess) Validate() error {
 	if f.Base != nil {
 		if validator, ok := f.Base.(interface{ Validate() error }); ok {
 			if err := validator.Validate(); err != nil {
-				return fmt.Errorf("Base: %w", err)
+				return fmt.Errorf("base: %w", err)
 			}
 		}
 	} else if f.Identifier != nil {

@@ -602,13 +602,3 @@ func (suite *StepSuite) TestFKScenarioRefCascade() {
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddSteps(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, root *model_scenario.Step) {
-	rows := flattenSteps(scenarioKey, root)
-	err := AddSteps(dbOrTx, modelKey, rows)
-	assert.Nil(t, err)
-}

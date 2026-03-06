@@ -118,18 +118,3 @@ func (suite *ActionSafetySuite) TestQuery() {
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, safeties)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddActionSafety(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddActionSafety(dbOrTx, modelKey, actionKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadActionSafety(dbOrTx, modelKey, actionKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

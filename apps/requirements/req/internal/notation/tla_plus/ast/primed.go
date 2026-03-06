@@ -29,7 +29,7 @@ func (p *Primed) Validate() error {
 	}
 	if validator, ok := p.Base.(interface{ Validate() error }); ok {
 		if err := validator.Validate(); err != nil {
-			return fmt.Errorf("Base: %w", err)
+			return fmt.Errorf("base: %w", err)
 		}
 	}
 	return nil

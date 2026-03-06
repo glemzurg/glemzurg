@@ -117,16 +117,3 @@ func (suite *ClassInvariantSuite) TestQuery() {
 }
 
 //==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddClassInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddClassInvariant(dbOrTx, modelKey, classKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadClassInvariant(dbOrTx, modelKey, classKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

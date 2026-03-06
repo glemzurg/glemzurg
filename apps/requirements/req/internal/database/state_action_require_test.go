@@ -118,18 +118,3 @@ func (suite *ActionRequireSuite) TestQuery() {
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddActionRequire(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddActionRequire(dbOrTx, modelKey, actionKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadActionRequire(dbOrTx, modelKey, actionKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

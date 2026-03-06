@@ -165,21 +165,3 @@ func (suite *NamedSetSuite) TestQuery() {
 }
 
 //==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddNamedSet(t *testing.T, dbOrTx DbOrTx, modelKey string, nsKey identity.Key, name string) model_named_set.NamedSet {
-
-	err := AddNamedSet(dbOrTx, modelKey, model_named_set.NamedSet{
-		Key:         nsKey,
-		Name:        name,
-		Description: name,
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"a", "b"}`},
-	})
-	assert.Nil(t, err)
-
-	ns, err := LoadNamedSet(dbOrTx, modelKey, nsKey)
-	assert.Nil(t, err)
-
-	return ns
-}

@@ -376,7 +376,7 @@ func lowerUnaryLogic(e *ast.UnaryLogic, ctx *LowerContext) (*me.Not, error) {
 func lowerPrimed(e *ast.Primed, ctx *LowerContext) (*me.NextState, error) {
 	inner, err := Lower(e.Base, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Primed: %w", err)
+		return nil, fmt.Errorf("primed: %w", err)
 	}
 	return &me.NextState{Expr: inner}, nil
 }
@@ -799,7 +799,7 @@ func lowerQuantifier(e *ast.Quantifier, ctx *LowerContext) (*me.Quantifier, erro
 
 	varName, domain, err := extractMembershipBinding(e.Membership, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Quantifier: %w", err)
+		return nil, fmt.Errorf("quantifier: %w", err)
 	}
 
 	childCtx := withLocalVar(ctx, varName)

@@ -1,18 +1,14 @@
 package generate
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"unicode"
-
-	"github.com/pkg/errors"
 )
 
 // Skip the header and grab the first markdown paragraph as a summary for showing in table of contents pages.
 func firstMdParagraph(md string) string {
 	lines := strings.Split(md, "\n")
-	var inHeader bool = true
+	var inHeader = true
 	var paragraph []string
 
 	for _, line := range lines {
@@ -104,18 +100,3 @@ func firstSentence(para string) string {
 	return para
 }
 
-// debugWriteDotFile writes the dot contents to a file in the "dot" subdirectory if debug is true.
-// The dot filename is derived by replacing ".svg" with ".dot" in the svgFilename.
-func debugWriteDotFile(debug bool, outputPath string, svgFilename string, dotContents string) error {
-	if !debug {
-		return nil
-	}
-	dotFilename := filepath.Join(outputPath, "dot", strings.Replace(svgFilename, ".svg", ".dot", 1))
-	if err := os.MkdirAll(filepath.Dir(dotFilename), 0755); err != nil {
-		return errors.WithStack(err)
-	}
-	if err := os.WriteFile(dotFilename, []byte(dotContents), 0644); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
-}

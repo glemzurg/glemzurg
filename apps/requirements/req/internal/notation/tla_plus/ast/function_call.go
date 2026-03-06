@@ -106,14 +106,14 @@ func (f *FunctionCall) Validate() error {
 		}
 	}
 	if err := f.Name.Validate(); err != nil {
-		return fmt.Errorf("Name: %w", err)
+		return fmt.Errorf("name: %w", err)
 	}
 	for i, arg := range f.Args {
 		if arg == nil {
-			return fmt.Errorf("Args[%d]: is nil", i)
+			return fmt.Errorf("args[%d]: is nil", i)
 		}
 		if err := arg.Validate(); err != nil {
-			return fmt.Errorf("Args[%d]: %w", i, err)
+			return fmt.Errorf("args[%d]: %w", i, err)
 		}
 	}
 	return nil

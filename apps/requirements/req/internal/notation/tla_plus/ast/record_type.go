@@ -56,7 +56,7 @@ func (r *RecordTypeExpr) Validate() error {
 	}
 	for i, field := range r.Fields {
 		if field == nil {
-			return fmt.Errorf("Fields[%d]: is nil", i)
+			return fmt.Errorf("fields[%d]: is nil", i)
 		}
 		if field.Name == nil {
 			return fmt.Errorf("Fields[%d].Name: is required", i)

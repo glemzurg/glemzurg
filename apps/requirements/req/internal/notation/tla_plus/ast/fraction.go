@@ -36,10 +36,10 @@ func (f *Fraction) Validate() error {
 		return err
 	}
 	if err := f.Numerator.Validate(); err != nil {
-		return fmt.Errorf("Numerator: %w", err)
+		return fmt.Errorf("numerator: %w", err)
 	}
 	if err := f.Denominator.Validate(); err != nil {
-		return fmt.Errorf("Denominator: %w", err)
+		return fmt.Errorf("denominator: %w", err)
 	}
 	return nil
 }

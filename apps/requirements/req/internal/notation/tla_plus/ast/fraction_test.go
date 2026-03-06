@@ -158,7 +158,7 @@ func (suite *FractionExprSuite) TestValidate() {
 				Numerator:   &NumberLiteral{Base: BaseDecimal, IntegerPart: "", FractionalPart: ""},
 				Denominator: &NumberLiteral{Base: BaseDecimal, IntegerPart: "2"},
 			},
-			errstr: "Numerator",
+			errstr: "numerator",
 		},
 		{
 			testName: "error invalid denominator",
@@ -166,7 +166,7 @@ func (suite *FractionExprSuite) TestValidate() {
 				Numerator:   &NumberLiteral{Base: BaseDecimal, IntegerPart: "1"},
 				Denominator: &NumberLiteral{Base: BaseDecimal, IntegerPart: "", FractionalPart: ""},
 			},
-			errstr: "Denominator",
+			errstr: "denominator",
 		},
 	}
 	for _, tt := range tests {

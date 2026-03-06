@@ -154,20 +154,3 @@ func (suite *UseCaseActorSuite) TestQuery() {
 		},
 	}, actors)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddUseCaseActor(t *testing.T, dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, classKey identity.Key) (actor model_use_case.Actor) {
-
-	err := AddUseCaseActor(dbOrTx, modelKey, useCaseKey, classKey, model_use_case.Actor{
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(t, err)
-
-	actor, err = LoadUseCaseActor(dbOrTx, modelKey, useCaseKey, classKey)
-	assert.Nil(t, err)
-
-	return actor
-}

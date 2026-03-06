@@ -15,9 +15,7 @@ import (
 func ScopeInvariants(invariants []model_logic.Logic, classNames map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	// Without knowing all class names, we can't detect out-of-scope references.
 	// Include everything by default. Use ScopeInvariantsWithAllClasses for full filtering.
-	for _, inv := range invariants {
-		included = append(included, inv)
-	}
+	included = append(included, invariants...)
 	return included, excluded
 }
 

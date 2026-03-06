@@ -224,7 +224,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 					nil,
 				},
 			},
-			errstr: `Alterations[0]`,
+			errstr: `alterations[0]`,
 		},
 		{
 			testName: `error nil field in alteration`,

@@ -25,14 +25,14 @@ func graphvizDotToSvg(dot string) (svg string, err error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	defer g.Close()
+	defer func() { _ = g.Close() }()
 
 	// Create a graph from the input.
 	graph, err := graphviz.ParseBytes([]byte(dot))
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	defer graph.Close()
+	defer func() { _ = graph.Close() }()
 
 	// Render the SVG as a string.
 	var buf bytes.Buffer

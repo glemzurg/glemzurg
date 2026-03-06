@@ -301,7 +301,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Domain`,
+			errstr: `domain`,
 		},
 		{
 			testName: `error model scope with subdomain`,
@@ -315,7 +315,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Subdomain`,
+			errstr: `subdomain`,
 		},
 		{
 			testName: `error model scope with class`,
@@ -329,7 +329,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Class`,
+			errstr: `class`,
 		},
 		{
 			testName: `error domain without subdomain`,
@@ -342,7 +342,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Subdomain`,
+			errstr: `subdomain`,
 		},
 		{
 			testName: `error domain without class`,
@@ -356,7 +356,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Class`,
+			errstr: `class`,
 		},
 		{
 			testName: `error subdomain without class`,
@@ -369,7 +369,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Class`,
+			errstr: `class`,
 		},
 		{
 			testName: `error empty domain`,

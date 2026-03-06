@@ -57,7 +57,7 @@ func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_sce
 
 	contents, err = s.Generate()
 
-	return contents, nil
+	return contents, err
 }
 
 func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence, statements []model_scenario.Step, scenarioLookup map[string]model_scenario.Scenario, objectLookup map[string]model_scenario.Object, classLookup map[string]model_class.Class) error {

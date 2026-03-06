@@ -60,11 +60,11 @@ func (r *RecordAltered) Validate() error {
 		return err
 	}
 	if err := r.Base.Validate(); err != nil {
-		return fmt.Errorf("Base: %w", err)
+		return fmt.Errorf("base: %w", err)
 	}
 	for i, alt := range r.Alterations {
 		if alt == nil {
-			return fmt.Errorf("Alterations[%d]: is nil", i)
+			return fmt.Errorf("alterations[%d]: is nil", i)
 		}
 		if alt.Field == nil {
 			return fmt.Errorf("Alterations[%d].Field: is required", i)

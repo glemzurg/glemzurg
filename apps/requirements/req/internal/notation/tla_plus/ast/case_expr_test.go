@@ -245,7 +245,7 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 			e: &ExpressionCase{
 				Branches: []*CaseBranch{nil},
 			},
-			errstr: `Branches[0]`,
+			errstr: `branches[0]`,
 		},
 		{
 			testName: `error invalid condition`,

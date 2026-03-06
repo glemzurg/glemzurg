@@ -86,7 +86,7 @@ func dbQuery(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...i
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	// Handle each row.
 	for rows.Next() {

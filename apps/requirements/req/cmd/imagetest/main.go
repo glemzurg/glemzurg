@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create graphviz: %v", err)
 	}
-	defer gv.Close()
+	defer func() { _ = gv.Close() }()
 
 	// Define the DOT as a literal string.
 	dot := `digraph G {
@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to parse DOT: %v", errors.WithStack(err))
 	}
-	defer parsedGraph.Close()
+	defer func() { _ = parsedGraph.Close() }()
 
 	// Render the SVG as a string using the provided logic.
 	var buf bytes.Buffer

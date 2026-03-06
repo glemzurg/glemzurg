@@ -234,7 +234,7 @@ func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 	if err := watcher.Start(); err != nil {
 		log.Fatalf("Failed to start source watcher: %v", err)
 	}
-	defer watcher.Close()
+	defer func() { _ = watcher.Close() }()
 
 	// Start the HTTP server
 	fmt.Printf("Server ready at http://localhost:%s/%s/model.md\n", port, model)

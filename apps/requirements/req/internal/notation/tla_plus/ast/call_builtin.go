@@ -49,10 +49,10 @@ func (b *BuiltinCall) Validate() error {
 	}
 	for i, arg := range b.Args {
 		if arg == nil {
-			return fmt.Errorf("Args[%d]: is nil", i)
+			return fmt.Errorf("args[%d]: is nil", i)
 		}
 		if err := arg.Validate(); err != nil {
-			return fmt.Errorf("Args[%d]: %w", i, err)
+			return fmt.Errorf("args[%d]: %w", i, err)
 		}
 	}
 	return nil

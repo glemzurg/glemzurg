@@ -117,7 +117,8 @@ func (s *NumberSuite) TestClone() {
 	s.Equal(original.Type(), clone.Type())
 
 	// Modify clone via SetValue, original unchanged
-	clone.SetValue(NewInteger(100))
+	err := clone.SetValue(NewInteger(100))
+	s.Require().NoError(err)
 	s.Equal("42", original.Inspect())
 	s.Equal("100", clone.Inspect())
 }
@@ -130,7 +131,8 @@ func (s *NumberSuite) TestCloneReal() {
 	s.Equal(KindRational, clone.Kind())
 
 	// Modify clone via SetValue, original unchanged
-	clone.SetValue(NewReal(271, 100)) // 2.71
+	err := clone.SetValue(NewReal(271, 100)) // 2.71
+	s.Require().NoError(err)
 	s.Equal("157/50", original.Inspect())
 	s.Equal("271/100", clone.Inspect())
 }

@@ -265,7 +265,8 @@ func (c *DataTypeChecker) checkSpanConstraint(
 		lowerRat := spanValueToRat(span.LowerValue, span.LowerDenominator)
 
 		cmp := valueRat.Cmp(lowerRat)
-		if span.LowerType == "closed" {
+		switch span.LowerType {
+		case "closed":
 			// Closed: value >= lower
 			if cmp < 0 {
 				return NewSpanConstraintViolation(
@@ -276,7 +277,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		} else if span.LowerType == "open" {
+		case "open":
 			// Open: value > lower
 			if cmp <= 0 {
 				return NewSpanConstraintViolation(
@@ -295,7 +296,8 @@ func (c *DataTypeChecker) checkSpanConstraint(
 		higherRat := spanValueToRat(span.HigherValue, span.HigherDenominator)
 
 		cmp := valueRat.Cmp(higherRat)
-		if span.HigherType == "closed" {
+		switch span.HigherType {
+		case "closed":
 			// Closed: value <= higher
 			if cmp > 0 {
 				return NewSpanConstraintViolation(
@@ -306,7 +308,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		} else if span.HigherType == "open" {
+		case "open":
 			// Open: value < higher
 			if cmp >= 0 {
 				return NewSpanConstraintViolation(

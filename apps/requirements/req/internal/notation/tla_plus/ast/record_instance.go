@@ -55,7 +55,7 @@ func (r *RecordInstance) Validate() error {
 	}
 	for i, binding := range r.Bindings {
 		if binding == nil {
-			return fmt.Errorf("Bindings[%d]: is nil", i)
+			return fmt.Errorf("bindings[%d]: is nil", i)
 		}
 		if binding.Field == nil {
 			return fmt.Errorf("Bindings[%d].Field: is required", i)

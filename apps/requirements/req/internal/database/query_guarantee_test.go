@@ -118,18 +118,3 @@ func (suite *QueryGuaranteeSuite) TestQuery() {
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, guarantees)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddQueryGuarantee(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddQueryGuarantee(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadQueryGuarantee(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

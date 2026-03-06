@@ -45,10 +45,10 @@ func (t *TupleLiteral) Validate() error {
 	}
 	for i, el := range t.Elements {
 		if el == nil {
-			return fmt.Errorf("Elements[%d]: is nil", i)
+			return fmt.Errorf("elements[%d]: is nil", i)
 		}
 		if err := el.Validate(); err != nil {
-			return fmt.Errorf("Elements[%d]: %w", i, err)
+			return fmt.Errorf("elements[%d]: %w", i, err)
 		}
 	}
 	return nil

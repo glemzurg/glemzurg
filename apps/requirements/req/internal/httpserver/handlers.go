@@ -75,7 +75,7 @@ func (s *Server) eventsHandler(w http.ResponseWriter, r *http.Request) {
 		if !open {
 			break
 		}
-		fmt.Fprintf(w, "data: %s\n\n", msg)
+		_, _ = fmt.Fprintf(w, "data: %s\n\n", msg)
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
 		}

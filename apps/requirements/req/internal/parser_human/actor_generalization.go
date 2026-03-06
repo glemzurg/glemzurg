@@ -50,10 +50,10 @@ func parseActorGeneralization(generalizationSubKey, filename, contents string) (
 
 func generateActorGeneralizationContent(generalization model_actor.Generalization) string {
 	yamlStr := ""
-	if generalization.IsComplete != true {
+	if !generalization.IsComplete {
 		yamlStr += "is_complete: " + strconv.FormatBool(generalization.IsComplete) + "\n"
 	}
-	if generalization.IsStatic != true {
+	if !generalization.IsStatic {
 		yamlStr += "is_static: " + strconv.FormatBool(generalization.IsStatic) + "\n"
 	}
 	return generateFileContent(prependMarkdownSubtitle(generalization.Name, generalization.Details), generalization.UmlComment, yamlStr)

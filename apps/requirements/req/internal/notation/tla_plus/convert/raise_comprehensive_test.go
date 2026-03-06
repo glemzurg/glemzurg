@@ -201,9 +201,6 @@ func gte(l, r me.Expression) *me.Compare {
 func eq(l, r me.Expression) *me.Compare {
 	return &me.Compare{Op: me.CompareEq, Left: l, Right: r}
 }
-func neq(l, r me.Expression) *me.Compare {
-	return &me.Compare{Op: me.CompareNeq, Left: l, Right: r}
-}
 func setUnion(l, r me.Expression) *me.SetOp {
 	return &me.SetOp{Op: me.SetUnion, Left: l, Right: r}
 }

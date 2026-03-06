@@ -21,14 +21,6 @@ func TestExtractorSuite(t *testing.T) {
 	suite.Run(t, new(ExtractorTestSuite))
 }
 
-func mustKey(s string) identity.Key {
-	k, err := identity.ParseKey(s)
-	if err != nil {
-		panic(err)
-	}
-	return k
-}
-
 // =============================================================================
 // Model Invariants
 // =============================================================================
@@ -94,9 +86,10 @@ func (s *ExtractorTestSuite) TestExtractGlobalFunctions() {
 	// Find the _Max definition (map iteration order is not guaranteed)
 	var maxExpr, statusExpr *ExtractedExpression
 	for i := range expressions {
-		if expressions[i].Name == "_Max" {
+		switch expressions[i].Name {
+		case "_Max":
 			maxExpr = &expressions[i]
-		} else if expressions[i].Name == "_ValidStatuses" {
+		case "_ValidStatuses":
 			statusExpr = &expressions[i]
 		}
 	}

@@ -166,21 +166,3 @@ func (suite *UseCaseSharedSuite) TestQuery() {
 		},
 	}, useCaseShareds)
 }
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddUseCaseShared(t *testing.T, dbOrTx DbOrTx, modelKey string, seaUseCaseKey identity.Key, mudUseCaseKey identity.Key, shareType string) (useCaseShared model_use_case.UseCaseShared) {
-
-	err := AddUseCaseShared(dbOrTx, modelKey, seaUseCaseKey, mudUseCaseKey, model_use_case.UseCaseShared{
-		ShareType:  shareType,
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(t, err)
-
-	useCaseShared, err = LoadUseCaseShared(dbOrTx, modelKey, seaUseCaseKey, mudUseCaseKey)
-	assert.Nil(t, err)
-
-	return useCaseShared
-}

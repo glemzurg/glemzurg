@@ -42,7 +42,7 @@ func (fw *FileWriter) writeFile(filename string, content []byte) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	_, err = file.Write(content)
 	if err != nil {

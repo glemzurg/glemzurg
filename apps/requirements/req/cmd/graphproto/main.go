@@ -241,7 +241,7 @@ func main() {
 		if err := graph.Close(); err != nil {
 			panic(err)
 		}
-		g.Close()
+		_ = g.Close()
 	}()
 
 	var buf bytes.Buffer

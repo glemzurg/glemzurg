@@ -63,10 +63,10 @@ func (b *BinaryArithmetic) Validate() error {
 		return err
 	}
 	if err := b.Left.Validate(); err != nil {
-		return fmt.Errorf("Left: %w", err)
+		return fmt.Errorf("left: %w", err)
 	}
 	if err := b.Right.Validate(); err != nil {
-		return fmt.Errorf("Right: %w", err)
+		return fmt.Errorf("right: %w", err)
 	}
 	return nil
 }
