@@ -18,7 +18,6 @@ type Transition struct {
 }
 
 func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identity.Key, guardKey, actionKey, toStateKey *identity.Key, umlComment string) (transition Transition, err error) {
-
 	transition = Transition{
 		Key:          key,
 		FromStateKey: fromStateKey,
@@ -116,7 +115,7 @@ func (t *Transition) ValidateWithParent(parent *identity.Key) error {
 // - ToStateKey must exist in the states map (if not nil)
 // - EventKey must exist in the events map
 // - GuardKey must exist in the guards map (if not nil)
-// - ActionKey must exist in the actions map (if not nil)
+// - ActionKey must exist in the actions map (if not nil).
 func (t *Transition) ValidateReferences(states, events, guards, actions map[identity.Key]bool) error {
 	if t.FromStateKey != nil {
 		if !states[*t.FromStateKey] {

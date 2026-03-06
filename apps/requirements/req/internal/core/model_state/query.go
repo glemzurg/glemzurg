@@ -20,7 +20,6 @@ type Query struct {
 }
 
 func NewQuery(key identity.Key, name, details string, requires, guarantees []model_logic.Logic, parameters []Parameter) (query Query, err error) {
-
 	query = Query{
 		Key:        key,
 		Name:       name,

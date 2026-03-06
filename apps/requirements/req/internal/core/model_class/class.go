@@ -29,7 +29,6 @@ type Class struct {
 }
 
 func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (class Class, err error) {
-
 	class = Class{
 		Key:             key,
 		Name:            name,
@@ -98,7 +97,7 @@ func (c *Class) Validate() error {
 // ValidateReferences validates that the class's reference keys point to valid entities.
 // - ActorKey must exist in the actors map
 // - SuperclassOfKey must exist in the generalizations map and be in the same subdomain
-// - SubclassOfKey must exist in the generalizations map and be in the same subdomain
+// - SubclassOfKey must exist in the generalizations map and be in the same subdomain.
 func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations map[identity.Key]bool) error {
 	// Validate ActorKey references a real actor.
 	if c.ActorKey != nil {

@@ -6,7 +6,6 @@ type Actor struct {
 }
 
 func NewActor(umlComment string) (actor Actor, err error) {
-
 	actor = Actor{
 		UmlComment: umlComment,
 	}

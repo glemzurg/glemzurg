@@ -24,7 +24,7 @@ const (
 )
 
 // Step represents a step in the scenario steps tree.
-type Step struct {
+type Step struct { //nolint:recvcheck
 	Key           identity.Key  `json:"key" yaml:"key"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
 	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"` // Only for leaf steps: event, query, scenario, delete.
@@ -240,7 +240,7 @@ func (s Step) ToYAML() (string, error) {
 // MarshalJSON custom marshals the Step to only include non-empty fields.
 // Uses value receiver so it works with both value and pointer types.
 func (s Step) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	m["key"] = s.Key
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {
@@ -275,8 +275,8 @@ func (s Step) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML custom marshals the Step to only include non-empty fields.
 // Uses value receiver so it works with both value and pointer types.
-func (s Step) MarshalYAML() (interface{}, error) {
-	m := make(map[string]interface{})
+func (s Step) MarshalYAML() (any, error) {
+	m := make(map[string]any)
 	m["key"] = s.Key.String()
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {

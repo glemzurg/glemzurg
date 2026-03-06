@@ -21,7 +21,7 @@ func (f Field) Validate() error {
 		return err
 	}
 	if !_fieldNameRegexp.MatchString(f.Name) {
-		return fmt.Errorf("Name: '%s' must be a lowercase identifier matching [a-z_][a-z0-9_]*", f.Name)
+		return fmt.Errorf("name: '%s' must be a lowercase identifier matching [a-z_][a-z0-9_]*", f.Name)
 	}
 	return nil
 }

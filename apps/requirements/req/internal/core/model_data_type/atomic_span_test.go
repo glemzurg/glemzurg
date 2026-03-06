@@ -114,7 +114,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerValue: cannot be blank.",
+			errorMessage: "LowerValue: cannot be blank",
 		},
 		{
 			name: "LowerType closed but LowerDenominator nil",
@@ -125,7 +125,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  1.0,
 			},
-			errorMessage: "LowerDenominator: cannot be blank.",
+			errorMessage: "LowerDenominator: cannot be blank",
 		},
 		{
 			name: "LowerDenominator < 1",
@@ -138,7 +138,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerDenominator: must be no less than 1.",
+			errorMessage: "LowerDenominator: must be no less than 1",
 		},
 		{
 			name: "HigherType open but HigherValue nil",
@@ -149,7 +149,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:             "m",
 				Precision:         1.0,
 			},
-			errorMessage: "HigherValue: cannot be blank.",
+			errorMessage: "HigherValue: cannot be blank",
 		},
 		{
 			name: "HigherType open but HigherDenominator nil",
@@ -160,7 +160,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:       "m",
 				Precision:   1.0,
 			},
-			errorMessage: "HigherDenominator: cannot be blank.",
+			errorMessage: "HigherDenominator: cannot be blank",
 		},
 		{
 			name: "HigherDenominator < 1",
@@ -172,7 +172,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:             "m",
 				Precision:         1.0,
 			},
-			errorMessage: "HigherDenominator: must be no less than 1.",
+			errorMessage: "HigherDenominator: must be no less than 1",
 		},
 		{
 			name: "LowerDenominator < 1",
@@ -184,7 +184,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerDenominator: must be no less than 1.",
+			errorMessage: "LowerDenominator: must be no less than 1",
 		},
 		{
 			name: "LowerDenominator nil when unconstrained",
@@ -223,7 +223,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  -1.0,
 			},
-			errorMessage: "Precision: must be greater than 0 and less than or equal to 1.",
+			errorMessage: "precision: must be greater than 0 and less than or equal to 1",
 		},
 		{
 			name: "Precision > 1",
@@ -233,7 +233,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  2.0,
 			},
-			errorMessage: "Precision: must be greater than 0 and less than or equal to 1.",
+			errorMessage: "precision: must be greater than 0 and less than or equal to 1",
 		},
 		{
 			name: "Precision not power of 10",
@@ -243,7 +243,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  0.5,
 			},
-			errorMessage: "Precision: must be exactly 1.0, 0.1, 0.01, etc.",
+			errorMessage: "precision: must be exactly 1.0, 0.1, 0.01, etc",
 		},
 		{
 			name: "valid Precision 0.1",

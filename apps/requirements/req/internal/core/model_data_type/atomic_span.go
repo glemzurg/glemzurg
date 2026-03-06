@@ -29,24 +29,24 @@ type AtomicSpan struct {
 func validateDenominator(ptr *int, required bool) error {
 	if ptr == nil {
 		if required {
-			return fmt.Errorf("cannot be blank.")
+			return fmt.Errorf("cannot be blank")
 		}
 		return nil
 	}
 	if *ptr < 1 {
-		return fmt.Errorf("must be no less than 1.")
+		return fmt.Errorf("must be no less than 1")
 	}
 	return nil
 }
 
 func precisionValidator(v float64) error {
 	if v <= 0 || v > 1 {
-		return fmt.Errorf("must be greater than 0 and less than or equal to 1.")
+		return fmt.Errorf("must be greater than 0 and less than or equal to 1")
 	}
 
 	log := math.Log10(v)
 	if math.Floor(log) != log {
-		return fmt.Errorf("must be exactly 1.0, 0.1, 0.01, etc.")
+		return fmt.Errorf("must be exactly 1.0, 0.1, 0.01, etc")
 	}
 
 	return nil
@@ -61,7 +61,7 @@ func (a *AtomicSpan) Validate() error {
 	// LowerValue: required when LowerType != unconstrained.
 	if a.LowerType != _BOUND_TYPE_LIMIT_UNCONSTRAINED {
 		if a.LowerValue == nil {
-			return fmt.Errorf("LowerValue: cannot be blank.")
+			return fmt.Errorf("LowerValue: cannot be blank")
 		}
 	}
 
@@ -73,7 +73,7 @@ func (a *AtomicSpan) Validate() error {
 	// HigherValue: required when HigherType != unconstrained.
 	if a.HigherType != _BOUND_TYPE_LIMIT_UNCONSTRAINED {
 		if a.HigherValue == nil {
-			return fmt.Errorf("HigherValue: cannot be blank.")
+			return fmt.Errorf("HigherValue: cannot be blank")
 		}
 	}
 
@@ -84,7 +84,7 @@ func (a *AtomicSpan) Validate() error {
 
 	// Precision: must be valid value.
 	if err := precisionValidator(a.Precision); err != nil {
-		return fmt.Errorf("Precision: %s", err.Error())
+		return fmt.Errorf("precision: %s", err.Error())
 	}
 
 	return nil

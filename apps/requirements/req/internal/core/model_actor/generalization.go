@@ -17,7 +17,6 @@ type Generalization struct {
 }
 
 func NewGeneralization(key identity.Key, name, details string, isComplete, isStatic bool, umlComment string) (generalization Generalization, err error) {
-
 	generalization = Generalization{
 		Key:        key,
 		Name:       name,

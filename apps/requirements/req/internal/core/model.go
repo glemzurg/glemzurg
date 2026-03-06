@@ -1,6 +1,7 @@
 package core
 
 import (
+	"maps"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -32,7 +33,6 @@ type Model struct {
 }
 
 func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_named_set.NamedSet) (model Model, err error) {
-
 	model = Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
 		Name:            name,
@@ -247,14 +247,10 @@ func (m *Model) SetClassAssociations(associations map[identity.Key]model_class.A
 func (m *Model) GetClassAssociations() map[identity.Key]model_class.Association {
 	result := make(map[identity.Key]model_class.Association)
 	// Add model-level associations.
-	for k, v := range m.ClassAssociations {
-		result[k] = v
-	}
+	maps.Copy(result, m.ClassAssociations)
 	// Add associations from all domains.
 	for _, domain := range m.Domains {
-		for k, v := range domain.GetClassAssociations() {
-			result[k] = v
-		}
+		maps.Copy(result, domain.GetClassAssociations())
 	}
 	return result
 }

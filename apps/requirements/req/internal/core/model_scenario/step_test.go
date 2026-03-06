@@ -67,7 +67,7 @@ func (suite *ScenarioStepsSuite) SetupSuite() {
 	suite.queryKey = &queryKey
 
 	// Pre-create a pool of step keys.
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		k, err := identity.NewScenarioStepKey(suite.scenarioKey, fmt.Sprintf("%d", i))
 		require.NoError(suite.T(), err)
 		suite.stepKeys = append(suite.stepKeys, k)
@@ -980,8 +980,7 @@ statements:
 }
 
 func t_OrderedJson(value string) (sorted string) {
-
-	var data interface{}
+	var data any
 	if err := json.Unmarshal([]byte(value), &data); err != nil {
 		panic(err)
 	}
@@ -994,9 +993,9 @@ func t_OrderedJson(value string) (sorted string) {
 	return sorted
 }
 
-func t_ToSortedJSON(v interface{}) (string, error) {
+func t_ToSortedJSON(v any) (string, error) {
 	switch vv := v.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		keys := make([]string, 0, len(vv))
 		for k := range vv {
 			keys = append(keys, k)
@@ -1011,7 +1010,7 @@ func t_ToSortedJSON(v interface{}) (string, error) {
 			parts = append(parts, fmt.Sprintf("%q:%s", k, valStr))
 		}
 		return "{" + strings.Join(parts, ",") + "}", nil
-	case []interface{}:
+	case []any:
 		var parts []string
 		for _, item := range vv {
 			itemStr, err := t_ToSortedJSON(item)

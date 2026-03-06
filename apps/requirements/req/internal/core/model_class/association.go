@@ -20,7 +20,6 @@ type Association struct {
 }
 
 func NewAssociation(key identity.Key, name, details string, fromClassKey identity.Key, fromMultiplicity Multiplicity, toClassKey identity.Key, toMultiplicity Multiplicity, associationClassKey *identity.Key, umlComment string) (association Association, err error) {
-
 	association = Association{
 		Key:                 key,
 		Name:                name,
@@ -134,7 +133,7 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 // ValidateReferences validates that the association's class keys reference real classes.
 // - FromClassKey must exist in the classes map
 // - ToClassKey must exist in the classes map
-// - AssociationClassKey (if set) must exist in the classes map
+// - AssociationClassKey (if set) must exist in the classes map.
 func (a *Association) ValidateReferences(classes map[identity.Key]bool) error {
 	if !classes[a.FromClassKey] {
 		return errors.Errorf("association '%s' references non-existent from class '%s'", a.Key.String(), a.FromClassKey.String())

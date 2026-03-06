@@ -20,7 +20,6 @@ type Action struct {
 }
 
 func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) (action Action, err error) {
-
 	action = Action{
 		Key:         key,
 		Name:        name,

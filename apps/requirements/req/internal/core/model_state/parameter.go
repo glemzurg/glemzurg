@@ -1,6 +1,8 @@
 package model_state
 
 import (
+	"errors"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 )
 
@@ -12,7 +14,6 @@ type Parameter struct {
 }
 
 func NewParameter(name, dataTypeRules string) (param Parameter, err error) {
-
 	param = Parameter{
 		Name:          name,
 		DataTypeRules: dataTypeRules,
@@ -40,17 +41,9 @@ func NewParameter(name, dataTypeRules string) (param Parameter, err error) {
 	return param, nil
 }
 
-// isCannotParseError checks if the error is a CannotParseError using type assertion.
+// isCannotParseError checks if the error is a CannotParseError using errors.As.
 func isCannotParseError(err error, target **model_data_type.CannotParseError) bool {
-	if err == nil {
-		return false
-	}
-	// Try type assertion
-	if e, ok := err.(*model_data_type.CannotParseError); ok {
-		*target = e
-		return true
-	}
-	return false
+	return errors.As(err, target)
 }
 
 // Validate validates the Parameter struct.

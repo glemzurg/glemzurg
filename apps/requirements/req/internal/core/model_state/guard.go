@@ -15,7 +15,6 @@ type Guard struct {
 }
 
 func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Guard, err error) {
-
 	guard = Guard{
 		Key:   key,
 		Name:  name,

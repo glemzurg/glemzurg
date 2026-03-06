@@ -24,7 +24,6 @@ type Attribute struct {
 }
 
 func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
-
 	attribute = Attribute{
 		Key:              key,
 		Name:             name,
@@ -38,7 +37,6 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 
 	// Parse the data type rules into a DataType object if possible.
 	if attribute.DataTypeRules != "" {
-
 		// Use the attribute key as the key of this data type.
 		dataTypeKey := attribute.Key.String()
 		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules, nil)

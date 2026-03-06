@@ -19,7 +19,6 @@ type State struct {
 }
 
 func NewState(key identity.Key, name, details, umlComment string) (state State, err error) {
-
 	state = State{
 		Key:        key,
 		Name:       name,
@@ -53,7 +52,6 @@ func (s *State) Validate() error {
 }
 
 func (s *State) SetActions(actions []StateAction) {
-
 	sort.Slice(actions, func(i, j int) bool {
 		return lessThanStateAction(actions[i], actions[j])
 	})

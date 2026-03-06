@@ -1,11 +1,12 @@
 package model_logic
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 )
 
 // GlobalFunction represents a global definition that can be referenced
@@ -48,7 +49,7 @@ func (gf *GlobalFunction) Validate() error {
 		return err
 	}
 	if gf.Key.KeyType != identity.KEY_TYPE_GLOBAL_FUNCTION {
-		return errors.Errorf("Key: invalid key type '%s' for global function", gf.Key.KeyType)
+		return pkgerrors.Errorf("Key: invalid key type '%s' for global function", gf.Key.KeyType)
 	}
 
 	// Validate the specification logic.
@@ -58,18 +59,19 @@ func (gf *GlobalFunction) Validate() error {
 
 	// Logic must use the global function's exact key.
 	if gf.Logic.Key != gf.Key {
-		return errors.Errorf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String())
+		return pkgerrors.Errorf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String())
 	}
 
 	// Global function logic must be of kind "value".
 	if gf.Logic.Type != LogicTypeValue {
-		return errors.Errorf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type)
+		return pkgerrors.Errorf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type)
 	}
 
 	if err := _validate.Struct(gf); err != nil {
 		// Wrap startswith error with a clearer message for the underscore rule.
-		if _, ok := err.(validator.ValidationErrors); ok {
-			for _, fe := range err.(validator.ValidationErrors) {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			for _, fe := range ve {
 				if fe.Field() == "Name" && fe.Tag() == "startswith" {
 					return fmt.Errorf("global function name '%s' must start with underscore", gf.Name)
 				}
@@ -92,7 +94,7 @@ func (gf *GlobalFunction) ValidateWithParent() error {
 	// Validate the logic's key parent relationship.
 	// The spec shares the global function's exact key (root-level, nil parent).
 	if err := gf.Logic.ValidateWithParent(nil); err != nil {
-		return errors.Wrap(err, "specification")
+		return pkgerrors.Wrap(err, "specification")
 	}
 	return nil
 }

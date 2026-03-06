@@ -76,7 +76,6 @@ func (suite *MultiplicitySuite) TestNew() {
 }
 
 func (suite *MultiplicitySuite) TestParseMultiplicity() {
-
 	tests := []struct {
 		multiplicity string
 		lowerBound   uint
@@ -232,7 +231,6 @@ func (suite *MultiplicitySuite) TestParsedString() {
 }
 
 func (suite *MultiplicitySuite) TestString() {
-
 	tests := []struct {
 		multiplicity Multiplicity
 		value        string

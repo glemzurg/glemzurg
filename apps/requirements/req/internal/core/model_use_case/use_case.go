@@ -28,7 +28,6 @@ type UseCase struct {
 }
 
 func NewUseCase(key identity.Key, name, details, level string, readOnly bool, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (useCase UseCase, err error) {
-
 	useCase = UseCase{
 		Key:             key,
 		Name:            name,
@@ -132,7 +131,7 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 
 // ValidateReferences validates that the use case's reference keys point to valid entities.
 // - SuperclassOfKey must exist in the generalizations map
-// - SubclassOfKey must exist in the generalizations map
+// - SubclassOfKey must exist in the generalizations map.
 func (uc *UseCase) ValidateReferences(generalizations map[identity.Key]bool) error {
 	if uc.SuperclassOfKey != nil {
 		if !generalizations[*uc.SuperclassOfKey] {

@@ -16,7 +16,6 @@ type Event struct {
 }
 
 func NewEvent(key identity.Key, name, details string, parameters []Parameter) (event Event, err error) {
-
 	event = Event{
 		Key:        key,
 		Name:       name,

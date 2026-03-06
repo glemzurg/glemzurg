@@ -59,7 +59,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "Key",
 			collectionType: "atomic",
 			atomic:         nil,
-			errstr:         `Atomic: cannot be blank.`,
+			errstr:         `atomic: cannot be blank`,
 		},
 		{
 			key:            "Key",
@@ -143,7 +143,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionType: "stack",
 				Atomic:         atomic,
 			},
-			errstr: "CollectionUnique: cannot be blank.",
+			errstr: "collectionUnique: cannot be blank",
 		},
 		{
 			name: "collection CollectionMin less than 1",
@@ -154,7 +154,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMin:    intPtr(0),
 				Atomic:           atomic,
 			},
-			errstr: "CollectionMin: must be no less than 1.",
+			errstr: "collectionMin: must be no less than 1",
 		},
 		{
 			name: "collection CollectionMax less than 1",
@@ -165,7 +165,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMax:    intPtr(0),
 				Atomic:           atomic,
 			},
-			errstr: "CollectionMax: must be no less than 1.",
+			errstr: "collectionMax: must be no less than 1",
 		},
 		{
 			name: "collection max less than min",
@@ -177,7 +177,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMax:    intPtr(2),
 				Atomic:           atomic,
 			},
-			errstr: "CollectionMax: must be no less than CollectionMin.",
+			errstr: "collectionMax: must be no less than collectionMin",
 		},
 
 		// Non-collections must not have collection fields.
@@ -189,7 +189,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
 			},
-			errstr: "CollectionUnique: must be blank.",
+			errstr: "collectionUnique: must be blank",
 		},
 		{
 			name: "atomic with CollectionMin",
@@ -199,7 +199,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMin:  intPtr(1),
 				Atomic:         atomic,
 			},
-			errstr: "CollectionMin: must be blank.",
+			errstr: "collectionMin: must be blank",
 		},
 		{
 			name: "record with CollectionMax",
@@ -211,7 +211,7 @@ func (suite *DataTypeSuite) TestValidate() {
 					{Name: "f", FieldDataType: &DataType{Key: "f", CollectionType: "atomic", Atomic: atomic}},
 				},
 			},
-			errstr: "CollectionMax: must be blank.",
+			errstr: "collectionMax: must be blank",
 		},
 	}
 
@@ -498,7 +498,6 @@ func TestParseCollections(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("CollectionDataType"))
 			if tt.errorMessage == "" {
@@ -509,7 +508,6 @@ func TestParseCollections(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
 				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
@@ -582,7 +580,6 @@ func TestParseRecordFields(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("Field"))
 			if tt.errorMessage == "" {
@@ -593,7 +590,6 @@ func TestParseRecordFields(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
 				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
@@ -771,7 +767,6 @@ func TestParseRecords(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("RecordDataType"))
 			if tt.errorMessage == "" {
@@ -782,7 +777,6 @@ func TestParseRecords(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
 				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
@@ -795,7 +789,6 @@ func TestParseRecords(t *testing.T) {
 }
 
 func TestNewUnparsable(t *testing.T) {
-
 	// If we cannot parse the text, no error but instead just a nil result.
 	result, err := New("key", "this cannot be parsed so it is just an unparsable blob", nil)
 	var targetType *CannotParseError
@@ -945,7 +938,7 @@ func TestDataTypeString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panicMessage != "" {
-				assert.PanicsWithValue(t, tt.panicMessage, func() { tt.dataType.String() })
+				assert.PanicsWithValue(t, tt.panicMessage, func() { _ = tt.dataType.String() })
 			} else {
 				assert.NotPanics(t, func() {
 					result := tt.dataType.String()

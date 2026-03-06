@@ -25,7 +25,6 @@ type Object struct {
 }
 
 func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) (object Object, err error) {
-
 	object = Object{
 		Key:          key,
 		ObjectNumber: objectNumber,

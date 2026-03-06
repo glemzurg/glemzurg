@@ -34,64 +34,58 @@ func (a Atomic) Validate() error {
 	// Reference: must be non-nil and non-empty for reference types; nil for others.
 	if a.ConstraintType == CONSTRAINT_TYPE_REFERENCE {
 		if a.Reference == nil || *a.Reference == "" {
-			return fmt.Errorf("Reference: Reference must not be nil or empty for reference types.")
+			return fmt.Errorf("reference: reference must not be nil or empty for reference types")
 		}
 	} else {
 		if a.Reference != nil {
-			return fmt.Errorf("Reference: Reference must be nil for non-reference types.")
+			return fmt.Errorf("reference: reference must be nil for non-reference types")
 		}
 	}
 
 	// ObjectClassKey: must be non-nil and non-empty for object types; nil for others.
 	if a.ConstraintType == CONSTRAINT_TYPE_OBJECT {
 		if a.ObjectClassKey == nil || *a.ObjectClassKey == "" {
-			return fmt.Errorf("ObjectClassKey: ObjectClassKey must not be nil or empty for object types.")
+			return fmt.Errorf("objectClassKey: objectClassKey must not be nil or empty for object types")
 		}
 	} else {
 		if a.ObjectClassKey != nil {
-			return fmt.Errorf("ObjectClassKey: ObjectClassKey must be nil for non-object types.")
+			return fmt.Errorf("objectClassKey: objectClassKey must be nil for non-object types")
 		}
 	}
 
 	// Enums: required when enumeration; must be empty when not enumeration; each must validate.
 	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if len(a.Enums) == 0 {
-			return fmt.Errorf("Enums: cannot be blank.")
+			return fmt.Errorf("enums: cannot be blank")
 		}
 		for _, enum := range a.Enums {
 			if err := enum.Validate(); err != nil {
-				return fmt.Errorf("Enums: (%s).", err.Error())
+				return fmt.Errorf("enums: (%s)", err.Error())
 			}
 		}
-	} else {
-		if len(a.Enums) > 0 {
-			return fmt.Errorf("Enums: must be blank.")
-		}
+	} else if len(a.Enums) > 0 {
+		return fmt.Errorf("enums: must be blank")
 	}
 
 	// EnumOrdered: must be non-nil for enumeration; nil for others.
 	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if a.EnumOrdered == nil {
-			return fmt.Errorf("EnumOrdered: EnumOrdered must not be nil for enumeration types.")
+			return fmt.Errorf("enumOrdered: enumOrdered must not be nil for enumeration types")
 		}
-	} else {
-		if a.EnumOrdered != nil {
-			return fmt.Errorf("EnumOrdered: EnumOrdered must be nil for non-enumeration types.")
-		}
+	} else if a.EnumOrdered != nil {
+		return fmt.Errorf("enumOrdered: enumOrdered must be nil for non-enumeration types")
 	}
 
 	// Span: must be non-nil for span types (and validate); nil for others.
 	if a.ConstraintType == CONSTRAINT_TYPE_SPAN {
 		if a.Span == nil {
-			return fmt.Errorf("Span: Span must not be nil for span types.")
+			return fmt.Errorf("span: span must not be nil for span types")
 		}
 		if err := a.Span.Validate(); err != nil {
-			return fmt.Errorf("Span: (%s).", err.Error())
+			return fmt.Errorf("span: (%s)", err.Error())
 		}
-	} else {
-		if a.Span != nil {
-			return fmt.Errorf("Span: Span must be nil for non-span types.")
-		}
+	} else if a.Span != nil {
+		return fmt.Errorf("span: span must be nil for non-span types")
 	}
 
 	return nil
@@ -99,24 +93,21 @@ func (a Atomic) Validate() error {
 
 // String returns a string representation of the Atomic type.
 func (a Atomic) String() string {
-
 	switch a.ConstraintType {
-
 	case CONSTRAINT_TYPE_UNCONSTRAINED:
-		return "unconstrained"
+		return CONSTRAINT_TYPE_UNCONSTRAINED
 
 	case CONSTRAINT_TYPE_SPAN:
 		if a.Span == nil {
 			return "span: <nil>"
-
 		}
 
 		lowerBracket := "("
-		if a.Span.LowerType == "closed" {
+		if a.Span.LowerType == _BOUND_TYPE_LIMIT_CLOSED {
 			lowerBracket = "["
 		}
 
-		lowerStr := "unconstrained"
+		lowerStr := CONSTRAINT_TYPE_UNCONSTRAINED
 		if a.Span.LowerValue != nil {
 			lowerStr = strconv.Itoa(*a.Span.LowerValue)
 			if a.Span.LowerDenominator != nil && *a.Span.LowerDenominator > 1 {
@@ -124,7 +115,7 @@ func (a Atomic) String() string {
 			}
 		}
 
-		higherStr := "unconstrained"
+		higherStr := CONSTRAINT_TYPE_UNCONSTRAINED
 		if a.Span.HigherValue != nil {
 			higherStr = strconv.Itoa(*a.Span.HigherValue)
 			if a.Span.HigherDenominator != nil && *a.Span.HigherDenominator > 1 {
@@ -133,7 +124,7 @@ func (a Atomic) String() string {
 		}
 
 		higherBracket := ")"
-		if a.Span.HigherType == "closed" {
+		if a.Span.HigherType == _BOUND_TYPE_LIMIT_CLOSED {
 			higherBracket = "]"
 		}
 

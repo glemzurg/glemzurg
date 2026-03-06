@@ -28,7 +28,6 @@ type StateAction struct {
 }
 
 func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {
-
 	stateAction = StateAction{
 		Key:       key,
 		ActionKey: actionKey,
@@ -92,7 +91,6 @@ func (sa *StateAction) ValidateReferences(actions map[identity.Key]bool) error {
 }
 
 func lessThanStateAction(a, b StateAction) (less bool) {
-
 	// Sort by when first.
 	if _whenSortValue[a.When] != _whenSortValue[b.When] {
 		return _whenSortValue[a.When] < _whenSortValue[b.When]

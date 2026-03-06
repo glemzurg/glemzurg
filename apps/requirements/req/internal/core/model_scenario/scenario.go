@@ -17,7 +17,6 @@ type Scenario struct {
 }
 
 func NewScenario(key identity.Key, name, details string) (scenario Scenario, err error) {
-
 	scenario = Scenario{
 		Key:     key,
 		Name:    name,

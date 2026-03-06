@@ -1,6 +1,8 @@
 package model_domain
 
 import (
+	"maps"
+
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -24,7 +26,6 @@ type Subdomain struct {
 }
 
 func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain Subdomain, err error) {
-
 	subdomain = Subdomain{
 		Key:        key,
 		Name:       name,
@@ -217,8 +218,6 @@ func (s *Subdomain) SetClassAssociations(associations map[identity.Key]model_cla
 // GetClassAssociations returns a copy of the subdomain's class associations.
 func (s *Subdomain) GetClassAssociations() map[identity.Key]model_class.Association {
 	result := make(map[identity.Key]model_class.Association)
-	for k, v := range s.ClassAssociations {
-		result[k] = v
-	}
+	maps.Copy(result, s.ClassAssociations)
 	return result
 }
