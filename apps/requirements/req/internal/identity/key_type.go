@@ -234,7 +234,7 @@ func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key 
 	if from == "" {
 		from = "initial"
 	}
-	// Default to to "final" when blank.
+	// Default to "final" when blank.
 	if to == "" {
 		to = "final"
 	}

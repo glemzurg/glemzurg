@@ -779,7 +779,7 @@ func (r *Requirements) RegardingClasses(inClasses []model_class.Class) (generali
 	// Create an association lookup.
 	relevantAssociationsLookup := classAssociationsAsLookup(relevantClassLookup, allAssociations)
 
-	// Find relevant associations to the the classes.
+	// Find relevant associations to the classes.
 	classesFromAssocaitionsLookup := classesFromAssociations(allClassLookup, relevantAssociationsLookup)
 	relevantClassLookup = mergeClassLookups(relevantClassLookup, classesFromAssocaitionsLookup)
 

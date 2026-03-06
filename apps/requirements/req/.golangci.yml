@@ -2,10 +2,10 @@ version: "2"
 
 linters:
   default: standard
-  # enable:
-  #   - dupword
-  #   - errname
-  #   - errorlint
+  enable:
+    - dupword
+    - errname
+    - errorlint
   #   - exhaustive
   #   - forbidigo
   #   - goconst
