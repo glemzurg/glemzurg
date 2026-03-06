@@ -10,6 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/req_model/model_state"
@@ -133,6 +134,9 @@ type testKeys struct {
 
 	// Global function keys.
 	globalFunc1, globalFunc2, globalFunc3 identity.Key
+
+	// Named set keys.
+	namedSet1, namedSet2 identity.Key
 
 	// Use case keys.
 	ucPlaceOrder, ucViewOrder, ucManageOrder, ucCancelOrder, uc5, uc6 identity.Key
@@ -364,6 +368,11 @@ func buildTestModel() (req_model.Model, error) {
 		return req_model.Model{}, err
 	}
 
+	namedSets, err := buildNamedSets(k)
+	if err != nil {
+		return req_model.Model{}, err
+	}
+
 	params, err := buildParameters()
 	if err != nil {
 		return req_model.Model{}, err
@@ -431,7 +440,7 @@ func buildTestModel() (req_model.Model, error) {
 		"A comprehensive test model with every type represented.",
 		logic.invariants,
 		globalFuncs,
-		nil,
+		namedSets,
 	)
 	if err != nil {
 		return req_model.Model{}, err
@@ -914,6 +923,16 @@ func buildKeys() (testKeys, error) {
 		return k, err
 	}
 
+	// Named sets.
+	k.namedSet1, err = identity.NewNamedSetKey("valid_statuses")
+	if err != nil {
+		return k, err
+	}
+	k.namedSet2, err = identity.NewNamedSetKey("order_types")
+	if err != nil {
+		return k, err
+	}
+
 	// Use cases.
 	k.ucPlaceOrder, err = identity.NewUseCaseKey(k.subdomainA, "place_order")
 	if err != nil {
@@ -1382,6 +1401,33 @@ func buildGlobalFunctions(k testKeys, l testLogic) (map[identity.Key]model_logic
 		k.globalFunc1: gf1,
 		k.globalFunc2: gf2,
 		k.globalFunc3: gf3,
+	}, nil
+}
+
+// =========================================================================
+// Named sets
+// =========================================================================
+
+func buildNamedSets(k testKeys) (map[identity.Key]model_named_set.NamedSet, error) {
+	// Named set with a spec and type spec.
+	typeSpec1, err := model_spec.NewTypeSpec("tla_plus", "SUBSET STRING", nil)
+	if err != nil {
+		return nil, err
+	}
+	ns1, err := model_named_set.NewNamedSet(k.namedSet1, "_Valid_Statuses", "The set of valid order statuses.", parsedSpec("{\"pending\", \"active\", \"closed\"}"), &typeSpec1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Named set without a type spec.
+	ns2, err := model_named_set.NewNamedSet(k.namedSet2, "_Order_Types", "The set of order types.", parsedSpec("{\"standard\", \"express\"}"), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[identity.Key]model_named_set.NamedSet{
+		k.namedSet1: ns1,
+		k.namedSet2: ns2,
 	}, nil
 }
 

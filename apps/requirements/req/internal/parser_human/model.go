@@ -125,7 +125,7 @@ func parseModel(key, filename, contents string) (model req_model.Model, err erro
 					name = n.(string)
 				}
 
-				nsKey, err := identity.NewNamedSetKey(strings.ToLower(name))
+				nsKey, err := identity.NewNamedSetKey(strings.ToLower(strings.TrimPrefix(name, "_")))
 				if err != nil {
 					return req_model.Model{}, errors.WithStack(err)
 				}
