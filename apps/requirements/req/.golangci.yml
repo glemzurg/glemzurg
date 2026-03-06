@@ -1,14 +1,12 @@
 version: "2"
-
 linters:
-  default: standard
   enable:
     - dupword
     - errname
     - errorlint
-  #   - exhaustive
-  #   - forbidigo
-  #   - goconst
+    - exhaustive
+    - forbidigo
+    - goconst
   #   - gocritic
   #   - godot
   #   - gosec
@@ -25,11 +23,27 @@ linters:
   #   - unparam
   #   - whitespace
 
-exclusions:
-  paths:
-    - ".*\\.generated\\.go$"
-  rules:
-    - linters:
-        - dupl
-        - gosec
-      path: "_test\\.go$"
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - goconst
+          - forbidigo
+        path: .*_test\.go$
+    paths:
+      - .*\.generated\.go$
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
