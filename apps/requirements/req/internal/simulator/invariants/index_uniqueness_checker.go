@@ -90,8 +90,8 @@ func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 }
 
 // CheckState validates all instances in a simulation state for index uniqueness.
-func (c *IndexUniquenessChecker) CheckState(simState *state.SimulationState) ViolationList {
-	var violations ViolationList
+func (c *IndexUniquenessChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+	var violations ViolationErrors
 
 	for classKey, indexInfo := range c.classIndexes {
 		instances := simState.InstancesByClass(classKey)
@@ -109,8 +109,8 @@ func (c *IndexUniquenessChecker) CheckClassInstances(
 	classKey identity.Key,
 	instances []*state.ClassInstance,
 	indexInfo *ClassIndexInfo,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	for _, indexDef := range indexInfo.Indexes {
 		seen := make(map[string]state.InstanceID)

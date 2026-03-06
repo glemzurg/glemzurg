@@ -2,6 +2,7 @@ package parser_ai
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,7 +61,8 @@ func (suite *LogicSuite) TestParseLogicErrors() {
 			_, err := parseLogic([]byte(testData.InputJSON), testData.Filename)
 			assert.NotNil(t, err, testName+" should return an error")
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			assert.True(t, ok, testName+" should return a ParseError")
 			if !ok {
 				return

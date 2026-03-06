@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,8 @@ func (suite *KeyValidateSuite) TestInvalidKeysUppercase() {
 			err := ValidateKey(key, "test_key", "test.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "lowercase")
@@ -87,7 +89,8 @@ func (suite *KeyValidateSuite) TestInvalidKeysHyphens() {
 			err := ValidateKey(key, "test_key", "test.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "hyphen")
@@ -109,7 +112,8 @@ func (suite *KeyValidateSuite) TestInvalidKeysSpaces() {
 			err := ValidateKey(key, "test_key", "test.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "space")
@@ -132,7 +136,8 @@ func (suite *KeyValidateSuite) TestInvalidKeysStartsWithNumber() {
 			err := ValidateKey(key, "test_key", "test.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "number")
@@ -158,7 +163,8 @@ func (suite *KeyValidateSuite) TestInvalidKeysUnderscoreIssues() {
 			err := ValidateKey(tt.key, "test_key", "test.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, tt.contains)
@@ -180,7 +186,8 @@ func (suite *KeyValidateSuite) TestInvalidKeysDots() {
 			err := ValidateKey(key, "test_key", "test.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "dot")
@@ -195,7 +202,8 @@ func (suite *KeyValidateSuite) TestEmptyKey() {
 	err := ValidateKey("", "test_key", "test.json")
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 	assert.Contains(t, parseErr.Message, "empty")
@@ -208,7 +216,8 @@ func (suite *KeyValidateSuite) TestErrorContainsKeyType() {
 	err := ValidateKey("Invalid", "actor_key", "actors/Invalid.actor.json")
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, "actor_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "actor_key")
@@ -221,7 +230,8 @@ func (suite *KeyValidateSuite) TestErrorContainsFilePath() {
 	err := ValidateKey("Invalid", "class_key", "domains/orders/subdomains/default/classes/Invalid/class.json")
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Contains(t, parseErr.File, "Invalid/class.json")
 }
@@ -267,7 +277,8 @@ func (suite *KeyValidateSuite) TestMixedInvalidCharacters() {
 	err := ValidateKey("Book-Order Line", "test_key", "test.json")
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 	// Should mention multiple issues
@@ -355,7 +366,8 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPartCount() {
 			err := ValidateAssociationFilename(tt.filename, tt.level, "test.assoc.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrAssocFilenameInvalidFormat, parseErr.Code)
 		})
@@ -386,7 +398,8 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameInvalidComponent() 
 			err := ValidateAssociationFilename(tt.filename, tt.level, "test.assoc.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			assert.Equal(t, ErrAssocFilenameInvalidComponent, parseErr.Code)
 			assert.Contains(t, parseErr.Field, tt.badField)
@@ -417,7 +430,8 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPathDepth() {
 			err := ValidateAssociationFilename(tt.filename, tt.level, "test.assoc.json")
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
 			// Should be either format error or component error
 			assert.True(t, parseErr.Code == ErrAssocFilenameInvalidFormat ||

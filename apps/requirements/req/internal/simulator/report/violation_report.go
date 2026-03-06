@@ -34,8 +34,8 @@ type ViolationEntry struct {
 	Expression string `json:"expression,omitempty"`
 }
 
-// FromViolations builds a ViolationReport from a ViolationList.
-func FromViolations(violations invariants.ViolationList) *ViolationReport {
+// FromViolations builds a ViolationReport from a ViolationErrors.
+func FromViolations(violations invariants.ViolationErrors) *ViolationReport {
 	r := &ViolationReport{
 		TotalCount: len(violations),
 	}
@@ -46,7 +46,7 @@ func FromViolations(violations invariants.ViolationList) *ViolationReport {
 	liveness := violations.LivenessViolations()
 
 	// Collect remaining violations (multiplicity, safety rules, unparsed data type).
-	categorized := make(map[*invariants.Violation]bool)
+	categorized := make(map[*invariants.ViolationError]bool)
 	for _, v := range tla {
 		categorized[v] = true
 	}
@@ -56,7 +56,7 @@ func FromViolations(violations invariants.ViolationList) *ViolationReport {
 	for _, v := range liveness {
 		categorized[v] = true
 	}
-	var other invariants.ViolationList
+	var other invariants.ViolationErrors
 	for _, v := range violations {
 		if !categorized[v] {
 			other = append(other, v)
@@ -112,8 +112,8 @@ func (r *ViolationReport) FormatJSON() ([]byte, error) {
 	return json.MarshalIndent(r, "", "  ")
 }
 
-// buildCategory creates a ViolationCategory from a ViolationList.
-func buildCategory(name string, violations invariants.ViolationList) ViolationCategory {
+// buildCategory creates a ViolationCategory from a ViolationErrors.
+func buildCategory(name string, violations invariants.ViolationErrors) ViolationCategory {
 	cat := ViolationCategory{
 		Name:  name,
 		Count: len(violations),

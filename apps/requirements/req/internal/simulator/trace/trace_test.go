@@ -209,7 +209,7 @@ func (s *TraceSuite) TestStepWithViolations() {
 				ClassKey:   classKey,
 				ClassName:  "Order",
 				InstanceID: 1,
-				Violations: invariants.ViolationList{
+				Violations: invariants.ViolationErrors{
 					{
 						Type:    invariants.ViolationTypeModelInvariant,
 						Message: "invariant failed: x > 0",

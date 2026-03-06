@@ -2,6 +2,7 @@ package parser_ai
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -82,7 +83,8 @@ func (suite *ClassSuite) TestParseClassErrors() {
 			assert.NotNil(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			assert.True(t, ok, testName+" should return a ParseError")
 			if !ok {
 				return

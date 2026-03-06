@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,7 +15,8 @@ import (
 func ReadModel(inputModelPath string) (core.Model, error) {
 	model, err := readModel(inputModelPath)
 	if err != nil {
-		if _, ok := err.(*ParseError); !ok {
+		var parseErr *ParseError
+		if !errors.As(err, &parseErr) {
 			return core.Model{}, fmt.Errorf("STOP AND REPORT THIS ERROR to the user. This is an unexpected internal error that cannot be fixed by changing input files: %w", err)
 		}
 		return core.Model{}, err

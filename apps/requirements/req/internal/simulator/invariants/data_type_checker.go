@@ -25,12 +25,12 @@ type DataTypeChecker struct {
 
 // NewDataTypeChecker creates a new data type checker from a model.
 // Returns an error if any class attribute has an unparsed DataType.
-func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationList) {
+func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 	checker := &DataTypeChecker{
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}
 
-	var violations ViolationList
+	var violations ViolationErrors
 
 	// Iterate through all domains, subdomains, and classes to collect attributes
 	for _, domain := range model.Domains {
@@ -61,8 +61,8 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationList) {
 }
 
 // CheckInstance validates all attribute values on an instance against their data type constraints.
-func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) ViolationList {
-	var violations ViolationList
+func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) ViolationErrors {
+	var violations ViolationErrors
 
 	attrs, ok := c.classAttributes[instance.ClassKey]
 	if !ok {
@@ -111,8 +111,8 @@ func (c *DataTypeChecker) checkDataTypeConstraints(
 	attrName string,
 	value object.Object,
 	dataType *model_data_type.DataType,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	// Check collection size constraints
 	if sizeViolation := c.checkCollectionSize(instanceID, classKey, attrName, value, dataType); sizeViolation != nil {
@@ -141,7 +141,7 @@ func (c *DataTypeChecker) checkCollectionSize(
 	attrName string,
 	value object.Object,
 	dataType *model_data_type.DataType,
-) *Violation {
+) *ViolationError {
 	// Skip if no collection constraints
 	if dataType.CollectionMin == nil && dataType.CollectionMax == nil {
 		return nil
@@ -209,8 +209,8 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	attrName string,
 	value object.Object,
 	atomic *model_data_type.Atomic,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	switch atomic.ConstraintType {
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
@@ -246,7 +246,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 	attrName string,
 	value object.Object,
 	span *model_data_type.AtomicSpan,
-) *Violation {
+) *ViolationError {
 	// Get numeric value
 	num, ok := value.(*object.Number)
 	if !ok {
@@ -389,7 +389,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 	attrName string,
 	value object.Object,
 	enums []model_data_type.AtomicEnum,
-) *Violation {
+) *ViolationError {
 	// Get string value
 	str, ok := value.(*object.String)
 	if !ok {
@@ -419,8 +419,8 @@ func (c *DataTypeChecker) checkEnumConstraint(
 }
 
 // CheckState validates all instances in a simulation state.
-func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationList {
-	var violations ViolationList
+func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+	var violations ViolationErrors
 
 	for _, instance := range simState.AllInstances() {
 		instanceViolations := c.CheckInstance(instance)

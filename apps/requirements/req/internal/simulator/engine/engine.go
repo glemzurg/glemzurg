@@ -37,7 +37,7 @@ type SimulationResult struct {
 	StepsTaken int
 
 	// Violations is the combined list of all violations from all steps.
-	Violations invariants.ViolationList
+	Violations invariants.ViolationErrors
 
 	// TerminationReason explains why the simulation stopped.
 	// One of: "max_steps", "violation", "deadlock".

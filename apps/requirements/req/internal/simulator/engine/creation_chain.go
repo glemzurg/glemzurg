@@ -48,7 +48,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 	createdInstanceID state.InstanceID,
 	simState *state.SimulationState,
 	depth int,
-) ([]*SimulationStep, invariants.ViolationList, error) {
+) ([]*SimulationStep, invariants.ViolationErrors, error) {
 	if depth > maxCascadeDepth {
 		return nil, nil, fmt.Errorf("creation chain cascade exceeded max depth of %d", maxCascadeDepth)
 	}
@@ -65,7 +65,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 	}
 
 	var cascadedSteps []*SimulationStep
-	var allViolations invariants.ViolationList
+	var allViolations invariants.ViolationErrors
 
 	for _, assocInfo := range mandatory {
 		toClassInfo := h.catalog.GetClassInfo(assocInfo.ToClassKey)

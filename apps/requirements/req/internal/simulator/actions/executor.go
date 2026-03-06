@@ -24,7 +24,7 @@ type ActionResult struct {
 	PrimedAssignments map[state.InstanceID]map[string]object.Object
 
 	// Violations contains any invariant violations detected after state changes.
-	Violations invariants.ViolationList
+	Violations invariants.ViolationErrors
 
 	// Success is true if there are no violations.
 	Success bool
@@ -39,7 +39,7 @@ type QueryResult struct {
 	Outputs map[string]object.Object
 
 	// Violations contains any post-condition violations.
-	Violations invariants.ViolationList
+	Violations invariants.ViolationErrors
 
 	// Success is true if there are no violations.
 	Success bool
@@ -72,7 +72,7 @@ type TransitionResult struct {
 	ActionResult *ActionResult
 
 	// Violations contains any violations from the transition.
-	Violations invariants.ViolationList
+	Violations invariants.ViolationErrors
 }
 
 // ActionExecutor executes actions, queries, and transitions against simulation state.
@@ -130,7 +130,7 @@ func (e *ActionExecutor) ExecuteAction(
 	}
 
 	// Phase C: Check ALL post-conditions from the entire chain
-	var allViolations invariants.ViolationList
+	var allViolations invariants.ViolationErrors
 
 	for _, pc := range ctx.GetAllPostConditions() {
 		targetInstance := simState.GetInstance(pc.InstanceID)
@@ -382,7 +382,7 @@ func (e *ActionExecutor) ExecuteQuery(
 	}
 
 	// Check post-conditions
-	var allViolations invariants.ViolationList
+	var allViolations invariants.ViolationErrors
 	simState := e.bindingsBuilder.State()
 
 	for _, pc := range ctx.GetAllPostConditions() {
@@ -609,7 +609,7 @@ func (e *ActionExecutor) ExecuteTransition(
 
 	// Step 5: Apply state transition
 	var toStateName string
-	var violations invariants.ViolationList
+	var violations invariants.ViolationErrors
 
 	if actionResult != nil {
 		violations = actionResult.Violations
@@ -680,7 +680,7 @@ func isTrueBoolean(obj object.Object) bool {
 }
 
 // createPostConditionViolation creates a violation from a deferred post-condition.
-func createPostConditionViolation(pc DeferredPostCondition, message string) *invariants.Violation {
+func createPostConditionViolation(pc DeferredPostCondition, message string) *invariants.ViolationError {
 	if pc.SourceType == "action" {
 		return invariants.NewActionGuaranteeViolation(
 			pc.SourceKey,

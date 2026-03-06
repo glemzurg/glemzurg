@@ -101,8 +101,8 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 func (c *InvariantChecker) CheckModelInvariants(
 	simState *state.SimulationState,
 	bindingsBuilder *state.BindingsBuilder,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	bindings := bindingsBuilder.BuildWithClassInstances(c.classNameMap)
 
@@ -167,13 +167,13 @@ func (c *InvariantChecker) CheckActionPostConditions(
 	instance *state.ClassInstance,
 	bindingsBuilder *state.BindingsBuilder,
 	additionalBindings map[string]object.Object,
-) ViolationList {
+) ViolationErrors {
 	guarantees, ok := c.actionPostConditions[actionKey]
 	if !ok {
 		return nil // No post-conditions for this action
 	}
 
-	var violations ViolationList
+	var violations ViolationErrors
 
 	// Build bindings with self and any additional variables
 	var bindings *evaluator.Bindings
@@ -229,13 +229,13 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 	instance *state.ClassInstance,
 	bindingsBuilder *state.BindingsBuilder,
 	additionalBindings map[string]object.Object,
-) ViolationList {
+) ViolationErrors {
 	guarantees, ok := c.queryPostConditions[queryKey]
 	if !ok {
 		return nil // No post-conditions for this query
 	}
 
-	var violations ViolationList
+	var violations ViolationErrors
 
 	// Build bindings with self and any additional variables
 	var bindings *evaluator.Bindings
@@ -292,8 +292,8 @@ func (c *InvariantChecker) CheckAllInvariants(
 	bindingsBuilder *state.BindingsBuilder,
 	dataTypeChecker *DataTypeChecker,
 	indexChecker *IndexUniquenessChecker,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	// Check model invariants
 	modelViolations := c.CheckModelInvariants(simState, bindingsBuilder)

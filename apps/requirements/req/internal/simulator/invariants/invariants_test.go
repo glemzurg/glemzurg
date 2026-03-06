@@ -378,11 +378,11 @@ func (s *InvariantsSuite) TestViolationTypes() {
 	s.Contains(v6.Message, "unparsed")
 }
 
-// Test: ViolationList filtering
-func (s *InvariantsSuite) TestViolationListFiltering() {
+// Test: ViolationErrors filtering
+func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
-	violations := ViolationList{
+	violations := ViolationErrors{
 		NewRequiredAttributeViolation(1, classKey, "a"),
 		NewSpanConstraintViolation(1, classKey, "b", "1", "[0,0]"),
 		NewModelInvariantViolation(0, "TRUE", "failed"),

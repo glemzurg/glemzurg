@@ -1,6 +1,7 @@
 package parser_ai
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -37,7 +38,8 @@ func (suite *TreeValidateSuite) TestClassActorNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassActorNotFound, parseErr.Code)
 	assert.Equal(t, "actor_key", parseErr.Field)
@@ -66,7 +68,8 @@ func (suite *TreeValidateSuite) TestClassIndexAttrNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassIndexAttrNotFound, parseErr.Code)
 	assert.Equal(t, "indexes[0][0]", parseErr.Field)
@@ -86,7 +89,8 @@ func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassIndexAttrNotFound, parseErr.Code)
 	assert.Contains(t, parseErr.Message, "duplicate")
@@ -116,7 +120,8 @@ func (suite *TreeValidateSuite) TestStateMachineStateActionNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineActionNotFound, parseErr.Code)
 	assert.Equal(t, "states.pending.actions[0].action_key", parseErr.Field)
@@ -149,7 +154,8 @@ func (suite *TreeValidateSuite) TestTransitionNoStates() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeTransitionNoStates, parseErr.Code)
 	assert.Equal(t, "transitions[0]", parseErr.Field)
@@ -184,7 +190,8 @@ func (suite *TreeValidateSuite) TestTransitionFromStateNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineStateNotFound, parseErr.Code)
 	assert.Equal(t, "transitions[0].from_state_key", parseErr.Field)
@@ -219,7 +226,8 @@ func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineStateNotFound, parseErr.Code)
 	assert.Equal(t, "transitions[0].to_state_key", parseErr.Field)
@@ -251,7 +259,8 @@ func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineEventNotFound, parseErr.Code)
 	assert.Equal(t, "transitions[0].event_key", parseErr.Field)
@@ -287,7 +296,8 @@ func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineGuardNotFound, parseErr.Code)
 	assert.Equal(t, "transitions[0].guard_key", parseErr.Field)
@@ -323,7 +333,8 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineActionNotFound, parseErr.Code)
 	assert.Equal(t, "transitions[0].action_key", parseErr.Field)
@@ -361,7 +372,8 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeActionUnreferenced, parseErr.Code)
 	assert.Equal(t, "action_key", parseErr.Field)
@@ -456,7 +468,8 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassGenSuperclassNotFound, parseErr.Code)
 	assert.Equal(t, "superclass_key", parseErr.Field)
@@ -480,7 +493,8 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassGenSubclassNotFound, parseErr.Code)
 	assert.Equal(t, "subclass_keys[0]", parseErr.Field)
@@ -505,7 +519,8 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassGenSubclassDuplicate, parseErr.Code)
 	assert.Equal(t, "subclass_keys[1]", parseErr.Field)
@@ -530,7 +545,8 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassGenSuperclassIsSubclass, parseErr.Code)
 }
@@ -554,7 +570,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
 	assert.Equal(t, "from_class_key", parseErr.Field)
@@ -579,7 +596,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocToClassNotFound, parseErr.Code)
 	assert.Equal(t, "to_class_key", parseErr.Field)
@@ -607,7 +625,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocClassNotFound, parseErr.Code)
 	assert.Equal(t, "association_class_key", parseErr.Field)
@@ -635,7 +654,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
 	assert.Equal(t, "association_class_key", parseErr.Field)
@@ -664,7 +684,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
 	assert.Equal(t, "association_class_key", parseErr.Field)
@@ -691,7 +712,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocMultiplicityInvalid, parseErr.Code)
 	assert.Equal(t, "from_multiplicity", parseErr.Field)
@@ -722,7 +744,8 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
 	assert.Equal(t, "from_class_key", parseErr.Field)
@@ -746,7 +769,8 @@ func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
 }
@@ -782,7 +806,8 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
 	assert.Equal(t, "from_class_key", parseErr.Field)
@@ -818,7 +843,8 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocToClassNotFound, parseErr.Code)
 	assert.Equal(t, "to_class_key", parseErr.Field)
@@ -842,7 +868,8 @@ func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
 }
@@ -905,7 +932,8 @@ func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeModelNoActors, parseErr.Code)
 	assert.Equal(t, "actors", parseErr.Field)
@@ -923,7 +951,8 @@ func (suite *TreeValidateSuite) TestCompletenessModelNoDomains() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeModelNoDomains, parseErr.Code)
 	assert.Equal(t, "domains", parseErr.Field)
@@ -941,7 +970,8 @@ func (suite *TreeValidateSuite) TestCompletenessDomainNoSubdomains() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeDomainNoSubdomains, parseErr.Code)
 	assert.Equal(t, "subdomains", parseErr.Field)
@@ -961,7 +991,8 @@ func (suite *TreeValidateSuite) TestSingleSubdomainNotDefault() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeSingleSubdomainNotDefault, parseErr.Code)
 	assert.Equal(t, "subdomain_key", parseErr.Field)
@@ -997,7 +1028,8 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeMultipleSubdomainsHasDefault, parseErr.Code)
 	assert.Equal(t, "subdomain_key", parseErr.Field)
@@ -1060,7 +1092,8 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeSubdomainTooFewClasses, parseErr.Code)
 	assert.Equal(t, "classes", parseErr.Field)
@@ -1078,7 +1111,8 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeSubdomainNoAssociations, parseErr.Code)
 	assert.Equal(t, "associations", parseErr.Field)
@@ -1096,7 +1130,8 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassNoAttributes, parseErr.Code)
 	assert.Equal(t, "attributes", parseErr.Field)
@@ -1114,7 +1149,8 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoStateMachine() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeClassNoStateMachine, parseErr.Code)
 	assert.Equal(t, "state_machine", parseErr.Field)
@@ -1132,7 +1168,8 @@ func (suite *TreeValidateSuite) TestCompletenessStateMachineNoTransitions() {
 	err := validateModelCompleteness(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeStateMachineNoTransitions, parseErr.Code)
 	assert.Equal(t, "transitions", parseErr.Field)
@@ -1277,7 +1314,8 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			err := validateModelCompleteness(model)
 			require.Error(t, err)
 
-			parseErr, ok := err.(*ParseError)
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 			require.True(t, ok, "error should be a ParseError")
 			assert.Equal(t, tt.expectedCode, parseErr.Code, "error code should match")
 
@@ -1305,7 +1343,8 @@ func (suite *TreeValidateSuite) TestModelDomainAssocDomainNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeDomainAssocDomainNotFound, parseErr.Code)
 	assert.Equal(t, "problem_domain_key", parseErr.Field)
@@ -1326,7 +1365,8 @@ func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
 	err := validateModelTree(model)
 	require.Error(t, err)
 
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeActorGenActorNotFound, parseErr.Code)
 	assert.Equal(t, "superclass_key", parseErr.Field)
@@ -1357,7 +1397,8 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 
 	err := validateModelTree(model)
 	require.Error(t, err)
-	parseErr, ok := err.(*ParseError)
+	var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeScenarioStepObjectNotFound, parseErr.Code)
 	assert.Equal(t, "steps.from_object_key", parseErr.Field)
@@ -1380,7 +1421,7 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 
 	err = validateModelTree(model)
 	require.Error(t, err)
-	parseErr, ok = err.(*ParseError)
+	ok = errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeScenarioStepEventNotFound, parseErr.Code)
 	assert.Equal(t, "steps.event_key", parseErr.Field)
@@ -1402,7 +1443,7 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 
 	err = validateModelTree(model)
 	require.Error(t, err)
-	parseErr, ok = err.(*ParseError)
+	ok = errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrTreeScenarioStepQueryNotFound, parseErr.Code)
 	assert.Equal(t, "steps.query_key", parseErr.Field)
