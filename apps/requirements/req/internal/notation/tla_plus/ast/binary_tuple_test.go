@@ -447,4 +447,3 @@ func (suite *TupleInfixExpressionSuite) TestExpressionNode() {
 	}
 	t.expressionNode()
 }
-

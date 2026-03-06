@@ -3,8 +3,6 @@ package database
 import (
 	"database/sql"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -15,6 +13,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 )
 
 func WriteModel(db *sql.DB, model core.Model) (err error) {

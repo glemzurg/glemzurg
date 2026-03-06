@@ -6,8 +6,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // NotationTLAPlus is the only supported notation for logic specifications.
@@ -28,12 +28,12 @@ var _validate = validator.New()
 
 // Logic represents a formal logic specification attached to a model element.
 type Logic struct {
-	Key            identity.Key           // The key is unique in the whole model, and built on the key of the containing object.
-	Type           string                 `validate:"required,oneof=assessment state_change query safety_rule value let"`
-	Description    string                 `validate:"required"`
-	Target         string                 // Identifier or attribute to set. Required for state_change and query types.
+	Key            identity.Key              // The key is unique in the whole model, and built on the key of the containing object.
+	Type           string                    `validate:"required,oneof=assessment state_change query safety_rule value let"`
+	Description    string                    `validate:"required"`
+	Target         string                    // Identifier or attribute to set. Required for state_change and query types.
 	Spec           model_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
-	TargetTypeSpec *model_spec.TypeSpec   // Optional: declared result type of the logic's target.
+	TargetTypeSpec *model_spec.TypeSpec      // Optional: declared result type of the logic's target.
 }
 
 // NewLogic creates a new Logic and validates it.

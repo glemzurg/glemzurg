@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,10 +23,10 @@ func TestNamedSetSuite(t *testing.T) {
 
 type NamedSetSuite struct {
 	suite.Suite
-	db       *sql.DB
-	model    core.Model
-	nsKey    identity.Key
-	nsKeyB   identity.Key
+	db     *sql.DB
+	model  core.Model
+	nsKey  identity.Key
+	nsKeyB identity.Key
 }
 
 func (suite *NamedSetSuite) SetupTest() {

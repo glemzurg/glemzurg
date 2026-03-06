@@ -3,13 +3,13 @@ package core
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -63,10 +63,10 @@ func (suite *ModelSuite) TestValidate() {
 						Name:       "_Max",
 						Parameters: []string{"x", "y"},
 						Logic: model_logic.Logic{
-							Key:           gfKey,
-							Type:          model_logic.LogicTypeValue,
-							Description:   "Max of two values.",
-							Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
+							Key:         gfKey,
+							Type:        model_logic.LogicTypeValue,
+							Description: "Max of two values.",
+							Spec:        model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF x > y THEN x ELSE y"},
 						},
 					},
 				},

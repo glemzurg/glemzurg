@@ -223,4 +223,3 @@ func (b *Bag) Equals(other *Bag) bool {
 	}
 	return true
 }
-

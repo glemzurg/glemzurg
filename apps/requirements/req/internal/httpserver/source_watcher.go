@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
 
 // Input format constants

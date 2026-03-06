@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 )
 
 // RaiseComprehensiveTestSuite provides exhaustive pair-wise precedence coverage,
@@ -71,7 +71,7 @@ func (s *RaiseComprehensiveTestSuite) SetupTest() {
 		},
 		NamedSets: map[string]identity.Key{
 			"valid_statuses": namedSetKey,
-			"all_accounts":  namedSetAccountsKey,
+			"all_accounts":   namedSetAccountsKey,
 		},
 		AllActions: map[string]identity.Key{
 			"s2!c2!OtherAction": crossActionKey,
@@ -151,10 +151,10 @@ func (s *RaiseComprehensiveTestSuite) assertRoundTrip(expr me.Expression) string
 }
 
 // Helpers for constructing model expressions.
-func intLit(v int64) *me.IntLiteral      { return &me.IntLiteral{Value: big.NewInt(v)} }
-func boolLit(v bool) *me.BoolLiteral      { return &me.BoolLiteral{Value: v} }
-func strLit(v string) *me.StringLiteral    { return &me.StringLiteral{Value: v} }
-func localVar(name string) *me.LocalVar    { return &me.LocalVar{Name: name} }
+func intLit(v int64) *me.IntLiteral     { return &me.IntLiteral{Value: big.NewInt(v)} }
+func boolLit(v bool) *me.BoolLiteral    { return &me.BoolLiteral{Value: v} }
+func strLit(v string) *me.StringLiteral { return &me.StringLiteral{Value: v} }
+func localVar(name string) *me.LocalVar { return &me.LocalVar{Name: name} }
 
 func add(l, r me.Expression) *me.BinaryArith {
 	return &me.BinaryArith{Op: me.ArithAdd, Left: l, Right: r}
@@ -1088,9 +1088,9 @@ func (s *RaiseComprehensiveTestSuite) TestDeep_IfWithQuantifierCondition() {
 	// IF ∀ x ∈ Nat : x ≥ 0 THEN 1 ELSE 0
 	expr := &me.IfThenElse{
 		Condition: &me.Quantifier{
-			Kind:     me.QuantifierForall,
-			Variable: "x",
-			Domain:   &me.SetConstant{Kind: me.SetConstantNat},
+			Kind:      me.QuantifierForall,
+			Variable:  "x",
+			Domain:    &me.SetConstant{Kind: me.SetConstantNat},
 			Predicate: gte(localVar("x"), intLit(0)),
 		},
 		Then: intLit(1),
@@ -1724,9 +1724,9 @@ func (s *RaiseComprehensiveTestSuite) TestRealWorld_ExistsWithSetLiteralComplex(
 		Variable: "x",
 		Domain:   &me.SetLiteral{Elements: []me.Expression{intLit(1), intLit(2), intLit(3)}},
 		Predicate: &me.Quantifier{
-			Kind:     me.QuantifierExists,
-			Variable: "y",
-			Domain:   &me.SetLiteral{Elements: []me.Expression{intLit(4), intLit(5), intLit(6)}},
+			Kind:      me.QuantifierExists,
+			Variable:  "y",
+			Domain:    &me.SetLiteral{Elements: []me.Expression{intLit(4), intLit(5), intLit(6)}},
 			Predicate: eq(add(localVar("x"), localVar("y")), intLit(7)),
 		},
 	}

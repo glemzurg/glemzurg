@@ -7,12 +7,12 @@ import (
 
 // Arithmetic operators
 const (
-	ArithmeticOperatorAdd      = "+"  // Addition
-	ArithmeticOperatorSubtract = "-"  // Subtraction
-	ArithmeticOperatorMultiply = "*"  // Multiplication
-	ArithmeticOperatorPower    = "^"  // Exponentiation
-	ArithmeticOperatorDivide   = "÷"  // Division (Unicode)
-	ArithmeticOperatorModulo   = "%"  // Modulo
+	ArithmeticOperatorAdd      = "+" // Addition
+	ArithmeticOperatorSubtract = "-" // Subtraction
+	ArithmeticOperatorMultiply = "*" // Multiplication
+	ArithmeticOperatorPower    = "^" // Exponentiation
+	ArithmeticOperatorDivide   = "÷" // Division (Unicode)
+	ArithmeticOperatorModulo   = "%" // Modulo
 )
 
 // arithmeticOperatorAscii maps Unicode operators to ASCII equivalents.

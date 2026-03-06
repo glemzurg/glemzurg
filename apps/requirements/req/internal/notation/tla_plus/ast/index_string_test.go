@@ -145,4 +145,3 @@ func (suite *StringIndexSuite) TestExpressionNode() {
 	}
 	s.expressionNode()
 }
-

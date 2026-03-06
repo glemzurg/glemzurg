@@ -141,7 +141,6 @@ func (s *RecordSuite) TestEquals() {
 	s.False(r1.Equals(r4))
 }
 
-
 func (s *RecordSuite) TestWithField() {
 	original := NewRecordFromFields(map[string]Object{
 		"x": NewInteger(1),

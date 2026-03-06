@@ -137,4 +137,3 @@ func (s *SetSuite) TestEquals() {
 	s.True(s1.Equals(s2))
 	s.False(s1.Equals(s3))
 }
-

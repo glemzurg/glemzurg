@@ -19,8 +19,8 @@ var binaryLogicAscii = map[string]string{
 // BinaryLogic is a binary logic expression (∧, ∨, ⇒, ≡).
 type BinaryLogic struct {
 	Operator string     `validate:"required,oneof=∧ ∨ ⇒ ≡"` // The logic operator: ∧, ∨, ⇒, ≡
-	Left     Expression `validate:"required"`                 // Must be Boolean
-	Right    Expression `validate:"required"`                 // Must be Boolean
+	Left     Expression `validate:"required"`               // Must be Boolean
+	Right    Expression `validate:"required"`               // Must be Boolean
 }
 
 func (b *BinaryLogic) expressionNode() {}

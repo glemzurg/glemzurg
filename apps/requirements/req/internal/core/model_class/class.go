@@ -3,9 +3,9 @@ package model_class
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Class is a thing in the system.

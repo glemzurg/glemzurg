@@ -3,8 +3,8 @@ package surface
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // SurfaceSpecification defines the scope of a simulation run.

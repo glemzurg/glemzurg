@@ -263,4 +263,3 @@ func (s *TupleSuite) TestEquals() {
 	s.False(t1.Equals(t3))
 	s.False(t1.Equals(t4))
 }
-

@@ -90,5 +90,10 @@ echo -e "\nLINTING\n"
 golangci-lint run ./...
 [ $? -ne 0 ] && exit 1
 
+# Complexity linter.
+echo -e "\nCOMPLEXITY\n"
+go-complexity-lint ./...
+[ $? -ne 0 ] && exit 1
+
 # Everything is fine.
 exit 0

@@ -3,8 +3,8 @@ package model_domain
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Domain is a root category of the mode.

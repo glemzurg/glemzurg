@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 func TestDebugPrimed(t *testing.T) {

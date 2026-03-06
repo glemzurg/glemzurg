@@ -1,8 +1,8 @@
 package parser_human
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

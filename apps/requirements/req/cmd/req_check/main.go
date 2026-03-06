@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 )
 
 func main() {

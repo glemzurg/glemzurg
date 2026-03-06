@@ -86,7 +86,7 @@ func (suite *RecordAlteredSuite) TestString() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			r := &RecordAltered{
-				Base: &Identifier{Value: tt.identifier},
+				Base:        &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
 			assert.Equal(t, tt.expected, r.String())
@@ -131,7 +131,7 @@ func (suite *RecordAlteredSuite) TestAscii() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			r := &RecordAltered{
-				Base: &Identifier{Value: tt.identifier},
+				Base:        &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
 			assert.Equal(t, tt.expected, r.Ascii())

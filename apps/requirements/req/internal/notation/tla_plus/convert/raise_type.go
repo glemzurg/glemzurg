@@ -3,8 +3,8 @@ package convert
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
 
 // RaiseType converts a model ExpressionType into a TLA+ string representation.

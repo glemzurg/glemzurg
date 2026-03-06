@@ -3,9 +3,6 @@ package invariants
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -13,6 +10,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -125,7 +125,7 @@ func createTestModel() *core.Model {
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionRequireKey(actionKey, "0")), model_logic.LogicTypeAssessment, "Precondition.", "", orderSpec("self.status = \"active\""), nil)),
 	}
 	guarantees := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"completed\""), nil)), // This is a primed assignment, not a post-condition
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"completed\""), nil)),  // This is a primed assignment, not a post-condition
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "1")), model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 1"), nil)), // A second guarantee on a different attribute
 	}
 	completeAction := helper.Must(model_state.NewAction(actionKey, "complete", "", requires, guarantees, nil, nil))

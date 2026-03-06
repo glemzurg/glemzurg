@@ -7,10 +7,10 @@ import (
 
 // Comparison operators
 const (
-	ComparisonLessThan           = "<"  // Less than
-	ComparisonGreaterThan        = ">"  // Greater than
-	ComparisonLessThanOrEqual    = "≤"  // Less than or equal (Unicode)
-	ComparisonGreaterThanOrEqual = "≥"  // Greater than or equal (Unicode)
+	ComparisonLessThan           = "<" // Less than
+	ComparisonGreaterThan        = ">" // Greater than
+	ComparisonLessThanOrEqual    = "≤" // Less than or equal (Unicode)
+	ComparisonGreaterThanOrEqual = "≥" // Greater than or equal (Unicode)
 )
 
 // comparisonAscii maps Unicode operators to ASCII equivalents.

@@ -9,7 +9,7 @@ import (
 // Association is how two classes relate to each other.
 type Association struct {
 	Key                 identity.Key
-	Name                string `validate:"required"`
+	Name                string        `validate:"required"`
 	Details             string        // Markdown.
 	FromClassKey        identity.Key  // The class on one end of the association.
 	FromMultiplicity    Multiplicity  // The multiplicity from one end of the association.

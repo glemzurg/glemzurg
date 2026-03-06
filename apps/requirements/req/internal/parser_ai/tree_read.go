@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 )
 
 func ReadModel(inputModelPath string) (core.Model, error) {

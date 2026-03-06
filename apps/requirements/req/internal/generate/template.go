@@ -11,8 +11,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -21,6 +19,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )

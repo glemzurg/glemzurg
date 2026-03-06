@@ -140,4 +140,3 @@ func (suite *StringLiteralSuite) TestExpressionNode() {
 	// This should compile and not panic.
 	s.expressionNode()
 }
-

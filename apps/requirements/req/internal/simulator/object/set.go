@@ -149,4 +149,3 @@ func (s *Set) Equals(other *Set) bool {
 	}
 	return true
 }
-

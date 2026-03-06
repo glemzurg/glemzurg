@@ -6,7 +6,7 @@ import (
 
 // Parameter is a typed parameter for actions and queries.
 type Parameter struct {
-	Name          string `validate:"required"`
+	Name          string                    `validate:"required"`
 	DataTypeRules string                    `validate:"required"` // What are the bounds of this data type.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }

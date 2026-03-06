@@ -1,0 +1,50 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - cyclop
+    - dupl
+    - dupword
+    - errname
+    - errorlint
+    - exhaustive
+    - forbidigo
+    - funlen
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - gosec
+    - intrange
+    - misspell
+    - modernize
+    - nestif
+    - nilnil
+    - noctx
+    - perfsprint
+    - prealloc
+    - recvcheck
+    - revive
+    - rowserrcheck
+    - testifylint
+    - unconvert
+    - unparam
+    - whitespace
+
+exclusions:
+  paths:
+    - ".*\\.generated\\.go$"
+  rules:
+    - linters:
+        - dupl
+        - funlen
+        - gocognit
+        - gocyclo
+        - cyclop
+        - nestif
+      path: "_test\\.go$"
+    - linters:
+        - gosec
+      path: "_test\\.go$"

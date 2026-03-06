@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 type RaiseTypeTestSuite struct {

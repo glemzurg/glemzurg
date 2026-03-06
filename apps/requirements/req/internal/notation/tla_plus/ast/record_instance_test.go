@@ -295,4 +295,3 @@ func (suite *RecordInstanceSuite) TestExpressionNode() {
 	// This should compile and not panic.
 	r.expressionNode()
 }
-

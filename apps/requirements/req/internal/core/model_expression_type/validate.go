@@ -94,4 +94,3 @@ func (t *ObjectType) Validate() error {
 	}
 	return nil
 }
-

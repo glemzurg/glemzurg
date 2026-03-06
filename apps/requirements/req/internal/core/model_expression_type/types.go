@@ -15,34 +15,34 @@ type RecordFieldType struct {
 // BooleanType represents the boolean type (TRUE/FALSE).
 type BooleanType struct{}
 
-func (t *BooleanType) expressionType()   {}
-func (t *BooleanType) TypeName() string  { return TypeBoolean }
+func (t *BooleanType) expressionType()  {}
+func (t *BooleanType) TypeName() string { return TypeBoolean }
 
 // IntegerType represents the integer type (Nat, Int).
 type IntegerType struct{}
 
-func (t *IntegerType) expressionType()   {}
-func (t *IntegerType) TypeName() string  { return TypeInteger }
+func (t *IntegerType) expressionType()  {}
+func (t *IntegerType) TypeName() string { return TypeInteger }
 
 // RationalType represents the rational number type (Real).
 type RationalType struct{}
 
-func (t *RationalType) expressionType()   {}
-func (t *RationalType) TypeName() string  { return TypeRational }
+func (t *RationalType) expressionType()  {}
+func (t *RationalType) TypeName() string { return TypeRational }
 
 // StringType represents the string type (STRING).
 type StringType struct{}
 
-func (t *StringType) expressionType()   {}
-func (t *StringType) TypeName() string  { return TypeString }
+func (t *StringType) expressionType()  {}
+func (t *StringType) TypeName() string { return TypeString }
 
 // EnumType represents a finite enumeration of string values.
 type EnumType struct {
 	Values []string `validate:"required,min=1"`
 }
 
-func (t *EnumType) expressionType()   {}
-func (t *EnumType) TypeName() string  { return TypeEnum }
+func (t *EnumType) expressionType()  {}
+func (t *EnumType) TypeName() string { return TypeEnum }
 
 // --- Collection types ---
 
@@ -51,8 +51,8 @@ type SetType struct {
 	ElementType ExpressionType // Required.
 }
 
-func (t *SetType) expressionType()   {}
-func (t *SetType) TypeName() string  { return TypeSet }
+func (t *SetType) expressionType()  {}
+func (t *SetType) TypeName() string { return TypeSet }
 
 // SequenceType represents an ordered sequence. Unique=true means no duplicates.
 type SequenceType struct {
@@ -60,16 +60,16 @@ type SequenceType struct {
 	Unique      bool
 }
 
-func (t *SequenceType) expressionType()   {}
-func (t *SequenceType) TypeName() string  { return TypeSequence }
+func (t *SequenceType) expressionType()  {}
+func (t *SequenceType) TypeName() string { return TypeSequence }
 
 // BagType represents a multiset (bag) of elements of a given type.
 type BagType struct {
 	ElementType ExpressionType // Required.
 }
 
-func (t *BagType) expressionType()   {}
-func (t *BagType) TypeName() string  { return TypeBag }
+func (t *BagType) expressionType()  {}
+func (t *BagType) TypeName() string { return TypeBag }
 
 // --- Compound types ---
 
@@ -78,16 +78,16 @@ type TupleType struct {
 	ElementTypes []ExpressionType `validate:"required,min=1"`
 }
 
-func (t *TupleType) expressionType()   {}
-func (t *TupleType) TypeName() string  { return TypeTuple }
+func (t *TupleType) expressionType()  {}
+func (t *TupleType) TypeName() string { return TypeTuple }
 
 // RecordType represents a record with named, typed fields.
 type RecordType struct {
 	Fields []RecordFieldType `validate:"required,min=1"`
 }
 
-func (t *RecordType) expressionType()   {}
-func (t *RecordType) TypeName() string  { return TypeRecord }
+func (t *RecordType) expressionType()  {}
+func (t *RecordType) TypeName() string { return TypeRecord }
 
 // FunctionType represents a function from parameter types to a return type.
 type FunctionType struct {
@@ -95,8 +95,8 @@ type FunctionType struct {
 	Return ExpressionType   // Required.
 }
 
-func (t *FunctionType) expressionType()   {}
-func (t *FunctionType) TypeName() string  { return TypeFunction }
+func (t *FunctionType) expressionType()  {}
+func (t *FunctionType) TypeName() string { return TypeFunction }
 
 // --- Reference types ---
 
@@ -105,5 +105,5 @@ type ObjectType struct {
 	ClassKey identity.Key // Required.
 }
 
-func (t *ObjectType) expressionType()   {}
-func (t *ObjectType) TypeName() string  { return TypeObject }
+func (t *ObjectType) expressionType()  {}
+func (t *ObjectType) TypeName() string { return TypeObject }

@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
 
 	"github.com/pkg/errors"
@@ -293,10 +293,10 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
 				spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
-			if err != nil {
-				return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
-			}
-			logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
+				if err != nil {
+					return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
+				}
+				logic, err := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, description, "", spec, nil)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "failed to create derivation policy logic")
 				}

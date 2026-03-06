@@ -3,9 +3,9 @@ package engine
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"

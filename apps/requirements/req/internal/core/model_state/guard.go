@@ -3,8 +3,8 @@ package model_state
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Guard is a constraint on an event in a state machine.

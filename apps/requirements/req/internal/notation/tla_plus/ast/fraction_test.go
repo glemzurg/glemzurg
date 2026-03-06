@@ -74,8 +74,8 @@ func (suite *FractionExprSuite) TestString() {
 			expected:    "1/2/3",
 		},
 		{
-			testName:  "parenthesized numerator",
-			numerator: &ParenExpr{Inner: &NumberLiteral{Base: BaseDecimal, IntegerPart: "5"}},
+			testName:    "parenthesized numerator",
+			numerator:   &ParenExpr{Inner: &NumberLiteral{Base: BaseDecimal, IntegerPart: "5"}},
 			denominator: &NumberLiteral{Base: BaseDecimal, IntegerPart: "10"},
 			expected:    "(5)/10",
 		},

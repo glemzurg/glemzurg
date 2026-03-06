@@ -3,8 +3,6 @@ package test_helper
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -15,6 +13,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 )
 
 // newSpec creates a TLA+ ExpressionSpec via the constructor. The parse function is nil,
@@ -98,17 +98,17 @@ type testKeys struct {
 	actionSafety1, actionSafety2, actionSafety3          identity.Key
 
 	// Let keys for actions.
-	actionRequireLet  identity.Key
-	actionGuarLet     identity.Key
-	actionSafetyLet   identity.Key
+	actionRequireLet identity.Key
+	actionGuarLet    identity.Key
+	actionSafetyLet  identity.Key
 
 	// Logic keys for queries.
 	queryRequire1, queryRequire2, queryRequire3       identity.Key
 	queryGuarantee1, queryGuarantee2, queryGuarantee3 identity.Key
 
 	// Let keys for queries.
-	queryRequireLet  identity.Key
-	queryGuarLet     identity.Key
+	queryRequireLet identity.Key
+	queryGuarLet    identity.Key
 
 	// Logic keys for guard.
 	guardLogic1, guardLogic2, guardLogic3 identity.Key
@@ -1094,17 +1094,17 @@ type testLogic struct {
 	actionSafety1, actionSafety2, actionSafety3          model_logic.Logic
 
 	// Action let logic.
-	actionRequireLet  model_logic.Logic
-	actionGuarLet     model_logic.Logic
-	actionSafetyLet   model_logic.Logic
+	actionRequireLet model_logic.Logic
+	actionGuarLet    model_logic.Logic
+	actionSafetyLet  model_logic.Logic
 
 	// Query logic.
 	queryRequire1, queryRequire2, queryRequire3       model_logic.Logic
 	queryGuarantee1, queryGuarantee2, queryGuarantee3 model_logic.Logic
 
 	// Query let logic.
-	queryRequireLet  model_logic.Logic
-	queryGuarLet     model_logic.Logic
+	queryRequireLet model_logic.Logic
+	queryGuarLet    model_logic.Logic
 
 	// Model-level.
 	invariants     []model_logic.Logic

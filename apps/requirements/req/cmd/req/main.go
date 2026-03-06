@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
 
 // Supported input formats

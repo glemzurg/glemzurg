@@ -55,4 +55,3 @@ func (s *BooleanSuite) TestClone() {
 	clone.value = false
 	s.True(original.Value())
 }
-

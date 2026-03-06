@@ -4,8 +4,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // _validate is the shared validator instance for this package.
@@ -15,11 +15,11 @@ var _validate = validator.New()
 // Named sets define well-known collections that can be referenced
 // from behavioral logic (requires, guarantees, etc.) via NamedSetRef expressions.
 type NamedSet struct {
-	Key         identity.Key          // Unique key of type "nset".
-	Name        string                `validate:"required"`
-	Description string                // Optional description.
+	Key         identity.Key              // Unique key of type "nset".
+	Name        string                    `validate:"required"`
+	Description string                    // Optional description.
 	Spec        model_spec.ExpressionSpec // Notation + Specification + Expression for the set definition.
-	TypeSpec    *model_spec.TypeSpec  // Optional precise type specification.
+	TypeSpec    *model_spec.TypeSpec      // Optional precise type specification.
 }
 
 // NewNamedSet creates a new NamedSet and validates it.

@@ -162,4 +162,3 @@ func (s *BagSuite) TestEquals() {
 	s.True(b1.Equals(b2))
 	s.False(b1.Equals(b3))
 }
-

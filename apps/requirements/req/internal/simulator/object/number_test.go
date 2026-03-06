@@ -82,7 +82,7 @@ func (s *NumberSuite) TestInspect() {
 		{"natural", NewNatural(42), "42"},
 		{"zero", NewInteger(0), "0"},
 		{"negative", NewInteger(-100), "-100"},
-		{"real", NewReal(314, 100), "157/50"},    // RatString format (reduced)
+		{"real", NewReal(314, 100), "157/50"},     // RatString format (reduced)
 		{"negative real", NewReal(-5, 2), "-5/2"}, // RatString format
 	}
 	for _, tt := range tests {

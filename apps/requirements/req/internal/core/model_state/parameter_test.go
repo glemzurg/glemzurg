@@ -90,5 +90,3 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 	err = param.ValidateWithParent()
 	assert.NoError(suite.T(), err)
 }
-
-

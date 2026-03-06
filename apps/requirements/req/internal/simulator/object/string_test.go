@@ -53,4 +53,3 @@ func (s *StringSuite) TestClone() {
 	clone.value = "world"
 	s.Equal("hello", original.Value())
 }
-

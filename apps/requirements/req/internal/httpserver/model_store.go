@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 )
 
 // ModelStore manages in-memory models and their generated markdown content.
 type ModelStore struct {
 	mu       sync.RWMutex
-	models   map[string]*core.Model  // Keyed by model name
+	models   map[string]*core.Model       // Keyed by model name
 	markdown map[string]map[string][]byte // model -> file -> content
 	css      map[string][]byte            // model -> CSS content
 	svg      map[string]map[string][]byte // model -> file -> SVG content

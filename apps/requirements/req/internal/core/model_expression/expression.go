@@ -33,26 +33,26 @@ const (
 	NodeNextState       = "next_state"
 
 	// Binary operators.
-	NodeBinaryArith  = "binary_arith"
-	NodeBinaryLogic  = "binary_logic"
-	NodeCompare      = "compare"
-	NodeSetOp        = "set_op"
-	NodeSetCompare   = "set_compare"
-	NodeBagOp        = "bag_op"
-	NodeBagCompare   = "bag_compare"
-	NodeMembership   = "membership"
+	NodeBinaryArith = "binary_arith"
+	NodeBinaryLogic = "binary_logic"
+	NodeCompare     = "compare"
+	NodeSetOp       = "set_op"
+	NodeSetCompare  = "set_compare"
+	NodeBagOp       = "bag_op"
+	NodeBagCompare  = "bag_compare"
+	NodeMembership  = "membership"
 
 	// Unary operators.
 	NodeNegate = "negate"
 	NodeNot    = "not"
 
 	// Collections.
-	NodeFieldAccess   = "field_access"
-	NodeTupleIndex    = "tuple_index"
-	NodeRecordUpdate  = "record_update"
-	NodeStringIndex   = "string_index"
-	NodeStringConcat  = "string_concat"
-	NodeTupleConcat   = "tuple_concat"
+	NodeFieldAccess  = "field_access"
+	NodeTupleIndex   = "tuple_index"
+	NodeRecordUpdate = "record_update"
+	NodeStringIndex  = "string_index"
+	NodeStringConcat = "string_concat"
+	NodeTupleConcat  = "tuple_concat"
 
 	// Control flow.
 	NodeIfThenElse = "if_then_else"
@@ -64,10 +64,10 @@ const (
 	NodeSetRange   = "set_range"
 
 	// Calls.
-	NodeActionCall   = "action_call"
-	NodeGlobalCall   = "global_call"
-	NodeBuiltinCall  = "builtin_call"
-	NodeNamedSetRef  = "named_set_ref"
+	NodeActionCall  = "action_call"
+	NodeGlobalCall  = "global_call"
+	NodeBuiltinCall = "builtin_call"
+	NodeNamedSetRef = "named_set_ref"
 )
 
 // ValidateExpression validates an Expression if it is non-nil.

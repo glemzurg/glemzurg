@@ -243,7 +243,7 @@ func (suite *KeyValidateSuite) TestNormalizeToKey() {
 		{"Order", "order"},
 		{"orderLine", "order_line"},
 		{"OrderLineItem", "order_line_item"},
-		{"123Order", "order"},  // Leading numbers stripped
+		{"123Order", "order"}, // Leading numbers stripped
 		{"order123", "order123"},
 		{"", ""},
 		{"  order  ", "order"},
@@ -342,12 +342,12 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPartCount() {
 		filename string
 		level    AssociationLevel
 	}{
-		{"order--line_item", AssocLevelSubdomain},                  // Missing name
-		{"order--line_item--name--extra", AssocLevelSubdomain},     // Too many parts
-		{"order", AssocLevelSubdomain},                             // Only one part
-		{"", AssocLevelSubdomain},                                  // Empty
-		{"sub.class--sub.class", AssocLevelDomain},                 // Missing name
-		{"dom.sub.class--dom.sub.class", AssocLevelModel},          // Missing name
+		{"order--line_item", AssocLevelSubdomain},              // Missing name
+		{"order--line_item--name--extra", AssocLevelSubdomain}, // Too many parts
+		{"order", AssocLevelSubdomain},                         // Only one part
+		{"", AssocLevelSubdomain},                              // Empty
+		{"sub.class--sub.class", AssocLevelDomain},             // Missing name
+		{"dom.sub.class--dom.sub.class", AssocLevelModel},      // Missing name
 	}
 
 	for _, tt := range tests {
@@ -367,18 +367,18 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameInvalidComponent() 
 	t := suite.T()
 
 	tests := []struct {
-		filename  string
-		level     AssociationLevel
-		badField  string
+		filename string
+		level    AssociationLevel
+		badField string
 	}{
-		{"Order--line_item--name", AssocLevelSubdomain, "from_class"},              // Uppercase in from
-		{"order--LineItem--name", AssocLevelSubdomain, "to_class"},                 // Uppercase in to
-		{"order--line_item--Name", AssocLevelSubdomain, "name"},                    // Uppercase in name
-		{"order-item--line--name", AssocLevelSubdomain, "from_class"},              // Hyphen in from
-		{"sub.Class--sub.class--name", AssocLevelDomain, "from_class"},             // Uppercase in class
-		{"Sub.class--sub.class--name", AssocLevelDomain, "from_subdomain"},         // Uppercase in subdomain
-		{"dom.sub.Class--dom.sub.class--name", AssocLevelModel, "from_class"},      // Uppercase in class
-		{"Dom.sub.class--dom.sub.class--name", AssocLevelModel, "from_domain"},     // Uppercase in domain
+		{"Order--line_item--name", AssocLevelSubdomain, "from_class"},          // Uppercase in from
+		{"order--LineItem--name", AssocLevelSubdomain, "to_class"},             // Uppercase in to
+		{"order--line_item--Name", AssocLevelSubdomain, "name"},                // Uppercase in name
+		{"order-item--line--name", AssocLevelSubdomain, "from_class"},          // Hyphen in from
+		{"sub.Class--sub.class--name", AssocLevelDomain, "from_class"},         // Uppercase in class
+		{"Sub.class--sub.class--name", AssocLevelDomain, "from_subdomain"},     // Uppercase in subdomain
+		{"dom.sub.Class--dom.sub.class--name", AssocLevelModel, "from_class"},  // Uppercase in class
+		{"Dom.sub.class--dom.sub.class--name", AssocLevelModel, "from_domain"}, // Uppercase in domain
 	}
 
 	for _, tt := range tests {
@@ -405,11 +405,11 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPathDepth() {
 		// Subdomain level should have simple class names (no dots)
 		{"sub.class--sub.class--name", AssocLevelSubdomain},
 		// Domain level should have subdomain.class (2 parts)
-		{"order--line--name", AssocLevelDomain},                           // No subdomain prefix
-		{"dom.sub.class--dom.sub.class--name", AssocLevelDomain},          // Too many parts
+		{"order--line--name", AssocLevelDomain},                  // No subdomain prefix
+		{"dom.sub.class--dom.sub.class--name", AssocLevelDomain}, // Too many parts
 		// Model level should have domain.subdomain.class (3 parts)
-		{"sub.class--sub.class--name", AssocLevelModel},                   // Only 2 parts
-		{"order--line--name", AssocLevelModel},                            // Only 1 part
+		{"sub.class--sub.class--name", AssocLevelModel}, // Only 2 parts
+		{"order--line--name", AssocLevelModel},          // Only 1 part
 	}
 
 	for _, tt := range tests {

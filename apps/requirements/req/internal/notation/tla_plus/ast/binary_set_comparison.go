@@ -35,8 +35,8 @@ const (
 // BinarySetComparison is a binary comparison operation between two sets.
 type BinarySetComparison struct {
 	Operator string     `validate:"required,oneof== ≠ ⊆ ⊂ ⊇ ⊃"` // The comparison operator, e.g., =, ≠, ⊆, ⊂, ⊇, ⊃
-	Left     Expression `validate:"required"`                     // Must be Set
-	Right    Expression `validate:"required"`                     // Must be Set
+	Left     Expression `validate:"required"`                   // Must be Set
+	Right    Expression `validate:"required"`                   // Must be Set
 }
 
 func (is *BinarySetComparison) expressionNode() {}

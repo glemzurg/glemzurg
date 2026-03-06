@@ -49,7 +49,7 @@ func (suite *ExpressionIfElseSuite) TestString() {
 			expected: `IF 5 > 0 THEN positive ELSE nonpositive`,
 		},
 		{
-			testName: `nested if then else`,
+			testName:  `nested if then else`,
 			condition: &BooleanLiteral{Value: true},
 			then: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: false},

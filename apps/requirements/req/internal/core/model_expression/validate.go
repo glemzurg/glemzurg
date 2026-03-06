@@ -4,14 +4,14 @@ import "fmt"
 
 // --- Literal validation ---
 
-func (n *BoolLiteral) Validate() error     { return nil }
+func (n *BoolLiteral) Validate() error { return nil }
 func (n *IntLiteral) Validate() error {
 	if n.Value == nil {
 		return fmt.Errorf("IntLiteral.Value: is required")
 	}
 	return nil
 }
-func (n *StringLiteral) Validate() error   { return nil }
+func (n *StringLiteral) Validate() error { return nil }
 
 func (n *RationalLiteral) Validate() error {
 	if n.Value == nil {

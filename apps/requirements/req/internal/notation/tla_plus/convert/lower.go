@@ -5,9 +5,9 @@ import (
 	"math/big"
 	"strings"
 
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 )
 
 // LowerContext provides class-level context for semantic resolution during lowering.

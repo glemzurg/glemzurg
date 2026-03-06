@@ -27,7 +27,7 @@ const (
 type Step struct {
 	Key           identity.Key  `json:"key" yaml:"key"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
-	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"`             // Only for leaf steps: event, query, scenario, delete.
+	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"` // Only for leaf steps: event, query, scenario, delete.
 	Statements    []Step        `json:"statements,omitempty" yaml:"statements,omitempty"`
 	Condition     string        `json:"condition,omitempty" yaml:"condition,omitempty"`             // Used by loop and case steps.
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`         // Leaf description.

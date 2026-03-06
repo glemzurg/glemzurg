@@ -95,8 +95,8 @@ func (s *StressCaseTestSuite) TestCaseWithIndexingInResults() {
 // to OrExpr, which excludes implies (⇒) and equivalence (≡) at the top level.
 func (s *StressCaseTestSuite) TestCaseConditionOrExprRestriction() {
 	tests := []struct {
-		input   string
-		desc    string
+		input       string
+		desc        string
 		shouldParse bool
 	}{
 		// Parenthesized implies in condition — should work because parens

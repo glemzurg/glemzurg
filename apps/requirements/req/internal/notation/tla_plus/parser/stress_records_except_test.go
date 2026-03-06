@@ -21,9 +21,9 @@ func TestStressRecordExceptSuite(t *testing.T) {
 // TestRecordLiteralVariations tests various record literal constructions.
 func (s *StressRecordExceptTestSuite) TestRecordLiteralVariations() {
 	tests := []struct {
-		input    string
-		desc     string
-		nFields  int
+		input   string
+		desc    string
+		nFields int
 	}{
 		{`[a |-> 1]`, "single field record", 1},
 		{`[a |-> 1, b |-> 2]`, "two field record", 2},
@@ -52,8 +52,8 @@ func (s *StressRecordExceptTestSuite) TestRecordLiteralVariations() {
 // TestRecordExceptBasic tests basic EXCEPT expressions.
 func (s *StressRecordExceptTestSuite) TestRecordExceptBasic() {
 	tests := []struct {
-		input       string
-		desc        string
+		input        string
+		desc         string
 		nAlterations int
 	}{
 		{`[r EXCEPT !.x = 1]`, "single field update", 1},

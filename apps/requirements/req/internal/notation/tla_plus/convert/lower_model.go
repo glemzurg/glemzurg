@@ -3,12 +3,12 @@ package convert
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
 // LowerModel walks the entire model tree, parsing and lowering every ExpressionSpec
@@ -304,4 +304,3 @@ func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 	}
 	return m
 }
-

@@ -139,8 +139,8 @@ func (s *TypesSuite) TestRecord_Equals() {
 	r4 := Record{Fields: map[string]Type{"x": Number{}, "z": Boolean{}}}
 
 	assert.True(s.T(), r1.Equals(r2))
-	assert.False(s.T(), r1.Equals(r3))  // Different field count
-	assert.False(s.T(), r1.Equals(r4))  // Different field names
+	assert.False(s.T(), r1.Equals(r3)) // Different field count
+	assert.False(s.T(), r1.Equals(r4)) // Different field names
 }
 
 func (s *TypesSuite) TestBag_Equals() {
@@ -160,9 +160,9 @@ func (s *TypesSuite) TestFunction_Equals() {
 	f5 := Function{Params: []Type{Number{}, Number{}}, Return: Boolean{}}
 
 	assert.True(s.T(), f1.Equals(f2))
-	assert.False(s.T(), f1.Equals(f3))  // Different param type
-	assert.False(s.T(), f1.Equals(f4))  // Different return type
-	assert.False(s.T(), f1.Equals(f5))  // Different param count
+	assert.False(s.T(), f1.Equals(f3)) // Different param type
+	assert.False(s.T(), f1.Equals(f4)) // Different return type
+	assert.False(s.T(), f1.Equals(f5)) // Different param count
 }
 
 func (s *TypesSuite) TestTypeVar_Equals() {

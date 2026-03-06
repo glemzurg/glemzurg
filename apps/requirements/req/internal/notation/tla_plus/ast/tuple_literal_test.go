@@ -227,4 +227,3 @@ func (suite *TupleLiteralSuite) TestExpressionNode() {
 	// This should compile and not panic.
 	t.expressionNode()
 }
-

@@ -26,8 +26,8 @@ const (
 // BinaryBagComparison is a binary comparison operation between two bags.
 type BinaryBagComparison struct {
 	Operator string     `validate:"required,oneof=⊏ ⊑ ⊐ ⊒"` // The comparison operator
-	Left     Expression `validate:"required"`                // Must be Bag
-	Right    Expression `validate:"required"`                // Must be Bag
+	Left     Expression `validate:"required"`               // Must be Bag
+	Right    Expression `validate:"required"`               // Must be Bag
 }
 
 func (ib *BinaryBagComparison) expressionNode() {}

@@ -1,8 +1,8 @@
 package model_use_case
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/pkg/errors"
 )
 
