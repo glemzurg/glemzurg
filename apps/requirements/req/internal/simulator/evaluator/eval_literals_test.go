@@ -37,7 +37,7 @@ func (s *LiteralsSuite) TestStringLiteral_Empty() {
 
 	s.False(result.IsError())
 	str := result.Value.(*object.String)
-	s.Equal("", str.Value())
+	s.Empty(str.Value())
 }
 
 func (s *LiteralsSuite) TestStringLiteral_Unicode() {

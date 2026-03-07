@@ -48,8 +48,8 @@ func (suite *ClassIndexSuite) SetupTest() {
 func (suite *ClassIndexSuite) TestLoad() {
 	// Nothing in database yet.
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
-	assert.Empty(suite.T(), indexes)
+	suite.NoError(err)
+	suite.Empty(indexes)
 
 	err = dbExec(suite.db, `
 		INSERT INTO class_index

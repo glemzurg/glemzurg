@@ -238,11 +238,11 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 	})
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Load from database
 	loaded, err := LoadTopLevelDataTypes(suite.db, suite.model.Key)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Verify that loaded matches original.
 	assert.Equal(suite.T(), map[string]model_data_type.DataType{

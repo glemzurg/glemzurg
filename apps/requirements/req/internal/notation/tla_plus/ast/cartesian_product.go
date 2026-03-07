@@ -26,13 +26,13 @@ func (cp *CartesianProduct) String() (value string) {
 	return out.String()
 }
 
-func (cp *CartesianProduct) Ascii() (value string) {
+func (cp *CartesianProduct) ASCII() (value string) {
 	var out bytes.Buffer
 	for i, op := range cp.Operands {
 		if i > 0 {
 			out.WriteString(" \\X ")
 		}
-		out.WriteString(op.Ascii())
+		out.WriteString(op.ASCII())
 	}
 	return out.String()
 }

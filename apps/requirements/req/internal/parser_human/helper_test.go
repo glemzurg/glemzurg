@@ -53,9 +53,8 @@ func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error)
 			case ".json":
 				// Check if this is a children file (ends with _children.json).
 				nameNoExtension := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-				if strings.HasSuffix(nameNoExtension, "_children") {
+				if baseName, found := strings.CutSuffix(nameNoExtension, "_children"); found {
 					// This is a children file - link to the base test file.
-					baseName := strings.TrimSuffix(nameNoExtension, "_children")
 					fileContents := fileLookup[baseName]
 					fileContents.JsonChildren = strings.TrimSpace(string(content))
 					fileLookup[baseName] = fileContents

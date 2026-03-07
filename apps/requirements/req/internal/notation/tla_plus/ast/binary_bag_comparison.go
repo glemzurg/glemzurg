@@ -10,7 +10,7 @@ const (
 	BagComparisonSupBag       = "⊒" // Superbag or equal (U+2292 SQUARE ORIGINAL OF OR EQUAL TO)
 )
 
-var bagComparisonAscii = map[string]string{
+var bagComparisonASCII = map[string]string{
 	BagComparisonProperSubBag: `\sqsubset`,
 	BagComparisonSubBag:       `\sqsubseteq`,
 	BagComparisonProperSupBag: `\sqsupset`,
@@ -18,6 +18,7 @@ var bagComparisonAscii = map[string]string{
 }
 
 // Backwards compatibility constants.
+//
 // Deprecated: Use BagComparison* constants instead.
 const (
 	LogicBagOperatorSubBag = BagComparisonSubBag
@@ -40,11 +41,11 @@ func (ib *BinaryBagComparison) String() (value string) {
 	return out.String()
 }
 
-func (ib *BinaryBagComparison) Ascii() (value string) {
+func (ib *BinaryBagComparison) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(ib.Left.Ascii())
-	out.WriteString(" " + bagComparisonAscii[ib.Operator] + " ")
-	out.WriteString(ib.Right.Ascii())
+	out.WriteString(ib.Left.ASCII())
+	out.WriteString(" " + bagComparisonASCII[ib.Operator] + " ")
+	out.WriteString(ib.Right.ASCII())
 	return out.String()
 }
 
@@ -62,5 +63,6 @@ func (ib *BinaryBagComparison) Validate() error {
 }
 
 // LogicInfixBag is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryBagComparison instead.
 type LogicInfixBag = BinaryBagComparison

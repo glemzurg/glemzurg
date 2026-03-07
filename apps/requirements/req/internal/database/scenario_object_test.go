@@ -58,9 +58,9 @@ func (suite *ObjectSuite) SetupTest() {
 func (suite *ObjectSuite) TestLoad() {
 	// Nothing in database yet.
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), scenarioKey)
-	assert.Empty(suite.T(), object)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(scenarioKey)
+	suite.Empty(object)
 
 	err = dbExec(suite.db, `
 		INSERT INTO scenario_object
@@ -183,9 +183,9 @@ func (suite *ObjectSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), scenarioKey)
-	assert.Empty(suite.T(), object)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(scenarioKey)
+	suite.Empty(object)
 }
 
 func (suite *ObjectSuite) TestQuery() {

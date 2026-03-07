@@ -50,7 +50,7 @@ func (suite *LogicMembershipSuite) TestString() {
 	}
 }
 
-func (suite *LogicMembershipSuite) TestAscii() {
+func (suite *LogicMembershipSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -80,7 +80,7 @@ func (suite *LogicMembershipSuite) TestAscii() {
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, m.Ascii())
+			assert.Equal(t, tt.expected, m.ASCII())
 		})
 	}
 }

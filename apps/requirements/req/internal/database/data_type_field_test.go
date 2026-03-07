@@ -44,8 +44,8 @@ func (suite *DataTypeFieldSuite) SetupTest() {
 func (suite *DataTypeFieldSuite) TestLoad() {
 	// Nothing in database yet.
 	fields, err := LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), fields)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(fields)
 
 	err = dbExec(suite.db, `
 		INSERT INTO data_type_field
@@ -142,8 +142,8 @@ func (suite *DataTypeFieldSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), fields)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(fields)
 }
 
 func (suite *DataTypeFieldSuite) TestQuery() {
@@ -195,10 +195,10 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 			},
 		},
 	})
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	fields, err := QueryFields(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), map[string][]model_data_type.Field{
 		"data_type_key": {
 			{

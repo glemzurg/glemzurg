@@ -10,8 +10,8 @@ const (
 	StringOperatorConcat = "∘" // Concatenation (U+2218 RING OPERATOR)
 )
 
-// stringOperatorAscii maps Unicode operators to ASCII equivalents.
-var stringOperatorAscii = map[string]string{
+// stringOperatorASCII maps Unicode operators to ASCII equivalents.
+var stringOperatorASCII = map[string]string{
 	StringOperatorConcat: `\o`,
 }
 
@@ -36,10 +36,10 @@ func (s *StringConcat) String() (value string) {
 	return out.String()
 }
 
-func (s *StringConcat) Ascii() (value string) {
+func (s *StringConcat) ASCII() (value string) {
 	var out bytes.Buffer
 	ascii := s.Operator
-	if a, ok := stringOperatorAscii[s.Operator]; ok {
+	if a, ok := stringOperatorASCII[s.Operator]; ok {
 		ascii = a
 	}
 	for i, operand := range s.Operands {
@@ -48,7 +48,7 @@ func (s *StringConcat) Ascii() (value string) {
 			out.WriteString(ascii)
 			out.WriteString(" ")
 		}
-		out.WriteString(operand.Ascii())
+		out.WriteString(operand.ASCII())
 	}
 	return out.String()
 }
@@ -69,5 +69,6 @@ func (s *StringConcat) Validate() error {
 }
 
 // StringInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use StringConcat instead.
 type StringInfixExpression = StringConcat

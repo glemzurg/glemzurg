@@ -6,9 +6,9 @@ import (
 )
 
 // evalSetConditional evaluates a set comprehension {x ∈ S : predicate}.
-func evalSetConditional(node *ast.SetConditional, bindings *Bindings) *EvalResult {
+func evalSetConditional(node *ast.SetFilter, bindings *Bindings) *EvalResult {
 	// Get the membership expression
-	membership, ok := node.Membership.(*ast.LogicMembership)
+	membership, ok := node.Membership.(*ast.Membership)
 	if !ok {
 		return NewEvalError("set conditional requires membership expression")
 	}

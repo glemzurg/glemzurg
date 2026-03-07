@@ -2,6 +2,7 @@ package surface
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -145,9 +146,7 @@ func addAllNonRealizedClasses(model *core.Model, resolved *ResolvedSurface) {
 			continue
 		}
 		for _, subdomain := range domain.Subdomains {
-			for classKey, class := range subdomain.Classes {
-				resolved.Classes[classKey] = class
-			}
+			maps.Copy(resolved.Classes, subdomain.Classes)
 		}
 	}
 }

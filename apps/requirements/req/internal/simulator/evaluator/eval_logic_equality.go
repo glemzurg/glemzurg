@@ -7,7 +7,7 @@ import (
 
 // evalLogicEquality evaluates a generic equality comparison (=, ≠).
 // This handles equality for all types: numbers, strings, booleans, sets, tuples, records, etc.
-func evalLogicEquality(node *ast.LogicEquality, bindings *Bindings) *EvalResult {
+func evalLogicEquality(node *ast.BinaryEquality, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

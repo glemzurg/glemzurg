@@ -1,18 +1,20 @@
 package evaluator
 
 import (
+	"strings"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
 // evalStringInfix evaluates string concatenation (∘).
-func evalStringInfix(node *ast.StringInfixExpression, bindings *Bindings) *EvalResult {
+func evalStringInfix(node *ast.StringConcat, bindings *Bindings) *EvalResult {
 	if len(node.Operands) < 2 {
 		return NewEvalError("string concatenation requires at least 2 operands, got %d", len(node.Operands))
 	}
 
 	// Evaluate and concatenate all operands
-	var result string
+	var builder strings.Builder
 	for i, operand := range node.Operands {
 		opResult := EvalAST(operand, bindings)
 		if opResult.IsError() {
@@ -24,8 +26,8 @@ func evalStringInfix(node *ast.StringInfixExpression, bindings *Bindings) *EvalR
 			return NewEvalError("operand %d must be String, got %s", i+1, opResult.Value.Type())
 		}
 
-		result += str.Value()
+		builder.WriteString(str.Value())
 	}
 
-	return NewEvalResult(object.NewString(result))
+	return NewEvalResult(object.NewString(builder.String()))
 }

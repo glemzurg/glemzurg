@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"strings"
+
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
@@ -751,7 +753,7 @@ func evalMEStringIndex(n *me.StringIndex, bindings *Bindings) *EvalResult {
 }
 
 func evalMEStringConcat(n *me.StringConcat, bindings *Bindings) *EvalResult {
-	var result string
+	var builder strings.Builder
 	for i, operand := range n.Operands {
 		opResult := Eval(operand, bindings)
 		if opResult.IsError() {
@@ -761,9 +763,9 @@ func evalMEStringConcat(n *me.StringConcat, bindings *Bindings) *EvalResult {
 		if !ok {
 			return NewEvalError("operand %d must be String, got %s", i+1, opResult.Value.Type())
 		}
-		result += str.Value()
+		builder.WriteString(str.Value())
 	}
-	return NewEvalResult(object.NewString(result))
+	return NewEvalResult(object.NewString(builder.String()))
 }
 
 func evalMETupleConcat(n *me.TupleConcat, bindings *Bindings) *EvalResult {

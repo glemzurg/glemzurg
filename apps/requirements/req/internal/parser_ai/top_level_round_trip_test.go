@@ -23,16 +23,16 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 
 	// Validate the model before writing.
 	err := input.Validate()
-	suite.Require().Nil(err, "input model should be valid")
+	suite.Require().NoError(err, "input model should be valid")
 
 	// Write to a temporary folder, ensure the subfolder has the model key.
 	tempDir := filepath.Join(suite.T().TempDir(), input.Key)
 	err = WriteModel(input, tempDir)
-	suite.Require().Nil(err, "writing model should succeed")
+	suite.Require().NoError(err, "writing model should succeed")
 
 	// Read from the temporary folder and convert back to core.Model.
 	output, err := ReadModel(tempDir)
-	suite.Require().Nil(err, "reading model should succeed")
+	suite.Require().NoError(err, "reading model should succeed")
 
 	// Compare progressively larger slices of the model tree to isolate mismatches.
 	// Each check focuses on a specific layer so failures point to the right area.
@@ -70,7 +70,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	// 6. Compare scenarios individually for better error diagnostics on steps.
 	inputScenarios := test_helper.ExtractScenarios(input)
 	outputScenarios := test_helper.ExtractScenarios(output)
-	assert.Equal(suite.T(), len(inputScenarios), len(outputScenarios), "scenario count mismatch")
+	suite.Len(outputScenarios, len(inputScenarios), "scenario count mismatch")
 	for i := range inputScenarios {
 		if i >= len(outputScenarios) {
 			break

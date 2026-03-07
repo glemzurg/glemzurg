@@ -16,11 +16,10 @@ func firstMdParagraph(md string) string {
 		if inHeader {
 			if strings.HasPrefix(trimmed, "#") || trimmed == "" {
 				continue
-			} else {
-				inHeader = false
-				if trimmed != "" {
-					paragraph = append(paragraph, line)
-				}
+			}
+			inHeader = false
+			if trimmed != "" {
+				paragraph = append(paragraph, line)
 			}
 		} else {
 			if trimmed == "" {

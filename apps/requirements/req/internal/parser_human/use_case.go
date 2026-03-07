@@ -276,15 +276,15 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 }
 
 func generateUseCaseContent(useCase model_use_case.UseCase) string {
-	yaml := ""
+	var yb strings.Builder
 	if useCase.Level != "sea" {
-		yaml += "level: " + useCase.Level + "\n"
+		yb.WriteString("level: " + useCase.Level + "\n")
 	}
 	if useCase.SuperclassOfKey != nil {
-		yaml += "superclass_of_key: " + useCase.SuperclassOfKey.SubKey + "\n"
+		yb.WriteString("superclass_of_key: " + useCase.SuperclassOfKey.SubKey + "\n")
 	}
 	if useCase.SubclassOfKey != nil {
-		yaml += "subclass_of_key: " + useCase.SubclassOfKey.SubKey + "\n"
+		yb.WriteString("subclass_of_key: " + useCase.SubclassOfKey.SubKey + "\n")
 	}
 
 	if len(useCase.Actors) > 0 {
@@ -295,20 +295,20 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 			}
 		}
 		if len(actors) > 0 {
-			yaml += "\nactors:\n"
+			yb.WriteString("\nactors:\n")
 			keys := make([]string, 0, len(actors))
 			for k := range actors {
 				keys = append(keys, k)
 			}
 			sort.Sort(sort.Reverse(sort.StringSlice(keys)))
 			for _, k := range keys {
-				yaml += "    " + k + ": " + actors[k] + "\n"
+				yb.WriteString("    " + k + ": " + actors[k] + "\n")
 			}
 		}
 	}
 
 	if len(useCase.Scenarios) > 0 {
-		yaml += "\nscenarios:\n"
+		yb.WriteString("\nscenarios:\n")
 		// Sort scenarios by key for deterministic output.
 		scenarios := make([]model_scenario.Scenario, 0, len(useCase.Scenarios))
 		for _, scenario := range useCase.Scenarios {
@@ -319,11 +319,11 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 		})
 		for _, scenario := range scenarios {
 			name := scenario.Key.SubKey
-			yaml += "\n    " + name + ":\n"
-			yaml += "        name: " + scenario.Name + "\n"
-			yaml += formatYamlField("details", scenario.Details, 8)
+			yb.WriteString("\n    " + name + ":\n")
+			yb.WriteString("        name: " + scenario.Name + "\n")
+			yb.WriteString(formatYamlField("details", scenario.Details, 8))
 			if len(scenario.Objects) > 0 {
-				yaml += "        objects:\n"
+				yb.WriteString("        objects:\n")
 				// Sort objects by ObjectNumber for deterministic output.
 				objects := make([]model_scenario.Object, 0, len(scenario.Objects))
 				for _, obj := range scenario.Objects {
@@ -334,29 +334,29 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 				})
 				for _, obj := range objects {
 					objName := obj.Key.SubKey
-					yaml += "            - key: " + objName + "\n"
-					yaml += formatYamlField("name", obj.Name, 14)
+					yb.WriteString("            - key: " + objName + "\n")
+					yb.WriteString(formatYamlField("name", obj.Name, 14))
 					if obj.NameStyle != "" && obj.NameStyle != "unnamed" {
-						yaml += "              style: " + obj.NameStyle + "\n"
+						yb.WriteString("              style: " + obj.NameStyle + "\n")
 					}
 					if obj.ClassKey.String() != "" {
 						// Output only the subkey for backwards compatibility with the md format.
-						yaml += "              class_key: " + obj.ClassKey.SubKey + "\n"
+						yb.WriteString("              class_key: " + obj.ClassKey.SubKey + "\n")
 					}
 					if obj.Multi {
-						yaml += "              multi: true\n"
+						yb.WriteString("              multi: true\n")
 					}
-					yaml += formatYamlField("uml_comment", obj.UmlComment, 14)
+					yb.WriteString(formatYamlField("uml_comment", obj.UmlComment, 14))
 				}
 			}
 			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
-				yaml += "        steps:\n"
-				yaml += generateSteps(scenario.Steps.Statements, "            ", useCase.Key)
+				yb.WriteString("        steps:\n")
+				yb.WriteString(generateSteps(scenario.Steps.Statements, "            ", useCase.Key))
 			}
 		}
 	}
 
-	yamlStr := strings.TrimSpace(yaml)
+	yamlStr := strings.TrimSpace(yb.String())
 	if yamlStr == "" {
 		yamlStr = "\n"
 	}
@@ -368,11 +368,11 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 }
 
 func generateSteps(steps []model_scenario.Step, indent string, useCaseKey identity.Key) string {
-	s := ""
+	var sb strings.Builder
 	for _, step := range steps {
-		s += generateStep(step, indent, useCaseKey)
+		sb.WriteString(generateStep(step, indent, useCaseKey))
 	}
-	return s
+	return sb.String()
 }
 
 func generateStep(step model_scenario.Step, indent string, useCaseKey identity.Key) string {

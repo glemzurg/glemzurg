@@ -74,7 +74,7 @@ func (s *RegistryTestSuite) TestRegisterGlobalFunction() {
 	s.Equal(KindGlobalFunction, def.Kind)
 	s.Equal(ScopePath(""), def.Scope)
 	s.Equal("IsoCurrency", def.LocalName)
-	s.Len(def.Parameters, 0)
+	s.Empty(def.Parameters)
 
 	// Test global lookup
 	retrieved, ok := r.GetGlobal("IsoCurrency")
@@ -179,7 +179,7 @@ func (s *RegistryTestSuite) TestScopePathParts() {
 	// Empty path
 	emptyPath := ScopePath("")
 	s.Nil(emptyPath.Parts())
-	s.Equal("", emptyPath.Domain())
+	s.Empty(emptyPath.Domain())
 }
 
 // =============================================================================
@@ -206,7 +206,7 @@ func (s *RegistryTestSuite) TestNewScopeContext() {
 	// Global scope
 	ctx := NewGlobalScopeContext(r)
 	s.Equal(ScopeLevelGlobal, ctx.Level)
-	s.Equal("", ctx.Domain)
+	s.Empty(ctx.Domain)
 
 	// Domain scope
 	ctx = NewDomainScopeContext(r, "DomainA")
@@ -236,7 +236,7 @@ func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
 	// Can call global from any scope
 	ctx := NewClassScopeContext(r, "A", "B", "C")
 
-	call := &ast.CallExpression{
+	call := &ast.ScopedCall{
 		ModelScope:   true,
 		FunctionName: &ast.Identifier{Value: "GlobalFunc"},
 	}
@@ -256,7 +256,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
 	// From class scope, just use function name
 	ctx := NewClassScopeContext(r, "DomainA", "SubB", "ClassC")
 
-	call := &ast.CallExpression{
+	call := &ast.ScopedCall{
 		FunctionName: &ast.Identifier{Value: "Func"},
 	}
 
@@ -275,7 +275,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
 	// From subdomain scope, need Class!Func
 	ctx := NewSubdomainScopeContext(r, "DomainA", "SubB")
 
-	call := &ast.CallExpression{
+	call := &ast.ScopedCall{
 		Class:        &ast.Identifier{Value: "ClassC"},
 		FunctionName: &ast.Identifier{Value: "Func"},
 	}
@@ -295,7 +295,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
 	// From domain scope, need Subdomain!Class!Func
 	ctx := NewDomainScopeContext(r, "DomainA")
 
-	call := &ast.CallExpression{
+	call := &ast.ScopedCall{
 		Subdomain:    &ast.Identifier{Value: "SubB"},
 		Class:        &ast.Identifier{Value: "ClassC"},
 		FunctionName: &ast.Identifier{Value: "Func"},
@@ -316,7 +316,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
 	// From global scope, need full path
 	ctx := NewGlobalScopeContext(r)
 
-	call := &ast.CallExpression{
+	call := &ast.ScopedCall{
 		Domain:       &ast.Identifier{Value: "DomainA"},
 		Subdomain:    &ast.Identifier{Value: "SubB"},
 		Class:        &ast.Identifier{Value: "ClassC"},
@@ -338,7 +338,7 @@ func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
 	// From class scope, cannot use Class!Func (that requires subdomain scope)
 	ctx := NewClassScopeContext(r, "DomainA", "SubB", "ClassC")
 
-	call := &ast.CallExpression{
+	call := &ast.ScopedCall{
 		Class:        &ast.Identifier{Value: "ClassC"},
 		FunctionName: &ast.Identifier{Value: "Func"},
 	}
@@ -423,7 +423,7 @@ func (s *RegistryTestSuite) TestInvalidateDefinition() {
 func (s *RegistryTestSuite) TestInvalidationSet() {
 	set := NewInvalidationSet()
 	s.NotNil(set)
-	s.Len(set.Keys, 0)
+	s.Empty(set.Keys)
 
 	set.Add("_A", 1)
 	s.True(set.Contains("_A"))

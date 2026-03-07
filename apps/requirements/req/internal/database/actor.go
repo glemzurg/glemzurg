@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -197,14 +198,15 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO actor (model_key, actor_key, name, details, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(actors)*8)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO actor (model_key, actor_key, name, details, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(actors)*8)
 	for i, actor := range actors {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 8
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -220,7 +222,7 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, superclassOfKeyPtr, subclassOfKeyPtr, actor.UmlComment)
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

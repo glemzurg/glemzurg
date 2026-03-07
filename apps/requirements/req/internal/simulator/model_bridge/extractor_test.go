@@ -56,7 +56,7 @@ func (s *ExtractorTestSuite) TestExtractModelInvariants_Empty() {
 
 	expressions := ExtractFromModel(&model)
 
-	s.Len(expressions, 0)
+	s.Empty(expressions)
 }
 
 // =============================================================================

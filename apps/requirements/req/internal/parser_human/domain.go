@@ -108,16 +108,17 @@ func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, ass
 }
 
 func generateDomainContent(domain model_domain.Domain, associations []model_domain.Association) string {
-	yaml := "realized: " + strconv.FormatBool(domain.Realized)
+	var yb strings.Builder
+	yb.WriteString("realized: " + strconv.FormatBool(domain.Realized))
 
 	if len(associations) > 0 {
-		yaml += "\n\nassociations:\n"
+		yb.WriteString("\n\nassociations:\n")
 		for _, assoc := range associations {
-			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey + "\n"
-			yaml += formatYamlField("uml_comment", assoc.UmlComment, 6)
+			yb.WriteString("\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey + "\n")
+			yb.WriteString(formatYamlField("uml_comment", assoc.UmlComment, 6))
 		}
 	}
 
-	yamlStr := strings.TrimSpace(yaml)
+	yamlStr := strings.TrimSpace(yb.String())
 	return generateFileContent(prependMarkdownTitle(domain.Name, domain.Details), domain.UmlComment, yamlStr)
 }

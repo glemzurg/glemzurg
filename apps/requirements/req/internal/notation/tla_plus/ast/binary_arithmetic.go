@@ -15,8 +15,8 @@ const (
 	ArithmeticOperatorModulo   = "%" // Modulo
 )
 
-// arithmeticOperatorAscii maps Unicode operators to ASCII equivalents.
-var arithmeticOperatorAscii = map[string]string{
+// arithmeticOperatorASCII maps Unicode operators to ASCII equivalents.
+var arithmeticOperatorASCII = map[string]string{
 	ArithmeticOperatorAdd:      "+",
 	ArithmeticOperatorSubtract: "-",
 	ArithmeticOperatorMultiply: "*",
@@ -44,17 +44,17 @@ func (b *BinaryArithmetic) String() (value string) {
 	return out.String()
 }
 
-func (b *BinaryArithmetic) Ascii() (value string) {
+func (b *BinaryArithmetic) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(b.Left.Ascii())
+	out.WriteString(b.Left.ASCII())
 	out.WriteString(" ")
-	if ascii, ok := arithmeticOperatorAscii[b.Operator]; ok {
+	if ascii, ok := arithmeticOperatorASCII[b.Operator]; ok {
 		out.WriteString(ascii)
 	} else {
 		out.WriteString(b.Operator)
 	}
 	out.WriteString(" ")
-	out.WriteString(b.Right.Ascii())
+	out.WriteString(b.Right.ASCII())
 	return out.String()
 }
 
@@ -72,10 +72,12 @@ func (b *BinaryArithmetic) Validate() error {
 }
 
 // RealInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryArithmetic instead.
 type RealInfixExpression = BinaryArithmetic
 
-// Backwards compatibility constants
+// Backwards compatibility constants.
+//
 // Deprecated: Use ArithmeticOperator* constants instead.
 const (
 	RealOperatorAdd      = ArithmeticOperatorAdd

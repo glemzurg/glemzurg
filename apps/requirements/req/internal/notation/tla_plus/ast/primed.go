@@ -21,7 +21,7 @@ func (p *Primed) String() (value string) {
 	return out.String()
 }
 
-func (p *Primed) Ascii() (value string) { return p.String() }
+func (p *Primed) ASCII() (value string) { return p.String() }
 
 func (p *Primed) Validate() error {
 	if err := _validate.Struct(p); err != nil {

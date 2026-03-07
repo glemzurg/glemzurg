@@ -4811,7 +4811,7 @@ func (c *current) onImpliesExpr1(left, rest any) (any, error) {
 	}
 	parts := rest.([]interface{})
 	right := parts[3].(ast.Expression)
-	return &ast.LogicInfixExpression{
+	return &ast.BinaryLogic{
 		Operator: "⇒",
 		Left:     left.(ast.Expression),
 		Right:    right,
@@ -4830,7 +4830,7 @@ func (c *current) onEquivExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.LogicInfixExpression{
+			result = &ast.BinaryLogic{
 				Operator: "≡",
 				Left:     result,
 				Right:    right,
@@ -4852,7 +4852,7 @@ func (c *current) onOrExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.LogicInfixExpression{
+			result = &ast.BinaryLogic{
 				Operator: "∨",
 				Left:     result,
 				Right:    right,
@@ -4874,7 +4874,7 @@ func (c *current) onAndExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.LogicInfixExpression{
+			result = &ast.BinaryLogic{
 				Operator: "∧",
 				Left:     result,
 				Right:    right,
@@ -5270,7 +5270,7 @@ func (c *current) onModuloExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.RealInfixExpression{
+			result = &ast.BinaryArithmetic{
 				Left:     result,
 				Operator: "%",
 				Right:    right,
@@ -5292,7 +5292,7 @@ func (c *current) onAdditionExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.RealInfixExpression{
+			result = &ast.BinaryArithmetic{
 				Left:     result,
 				Operator: "+",
 				Right:    right,
@@ -5336,7 +5336,7 @@ func (c *current) onSubtractionExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.RealInfixExpression{
+			result = &ast.BinaryArithmetic{
 				Left:     result,
 				Operator: "-",
 				Right:    right,
@@ -5368,7 +5368,7 @@ func (c *current) onDivisionExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.RealInfixExpression{
+			result = &ast.BinaryArithmetic{
 				Left:     result,
 				Operator: "÷",
 				Right:    right,
@@ -5412,7 +5412,7 @@ func (c *current) onMultiplicationExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = &ast.RealInfixExpression{
+			result = &ast.BinaryArithmetic{
 				Left:     result,
 				Operator: "*",
 				Right:    right,
@@ -5434,7 +5434,7 @@ func (c *current) onFractionExpr1(left, rest any) (any, error) {
 		for _, r := range rest.([]interface{}) {
 			parts := r.([]interface{})
 			right := parts[3].(ast.Expression)
-			result = ast.NewFractionExpr(result, right)
+			result = ast.NewFraction(result, right)
 		}
 	}
 	return result, nil
@@ -5462,7 +5462,7 @@ func (c *current) onPowerExpr1(left, rest any) (any, error) {
 	}
 	parts := rest.([]interface{})
 	right := parts[3].(ast.Expression)
-	return &ast.RealInfixExpression{
+	return &ast.BinaryArithmetic{
 		Left:     left.(ast.Expression),
 		Operator: "^",
 		Right:    right,

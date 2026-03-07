@@ -50,7 +50,7 @@ func (a *Actor) Validate() error {
 		return err
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ACTOR {
-		return errors.Errorf("Key: invalid key type '%s' for actor.", a.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for actor", a.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required, Type required+oneof).

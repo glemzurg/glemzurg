@@ -20,8 +20,8 @@ func (p *Parenthesized) String() string {
 	return fmt.Sprintf("(%s)", p.Inner.String())
 }
 
-// Ascii returns the ASCII representation (same as String).
-func (p *Parenthesized) Ascii() string {
+// ASCII returns the ASCII representation (same as String).
+func (p *Parenthesized) ASCII() string {
 	return p.String()
 }
 
@@ -39,9 +39,11 @@ func NewParenthesized(inner Expression) *Parenthesized {
 }
 
 // ParenExpr is an alias for backwards compatibility.
+//
 // Deprecated: Use Parenthesized instead.
 type ParenExpr = Parenthesized
 
 // NewParenExpr is an alias for backwards compatibility.
+//
 // Deprecated: Use NewParenthesized instead.
 var NewParenExpr = NewParenthesized

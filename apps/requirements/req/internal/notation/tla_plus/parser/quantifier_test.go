@@ -122,7 +122,7 @@ func (s *QuantifierSuite) TestForAll_ComplexPredicate() {
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
-	_, ok = q.Predicate.(*ast.LogicInfixExpression)
+	_, ok = q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 }
 
@@ -134,7 +134,7 @@ func (s *QuantifierSuite) TestForAll_ImpliesPredicate() {
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
-	logic, ok := q.Predicate.(*ast.LogicInfixExpression)
+	logic, ok := q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 	s.Equal("⇒", logic.Operator)
 }
@@ -184,7 +184,7 @@ func (s *QuantifierSuite) TestPrecedence_QuantifierWithLogic() {
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
 	// The predicate should be the entire P /\ Q expression
-	_, ok = q.Predicate.(*ast.LogicInfixExpression)
+	_, ok = q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 }
 
@@ -196,7 +196,7 @@ func (s *QuantifierSuite) TestPrecedence_QuantifierWithImplies() {
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
-	logic, ok := q.Predicate.(*ast.LogicInfixExpression)
+	logic, ok := q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 	s.Equal("⇒", logic.Operator)
 }

@@ -20,7 +20,7 @@ type ArithmeticSuite struct {
 
 func (s *ArithmeticSuite) TestAddition_Natural() {
 	// 2 + 3 = 5
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "+",
 		Right:    ast.NewIntLiteral(3),
@@ -36,7 +36,7 @@ func (s *ArithmeticSuite) TestAddition_Natural() {
 
 func (s *ArithmeticSuite) TestAddition_Integer() {
 	// -2 + 5 = 3
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(-2),
 		Operator: "+",
 		Right:    ast.NewIntLiteral(5),
@@ -52,10 +52,10 @@ func (s *ArithmeticSuite) TestAddition_Integer() {
 
 func (s *ArithmeticSuite) TestAddition_Real() {
 	// 1/2 + 1/4 = 3/4
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "+",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(4)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(4)),
 	}
 	bindings := NewBindings()
 
@@ -68,8 +68,8 @@ func (s *ArithmeticSuite) TestAddition_Real() {
 
 func (s *ArithmeticSuite) TestAddition_MixedTypes() {
 	// 1/2 + 1 = 3/2
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "+",
 		Right:    ast.NewIntLiteral(1),
 	}
@@ -86,7 +86,7 @@ func (s *ArithmeticSuite) TestAddition_MixedTypes() {
 
 func (s *ArithmeticSuite) TestSubtraction_Natural() {
 	// 5 - 3 = 2
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "-",
 		Right:    ast.NewIntLiteral(3),
@@ -102,7 +102,7 @@ func (s *ArithmeticSuite) TestSubtraction_Natural() {
 
 func (s *ArithmeticSuite) TestSubtraction_NegativeResult() {
 	// 3 - 5 = -2
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "-",
 		Right:    ast.NewIntLiteral(5),
@@ -121,7 +121,7 @@ func (s *ArithmeticSuite) TestSubtraction_NegativeResult() {
 
 func (s *ArithmeticSuite) TestMultiplication_Natural() {
 	// 3 * 4 = 12
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "*",
 		Right:    ast.NewIntLiteral(4),
@@ -137,7 +137,7 @@ func (s *ArithmeticSuite) TestMultiplication_Natural() {
 
 func (s *ArithmeticSuite) TestMultiplication_ByZero() {
 	// 5 * 0 = 0
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "*",
 		Right:    ast.NewIntLiteral(0),
@@ -153,10 +153,10 @@ func (s *ArithmeticSuite) TestMultiplication_ByZero() {
 
 func (s *ArithmeticSuite) TestMultiplication_Real() {
 	// 1/2 * 2/3 = 1/3
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "*",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(2), ast.NewIntLiteral(3)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(2), ast.NewIntLiteral(3)),
 	}
 	bindings := NewBindings()
 
@@ -171,7 +171,7 @@ func (s *ArithmeticSuite) TestMultiplication_Real() {
 
 func (s *ArithmeticSuite) TestDivision_Natural() {
 	// 10 ÷ 2 = 5
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(10),
 		Operator: "÷",
 		Right:    ast.NewIntLiteral(2),
@@ -187,7 +187,7 @@ func (s *ArithmeticSuite) TestDivision_Natural() {
 
 func (s *ArithmeticSuite) TestDivision_WithSlash() {
 	// 10 / 2 = 5
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(10),
 		Operator: "/",
 		Right:    ast.NewIntLiteral(2),
@@ -203,7 +203,7 @@ func (s *ArithmeticSuite) TestDivision_WithSlash() {
 
 func (s *ArithmeticSuite) TestDivision_FractionalResult() {
 	// 1 ÷ 3 = 1/3
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(1),
 		Operator: "÷",
 		Right:    ast.NewIntLiteral(3),
@@ -219,7 +219,7 @@ func (s *ArithmeticSuite) TestDivision_FractionalResult() {
 
 func (s *ArithmeticSuite) TestDivision_ByZero() {
 	// 5 ÷ 0 = error
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "÷",
 		Right:    ast.NewIntLiteral(0),
@@ -237,12 +237,12 @@ func (s *ArithmeticSuite) TestDivision_ByZero() {
 func (s *ArithmeticSuite) TestDivision_RealLeftOperand() {
 	// sqrt(2) ÷ 2 = Real (contaminated by Real operand)
 	// First create sqrt(2) via power
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     sqrt2,
 		Operator: "÷",
 		Right:    ast.NewIntLiteral(2),
@@ -260,12 +260,12 @@ func (s *ArithmeticSuite) TestDivision_RealLeftOperand() {
 
 func (s *ArithmeticSuite) TestDivision_RealRightOperand() {
 	// 2 ÷ sqrt(2) = Real (contaminated by Real operand)
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "÷",
 		Right:    sqrt2,
@@ -283,12 +283,12 @@ func (s *ArithmeticSuite) TestDivision_RealRightOperand() {
 
 func (s *ArithmeticSuite) TestDivision_SlashWithRealLeftOperand() {
 	// sqrt(2) / 2 = Real (using / operator)
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     sqrt2,
 		Operator: "/",
 		Right:    ast.NewIntLiteral(2),
@@ -304,12 +304,12 @@ func (s *ArithmeticSuite) TestDivision_SlashWithRealLeftOperand() {
 
 func (s *ArithmeticSuite) TestDivision_SlashWithRealRightOperand() {
 	// 2 / sqrt(2) = Real (using / operator)
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "/",
 		Right:    sqrt2,
@@ -327,17 +327,17 @@ func (s *ArithmeticSuite) TestDivision_SlashWithRealRightOperand() {
 
 func (s *ArithmeticSuite) TestDivision_SameRealDividedBySelf() {
 	// sqrt(2) / sqrt(2) = Real (still contaminated, even though mathematically = 1)
-	sqrt2a := &ast.RealInfixExpression{
+	sqrt2a := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	sqrt2b := &ast.RealInfixExpression{
+	sqrt2b := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     sqrt2a,
 		Operator: "/",
 		Right:    sqrt2b,
@@ -355,17 +355,17 @@ func (s *ArithmeticSuite) TestDivision_SameRealDividedBySelf() {
 
 func (s *ArithmeticSuite) TestDivision_BothRealOperands() {
 	// sqrt(2) ÷ sqrt(3) = Real
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	sqrt3 := &ast.RealInfixExpression{
+	sqrt3 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     sqrt2,
 		Operator: "÷",
 		Right:    sqrt3,
@@ -385,7 +385,7 @@ func (s *ArithmeticSuite) TestDivision_BothRealOperands() {
 
 func (s *ArithmeticSuite) TestModulo_Simple() {
 	// 10 % 3 = 1
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(10),
 		Operator: "%",
 		Right:    ast.NewIntLiteral(3),
@@ -401,7 +401,7 @@ func (s *ArithmeticSuite) TestModulo_Simple() {
 
 func (s *ArithmeticSuite) TestModulo_EvenDivision() {
 	// 9 % 3 = 0
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(9),
 		Operator: "%",
 		Right:    ast.NewIntLiteral(3),
@@ -419,12 +419,12 @@ func (s *ArithmeticSuite) TestModulo_EvenDivision() {
 
 func (s *ArithmeticSuite) TestNested_Expression() {
 	// (2 + 3) * 4 = 20
-	inner := &ast.RealInfixExpression{
+	inner := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "+",
 		Right:    ast.NewIntLiteral(3),
 	}
-	outer := &ast.RealInfixExpression{
+	outer := &ast.BinaryArithmetic{
 		Left:     inner,
 		Operator: "*",
 		Right:    ast.NewIntLiteral(4),
@@ -440,17 +440,17 @@ func (s *ArithmeticSuite) TestNested_Expression() {
 
 func (s *ArithmeticSuite) TestNested_DeepExpression() {
 	// ((1 + 2) * 3) - 4 = 5
-	innermost := &ast.RealInfixExpression{
+	innermost := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(1),
 		Operator: "+",
 		Right:    ast.NewIntLiteral(2),
 	}
-	middle := &ast.RealInfixExpression{
+	middle := &ast.BinaryArithmetic{
 		Left:     innermost,
 		Operator: "*",
 		Right:    ast.NewIntLiteral(3),
 	}
-	outer := &ast.RealInfixExpression{
+	outer := &ast.BinaryArithmetic{
 		Left:     middle,
 		Operator: "-",
 		Right:    ast.NewIntLiteral(4),
@@ -472,7 +472,7 @@ func (s *ArithmeticSuite) TestNested_DeepExpression() {
 
 func (s *ArithmeticSuite) TestPower_Simple() {
 	// 2 ^ 3 = 8
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(3),
@@ -488,7 +488,7 @@ func (s *ArithmeticSuite) TestPower_Simple() {
 
 func (s *ArithmeticSuite) TestPower_Zero() {
 	// 5 ^ 0 = 1
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(0),
@@ -504,7 +504,7 @@ func (s *ArithmeticSuite) TestPower_Zero() {
 
 func (s *ArithmeticSuite) TestPower_One() {
 	// 7 ^ 1 = 7
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(7),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(1),
@@ -520,8 +520,8 @@ func (s *ArithmeticSuite) TestPower_One() {
 
 func (s *ArithmeticSuite) TestPower_FractionalBase() {
 	// (1/2) ^ 3 = 1/8
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(3),
 	}
@@ -536,7 +536,7 @@ func (s *ArithmeticSuite) TestPower_FractionalBase() {
 
 func (s *ArithmeticSuite) TestPower_LargeExponent() {
 	// 2 ^ 10 = 1024
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(10),
@@ -552,7 +552,7 @@ func (s *ArithmeticSuite) TestPower_LargeExponent() {
 
 func (s *ArithmeticSuite) TestPower_ZeroBase() {
 	// 0 ^ 5 = 0
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(0),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(5),
@@ -568,7 +568,7 @@ func (s *ArithmeticSuite) TestPower_ZeroBase() {
 
 func (s *ArithmeticSuite) TestPower_ZeroToZero_Error() {
 	// 0 ^ 0 = error (undefined)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(0),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(0),
@@ -583,7 +583,7 @@ func (s *ArithmeticSuite) TestPower_ZeroToZero_Error() {
 
 func (s *ArithmeticSuite) TestPower_NegativeExponent_Error() {
 	// 2 ^ -1 = error (negative exponent not supported)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
 		Right:    ast.NewIntLiteral(-1),
@@ -598,10 +598,10 @@ func (s *ArithmeticSuite) TestPower_NegativeExponent_Error() {
 
 func (s *ArithmeticSuite) TestPower_SquareRoot() {
 	// 4 ^ (1/2) = 2 (square root)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(4),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -614,10 +614,10 @@ func (s *ArithmeticSuite) TestPower_SquareRoot() {
 
 func (s *ArithmeticSuite) TestPower_CubeRoot() {
 	// 27 ^ (1/3) = 3 (cube root)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(27),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
 	}
 	bindings := NewBindings()
 
@@ -630,10 +630,10 @@ func (s *ArithmeticSuite) TestPower_CubeRoot() {
 
 func (s *ArithmeticSuite) TestPower_FractionalExponentWithNumerator() {
 	// 8 ^ (2/3) = (8^2)^(1/3) = 64^(1/3) = 4
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(8),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(2), ast.NewIntLiteral(3)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(2), ast.NewIntLiteral(3)),
 	}
 	bindings := NewBindings()
 
@@ -646,10 +646,10 @@ func (s *ArithmeticSuite) TestPower_FractionalExponentWithNumerator() {
 
 func (s *ArithmeticSuite) TestPower_FractionalBaseWithRoot() {
 	// (1/4) ^ (1/2) = 1/2 (square root of 1/4)
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(4)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(4)),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -662,10 +662,10 @@ func (s *ArithmeticSuite) TestPower_FractionalBaseWithRoot() {
 
 func (s *ArithmeticSuite) TestPower_IrrationalResult_Real() {
 	// 2 ^ (1/2) = sqrt(2) ≈ 1.414... (Real number)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -682,12 +682,12 @@ func (s *ArithmeticSuite) TestPower_IrrationalResult_Real() {
 
 func (s *ArithmeticSuite) TestPower_RealBase() {
 	// sqrt(2) ^ 2 = Real (contaminated by Real base, even though result is 2)
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     sqrt2,
 		Operator: "^",
 		Right:    ast.NewIntLiteral(2),
@@ -705,12 +705,12 @@ func (s *ArithmeticSuite) TestPower_RealBase() {
 
 func (s *ArithmeticSuite) TestPower_RealExponent() {
 	// 2 ^ sqrt(2) = Real (contaminated by Real exponent)
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
 		Right:    sqrt2,
@@ -728,17 +728,17 @@ func (s *ArithmeticSuite) TestPower_RealExponent() {
 
 func (s *ArithmeticSuite) TestPower_BothReal() {
 	// sqrt(2) ^ sqrt(3) = Real
-	sqrt2 := &ast.RealInfixExpression{
+	sqrt2 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	sqrt3 := &ast.RealInfixExpression{
+	sqrt3 := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "^",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     sqrt2,
 		Operator: "^",
 		Right:    sqrt3,
@@ -758,8 +758,8 @@ func (s *ArithmeticSuite) TestPower_BothReal() {
 
 func (s *ArithmeticSuite) TestModulo_FractionalLeft_Error() {
 	// (1/2) % 3 = error (modulo requires integer operands)
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "%",
 		Right:    ast.NewIntLiteral(3),
 	}
@@ -773,10 +773,10 @@ func (s *ArithmeticSuite) TestModulo_FractionalLeft_Error() {
 
 func (s *ArithmeticSuite) TestModulo_FractionalRight_Error() {
 	// 10 % (1/2) = error (modulo requires integer operands)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(10),
 		Operator: "%",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -788,10 +788,10 @@ func (s *ArithmeticSuite) TestModulo_FractionalRight_Error() {
 
 func (s *ArithmeticSuite) TestModulo_BothFractional_Error() {
 	// (3/4) % (1/2) = error (modulo requires integer operands)
-	node := &ast.RealInfixExpression{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(3), ast.NewIntLiteral(4)),
+	node := &ast.BinaryArithmetic{
+		Left:     ast.NewFraction(ast.NewIntLiteral(3), ast.NewIntLiteral(4)),
 		Operator: "%",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -803,7 +803,7 @@ func (s *ArithmeticSuite) TestModulo_BothFractional_Error() {
 
 func (s *ArithmeticSuite) TestModulo_ByZero_Error() {
 	// 10 % 0 = error (division by zero)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(10),
 		Operator: "%",
 		Right:    ast.NewIntLiteral(0),
@@ -820,7 +820,7 @@ func (s *ArithmeticSuite) TestModulo_ByZero_Error() {
 
 func (s *ArithmeticSuite) TestUnknownOperator() {
 	// 5 & 3 (invalid operator)
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "&", // not a valid arithmetic operator
 		Right:    ast.NewIntLiteral(3),

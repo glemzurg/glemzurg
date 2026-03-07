@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -150,14 +151,15 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 		return nil
 	}
 
-	query := `INSERT INTO global_function (model_key, logic_key, name, parameters) VALUES `
-	args := make([]interface{}, 0, len(gfs)*4)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO global_function (model_key, logic_key, name, parameters) VALUES `)
+	args := make([]any, 0, len(gfs)*4)
 	for i, gf := range gfs {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 4
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4))
 		args = append(args,
 			modelKey,
 			gf.Key.String(),
@@ -165,7 +167,7 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 			pq.Array(gf.Parameters))
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

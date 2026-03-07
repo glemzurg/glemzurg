@@ -163,7 +163,7 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 	}
 }
 
-func (suite *TupleInfixExpressionSuite) TestAscii() {
+func (suite *TupleInfixExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -241,7 +241,7 @@ func (suite *TupleInfixExpressionSuite) TestAscii() {
 				Operator: tt.operator,
 				Operands: tt.operands,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			assert.Equal(t, tt.expected, expr.ASCII())
 		})
 	}
 }

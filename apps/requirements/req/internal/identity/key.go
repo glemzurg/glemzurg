@@ -500,7 +500,7 @@ func (k *Key) UnmarshalText(data []byte) error {
 // UnmarshalYAML implements yaml.Unmarshaler for Key.
 // Only accepts fully formed key strings. Partial keys must be expanded
 // before being unmarshaled (e.g., by parser.scopeObjectKeys).
-func (k *Key) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (k *Key) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err

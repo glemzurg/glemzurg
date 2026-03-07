@@ -6,9 +6,9 @@ import (
 )
 
 // evalLogicBoundQuantifier evaluates a bound quantifier (∀, ∃).
-func evalLogicBoundQuantifier(node *ast.LogicBoundQuantifier, bindings *Bindings) *EvalResult {
+func evalLogicBoundQuantifier(node *ast.Quantifier, bindings *Bindings) *EvalResult {
 	// Get the membership expression to extract the bound variable and set
-	membership, ok := node.Membership.(*ast.LogicMembership)
+	membership, ok := node.Membership.(*ast.Membership)
 	if !ok {
 		return NewEvalError("quantifier requires membership expression")
 	}

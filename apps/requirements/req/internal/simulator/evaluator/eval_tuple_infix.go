@@ -6,7 +6,7 @@ import (
 )
 
 // evalTupleInfix evaluates tuple concatenation (∘).
-func evalTupleInfix(node *ast.TupleInfixExpression, bindings *Bindings) *EvalResult {
+func evalTupleInfix(node *ast.TupleConcat, bindings *Bindings) *EvalResult {
 	if len(node.Operands) < 2 {
 		return NewEvalError("tuple concatenation requires at least 2 operands, got %d", len(node.Operands))
 	}

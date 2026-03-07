@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -369,13 +368,13 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			result, err := ConvertToExpressionType(tt.expr)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, result)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, result)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}

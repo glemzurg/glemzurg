@@ -23,7 +23,7 @@ func TestGetTestModel(t *testing.T) {
 
 	// Verify the model validates.
 	err := model.Validate()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestGetStrictTestModel(t *testing.T) {
@@ -43,5 +43,5 @@ func TestGetStrictTestModel(t *testing.T) {
 
 	// Verify the model validates.
 	err := model.Validate()
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }

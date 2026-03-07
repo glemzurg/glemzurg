@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -25,19 +26,16 @@ type ClassFileSuite struct {
 
 func (suite *ClassFileSuite) TestParseClassFiles() {
 	// Create a parent subdomain key for testing.
-	domainKey, err := identity.NewDomainKey("test_domain")
-	assert.Nil(suite.T(), err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, "test_subdomain")
-	assert.Nil(suite.T(), err)
+	domainKey := helper.Must(identity.NewDomainKey("test_domain"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "test_subdomain"))
 
 	classSubKey := "class_key"
 
-	testDataFiles, err := t_ContentsForAllMdFiles(t_CLASS_PATH_OK)
-	assert.Nil(suite.T(), err)
+	testDataFiles := helper.Must(t_ContentsForAllMdFiles(t_CLASS_PATH_OK))
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.T().Run(testName, func(t *testing.T) { //nolint:testifylint // captures subtest result
 			var expected, actual model_class.Class
 
 			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)

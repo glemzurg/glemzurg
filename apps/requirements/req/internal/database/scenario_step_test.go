@@ -14,7 +14,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -81,7 +80,7 @@ func t_strPtr(s string) *string { return &s }
 func (suite *StepSuite) TestLoad() {
 	// Nothing in database yet.
 	_, _, _, _, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 
 	// Insert a step directly with raw SQL.
 	err = dbExec(suite.db, `
@@ -120,14 +119,14 @@ func (suite *StepSuite) TestLoad() {
 				NULL
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	scenarioKey, parentStepKey, sortOrder, step, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Nil(suite.T(), parentStepKey)
-	assert.Equal(suite.T(), 0, sortOrder)
-	assert.Equal(suite.T(), model_scenario.Step{
+	suite.NoError(err)
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Nil(parentStepKey)
+	suite.Equal(0, sortOrder)
+	suite.Equal(model_scenario.Step{
 		Key:           suite.stepKey(0),
 		StepType:      model_scenario.STEP_TYPE_LEAF,
 		LeafType:      t_strPtr(model_scenario.LEAF_TYPE_EVENT),
@@ -150,14 +149,14 @@ func (suite *StepSuite) TestAdd() {
 	}
 
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	scenarioKey, parentStepKey, sortOrder, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Nil(suite.T(), parentStepKey)
-	assert.Equal(suite.T(), 0, sortOrder)
-	assert.Equal(suite.T(), step, loaded)
+	suite.NoError(err)
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Nil(parentStepKey)
+	suite.Equal(0, sortOrder)
+	suite.Equal(step, loaded)
 }
 
 func (suite *StepSuite) TestAddWithParent() {
@@ -167,7 +166,7 @@ func (suite *StepSuite) TestAddWithParent() {
 		StepType: model_scenario.STEP_TYPE_SEQUENCE,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, rootStep)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Add child step with parent.
 	parentKey := suite.stepKey(0)
@@ -181,15 +180,15 @@ func (suite *StepSuite) TestAddWithParent() {
 		EventKey:      &suite.event.Key,
 	}
 	err = AddStep(suite.db, suite.model.Key, suite.scenario.Key, &parentKey, 0, childStep)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	scenarioKey, loadedParent, sortOrder, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.NotNil(suite.T(), loadedParent)
-	assert.Equal(suite.T(), suite.stepKey(0), *loadedParent)
-	assert.Equal(suite.T(), 0, sortOrder)
-	assert.Equal(suite.T(), childStep, loaded)
+	suite.NoError(err)
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.NotNil(loadedParent)
+	suite.Equal(suite.stepKey(0), *loadedParent)
+	suite.Equal(0, sortOrder)
+	suite.Equal(childStep, loaded)
 }
 
 func (suite *StepSuite) TestUpdate() {
@@ -204,7 +203,7 @@ func (suite *StepSuite) TestUpdate() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Update to a query leaf.
 	updated := model_scenario.Step{
@@ -217,11 +216,11 @@ func (suite *StepSuite) TestUpdate() {
 		QueryKey:      &suite.query.Key,
 	}
 	err = UpdateStep(suite.db, suite.model.Key, 0, updated)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	_, _, _, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), updated, loaded)
+	suite.NoError(err)
+	suite.Equal(updated, loaded)
 }
 
 func (suite *StepSuite) TestRemove() {
@@ -235,13 +234,13 @@ func (suite *StepSuite) TestRemove() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	err = RemoveStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 func (suite *StepSuite) TestQuerySteps() {
@@ -274,16 +273,16 @@ func (suite *StepSuite) TestQuerySteps() {
 	// Flatten and insert.
 	rows := flattenSteps(suite.scenario.Key, &rootStep)
 	err := AddSteps(suite.db, suite.model.Key, rows)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Query and reconstruct.
 	stepsMap, err := QuerySteps(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Len(suite.T(), stepsMap, 1)
+	suite.NoError(err)
+	suite.Len(stepsMap, 1)
 
 	reconstructed := stepsMap[suite.scenario.Key]
-	assert.NotNil(suite.T(), reconstructed)
-	assert.Equal(suite.T(), rootStep, *reconstructed)
+	suite.NotNil(reconstructed)
+	suite.Equal(rootStep, *reconstructed)
 }
 
 // ===== Foreign Key Tests =====
@@ -304,7 +303,7 @@ func (suite *StepSuite) TestFKScenario() {
 
 	// Insert with non-existent scenario_key should fail.
 	err := AddStep(suite.db, suite.model.Key, bogusScenarioKey, nil, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKScenarioCascade tests fk_step_scenario ON DELETE CASCADE: deleting the scenario deletes its steps.
@@ -319,15 +318,15 @@ func (suite *StepSuite) TestFKScenarioCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the scenario.
 	err = RemoveScenario(suite.db, suite.model.Key, suite.scenario.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 // TestFKParent tests fk_step_parent: parent_step_key must reference an existing step.
@@ -346,7 +345,7 @@ func (suite *StepSuite) TestFKParent() {
 
 	// Insert with non-existent parent_step_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, &bogusParentKey, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKParentCascade tests fk_step_parent ON DELETE CASCADE: deleting a parent step deletes its children.
@@ -357,7 +356,7 @@ func (suite *StepSuite) TestFKParentCascade() {
 		StepType: model_scenario.STEP_TYPE_SEQUENCE,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, rootStep)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Add child step.
 	parentKey := suite.stepKey(0)
@@ -371,15 +370,15 @@ func (suite *StepSuite) TestFKParentCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err = AddStep(suite.db, suite.model.Key, suite.scenario.Key, &parentKey, 0, childStep)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the parent step.
 	err = RemoveStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Child should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 // TestFKFromObject tests fk_step_from_object: from_object_key must reference an existing scenario_object.
@@ -398,7 +397,7 @@ func (suite *StepSuite) TestFKFromObject() {
 
 	// Insert with non-existent from_object_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKFromObjectCascade tests fk_step_from_object ON DELETE CASCADE: deleting the from_object deletes the step.
@@ -413,15 +412,15 @@ func (suite *StepSuite) TestFKFromObjectCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the from_object.
 	err = RemoveObject(suite.db, suite.model.Key, suite.fromObj.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 // TestFKToObject tests fk_step_to_object: to_object_key must reference an existing scenario_object.
@@ -440,7 +439,7 @@ func (suite *StepSuite) TestFKToObject() {
 
 	// Insert with non-existent to_object_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKToObjectCascade tests fk_step_to_object ON DELETE CASCADE: deleting the to_object deletes the step.
@@ -455,15 +454,15 @@ func (suite *StepSuite) TestFKToObjectCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the to_object.
 	err = RemoveObject(suite.db, suite.model.Key, suite.toObj.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 // TestFKEvent tests fk_step_event: event_key must reference an existing event.
@@ -482,7 +481,7 @@ func (suite *StepSuite) TestFKEvent() {
 
 	// Insert with non-existent event_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKEventCascade tests fk_step_event ON DELETE CASCADE: deleting the event deletes the step.
@@ -497,15 +496,15 @@ func (suite *StepSuite) TestFKEventCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the event.
 	err = RemoveEvent(suite.db, suite.model.Key, suite.class.Key, suite.event.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 // TestFKQuery tests fk_step_query: query_key must reference an existing query.
@@ -524,7 +523,7 @@ func (suite *StepSuite) TestFKQuery() {
 
 	// Insert with non-existent query_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKQueryCascade tests fk_step_query ON DELETE CASCADE: deleting the query deletes the step.
@@ -539,15 +538,15 @@ func (suite *StepSuite) TestFKQueryCascade() {
 		QueryKey:      &suite.query.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the query.
 	err = RemoveQuery(suite.db, suite.model.Key, suite.class.Key, suite.query.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 // TestFKScenarioRef tests fk_step_scenario_ref: scenario_ref_key must reference an existing scenario.
@@ -566,7 +565,7 @@ func (suite *StepSuite) TestFKScenarioRef() {
 
 	// Insert with non-existent scenario_ref_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.NotNil(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestFKScenarioRefCascade tests fk_step_scenario_ref ON DELETE CASCADE: deleting the referenced scenario deletes the step.
@@ -585,13 +584,13 @@ func (suite *StepSuite) TestFKScenarioRefCascade() {
 		ScenarioKey:   &scenarioB.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Delete the referenced scenario.
 	err = RemoveScenario(suite.db, suite.model.Key, scenarioB.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }

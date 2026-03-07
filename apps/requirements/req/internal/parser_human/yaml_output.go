@@ -358,13 +358,13 @@ func formatYamlField(key, value string, indent int) string {
 
 	if strings.Contains(value, "\n") {
 		// Use literal block scalar for multi-line strings
-		result := indentStr + key + ": |\n"
+		var sb strings.Builder
+		sb.WriteString(indentStr + key + ": |\n")
 		contentIndent := strings.Repeat(" ", indent+4)
-		lines := strings.Split(value, "\n")
-		for _, line := range lines {
-			result += contentIndent + line + "\n"
+		for line := range strings.SplitSeq(value, "\n") {
+			sb.WriteString(contentIndent + line + "\n")
 		}
-		return result
+		return sb.String()
 	}
 
 	// Single line - simple format

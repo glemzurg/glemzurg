@@ -6,16 +6,17 @@ import (
 
 // evalCallExpression evaluates a function call.
 // TODO: This needs integration with the custom TLA+ block registry.
-func evalCallExpression(node *ast.CallExpression) *EvalResult {
+func evalCallExpression(node *ast.ScopedCall) *EvalResult {
 	// Build the full function name
 	var fullName string
-	if node.Domain != nil {
+	switch {
+	case node.Domain != nil:
 		fullName = node.Domain.Value + "!" + node.Subdomain.Value + "!" + node.Class.Value + "!" + node.FunctionName.Value
-	} else if node.Subdomain != nil {
+	case node.Subdomain != nil:
 		fullName = node.Subdomain.Value + "!" + node.Class.Value + "!" + node.FunctionName.Value
-	} else if node.Class != nil {
+	case node.Class != nil:
 		fullName = node.Class.Value + "!" + node.FunctionName.Value
-	} else {
+	default:
 		fullName = node.FunctionName.Value
 	}
 

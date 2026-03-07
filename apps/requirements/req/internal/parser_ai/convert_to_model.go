@@ -2,6 +2,7 @@ package parser_ai
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
@@ -233,11 +234,8 @@ func convertActorToModel(keyStr string, actor *inputActor, actorGeneralizations 
 		if gen.SuperclassKey == keyStr {
 			result.SuperclassOfKey = &genKey
 		}
-		for _, subKey := range gen.SubclassKeys {
-			if subKey == keyStr {
-				result.SubclassOfKey = &genKey
-				break
-			}
+		if slices.Contains(gen.SubclassKeys, keyStr) {
+			result.SubclassOfKey = &genKey
 		}
 	}
 
@@ -482,11 +480,8 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, subdomainKey identit
 		if gen.SuperclassKey == keyStr {
 			result.SuperclassOfKey = &genKey
 		}
-		for _, subKey := range gen.SubclassKeys {
-			if subKey == keyStr {
-				result.SubclassOfKey = &genKey
-				break
-			}
+		if slices.Contains(gen.SubclassKeys, keyStr) {
+			result.SubclassOfKey = &genKey
 		}
 	}
 
@@ -800,11 +795,8 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		if gen.SuperclassKey == keyStr {
 			result.SuperclassOfKey = &genKey
 		}
-		for _, subclassKey := range gen.SubclassKeys {
-			if subclassKey == keyStr {
-				result.SubclassOfKey = &genKey
-				break
-			}
+		if slices.Contains(gen.SubclassKeys, keyStr) {
+			result.SubclassOfKey = &genKey
 		}
 	}
 
@@ -866,11 +858,8 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 	// Find which indexes this attribute is part of
 	var indexNums []uint
 	for i, index := range indexes {
-		for _, attrKeyInIndex := range index {
-			if attrKeyInIndex == keyStr {
-				indexNums = append(indexNums, uint(i)) //nolint:gosec // index i is bounded by slice length, no overflow possible
-				break
-			}
+		if slices.Contains(index, keyStr) {
+			indexNums = append(indexNums, uint(i)) //nolint:gosec // index i is bounded by slice length, no overflow possible
 		}
 	}
 
@@ -1573,8 +1562,8 @@ func normalizeMultiplicity(mult string) string {
 		return "any"
 	}
 	// Handle "n..*" patterns -> "n..many"
-	if strings.HasSuffix(mult, "..*") {
-		return strings.TrimSuffix(mult, "..*") + "..many"
+	if trimmed, ok := strings.CutSuffix(mult, "..*"); ok {
+		return trimmed + "..many"
 	}
 	return mult
 }

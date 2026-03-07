@@ -4,6 +4,7 @@ package state
 
 import (
 	"fmt"
+	"maps"
 	"sync"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -312,9 +313,7 @@ func (s *SimulationState) Clone() *SimulationState {
 	}
 
 	// Clone state machine states
-	for id, state := range s.stateMachineStates {
-		clone.stateMachineStates[id] = state
-	}
+	maps.Copy(clone.stateMachineStates, s.stateMachineStates)
 
 	// Clone links by copying each link
 	for _, instance := range s.instances {

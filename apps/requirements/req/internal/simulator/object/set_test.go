@@ -73,7 +73,7 @@ func (s *SetSuite) TestSetValue() {
 	})
 
 	err := s1.SetValue(s2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(2, s1.Size())
 	s.True(s1.Contains(NewInteger(10)))
 }

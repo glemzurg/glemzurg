@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -218,14 +219,16 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(useCases)*10)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(useCases)*10)
 	for i, uc := range useCases {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 10
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
+
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -242,7 +245,7 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, superclassOfKeyPtr, subclassOfKeyPtr, uc.UmlComment)
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

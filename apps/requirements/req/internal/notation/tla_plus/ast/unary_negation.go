@@ -22,7 +22,7 @@ func (u *UnaryNegation) String() string {
 	return out.String()
 }
 
-func (u *UnaryNegation) Ascii() string {
+func (u *UnaryNegation) ASCII() string {
 	return u.String()
 }
 
@@ -45,9 +45,11 @@ func NewNegation(operand Expression) *UnaryNegation {
 }
 
 // NumericPrefixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use UnaryNegation instead.
 type NumericPrefixExpression = UnaryNegation
 
 // Backwards compatibility constant.
+//
 // Deprecated: Use NegationOperator instead.
 const NumericOperatorNegate = NegationOperator

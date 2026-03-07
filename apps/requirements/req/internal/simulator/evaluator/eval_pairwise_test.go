@@ -22,7 +22,7 @@ func (s *PairwiseSuite) TestAssignment_WithTupleConcat() {
 	// x' = <<1, 2>> ∘ <<3, 4>>
 	node := &ast.Assignment{
 		Target: &ast.Identifier{Value: "x"},
-		Value: &ast.TupleInfixExpression{
+		Value: &ast.TupleConcat{
 			Operator: "∘",
 			Operands: []ast.Expression{
 				&ast.TupleLiteral{
@@ -101,7 +101,7 @@ func (s *PairwiseSuite) TestAssignment_WithIfElse() {
 	// x' = IF TRUE THEN 10 ELSE 20
 	node := &ast.Assignment{
 		Target: &ast.Identifier{Value: "x"},
-		Value: &ast.ExpressionIfElse{
+		Value: &ast.IfThenElse{
 			Condition: &ast.BooleanLiteral{Value: true},
 			Then:      ast.NewIntLiteral(10),
 			Else:      ast.NewIntLiteral(20),
@@ -120,10 +120,10 @@ func (s *PairwiseSuite) TestAssignment_WithArithmetic() {
 	// x' = 5 + 3 * 2
 	node := &ast.Assignment{
 		Target: &ast.Identifier{Value: "x"},
-		Value: &ast.RealInfixExpression{
+		Value: &ast.BinaryArithmetic{
 			Operator: "+",
 			Left:     ast.NewIntLiteral(5),
-			Right: &ast.RealInfixExpression{
+			Right: &ast.BinaryArithmetic{
 				Operator: "*",
 				Left:     ast.NewIntLiteral(3),
 				Right:    ast.NewIntLiteral(2),
@@ -143,12 +143,12 @@ func (s *PairwiseSuite) TestAssignment_WithArithmetic() {
 
 func (s *PairwiseSuite) TestQuantifier_OverSetUnion() {
 	// ∀x ∈ ({1} ∪ {2}) : TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
-			Right: &ast.SetInfix{
+			Right: &ast.BinarySetOperation{
 				Operator: "∪",
 				Left:     &ast.SetLiteralInt{Values: []int{1}},
 				Right:    &ast.SetLiteralInt{Values: []int{2}},
@@ -167,13 +167,13 @@ func (s *PairwiseSuite) TestQuantifier_OverSetUnion() {
 
 func (s *PairwiseSuite) TestQuantifier_OverSetConditional() {
 	// ∃x ∈ {y ∈ {1, 2, 3} : TRUE} : TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∃",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
-			Right: &ast.SetConditional{
-				Membership: &ast.LogicMembership{
+			Right: &ast.SetFilter{
+				Membership: &ast.Membership{
 					Left:     &ast.Identifier{Value: "y"},
 					Operator: "∈",
 					Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -194,9 +194,9 @@ func (s *PairwiseSuite) TestQuantifier_OverSetConditional() {
 
 func (s *PairwiseSuite) TestQuantifier_OverSetRange() {
 	// ∀x ∈ 1..5 : TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right: &ast.SetRange{
@@ -219,7 +219,7 @@ func (s *PairwiseSuite) TestQuantifier_OverSetRange() {
 
 func (s *PairwiseSuite) TestIfElse_ReturnsRecord() {
 	// IF TRUE THEN [a ↦ 1] ELSE [a ↦ 2]
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: true},
 		Then: &ast.RecordInstance{
 			Bindings: []*ast.FieldBinding{
@@ -243,7 +243,7 @@ func (s *PairwiseSuite) TestIfElse_ReturnsRecord() {
 
 func (s *PairwiseSuite) TestIfElse_ReturnsTuple() {
 	// IF FALSE THEN <<1>> ELSE <<2, 3>>
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: false},
 		Then: &ast.TupleLiteral{
 			Elements: []ast.Expression{ast.NewIntLiteral(1)},
@@ -266,7 +266,7 @@ func (s *PairwiseSuite) TestIfElse_ReturnsTuple() {
 
 func (s *PairwiseSuite) TestCase_ReturnsTuple() {
 	// CASE TRUE → <<1, 2>> □ OTHER → <<>>
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: true},
@@ -291,7 +291,7 @@ func (s *PairwiseSuite) TestCase_ReturnsTuple() {
 
 func (s *PairwiseSuite) TestCase_ReturnsRecord() {
 	// CASE FALSE → [x ↦ 1] □ TRUE → [x ↦ 2] □ OTHER → [x ↦ 0]
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: false},
@@ -329,10 +329,10 @@ func (s *PairwiseSuite) TestCase_ReturnsRecord() {
 
 func (s *PairwiseSuite) TestMembership_InSetUnion() {
 	// 3 ∈ ({1, 2} ∪ {3, 4})
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "∈",
-		Right: &ast.SetInfix{
+		Right: &ast.BinarySetOperation{
 			Operator: "∪",
 			Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 			Right:    &ast.SetLiteralInt{Values: []int{3, 4}},
@@ -349,10 +349,10 @@ func (s *PairwiseSuite) TestMembership_InSetUnion() {
 
 func (s *PairwiseSuite) TestMembership_InSetIntersection() {
 	// 2 ∈ ({1, 2, 3} ∩ {2, 3, 4})
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "∈",
-		Right: &ast.SetInfix{
+		Right: &ast.BinarySetOperation{
 			Operator: "∩",
 			Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 			Right:    &ast.SetLiteralInt{Values: []int{2, 3, 4}},
@@ -369,10 +369,10 @@ func (s *PairwiseSuite) TestMembership_InSetIntersection() {
 
 func (s *PairwiseSuite) TestMembership_InSetDifference() {
 	// 1 ∈ ({1, 2, 3} \ {2, 3})
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(1),
 		Operator: "∈",
-		Right: &ast.SetInfix{
+		Right: &ast.BinarySetOperation{
 			Operator: "\\",
 			Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 			Right:    &ast.SetLiteralInt{Values: []int{2, 3}},
@@ -389,10 +389,10 @@ func (s *PairwiseSuite) TestMembership_InSetDifference() {
 
 func (s *PairwiseSuite) TestNotMembership_InSetDifference() {
 	// 2 ∉ ({1, 2, 3} \ {2, 3})
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "∉",
-		Right: &ast.SetInfix{
+		Right: &ast.BinarySetOperation{
 			Operator: "\\",
 			Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 			Right:    &ast.SetLiteralInt{Values: []int{2, 3}},
@@ -411,7 +411,7 @@ func (s *PairwiseSuite) TestNotMembership_InSetDifference() {
 
 func (s *PairwiseSuite) TestSeqLen_InArithmetic() {
 	// _Seq!Len(<<1, 2, 3>>) + 5
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Operator: "+",
 		Left: &ast.BuiltinCall{
 			Name: "_Seq!Len",
@@ -438,7 +438,7 @@ func (s *PairwiseSuite) TestSeqLen_InArithmetic() {
 
 func (s *PairwiseSuite) TestSeqLen_InComparison() {
 	// _Seq!Len(<<1, 2>>) < 5
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left: &ast.BuiltinCall{
 			Name: "_Seq!Len",
 			Args: []ast.Expression{
@@ -476,8 +476,8 @@ func (s *PairwiseSuite) TestRecordExcept_WithArithmetic() {
 		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
-				Field: &ast.FieldIdentifier{Identifier: nil, Member: "value"},
-				Expression: &ast.RealInfixExpression{
+				Field: &ast.FieldAccess{Identifier: nil, Member: "value"},
+				Expression: &ast.BinaryArithmetic{
 					Operator: "+",
 					Left:     ast.NewIntLiteral(10),
 					Right:    ast.NewIntLiteral(5),
@@ -505,8 +505,8 @@ func (s *PairwiseSuite) TestRecordExcept_WithIfElse() {
 		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
-				Field: &ast.FieldIdentifier{Identifier: nil, Member: "value"},
-				Expression: &ast.ExpressionIfElse{
+				Field: &ast.FieldAccess{Identifier: nil, Member: "value"},
+				Expression: &ast.IfThenElse{
 					Condition: &ast.BooleanLiteral{Value: true},
 					Then:      ast.NewIntLiteral(100),
 					Else:      ast.NewIntLiteral(0),
@@ -526,13 +526,13 @@ func (s *PairwiseSuite) TestRecordExcept_WithIfElse() {
 
 func (s *PairwiseSuite) TestError_InSetConditional() {
 	// {x ∈ {1, 2, 3} : x ∈ nonexistent} - error in predicate (nonexistent set variable)
-	node := &ast.SetConditional{
-		Membership: &ast.LogicMembership{
+	node := &ast.SetFilter{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		},
-		Predicate: &ast.LogicMembership{
+		Predicate: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{}}, // Empty set - predicate will be false, no error
@@ -551,21 +551,21 @@ func (s *PairwiseSuite) TestError_InSetConditional() {
 func (s *PairwiseSuite) TestError_InQuantifier_BadType() {
 	// ∀x ∈ {1, 2, 3} : 5 < 3 ∧ 2 < 1
 	// No error - just false predicate
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		},
-		Predicate: &ast.LogicInfixExpression{
+		Predicate: &ast.BinaryLogic{
 			Operator: "∧",
-			Left: &ast.LogicRealComparison{
+			Left: &ast.BinaryComparison{
 				Left:     ast.NewIntLiteral(5),
 				Operator: "<",
 				Right:    ast.NewIntLiteral(3),
 			},
-			Right: &ast.LogicRealComparison{
+			Right: &ast.BinaryComparison{
 				Left:     ast.NewIntLiteral(2),
 				Operator: "<",
 				Right:    ast.NewIntLiteral(1),
@@ -601,7 +601,7 @@ func (s *PairwiseSuite) TestError_InRecordAltered_UndefinedVariable() {
 		Base: &ast.Identifier{Value: "nonexistent"},
 		Alterations: []*ast.FieldAlteration{
 			{
-				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "field"},
+				Field:      &ast.FieldAccess{Identifier: nil, Member: "field"},
 				Expression: ast.NewIntLiteral(1),
 			},
 		},
@@ -615,7 +615,7 @@ func (s *PairwiseSuite) TestError_InRecordAltered_UndefinedVariable() {
 
 func (s *PairwiseSuite) TestError_InFieldAccess_UndefinedVariable() {
 	// nonexistent.field - record not defined
-	node := &ast.FieldIdentifier{
+	node := &ast.FieldAccess{
 		Identifier: &ast.Identifier{Value: "nonexistent"},
 		Member:     "field",
 	}
@@ -628,7 +628,7 @@ func (s *PairwiseSuite) TestError_InFieldAccess_UndefinedVariable() {
 
 func (s *PairwiseSuite) TestError_InTupleIndex_OutOfBounds() {
 	// <<1, 2>>[5] - index out of bounds (1-based)
-	node := &ast.ExpressionTupleIndex{
+	node := &ast.TupleIndex{
 		Tuple: &ast.TupleLiteral{
 			Elements: []ast.Expression{
 				ast.NewIntLiteral(1),
@@ -647,7 +647,7 @@ func (s *PairwiseSuite) TestError_InTupleIndex_OutOfBounds() {
 
 func (s *PairwiseSuite) TestError_DivisionByZero() {
 	// 10 ÷ 0
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Operator: "÷",
 		Left:     ast.NewIntLiteral(10),
 		Right:    ast.NewIntLiteral(0),
@@ -664,11 +664,11 @@ func (s *PairwiseSuite) TestError_DivisionByZero() {
 
 func (s *PairwiseSuite) TestDeeplyNested_SetOperations() {
 	// (({1} ∪ {2}) ∩ {2, 3}) \ {3}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Operator: "\\",
-		Left: &ast.SetInfix{
+		Left: &ast.BinarySetOperation{
 			Operator: "∩",
-			Left: &ast.SetInfix{
+			Left: &ast.BinarySetOperation{
 				Operator: "∪",
 				Left:     &ast.SetLiteralInt{Values: []int{1}},
 				Right:    &ast.SetLiteralInt{Values: []int{2}},
@@ -722,18 +722,18 @@ func (s *PairwiseSuite) TestDeeplyNested_TupleOperations() {
 
 func (s *PairwiseSuite) TestDeeplyNested_LogicOperations() {
 	// ((TRUE ∧ FALSE) ∨ TRUE) ⇒ (¬FALSE)
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Operator: "⇒",
-		Left: &ast.LogicInfixExpression{
+		Left: &ast.BinaryLogic{
 			Operator: "∨",
-			Left: &ast.LogicInfixExpression{
+			Left: &ast.BinaryLogic{
 				Operator: "∧",
 				Left:     &ast.BooleanLiteral{Value: true},
 				Right:    &ast.BooleanLiteral{Value: false},
 			},
 			Right: &ast.BooleanLiteral{Value: true},
 		},
-		Right: &ast.LogicPrefixExpression{
+		Right: &ast.UnaryLogic{
 			Operator: "¬",
 			Right:    &ast.BooleanLiteral{Value: false},
 		},
@@ -751,9 +751,9 @@ func (s *PairwiseSuite) TestDeeplyNested_LogicOperations() {
 
 func (s *PairwiseSuite) TestStringConcat_InIfElse() {
 	// IF TRUE THEN "hello" ∘ " world" ELSE "goodbye"
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: true},
-		Then: &ast.StringInfixExpression{
+		Then: &ast.StringConcat{
 			Operator: "∘",
 			Operands: []ast.Expression{
 				&ast.StringLiteral{Value: "hello"},

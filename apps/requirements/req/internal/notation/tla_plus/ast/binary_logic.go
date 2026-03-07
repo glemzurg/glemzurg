@@ -9,7 +9,7 @@ const (
 	LogicOperatorEquiv   = "≡"
 )
 
-var binaryLogicAscii = map[string]string{
+var binaryLogicASCII = map[string]string{
 	LogicOperatorAnd:     `/\`,
 	LogicOperatorOr:      `\/`,
 	LogicOperatorImplies: `=>`,
@@ -33,11 +33,11 @@ func (b *BinaryLogic) String() (value string) {
 	return out.String()
 }
 
-func (b *BinaryLogic) Ascii() (value string) {
+func (b *BinaryLogic) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(b.Left.Ascii())
-	out.WriteString(" " + binaryLogicAscii[b.Operator] + " ")
-	out.WriteString(b.Right.Ascii())
+	out.WriteString(b.Left.ASCII())
+	out.WriteString(" " + binaryLogicASCII[b.Operator] + " ")
+	out.WriteString(b.Right.ASCII())
 	return out.String()
 }
 
@@ -55,5 +55,6 @@ func (b *BinaryLogic) Validate() error {
 }
 
 // LogicInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryLogic instead.
 type LogicInfixExpression = BinaryLogic

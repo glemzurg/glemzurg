@@ -61,7 +61,7 @@ func (suite *ActorSuite) TestParseActorErrors() {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
 			_, err := parseActor([]byte(testData.InputJSON), testData.Filename)
-			assert.NotNil(t, err, testName+" should return an error")
+			assert.Error(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.
 			var parseErr *ParseError

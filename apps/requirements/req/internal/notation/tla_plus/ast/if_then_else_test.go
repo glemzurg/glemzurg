@@ -83,7 +83,7 @@ func (suite *ExpressionIfElseSuite) TestString() {
 	}
 }
 
-func (suite *ExpressionIfElseSuite) TestAscii() {
+func (suite *ExpressionIfElseSuite) TestASCII() {
 	tests := []struct {
 		testName  string
 		condition Expression
@@ -124,7 +124,7 @@ func (suite *ExpressionIfElseSuite) TestAscii() {
 				Then:      tt.then,
 				Else:      tt.elseExpr,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			assert.Equal(t, tt.expected, expr.ASCII())
 		})
 	}
 }

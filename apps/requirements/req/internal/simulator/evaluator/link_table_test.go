@@ -67,10 +67,10 @@ func (s *LinkTableTestSuite) TestRemoveLink() {
 	s.Equal(0, table.Count())
 
 	forward := table.GetForward(ObjectID(1), assocKey)
-	s.Len(forward, 0)
+	s.Empty(forward)
 
 	reverse := table.GetReverse(ObjectID(2), assocKey)
-	s.Len(reverse, 0)
+	s.Empty(reverse)
 }
 
 func (s *LinkTableTestSuite) TestRemoveLink_NonExistent() {

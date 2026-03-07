@@ -51,9 +51,9 @@ func (suite *QuerySuite) SetupTest() {
 func (suite *QuerySuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), query)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(classKey)
+	suite.Empty(query)
 
 	err = dbExec(suite.db, `
 		INSERT INTO query
@@ -140,9 +140,9 @@ func (suite *QuerySuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), query)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(classKey)
+	suite.Empty(query)
 }
 
 func (suite *QuerySuite) TestQuery() {

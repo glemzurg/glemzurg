@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -144,9 +145,7 @@ var _funcMap = template.FuncMap{
 		}
 		return "__" + dataType.String() + "__"
 	},
-	"first_md_paragraph": func(md string) (paragraph string) {
-		return firstMdParagraph(md)
-	},
+	"first_md_paragraph": firstMdParagraph,
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
@@ -424,7 +423,7 @@ var _funcMap = template.FuncMap{
 		for num := range indexMap {
 			nums = append(nums, num)
 		}
-		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
+		slices.Sort(nums)
 		// Build sorted result.
 		for _, num := range nums {
 			names := indexMap[num]

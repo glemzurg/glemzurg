@@ -59,7 +59,7 @@ func (s *PipelineSuite) TestEval_Arithmetic() {
 	bindings := evaluator.NewBindings()
 
 	// 3 + 4 = 7
-	node := &ast.RealInfixExpression{
+	node := &ast.BinaryArithmetic{
 		Operator: "+",
 		Left:     ast.NewIntLiteral(3),
 		Right:    ast.NewIntLiteral(4),
@@ -191,7 +191,7 @@ func (s *PipelineSuite) TestEval_IfThenElse() {
 	pipeline := NewPipeline()
 	bindings := evaluator.NewBindings()
 
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: true},
 		Then:      ast.NewIntLiteral(1),
 		Else:      ast.NewIntLiteral(2),

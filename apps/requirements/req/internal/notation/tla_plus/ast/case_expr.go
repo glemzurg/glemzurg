@@ -40,20 +40,20 @@ func (e *CaseExpr) String() (value string) {
 	return out.String()
 }
 
-func (e *CaseExpr) Ascii() (value string) {
+func (e *CaseExpr) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("CASE ")
 	for i, branch := range e.Branches {
 		if i > 0 {
 			out.WriteString(" [] ")
 		}
-		out.WriteString(branch.Condition.Ascii())
+		out.WriteString(branch.Condition.ASCII())
 		out.WriteString(" -> ")
-		out.WriteString(branch.Result.Ascii())
+		out.WriteString(branch.Result.ASCII())
 	}
 	if e.Other != nil {
 		out.WriteString(" [] OTHER -> ")
-		out.WriteString(e.Other.Ascii())
+		out.WriteString(e.Other.ASCII())
 	}
 	return out.String()
 }
@@ -82,5 +82,6 @@ func (e *CaseExpr) Validate() error {
 }
 
 // ExpressionCase is an alias for backwards compatibility.
+//
 // Deprecated: Use CaseExpr instead.
 type ExpressionCase = CaseExpr

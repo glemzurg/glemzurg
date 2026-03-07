@@ -29,7 +29,7 @@ func (b *BuiltinCall) String() string {
 	return out.String()
 }
 
-func (b *BuiltinCall) Ascii() string {
+func (b *BuiltinCall) ASCII() string {
 	var out bytes.Buffer
 	out.WriteString(b.Name)
 	out.WriteString("(")
@@ -37,7 +37,7 @@ func (b *BuiltinCall) Ascii() string {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(arg.Ascii())
+		out.WriteString(arg.ASCII())
 	}
 	out.WriteString(")")
 	return out.String()

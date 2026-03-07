@@ -69,12 +69,12 @@ func (suite *SubdomainSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.subdomain.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -86,8 +86,8 @@ func (suite *SubdomainSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	subdomain, err := NewSubdomain(key, "Name", "Details", "UmlComment")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Subdomain{
+	suite.NoError(err)
+	suite.Equal(Subdomain{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
@@ -122,7 +122,7 @@ func (suite *SubdomainSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = subdomain.ValidateWithParent(&suite.domainKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestSetClassAssociations tests that SetClassAssociations validates parent relationships.
@@ -146,8 +146,8 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	err := subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		validAssocKey: validAssoc,
 	})
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 1, len(subdomain.ClassAssociations))
+	suite.NoError(err)
+	suite.Len(subdomain.ClassAssociations, 1)
 
 	// Test: error when association has no parent (model-level association).
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
@@ -188,16 +188,16 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 
 	// Test: GetClassAssociations returns the association.
 	result := subdomain.GetClassAssociations()
-	assert.Equal(suite.T(), 1, len(result))
-	assert.Contains(suite.T(), result, assocKey)
-	assert.Equal(suite.T(), assoc, result[assocKey])
+	suite.Len(result, 1)
+	suite.Contains(result, assocKey)
+	suite.Equal(assoc, result[assocKey])
 
 	// Test: returned map is a copy, not the original.
 	classKey3 := helper.Must(identity.NewClassKey(subdomainKey, "class3"))
 	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey1, classKey3, "new association"))
 	result[newAssocKey] = helper.Must(model_class.NewAssociation(newAssocKey, "New", "", classKey1, helper.Must(model_class.NewMultiplicity("1")), classKey3, helper.Must(model_class.NewMultiplicity("0")), nil, ""))
-	assert.Equal(suite.T(), 1, len(subdomain.ClassAssociations), "Original should not be modified")
-	assert.Equal(suite.T(), 2, len(result), "Copy should have new entry")
+	suite.Len(subdomain.ClassAssociations, 1, "Original should not be modified")
+	suite.Len(result, 2, "Copy should have new entry")
 
 	// Test: empty associations returns empty map.
 	emptySubdomain := Subdomain{
@@ -205,8 +205,8 @@ func (suite *SubdomainSuite) TestGetClassAssociations() {
 		Name: "Empty Subdomain",
 	}
 	emptyResult := emptySubdomain.GetClassAssociations()
-	assert.NotNil(suite.T(), emptyResult)
-	assert.Equal(suite.T(), 0, len(emptyResult))
+	suite.NotNil(emptyResult)
+	suite.Empty(emptyResult)
 }
 
 // TestValidateWithParentAndActorsAndClasses tests child validation propagation.
@@ -327,7 +327,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.NoError(suite.T(), err, "Valid subdomain with all children should pass")
+	suite.NoError(err, "Valid subdomain with all children should pass")
 }
 
 // TestValidateWithParentDeepTree tests that key validation propagates through the full tree:
@@ -372,7 +372,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err := subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.NoError(suite.T(), err, "Valid full tree should pass")
+	suite.NoError(err, "Valid full tree should pass")
 
 	// Test guard logic key mismatch is caught deep in the tree.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))

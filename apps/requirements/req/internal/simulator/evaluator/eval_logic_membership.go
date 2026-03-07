@@ -6,7 +6,7 @@ import (
 )
 
 // evalLogicMembership evaluates a set membership test (∈, ∉).
-func evalLogicMembership(node *ast.LogicMembership, bindings *Bindings) *EvalResult {
+func evalLogicMembership(node *ast.Membership, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

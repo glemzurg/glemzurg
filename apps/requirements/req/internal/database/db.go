@@ -7,7 +7,7 @@ import (
 	"log"
 	"sync"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // PostgreSQL driver
 	"github.com/pkg/errors"
 )
 
@@ -60,7 +60,7 @@ func NewDb() (db *sql.DB, err error) {
 }
 
 // dbExec processes a single sql statement.
-func dbExec(dbOrTx DbOrTx, query string, args ...interface{}) error {
+func dbExec(dbOrTx DbOrTx, query string, args ...any) error {
 	if _, err := dbOrTx.Exec(query, args...); err != nil {
 		return errors.WithStack(err)
 	}
@@ -70,14 +70,14 @@ func dbExec(dbOrTx DbOrTx, query string, args ...interface{}) error {
 
 // Scanner is any object that can scan a row of a SQL query result (*sql.Row and *sql.Rows).
 type Scanner interface {
-	Scan(dest ...interface{}) (err error)
+	Scan(dest ...any) (err error)
 }
 
 // RowHandleFunc is a method to run for each row of a query.
 type RowHandleFunc func(scanner Scanner) (err error)
 
 // dbQuery runs a multi-row return sql statement and handles each row of the results with the method passed in.
-func dbQuery(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...interface{}) (err error) {
+func dbQuery(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...any) (err error) {
 	// Make the query.
 	rows, err := dbOrTx.Query(query, args...)
 	if err != nil {
@@ -100,7 +100,7 @@ func dbQuery(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...i
 }
 
 // dbQueryRow runs a single-row return sql query statement.
-func dbQueryRow(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...interface{}) (err error) {
+func dbQueryRow(dbOrTx DbOrTx, rowHandleFunc RowHandleFunc, query string, args ...any) (err error) {
 	// Query the row.
 	row := dbOrTx.QueryRow(query, args...)
 

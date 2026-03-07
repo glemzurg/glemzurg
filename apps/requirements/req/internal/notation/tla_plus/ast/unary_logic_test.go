@@ -46,7 +46,7 @@ func (suite *LogicPrefixExpressionSuite) TestString() {
 	}
 }
 
-func (suite *LogicPrefixExpressionSuite) TestAscii() {
+func (suite *LogicPrefixExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -72,7 +72,7 @@ func (suite *LogicPrefixExpressionSuite) TestAscii() {
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, pe.Ascii())
+			assert.Equal(t, tt.expected, pe.ASCII())
 		})
 	}
 }

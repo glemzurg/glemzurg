@@ -64,33 +64,33 @@ func (c *ScopedCall) String() (value string) {
 	return out.String()
 }
 
-func (c *ScopedCall) Ascii() (value string) {
+func (c *ScopedCall) ASCII() (value string) {
 	var out bytes.Buffer
 
 	// Model scope uses leading _
 	if c.ModelScope {
 		out.WriteString("_")
-		out.WriteString(c.FunctionName.Ascii())
+		out.WriteString(c.FunctionName.ASCII())
 	} else {
 		// Build the scoped function name
 		if c.Domain != nil {
-			out.WriteString(c.Domain.Ascii())
+			out.WriteString(c.Domain.ASCII())
 			out.WriteString("!")
 		}
 		if c.Subdomain != nil {
-			out.WriteString(c.Subdomain.Ascii())
+			out.WriteString(c.Subdomain.ASCII())
 			out.WriteString("!")
 		}
 		if c.Class != nil {
-			out.WriteString(c.Class.Ascii())
+			out.WriteString(c.Class.ASCII())
 			out.WriteString("!")
 		}
-		out.WriteString(c.FunctionName.Ascii())
+		out.WriteString(c.FunctionName.ASCII())
 	}
 
 	// Build the parameter
 	out.WriteString("(")
-	out.WriteString(c.Parameter.Ascii())
+	out.WriteString(c.Parameter.ASCII())
 	out.WriteString(")")
 
 	return out.String()
@@ -159,5 +159,6 @@ func (c *ScopedCall) Validate() error {
 }
 
 // CallExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use ScopedCall instead.
 type CallExpression = ScopedCall

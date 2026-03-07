@@ -6,7 +6,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,29 +25,29 @@ type GeneralizationFileSuite struct {
 func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
 	// Create a parent subdomain key for testing.
 	domainKey, err := identity.NewDomainKey("test_domain")
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 	subdomainKey, err := identity.NewSubdomainKey(domainKey, "test_subdomain")
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	generalizationSubKey := "generalization_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERALIZATION_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		var expected, actual model_class.Generalization
 
 		actual, err := parseClassGeneralization(subdomainKey, generalizationSubKey, testData.Filename, testData.Contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		assert.Nil(suite.T(), err, testName)
+		suite.NoError(err, testName)
 
-		assert.Equal(suite.T(), expected, actual, testName)
+		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
 		generated := generateGeneralizationContent(actual)
-		assert.Equal(suite.T(), testData.Contents, generated, testName)
+		suite.Equal(testData.Contents, generated, testName)
 	}
 }

@@ -43,8 +43,8 @@ func (suite *DomainSuite) SetupTest() {
 func (suite *DomainSuite) TestLoad() {
 	// Nothing in database yet.
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), domain)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(domain)
 
 	err = dbExec(suite.db, `
 		INSERT INTO domain
@@ -66,11 +66,11 @@ func (suite *DomainSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	domain, err = LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_domain.Domain{
+	suite.NoError(err)
+	suite.Equal(model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -87,11 +87,11 @@ func (suite *DomainSuite) TestAdd() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_domain.Domain{
+	suite.NoError(err)
+	suite.Equal(model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -108,7 +108,7 @@ func (suite *DomainSuite) TestUpdate() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	err = UpdateDomain(suite.db, suite.model.Key, model_domain.Domain{
 		Key:        suite.domainKey,
@@ -117,11 +117,11 @@ func (suite *DomainSuite) TestUpdate() {
 		Realized:   false,
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_domain.Domain{
+	suite.NoError(err)
+	suite.Equal(model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -138,14 +138,14 @@ func (suite *DomainSuite) TestRemove() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	err = RemoveDomain(suite.db, suite.model.Key, suite.domainKey)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), domain)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(domain)
 }
 
 func (suite *DomainSuite) TestQuery() {
@@ -165,11 +165,11 @@ func (suite *DomainSuite) TestQuery() {
 			UmlComment: "UmlComment",
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	domains, err := QueryDomains(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_domain.Domain{
+	suite.NoError(err)
+	suite.Equal([]model_domain.Domain{
 		{
 			Key:        suite.domainKey,
 			Name:       "Name",
@@ -199,10 +199,10 @@ func t_AddDomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey identit
 		Realized:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	domain, err = LoadDomain(dbOrTx, modelKey, domainKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return domain
 }

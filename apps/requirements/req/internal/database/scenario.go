@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -169,22 +170,23 @@ func AddScenarios(dbOrTx DbOrTx, modelKey string, scenarios map[identity.Key][]m
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for useCaseKey, scenList := range scenarios {
 		for _, scenario := range scenList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
 			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

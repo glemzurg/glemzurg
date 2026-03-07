@@ -6,7 +6,7 @@ import (
 )
 
 // evalRealInfix evaluates an arithmetic infix expression.
-func evalRealInfix(node *ast.RealInfixExpression, bindings *Bindings) *EvalResult {
+func evalRealInfix(node *ast.BinaryArithmetic, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

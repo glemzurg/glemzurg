@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -198,12 +197,12 @@ func (suite *ModelSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.model.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -233,8 +232,8 @@ func (suite *ModelSuite) TestNew() {
 	}
 	model, err := NewModel("  MODEL1  ", "Name", "Details",
 		invariants, globalFuncs, nil)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Model{
+	suite.Require().NoError(err)
+	suite.Equal(Model{
 		Key:             "model1",
 		Name:            "Name",
 		Details:         "Details",
@@ -244,8 +243,8 @@ func (suite *ModelSuite) TestNew() {
 
 	// Test with nil optional fields (Invariants and GlobalFunctions are optional).
 	model, err = NewModel("  MODEL1  ", "Name", "Details", nil, nil, nil)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Model{
+	suite.Require().NoError(err)
+	suite.Equal(Model{
 		Key:     "model1",
 		Name:    "Name",
 		Details: "Details",
@@ -253,7 +252,7 @@ func (suite *ModelSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewModel("model1", "", "Details", nil, nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.ErrorContains(err, "Name")
 }
 
 // TestValidateTree tests that Validate validates the entire model tree.
@@ -266,7 +265,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		Details: "Details",
 	}
 	err := model.Validate()
-	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate Model fields")
+	suite.Require().ErrorContains(err, "Name", "Validate should validate Model fields")
 
 	// Test 2: Validate validates child Actor fields through the tree.
 	actorKey := helper.Must(identity.NewActorKey("actor1"))
@@ -283,7 +282,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate child fields")
+	suite.ErrorContains(err, "Name", "Validate should validate child fields")
 
 	// Test 3: Validate validates parent relationships - wrong parent key should fail.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
@@ -309,7 +308,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "Validate should validate parent relationships")
+	suite.ErrorContains(err, "does not match expected parent", "Validate should validate parent relationships")
 
 	// Test 4: Validate validates child DomainAssociation fields through the tree.
 	domain2Key := helper.Must(identity.NewDomainKey("domain2"))
@@ -331,7 +330,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	assert.ErrorContains(suite.T(), err, "ProblemDomainKey and SolutionDomainKey cannot be the same", "Validate should validate child DomainAssociations")
+	suite.ErrorContains(err, "ProblemDomainKey and SolutionDomainKey cannot be the same", "Validate should validate child DomainAssociations")
 
 	// Test 5: Validate validates child ClassAssociation fields through the tree.
 	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
@@ -353,7 +352,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	assert.ErrorContains(suite.T(), err, "Name", "Validate should validate child ClassAssociations")
+	suite.ErrorContains(err, "Name", "Validate should validate child ClassAssociations")
 
 	// Test 6: Valid model should pass.
 	validSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
@@ -385,7 +384,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	assert.NoError(suite.T(), err, "Valid model should pass Validate()")
+	suite.NoError(err, "Valid model should pass Validate()")
 }
 
 // TestSetClassAssociations tests that SetClassAssociations validates and routes associations.
@@ -481,23 +480,23 @@ func (suite *ModelSuite) TestSetClassAssociations() {
 		domain2AssocKey:   domain2Assoc,
 		subdomainAssocKey: subdomainAssoc,
 	})
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Verify model-level association.
-	assert.Equal(suite.T(), 1, len(model.ClassAssociations))
-	assert.Contains(suite.T(), model.ClassAssociations, modelAssocKey)
+	suite.Len(model.ClassAssociations, 1)
+	suite.Contains(model.ClassAssociations, modelAssocKey)
 
 	// Verify domain1 received its association.
-	assert.Equal(suite.T(), 1, len(model.Domains[domain1Key].ClassAssociations))
-	assert.Contains(suite.T(), model.Domains[domain1Key].ClassAssociations, domain1AssocKey)
+	suite.Len(model.Domains[domain1Key].ClassAssociations, 1)
+	suite.Contains(model.Domains[domain1Key].ClassAssociations, domain1AssocKey)
 
 	// Verify domain2 received its association.
-	assert.Equal(suite.T(), 1, len(model.Domains[domain2Key].ClassAssociations))
-	assert.Contains(suite.T(), model.Domains[domain2Key].ClassAssociations, domain2AssocKey)
+	suite.Len(model.Domains[domain2Key].ClassAssociations, 1)
+	suite.Contains(model.Domains[domain2Key].ClassAssociations, domain2AssocKey)
 
 	// Verify subdomain received its association (routed through domain1).
-	assert.Equal(suite.T(), 1, len(model.Domains[domain1Key].Subdomains[subdomain1InD1Key].ClassAssociations))
-	assert.Contains(suite.T(), model.Domains[domain1Key].Subdomains[subdomain1InD1Key].ClassAssociations, subdomainAssocKey)
+	suite.Len(model.Domains[domain1Key].Subdomains[subdomain1InD1Key].ClassAssociations, 1)
+	suite.Contains(model.Domains[domain1Key].Subdomains[subdomain1InD1Key].ClassAssociations, subdomainAssocKey)
 
 	// Test: error when association has a parent that doesn't match any domain.
 	otherDomainKey := helper.Must(identity.NewDomainKey("other_domain"))
@@ -517,7 +516,7 @@ func (suite *ModelSuite) TestSetClassAssociations() {
 	err = model.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongParentAssocKey: wrongParentAssoc,
 	})
-	assert.ErrorContains(suite.T(), err, "does not match any domain")
+	suite.ErrorContains(err, "does not match any domain")
 }
 
 // TestGetClassAssociations tests that GetClassAssociations returns associations from model, domains, and subdomains.
@@ -612,18 +611,18 @@ func (suite *ModelSuite) TestGetClassAssociations() {
 
 	// Test: GetClassAssociations returns all associations.
 	result := model.GetClassAssociations()
-	assert.Equal(suite.T(), 3, len(result))
-	assert.Contains(suite.T(), result, modelAssocKey)
-	assert.Contains(suite.T(), result, domain1AssocKey)
-	assert.Contains(suite.T(), result, subdomainAssocKey)
+	suite.Len(result, 3)
+	suite.Contains(result, modelAssocKey)
+	suite.Contains(result, domain1AssocKey)
+	suite.Contains(result, subdomainAssocKey)
 
 	// Test: returned map is a copy.
 	class3InS1D1 := helper.Must(identity.NewClassKey(subdomain1InD1Key, "class3"))
 	newAssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1InD1Key, class1InS1D1, class3InS1D1, "new association"))
 	result[newAssocKey] = model_class.Association{Key: newAssocKey, Name: "New"}
-	assert.Equal(suite.T(), 1, len(model.ClassAssociations), "Model associations should not be modified")
-	assert.Equal(suite.T(), 1, len(model.Domains[domain1Key].ClassAssociations), "Domain associations should not be modified")
-	assert.Equal(suite.T(), 1, len(model.Domains[domain1Key].Subdomains[subdomain1InD1Key].ClassAssociations), "Subdomain associations should not be modified")
+	suite.Len(model.ClassAssociations, 1, "Model associations should not be modified")
+	suite.Len(model.Domains[domain1Key].ClassAssociations, 1, "Domain associations should not be modified")
+	suite.Len(model.Domains[domain1Key].Subdomains[subdomain1InD1Key].ClassAssociations, 1, "Subdomain associations should not be modified")
 
 	// Test: empty model returns empty map.
 	emptyModel := Model{
@@ -631,6 +630,6 @@ func (suite *ModelSuite) TestGetClassAssociations() {
 		Name: "Empty Model",
 	}
 	emptyResult := emptyModel.GetClassAssociations()
-	assert.NotNil(suite.T(), emptyResult)
-	assert.Equal(suite.T(), 0, len(emptyResult))
+	suite.NotNil(emptyResult)
+	suite.Empty(emptyResult)
 }

@@ -75,19 +75,19 @@ func (f *FunctionCall) String() string {
 	return out.String()
 }
 
-func (f *FunctionCall) Ascii() string {
+func (f *FunctionCall) ASCII() string {
 	var out bytes.Buffer
 	for _, seg := range f.ScopePath {
-		out.WriteString(seg.Ascii())
+		out.WriteString(seg.ASCII())
 		out.WriteString("!")
 	}
-	out.WriteString(f.Name.Ascii())
+	out.WriteString(f.Name.ASCII())
 	out.WriteString("(")
 	for i, arg := range f.Args {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(arg.Ascii())
+		out.WriteString(arg.ASCII())
 	}
 	out.WriteString(")")
 	return out.String()

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,8 +21,8 @@ func (s *EnvSuite) SetupTest() {
 
 func (s *EnvSuite) TestNewEnv() {
 	env := NewEnv()
-	assert.NotNil(s.T(), env)
-	assert.Empty(s.T(), env.Names())
+	s.NotNil(env)
+	s.Empty(env.Names())
 }
 
 func (s *EnvSuite) TestBind_And_Lookup() {
@@ -31,14 +30,14 @@ func (s *EnvSuite) TestBind_And_Lookup() {
 	env.Bind("x", types.Monotype(types.Number{}))
 
 	scheme, ok := env.Lookup("x")
-	assert.True(s.T(), ok)
-	assert.True(s.T(), scheme.Type.Equals(types.Number{}))
+	s.True(ok)
+	s.True(scheme.Type.Equals(types.Number{}))
 }
 
 func (s *EnvSuite) TestBind_NotFound() {
 	env := NewEnv()
 	_, ok := env.Lookup("x")
-	assert.False(s.T(), ok)
+	s.False(ok)
 }
 
 func (s *EnvSuite) TestBindMono() {
@@ -46,9 +45,9 @@ func (s *EnvSuite) TestBindMono() {
 	env.BindMono("x", types.Boolean{})
 
 	scheme, ok := env.Lookup("x")
-	assert.True(s.T(), ok)
-	assert.Empty(s.T(), scheme.TypeVars) // Monomorphic
-	assert.True(s.T(), scheme.Type.Equals(types.Boolean{}))
+	s.True(ok)
+	s.Empty(scheme.TypeVars) // Monomorphic
+	s.True(scheme.Type.Equals(types.Boolean{}))
 }
 
 func (s *EnvSuite) TestExtend() {
@@ -61,14 +60,14 @@ func (s *EnvSuite) TestExtend() {
 	// Child can see both
 	_, okX := child.Lookup("x")
 	_, okY := child.Lookup("y")
-	assert.True(s.T(), okX)
-	assert.True(s.T(), okY)
+	s.True(okX)
+	s.True(okY)
 
 	// Parent can only see x
 	_, okX = parent.Lookup("x")
 	_, okY = parent.Lookup("y")
-	assert.True(s.T(), okX)
-	assert.False(s.T(), okY)
+	s.True(okX)
+	s.False(okY)
 }
 
 func (s *EnvSuite) TestExtend_Shadowing() {
@@ -80,19 +79,19 @@ func (s *EnvSuite) TestExtend_Shadowing() {
 
 	// Child sees Boolean
 	schemeChild, _ := child.Lookup("x")
-	assert.True(s.T(), schemeChild.Type.Equals(types.Boolean{}))
+	s.True(schemeChild.Type.Equals(types.Boolean{}))
 
 	// Parent still sees Number
 	schemeParent, _ := parent.Lookup("x")
-	assert.True(s.T(), schemeParent.Type.Equals(types.Number{}))
+	s.True(schemeParent.Type.Equals(types.Number{}))
 }
 
 func (s *EnvSuite) TestContains() {
 	env := NewEnv()
 	env.BindMono("x", types.Number{})
 
-	assert.True(s.T(), env.Contains("x"))
-	assert.False(s.T(), env.Contains("y"))
+	s.True(env.Contains("x"))
+	s.False(env.Contains("y"))
 }
 
 func (s *EnvSuite) TestFreeTypeVars_Empty() {
@@ -100,7 +99,7 @@ func (s *EnvSuite) TestFreeTypeVars_Empty() {
 	env.BindMono("x", types.Number{})
 
 	free := env.FreeTypeVars()
-	assert.Empty(s.T(), free)
+	s.Empty(free)
 }
 
 func (s *EnvSuite) TestFreeTypeVars_WithTypeVar() {
@@ -110,7 +109,7 @@ func (s *EnvSuite) TestFreeTypeVars_WithTypeVar() {
 
 	free := env.FreeTypeVars()
 	_, exists := free[42]
-	assert.True(s.T(), exists)
+	s.True(exists)
 }
 
 func (s *EnvSuite) TestFreeTypeVars_InParent() {
@@ -123,7 +122,7 @@ func (s *EnvSuite) TestFreeTypeVars_InParent() {
 
 	free := child.FreeTypeVars()
 	_, exists := free[10]
-	assert.True(s.T(), exists)
+	s.True(exists)
 }
 
 func (s *EnvSuite) TestApply() {
@@ -135,11 +134,11 @@ func (s *EnvSuite) TestApply() {
 	newEnv := env.Apply(subst)
 
 	scheme, _ := newEnv.Lookup("x")
-	assert.True(s.T(), scheme.Type.Equals(types.Number{}))
+	s.True(scheme.Type.Equals(types.Number{}))
 
 	// Original unchanged
 	origScheme, _ := env.Lookup("x")
-	assert.True(s.T(), origScheme.Type.Equals(tv))
+	s.True(origScheme.Type.Equals(tv))
 }
 
 func (s *EnvSuite) TestApply_WithParent() {
@@ -156,8 +155,8 @@ func (s *EnvSuite) TestApply_WithParent() {
 
 	schemeX, _ := newEnv.Lookup("x")
 	schemeY, _ := newEnv.Lookup("y")
-	assert.True(s.T(), schemeX.Type.Equals(types.Number{}))
-	assert.True(s.T(), schemeY.Type.Equals(types.Boolean{}))
+	s.True(schemeX.Type.Equals(types.Number{}))
+	s.True(schemeY.Type.Equals(types.Boolean{}))
 }
 
 func (s *EnvSuite) TestClone() {
@@ -168,12 +167,12 @@ func (s *EnvSuite) TestClone() {
 	clone.BindMono("y", types.Boolean{})
 
 	// Clone has both
-	assert.True(s.T(), clone.Contains("x"))
-	assert.True(s.T(), clone.Contains("y"))
+	s.True(clone.Contains("x"))
+	s.True(clone.Contains("y"))
 
 	// Original only has x
-	assert.True(s.T(), env.Contains("x"))
-	assert.False(s.T(), env.Contains("y"))
+	s.True(env.Contains("x"))
+	s.False(env.Contains("y"))
 }
 
 func (s *EnvSuite) TestNames() {
@@ -182,9 +181,9 @@ func (s *EnvSuite) TestNames() {
 	env.BindMono("y", types.Boolean{})
 
 	names := env.Names()
-	assert.Len(s.T(), names, 2)
-	assert.Contains(s.T(), names, "x")
-	assert.Contains(s.T(), names, "y")
+	s.Len(names, 2)
+	s.Contains(names, "x")
+	s.Contains(names, "y")
 }
 
 func (s *EnvSuite) TestAllNames() {
@@ -195,13 +194,13 @@ func (s *EnvSuite) TestAllNames() {
 	child.BindMono("y", types.Boolean{})
 
 	// Names() only returns local bindings
-	assert.Len(s.T(), child.Names(), 1)
+	s.Len(child.Names(), 1)
 
 	// AllNames() includes parent
 	allNames := child.AllNames()
-	assert.Len(s.T(), allNames, 2)
-	assert.Contains(s.T(), allNames, "x")
-	assert.Contains(s.T(), allNames, "y")
+	s.Len(allNames, 2)
+	s.Contains(allNames, "x")
+	s.Contains(allNames, "y")
 }
 
 func (s *EnvSuite) TestAllNames_Shadowing() {
@@ -219,5 +218,5 @@ func (s *EnvSuite) TestAllNames_Shadowing() {
 			count++
 		}
 	}
-	assert.Equal(s.T(), 1, count)
+	s.Equal(1, count)
 }

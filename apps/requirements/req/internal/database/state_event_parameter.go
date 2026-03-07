@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
@@ -208,13 +209,14 @@ func AddEventParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 	}
 
 	// Build the bulk insert query.
-	sqlQuery := `INSERT INTO event_parameter (model_key, event_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `
-	args := make([]interface{}, 0, count*7)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO event_parameter (model_key, event_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `)
+	args := make([]any, 0, count*7)
 	i := 0
 	for eventKey, paramList := range params {
 		for paramIdx, param := range paramList {
 			if i > 0 {
-				sqlQuery += ", "
+				qb.WriteString(", ")
 			}
 
 			paramKey, err := preenKey(param.Name)
@@ -223,13 +225,13 @@ func AddEventParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 			}
 
 			base := i * 7
-			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
 			args = append(args, modelKey, eventKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, sqlQuery, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

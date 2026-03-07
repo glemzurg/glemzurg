@@ -422,9 +422,9 @@ func (s *ResolverSuite) TestResolve_AssociationOneEndpointExcluded() {
 	}
 	resolved, err := Resolve(spec, model)
 	s.NoError(err)
-	s.Len(resolved.Associations, 0)
+	s.Empty(resolved.Associations)
 	// Should produce a warning about the dropped association.
-	s.True(len(resolved.Warnings) > 0)
+	s.NotEmpty(resolved.Warnings)
 	foundWarning := false
 	for _, w := range resolved.Warnings {
 		if contains(w, "dropped") {
@@ -447,7 +447,7 @@ func (s *ResolverSuite) TestResolve_RealizedDomainExcluded() {
 		IncludeDomains: []identity.Key{domainKey, domain2Key},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Payment should not be included (realized domain).
 	s.NotContains(resolved.Classes, paymentClassKey)
 	// Should produce a warning about realized domain.
@@ -519,7 +519,7 @@ func (s *ResolverSuite) TestResolve_MultipleIncludes() {
 		IncludeClasses:    []identity.Key{paymentClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// All 3 classes should be included.
 	s.Len(resolved.Classes, 3)
 }
@@ -544,7 +544,7 @@ func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 	inScope := map[string]bool{"Order": true, "Item": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
 	s.Len(included, 2)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
@@ -558,7 +558,7 @@ func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 	// It only filters if the identifier matches a class name that's NOT in scope.
 	// Without the allClassNames context, it can't tell.
 	s.Len(included, 2)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfScope() {
@@ -584,13 +584,13 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_KeepsNonClassI
 	// "x" and "y" are not known class names, so this invariant stays.
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_EmptyInvariants() {
 	included, excluded := ScopeInvariantsWithAllClasses(nil, map[string]bool{}, map[string]bool{})
-	s.Len(included, 0)
-	s.Len(excluded, 0)
+	s.Empty(included)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInvariant() {
@@ -602,7 +602,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInv
 	// Unparseable invariants should be kept (fail-open).
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassReferences() {
@@ -613,7 +613,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassR
 	allClasses := map[string]bool{"Order": true, "Payment": true}
 	// References Payment which is out of scope.
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
-	s.Len(included, 0)
+	s.Empty(included)
 	s.Len(excluded, 1)
 }
 
@@ -952,7 +952,7 @@ func (s *DiagnosticsSuite) TestDiagnose_NoDiagnosticsForHealthySurface() {
 	}
 
 	diagnostics := Diagnose(resolved, model, nil)
-	s.Len(diagnostics, 0, "expected no diagnostics for a healthy surface, got: %v", diagnostics)
+	s.Empty(diagnostics, "expected no diagnostics for a healthy surface, got: %v", diagnostics)
 }
 
 // ============================================================

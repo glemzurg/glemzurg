@@ -8,7 +8,7 @@ var _validate = validator.New()
 // Node is a node of the abstract syntax tree.
 type Node interface {
 	String() (value string)
-	Ascii() (value string)
+	ASCII() (value string)
 	Validate() error
 }
 

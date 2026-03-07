@@ -10,8 +10,8 @@ const (
 	TupleOperatorConcat = "∘" // Concatenation (U+2218 RING OPERATOR)
 )
 
-// tupleOperatorAscii maps Unicode operators to ASCII equivalents.
-var tupleOperatorAscii = map[string]string{
+// tupleOperatorASCII maps Unicode operators to ASCII equivalents.
+var tupleOperatorASCII = map[string]string{
 	TupleOperatorConcat: `\o`,
 }
 
@@ -36,10 +36,10 @@ func (t *TupleConcat) String() (value string) {
 	return out.String()
 }
 
-func (t *TupleConcat) Ascii() (value string) {
+func (t *TupleConcat) ASCII() (value string) {
 	var out bytes.Buffer
 	ascii := t.Operator
-	if a, ok := tupleOperatorAscii[t.Operator]; ok {
+	if a, ok := tupleOperatorASCII[t.Operator]; ok {
 		ascii = a
 	}
 	for i, operand := range t.Operands {
@@ -48,7 +48,7 @@ func (t *TupleConcat) Ascii() (value string) {
 			out.WriteString(ascii)
 			out.WriteString(" ")
 		}
-		out.WriteString(operand.Ascii())
+		out.WriteString(operand.ASCII())
 	}
 	return out.String()
 }
@@ -69,5 +69,6 @@ func (t *TupleConcat) Validate() error {
 }
 
 // TupleInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use TupleConcat instead.
 type TupleInfixExpression = TupleConcat

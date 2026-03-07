@@ -114,7 +114,7 @@ func (suite *CallExpressionSuite) TestString() {
 	}
 }
 
-func (suite *CallExpressionSuite) TestAscii() {
+func (suite *CallExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName     string
 		modelScope   bool
@@ -182,7 +182,7 @@ func (suite *CallExpressionSuite) TestAscii() {
 				FunctionName: tt.functionName,
 				Parameter:    tt.parameter,
 			}
-			assert.Equal(t, tt.expected, c.Ascii())
+			assert.Equal(t, tt.expected, c.ASCII())
 		})
 	}
 }

@@ -40,7 +40,7 @@ func evalNumberLiteral(node *ast.NumberLiteral) *EvalResult {
 	}
 
 	numerator := intVal*denom + precisionVal
-	return NewEvalResult(object.NewReal(numerator, denom))
+	return NewEvalResult(object.NewRational(numerator, denom))
 }
 
 // parseIntegerPart parses the integer part of a NumberLiteral according to its base.
@@ -82,7 +82,7 @@ func evalNumericPrefixExpression(node *ast.NumericPrefixExpression, bindings *Bi
 }
 
 // evalFractionExpr evaluates a fraction expression (a/b).
-func evalFractionExpr(node *ast.FractionExpr, bindings *Bindings) *EvalResult {
+func evalFractionExpr(node *ast.Fraction, bindings *Bindings) *EvalResult {
 	// Evaluate numerator
 	numResult := EvalAST(node.Numerator, bindings)
 	if numResult.IsError() {

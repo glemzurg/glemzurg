@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -176,22 +177,24 @@ func AddSubdomains(dbOrTx DbOrTx, modelKey string, subdomains map[identity.Key][
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*6)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, uml_comment) VALUES `)
+	args := make([]any, 0, count*6)
 	i := 0
 	for domainKey, subs := range subdomains {
 		for _, subdomain := range subs {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 6
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
+
 			args = append(args, modelKey, domainKey.String(), subdomain.Key.String(), subdomain.Name, subdomain.Details, subdomain.UmlComment)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

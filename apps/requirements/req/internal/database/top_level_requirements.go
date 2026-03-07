@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
@@ -610,9 +611,7 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 		useCaseSharedsMap := make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared)
 		for _, domain := range model.Domains {
 			for _, subdomain := range domain.Subdomains {
-				for seaKey, mudMap := range subdomain.UseCaseShares {
-					useCaseSharedsMap[seaKey] = mudMap
-				}
+				maps.Copy(useCaseSharedsMap, subdomain.UseCaseShares)
 			}
 		}
 		if err = AddUseCaseShareds(tx, modelKey, useCaseSharedsMap); err != nil {

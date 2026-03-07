@@ -40,7 +40,7 @@ func (g *Generalization) Validate() error {
 		return err
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
-		return errors.Errorf("Key: invalid key type '%s' for use case generalization.", g.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for use case generalization", g.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

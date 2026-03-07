@@ -246,7 +246,7 @@ func BulkInsertAtomicEnums(dbOrTx DbOrTx, modelKey string, atomicEnums map[strin
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, totalEnums*4)
+	args := make([]any, 0, totalEnums*4)
 	valueStrings := make([]string, 0, totalEnums)
 	i := 0
 	for dataTypeKey, enums := range atomicEnums {

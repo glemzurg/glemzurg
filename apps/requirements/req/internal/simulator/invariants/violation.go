@@ -256,13 +256,14 @@ func NewCollectionSizeViolation(
 	maxSize *int,
 ) *ViolationError {
 	var rangeStr string
-	if minSize != nil && maxSize != nil {
+	switch {
+	case minSize != nil && maxSize != nil:
 		rangeStr = fmt.Sprintf("[%d, %d]", *minSize, *maxSize)
-	} else if minSize != nil {
+	case minSize != nil:
 		rangeStr = fmt.Sprintf("[%d, ∞)", *minSize)
-	} else if maxSize != nil {
+	case maxSize != nil:
 		rangeStr = fmt.Sprintf("[0, %d]", *maxSize)
-	} else {
+	default:
 		rangeStr = "[0, ∞)"
 	}
 
@@ -331,9 +332,9 @@ func NewMultiplicityViolation(
 	classKey identity.Key,
 	associationName string,
 	direction string,
-	actualCount int,
-	requiredMin uint,
-	requiredMax uint,
+	_ int,
+	_ uint,
+	_ uint,
 	message string,
 ) *ViolationError {
 	return &ViolationError{
@@ -364,7 +365,7 @@ func NewLivenessAttributeNotWrittenViolation(classKey identity.Key, className, a
 }
 
 // NewLivenessAssociationNotLinkedViolation creates a violation for an association that was never linked.
-func NewLivenessAssociationNotLinkedViolation(associationKey identity.Key, associationName string, fromClassKey, toClassKey identity.Key) *ViolationError {
+func NewLivenessAssociationNotLinkedViolation(_ identity.Key, associationName string, fromClassKey, toClassKey identity.Key) *ViolationError {
 	return &ViolationError{
 		Type:    ViolationTypeLivenessAssociationNotLinked,
 		Message: fmt.Sprintf("liveness: association %s (between %s and %s) never had a link created during simulation", associationName, fromClassKey.String(), toClassKey.String()),

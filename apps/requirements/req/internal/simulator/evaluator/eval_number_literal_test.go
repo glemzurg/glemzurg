@@ -208,7 +208,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_Negation() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			node := &ast.NumericPrefixExpression{
+			node := &ast.UnaryNegation{
 				Operator: "-",
 				Right:    &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: string(rune('0' + tt.value%10))},
 			}
@@ -229,9 +229,9 @@ func (s *NumberLiteralSuite) TestNumericPrefix_Negation() {
 
 func (s *NumberLiteralSuite) TestNumericPrefix_DoubleNegation() {
 	// --5 should equal 5
-	node := &ast.NumericPrefixExpression{
+	node := &ast.UnaryNegation{
 		Operator: "-",
-		Right: &ast.NumericPrefixExpression{
+		Right: &ast.UnaryNegation{
 			Operator: "-",
 			Right:    &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 		},
@@ -246,7 +246,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_DoubleNegation() {
 
 func (s *NumberLiteralSuite) TestNumericPrefix_NegateDecimal() {
 	// -(3.14)
-	node := &ast.NumericPrefixExpression{
+	node := &ast.UnaryNegation{
 		Operator: "-",
 		Right: &ast.NumberLiteral{
 			Base:            ast.BaseDecimal,
@@ -264,7 +264,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_NegateDecimal() {
 }
 
 func (s *NumberLiteralSuite) TestNumericPrefix_NegateNonNumeric() {
-	node := &ast.NumericPrefixExpression{
+	node := &ast.UnaryNegation{
 		Operator: "-",
 		Right:    &ast.StringLiteral{Value: "hello"},
 	}
@@ -275,7 +275,7 @@ func (s *NumberLiteralSuite) TestNumericPrefix_NegateNonNumeric() {
 }
 
 func (s *NumberLiteralSuite) TestNumericPrefix_UnknownOperator() {
-	node := &ast.NumericPrefixExpression{
+	node := &ast.UnaryNegation{
 		Operator: "+",
 		Right:    &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 	}
@@ -303,7 +303,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_Simple() {
 	}
 	for _, tt := range tests {
 		s.Run(tt.testName, func() {
-			node := ast.NewFractionExpr(
+			node := ast.NewFraction(
 				&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: intToString(tt.numerator)},
 				&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: intToString(tt.denominator)},
 			)
@@ -319,7 +319,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_Simple() {
 
 func (s *NumberLiteralSuite) TestFractionExpr_NegativeNumerator() {
 	// -3/4
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}),
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"},
 	)
@@ -333,7 +333,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NegativeNumerator() {
 
 func (s *NumberLiteralSuite) TestFractionExpr_NegativeDenominator() {
 	// 3/-4
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}),
 	)
@@ -347,7 +347,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NegativeDenominator() {
 
 func (s *NumberLiteralSuite) TestFractionExpr_BothNegative() {
 	// -3/-4 = 3/4
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}),
 		ast.NewNegation(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}),
 	)
@@ -360,7 +360,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_BothNegative() {
 }
 
 func (s *NumberLiteralSuite) TestFractionExpr_DivisionByZero() {
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "0"},
 	)
@@ -371,7 +371,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_DivisionByZero() {
 }
 
 func (s *NumberLiteralSuite) TestFractionExpr_NonNumericNumerator() {
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		&ast.StringLiteral{Value: "hello"},
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 	)
@@ -382,7 +382,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NonNumericNumerator() {
 }
 
 func (s *NumberLiteralSuite) TestFractionExpr_NonNumericDenominator() {
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		&ast.StringLiteral{Value: "hello"},
 	)
@@ -394,8 +394,8 @@ func (s *NumberLiteralSuite) TestFractionExpr_NonNumericDenominator() {
 
 func (s *NumberLiteralSuite) TestFractionExpr_NestedFractions() {
 	// (1/2)/3 = 1/6
-	node := ast.NewFractionExpr(
-		ast.NewFractionExpr(
+	node := ast.NewFraction(
+		ast.NewFraction(
 			&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 			&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		),
@@ -410,7 +410,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_NestedFractions() {
 
 func (s *NumberLiteralSuite) TestFractionExpr_DecimalOperands() {
 	// 1.5/0.5 = 3
-	node := ast.NewFractionExpr(
+	node := ast.NewFraction(
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1", HasDecimalPoint: true, FractionalPart: "5"},
 		&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "0", HasDecimalPoint: true, FractionalPart: "5"},
 	)
@@ -425,7 +425,7 @@ func (s *NumberLiteralSuite) TestFractionExpr_DecimalOperands() {
 // === ParenExpr ===
 
 func (s *NumberLiteralSuite) TestParenExpr_Number() {
-	node := &ast.ParenExpr{
+	node := &ast.Parenthesized{
 		Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 	}
 	result := EvalAST(node, NewBindings())
@@ -436,7 +436,7 @@ func (s *NumberLiteralSuite) TestParenExpr_Number() {
 }
 
 func (s *NumberLiteralSuite) TestParenExpr_String() {
-	node := &ast.ParenExpr{
+	node := &ast.Parenthesized{
 		Inner: &ast.StringLiteral{Value: "hello"},
 	}
 	result := EvalAST(node, NewBindings())
@@ -447,7 +447,7 @@ func (s *NumberLiteralSuite) TestParenExpr_String() {
 }
 
 func (s *NumberLiteralSuite) TestParenExpr_Boolean() {
-	node := &ast.ParenExpr{
+	node := &ast.Parenthesized{
 		Inner: &ast.BooleanLiteral{Value: true},
 	}
 	result := EvalAST(node, NewBindings())
@@ -459,8 +459,8 @@ func (s *NumberLiteralSuite) TestParenExpr_Boolean() {
 
 func (s *NumberLiteralSuite) TestParenExpr_NestedParens() {
 	// ((42))
-	node := &ast.ParenExpr{
-		Inner: &ast.ParenExpr{
+	node := &ast.Parenthesized{
+		Inner: &ast.Parenthesized{
 			Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 		},
 	}
@@ -473,9 +473,9 @@ func (s *NumberLiteralSuite) TestParenExpr_NestedParens() {
 
 func (s *NumberLiteralSuite) TestParenExpr_WithNegation() {
 	// -(42)
-	node := &ast.NumericPrefixExpression{
+	node := &ast.UnaryNegation{
 		Operator: "-",
-		Right: &ast.ParenExpr{
+		Right: &ast.Parenthesized{
 			Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 		},
 	}
@@ -488,9 +488,9 @@ func (s *NumberLiteralSuite) TestParenExpr_WithNegation() {
 
 func (s *NumberLiteralSuite) TestParenExpr_WithFraction() {
 	// (3)/(4)
-	node := ast.NewFractionExpr(
-		&ast.ParenExpr{Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}},
-		&ast.ParenExpr{Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}},
+	node := ast.NewFraction(
+		&ast.Parenthesized{Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"}},
+		&ast.Parenthesized{Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"}},
 	)
 	result := EvalAST(node, NewBindings())
 

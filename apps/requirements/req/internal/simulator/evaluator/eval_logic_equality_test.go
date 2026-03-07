@@ -21,7 +21,7 @@ type LogicEqualitySuite struct {
 // =============================================================================
 
 func (s *LogicEqualitySuite) TestNumberEqual_True() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     ast.NewIntLiteral(42),
 		Right:    ast.NewIntLiteral(42),
@@ -35,7 +35,7 @@ func (s *LogicEqualitySuite) TestNumberEqual_True() {
 }
 
 func (s *LogicEqualitySuite) TestNumberEqual_False() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     ast.NewIntLiteral(42),
 		Right:    ast.NewIntLiteral(43),
@@ -49,7 +49,7 @@ func (s *LogicEqualitySuite) TestNumberEqual_False() {
 }
 
 func (s *LogicEqualitySuite) TestNumberNotEqual_True() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "≠",
 		Left:     ast.NewIntLiteral(42),
 		Right:    ast.NewIntLiteral(43),
@@ -63,7 +63,7 @@ func (s *LogicEqualitySuite) TestNumberNotEqual_True() {
 }
 
 func (s *LogicEqualitySuite) TestNumberNotEqual_False() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "≠",
 		Left:     ast.NewIntLiteral(42),
 		Right:    ast.NewIntLiteral(42),
@@ -78,10 +78,10 @@ func (s *LogicEqualitySuite) TestNumberNotEqual_False() {
 
 func (s *LogicEqualitySuite) TestNumberEqual_DifferentKindsSameValue() {
 	// Natural 5 should equal Rational 10/2
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     ast.NewIntLiteral(5),
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(10), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(10), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -96,7 +96,7 @@ func (s *LogicEqualitySuite) TestNumberEqual_DifferentKindsSameValue() {
 // =============================================================================
 
 func (s *LogicEqualitySuite) TestStringEqual_True() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.StringLiteral{Value: "hello"},
 		Right:    &ast.StringLiteral{Value: "hello"},
@@ -110,7 +110,7 @@ func (s *LogicEqualitySuite) TestStringEqual_True() {
 }
 
 func (s *LogicEqualitySuite) TestStringEqual_False() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.StringLiteral{Value: "hello"},
 		Right:    &ast.StringLiteral{Value: "world"},
@@ -124,7 +124,7 @@ func (s *LogicEqualitySuite) TestStringEqual_False() {
 }
 
 func (s *LogicEqualitySuite) TestStringNotEqual_True() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "≠",
 		Left:     &ast.StringLiteral{Value: "hello"},
 		Right:    &ast.StringLiteral{Value: "world"},
@@ -142,7 +142,7 @@ func (s *LogicEqualitySuite) TestStringNotEqual_True() {
 // =============================================================================
 
 func (s *LogicEqualitySuite) TestBooleanEqual_True() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.BooleanLiteral{Value: true},
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -156,7 +156,7 @@ func (s *LogicEqualitySuite) TestBooleanEqual_True() {
 }
 
 func (s *LogicEqualitySuite) TestBooleanEqual_False() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.BooleanLiteral{Value: true},
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -170,7 +170,7 @@ func (s *LogicEqualitySuite) TestBooleanEqual_False() {
 }
 
 func (s *LogicEqualitySuite) TestBooleanNotEqual_True() {
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "≠",
 		Left:     &ast.BooleanLiteral{Value: true},
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -189,7 +189,7 @@ func (s *LogicEqualitySuite) TestBooleanNotEqual_True() {
 
 func (s *LogicEqualitySuite) TestSetEqual_True() {
 	// {1, 2, 3} = {1, 2, 3}
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -204,7 +204,7 @@ func (s *LogicEqualitySuite) TestSetEqual_True() {
 
 func (s *LogicEqualitySuite) TestSetEqual_DifferentOrder() {
 	// {1, 2, 3} = {3, 2, 1} - sets are unordered
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Right:    &ast.SetLiteralInt{Values: []int{3, 2, 1}},
@@ -219,7 +219,7 @@ func (s *LogicEqualitySuite) TestSetEqual_DifferentOrder() {
 
 func (s *LogicEqualitySuite) TestSetEqual_False() {
 	// {1, 2, 3} = {1, 2, 4}
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 4}},
@@ -234,7 +234,7 @@ func (s *LogicEqualitySuite) TestSetEqual_False() {
 
 func (s *LogicEqualitySuite) TestSetNotEqual_True() {
 	// {1, 2} ≠ {1, 2, 3}
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "≠",
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -253,7 +253,7 @@ func (s *LogicEqualitySuite) TestSetNotEqual_True() {
 
 func (s *LogicEqualitySuite) TestTupleEqual_True() {
 	// <<1, 2, 3>> = <<1, 2, 3>>
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left: &ast.TupleLiteral{Elements: []ast.Expression{
 			ast.NewIntLiteral(1),
@@ -276,7 +276,7 @@ func (s *LogicEqualitySuite) TestTupleEqual_True() {
 
 func (s *LogicEqualitySuite) TestTupleEqual_DifferentOrder() {
 	// <<1, 2>> = <<2, 1>> - tuples are ordered
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left: &ast.TupleLiteral{Elements: []ast.Expression{
 			ast.NewIntLiteral(1),
@@ -297,7 +297,7 @@ func (s *LogicEqualitySuite) TestTupleEqual_DifferentOrder() {
 
 func (s *LogicEqualitySuite) TestTupleEqual_DifferentLength() {
 	// <<1, 2>> = <<1, 2, 3>>
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left: &ast.TupleLiteral{Elements: []ast.Expression{
 			ast.NewIntLiteral(1),
@@ -323,7 +323,7 @@ func (s *LogicEqualitySuite) TestTupleEqual_DifferentLength() {
 
 func (s *LogicEqualitySuite) TestRecordEqual_True() {
 	// [x |-> 1, y |-> 2] = [x |-> 1, y |-> 2]
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left: &ast.RecordInstance{
 			Bindings: []*ast.FieldBinding{
@@ -348,7 +348,7 @@ func (s *LogicEqualitySuite) TestRecordEqual_True() {
 
 func (s *LogicEqualitySuite) TestRecordEqual_DifferentFieldOrder() {
 	// [x |-> 1, y |-> 2] = [y |-> 2, x |-> 1] - fields can be in any order
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left: &ast.RecordInstance{
 			Bindings: []*ast.FieldBinding{
@@ -373,7 +373,7 @@ func (s *LogicEqualitySuite) TestRecordEqual_DifferentFieldOrder() {
 
 func (s *LogicEqualitySuite) TestRecordEqual_DifferentValue() {
 	// [x |-> 1] = [x |-> 2]
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left: &ast.RecordInstance{
 			Bindings: []*ast.FieldBinding{
@@ -400,7 +400,7 @@ func (s *LogicEqualitySuite) TestRecordEqual_DifferentValue() {
 
 func (s *LogicEqualitySuite) TestCrossTypeEqual_NumberVsString() {
 	// 42 = "42" - different types, always false
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     ast.NewIntLiteral(42),
 		Right:    &ast.StringLiteral{Value: "42"},
@@ -415,7 +415,7 @@ func (s *LogicEqualitySuite) TestCrossTypeEqual_NumberVsString() {
 
 func (s *LogicEqualitySuite) TestCrossTypeEqual_BooleanVsNumber() {
 	// TRUE = 1 - different types, always false
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "=",
 		Left:     &ast.BooleanLiteral{Value: true},
 		Right:    ast.NewIntLiteral(1),
@@ -430,7 +430,7 @@ func (s *LogicEqualitySuite) TestCrossTypeEqual_BooleanVsNumber() {
 
 func (s *LogicEqualitySuite) TestCrossTypeNotEqual_NumberVsBoolean() {
 	// 1 ≠ TRUE - different types, always true
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "≠",
 		Left:     ast.NewIntLiteral(1),
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -449,7 +449,7 @@ func (s *LogicEqualitySuite) TestCrossTypeNotEqual_NumberVsBoolean() {
 
 func (s *LogicEqualitySuite) TestNotEqual_SlashEquals() {
 	// 1 /= 2 using ASCII operator
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "/=",
 		Left:     ast.NewIntLiteral(1),
 		Right:    ast.NewIntLiteral(2),
@@ -464,7 +464,7 @@ func (s *LogicEqualitySuite) TestNotEqual_SlashEquals() {
 
 func (s *LogicEqualitySuite) TestNotEqual_Hash() {
 	// 1 # 2 using hash operator
-	node := &ast.LogicEquality{
+	node := &ast.BinaryEquality{
 		Operator: "#",
 		Left:     ast.NewIntLiteral(1),
 		Right:    ast.NewIntLiteral(2),

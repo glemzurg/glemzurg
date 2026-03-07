@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -106,12 +105,12 @@ func (suite *AssociationSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.association.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -123,8 +122,8 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	assoc, err := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Association{
+	suite.NoError(err)
+	suite.Equal(Association{
 		Key:               key,
 		ProblemDomainKey:  suite.problemDomainKey,
 		SolutionDomainKey: suite.solutionDomainKey,
@@ -133,7 +132,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "'KeyType' failed on the 'required' tag")
+	suite.ErrorContains(err, "'KeyType' failed on the 'required' tag")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -148,7 +147,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
 	err := assoc.ValidateWithParent(nil)
-	assert.ErrorContains(suite.T(), err, "'KeyType' failed on the 'required' tag", "ValidateWithParent should call Validate()")
+	suite.ErrorContains(err, "'KeyType' failed on the 'required' tag", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domain association is a root key, so it should not have a parent.
 	assoc = Association{
@@ -157,11 +156,11 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
 	err = assoc.ValidateWithParent(&otherDomainKey)
-	assert.ErrorContains(suite.T(), err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
+	suite.ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case - domain association key has no parent (root-level entity).
 	err = assoc.ValidateWithParent(nil)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates domain references correctly.
@@ -212,12 +211,12 @@ func (suite *AssociationSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.association.ValidateReferences(tt.domains)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}

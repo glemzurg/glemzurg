@@ -20,7 +20,7 @@ func (s *SetRangeExpr) String() (value string) {
 	return out.String()
 }
 
-func (s *SetRangeExpr) Ascii() (value string) {
+func (s *SetRangeExpr) ASCII() (value string) {
 	return s.String()
 }
 

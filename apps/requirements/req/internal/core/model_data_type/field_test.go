@@ -3,7 +3,6 @@ package model_data_type
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -120,10 +119,10 @@ func (suite *FieldSuite) TestValidate() {
 		suite.Run(tt.name, func() {
 			err := tt.field.Validate()
 			if tt.errstr == "" {
-				assert.Nil(suite.T(), err, "expected no error for %+v", tt.field)
+				suite.NoError(err, "expected no error for %+v", tt.field)
 			} else {
-				assert.NotNil(suite.T(), err, "expected error for %+v", tt.field)
-				assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %+v", tt.field)
+				suite.Error(err, "expected error for %+v", tt.field)
+				suite.ErrorContains(err, tt.errstr, "error message mismatch for %+v", tt.field)
 			}
 		})
 	}

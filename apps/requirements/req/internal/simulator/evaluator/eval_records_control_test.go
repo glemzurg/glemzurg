@@ -20,7 +20,7 @@ type RecordsControlSuite struct {
 
 func (s *RecordsControlSuite) TestIfElse_TrueCondition() {
 	// IF TRUE THEN 1 ELSE 2 = 1
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: true},
 		Then:      ast.NewIntLiteral(1),
 		Else:      ast.NewIntLiteral(2),
@@ -36,7 +36,7 @@ func (s *RecordsControlSuite) TestIfElse_TrueCondition() {
 
 func (s *RecordsControlSuite) TestIfElse_FalseCondition() {
 	// IF FALSE THEN 1 ELSE 2 = 2
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: false},
 		Then:      ast.NewIntLiteral(1),
 		Else:      ast.NewIntLiteral(2),
@@ -52,8 +52,8 @@ func (s *RecordsControlSuite) TestIfElse_FalseCondition() {
 
 func (s *RecordsControlSuite) TestIfElse_NestedCondition() {
 	// IF (3 < 5) THEN "yes" ELSE "no" = "yes"
-	node := &ast.ExpressionIfElse{
-		Condition: &ast.LogicRealComparison{
+	node := &ast.IfThenElse{
+		Condition: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(5),
@@ -72,12 +72,12 @@ func (s *RecordsControlSuite) TestIfElse_NestedCondition() {
 
 func (s *RecordsControlSuite) TestIfElse_NestedIfElse() {
 	// IF FALSE THEN 1 ELSE IF TRUE THEN 2 ELSE 3 = 2
-	inner := &ast.ExpressionIfElse{
+	inner := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: true},
 		Then:      ast.NewIntLiteral(2),
 		Else:      ast.NewIntLiteral(3),
 	}
-	outer := &ast.ExpressionIfElse{
+	outer := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: false},
 		Then:      ast.NewIntLiteral(1),
 		Else:      inner,
@@ -105,7 +105,7 @@ func (s *RecordsControlSuite) TestRecordExcept_SimpleUpdate() {
 		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
-				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "value"},
+				Field:      &ast.FieldAccess{Identifier: nil, Member: "value"},
 				Expression: ast.NewIntLiteral(20),
 			},
 		},
@@ -136,11 +136,11 @@ func (s *RecordsControlSuite) TestRecordExcept_MultipleUpdates() {
 		Base: &ast.Identifier{Value: "x"},
 		Alterations: []*ast.FieldAlteration{
 			{
-				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "a"},
+				Field:      &ast.FieldAccess{Identifier: nil, Member: "a"},
 				Expression: ast.NewIntLiteral(100),
 			},
 			{
-				Field:      &ast.FieldIdentifier{Identifier: nil, Member: "b"},
+				Field:      &ast.FieldAccess{Identifier: nil, Member: "b"},
 				Expression: ast.NewIntLiteral(200),
 			},
 		},
@@ -204,7 +204,7 @@ func (s *RecordsControlSuite) TestIfElse_WithRecords() {
 	// IF TRUE THEN [val ↦ 1] ELSE [val ↦ 2]
 	bindings := NewBindings()
 
-	node := &ast.ExpressionIfElse{
+	node := &ast.IfThenElse{
 		Condition: &ast.BooleanLiteral{Value: true}, // Use literal since Identifier doesn't implement Logic
 		Then: &ast.RecordInstance{
 			Bindings: []*ast.FieldBinding{
@@ -273,7 +273,7 @@ func (s *RecordsControlSuite) TestStringIndex_OutOfBounds() {
 
 func (s *RecordsControlSuite) TestStringConcat_Simple() {
 	// "hello" ∘ " " ∘ "world" = "hello world"
-	node := &ast.StringInfixExpression{
+	node := &ast.StringConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.StringLiteral{Value: "hello"},

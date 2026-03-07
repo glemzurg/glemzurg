@@ -25,14 +25,14 @@ func TestNumberLiterals(t *testing.T) {
 		{"negative large", ast.NewIntLiteral(-1000000), object.KindInteger, "-1000000"},
 
 		// Rationals (fractions that don't simplify to integers)
-		{"simple fraction", ast.NewFractionExpr(ast.NewIntLiteral(3), ast.NewIntLiteral(2)), object.KindRational, "3/2"},
-		{"negative fraction", ast.NewFractionExpr(ast.NewIntLiteral(-3), ast.NewIntLiteral(4)), object.KindRational, "-3/4"},
-		{"fraction simplifies", ast.NewFractionExpr(ast.NewIntLiteral(6), ast.NewIntLiteral(4)), object.KindRational, "3/2"},
+		{"simple fraction", ast.NewFraction(ast.NewIntLiteral(3), ast.NewIntLiteral(2)), object.KindRational, "3/2"},
+		{"negative fraction", ast.NewFraction(ast.NewIntLiteral(-3), ast.NewIntLiteral(4)), object.KindRational, "-3/4"},
+		{"fraction simplifies", ast.NewFraction(ast.NewIntLiteral(6), ast.NewIntLiteral(4)), object.KindRational, "3/2"},
 
 		// Fractions that simplify to integers
-		{"fraction to natural", ast.NewFractionExpr(ast.NewIntLiteral(4), ast.NewIntLiteral(2)), object.KindNatural, "2"},
-		{"fraction to integer", ast.NewFractionExpr(ast.NewIntLiteral(-6), ast.NewIntLiteral(2)), object.KindInteger, "-3"},
-		{"fraction to zero", ast.NewFractionExpr(ast.NewIntLiteral(0), ast.NewIntLiteral(5)), object.KindNatural, "0"},
+		{"fraction to natural", ast.NewFraction(ast.NewIntLiteral(4), ast.NewIntLiteral(2)), object.KindNatural, "2"},
+		{"fraction to integer", ast.NewFraction(ast.NewIntLiteral(-6), ast.NewIntLiteral(2)), object.KindInteger, "-3"},
+		{"fraction to zero", ast.NewFraction(ast.NewIntLiteral(0), ast.NewIntLiteral(5)), object.KindNatural, "0"},
 	}
 
 	for _, tt := range tests {

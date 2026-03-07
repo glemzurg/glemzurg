@@ -3,7 +3,6 @@ package model_use_case
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,12 +53,12 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.obj.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -69,15 +68,15 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 func (suite *UseCaseSharedSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	obj, err := NewUseCaseShared("include", "UmlComment")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), UseCaseShared{
+	suite.NoError(err)
+	suite.Equal(UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	}, obj)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewUseCaseShared("", "UmlComment")
-	assert.ErrorContains(suite.T(), err, "ShareType")
+	suite.ErrorContains(err, "ShareType")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
@@ -88,7 +87,7 @@ func (suite *UseCaseSharedSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err := obj.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "ShareType", "ValidateWithParent should call Validate()")
+	suite.ErrorContains(err, "ShareType", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
 	obj = UseCaseShared{
@@ -96,5 +95,5 @@ func (suite *UseCaseSharedSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err = obj.ValidateWithParent()
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }

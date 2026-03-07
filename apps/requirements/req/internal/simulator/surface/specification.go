@@ -10,7 +10,7 @@ import (
 // SurfaceSpecification defines the scope of a simulation run.
 // It uses an inclusion model: only explicitly included items participate.
 // An empty specification means "simulate everything" (backward compatible).
-type SurfaceSpecification struct {
+type SurfaceSpecification struct { //nolint:revive // public API name
 	// IncludeDomains lists domain keys to include. All non-realized subdomains
 	// and their classes within these domains are included.
 	IncludeDomains []identity.Key

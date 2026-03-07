@@ -7,7 +7,7 @@ import (
 
 // evalFieldIdentifier evaluates a field access expression (base.member or @.member).
 // The base can be any expression: identifier, existing value (@), or another field access (chaining).
-func evalFieldIdentifier(node *ast.FieldIdentifier, bindings *Bindings) *EvalResult {
+func evalFieldIdentifier(node *ast.FieldAccess, bindings *Bindings) *EvalResult {
 	var record *object.Record
 
 	// Get the effective base expression

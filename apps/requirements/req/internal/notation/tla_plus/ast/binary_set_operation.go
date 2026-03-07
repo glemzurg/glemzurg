@@ -9,7 +9,7 @@ const (
 	SetOperatorDifference   = `\`
 )
 
-var setOperationAscii = map[string]string{
+var setOperationASCII = map[string]string{
 	SetOperatorUnion:        `\union`,
 	SetOperatorIntersection: `\intersect`,
 	SetOperatorDifference:   `\`,
@@ -32,11 +32,11 @@ func (si *BinarySetOperation) String() (value string) {
 	return out.String()
 }
 
-func (si *BinarySetOperation) Ascii() (value string) {
+func (si *BinarySetOperation) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(si.Left.Ascii())
-	out.WriteString(" " + setOperationAscii[si.Operator] + " ")
-	out.WriteString(si.Right.Ascii())
+	out.WriteString(si.Left.ASCII())
+	out.WriteString(" " + setOperationASCII[si.Operator] + " ")
+	out.WriteString(si.Right.ASCII())
 	return out.String()
 }
 
@@ -54,5 +54,6 @@ func (si *BinarySetOperation) Validate() error {
 }
 
 // SetInfix is an alias for backwards compatibility.
+//
 // Deprecated: Use BinarySetOperation instead.
 type SetInfix = BinarySetOperation

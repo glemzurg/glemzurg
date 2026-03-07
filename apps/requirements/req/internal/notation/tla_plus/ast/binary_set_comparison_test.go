@@ -78,7 +78,7 @@ func (suite *LogicInfixSetSuite) TestString() {
 	}
 }
 
-func (suite *LogicInfixSetSuite) TestAscii() {
+func (suite *LogicInfixSetSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -136,7 +136,7 @@ func (suite *LogicInfixSetSuite) TestAscii() {
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, is.Ascii())
+			assert.Equal(t, tt.expected, is.ASCII())
 		})
 	}
 }

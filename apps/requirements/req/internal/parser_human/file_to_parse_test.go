@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -165,11 +164,11 @@ func (suite *FileToParseSuite) TestNew() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		toParse, err := newFileToParse(test.modelPath, test.pathRel, test.pathAbs)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.toParse, toParse, testName)
+			suite.Require().NoError(err, testName)
+			suite.Equal(test.toParse, toParse, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), toParse, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
+			suite.Empty(toParse, testName)
 		}
 	}
 }
@@ -213,6 +212,6 @@ func (suite *FileToParseSuite) TestString() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		val := test.toParse.String()
-		assert.Equal(suite.T(), test.val, val, testName)
+		suite.Equal(test.val, val, testName)
 	}
 }

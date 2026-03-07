@@ -20,8 +20,8 @@ type BagsSetsCallsSuite struct {
 
 func (s *BagsSetsCallsSuite) TestSetConditional_FilterAll() {
 	// {x ∈ {1, 2, 3} : TRUE} = {1, 2, 3}
-	node := &ast.SetConditional{
-		Membership: &ast.LogicMembership{
+	node := &ast.SetFilter{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -39,8 +39,8 @@ func (s *BagsSetsCallsSuite) TestSetConditional_FilterAll() {
 
 func (s *BagsSetsCallsSuite) TestSetConditional_FilterNone() {
 	// {x ∈ {1, 2, 3} : FALSE} = {}
-	node := &ast.SetConditional{
-		Membership: &ast.LogicMembership{
+	node := &ast.SetFilter{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -58,8 +58,8 @@ func (s *BagsSetsCallsSuite) TestSetConditional_FilterNone() {
 
 func (s *BagsSetsCallsSuite) TestSetConditional_EmptySource() {
 	// {x ∈ {} : TRUE} = {}
-	node := &ast.SetConditional{
-		Membership: &ast.LogicMembership{
+	node := &ast.SetFilter{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{}},
@@ -77,13 +77,13 @@ func (s *BagsSetsCallsSuite) TestSetConditional_EmptySource() {
 
 func (s *BagsSetsCallsSuite) TestSetConditional_WithComparisonPredicate() {
 	// {x ∈ {1, 2, 3, 4, 5} : 2 < 4} = {1, 2, 3, 4, 5} (predicate always true)
-	node := &ast.SetConditional{
-		Membership: &ast.LogicMembership{
+	node := &ast.SetFilter{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3, 4, 5}},
 		},
-		Predicate: &ast.LogicRealComparison{
+		Predicate: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(2),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(4),
@@ -467,7 +467,7 @@ func (s *BagsSetsCallsSuite) TestBagSum_Simple() {
 	bag2.Add(object.NewNatural(3), 1)
 
 	result := bag1.Sum(bag2)
-	s.Equal(3, len(result.Elements()))
+	s.Len(result.Elements(), 3)
 }
 
 func (s *BagsSetsCallsSuite) TestBagSum_Overlapping() {
@@ -481,7 +481,7 @@ func (s *BagsSetsCallsSuite) TestBagSum_Overlapping() {
 
 	result := bag1.Sum(bag2)
 	// 3 unique elements, but element 2 has count 2
-	s.Equal(3, len(result.Elements()))
+	s.Len(result.Elements(), 3)
 	s.Equal(2, result.CopiesIn(object.NewNatural(2)))
 }
 
@@ -495,7 +495,7 @@ func (s *BagsSetsCallsSuite) TestBagDifference_Simple() {
 	bag2.Add(object.NewNatural(2), 1)
 
 	result := bag1.Difference(bag2)
-	s.Equal(2, len(result.Elements()))
+	s.Len(result.Elements(), 2)
 }
 
 func (s *BagsSetsCallsSuite) TestBagDifference_NoOverlap() {
@@ -508,7 +508,7 @@ func (s *BagsSetsCallsSuite) TestBagDifference_NoOverlap() {
 	bag2.Add(object.NewNatural(4), 1)
 
 	result := bag1.Difference(bag2)
-	s.Equal(2, len(result.Elements()))
+	s.Len(result.Elements(), 2)
 }
 
 // === BinaryBagOperation via AST (⊕ and ⊖) ===
@@ -537,7 +537,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagOperation_Sum() {
 	s.False(result.IsError())
 	resultBag := result.Value.(*object.Bag)
 	// {1:1, 2:1} ⊕ {2:1, 3:1} = {1:1, 2:2, 3:1}
-	s.Equal(3, len(resultBag.Elements()))
+	s.Len(resultBag.Elements(), 3)
 	s.Equal(2, resultBag.CopiesIn(object.NewNatural(2)))
 }
 
@@ -564,7 +564,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagOperation_Difference() {
 	s.False(result.IsError())
 	resultBag := result.Value.(*object.Bag)
 	// {1:1, 2:2} ⊖ {2:1} = {1:1, 2:1}
-	s.Equal(2, len(resultBag.Elements()))
+	s.Len(resultBag.Elements(), 2)
 	s.Equal(1, resultBag.CopiesIn(object.NewNatural(2)))
 }
 
@@ -572,7 +572,7 @@ func (s *BagsSetsCallsSuite) TestEvalBagOperation_Difference() {
 
 func (s *BagsSetsCallsSuite) TestCallExpression_NotImplemented() {
 	// CallExpression should return "not yet implemented" error
-	node := &ast.CallExpression{
+	node := &ast.ScopedCall{
 		FunctionName: &ast.Identifier{Value: "MyFunction"},
 		Parameter: &ast.RecordInstance{
 			Bindings: []*ast.FieldBinding{
@@ -591,7 +591,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_NotImplemented() {
 
 func (s *BagsSetsCallsSuite) TestCallExpression_WithClass() {
 	// Class!FunctionName(record)
-	node := &ast.CallExpression{
+	node := &ast.ScopedCall{
 		Class:        &ast.Identifier{Value: "MyClass"},
 		FunctionName: &ast.Identifier{Value: "New"},
 		Parameter: &ast.RecordInstance{
@@ -610,7 +610,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_WithClass() {
 
 func (s *BagsSetsCallsSuite) TestCallExpression_ModelScope() {
 	// _FunctionName(record)
-	node := &ast.CallExpression{
+	node := &ast.ScopedCall{
 		ModelScope:   true,
 		FunctionName: &ast.Identifier{Value: "Initialize"},
 		Parameter: &ast.RecordInstance{
@@ -629,7 +629,7 @@ func (s *BagsSetsCallsSuite) TestCallExpression_ModelScope() {
 
 func (s *BagsSetsCallsSuite) TestCallExpression_FullyScoped() {
 	// Domain!Subdomain!Class!FunctionName(record)
-	node := &ast.CallExpression{
+	node := &ast.ScopedCall{
 		Domain:       &ast.Identifier{Value: "MyDomain"},
 		Subdomain:    &ast.Identifier{Value: "MySub"},
 		Class:        &ast.Identifier{Value: "MyClass"},

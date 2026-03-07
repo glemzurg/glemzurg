@@ -8,7 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -95,7 +94,7 @@ func (suite *SortSuite) TestSortAttributes() {
 	}
 
 	for _, tt := range tests {
-		suite.T().Run(tt.name, func(t *testing.T) {
+		suite.Run(tt.name, func() {
 			// Make a copy to avoid modifying the original.
 			attrs := make([]model_class.Attribute, len(tt.input))
 			copy(attrs, tt.input)
@@ -106,7 +105,7 @@ func (suite *SortSuite) TestSortAttributes() {
 			for i, attr := range attrs {
 				actualNames[i] = attr.Name
 			}
-			assert.Equal(t, tt.expected, actualNames)
+			suite.Equal(tt.expected, actualNames)
 		})
 	}
 }
@@ -129,9 +128,9 @@ func (suite *SortSuite) TestGetAttributesSorted() {
 
 	sorted := GetAttributesSorted(attrs)
 
-	assert.Len(suite.T(), sorted, 3)
+	suite.Len(sorted, 3)
 	// Indexed first, then alphabetical.
-	assert.Equal(suite.T(), "Apple", sorted[0].Name)
-	assert.Equal(suite.T(), "Banana", sorted[1].Name)
-	assert.Equal(suite.T(), "Zebra", sorted[2].Name)
+	suite.Equal("Apple", sorted[0].Name)
+	suite.Equal("Banana", sorted[1].Name)
+	suite.Equal("Zebra", sorted[2].Name)
 }

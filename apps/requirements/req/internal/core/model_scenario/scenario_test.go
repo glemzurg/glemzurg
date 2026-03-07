@@ -50,7 +50,7 @@ func (suite *ScenarioSuite) TestValidate() {
 				Key:  domainKey,
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'domain' for scenario.",
+			errstr: "key: invalid key type 'domain' for scenario",
 		},
 		{
 			testName: "error blank name",
@@ -62,12 +62,12 @@ func (suite *ScenarioSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.scenario.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -82,8 +82,8 @@ func (suite *ScenarioSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	scenario, err := NewScenario(key, "Name", "Details")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Scenario{
+	suite.NoError(err)
+	suite.Equal(Scenario{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
@@ -120,7 +120,7 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = scenario.ValidateWithParent(&useCaseKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateWithParentAndClasses tests that ValidateWithParentAndClasses validates child Objects.
@@ -146,7 +146,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err := scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Test invalid child Object (blank name with name style) propagates error.
 	scenario = Scenario{
@@ -185,5 +185,5 @@ func (suite *ScenarioSuite) TestSetObjects() {
 		objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: classKey},
 	}
 	scenario.SetObjects(objects)
-	assert.Equal(suite.T(), objects, scenario.Objects)
+	suite.Equal(objects, scenario.Objects)
 }

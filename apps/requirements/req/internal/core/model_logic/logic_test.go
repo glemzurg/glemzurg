@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -303,13 +302,13 @@ func (s *LogicTestSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.logic.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -323,7 +322,7 @@ func (s *LogicTestSuite) TestNew() {
 	// Test all parameters are mapped correctly (assessment — no target).
 	spec := validSpecWithBody("\\A p \\in Products : p.stock >= 0")
 	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", spec, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(Logic{
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
@@ -333,7 +332,7 @@ func (s *LogicTestSuite) TestNew() {
 
 	// Test with empty specification (optional).
 	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", validSpec(), nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(Logic{
 		Key:         validKey2,
 		Type:        LogicTypeAssessment,
@@ -385,7 +384,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Spec:        validSpec(),
 	}
 	err := logic.ValidateWithParent(nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Test that Validate is called.
 	logic = Logic{
@@ -395,7 +394,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(nil)
-	s.ErrorContains(err, "Description")
+	s.Require().ErrorContains(err, "Description")
 
 	// Test that ValidateParent is called - invariant key should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

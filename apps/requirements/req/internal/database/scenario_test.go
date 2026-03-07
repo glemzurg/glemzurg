@@ -51,9 +51,9 @@ func (suite *ScenarioSuite) SetupTest() {
 func (suite *ScenarioSuite) TestLoad() {
 	// Nothing in database yet.
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), useCaseKey)
-	assert.Empty(suite.T(), scenario)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(useCaseKey)
+	suite.Empty(scenario)
 
 	// Insert a scenario directly.
 	err = dbExec(suite.db, `
@@ -143,9 +143,9 @@ func (suite *ScenarioSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), useCaseKey)
-	assert.Empty(suite.T(), scenario)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(useCaseKey)
+	suite.Empty(scenario)
 }
 
 func (suite *ScenarioSuite) TestQueryScenarios() {

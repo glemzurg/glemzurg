@@ -73,7 +73,7 @@ func (suite *LogicBoundQuantifierSuite) TestString() {
 	}
 }
 
-func (suite *LogicBoundQuantifierSuite) TestAscii() {
+func (suite *LogicBoundQuantifierSuite) TestASCII() {
 	tests := []struct {
 		testName   string
 		quantifier string
@@ -126,7 +126,7 @@ func (suite *LogicBoundQuantifierSuite) TestAscii() {
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, q.Ascii())
+			assert.Equal(t, tt.expected, q.ASCII())
 		})
 	}
 }

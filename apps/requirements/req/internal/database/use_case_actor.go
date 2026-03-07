@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -180,22 +181,23 @@ func AddUseCaseActors(dbOrTx DbOrTx, modelKey string, actors map[identity.Key]ma
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO use_case_actor (model_key, use_case_key, actor_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*4)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO use_case_actor (model_key, use_case_key, actor_key, uml_comment) VALUES `)
+	args := make([]any, 0, count*4)
 	i := 0
 	for useCaseKey, actorMap := range actors {
 		for actorKey, actor := range actorMap {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 4
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4))
 			args = append(args, modelKey, useCaseKey.String(), actorKey.String(), actor.UmlComment)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

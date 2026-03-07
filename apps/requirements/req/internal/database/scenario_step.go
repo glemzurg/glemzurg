@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -411,17 +412,18 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario_step (model_key, scenario_step_key, scenario_key, parent_step_key, sort_order, step_type, leaf_type, condition, description, from_object_key, to_object_key, event_key, query_key, scenario_ref_key) VALUES `
-	args := make([]interface{}, 0, len(rows)*14)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO scenario_step (model_key, scenario_step_key, scenario_key, parent_step_key, sort_order, step_type, leaf_type, condition, description, from_object_key, to_object_key, event_key, query_key, scenario_ref_key) VALUES `)
+	args := make([]any, 0, len(rows)*14)
 
 	for i, row := range rows {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 14
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			base+1, base+2, base+3, base+4, base+5, base+6, base+7,
-			base+8, base+9, base+10, base+11, base+12, base+13, base+14)
+			base+8, base+9, base+10, base+11, base+12, base+13, base+14))
 
 		// Handle optional key pointers.
 		var parentStepKeyPtr *string
@@ -485,7 +487,7 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 		)
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

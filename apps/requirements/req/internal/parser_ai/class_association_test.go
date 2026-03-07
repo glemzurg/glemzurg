@@ -66,7 +66,7 @@ func (suite *AssociationSuite) TestParseAssociationErrors() {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
 			_, err := parseAssociation([]byte(testData.InputJSON), testData.Filename)
-			assert.NotNil(t, err, testName+" should return an error")
+			assert.Error(t, err, testName+" should return an error")
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)

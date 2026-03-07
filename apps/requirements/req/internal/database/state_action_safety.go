@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -141,22 +142,24 @@ func AddActionSafeties(dbOrTx DbOrTx, modelKey string, safeties map[identity.Key
 		return nil
 	}
 
-	query := `INSERT INTO action_safety (model_key, action_key, logic_key) VALUES `
-	args := make([]interface{}, 0, count*3)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO action_safety (model_key, action_key, logic_key) VALUES `)
+	args := make([]any, 0, count*3)
 	i := 0
 	for actionKey, logicKeys := range safeties {
 		for _, logicKey := range logicKeys {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 3
-			query += fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3))
+
 			args = append(args, modelKey, actionKey.String(), logicKey.String())
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

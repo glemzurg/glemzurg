@@ -3,7 +3,6 @@ package model_spec
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
@@ -75,13 +74,13 @@ func (s *ExpressionSpecTestSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.spec.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}

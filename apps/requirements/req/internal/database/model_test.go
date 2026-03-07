@@ -29,8 +29,8 @@ func (suite *ModelSuite) SetupTest() {
 func (suite *ModelSuite) TestLoad() {
 	// Nothing in database yet.
 	model, err := LoadModel(suite.db, "Key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), model)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(model)
 
 	err = dbExec(suite.db, `
 		INSERT INTO model
@@ -110,8 +110,8 @@ func (suite *ModelSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	model, err := LoadModel(suite.db, "key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), model)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(model)
 }
 
 func (suite *ModelSuite) TestQuery() {

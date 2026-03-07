@@ -44,7 +44,7 @@ func (suite *ClassSuite) TestParseClassFiles() {
 			assert.Equal(t, expected.Indexes, actual.Indexes, testName+" indexes")
 
 			// Compare attributes map
-			assert.Equal(t, len(expected.Attributes), len(actual.Attributes), testName+" attributes count")
+			assert.Len(t, actual.Attributes, len(expected.Attributes), testName+" attributes count")
 			for key, expectedAttr := range expected.Attributes {
 				actualAttr, exists := actual.Attributes[key]
 				assert.True(t, exists, testName+" attribute '"+key+"' should exist")
@@ -80,7 +80,7 @@ func (suite *ClassSuite) TestParseClassErrors() {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
 			_, err := parseClass([]byte(testData.InputJSON), testData.Filename)
-			assert.NotNil(t, err, testName+" should return an error")
+			assert.Error(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.
 			var parseErr *ParseError

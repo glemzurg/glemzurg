@@ -94,7 +94,7 @@ func (suite *RecordAlteredSuite) TestString() {
 	}
 }
 
-func (suite *RecordAlteredSuite) TestAscii() {
+func (suite *RecordAlteredSuite) TestASCII() {
 	tests := []struct {
 		testName    string
 		identifier  string
@@ -134,7 +134,7 @@ func (suite *RecordAlteredSuite) TestAscii() {
 				Base:        &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
-			assert.Equal(t, tt.expected, r.Ascii())
+			assert.Equal(t, tt.expected, r.ASCII())
 		})
 	}
 }

@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -195,22 +196,23 @@ func AddObjects(dbOrTx DbOrTx, modelKey string, objects map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario_object (model_key, scenario_object_key, scenario_key, object_number, name, name_style, class_key, multi, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*9)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO scenario_object (model_key, scenario_object_key, scenario_key, object_number, name, name_style, class_key, multi, uml_comment) VALUES `)
+	args := make([]any, 0, count*9)
 	i := 0
 	for scenarioKey, objList := range objects {
 		for _, obj := range objList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
 			args = append(args, modelKey, obj.Key.String(), scenarioKey.String(), obj.ObjectNumber, obj.Name, obj.NameStyle, obj.ClassKey.String(), obj.Multi, obj.UmlComment)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

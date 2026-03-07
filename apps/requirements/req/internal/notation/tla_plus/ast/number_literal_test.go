@@ -79,10 +79,10 @@ func (suite *NumberLiteralSuite) TestString() {
 	}
 }
 
-func (suite *NumberLiteralSuite) TestAscii() {
-	// Ascii should be same as String for numbers
+func (suite *NumberLiteralSuite) TestASCII() {
+	// ASCII should be same as String for numbers
 	n := &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}
-	assert.Equal(suite.T(), n.String(), n.Ascii())
+	suite.Equal(n.String(), n.ASCII())
 }
 
 func (suite *NumberLiteralSuite) TestValidate() {
@@ -251,23 +251,23 @@ func (suite *NumberLiteralSuite) TestNewIntLiteral() {
 	// Positive
 	expr := NewIntLiteral(42)
 	n, ok := expr.(*NumberLiteral)
-	assert.True(suite.T(), ok, "expected *NumberLiteral for positive")
-	assert.Equal(suite.T(), "42", n.String())
+	suite.True(ok, "expected *NumberLiteral for positive")
+	suite.Equal("42", n.String())
 
 	// Zero
 	expr = NewIntLiteral(0)
 	n, ok = expr.(*NumberLiteral)
-	assert.True(suite.T(), ok, "expected *NumberLiteral for zero")
-	assert.Equal(suite.T(), "0", n.String())
+	suite.True(ok, "expected *NumberLiteral for zero")
+	suite.Equal("0", n.String())
 
 	// Negative - should be NumericPrefixExpression
 	expr = NewIntLiteral(-5)
 	neg, ok := expr.(*NumericPrefixExpression)
-	assert.True(suite.T(), ok, "expected *NumericPrefixExpression for negative")
-	assert.Equal(suite.T(), "-", neg.Operator)
+	suite.True(ok, "expected *NumericPrefixExpression for negative")
+	suite.Equal("-", neg.Operator)
 	inner, ok := neg.Right.(*NumberLiteral)
-	assert.True(suite.T(), ok, "expected inner *NumberLiteral")
-	assert.Equal(suite.T(), "5", inner.IntegerPart)
+	suite.True(ok, "expected inner *NumberLiteral")
+	suite.Equal("5", inner.IntegerPart)
 }
 
 func (suite *NumberLiteralSuite) TestExpressionNode() {

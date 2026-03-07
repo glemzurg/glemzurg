@@ -22,7 +22,7 @@ func (s *SetRange) String() (value string) {
 	return out.String()
 }
 
-func (s *SetRange) Ascii() (value string) {
+func (s *SetRange) ASCII() (value string) {
 	return s.String()
 }
 

@@ -19,6 +19,7 @@ type FieldAccess struct {
 	Base Expression
 
 	// Identifier is for backwards compatibility with the old structure.
+	//
 	// Deprecated: Use Base instead.
 	Identifier *Identifier
 
@@ -29,11 +30,12 @@ func (f *FieldAccess) expressionNode() {}
 
 func (f *FieldAccess) String() (value string) {
 	var out bytes.Buffer
-	if f.Base != nil {
+	switch {
+	case f.Base != nil:
 		out.WriteString(f.Base.String())
-	} else if f.Identifier != nil {
+	case f.Identifier != nil:
 		out.WriteString(f.Identifier.String())
-	} else {
+	default:
 		out.WriteString("!")
 	}
 	out.WriteString(".")
@@ -41,7 +43,7 @@ func (f *FieldAccess) String() (value string) {
 	return out.String()
 }
 
-func (f *FieldAccess) Ascii() (value string) { return f.String() }
+func (f *FieldAccess) ASCII() (value string) { return f.String() }
 
 func (f *FieldAccess) Validate() error {
 	if err := _validate.Struct(f); err != nil {
@@ -76,5 +78,6 @@ func (f *FieldAccess) GetBase() Expression {
 }
 
 // FieldIdentifier is an alias for backwards compatibility.
+//
 // Deprecated: Use FieldAccess instead.
 type FieldIdentifier = FieldAccess

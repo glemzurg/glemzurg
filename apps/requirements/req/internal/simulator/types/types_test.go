@@ -3,7 +3,6 @@ package types
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,30 +21,30 @@ func (s *TypesSuite) SetupTest() {
 // === Basic Type String Representations ===
 
 func (s *TypesSuite) TestBoolean_String() {
-	assert.Equal(s.T(), "Boolean", Boolean{}.String())
+	s.Equal("Boolean", Boolean{}.String())
 }
 
 func (s *TypesSuite) TestNumber_String() {
-	assert.Equal(s.T(), "Number", Number{}.String())
+	s.Equal("Number", Number{}.String())
 }
 
 func (s *TypesSuite) TestString_String() {
-	assert.Equal(s.T(), "String", String{}.String())
+	s.Equal("String", String{}.String())
 }
 
 func (s *TypesSuite) TestSet_String() {
 	t := Set{Element: Number{}}
-	assert.Equal(s.T(), "Set[Number]", t.String())
+	s.Equal("Set[Number]", t.String())
 }
 
 func (s *TypesSuite) TestSet_Nested_String() {
 	t := Set{Element: Set{Element: Boolean{}}}
-	assert.Equal(s.T(), "Set[Set[Boolean]]", t.String())
+	s.Equal("Set[Set[Boolean]]", t.String())
 }
 
 func (s *TypesSuite) TestTuple_String() {
 	t := Tuple{Element: Number{}}
-	assert.Equal(s.T(), "Tuple[Number]", t.String())
+	s.Equal("Tuple[Number]", t.String())
 }
 
 func (s *TypesSuite) TestRecord_String() {
@@ -54,63 +53,63 @@ func (s *TypesSuite) TestRecord_String() {
 		"y": Boolean{},
 	}}
 	// Fields are sorted alphabetically
-	assert.Equal(s.T(), "Record{x: Number, y: Boolean}", t.String())
+	s.Equal("Record{x: Number, y: Boolean}", t.String())
 }
 
 func (s *TypesSuite) TestRecord_Empty_String() {
 	t := Record{Fields: map[string]Type{}}
-	assert.Equal(s.T(), "Record{}", t.String())
+	s.Equal("Record{}", t.String())
 }
 
 func (s *TypesSuite) TestBag_String() {
 	t := Bag{Element: String{}}
-	assert.Equal(s.T(), "Bag[String]", t.String())
+	s.Equal("Bag[String]", t.String())
 }
 
 func (s *TypesSuite) TestFunction_SingleParam_String() {
 	t := Function{Params: []Type{Number{}}, Return: Boolean{}}
-	assert.Equal(s.T(), "Number → Boolean", t.String())
+	s.Equal("Number → Boolean", t.String())
 }
 
 func (s *TypesSuite) TestFunction_MultipleParams_String() {
 	t := Function{Params: []Type{Number{}, String{}}, Return: Boolean{}}
-	assert.Equal(s.T(), "(Number, String) → Boolean", t.String())
+	s.Equal("(Number, String) → Boolean", t.String())
 }
 
 func (s *TypesSuite) TestFunction_NoParams_String() {
 	t := Function{Params: []Type{}, Return: Number{}}
-	assert.Equal(s.T(), "() → Number", t.String())
+	s.Equal("() → Number", t.String())
 }
 
 func (s *TypesSuite) TestTypeVar_String() {
 	tv := TypeVar{ID: 0, Name: "a"}
-	assert.Equal(s.T(), "a", tv.String())
+	s.Equal("a", tv.String())
 }
 
 func (s *TypesSuite) TestTypeVar_NoName_String() {
 	tv := TypeVar{ID: 42, Name: ""}
-	assert.Equal(s.T(), "t42", tv.String())
+	s.Equal("t42", tv.String())
 }
 
 func (s *TypesSuite) TestAny_String() {
-	assert.Equal(s.T(), "Any", Any{}.String())
+	s.Equal("Any", Any{}.String())
 }
 
 // === Type Equality ===
 
 func (s *TypesSuite) TestBoolean_Equals() {
-	assert.True(s.T(), Boolean{}.Equals(Boolean{}))
-	assert.False(s.T(), Boolean{}.Equals(Number{}))
+	s.True(Boolean{}.Equals(Boolean{}))
+	s.False(Boolean{}.Equals(Number{}))
 }
 
 func (s *TypesSuite) TestNumber_Equals() {
-	assert.True(s.T(), Number{}.Equals(Number{}))
-	assert.False(s.T(), Number{}.Equals(Boolean{}))
+	s.True(Number{}.Equals(Number{}))
+	s.False(Number{}.Equals(Boolean{}))
 }
 
 func (s *TypesSuite) TestString_Equals() {
-	assert.True(s.T(), String{}.Equals(String{}))
-	assert.False(s.T(), String{}.Equals(Number{}))
+	s.True(String{}.Equals(String{}))
+	s.False(String{}.Equals(Number{}))
 }
 
 func (s *TypesSuite) TestSet_Equals() {
@@ -118,9 +117,9 @@ func (s *TypesSuite) TestSet_Equals() {
 	s2 := Set{Element: Number{}}
 	s3 := Set{Element: Boolean{}}
 
-	assert.True(s.T(), s1.Equals(s2))
-	assert.False(s.T(), s1.Equals(s3))
-	assert.False(s.T(), s1.Equals(Number{}))
+	s.True(s1.Equals(s2))
+	s.False(s1.Equals(s3))
+	s.False(s1.Equals(Number{}))
 }
 
 func (s *TypesSuite) TestTuple_Equals() {
@@ -128,8 +127,8 @@ func (s *TypesSuite) TestTuple_Equals() {
 	t2 := Tuple{Element: Number{}}
 	t3 := Tuple{Element: Boolean{}}
 
-	assert.True(s.T(), t1.Equals(t2))
-	assert.False(s.T(), t1.Equals(t3))
+	s.True(t1.Equals(t2))
+	s.False(t1.Equals(t3))
 }
 
 func (s *TypesSuite) TestRecord_Equals() {
@@ -138,9 +137,9 @@ func (s *TypesSuite) TestRecord_Equals() {
 	r3 := Record{Fields: map[string]Type{"x": Number{}}}
 	r4 := Record{Fields: map[string]Type{"x": Number{}, "z": Boolean{}}}
 
-	assert.True(s.T(), r1.Equals(r2))
-	assert.False(s.T(), r1.Equals(r3)) // Different field count
-	assert.False(s.T(), r1.Equals(r4)) // Different field names
+	s.True(r1.Equals(r2))
+	s.False(r1.Equals(r3)) // Different field count
+	s.False(r1.Equals(r4)) // Different field names
 }
 
 func (s *TypesSuite) TestBag_Equals() {
@@ -148,8 +147,8 @@ func (s *TypesSuite) TestBag_Equals() {
 	b2 := Bag{Element: Number{}}
 	b3 := Bag{Element: String{}}
 
-	assert.True(s.T(), b1.Equals(b2))
-	assert.False(s.T(), b1.Equals(b3))
+	s.True(b1.Equals(b2))
+	s.False(b1.Equals(b3))
 }
 
 func (s *TypesSuite) TestFunction_Equals() {
@@ -159,10 +158,10 @@ func (s *TypesSuite) TestFunction_Equals() {
 	f4 := Function{Params: []Type{Number{}}, Return: String{}}
 	f5 := Function{Params: []Type{Number{}, Number{}}, Return: Boolean{}}
 
-	assert.True(s.T(), f1.Equals(f2))
-	assert.False(s.T(), f1.Equals(f3)) // Different param type
-	assert.False(s.T(), f1.Equals(f4)) // Different return type
-	assert.False(s.T(), f1.Equals(f5)) // Different param count
+	s.True(f1.Equals(f2))
+	s.False(f1.Equals(f3)) // Different param type
+	s.False(f1.Equals(f4)) // Different return type
+	s.False(f1.Equals(f5)) // Different param count
 }
 
 func (s *TypesSuite) TestTypeVar_Equals() {
@@ -170,41 +169,41 @@ func (s *TypesSuite) TestTypeVar_Equals() {
 	tv2 := TypeVar{ID: 0, Name: "a"}
 	tv3 := TypeVar{ID: 1, Name: "b"}
 
-	assert.True(s.T(), tv1.Equals(tv2))
-	assert.False(s.T(), tv1.Equals(tv3))
-	assert.False(s.T(), tv1.Equals(Number{}))
+	s.True(tv1.Equals(tv2))
+	s.False(tv1.Equals(tv3))
+	s.False(tv1.Equals(Number{}))
 }
 
 func (s *TypesSuite) TestAny_Equals() {
-	assert.True(s.T(), Any{}.Equals(Any{}))
-	assert.False(s.T(), Any{}.Equals(Number{}))
+	s.True(Any{}.Equals(Any{}))
+	s.False(Any{}.Equals(Number{}))
 }
 
 // === Free Type Variables ===
 
 func (s *TypesSuite) TestBoolean_FreeTypeVars() {
-	assert.Nil(s.T(), Boolean{}.FreeTypeVars())
+	s.Nil(Boolean{}.FreeTypeVars())
 }
 
 func (s *TypesSuite) TestNumber_FreeTypeVars() {
-	assert.Nil(s.T(), Number{}.FreeTypeVars())
+	s.Nil(Number{}.FreeTypeVars())
 }
 
 func (s *TypesSuite) TestTypeVar_FreeTypeVars() {
 	tv := TypeVar{ID: 42, Name: "a"}
 	free := tv.FreeTypeVars()
-	assert.Len(s.T(), free, 1)
+	s.Len(free, 1)
 	_, exists := free[42]
-	assert.True(s.T(), exists)
+	s.True(exists)
 }
 
 func (s *TypesSuite) TestSet_FreeTypeVars() {
 	tv := TypeVar{ID: 1, Name: "a"}
 	t := Set{Element: tv}
 	free := t.FreeTypeVars()
-	assert.Len(s.T(), free, 1)
+	s.Len(free, 1)
 	_, exists := free[1]
-	assert.True(s.T(), exists)
+	s.True(exists)
 }
 
 func (s *TypesSuite) TestFunction_FreeTypeVars() {
@@ -213,11 +212,11 @@ func (s *TypesSuite) TestFunction_FreeTypeVars() {
 	f := Function{Params: []Type{tv1}, Return: tv2}
 
 	free := f.FreeTypeVars()
-	assert.Len(s.T(), free, 2)
+	s.Len(free, 2)
 	_, exists1 := free[1]
 	_, exists2 := free[2]
-	assert.True(s.T(), exists1)
-	assert.True(s.T(), exists2)
+	s.True(exists1)
+	s.True(exists2)
 }
 
 func (s *TypesSuite) TestRecord_FreeTypeVars() {
@@ -225,9 +224,9 @@ func (s *TypesSuite) TestRecord_FreeTypeVars() {
 	r := Record{Fields: map[string]Type{"x": tv, "y": Number{}}}
 
 	free := r.FreeTypeVars()
-	assert.Len(s.T(), free, 1)
+	s.Len(free, 1)
 	_, exists := free[5]
-	assert.True(s.T(), exists)
+	s.True(exists)
 }
 
 func (s *TypesSuite) TestScheme_FreeTypeVars() {
@@ -241,11 +240,11 @@ func (s *TypesSuite) TestScheme_FreeTypeVars() {
 	}
 
 	free := scheme.FreeTypeVars()
-	assert.Len(s.T(), free, 1)
+	s.Len(free, 1)
 	_, existsA := free[1]
 	_, existsB := free[2]
-	assert.False(s.T(), existsA) // a is bound
-	assert.True(s.T(), existsB)  // b is free
+	s.False(existsA) // a is bound
+	s.True(existsB)  // b is free
 }
 
 // === Substitution ===
@@ -255,7 +254,7 @@ func (s *TypesSuite) TestSubstitution_Apply_TypeVar() {
 	subst := Substitution{1: Number{}}
 
 	result := subst.Apply(tv)
-	assert.True(s.T(), result.Equals(Number{}))
+	s.True(result.Equals(Number{}))
 }
 
 func (s *TypesSuite) TestSubstitution_Apply_Unbound() {
@@ -263,7 +262,7 @@ func (s *TypesSuite) TestSubstitution_Apply_Unbound() {
 	subst := Substitution{2: Number{}} // Different ID
 
 	result := subst.Apply(tv)
-	assert.True(s.T(), result.Equals(tv)) // Unchanged
+	s.True(result.Equals(tv)) // Unchanged
 }
 
 func (s *TypesSuite) TestSubstitution_Apply_Set() {
@@ -273,7 +272,7 @@ func (s *TypesSuite) TestSubstitution_Apply_Set() {
 
 	result := subst.Apply(t)
 	expected := Set{Element: Number{}}
-	assert.True(s.T(), result.Equals(expected))
+	s.True(result.Equals(expected))
 }
 
 func (s *TypesSuite) TestSubstitution_Apply_Function() {
@@ -284,7 +283,7 @@ func (s *TypesSuite) TestSubstitution_Apply_Function() {
 
 	result := subst.Apply(f)
 	expected := Function{Params: []Type{Number{}}, Return: Boolean{}}
-	assert.True(s.T(), result.Equals(expected))
+	s.True(result.Equals(expected))
 }
 
 func (s *TypesSuite) TestSubstitution_Apply_Record() {
@@ -293,8 +292,8 @@ func (s *TypesSuite) TestSubstitution_Apply_Record() {
 	subst := Substitution{1: String{}}
 
 	result := subst.Apply(r).(Record)
-	assert.True(s.T(), result.Fields["x"].Equals(String{}))
-	assert.True(s.T(), result.Fields["y"].Equals(Number{}))
+	s.True(result.Fields["x"].Equals(String{}))
+	s.True(result.Fields["y"].Equals(Number{}))
 }
 
 func (s *TypesSuite) TestSubstitution_Apply_Chained() {
@@ -304,13 +303,13 @@ func (s *TypesSuite) TestSubstitution_Apply_Chained() {
 	subst := Substitution{1: tv2, 2: Number{}}
 
 	result := subst.Apply(tv1)
-	assert.True(s.T(), result.Equals(Number{}))
+	s.True(result.Equals(Number{}))
 }
 
 func (s *TypesSuite) TestSubstitution_Apply_Nil() {
 	subst := Substitution{1: Number{}}
 	result := subst.Apply(nil)
-	assert.Nil(s.T(), result)
+	s.Nil(result)
 }
 
 func (s *TypesSuite) TestSubstitution_Compose() {
@@ -325,15 +324,15 @@ func (s *TypesSuite) TestSubstitution_Compose() {
 	tvA := TypeVar{ID: 1, Name: "a"}
 	tvB := TypeVar{ID: 2, Name: "b"}
 
-	assert.True(s.T(), composed.Apply(tvA).Equals(Number{}))
-	assert.True(s.T(), composed.Apply(tvB).Equals(Number{}))
+	s.True(composed.Apply(tvA).Equals(Number{}))
+	s.True(composed.Apply(tvB).Equals(Number{}))
 }
 
 // === Scheme String ===
 
 func (s *TypesSuite) TestScheme_String_Monomorphic() {
 	scheme := Monotype(Number{})
-	assert.Equal(s.T(), "Number", scheme.String())
+	s.Equal("Number", scheme.String())
 }
 
 func (s *TypesSuite) TestScheme_String_Polymorphic() {
@@ -343,7 +342,7 @@ func (s *TypesSuite) TestScheme_String_Polymorphic() {
 		TypeVars: []int{1},
 		Type:     Function{Params: []Type{tv}, Return: tv},
 	}
-	assert.Equal(s.T(), "∀a. a → a", scheme.String())
+	s.Equal("∀a. a → a", scheme.String())
 }
 
 // === NewTypeVar ===
@@ -355,26 +354,26 @@ func (s *TypesSuite) TestNewTypeVar() {
 	tv2 := NewTypeVar("b")
 	tv3 := NewTypeVar("")
 
-	assert.Equal(s.T(), 0, tv1.ID)
-	assert.Equal(s.T(), "a", tv1.Name)
-	assert.Equal(s.T(), 1, tv2.ID)
-	assert.Equal(s.T(), "b", tv2.Name)
-	assert.Equal(s.T(), 2, tv3.ID)
-	assert.Equal(s.T(), "", tv3.Name)
+	s.Equal(0, tv1.ID)
+	s.Equal("a", tv1.Name)
+	s.Equal(1, tv2.ID)
+	s.Equal("b", tv2.Name)
+	s.Equal(2, tv3.ID)
+	s.Empty(tv3.Name)
 }
 
 // === Helper Functions ===
 
 func (s *TypesSuite) TestMonotype() {
 	scheme := Monotype(Boolean{})
-	assert.Empty(s.T(), scheme.TypeVars)
-	assert.True(s.T(), scheme.Type.Equals(Boolean{}))
+	s.Empty(scheme.TypeVars)
+	s.True(scheme.Type.Equals(Boolean{}))
 }
 
 func (s *TypesSuite) TestForAll() {
 	tv := TypeVar{ID: 1, Name: "a"}
 	scheme := ForAll([]int{1}, Function{Params: []Type{tv}, Return: tv})
 
-	assert.Equal(s.T(), []int{1}, scheme.TypeVars)
-	assert.IsType(s.T(), Function{}, scheme.Type)
+	s.Equal([]int{1}, scheme.TypeVars)
+	s.IsType(Function{}, scheme.Type)
 }

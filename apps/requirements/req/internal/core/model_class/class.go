@@ -53,7 +53,7 @@ func (c *Class) Validate() error {
 		return err
 	}
 	if c.Key.KeyType != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("Key: invalid key type '%s' for class.", c.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for class", c.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

@@ -49,7 +49,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  domainKey,
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'domain' for generalization.",
+			errstr: "key: invalid key type 'domain' for generalization",
 		},
 		{
 			testName: "error blank name",
@@ -80,7 +80,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), Generalization{
 		Key:        key,
 		Name:       "Name",
@@ -120,5 +120,5 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = gen.ValidateWithParent(&subdomainKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }

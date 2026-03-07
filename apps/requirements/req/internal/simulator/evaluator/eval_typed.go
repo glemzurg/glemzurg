@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"strings"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
@@ -31,7 +33,7 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 	case *ast.NumericPrefixExpression:
 		return evalNumericPrefixExpression(n, bindings)
 
-	case *ast.FractionExpr:
+	case *ast.Fraction:
 		return evalFractionExpr(n, bindings)
 
 	case *ast.ParenExpr:
@@ -66,7 +68,7 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 	case *ast.Identifier:
 		return evalIdentifier(n, bindings)
 
-	case *ast.FieldIdentifier:
+	case *ast.FieldAccess:
 		return evalTypedFieldIdentifier(typed, bindings)
 
 	case *ast.ExistingValue:
@@ -75,52 +77,52 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 	// === Arithmetic ===
 	// Type checker guarantees both operands are numeric
 
-	case *ast.RealInfixExpression:
+	case *ast.BinaryArithmetic:
 		return evalTypedRealInfix(typed, bindings)
 
 	// === Logic ===
 	// Type checker guarantees operands are boolean where required
 
-	case *ast.LogicInfixExpression:
+	case *ast.BinaryLogic:
 		return evalTypedLogicInfix(typed, bindings)
 
 	case *ast.LogicPrefixExpression:
 		return evalTypedLogicPrefix(typed, bindings)
 
-	case *ast.LogicRealComparison:
+	case *ast.BinaryComparison:
 		return evalTypedLogicRealComparison(typed, bindings)
 
-	case *ast.LogicMembership:
+	case *ast.Membership:
 		return evalTypedLogicMembership(typed, bindings)
 
-	case *ast.LogicBoundQuantifier:
+	case *ast.Quantifier:
 		return evalTypedLogicBoundQuantifier(typed, bindings)
 
-	case *ast.LogicInfixSet:
+	case *ast.BinarySetComparison:
 		return evalTypedLogicInfixSet(typed, bindings)
 
-	case *ast.LogicInfixBag:
+	case *ast.BinaryBagComparison:
 		return evalTypedLogicInfixBag(typed, bindings)
 
 	// === Sets ===
 
-	case *ast.SetInfix:
+	case *ast.BinarySetOperation:
 		return evalTypedSetInfix(typed, bindings)
 
-	case *ast.SetConditional:
+	case *ast.SetFilter:
 		return evalTypedSetConditional(typed, bindings)
 
 	// === Bags ===
 
-	case *ast.BagInfix:
+	case *ast.BinaryBagOperation:
 		return evalTypedBagInfix(typed, bindings)
 
 	// === Tuples/Sequences ===
 
-	case *ast.ExpressionTupleIndex:
+	case *ast.TupleIndex:
 		return evalTypedTupleIndex(typed, bindings)
 
-	case *ast.TupleInfixExpression:
+	case *ast.TupleConcat:
 		return evalTypedTupleInfix(typed, bindings)
 
 	// === Builtins ===
@@ -135,15 +137,15 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 
 	// === Control Flow ===
 
-	case *ast.ExpressionIfElse:
+	case *ast.IfThenElse:
 		return evalTypedIfElse(typed, bindings)
 
-	case *ast.ExpressionCase:
+	case *ast.CaseExpr:
 		return evalTypedCase(typed, bindings)
 
 	// === Calls ===
 
-	case *ast.CallExpression:
+	case *ast.ScopedCall:
 		return evalTypedCallExpression(typed, bindings)
 
 	// === Strings ===
@@ -151,7 +153,7 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 	case *ast.StringIndex:
 		return evalTypedStringIndex(typed, bindings)
 
-	case *ast.StringInfixExpression:
+	case *ast.StringConcat:
 		return evalTypedStringInfix(typed, bindings)
 
 	// === Assignment ===
@@ -168,7 +170,7 @@ func evalTypedNode(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult
 // These use the type-checked children instead of re-evaluating sub-expressions
 
 func evalTypedRealInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.RealInfixExpression)
+	n := typed.Node.(*ast.BinaryArithmetic)
 
 	// Use typed children - type checker guarantees exactly 2 children
 	leftResult := evalTypedNode(typed.Children[0], bindings)
@@ -215,7 +217,7 @@ func evalTypedRealInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalR
 }
 
 func evalTypedLogicInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.LogicInfixExpression)
+	n := typed.Node.(*ast.BinaryLogic)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -279,7 +281,7 @@ func evalTypedLogicPrefix(typed *typechecker.TypedNode, bindings *Bindings) *Eva
 }
 
 func evalTypedLogicRealComparison(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.LogicRealComparison)
+	n := typed.Node.(*ast.BinaryComparison)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -314,7 +316,7 @@ func evalTypedLogicRealComparison(typed *typechecker.TypedNode, bindings *Bindin
 }
 
 func evalTypedLogicMembership(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.LogicMembership)
+	n := typed.Node.(*ast.Membership)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -343,11 +345,11 @@ func evalTypedLogicMembership(typed *typechecker.TypedNode, bindings *Bindings) 
 }
 
 func evalTypedLogicBoundQuantifier(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.LogicBoundQuantifier)
+	n := typed.Node.(*ast.Quantifier)
 
 	// Children: [0] = set type info, [1] = predicate type info
 	// The set is from the membership
-	membership := n.Membership.(*ast.LogicMembership)
+	membership := n.Membership.(*ast.Membership)
 	ident := membership.Left.(*ast.Identifier)
 
 	setResult := evalTypedNode(typed.Children[0], bindings)
@@ -400,7 +402,7 @@ func evalTypedLogicBoundQuantifier(typed *typechecker.TypedNode, bindings *Bindi
 }
 
 func evalTypedLogicInfixSet(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.LogicInfixSet)
+	n := typed.Node.(*ast.BinarySetComparison)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -433,7 +435,7 @@ func evalTypedLogicInfixSet(typed *typechecker.TypedNode, bindings *Bindings) *E
 }
 
 func evalTypedLogicInfixBag(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.LogicInfixBag)
+	n := typed.Node.(*ast.BinaryBagComparison)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -462,7 +464,7 @@ func evalTypedLogicInfixBag(typed *typechecker.TypedNode, bindings *Bindings) *E
 }
 
 func evalTypedSetInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.SetInfix)
+	n := typed.Node.(*ast.BinarySetOperation)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -490,10 +492,10 @@ func evalTypedSetInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalRe
 }
 
 func evalTypedSetConditional(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.SetConditional)
+	n := typed.Node.(*ast.SetFilter)
 
 	// Children: [0] = source set, [1] = predicate
-	membership := n.Membership.(*ast.LogicMembership)
+	membership := n.Membership.(*ast.Membership)
 	ident := membership.Left.(*ast.Identifier)
 
 	sourceResult := evalTypedNode(typed.Children[0], bindings)
@@ -523,7 +525,7 @@ func evalTypedSetConditional(typed *typechecker.TypedNode, bindings *Bindings) *
 }
 
 func evalTypedBagInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.BagInfix)
+	n := typed.Node.(*ast.BinaryBagOperation)
 
 	leftResult := evalTypedNode(typed.Children[0], bindings)
 	if leftResult.IsError() {
@@ -549,7 +551,7 @@ func evalTypedBagInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalRe
 }
 
 func evalTypedTupleIndex(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.ExpressionTupleIndex)
+	n := typed.Node.(*ast.TupleIndex)
 
 	tupleResult := evalTypedNode(typed.Children[0], bindings)
 	if tupleResult.IsError() {
@@ -575,7 +577,7 @@ func evalTypedTupleIndex(typed *typechecker.TypedNode, bindings *Bindings) *Eval
 }
 
 func evalTypedTupleInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.TupleInfixExpression)
+	n := typed.Node.(*ast.TupleConcat)
 
 	// All children are tuple operands
 	var tuples []*object.Tuple
@@ -655,9 +657,9 @@ func evalTypedRecordAltered(typed *typechecker.TypedNode, bindings *Bindings) *E
 }
 
 func evalTypedFieldIdentifier(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.FieldIdentifier)
+	n := typed.Node.(*ast.FieldAccess) //nolint:staticcheck // backwards compat alias
 
-	if n.Identifier == nil {
+	if n.Identifier == nil { //nolint:staticcheck // backwards compat field
 		// Field access on context record
 		contextRecord := bindings.GetExistingValue()
 		if contextRecord == nil {
@@ -702,7 +704,7 @@ func evalTypedIfElse(typed *typechecker.TypedNode, bindings *Bindings) *EvalResu
 }
 
 func evalTypedCase(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.ExpressionCase)
+	n := typed.Node.(*ast.CaseExpr)
 
 	// Children are pairs of (condition, result), then optionally OTHER result
 	childIdx := 0
@@ -761,7 +763,7 @@ func evalTypedCallExpression(typed *typechecker.TypedNode, bindings *Bindings) *
 }
 
 func evalTypedCallExpressionWithRegistry(typed *typechecker.TypedNode, bindings *Bindings, ctx *EvalContext) *EvalResult {
-	n := typed.Node.(*ast.CallExpression)
+	n := typed.Node.(*ast.ScopedCall)
 
 	// Call the registry to resolve and evaluate
 	result, err := ctx.Registry.ResolveAndEval(
@@ -781,7 +783,7 @@ func evalTypedCallExpressionWithRegistry(typed *typechecker.TypedNode, bindings 
 }
 
 func evalTypedCallExpressionLegacy(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.CallExpression)
+	n := typed.Node.(*ast.ScopedCall)
 
 	// First child is the parameter (record)
 	if len(typed.Children) == 0 {
@@ -842,7 +844,7 @@ func evalTypedStringIndex(typed *typechecker.TypedNode, bindings *Bindings) *Eva
 }
 
 func evalTypedStringInfix(typed *typechecker.TypedNode, bindings *Bindings) *EvalResult {
-	n := typed.Node.(*ast.StringInfixExpression)
+	n := typed.Node.(*ast.StringConcat)
 
 	var strs []string
 	for _, child := range typed.Children {
@@ -855,11 +857,11 @@ func evalTypedStringInfix(typed *typechecker.TypedNode, bindings *Bindings) *Eva
 
 	switch n.Operator {
 	case "∘", "\\o":
-		var result string
+		var builder strings.Builder
 		for _, s := range strs {
-			result += s
+			builder.WriteString(s)
 		}
-		return NewEvalResult(object.NewString(result))
+		return NewEvalResult(object.NewString(builder.String()))
 	default:
 		return NewEvalError("unknown string operator: %s", n.Operator)
 	}

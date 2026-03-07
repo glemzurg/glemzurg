@@ -1,5 +1,7 @@
 package registry
 
+import "slices"
+
 // AddDependency records that 'from' depends on 'to'.
 // This is called during type checking when a call expression is resolved.
 func (r *Registry) AddDependency(from, to DefinitionKey) {
@@ -215,12 +217,7 @@ func (r *Registry) InvalidateMultiple(keys []DefinitionKey) *InvalidationSet {
 // Helper functions
 
 func containsKey(slice []DefinitionKey, key DefinitionKey) bool {
-	for _, k := range slice {
-		if k == key {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, key)
 }
 
 func removeKey(slice []DefinitionKey, key DefinitionKey) []DefinitionKey {

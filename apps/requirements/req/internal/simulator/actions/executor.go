@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"maps"
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -331,9 +332,7 @@ func (e *ActionExecutor) executeActionInContext(
 		var capturedLetBindings map[string]object.Object
 		if len(letBindings) > 0 {
 			capturedLetBindings = make(map[string]object.Object, len(letBindings))
-			for k, v := range letBindings {
-				capturedLetBindings[k] = v
-			}
+			maps.Copy(capturedLetBindings, letBindings)
 		}
 
 		ctx.AddSafetyRule(DeferredSafetyRule{

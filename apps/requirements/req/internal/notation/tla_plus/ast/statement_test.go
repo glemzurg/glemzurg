@@ -74,7 +74,7 @@ func (suite *AssignmentSuite) TestString() {
 	}
 }
 
-func (suite *AssignmentSuite) TestAscii() {
+func (suite *AssignmentSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		target   *Identifier
@@ -105,7 +105,7 @@ func (suite *AssignmentSuite) TestAscii() {
 				Target: tt.target,
 				Value:  tt.value,
 			}
-			assert.Equal(t, tt.expected, stmt.Ascii())
+			assert.Equal(t, tt.expected, stmt.ASCII())
 		})
 	}
 }

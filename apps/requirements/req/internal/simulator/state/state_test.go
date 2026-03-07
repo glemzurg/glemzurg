@@ -92,7 +92,7 @@ func (s *StateTestSuite) TestUpdateInstance() {
 		"status": object.NewString("shipped"),
 	})
 	err := state.UpdateInstance(instance.ID, newAttrs)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	updated := state.GetInstance(instance.ID)
 	s.Equal("shipped", updated.GetAttribute("status").(*object.String).Value())
@@ -130,7 +130,7 @@ func (s *StateTestSuite) TestDeleteInstance() {
 	s.Equal(1, state.InstanceCount())
 
 	err := state.DeleteInstance(instance.ID)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, state.InstanceCount())
 
 	// Instance should no longer exist
@@ -265,7 +265,7 @@ func (s *StateTestSuite) TestSetStateMachineState() {
 	instance := state.CreateInstance(classKey, object.NewRecord())
 
 	err := state.SetStateMachineState(instance.ID, stateKey)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	retrieved, ok := state.GetStateMachineState(instance.ID)
 	s.True(ok)

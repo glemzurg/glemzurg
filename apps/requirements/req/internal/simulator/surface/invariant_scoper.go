@@ -12,7 +12,7 @@ import (
 //
 // classNames is the set of in-scope class names.
 // allClassNames is the set of ALL class names in the model.
-func ScopeInvariants(invariants []model_logic.Logic, classNames map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
+func ScopeInvariants(invariants []model_logic.Logic, _ map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	// Without knowing all class names, we can't detect out-of-scope references.
 	// Include everything by default. Use ScopeInvariantsWithAllClasses for full filtering.
 	included = append(included, invariants...)

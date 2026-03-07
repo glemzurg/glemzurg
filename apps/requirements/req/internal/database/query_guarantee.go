@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -141,22 +142,23 @@ func AddQueryGuarantees(dbOrTx DbOrTx, modelKey string, guarantees map[identity.
 		return nil
 	}
 
-	query := `INSERT INTO query_guarantee (model_key, query_key, logic_key) VALUES `
-	args := make([]interface{}, 0, count*3)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO query_guarantee (model_key, query_key, logic_key) VALUES `)
+	args := make([]any, 0, count*3)
 	i := 0
 	for queryKey, logicKeys := range guarantees {
 		for _, logicKey := range logicKeys {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 3
-			query += fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3))
 			args = append(args, modelKey, queryKey.String(), logicKey.String())
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

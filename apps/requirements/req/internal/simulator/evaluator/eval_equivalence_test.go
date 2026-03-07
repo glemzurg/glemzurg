@@ -22,7 +22,7 @@ type EquivalenceSuite struct {
 
 func (s *EquivalenceSuite) TestEquivalence_TrueTrue() {
 	// TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -37,7 +37,7 @@ func (s *EquivalenceSuite) TestEquivalence_TrueTrue() {
 
 func (s *EquivalenceSuite) TestEquivalence_TrueFalse() {
 	// TRUE ≡ FALSE = FALSE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -52,7 +52,7 @@ func (s *EquivalenceSuite) TestEquivalence_TrueFalse() {
 
 func (s *EquivalenceSuite) TestEquivalence_FalseTrue() {
 	// FALSE ≡ TRUE = FALSE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -67,7 +67,7 @@ func (s *EquivalenceSuite) TestEquivalence_FalseTrue() {
 
 func (s *EquivalenceSuite) TestEquivalence_FalseFalse() {
 	// FALSE ≡ FALSE = TRUE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -86,8 +86,8 @@ func (s *EquivalenceSuite) TestEquivalence_FalseFalse() {
 
 func (s *EquivalenceSuite) TestEquivalence_WithAndExpressions() {
 	// (TRUE ∧ FALSE) ≡ FALSE = FALSE ≡ FALSE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "∧",
 			Right:    &ast.BooleanLiteral{Value: false},
@@ -105,8 +105,8 @@ func (s *EquivalenceSuite) TestEquivalence_WithAndExpressions() {
 
 func (s *EquivalenceSuite) TestEquivalence_WithOrExpressions() {
 	// (TRUE ∨ FALSE) ≡ TRUE = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "∨",
 			Right:    &ast.BooleanLiteral{Value: false},
@@ -124,8 +124,8 @@ func (s *EquivalenceSuite) TestEquivalence_WithOrExpressions() {
 
 func (s *EquivalenceSuite) TestEquivalence_WithNotExpressions() {
 	// ¬TRUE ≡ FALSE = FALSE ≡ FALSE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicPrefixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.UnaryLogic{
 			Operator: "¬",
 			Right:    &ast.BooleanLiteral{Value: true},
 		},
@@ -142,10 +142,10 @@ func (s *EquivalenceSuite) TestEquivalence_WithNotExpressions() {
 
 func (s *EquivalenceSuite) TestEquivalence_DoubleNegation() {
 	// ¬¬TRUE ≡ TRUE = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicPrefixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.UnaryLogic{
 			Operator: "¬",
-			Right: &ast.LogicPrefixExpression{
+			Right: &ast.UnaryLogic{
 				Operator: "¬",
 				Right:    &ast.BooleanLiteral{Value: true},
 			},
@@ -167,14 +167,14 @@ func (s *EquivalenceSuite) TestEquivalence_DoubleNegation() {
 
 func (s *EquivalenceSuite) TestEquivalence_WithComparisons() {
 	// (3 < 5) ≡ (5 > 3) = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicRealComparison{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "≡",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(5),
 			Operator: ">",
 			Right:    ast.NewIntLiteral(3),
@@ -190,14 +190,14 @@ func (s *EquivalenceSuite) TestEquivalence_WithComparisons() {
 
 func (s *EquivalenceSuite) TestEquivalence_ComparisonMismatch() {
 	// (3 < 5) ≡ (3 > 5) = TRUE ≡ FALSE = FALSE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicRealComparison{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "≡",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: ">",
 			Right:    ast.NewIntLiteral(5),
@@ -213,14 +213,14 @@ func (s *EquivalenceSuite) TestEquivalence_ComparisonMismatch() {
 
 func (s *EquivalenceSuite) TestEquivalence_LessOrEqualVsGreaterOrEqual() {
 	// (5 ≤ 5) ≡ (5 ≥ 5) = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicRealComparison{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(5),
 			Operator: "≤",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "≡",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(5),
 			Operator: "≥",
 			Right:    ast.NewIntLiteral(5),
@@ -240,8 +240,8 @@ func (s *EquivalenceSuite) TestEquivalence_LessOrEqualVsGreaterOrEqual() {
 
 func (s *EquivalenceSuite) TestEquivalence_WithEquality() {
 	// (5 = 5) ≡ TRUE = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicEquality{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryEquality{
 			Left:     ast.NewIntLiteral(5),
 			Operator: "=",
 			Right:    ast.NewIntLiteral(5),
@@ -259,14 +259,14 @@ func (s *EquivalenceSuite) TestEquivalence_WithEquality() {
 
 func (s *EquivalenceSuite) TestEquivalence_EqualityVsNotEquality() {
 	// (5 = 5) ≡ (5 ≠ 6) = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicEquality{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryEquality{
 			Left:     ast.NewIntLiteral(5),
 			Operator: "=",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "≡",
-		Right: &ast.LogicEquality{
+		Right: &ast.BinaryEquality{
 			Left:     ast.NewIntLiteral(5),
 			Operator: "≠",
 			Right:    ast.NewIntLiteral(6),
@@ -286,8 +286,8 @@ func (s *EquivalenceSuite) TestEquivalence_EqualityVsNotEquality() {
 
 func (s *EquivalenceSuite) TestEquivalence_Chained() {
 	// TRUE ≡ TRUE ≡ TRUE = (TRUE ≡ TRUE) ≡ TRUE = TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "≡",
 			Right:    &ast.BooleanLiteral{Value: true},
@@ -305,8 +305,8 @@ func (s *EquivalenceSuite) TestEquivalence_Chained() {
 
 func (s *EquivalenceSuite) TestEquivalence_ChainedFalse() {
 	// TRUE ≡ FALSE ≡ FALSE = (TRUE ≡ FALSE) ≡ FALSE = FALSE ≡ FALSE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "≡",
 			Right:    &ast.BooleanLiteral{Value: false},
@@ -328,8 +328,8 @@ func (s *EquivalenceSuite) TestEquivalence_ChainedFalse() {
 
 func (s *EquivalenceSuite) TestEquivalence_WithImplication() {
 	// (TRUE ⇒ FALSE) ≡ FALSE = FALSE ≡ FALSE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "⇒",
 			Right:    &ast.BooleanLiteral{Value: false},
@@ -348,8 +348,8 @@ func (s *EquivalenceSuite) TestEquivalence_WithImplication() {
 func (s *EquivalenceSuite) TestEquivalence_ImplicationTautology() {
 	// (FALSE ⇒ TRUE) ≡ TRUE = TRUE ≡ TRUE = TRUE
 	// This tests the "ex falso quodlibet" property
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: false},
 			Operator: "⇒",
 			Right:    &ast.BooleanLiteral{Value: true},
@@ -368,8 +368,8 @@ func (s *EquivalenceSuite) TestEquivalence_ImplicationTautology() {
 func (s *EquivalenceSuite) TestEquivalence_VacuousImplication() {
 	// (FALSE ⇒ FALSE) ≡ TRUE = TRUE ≡ TRUE = TRUE
 	// Vacuously true implication
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: false},
 			Operator: "⇒",
 			Right:    &ast.BooleanLiteral{Value: false},
@@ -392,26 +392,26 @@ func (s *EquivalenceSuite) TestEquivalence_VacuousImplication() {
 func (s *EquivalenceSuite) TestEquivalence_DeMorganLaw1() {
 	// ¬(TRUE ∧ FALSE) ≡ (¬TRUE ∨ ¬FALSE) = TRUE ≡ TRUE = TRUE
 	// De Morgan's Law: ¬(A ∧ B) ≡ (¬A ∨ ¬B)
-	left := &ast.LogicPrefixExpression{
+	left := &ast.UnaryLogic{
 		Operator: "¬",
-		Right: &ast.LogicInfixExpression{
+		Right: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "∧",
 			Right:    &ast.BooleanLiteral{Value: false},
 		},
 	}
-	right := &ast.LogicInfixExpression{
-		Left: &ast.LogicPrefixExpression{
+	right := &ast.BinaryLogic{
+		Left: &ast.UnaryLogic{
 			Operator: "¬",
 			Right:    &ast.BooleanLiteral{Value: true},
 		},
 		Operator: "∨",
-		Right: &ast.LogicPrefixExpression{
+		Right: &ast.UnaryLogic{
 			Operator: "¬",
 			Right:    &ast.BooleanLiteral{Value: false},
 		},
 	}
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     left,
 		Operator: "≡",
 		Right:    right,
@@ -427,26 +427,26 @@ func (s *EquivalenceSuite) TestEquivalence_DeMorganLaw1() {
 func (s *EquivalenceSuite) TestEquivalence_DeMorganLaw2() {
 	// ¬(TRUE ∨ FALSE) ≡ (¬TRUE ∧ ¬FALSE) = FALSE ≡ FALSE = TRUE
 	// De Morgan's Law: ¬(A ∨ B) ≡ (¬A ∧ ¬B)
-	left := &ast.LogicPrefixExpression{
+	left := &ast.UnaryLogic{
 		Operator: "¬",
-		Right: &ast.LogicInfixExpression{
+		Right: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "∨",
 			Right:    &ast.BooleanLiteral{Value: false},
 		},
 	}
-	right := &ast.LogicInfixExpression{
-		Left: &ast.LogicPrefixExpression{
+	right := &ast.BinaryLogic{
+		Left: &ast.UnaryLogic{
 			Operator: "¬",
 			Right:    &ast.BooleanLiteral{Value: true},
 		},
 		Operator: "∧",
-		Right: &ast.LogicPrefixExpression{
+		Right: &ast.UnaryLogic{
 			Operator: "¬",
 			Right:    &ast.BooleanLiteral{Value: false},
 		},
 	}
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     left,
 		Operator: "≡",
 		Right:    right,
@@ -465,7 +465,7 @@ func (s *EquivalenceSuite) TestEquivalence_DeMorganLaw2() {
 
 func (s *EquivalenceSuite) TestEquivalence_AsciiOperator() {
 	// TRUE <=> TRUE = TRUE (using ASCII operator)
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "<=>",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -480,7 +480,7 @@ func (s *EquivalenceSuite) TestEquivalence_AsciiOperator() {
 
 func (s *EquivalenceSuite) TestEquivalence_AsciiOperator_False() {
 	// TRUE <=> FALSE = FALSE (using ASCII operator)
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "<=>",
 		Right:    &ast.BooleanLiteral{Value: false},

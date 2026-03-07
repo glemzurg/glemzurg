@@ -25,7 +25,7 @@ func (s *SetLiteralEnum) String() (value string) {
 	return out.String()
 }
 
-func (s *SetLiteralEnum) Ascii() (value string) {
+func (s *SetLiteralEnum) ASCII() (value string) {
 	return s.String()
 }
 

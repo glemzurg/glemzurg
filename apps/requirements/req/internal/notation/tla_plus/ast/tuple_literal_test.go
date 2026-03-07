@@ -100,7 +100,7 @@ func (suite *TupleLiteralSuite) TestString() {
 	}
 }
 
-func (suite *TupleLiteralSuite) TestAscii() {
+func (suite *TupleLiteralSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		elements []Expression
@@ -137,7 +137,7 @@ func (suite *TupleLiteralSuite) TestAscii() {
 			tup := &TupleLiteral{
 				Elements: tt.elements,
 			}
-			assert.Equal(t, tt.expected, tup.Ascii())
+			assert.Equal(t, tt.expected, tup.ASCII())
 		})
 	}
 }

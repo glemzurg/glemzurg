@@ -47,8 +47,8 @@ func (suite *DomainAssociationSuite) SetupTest() {
 func (suite *DomainAssociationSuite) TestLoad() {
 	// Nothing in database yet.
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), association)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(association)
 
 	err = dbExec(suite.db, `
 		INSERT INTO domain_association
@@ -140,8 +140,8 @@ func (suite *DomainAssociationSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), association)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(association)
 }
 
 func (suite *DomainAssociationSuite) TestQuery() {

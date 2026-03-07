@@ -40,7 +40,7 @@ func (suite *BooleanLiteralSuite) TestString() {
 	}
 }
 
-func (suite *BooleanLiteralSuite) TestAscii() {
+func (suite *BooleanLiteralSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		value    bool
@@ -60,7 +60,7 @@ func (suite *BooleanLiteralSuite) TestAscii() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			b := &BooleanLiteral{Value: tt.value}
-			assert.Equal(t, tt.expected, b.Ascii())
+			assert.Equal(t, tt.expected, b.ASCII())
 		})
 	}
 }

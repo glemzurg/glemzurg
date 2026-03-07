@@ -22,11 +22,11 @@ func (e *TupleIndex) String() (value string) {
 	return out.String()
 }
 
-func (e *TupleIndex) Ascii() (value string) {
+func (e *TupleIndex) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(e.Tuple.Ascii())
+	out.WriteString(e.Tuple.ASCII())
 	out.WriteString("[")
-	out.WriteString(e.Index.Ascii())
+	out.WriteString(e.Index.ASCII())
 	out.WriteString("]")
 	return out.String()
 }
@@ -45,5 +45,6 @@ func (e *TupleIndex) Validate() error {
 }
 
 // ExpressionTupleIndex is an alias for backwards compatibility.
+//
 // Deprecated: Use TupleIndex instead.
 type ExpressionTupleIndex = TupleIndex

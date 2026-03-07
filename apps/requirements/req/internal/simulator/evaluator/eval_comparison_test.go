@@ -21,7 +21,7 @@ type ComparisonSuite struct {
 // =============================================================================
 
 func (s *ComparisonSuite) TestLessThan_True() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(5),
@@ -35,7 +35,7 @@ func (s *ComparisonSuite) TestLessThan_True() {
 }
 
 func (s *ComparisonSuite) TestLessThan_False_Greater() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(3),
@@ -49,7 +49,7 @@ func (s *ComparisonSuite) TestLessThan_False_Greater() {
 }
 
 func (s *ComparisonSuite) TestLessThan_False_Equal() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(5),
@@ -64,7 +64,7 @@ func (s *ComparisonSuite) TestLessThan_False_Equal() {
 
 func (s *ComparisonSuite) TestLessThan_NegativeNumbers() {
 	// -5 < -3 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(-5),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(-3),
@@ -79,7 +79,7 @@ func (s *ComparisonSuite) TestLessThan_NegativeNumbers() {
 
 func (s *ComparisonSuite) TestLessThan_Zero() {
 	// -1 < 0 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(-1),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(0),
@@ -94,10 +94,10 @@ func (s *ComparisonSuite) TestLessThan_Zero() {
 
 func (s *ComparisonSuite) TestLessThan_Rationals() {
 	// 1/3 < 1/2 = TRUE
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
 		Operator: "<",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -109,8 +109,8 @@ func (s *ComparisonSuite) TestLessThan_Rationals() {
 
 func (s *ComparisonSuite) TestLessThan_MixedTypes() {
 	// 1/2 < 1 = TRUE (rational vs natural)
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(1),
 	}
@@ -127,7 +127,7 @@ func (s *ComparisonSuite) TestLessThan_MixedTypes() {
 // =============================================================================
 
 func (s *ComparisonSuite) TestGreaterThan_True() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(3),
@@ -141,7 +141,7 @@ func (s *ComparisonSuite) TestGreaterThan_True() {
 }
 
 func (s *ComparisonSuite) TestGreaterThan_False_Less() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(5),
@@ -155,7 +155,7 @@ func (s *ComparisonSuite) TestGreaterThan_False_Less() {
 }
 
 func (s *ComparisonSuite) TestGreaterThan_False_Equal() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(5),
@@ -170,7 +170,7 @@ func (s *ComparisonSuite) TestGreaterThan_False_Equal() {
 
 func (s *ComparisonSuite) TestGreaterThan_NegativeNumbers() {
 	// -3 > -5 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(-3),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(-5),
@@ -185,7 +185,7 @@ func (s *ComparisonSuite) TestGreaterThan_NegativeNumbers() {
 
 func (s *ComparisonSuite) TestGreaterThan_Zero() {
 	// 0 > -1 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(0),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(-1),
@@ -200,10 +200,10 @@ func (s *ComparisonSuite) TestGreaterThan_Zero() {
 
 func (s *ComparisonSuite) TestGreaterThan_Rationals() {
 	// 1/2 > 1/3 = TRUE
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: ">",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
 	}
 	bindings := NewBindings()
 
@@ -218,7 +218,7 @@ func (s *ComparisonSuite) TestGreaterThan_Rationals() {
 // =============================================================================
 
 func (s *ComparisonSuite) TestLessOrEqual_Less() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "≤",
 		Right:    ast.NewIntLiteral(5),
@@ -232,7 +232,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Less() {
 }
 
 func (s *ComparisonSuite) TestLessOrEqual_Equal() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "≤",
 		Right:    ast.NewIntLiteral(5),
@@ -246,7 +246,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Equal() {
 }
 
 func (s *ComparisonSuite) TestLessOrEqual_Greater() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "≤",
 		Right:    ast.NewIntLiteral(3),
@@ -261,7 +261,7 @@ func (s *ComparisonSuite) TestLessOrEqual_Greater() {
 
 func (s *ComparisonSuite) TestLessOrEqual_NegativeNumbers() {
 	// -5 ≤ -5 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(-5),
 		Operator: "≤",
 		Right:    ast.NewIntLiteral(-5),
@@ -276,10 +276,10 @@ func (s *ComparisonSuite) TestLessOrEqual_NegativeNumbers() {
 
 func (s *ComparisonSuite) TestLessOrEqual_Rationals() {
 	// 1/2 ≤ 2/4 = TRUE (equal)
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 		Operator: "≤",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(2), ast.NewIntLiteral(4)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(2), ast.NewIntLiteral(4)),
 	}
 	bindings := NewBindings()
 
@@ -291,8 +291,8 @@ func (s *ComparisonSuite) TestLessOrEqual_Rationals() {
 
 func (s *ComparisonSuite) TestLessOrEqual_RationalLessThanInteger() {
 	// 3/2 ≤ 2 = TRUE (1.5 ≤ 2)
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(3), ast.NewIntLiteral(2)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(3), ast.NewIntLiteral(2)),
 		Operator: "≤",
 		Right:    ast.NewIntLiteral(2),
 	}
@@ -309,7 +309,7 @@ func (s *ComparisonSuite) TestLessOrEqual_RationalLessThanInteger() {
 // =============================================================================
 
 func (s *ComparisonSuite) TestGreaterOrEqual_Greater() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "≥",
 		Right:    ast.NewIntLiteral(3),
@@ -323,7 +323,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Greater() {
 }
 
 func (s *ComparisonSuite) TestGreaterOrEqual_Equal() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "≥",
 		Right:    ast.NewIntLiteral(5),
@@ -337,7 +337,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Equal() {
 }
 
 func (s *ComparisonSuite) TestGreaterOrEqual_Less() {
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "≥",
 		Right:    ast.NewIntLiteral(5),
@@ -352,7 +352,7 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Less() {
 
 func (s *ComparisonSuite) TestGreaterOrEqual_Zero() {
 	// 0 ≥ 0 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(0),
 		Operator: "≥",
 		Right:    ast.NewIntLiteral(0),
@@ -367,10 +367,10 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Zero() {
 
 func (s *ComparisonSuite) TestGreaterOrEqual_Rationals() {
 	// 2/3 ≥ 1/2 = TRUE
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(2), ast.NewIntLiteral(3)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(2), ast.NewIntLiteral(3)),
 		Operator: "≥",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -382,10 +382,10 @@ func (s *ComparisonSuite) TestGreaterOrEqual_Rationals() {
 
 func (s *ComparisonSuite) TestGreaterOrEqual_IntegerEqualToRational() {
 	// 2 ≥ 4/2 = TRUE (2 ≥ 2)
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "≥",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(4), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(4), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -401,8 +401,8 @@ func (s *ComparisonSuite) TestGreaterOrEqual_IntegerEqualToRational() {
 
 func (s *ComparisonSuite) TestComparison_WithArithmetic() {
 	// (2 + 3) > 4 = 5 > 4 = TRUE
-	node := &ast.LogicRealComparison{
-		Left: &ast.RealInfixExpression{
+	node := &ast.BinaryComparison{
+		Left: &ast.BinaryArithmetic{
 			Left:     ast.NewIntLiteral(2),
 			Operator: "+",
 			Right:    ast.NewIntLiteral(3),
@@ -420,14 +420,14 @@ func (s *ComparisonSuite) TestComparison_WithArithmetic() {
 
 func (s *ComparisonSuite) TestComparison_BothSidesArithmetic() {
 	// (2 * 3) < (4 + 5) = 6 < 9 = TRUE
-	node := &ast.LogicRealComparison{
-		Left: &ast.RealInfixExpression{
+	node := &ast.BinaryComparison{
+		Left: &ast.BinaryArithmetic{
 			Left:     ast.NewIntLiteral(2),
 			Operator: "*",
 			Right:    ast.NewIntLiteral(3),
 		},
 		Operator: "<",
-		Right: &ast.RealInfixExpression{
+		Right: &ast.BinaryArithmetic{
 			Left:     ast.NewIntLiteral(4),
 			Operator: "+",
 			Right:    ast.NewIntLiteral(5),
@@ -443,8 +443,8 @@ func (s *ComparisonSuite) TestComparison_BothSidesArithmetic() {
 
 func (s *ComparisonSuite) TestComparison_WithPower() {
 	// 2^3 ≥ 8 = 8 ≥ 8 = TRUE
-	node := &ast.LogicRealComparison{
-		Left: &ast.RealInfixExpression{
+	node := &ast.BinaryComparison{
+		Left: &ast.BinaryArithmetic{
 			Left:     ast.NewIntLiteral(2),
 			Operator: "^",
 			Right:    ast.NewIntLiteral(3),
@@ -466,14 +466,14 @@ func (s *ComparisonSuite) TestComparison_WithPower() {
 
 func (s *ComparisonSuite) TestComparison_InAndExpression() {
 	// (3 < 5) ∧ (5 > 3) = TRUE ∧ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicRealComparison{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "∧",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(5),
 			Operator: ">",
 			Right:    ast.NewIntLiteral(3),
@@ -489,14 +489,14 @@ func (s *ComparisonSuite) TestComparison_InAndExpression() {
 
 func (s *ComparisonSuite) TestComparison_InOrExpression() {
 	// (3 > 5) ∨ (5 > 3) = FALSE ∨ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicRealComparison{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: ">",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "∨",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(5),
 			Operator: ">",
 			Right:    ast.NewIntLiteral(3),
@@ -512,14 +512,14 @@ func (s *ComparisonSuite) TestComparison_InOrExpression() {
 
 func (s *ComparisonSuite) TestComparison_InImplication() {
 	// (x < y) ⇒ (x ≤ y): for x=3, y=5: TRUE ⇒ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
-		Left: &ast.LogicRealComparison{
+	node := &ast.BinaryLogic{
+		Left: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(5),
 		},
 		Operator: "⇒",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: "≤",
 			Right:    ast.NewIntLiteral(5),
@@ -535,9 +535,9 @@ func (s *ComparisonSuite) TestComparison_InImplication() {
 
 func (s *ComparisonSuite) TestComparison_NegatedComparison() {
 	// ¬(3 > 5) = ¬FALSE = TRUE
-	node := &ast.LogicPrefixExpression{
+	node := &ast.UnaryLogic{
 		Operator: "¬",
-		Right: &ast.LogicRealComparison{
+		Right: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(3),
 			Operator: ">",
 			Right:    ast.NewIntLiteral(5),
@@ -557,7 +557,7 @@ func (s *ComparisonSuite) TestComparison_NegatedComparison() {
 
 func (s *ComparisonSuite) TestComparison_LargeNumbers() {
 	// 1000000 < 1000001 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(1000000),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(1000001),
@@ -572,10 +572,10 @@ func (s *ComparisonSuite) TestComparison_LargeNumbers() {
 
 func (s *ComparisonSuite) TestComparison_VerySmallRationals() {
 	// 1/1000 < 1/100 = TRUE
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(1000)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(1000)),
 		Operator: "<",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(100)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(100)),
 	}
 	bindings := NewBindings()
 

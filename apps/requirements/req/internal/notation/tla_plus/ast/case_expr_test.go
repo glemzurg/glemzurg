@@ -119,7 +119,7 @@ func (suite *ExpressionCaseSuite) TestString() {
 	}
 }
 
-func (suite *ExpressionCaseSuite) TestAscii() {
+func (suite *ExpressionCaseSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		branches []*CaseBranch
@@ -176,7 +176,7 @@ func (suite *ExpressionCaseSuite) TestAscii() {
 				Branches: tt.branches,
 				Other:    tt.other,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			assert.Equal(t, tt.expected, expr.ASCII())
 		})
 	}
 }

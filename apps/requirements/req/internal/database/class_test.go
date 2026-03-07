@@ -57,9 +57,9 @@ func (suite *ClassSuite) SetupTest() {
 func (suite *ClassSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), class)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(subdomainKey)
+	suite.Empty(class)
 
 	err = dbExec(suite.db, `
 		INSERT INTO class
@@ -243,9 +243,9 @@ func (suite *ClassSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), class)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(subdomainKey)
+	suite.Empty(class)
 }
 
 func (suite *ClassSuite) TestQuery() {

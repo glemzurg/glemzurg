@@ -139,7 +139,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions_NoParams() {
 	def, ok := result.Registry.GetGlobal("_StatusSet")
 	s.True(ok)
 	s.NotNil(def)
-	s.Len(def.Parameters, 0)
+	s.Empty(def.Parameters)
 }
 
 // =============================================================================
@@ -531,7 +531,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult() {
 	result := builder.Build(expr, reg)
 
 	s.True(result.IsSuccess())
-	s.Nil(result.Error)
+	s.Require().NoError(result.Error)
 	s.NotNil(result.Definition)
 	s.Equal(expr, result.Source)
 }
@@ -551,7 +551,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult_Error() {
 	result := builder.Build(expr, reg)
 
 	s.False(result.IsSuccess())
-	s.NotNil(result.Error)
+	s.Require().Error(result.Error)
 	s.Nil(result.Definition)
 }
 
@@ -570,7 +570,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_UnsupportedSource() {
 	result := builder.Build(expr, reg)
 
 	s.False(result.IsSuccess())
-	s.NotNil(result.Error)
+	s.Require().Error(result.Error)
 	s.Contains(result.Error.Error(), "unsupported expression source")
 }
 

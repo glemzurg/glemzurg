@@ -74,7 +74,7 @@ func (s *TraceSuite) TestCreationStep() {
 	s.Equal(classKey.String(), step.ClassKey)
 	s.Equal("create", step.EventName)
 	s.Equal(uint64(1), step.InstanceID)
-	s.Equal("", step.FromState)
+	s.Empty(step.FromState)
 	s.Equal("Open", step.ToState)
 }
 

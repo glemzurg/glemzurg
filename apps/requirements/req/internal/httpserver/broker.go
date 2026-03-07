@@ -80,7 +80,7 @@ func (r *BrokerRegistry) GetBroker(key string) *Broker {
 
 // NotifyAll sends a refresh notification to all brokers.
 func (r *BrokerRegistry) NotifyAll() {
-	r.brokers.Range(func(key, value interface{}) bool {
+	r.brokers.Range(func(_, value any) bool {
 		value.(*Broker).Notify([]byte("refresh"))
 		return true
 	})
@@ -88,7 +88,7 @@ func (r *BrokerRegistry) NotifyAll() {
 
 // NotifyModel sends a refresh notification to all brokers for a specific model.
 func (r *BrokerRegistry) NotifyModel(model string) {
-	r.brokers.Range(func(key, value interface{}) bool {
+	r.brokers.Range(func(key, value any) bool {
 		keyStr := key.(string)
 		if len(keyStr) > len(model) && keyStr[:len(model)+1] == model+"/" {
 			value.(*Broker).Notify([]byte("refresh"))

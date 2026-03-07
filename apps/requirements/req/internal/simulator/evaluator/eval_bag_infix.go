@@ -6,7 +6,7 @@ import (
 )
 
 // evalBagInfix evaluates a bag infix expression (⊕, ⊖).
-func evalBagInfix(node *ast.BagInfix, bindings *Bindings) *EvalResult {
+func evalBagInfix(node *ast.BinaryBagOperation, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

@@ -245,7 +245,7 @@ func main() {
 
 	var buf bytes.Buffer
 	if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
-		log.Fatal(err)
+		log.Fatal(err) //nolint:gocritic // server blocks until error, defer runs on normal exit
 	}
 	os.Stdout.WriteString(buf.String() + "\n")
 }

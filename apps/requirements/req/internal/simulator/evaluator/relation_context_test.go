@@ -220,7 +220,7 @@ func (s *RelationContextTestSuite) TestGetRelatedRecords_Empty() {
 	ctx.RegisterRecord(order) // Register but don't create links
 
 	related := ctx.GetRelatedRecords(order, assocKey, false)
-	s.Len(related, 0)
+	s.Empty(related)
 }
 
 func (s *RelationContextTestSuite) TestGetRelatedRecords_UnregisteredRecord() {
@@ -266,7 +266,7 @@ func (s *RelationContextTestSuite) TestRemoveLink() {
 
 	// Verify no related records
 	related := ctx.GetRelatedRecords(order, assocKey, false)
-	s.Len(related, 0)
+	s.Empty(related)
 }
 
 func (s *RelationContextTestSuite) TestClear() {

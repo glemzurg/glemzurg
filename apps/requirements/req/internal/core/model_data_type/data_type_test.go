@@ -77,10 +77,10 @@ func (suite *DataTypeSuite) TestValidate() {
 		}
 		err := dataType.Validate()
 		if tt.errstr == "" {
-			assert.Nil(suite.T(), err, "expected no error for %+v", dataType)
+			suite.NoError(err, "expected no error for %+v", dataType)
 		} else {
-			assert.NotNil(suite.T(), err, "expected error for %+v", dataType)
-			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %+v", dataType)
+			suite.Error(err, "expected error for %+v", dataType)
+			suite.ErrorContains(err, tt.errstr, "error message mismatch for %+v", dataType)
 		}
 	}
 
@@ -218,10 +218,10 @@ func (suite *DataTypeSuite) TestValidate() {
 	for _, tt := range collectionTests {
 		err := tt.dt.Validate()
 		if tt.errstr == "" {
-			assert.Nil(suite.T(), err, "expected no error for %s", tt.name)
+			suite.NoError(err, "expected no error for %s", tt.name)
 		} else {
-			assert.NotNil(suite.T(), err, "expected error for %s", tt.name)
-			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %s", tt.name)
+			suite.Error(err, "expected error for %s", tt.name)
+			suite.ErrorContains(err, tt.errstr, "error message mismatch for %s", tt.name)
 		}
 	}
 }
@@ -504,7 +504,7 @@ func TestParseCollections(t *testing.T) {
 				assert.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
-				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
@@ -586,7 +586,7 @@ func TestParseRecordFields(t *testing.T) {
 				assert.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(Field)
-				assert.Equal(t, true, ok, "cannot type cast to Field: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to Field: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
@@ -773,7 +773,7 @@ func TestParseRecords(t *testing.T) {
 				assert.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
-				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
@@ -983,17 +983,17 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 	result := root.UnpackNested()
 
 	// Verify the result
-	assert.Len(suite.T(), result, 3)
+	suite.Len(result, 3)
 
 	// Deepest first: grandchild, child, root
-	assert.Equal(suite.T(), "root/child/grandchild", result[0].Key)
-	assert.Equal(suite.T(), "atomic", result[0].CollectionType)
+	suite.Equal("root/child/grandchild", result[0].Key)
+	suite.Equal("atomic", result[0].CollectionType)
 
-	assert.Equal(suite.T(), "root/child", result[1].Key)
-	assert.Equal(suite.T(), "record", result[1].CollectionType)
+	suite.Equal("root/child", result[1].Key)
+	suite.Equal("record", result[1].CollectionType)
 
-	assert.Equal(suite.T(), "root", result[2].Key)
-	assert.Equal(suite.T(), "record", result[2].CollectionType)
+	suite.Equal("root", result[2].Key)
+	suite.Equal("record", result[2].CollectionType)
 }
 
 func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {
@@ -1006,10 +1006,10 @@ func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {
 
 	SortDataTypesByKeyLengthDesc(dataTypes)
 
-	assert.Equal(suite.T(), "dddd", dataTypes[0].Key)
-	assert.Equal(suite.T(), "ccc", dataTypes[1].Key)
-	assert.Equal(suite.T(), "bb", dataTypes[2].Key)
-	assert.Equal(suite.T(), "a", dataTypes[3].Key)
+	suite.Equal("dddd", dataTypes[0].Key)
+	suite.Equal("ccc", dataTypes[1].Key)
+	suite.Equal("bb", dataTypes[2].Key)
+	suite.Equal("a", dataTypes[3].Key)
 }
 
 func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
@@ -1059,7 +1059,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 
 	fieldMap, atomicMap, atomicSpanMap, atomicEnumMap := ExtractDatabaseObjects(dataTypes)
 
-	assert.Equal(suite.T(), map[string][]Field{
+	suite.Equal(map[string][]Field{
 		"record_key": {
 			{
 				Name:          "name",
@@ -1068,7 +1068,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 		},
 	}, fieldMap)
 
-	assert.Equal(suite.T(), map[string]Atomic{
+	suite.Equal(map[string]Atomic{
 		"atomic_key": {ConstraintType: "unconstrained"},
 		"atomic_span_key": Atomic{
 			ConstraintType: "span",
@@ -1086,11 +1086,11 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 		},
 	}, atomicMap)
 
-	assert.Equal(suite.T(), map[string]AtomicSpan{
+	suite.Equal(map[string]AtomicSpan{
 		"atomic_span_key": {LowerType: "unconstrained", HigherType: "unconstrained"},
 	}, atomicSpanMap)
 
-	assert.Equal(suite.T(), map[string][]AtomicEnum{
+	suite.Equal(map[string][]AtomicEnum{
 		"atomic_enum_key": {
 			{Value: "ValueA"},
 			{Value: "ValueB"},
@@ -1150,7 +1150,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	result := ReconstituteDataTypes(baseDataTypes, fieldMap, atomicMap, atomicSpanMap, atomicEnumMap)
 
 	// Verify the result is sorted by key length descending and components are attached
-	assert.Equal(suite.T(), []DataType{
+	suite.Equal([]DataType{
 		{
 			Key:            "atomic_enum_key",
 			CollectionType: "atomic",
@@ -1255,5 +1255,5 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	reconstructed := ReconstructNestedDataTypes(flat)
 
 	// Verify that reconstructed matches original
-	assert.Equal(suite.T(), original, reconstructed)
+	suite.Equal(original, reconstructed)
 }

@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -260,16 +261,17 @@ func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO transition (model_key, class_key, transition_key, from_state_key, event_key, guard_key, action_key, to_state_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*9)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO transition (model_key, class_key, transition_key, from_state_key, event_key, guard_key, action_key, to_state_key, uml_comment) VALUES `)
+	args := make([]any, 0, count*9)
 	i := 0
 	for classKey, transList := range transitions {
 		for _, transition := range transList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
 
 			// Handle optional key pointers.
 			var fromStateKeyPtr, guardKeyPtr, actionKeyPtr, toStateKeyPtr *string
@@ -295,7 +297,7 @@ func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

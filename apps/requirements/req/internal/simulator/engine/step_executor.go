@@ -134,11 +134,12 @@ func (e *StepExecutor) executeTransition(
 	step.ToState = result.ToState
 	step.Violations = append(step.Violations, result.Violations...)
 
-	if result.WasCreation {
+	switch {
+	case result.WasCreation:
 		step.Kind = StepKindCreation
-	} else if result.WasDeletion {
+	case result.WasDeletion:
 		step.Kind = StepKindDeletion
-	} else {
+	default:
 		step.Kind = StepKindNormal
 	}
 

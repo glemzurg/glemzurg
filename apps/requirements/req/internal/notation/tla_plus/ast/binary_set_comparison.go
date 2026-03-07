@@ -12,7 +12,7 @@ const (
 	SetComparisonSuperset   = "⊃"
 )
 
-var setComparisonAscii = map[string]string{
+var setComparisonASCII = map[string]string{
 	SetComparisonEqual:      `=`,
 	SetComparisonNotEqual:   `/=`,
 	SetComparisonSubsetEq:   `\subseteq`,
@@ -22,6 +22,7 @@ var setComparisonAscii = map[string]string{
 }
 
 // Backwards compatibility constants.
+//
 // Deprecated: Use SetComparison* constants instead.
 const (
 	LogicSetOperatorEqual      = SetComparisonEqual
@@ -49,11 +50,11 @@ func (is *BinarySetComparison) String() (value string) {
 	return out.String()
 }
 
-func (is *BinarySetComparison) Ascii() (value string) {
+func (is *BinarySetComparison) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(is.Left.Ascii())
-	out.WriteString(" " + setComparisonAscii[is.Operator] + " ")
-	out.WriteString(is.Right.Ascii())
+	out.WriteString(is.Left.ASCII())
+	out.WriteString(" " + setComparisonASCII[is.Operator] + " ")
+	out.WriteString(is.Right.ASCII())
 	return out.String()
 }
 
@@ -71,5 +72,6 @@ func (is *BinarySetComparison) Validate() error {
 }
 
 // LogicInfixSet is an alias for backwards compatibility.
+//
 // Deprecated: Use BinarySetComparison instead.
 type LogicInfixSet = BinarySetComparison

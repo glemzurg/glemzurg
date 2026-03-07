@@ -10,7 +10,7 @@ type Error struct {
 func (e *Error) Type() ObjectType { return TypeError }
 func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
 
-func (e *Error) SetValue(source Object) error {
+func (e *Error) SetValue(_ Object) error {
 	return fmt.Errorf("cannot assign to Error")
 }
 

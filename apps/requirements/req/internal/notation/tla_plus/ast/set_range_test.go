@@ -58,7 +58,7 @@ func (suite *SetRangeSuite) TestString() {
 	}
 }
 
-func (suite *SetRangeSuite) TestAscii() {
+func (suite *SetRangeSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		start    int
@@ -96,7 +96,7 @@ func (suite *SetRangeSuite) TestAscii() {
 				Start: tt.start,
 				End:   tt.end,
 			}
-			assert.Equal(t, tt.expected, s.Ascii())
+			assert.Equal(t, tt.expected, s.ASCII())
 		})
 	}
 }

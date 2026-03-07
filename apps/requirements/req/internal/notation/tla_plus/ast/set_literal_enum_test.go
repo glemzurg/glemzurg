@@ -47,7 +47,7 @@ func (suite *SetLiteralEnumSuite) TestString() {
 	}
 }
 
-func (suite *SetLiteralEnumSuite) TestAscii() {
+func (suite *SetLiteralEnumSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		values   []string
@@ -74,7 +74,7 @@ func (suite *SetLiteralEnumSuite) TestAscii() {
 			s := &SetLiteralEnum{
 				Values: tt.values,
 			}
-			assert.Equal(t, tt.expected, s.Ascii())
+			assert.Equal(t, tt.expected, s.ASCII())
 		})
 	}
 }

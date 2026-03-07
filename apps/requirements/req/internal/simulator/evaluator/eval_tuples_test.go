@@ -20,7 +20,7 @@ type TuplesSuite struct {
 
 func (s *TuplesSuite) TestTupleIndex_First() {
 	// <<1, 2, 3>>[1] = 1
-	node := &ast.ExpressionTupleIndex{
+	node := &ast.TupleIndex{
 		Tuple: &ast.TupleLiteral{
 			Elements: []ast.Expression{
 				ast.NewIntLiteral(1),
@@ -41,7 +41,7 @@ func (s *TuplesSuite) TestTupleIndex_First() {
 
 func (s *TuplesSuite) TestTupleIndex_Middle() {
 	// <<1, 2, 3>>[2] = 2
-	node := &ast.ExpressionTupleIndex{
+	node := &ast.TupleIndex{
 		Tuple: &ast.TupleLiteral{
 			Elements: []ast.Expression{
 				ast.NewIntLiteral(1),
@@ -62,7 +62,7 @@ func (s *TuplesSuite) TestTupleIndex_Middle() {
 
 func (s *TuplesSuite) TestTupleIndex_OutOfBounds() {
 	// <<1, 2, 3>>[5] = error
-	node := &ast.ExpressionTupleIndex{
+	node := &ast.TupleIndex{
 		Tuple: &ast.TupleLiteral{
 			Elements: []ast.Expression{
 				ast.NewIntLiteral(1),
@@ -268,7 +268,7 @@ func (s *TuplesSuite) TestSeqLen_Empty() {
 
 func (s *TuplesSuite) TestTupleConcat_Simple() {
 	// <<1, 2>> ∘ <<3, 4>> = <<1, 2, 3, 4>>
-	node := &ast.TupleInfixExpression{
+	node := &ast.TupleConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.TupleLiteral{
@@ -298,7 +298,7 @@ func (s *TuplesSuite) TestTupleConcat_Simple() {
 
 func (s *TuplesSuite) TestTupleConcat_Empty() {
 	// <<>> ∘ <<1, 2>> = <<1, 2>>
-	node := &ast.TupleInfixExpression{
+	node := &ast.TupleConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.TupleLiteral{Elements: []ast.Expression{}},
@@ -378,7 +378,7 @@ func (s *TuplesSuite) TestTupleConcat_WithVariables() {
 
 func (s *TuplesSuite) TestStringConcat_Simple() {
 	// "hello" ∘ "world" = "helloworld"
-	node := &ast.StringInfixExpression{
+	node := &ast.StringConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.StringLiteral{Value: "hello"},
@@ -395,7 +395,7 @@ func (s *TuplesSuite) TestStringConcat_Simple() {
 
 func (s *TuplesSuite) TestStringConcat_ThreeStrings() {
 	// "a" ∘ "b" ∘ "c" = "abc"
-	node := &ast.StringInfixExpression{
+	node := &ast.StringConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.StringLiteral{Value: "a"},
@@ -417,7 +417,7 @@ func (s *TuplesSuite) TestStringConcat_WithVariables() {
 	bindings.Set("a", object.NewString("foo"), NamespaceGlobal)
 	bindings.Set("b", object.NewString("bar"), NamespaceGlobal)
 
-	node := &ast.StringInfixExpression{
+	node := &ast.StringConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.Identifier{Value: "a"},
@@ -433,7 +433,7 @@ func (s *TuplesSuite) TestStringConcat_WithVariables() {
 
 func (s *TuplesSuite) TestStringConcat_EmptyString() {
 	// "" ∘ "hello" = "hello"
-	node := &ast.StringInfixExpression{
+	node := &ast.StringConcat{
 		Operator: "∘",
 		Operands: []ast.Expression{
 			&ast.StringLiteral{Value: ""},

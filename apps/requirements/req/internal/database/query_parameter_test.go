@@ -51,8 +51,8 @@ func (suite *QueryParameterSuite) SetupTest() {
 func (suite *QueryParameterSuite) TestLoad() {
 	// Nothing in database yet.
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 
 	err = dbExec(suite.db, `
 		INSERT INTO query_parameter
@@ -131,8 +131,8 @@ func (suite *QueryParameterSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 }
 
 func (suite *QueryParameterSuite) TestQuery() {

@@ -6,7 +6,7 @@ import (
 )
 
 // evalSetInfix evaluates a set infix expression (∪, ∩, \).
-func evalSetInfix(node *ast.SetInfix, bindings *Bindings) *EvalResult {
+func evalSetInfix(node *ast.BinarySetOperation, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

@@ -23,7 +23,7 @@ func (s *ComparisonSuite) TestParseEqual() {
 	expr, err := ParseExpression("1 = 2")
 	s.NoError(err)
 
-	eq := expr.(*ast.LogicEquality)
+	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
 
 	left := eq.Left.(*ast.NumberLiteral)
@@ -37,7 +37,7 @@ func (s *ComparisonSuite) TestParseEqualBooleans() {
 	expr, err := ParseExpression("TRUE = FALSE")
 	s.NoError(err)
 
-	eq := expr.(*ast.LogicEquality)
+	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
 
 	left := eq.Left.(*ast.BooleanLiteral)
@@ -51,7 +51,7 @@ func (s *ComparisonSuite) TestParseEqualStrings() {
 	expr, err := ParseExpression(`"hello" = "world"`)
 	s.NoError(err)
 
-	eq := expr.(*ast.LogicEquality)
+	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
 
 	left := eq.Left.(*ast.StringLiteral)
@@ -69,7 +69,7 @@ func (s *ComparisonSuite) TestParseNotEqualUnicode() {
 	expr, err := ParseExpression("1 ≠ 2")
 	s.NoError(err)
 
-	neq := expr.(*ast.LogicEquality)
+	neq := expr.(*ast.BinaryEquality)
 	s.Equal("≠", neq.Operator)
 }
 
@@ -77,7 +77,7 @@ func (s *ComparisonSuite) TestParseNotEqualSlash() {
 	expr, err := ParseExpression("1 /= 2")
 	s.NoError(err)
 
-	neq := expr.(*ast.LogicEquality)
+	neq := expr.(*ast.BinaryEquality)
 	s.Equal("≠", neq.Operator) // Normalized to Unicode
 }
 
@@ -85,7 +85,7 @@ func (s *ComparisonSuite) TestParseNotEqualHash() {
 	expr, err := ParseExpression("1 # 2")
 	s.NoError(err)
 
-	neq := expr.(*ast.LogicEquality)
+	neq := expr.(*ast.BinaryEquality)
 	s.Equal("≠", neq.Operator) // Normalized to Unicode
 }
 
@@ -97,7 +97,7 @@ func (s *ComparisonSuite) TestParseLessThan() {
 	expr, err := ParseExpression("1 < 2")
 	s.NoError(err)
 
-	lt := expr.(*ast.LogicRealComparison)
+	lt := expr.(*ast.BinaryComparison)
 	s.Equal("<", lt.Operator)
 }
 
@@ -109,7 +109,7 @@ func (s *ComparisonSuite) TestParseGreaterThan() {
 	expr, err := ParseExpression("5 > 3")
 	s.NoError(err)
 
-	gt := expr.(*ast.LogicRealComparison)
+	gt := expr.(*ast.BinaryComparison)
 	s.Equal(">", gt.Operator)
 }
 
@@ -121,15 +121,15 @@ func (s *ComparisonSuite) TestParseLessOrEqualUnicode() {
 	expr, err := ParseExpression("1 ≤ 2")
 	s.NoError(err)
 
-	le := expr.(*ast.LogicRealComparison)
+	le := expr.(*ast.BinaryComparison)
 	s.Equal("≤", le.Operator)
 }
 
-func (s *ComparisonSuite) TestParseLessOrEqualAscii() {
+func (s *ComparisonSuite) TestParseLessOrEqualASCII() {
 	expr, err := ParseExpression("1 =< 2")
 	s.NoError(err)
 
-	le := expr.(*ast.LogicRealComparison)
+	le := expr.(*ast.BinaryComparison)
 	s.Equal("≤", le.Operator) // Normalized to Unicode
 }
 
@@ -137,7 +137,7 @@ func (s *ComparisonSuite) TestParseLessOrEqualAlternate() {
 	expr, err := ParseExpression("1 <= 2")
 	s.NoError(err)
 
-	le := expr.(*ast.LogicRealComparison)
+	le := expr.(*ast.BinaryComparison)
 	s.Equal("≤", le.Operator) // Normalized to Unicode
 }
 
@@ -149,15 +149,15 @@ func (s *ComparisonSuite) TestParseGreaterOrEqualUnicode() {
 	expr, err := ParseExpression("5 ≥ 3")
 	s.NoError(err)
 
-	ge := expr.(*ast.LogicRealComparison)
+	ge := expr.(*ast.BinaryComparison)
 	s.Equal("≥", ge.Operator)
 }
 
-func (s *ComparisonSuite) TestParseGreaterOrEqualAscii() {
+func (s *ComparisonSuite) TestParseGreaterOrEqualASCII() {
 	expr, err := ParseExpression("5 >= 3")
 	s.NoError(err)
 
-	ge := expr.(*ast.LogicRealComparison)
+	ge := expr.(*ast.BinaryComparison)
 	s.Equal("≥", ge.Operator) // Normalized to Unicode
 }
 
@@ -170,15 +170,15 @@ func (s *ComparisonSuite) TestPrecedenceComparisonOverAnd() {
 	expr, err := ParseExpression("1 > 0 /\\ 2 < 3")
 	s.NoError(err)
 
-	and := expr.(*ast.LogicInfixExpression)
+	and := expr.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 
 	// Left is (1 > 0)
-	left := and.Left.(*ast.LogicRealComparison)
+	left := and.Left.(*ast.BinaryComparison)
 	s.Equal(">", left.Operator)
 
 	// Right is (2 < 3)
-	right := and.Right.(*ast.LogicRealComparison)
+	right := and.Right.(*ast.BinaryComparison)
 	s.Equal("<", right.Operator)
 }
 
@@ -187,15 +187,15 @@ func (s *ComparisonSuite) TestPrecedenceComparisonOverOr() {
 	expr, err := ParseExpression("1 = 1 \\/ 2 = 3")
 	s.NoError(err)
 
-	or := expr.(*ast.LogicInfixExpression)
+	or := expr.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
 
 	// Left is (1 = 1)
-	left := or.Left.(*ast.LogicEquality)
+	left := or.Left.(*ast.BinaryEquality)
 	s.Equal("=", left.Operator)
 
 	// Right is (2 = 3)
-	right := or.Right.(*ast.LogicEquality)
+	right := or.Right.(*ast.BinaryEquality)
 	s.Equal("=", right.Operator)
 }
 
@@ -204,15 +204,15 @@ func (s *ComparisonSuite) TestPrecedenceComparisonOverImplies() {
 	expr, err := ParseExpression("1 < 2 => 3 > 0")
 	s.NoError(err)
 
-	implies := expr.(*ast.LogicInfixExpression)
+	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
 
 	// Left is (1 < 2)
-	left := implies.Left.(*ast.LogicRealComparison)
+	left := implies.Left.(*ast.BinaryComparison)
 	s.Equal("<", left.Operator)
 
 	// Right is (3 > 0)
-	right := implies.Right.(*ast.LogicRealComparison)
+	right := implies.Right.(*ast.BinaryComparison)
 	s.Equal(">", right.Operator)
 }
 
@@ -225,11 +225,11 @@ func (s *ComparisonSuite) TestPrecedenceArithmeticOverComparison() {
 	expr, err := ParseExpression("1 + 2 < 5")
 	s.NoError(err)
 
-	lt := expr.(*ast.LogicRealComparison)
+	lt := expr.(*ast.BinaryComparison)
 	s.Equal("<", lt.Operator)
 
 	// Left is (1 + 2)
-	left := lt.Left.(*ast.RealInfixExpression)
+	left := lt.Left.(*ast.BinaryArithmetic)
 	s.Equal("+", left.Operator)
 
 	// Right is 5
@@ -242,15 +242,15 @@ func (s *ComparisonSuite) TestPrecedenceArithmeticBothSides() {
 	expr, err := ParseExpression("2 * 3 = 3 + 3")
 	s.NoError(err)
 
-	eq := expr.(*ast.LogicEquality)
+	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
 
 	// Left is (2 * 3)
-	left := eq.Left.(*ast.RealInfixExpression)
+	left := eq.Left.(*ast.BinaryArithmetic)
 	s.Equal("*", left.Operator)
 
 	// Right is (3 + 3)
-	right := eq.Right.(*ast.RealInfixExpression)
+	right := eq.Right.(*ast.BinaryArithmetic)
 	s.Equal("+", right.Operator)
 }
 
@@ -259,11 +259,11 @@ func (s *ComparisonSuite) TestPrecedencePowerOverComparison() {
 	expr, err := ParseExpression("2 ^ 3 > 5")
 	s.NoError(err)
 
-	gt := expr.(*ast.LogicRealComparison)
+	gt := expr.(*ast.BinaryComparison)
 	s.Equal(">", gt.Operator)
 
 	// Left is (2 ^ 3)
-	left := gt.Left.(*ast.RealInfixExpression)
+	left := gt.Left.(*ast.BinaryArithmetic)
 	s.Equal("^", left.Operator)
 }
 
@@ -278,7 +278,7 @@ func (s *ComparisonSuite) TestComplexExpression() {
 	expr, err := ParseExpression("1 + 2 = 3 /\\ 4 * 2 > 5 => TRUE")
 	s.NoError(err)
 
-	implies := expr.(*ast.LogicInfixExpression)
+	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
 
 	// Right is TRUE
@@ -286,23 +286,23 @@ func (s *ComparisonSuite) TestComplexExpression() {
 	s.True(right.Value)
 
 	// Left is ((1 + 2 = 3) /\ (4 * 2 > 5))
-	and := implies.Left.(*ast.LogicInfixExpression)
+	and := implies.Left.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 
 	// and.Left is (1 + 2 = 3)
-	eq := and.Left.(*ast.LogicEquality)
+	eq := and.Left.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
 
 	// eq.Left is (1 + 2)
-	add := eq.Left.(*ast.RealInfixExpression)
+	add := eq.Left.(*ast.BinaryArithmetic)
 	s.Equal("+", add.Operator)
 
 	// and.Right is (4 * 2 > 5)
-	gt := and.Right.(*ast.LogicRealComparison)
+	gt := and.Right.(*ast.BinaryComparison)
 	s.Equal(">", gt.Operator)
 
 	// gt.Left is (4 * 2)
-	mul := gt.Left.(*ast.RealInfixExpression)
+	mul := gt.Left.(*ast.BinaryArithmetic)
 	s.Equal("*", mul.Operator)
 }
 
@@ -311,10 +311,10 @@ func (s *ComparisonSuite) TestNegationWithComparison() {
 	expr, err := ParseExpression("~(1 = 2)")
 	s.NoError(err)
 
-	not := expr.(*ast.LogicPrefixExpression)
+	not := expr.(*ast.UnaryLogic)
 	s.Equal("¬", not.Operator)
 
-	paren := not.Right.(*ast.ParenExpr)
-	eq := paren.Inner.(*ast.LogicEquality)
+	paren := not.Right.(*ast.Parenthesized)
+	eq := paren.Inner.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
 }

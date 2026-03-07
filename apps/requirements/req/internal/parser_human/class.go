@@ -1308,8 +1308,8 @@ func classAssociationRelativeKey(fromClass model_class.Class, targetClassKey ide
 func addMultiplicityField(builder *YamlBuilder, key string, m model_class.Multiplicity) {
 	s := m.ParsedString()
 	// Convert UML "N..*" format to parseable "N..many" format.
-	if strings.HasSuffix(s, "..*") {
-		s = strings.TrimSuffix(s, "..*") + "..many"
+	if before, found := strings.CutSuffix(s, "..*"); found {
+		s = before + "..many"
 	}
 	if s == "any" {
 		builder.AddField(key, s)

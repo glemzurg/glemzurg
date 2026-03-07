@@ -89,7 +89,7 @@ func (suite *ExpressionTupleIndexSuite) TestString() {
 	}
 }
 
-func (suite *ExpressionTupleIndexSuite) TestAscii() {
+func (suite *ExpressionTupleIndexSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		tuple    Expression
@@ -131,7 +131,7 @@ func (suite *ExpressionTupleIndexSuite) TestAscii() {
 				Tuple: tt.tuple,
 				Index: tt.index,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			assert.Equal(t, tt.expected, expr.ASCII())
 		})
 	}
 }

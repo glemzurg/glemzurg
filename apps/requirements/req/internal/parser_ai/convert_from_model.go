@@ -17,7 +17,7 @@ import (
 
 // ConvertFromModel converts a core.Model to an inputModel.
 // It first validates the source model, then performs the conversion.
-func ConvertFromModel(model *core.Model) (*inputModel, error) {
+func ConvertFromModel(model *core.Model) (*inputModel, error) { //nolint:revive // intentionally returns internal type
 	// Validate the source model
 	if err := model.Validate(); err != nil {
 		return nil, convErr(

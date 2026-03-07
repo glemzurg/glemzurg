@@ -8,7 +8,7 @@ import (
 
 // ObjectType represents the runtime type of an object.
 // These are used for hashing and type identification during AST evaluation.
-type ObjectType string
+type ObjectType string //nolint:revive // public API name
 
 const (
 	TypeNumber  ObjectType = "Number"

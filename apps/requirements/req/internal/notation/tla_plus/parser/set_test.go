@@ -25,7 +25,7 @@ func (s *SetSuite) TestSetLiteral_Empty() {
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
-	s.Len(set.Elements, 0)
+	s.Empty(set.Elements)
 }
 
 func (s *SetSuite) TestSetLiteral_SingleElement() {

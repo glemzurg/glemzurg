@@ -16,6 +16,8 @@
 package typechecker
 
 import (
+	"maps"
+
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
@@ -114,9 +116,7 @@ func (env *TypeEnv) Apply(subst types.Substitution) *TypeEnv {
 // Clone creates a shallow copy of the environment.
 func (env *TypeEnv) Clone() *TypeEnv {
 	newBindings := make(map[string]types.Scheme, len(env.bindings))
-	for k, v := range env.bindings {
-		newBindings[k] = v
-	}
+	maps.Copy(newBindings, env.bindings)
 	return &TypeEnv{
 		bindings: newBindings,
 		parent:   env.parent,

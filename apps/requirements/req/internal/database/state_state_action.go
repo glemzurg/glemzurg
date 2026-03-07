@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -181,22 +182,23 @@ func AddStateActions(dbOrTx DbOrTx, modelKey string, stateActions map[identity.K
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO state_action (model_key, state_key, state_action_key, action_key, action_when) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO state_action (model_key, state_key, state_action_key, action_key, action_when) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for stateKey, saList := range stateActions {
 		for _, sa := range saList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
 			args = append(args, modelKey, stateKey.String(), sa.Key.String(), sa.ActionKey.String(), sa.When)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

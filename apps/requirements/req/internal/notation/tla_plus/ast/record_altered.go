@@ -38,18 +38,18 @@ func (r *RecordAltered) String() (value string) {
 	return out.String()
 }
 
-func (r *RecordAltered) Ascii() (value string) {
+func (r *RecordAltered) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("[")
-	out.WriteString(r.Base.Ascii())
+	out.WriteString(r.Base.ASCII())
 	out.WriteString(" EXCEPT ")
 	for i, alt := range r.Alterations {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(alt.Field.Ascii())
+		out.WriteString(alt.Field.ASCII())
 		out.WriteString(" = ")
-		out.WriteString(alt.Expression.Ascii())
+		out.WriteString(alt.Expression.ASCII())
 	}
 	out.WriteString("]")
 	return out.String()

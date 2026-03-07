@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -172,22 +173,24 @@ func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_s
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO guard (model_key, class_key, guard_key, name) VALUES `
-	args := make([]interface{}, 0, count*4)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO guard (model_key, class_key, guard_key, name) VALUES `)
+	args := make([]any, 0, count*4)
 	i := 0
 	for classKey, guardList := range guards {
 		for _, guard := range guardList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 4
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4))
+
 			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

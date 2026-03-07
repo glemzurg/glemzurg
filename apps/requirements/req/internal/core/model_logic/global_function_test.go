@@ -6,7 +6,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -192,13 +191,13 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.gf.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}

@@ -26,7 +26,7 @@ func (s *SetLiteralInt) String() (value string) {
 	return out.String()
 }
 
-func (s *SetLiteralInt) Ascii() (value string) {
+func (s *SetLiteralInt) ASCII() (value string) {
 	return s.String()
 }
 

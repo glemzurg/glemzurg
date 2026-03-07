@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
@@ -240,22 +241,23 @@ func AddAttributes(dbOrTx DbOrTx, modelKey string, attributes map[identity.Key][
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, data_type_key, derivation_policy_key, nullable, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*10)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO attribute (model_key, class_key, attribute_key, name, details, data_type_rules, data_type_key, derivation_policy_key, nullable, uml_comment) VALUES `)
+	args := make([]any, 0, count*10)
 	i := 0
 	for classKey, attrList := range attributes {
 		for _, attr := range attrList {
 			if i > 0 {
-				query += ", "
+				qb.WriteString(", ")
 			}
 			base := i * 10
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
+			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
 			args = append(args, modelKey, classKey.String(), attr.Key.String(), attr.Name, attr.Details, attr.DataTypeRules, dataTypeKey(attr), derivationPolicyKey(attr), attr.Nullable, attr.UmlComment)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

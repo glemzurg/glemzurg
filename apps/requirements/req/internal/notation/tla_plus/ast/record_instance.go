@@ -34,16 +34,16 @@ func (r *RecordInstance) String() (value string) {
 	return out.String()
 }
 
-func (r *RecordInstance) Ascii() (value string) {
+func (r *RecordInstance) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("[")
 	for i, binding := range r.Bindings {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(binding.Field.Ascii())
+		out.WriteString(binding.Field.ASCII())
 		out.WriteString(" |-> ")
-		out.WriteString(binding.Expression.Ascii())
+		out.WriteString(binding.Expression.ASCII())
 	}
 	out.WriteString("]")
 	return out.String()

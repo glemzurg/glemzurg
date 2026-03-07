@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -70,12 +69,12 @@ func (suite *EventSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.event.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -91,8 +90,8 @@ func (suite *EventSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	event, err := NewEvent(key, "Name", "Details",
 		[]Parameter{helper.Must(NewParameter("ParamA", "Nat")), helper.Must(NewParameter("ParamB", "Int"))})
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Event{
+	suite.Require().NoError(err)
+	suite.Equal(Event{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
@@ -104,8 +103,8 @@ func (suite *EventSuite) TestNew() {
 
 	// Test with nil optional Parameters.
 	event, err = NewEvent(key, "Name", "Details", nil)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Event{
+	suite.Require().NoError(err)
+	suite.Equal(Event{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
@@ -113,7 +112,7 @@ func (suite *EventSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewEvent(key, "", "Details", nil)
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -130,7 +129,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := event.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - event key has class1 as parent, but we pass other_class.
 	event = Event{
@@ -138,11 +137,11 @@ func (suite *EventSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = event.ValidateWithParent(&otherClassKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = event.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Test child Parameter validation propagates error.
 	event = Event{
@@ -153,7 +152,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 		},
 	}
 	err = event.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	event = Event{
@@ -164,5 +163,5 @@ func (suite *EventSuite) TestValidateWithParent() {
 		},
 	}
 	err = event.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }

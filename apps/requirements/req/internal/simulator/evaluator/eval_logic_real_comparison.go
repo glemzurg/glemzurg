@@ -6,7 +6,7 @@ import (
 )
 
 // evalLogicRealComparison evaluates a numeric comparison (<, >, ≤, ≥).
-func evalLogicRealComparison(node *ast.LogicRealComparison, bindings *Bindings) *EvalResult {
+func evalLogicRealComparison(node *ast.BinaryComparison, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

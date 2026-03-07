@@ -48,9 +48,9 @@ func (suite *PrimedSuite) TestString() {
 	}
 }
 
-func (suite *PrimedSuite) TestAscii() {
+func (suite *PrimedSuite) TestASCII() {
 	p := &Primed{Base: &Identifier{Value: "x"}}
-	assert.Equal(suite.T(), "x'", p.Ascii())
+	assert.Equal(suite.T(), "x'", p.ASCII())
 }
 
 func (suite *PrimedSuite) TestValidate() {

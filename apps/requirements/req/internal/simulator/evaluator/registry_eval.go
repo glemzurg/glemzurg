@@ -12,11 +12,11 @@ import (
 type RegistryEvalInterface interface {
 	// ResolveAndEval resolves a call expression and evaluates it.
 	// Returns the result or an error.
-	// The bindings parameter should be *Bindings but is interface{} to avoid import cycles.
+	// The bindings parameter should be *Bindings but is any to avoid import cycles.
 	ResolveAndEval(
-		call *ast.CallExpression,
+		call *ast.ScopedCall,
 		typedArgs []*typechecker.TypedNode,
-		bindings interface{},
+		bindings any,
 		scopeLevel int,
 		domain, subdomain, class string,
 	) (object.Object, error)

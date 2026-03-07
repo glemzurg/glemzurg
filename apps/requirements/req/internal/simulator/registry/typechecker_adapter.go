@@ -21,7 +21,7 @@ func NewTypeCheckerAdapter(r *Registry) *TypeCheckerAdapter {
 // ResolveCallExpression resolves a call expression using the registry.
 // It implements typechecker.RegistryInterface.
 func (a *TypeCheckerAdapter) ResolveCallExpression(
-	call *ast.CallExpression,
+	call *ast.ScopedCall,
 	scopeLevel int,
 	domain, subdomain, class string,
 ) (key string, paramTypes []types.Type, returnType types.Type, err error) {

@@ -19,7 +19,7 @@ type LogicSuite struct {
 // === Logic AND (∧) ===
 
 func (s *LogicSuite) TestAnd_TrueTrue() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "∧",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -34,7 +34,7 @@ func (s *LogicSuite) TestAnd_TrueTrue() {
 }
 
 func (s *LogicSuite) TestAnd_TrueFalse() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "∧",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -49,7 +49,7 @@ func (s *LogicSuite) TestAnd_TrueFalse() {
 }
 
 func (s *LogicSuite) TestAnd_FalseTrue() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "∧",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -64,7 +64,7 @@ func (s *LogicSuite) TestAnd_FalseTrue() {
 }
 
 func (s *LogicSuite) TestAnd_FalseFalse() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "∧",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -81,7 +81,7 @@ func (s *LogicSuite) TestAnd_FalseFalse() {
 // === Logic OR (∨) ===
 
 func (s *LogicSuite) TestOr_TrueTrue() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "∨",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -96,7 +96,7 @@ func (s *LogicSuite) TestOr_TrueTrue() {
 }
 
 func (s *LogicSuite) TestOr_TrueFalse() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "∨",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -111,7 +111,7 @@ func (s *LogicSuite) TestOr_TrueFalse() {
 }
 
 func (s *LogicSuite) TestOr_FalseFalse() {
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "∨",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -128,7 +128,7 @@ func (s *LogicSuite) TestOr_FalseFalse() {
 // === Logic NOT (¬) ===
 
 func (s *LogicSuite) TestNot_True() {
-	node := &ast.LogicPrefixExpression{
+	node := &ast.UnaryLogic{
 		Operator: "¬",
 		Right:    &ast.BooleanLiteral{Value: true},
 	}
@@ -142,7 +142,7 @@ func (s *LogicSuite) TestNot_True() {
 }
 
 func (s *LogicSuite) TestNot_False() {
-	node := &ast.LogicPrefixExpression{
+	node := &ast.UnaryLogic{
 		Operator: "¬",
 		Right:    &ast.BooleanLiteral{Value: false},
 	}
@@ -159,7 +159,7 @@ func (s *LogicSuite) TestNot_False() {
 
 func (s *LogicSuite) TestImplication_TrueTrue() {
 	// TRUE ⇒ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "⇒",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -175,7 +175,7 @@ func (s *LogicSuite) TestImplication_TrueTrue() {
 
 func (s *LogicSuite) TestImplication_TrueFalse() {
 	// TRUE ⇒ FALSE = FALSE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "⇒",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -191,7 +191,7 @@ func (s *LogicSuite) TestImplication_TrueFalse() {
 
 func (s *LogicSuite) TestImplication_FalseTrue() {
 	// FALSE ⇒ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "⇒",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -207,7 +207,7 @@ func (s *LogicSuite) TestImplication_FalseTrue() {
 
 func (s *LogicSuite) TestImplication_FalseFalse() {
 	// FALSE ⇒ FALSE = TRUE (vacuously true)
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "⇒",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -225,7 +225,7 @@ func (s *LogicSuite) TestImplication_FalseFalse() {
 
 func (s *LogicSuite) TestEquivalence_TrueTrue() {
 	// TRUE ≡ TRUE = TRUE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -241,7 +241,7 @@ func (s *LogicSuite) TestEquivalence_TrueTrue() {
 
 func (s *LogicSuite) TestEquivalence_TrueFalse() {
 	// TRUE ≡ FALSE = FALSE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -257,7 +257,7 @@ func (s *LogicSuite) TestEquivalence_TrueFalse() {
 
 func (s *LogicSuite) TestEquivalence_FalseFalse() {
 	// FALSE ≡ FALSE = TRUE
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: false},
 		Operator: "≡",
 		Right:    &ast.BooleanLiteral{Value: false},
@@ -275,7 +275,7 @@ func (s *LogicSuite) TestEquivalence_FalseFalse() {
 
 func (s *LogicSuite) TestComparison_LessThan() {
 	// 3 < 5 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(5),
@@ -291,7 +291,7 @@ func (s *LogicSuite) TestComparison_LessThan() {
 
 func (s *LogicSuite) TestComparison_LessThan_False() {
 	// 5 < 3 = FALSE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(3),
@@ -307,7 +307,7 @@ func (s *LogicSuite) TestComparison_LessThan_False() {
 
 func (s *LogicSuite) TestComparison_GreaterThan() {
 	// 5 > 3 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(3),
@@ -323,7 +323,7 @@ func (s *LogicSuite) TestComparison_GreaterThan() {
 
 func (s *LogicSuite) TestComparison_LessThanOrEqual() {
 	// 3 ≤ 3 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "≤",
 		Right:    ast.NewIntLiteral(3),
@@ -339,7 +339,7 @@ func (s *LogicSuite) TestComparison_LessThanOrEqual() {
 
 func (s *LogicSuite) TestComparison_GreaterThanOrEqual() {
 	// 3 ≥ 3 = TRUE
-	node := &ast.LogicRealComparison{
+	node := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "≥",
 		Right:    ast.NewIntLiteral(3),
@@ -355,10 +355,10 @@ func (s *LogicSuite) TestComparison_GreaterThanOrEqual() {
 
 func (s *LogicSuite) TestComparison_Real() {
 	// 1/3 < 1/2 = TRUE
-	node := &ast.LogicRealComparison{
-		Left:     ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
+	node := &ast.BinaryComparison{
+		Left:     ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(3)),
 		Operator: "<",
-		Right:    ast.NewFractionExpr(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
+		Right:    ast.NewFraction(ast.NewIntLiteral(1), ast.NewIntLiteral(2)),
 	}
 	bindings := NewBindings()
 
@@ -373,12 +373,12 @@ func (s *LogicSuite) TestComparison_Real() {
 
 func (s *LogicSuite) TestNested_AndOr() {
 	// (TRUE ∧ FALSE) ∨ TRUE = FALSE ∨ TRUE = TRUE
-	inner := &ast.LogicInfixExpression{
+	inner := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "∧",
 		Right:    &ast.BooleanLiteral{Value: false},
 	}
-	outer := &ast.LogicInfixExpression{
+	outer := &ast.BinaryLogic{
 		Left:     inner,
 		Operator: "∨",
 		Right:    &ast.BooleanLiteral{Value: true},
@@ -394,12 +394,12 @@ func (s *LogicSuite) TestNested_AndOr() {
 
 func (s *LogicSuite) TestNested_NotAnd() {
 	// ¬(TRUE ∧ FALSE) = ¬FALSE = TRUE
-	inner := &ast.LogicInfixExpression{
+	inner := &ast.BinaryLogic{
 		Left:     &ast.BooleanLiteral{Value: true},
 		Operator: "∧",
 		Right:    &ast.BooleanLiteral{Value: false},
 	}
-	outer := &ast.LogicPrefixExpression{
+	outer := &ast.UnaryLogic{
 		Operator: "¬",
 		Right:    inner,
 	}
@@ -416,17 +416,17 @@ func (s *LogicSuite) TestNested_NotAnd() {
 
 func (s *LogicSuite) TestComparison_InLogic() {
 	// (3 < 5) ∧ (5 > 3) = TRUE ∧ TRUE = TRUE
-	left := &ast.LogicRealComparison{
+	left := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(3),
 		Operator: "<",
 		Right:    ast.NewIntLiteral(5),
 	}
-	right := &ast.LogicRealComparison{
+	right := &ast.BinaryComparison{
 		Left:     ast.NewIntLiteral(5),
 		Operator: ">",
 		Right:    ast.NewIntLiteral(3),
 	}
-	node := &ast.LogicInfixExpression{
+	node := &ast.BinaryLogic{
 		Left:     left,
 		Operator: "∧",
 		Right:    right,

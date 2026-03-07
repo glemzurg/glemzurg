@@ -26,14 +26,14 @@ func (t *TupleLiteral) String() (value string) {
 	return out.String()
 }
 
-func (t *TupleLiteral) Ascii() (value string) {
+func (t *TupleLiteral) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("<<")
 	for i, el := range t.Elements {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(el.Ascii())
+		out.WriteString(el.ASCII())
 	}
 	out.WriteString(">>")
 	return out.String()

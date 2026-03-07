@@ -236,7 +236,7 @@ func BulkInsertAtomics(dbOrTx DbOrTx, modelKey string, atomics map[string]model_
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, len(atomics)*6)
+	args := make([]any, 0, len(atomics)*6)
 	valueStrings := make([]string, 0, len(atomics))
 	i := 0
 	for dataTypeKey, atomic := range atomics {

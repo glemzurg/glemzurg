@@ -51,9 +51,9 @@ func (suite *ActionSuite) SetupTest() {
 func (suite *ActionSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), action)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty( classKey)
+	suite.Empty( action)
 
 	err = dbExec(suite.db, `
 		INSERT INTO action
@@ -73,12 +73,12 @@ func (suite *ActionSuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	classKey, action, err = LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Action{
+	suite.NoError(err)
+	suite.Equal( suite.class.Key, classKey)
+	suite.Equal( model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
 		Details: "Details",
@@ -91,12 +91,12 @@ func (suite *ActionSuite) TestAdd() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Action{
+	suite.NoError(err)
+	suite.Equal( suite.class.Key, classKey)
+	suite.Equal( model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
 		Details: "Details",
@@ -109,19 +109,19 @@ func (suite *ActionSuite) TestUpdate() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	err = UpdateAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Action{
+	suite.NoError(err)
+	suite.Equal( suite.class.Key, classKey)
+	suite.Equal( model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -134,15 +134,15 @@ func (suite *ActionSuite) TestRemove() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	err = RemoveAction(suite.db, suite.model.Key, suite.class.Key, suite.actionKey)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), action)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty( classKey)
+	suite.Empty( action)
 }
 
 func (suite *ActionSuite) TestQuery() {
@@ -160,11 +160,11 @@ func (suite *ActionSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	actions, err := QueryActions(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Action{
+	suite.NoError(err)
+	suite.Equal( map[identity.Key][]model_state.Action{
 		suite.class.Key: {
 			{
 				Key:     suite.actionKey,

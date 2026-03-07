@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -233,16 +234,18 @@ func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO class (model_key, subdomain_key, class_key, name, details, actor_key, superclass_of_key, subclass_of_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*9)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO class (model_key, subdomain_key, class_key, name, details, actor_key, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, count*9)
 	i := 0
 	for subdomainKey, classList := range classes {
 		for _, class := range classList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
+
 
 			// Handle optional key pointers.
 			var actorKeyPtr, superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -264,7 +267,7 @@ func AddClasses(dbOrTx DbOrTx, modelKey string, classes map[identity.Key][]model
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

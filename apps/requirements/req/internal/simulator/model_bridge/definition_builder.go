@@ -2,6 +2,7 @@ package model_bridge
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
@@ -313,8 +314,8 @@ func containsPrimed(expr ast.Expression) bool {
 		if e.Base != nil {
 			return containsPrimed(e.Base)
 		}
-		if e.Identifier != nil {
-			return containsPrimed(e.Identifier)
+		if e.Identifier != nil { //nolint:staticcheck // backwards compat field
+			return containsPrimed(e.Identifier) //nolint:staticcheck // backwards compat field
 		}
 		return false
 	case *ast.TupleIndex:
@@ -382,19 +383,9 @@ func ContainsAnyPrimed(expr ast.Expression) bool {
 
 	// Concatenation.
 	case *ast.StringConcat:
-		for _, op := range e.Operands {
-			if ContainsAnyPrimed(op) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Operands, ContainsAnyPrimed)
 	case *ast.TupleConcat:
-		for _, op := range e.Operands {
-			if ContainsAnyPrimed(op) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Operands, ContainsAnyPrimed)
 
 	// Conditionals.
 	case *ast.IfThenElse:
@@ -415,21 +406,11 @@ func ContainsAnyPrimed(expr ast.Expression) bool {
 
 	// Literals with expression children.
 	case *ast.SetLiteral:
-		for _, elem := range e.Elements {
-			if ContainsAnyPrimed(elem) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Elements, ContainsAnyPrimed)
 	case *ast.SetRangeExpr:
 		return ContainsAnyPrimed(e.Start) || ContainsAnyPrimed(e.End)
 	case *ast.TupleLiteral:
-		for _, elem := range e.Elements {
-			if ContainsAnyPrimed(elem) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Elements, ContainsAnyPrimed)
 	case *ast.RecordInstance:
 		for _, binding := range e.Bindings {
 			if ContainsAnyPrimed(binding.Expression) {
@@ -447,19 +428,9 @@ func ContainsAnyPrimed(expr ast.Expression) bool {
 
 	// Function calls.
 	case *ast.FunctionCall:
-		for _, arg := range e.Args {
-			if ContainsAnyPrimed(arg) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Args, ContainsAnyPrimed)
 	case *ast.BuiltinCall:
-		for _, arg := range e.Args {
-			if ContainsAnyPrimed(arg) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Args, ContainsAnyPrimed)
 	case *ast.ScopedCall:
 		return ContainsAnyPrimed(e.Parameter)
 
@@ -529,19 +500,9 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 
 	// Concatenation.
 	case *me.StringConcat:
-		for _, op := range e.Operands {
-			if ContainsAnyPrimedME(op) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Operands, ContainsAnyPrimedME)
 	case *me.TupleConcat:
-		for _, op := range e.Operands {
-			if ContainsAnyPrimedME(op) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Operands, ContainsAnyPrimedME)
 
 	// Conditionals.
 	case *me.IfThenElse:
@@ -564,49 +525,21 @@ func ContainsAnyPrimedME(expr me.Expression) bool {
 
 	// Literals with expression children.
 	case *me.SetLiteral:
-		for _, elem := range e.Elements {
-			if ContainsAnyPrimedME(elem) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Elements, ContainsAnyPrimedME)
 	case *me.TupleLiteral:
-		for _, elem := range e.Elements {
-			if ContainsAnyPrimedME(elem) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Elements, ContainsAnyPrimedME)
 	case *me.RecordLiteral:
-		for _, field := range e.Fields {
-			if ContainsAnyPrimedME(field.Value) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Fields, func(f me.RecordField) bool {
+			return ContainsAnyPrimedME(f.Value)
+		})
 
 	// Calls.
 	case *me.BuiltinCall:
-		for _, arg := range e.Args {
-			if ContainsAnyPrimedME(arg) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Args, ContainsAnyPrimedME)
 	case *me.GlobalCall:
-		for _, arg := range e.Args {
-			if ContainsAnyPrimedME(arg) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Args, ContainsAnyPrimedME)
 	case *me.ActionCall:
-		for _, arg := range e.Args {
-			if ContainsAnyPrimedME(arg) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(e.Args, ContainsAnyPrimedME)
 
 	default:
 		return false

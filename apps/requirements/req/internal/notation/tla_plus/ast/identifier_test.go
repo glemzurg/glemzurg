@@ -40,7 +40,7 @@ func (suite *IdentifierSuite) TestString() {
 	}
 }
 
-func (suite *IdentifierSuite) TestAscii() {
+func (suite *IdentifierSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		value    string
@@ -60,7 +60,7 @@ func (suite *IdentifierSuite) TestAscii() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			i := &Identifier{Value: tt.value}
-			assert.Equal(t, tt.expected, i.Ascii())
+			assert.Equal(t, tt.expected, i.ASCII())
 		})
 	}
 }

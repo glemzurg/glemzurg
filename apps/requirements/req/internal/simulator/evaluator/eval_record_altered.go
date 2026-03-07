@@ -27,7 +27,7 @@ func evalRecordAltered(node *ast.RecordAltered, bindings *Bindings) *EvalResult 
 
 		// Get the current value for the @ reference
 		currentValue := result.Get(fieldName)
-		if currentValue == nil && alt.Field.Identifier == nil {
+		if currentValue == nil && alt.Field.Identifier == nil { //nolint:staticcheck // backwards compat field
 			// !.field where field doesn't exist
 			return NewEvalError("field not found for EXCEPT: %s", fieldName)
 		}

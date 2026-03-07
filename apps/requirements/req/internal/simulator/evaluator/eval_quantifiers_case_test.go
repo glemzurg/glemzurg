@@ -20,9 +20,9 @@ type QuantifiersCaseSuite struct {
 
 func (s *QuantifiersCaseSuite) TestForAll_AllTrue() {
 	// ∀x ∈ {1, 2, 3} : TRUE = TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -42,9 +42,9 @@ func (s *QuantifiersCaseSuite) TestForAll_AllTrue() {
 
 func (s *QuantifiersCaseSuite) TestForAll_SomeFalse() {
 	// ∀x ∈ {1, 2, 3} : FALSE = FALSE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -62,9 +62,9 @@ func (s *QuantifiersCaseSuite) TestForAll_SomeFalse() {
 
 func (s *QuantifiersCaseSuite) TestForAll_EmptySet() {
 	// ∀x ∈ {} : FALSE = TRUE (vacuously true)
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{}},
@@ -84,9 +84,9 @@ func (s *QuantifiersCaseSuite) TestForAll_EmptySet() {
 
 func (s *QuantifiersCaseSuite) TestExists_SomeTrue() {
 	// ∃x ∈ {1, 2, 3} : TRUE = TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∃",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -104,9 +104,9 @@ func (s *QuantifiersCaseSuite) TestExists_SomeTrue() {
 
 func (s *QuantifiersCaseSuite) TestExists_NoneTrue() {
 	// ∃x ∈ {1, 2, 3} : FALSE = FALSE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∃",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -124,9 +124,9 @@ func (s *QuantifiersCaseSuite) TestExists_NoneTrue() {
 
 func (s *QuantifiersCaseSuite) TestExists_EmptySet() {
 	// ∃x ∈ {} : TRUE = FALSE (nothing to exist)
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∃",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{}},
@@ -146,7 +146,7 @@ func (s *QuantifiersCaseSuite) TestExists_EmptySet() {
 
 func (s *QuantifiersCaseSuite) TestCase_FirstBranchMatches() {
 	// CASE TRUE → 1 □ FALSE → 2 = 1
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: true},
@@ -169,7 +169,7 @@ func (s *QuantifiersCaseSuite) TestCase_FirstBranchMatches() {
 
 func (s *QuantifiersCaseSuite) TestCase_SecondBranchMatches() {
 	// CASE FALSE → 1 □ TRUE → 2 = 2
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: false},
@@ -192,7 +192,7 @@ func (s *QuantifiersCaseSuite) TestCase_SecondBranchMatches() {
 
 func (s *QuantifiersCaseSuite) TestCase_OtherBranch() {
 	// CASE FALSE → 1 □ FALSE → 2 □ OTHER → 3 = 3
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: false},
@@ -216,7 +216,7 @@ func (s *QuantifiersCaseSuite) TestCase_OtherBranch() {
 
 func (s *QuantifiersCaseSuite) TestCase_NoMatchNoOther_Error() {
 	// CASE FALSE → 1 □ FALSE → 2 = error
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: false},
@@ -238,7 +238,7 @@ func (s *QuantifiersCaseSuite) TestCase_NoMatchNoOther_Error() {
 
 func (s *QuantifiersCaseSuite) TestCase_WithStringResults() {
 	// CASE TRUE → "yes" □ FALSE → "no" = "yes"
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: true},
@@ -261,7 +261,7 @@ func (s *QuantifiersCaseSuite) TestCase_WithStringResults() {
 
 func (s *QuantifiersCaseSuite) TestCase_WithRecordResults() {
 	// CASE TRUE → [val ↦ 1] □ OTHER → [val ↦ 0]
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: true},
@@ -301,7 +301,7 @@ func (s *QuantifiersCaseSuite) TestSetToBag_Simple() {
 
 	s.False(result.IsError())
 	bag := result.Value.(*object.Bag)
-	s.Equal(3, len(bag.Elements()))
+	s.Len(bag.Elements(), 3)
 }
 
 func (s *QuantifiersCaseSuite) TestSetToBag_Empty() {
@@ -312,7 +312,7 @@ func (s *QuantifiersCaseSuite) TestSetToBag_Empty() {
 
 	s.False(result.IsError())
 	bag := result.Value.(*object.Bag)
-	s.Equal(0, len(bag.Elements()))
+	s.Empty(bag.Elements())
 }
 
 func (s *QuantifiersCaseSuite) TestBagToSet_Simple() {
@@ -332,14 +332,14 @@ func (s *QuantifiersCaseSuite) TestBagToSet_Simple() {
 
 func (s *QuantifiersCaseSuite) TestForAll_WithComparison() {
 	// ∀x ∈ {5, 10, 15} : 5 < 20 = TRUE (using literal comparison since x isn't Real)
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{5, 10, 15}},
 		},
-		Predicate: &ast.LogicRealComparison{
+		Predicate: &ast.BinaryComparison{
 			Left:     ast.NewIntLiteral(5),
 			Operator: "<",
 			Right:    ast.NewIntLiteral(20),
@@ -358,11 +358,11 @@ func (s *QuantifiersCaseSuite) TestForAll_WithComparison() {
 
 func (s *QuantifiersCaseSuite) TestCase_WithNestedIfElse() {
 	// CASE TRUE → (IF TRUE THEN 10 ELSE 20) □ OTHER → 0
-	node := &ast.ExpressionCase{
+	node := &ast.CaseExpr{
 		Branches: []*ast.CaseBranch{
 			{
 				Condition: &ast.BooleanLiteral{Value: true},
-				Result: &ast.ExpressionIfElse{
+				Result: &ast.IfThenElse{
 					Condition: &ast.BooleanLiteral{Value: true},
 					Then:      ast.NewIntLiteral(10),
 					Else:      ast.NewIntLiteral(20),
@@ -384,14 +384,14 @@ func (s *QuantifiersCaseSuite) TestCase_WithNestedIfElse() {
 
 func (s *QuantifiersCaseSuite) TestForAll_WithLogicInfix() {
 	// ∀x ∈ {1, 2} : TRUE ∧ TRUE = TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∀",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1, 2}},
 		},
-		Predicate: &ast.LogicInfixExpression{
+		Predicate: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: true},
 			Operator: "∧",
 			Right:    &ast.BooleanLiteral{Value: true},
@@ -408,14 +408,14 @@ func (s *QuantifiersCaseSuite) TestForAll_WithLogicInfix() {
 
 func (s *QuantifiersCaseSuite) TestExists_WithLogicOr() {
 	// ∃x ∈ {1} : FALSE ∨ TRUE = TRUE
-	node := &ast.LogicBoundQuantifier{
+	node := &ast.Quantifier{
 		Quantifier: "∃",
-		Membership: &ast.LogicMembership{
+		Membership: &ast.Membership{
 			Left:     &ast.Identifier{Value: "x"},
 			Operator: "∈",
 			Right:    &ast.SetLiteralInt{Values: []int{1}},
 		},
-		Predicate: &ast.LogicInfixExpression{
+		Predicate: &ast.BinaryLogic{
 			Left:     &ast.BooleanLiteral{Value: false},
 			Operator: "∨",
 			Right:    &ast.BooleanLiteral{Value: true},

@@ -136,7 +136,8 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 			model.Actors[actor.Key] = actor
 
 		case _EXT_GENERALIZATION:
-			if toParseFile.Domain == "" {
+			switch {
+			case toParseFile.Domain == "":
 				// Actor generalization (under actors/ directory).
 				actorGen, err := parseActorGeneralization(toParseFile.Generalization, toParseFile.PathRel, contents)
 				if err != nil {
@@ -146,7 +147,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 					model.ActorGeneralizations = make(map[identity.Key]model_actor.Generalization)
 				}
 				model.ActorGeneralizations[actorGen.Key] = actorGen
-			} else if isUnderUseCases(toParseFile.PathRel) {
+			case isUnderUseCases(toParseFile.PathRel):
 				// Use case generalization (under use_cases/ directory).
 				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 				if !ok {
@@ -178,7 +179,7 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 				subdomain.UseCaseGeneralizations[generalization.Key] = generalization
 				domain.Subdomains[subdomainKey] = subdomain
 				model.Domains[domainKey] = domain
-			} else {
+			default:
 				// Class generalization (under classes/ or domain/subdomain directory).
 				domainKey, ok := domainKeysBySubKey[toParseFile.Domain]
 				if !ok {

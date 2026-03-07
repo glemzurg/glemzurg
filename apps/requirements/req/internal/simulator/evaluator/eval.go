@@ -51,7 +51,7 @@ func NewEvalResultWithPrimed(value object.Object, primed map[string]object.Objec
 }
 
 // NewEvalError creates an error result.
-func NewEvalError(format string, args ...interface{}) *EvalResult {
+func NewEvalError(format string, args ...any) *EvalResult {
 	return &EvalResult{
 		Error: &object.Error{Message: fmt.Sprintf(format, args...)},
 	}
@@ -193,7 +193,7 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 		return evalNumberLiteral(n)
 	case *ast.NumericPrefixExpression:
 		return evalNumericPrefixExpression(n, bindings)
-	case *ast.FractionExpr:
+	case *ast.Fraction:
 		return evalFractionExpr(n, bindings)
 	case *ast.ParenExpr:
 		return evalParenExpr(n, bindings)
@@ -221,7 +221,7 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 	// === Identifiers ===
 	case *ast.Identifier:
 		return evalIdentifier(n, bindings)
-	case *ast.FieldIdentifier:
+	case *ast.FieldAccess:
 		return evalFieldIdentifier(n, bindings)
 	case *ast.ExistingValue:
 		return evalExistingValue(bindings)
@@ -229,41 +229,41 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 		return evalPrimed(n, bindings)
 
 	// === Arithmetic ===
-	case *ast.RealInfixExpression:
+	case *ast.BinaryArithmetic:
 		return evalRealInfix(n, bindings)
 
 	// === Logic ===
-	case *ast.LogicInfixExpression:
+	case *ast.BinaryLogic:
 		return evalLogicInfix(n, bindings)
 	case *ast.LogicPrefixExpression:
 		return evalLogicPrefix(n, bindings)
-	case *ast.LogicRealComparison:
+	case *ast.BinaryComparison:
 		return evalLogicRealComparison(n, bindings)
-	case *ast.LogicMembership:
+	case *ast.Membership:
 		return evalLogicMembership(n, bindings)
-	case *ast.LogicBoundQuantifier:
+	case *ast.Quantifier:
 		return evalLogicBoundQuantifier(n, bindings)
-	case *ast.LogicInfixSet:
+	case *ast.BinarySetComparison:
 		return evalLogicInfixSet(n, bindings)
-	case *ast.LogicInfixBag:
+	case *ast.BinaryBagComparison:
 		return evalLogicInfixBag(n, bindings)
-	case *ast.LogicEquality:
+	case *ast.BinaryEquality:
 		return evalLogicEquality(n, bindings)
 
 	// === Sets ===
-	case *ast.SetInfix:
+	case *ast.BinarySetOperation:
 		return evalSetInfix(n, bindings)
-	case *ast.SetConditional:
+	case *ast.SetFilter:
 		return evalSetConditional(n, bindings)
 
 	// === Bags ===
-	case *ast.BagInfix:
+	case *ast.BinaryBagOperation:
 		return evalBagInfix(n, bindings)
 
 	// === Tuples/Sequences ===
-	case *ast.ExpressionTupleIndex:
+	case *ast.TupleIndex:
 		return evalTupleIndex(n, bindings)
-	case *ast.TupleInfixExpression:
+	case *ast.TupleConcat:
 		return evalTupleInfix(n, bindings)
 
 	// === Builtins ===
@@ -275,13 +275,13 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 		return evalRecordAltered(n, bindings)
 
 	// === Control Flow ===
-	case *ast.ExpressionIfElse:
+	case *ast.IfThenElse:
 		return evalIfElse(n, bindings)
-	case *ast.ExpressionCase:
+	case *ast.CaseExpr:
 		return evalCase(n, bindings)
 
 	// === Calls ===
-	case *ast.CallExpression:
+	case *ast.ScopedCall:
 		return evalCallExpression(n)
 	case *ast.FunctionCall:
 		return evalFunctionCall(n, bindings)
@@ -289,7 +289,7 @@ func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
 	// === String operations ===
 	case *ast.StringIndex:
 		return evalStringIndex(n, bindings)
-	case *ast.StringInfixExpression:
+	case *ast.StringConcat:
 		return evalStringInfix(n, bindings)
 
 	default:

@@ -58,7 +58,7 @@ func (suite *SetConditionalSuite) TestString() {
 	}
 }
 
-func (suite *SetConditionalSuite) TestAscii() {
+func (suite *SetConditionalSuite) TestASCII() {
 	tests := []struct {
 		testName   string
 		membership Expression
@@ -96,7 +96,7 @@ func (suite *SetConditionalSuite) TestAscii() {
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, sc.Ascii())
+			assert.Equal(t, tt.expected, sc.ASCII())
 		})
 	}
 }

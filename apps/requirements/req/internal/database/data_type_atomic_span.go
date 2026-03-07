@@ -255,7 +255,7 @@ func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[strin
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, len(atomicSpans)*10)
+	args := make([]any, 0, len(atomicSpans)*10)
 	valueStrings := make([]string, 0, len(atomicSpans))
 	i := 0
 	for dataTypeKey, span := range atomicSpans {

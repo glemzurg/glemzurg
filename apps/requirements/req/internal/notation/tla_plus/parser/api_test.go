@@ -28,9 +28,9 @@ func (s *APITestSuite) TestParseExpressionList() {
 	s.Equal(&ast.BooleanLiteral{Value: true}, exprs[0])
 	s.Equal(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"}, exprs[1])
 	s.Equal(&ast.StringLiteral{Value: "hello"}, exprs[2])
-	s.Equal(&ast.NumericPrefixExpression{
+	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
-		Right: &ast.FractionExpr{
+		Right: &ast.Fraction{
 			Numerator:   &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 			Denominator: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"},
 		},

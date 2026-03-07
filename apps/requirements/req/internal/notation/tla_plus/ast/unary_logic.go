@@ -6,7 +6,7 @@ const (
 	LogicOperatorNot = "¬"
 )
 
-var unaryLogicAscii = map[string]string{
+var unaryLogicASCII = map[string]string{
 	LogicOperatorNot: `~`,
 }
 
@@ -25,10 +25,10 @@ func (u *UnaryLogic) String() (value string) {
 	return out.String()
 }
 
-func (u *UnaryLogic) Ascii() (value string) {
+func (u *UnaryLogic) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(unaryLogicAscii[u.Operator])
-	out.WriteString(u.Right.Ascii())
+	out.WriteString(unaryLogicASCII[u.Operator])
+	out.WriteString(u.Right.ASCII())
 	return out.String()
 }
 
@@ -43,5 +43,6 @@ func (u *UnaryLogic) Validate() error {
 }
 
 // LogicPrefixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use UnaryLogic instead.
 type LogicPrefixExpression = UnaryLogic

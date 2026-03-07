@@ -11,7 +11,7 @@ func TestPruneToModelOnly(t *testing.T) {
 	pruned := PruneToModelOnly(model)
 
 	err := pruned.Validate()
-	assert.Nil(t, err, "pruned model should be valid")
+	assert.NoError(t, err, "pruned model should be valid")
 
 	// Verify children are stripped.
 	assert.Nil(t, pruned.ClassAssociations)
@@ -41,7 +41,7 @@ func TestPruneToClassAttributes(t *testing.T) {
 	pruned := PruneToClassAttributes(model)
 
 	err := pruned.Validate()
-	assert.Nil(t, err, "pruned model should be valid")
+	assert.NoError(t, err, "pruned model should be valid")
 
 	// Verify class associations are stripped.
 	assert.Nil(t, pruned.ClassAssociations)
@@ -71,7 +71,7 @@ func TestPruneToClassAssociations(t *testing.T) {
 	pruned := PruneToClassAssociations(model)
 
 	err := pruned.Validate()
-	assert.Nil(t, err, "pruned model should be valid")
+	assert.NoError(t, err, "pruned model should be valid")
 
 	// Verify use cases are stripped.
 	for _, domain := range pruned.Domains {
@@ -112,7 +112,7 @@ func TestPruneToStateMachine(t *testing.T) {
 	pruned := PruneToStateMachine(model)
 
 	err := pruned.Validate()
-	assert.Nil(t, err, "pruned model should be valid")
+	assert.NoError(t, err, "pruned model should be valid")
 
 	// Verify use cases are stripped.
 	for _, domain := range pruned.Domains {
@@ -129,7 +129,7 @@ func TestPruneToNoSteps(t *testing.T) {
 	pruned := PruneToNoSteps(model)
 
 	err := pruned.Validate()
-	assert.Nil(t, err, "pruned model should be valid")
+	assert.NoError(t, err, "pruned model should be valid")
 
 	// Verify steps are nil on all scenarios.
 	for _, domain := range pruned.Domains {

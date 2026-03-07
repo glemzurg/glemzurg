@@ -6,7 +6,7 @@ import (
 )
 
 // evalLogicInfixSet evaluates a set comparison (=, ≠, ⊆, ⊂, ⊇, ⊃).
-func evalLogicInfixSet(node *ast.LogicInfixSet, bindings *Bindings) *EvalResult {
+func evalLogicInfixSet(node *ast.BinarySetComparison, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

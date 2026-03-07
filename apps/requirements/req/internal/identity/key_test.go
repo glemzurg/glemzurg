@@ -1656,7 +1656,7 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 func (suite *KeySuite) TestJSONUnmarshalEmpty() {
 	var key Key
 	err := json.Unmarshal([]byte(`""`), &key)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), Key{}, key)
 }
 
@@ -1769,7 +1769,7 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 func (suite *KeySuite) TestTextUnmarshalEmpty() {
 	var key Key
 	err := key.UnmarshalText([]byte(""))
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), Key{}, key)
 }
 
@@ -1822,18 +1822,18 @@ func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
 
 	// Marshal the map to JSON.
 	jsonBytes, err := json.Marshal(originalMap)
-	assert.NoError(suite.T(), err, "Failed to marshal map to JSON")
+	suite.NoError(err, "Failed to marshal map to JSON")
 
 	// Unmarshal back.
 	var parsedMap map[Key]string
 	err = json.Unmarshal(jsonBytes, &parsedMap)
-	assert.NoError(suite.T(), err, "Failed to unmarshal map from JSON")
+	suite.NoError(err, "Failed to unmarshal map from JSON")
 
 	// Verify the parsed map matches the original.
-	assert.Equal(suite.T(), len(originalMap), len(parsedMap), "Map length mismatch")
+	suite.Len(parsedMap, len(originalMap), "Map length mismatch")
 	for key, value := range originalMap {
 		parsedValue, ok := parsedMap[key]
-		assert.True(suite.T(), ok, "Key not found in parsed map: %s", key.String())
+		suite.True(ok, "Key not found in parsed map: %s", key.String())
 		assert.Equal(suite.T(), value, parsedValue, "Value mismatch for key: %s", key.String())
 	}
 }
@@ -1904,7 +1904,7 @@ func (suite *KeySuite) TestYAMLRoundTrip() {
 func (suite *KeySuite) TestYAMLUnmarshalEmpty() {
 	var key Key
 	err := yaml.Unmarshal([]byte(`""`), &key)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), Key{}, key)
 }
 

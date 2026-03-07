@@ -48,9 +48,9 @@ func (suite *GeneralizationSuite) SetupTest() {
 func (suite *GeneralizationSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), generalization)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(subdomainKey)
+	suite.Empty(generalization)
 
 	err = dbExec(suite.db, `
 		INSERT INTO class_generalization
@@ -222,9 +222,9 @@ func (suite *GeneralizationSuite) TestRemove() {
 	assert.Nil(suite.T(), err)
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), generalization)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(subdomainKey)
+	suite.Empty(generalization)
 }
 
 func (suite *GeneralizationSuite) TestQuery() {

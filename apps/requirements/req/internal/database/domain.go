@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -158,18 +159,19 @@ func AddDomains(dbOrTx DbOrTx, modelKey string, domains []model_domain.Domain) (
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO domain (model_key, domain_key, name, details, realized, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(domains)*6)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO domain (model_key, domain_key, name, details, realized, uml_comment) VALUES `)
+	args := make([]any, 0, len(domains)*6)
 	for i, domain := range domains {
 		if i > 0 {
-			query += ", "
+			qb.WriteString(", ")
 		}
 		base := i * 6
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+		qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
 		args = append(args, modelKey, domain.Key.String(), domain.Name, domain.Details, domain.Realized, domain.UmlComment)
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -3,7 +3,6 @@ package model_state
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,12 +46,12 @@ func (suite *ParameterSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.param.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -62,14 +61,14 @@ func (suite *ParameterSuite) TestValidate() {
 func (suite *ParameterSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	param, err := NewParameter("amount", "Nat")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "amount", param.Name)
-	assert.Equal(suite.T(), "Nat", param.DataTypeRules)
+	suite.NoError(err)
+	suite.Equal("amount", param.Name)
+	suite.Equal("Nat", param.DataTypeRules)
 	// DataType may or may not be set depending on whether the parser is available
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewParameter("", "Nat")
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
@@ -80,7 +79,7 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		DataTypeRules: "Nat",
 	}
 	err := param.ValidateWithParent()
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
 	param = Parameter{
@@ -88,5 +87,5 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		DataTypeRules: "Nat",
 	}
 	err = param.ValidateWithParent()
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }

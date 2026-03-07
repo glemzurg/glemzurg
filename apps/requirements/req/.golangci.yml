@@ -37,6 +37,12 @@ linters:
           - gocritic
           - revive
         path: .*_test\.go$
+      - linters:
+          - revive
+        text: "var-naming: don't use an underscore in package name"
+      - linters:
+          - revive
+        text: "var-naming: don't use ALL_CAPS in Go names"
     paths:
       - .*\.generated\.go$
       - third_party$

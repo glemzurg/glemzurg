@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -127,23 +128,25 @@ func AddAttributeInvariants(dbOrTx DbOrTx, modelKey string, attrInvariants map[i
 		return nil
 	}
 
-	query := `INSERT INTO attribute_invariant (model_key, attribute_key, logic_key) VALUES `
-	args := make([]interface{}, 0, totalRows*3)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO attribute_invariant (model_key, attribute_key, logic_key) VALUES `)
+	args := make([]any, 0, totalRows*3)
 	first := true
 	argIdx := 0
 	for attrKey, logicKeys := range attrInvariants {
 		for _, logicKey := range logicKeys {
 			if !first {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			first = false
-			query += fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3))
+
 			args = append(args, modelKey, attrKey.String(), logicKey.String())
 			argIdx += 3
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

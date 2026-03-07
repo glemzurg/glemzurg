@@ -45,7 +45,7 @@ func (s *Step) Validate() error {
 		return err
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO_STEP {
-		return errors.Errorf("Key: invalid key type '%s' for scenario step.", s.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for scenario step", s.Key.KeyType)
 	}
 	switch s.StepType {
 	case STEP_TYPE_SEQUENCE:

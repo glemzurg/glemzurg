@@ -12,11 +12,11 @@ import (
 
 // collectionMinForDB maps CollectionMin=0 to nil (SQL NULL) to satisfy CHECK (collection_min > 0).
 // A zero minimum means "no minimum" and is stored as NULL in the database.
-func collectionMinForDB(min *int) *int {
-	if min != nil && *min == 0 {
+func collectionMinForDB(minVal *int) *int {
+	if minVal != nil && *minVal == 0 {
 		return nil
 	}
-	return min
+	return minVal
 }
 
 // Populate a golang struct from a database row.
@@ -289,7 +289,7 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, len(dataTypes)*8)
+	args := make([]any, 0, len(dataTypes)*8)
 	valueStrings := make([]string, 0, len(dataTypes))
 	for i, dt := range dataTypes {
 		dataTypeKey, err := preenKey(dt.Key)

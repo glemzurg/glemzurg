@@ -6,7 +6,7 @@ import (
 )
 
 // evalIfElse evaluates IF condition THEN expr ELSE expr.
-func evalIfElse(node *ast.ExpressionIfElse, bindings *Bindings) *EvalResult {
+func evalIfElse(node *ast.IfThenElse, bindings *Bindings) *EvalResult {
 	condResult := EvalAST(node.Condition, bindings)
 	if condResult.IsError() {
 		return condResult

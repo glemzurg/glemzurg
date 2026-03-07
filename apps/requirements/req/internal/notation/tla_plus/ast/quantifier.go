@@ -8,12 +8,13 @@ const (
 	QuantifierExists = "∃" // Existential quantifier
 )
 
-var quantifierAscii = map[string]string{
+var quantifierASCII = map[string]string{
 	QuantifierForAll: `\A`,
 	QuantifierExists: `\E`,
 }
 
 // Backwards compatibility constants.
+//
 // Deprecated: Use Quantifier* constants instead.
 const (
 	LogicQuantifierForAll = QuantifierForAll
@@ -41,14 +42,14 @@ func (q *Quantifier) String() (value string) {
 	return out.String()
 }
 
-func (q *Quantifier) Ascii() (value string) {
+func (q *Quantifier) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("(")
-	out.WriteString(quantifierAscii[q.Quantifier])
+	out.WriteString(quantifierASCII[q.Quantifier])
 	out.WriteString(" ")
-	out.WriteString(q.Membership.Ascii())
+	out.WriteString(q.Membership.ASCII())
 	out.WriteString(" : ")
-	out.WriteString(q.Predicate.Ascii())
+	out.WriteString(q.Predicate.ASCII())
 	out.WriteString(")")
 	return out.String()
 }
@@ -67,5 +68,6 @@ func (q *Quantifier) Validate() error {
 }
 
 // LogicBoundQuantifier is an alias for backwards compatibility.
+//
 // Deprecated: Use Quantifier instead.
 type LogicBoundQuantifier = Quantifier

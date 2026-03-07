@@ -37,8 +37,8 @@ func (suite *DataTypeSuite) SetupTest() {
 func (suite *DataTypeSuite) TestLoad() {
 	// Nothing in database yet.
 	dataType, err := LoadDataType(suite.db, strings.ToUpper(suite.model.Key), "Key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), dataType)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(dataType)
 
 	err = dbExec(suite.db, `
 		INSERT INTO data_type
@@ -189,8 +189,8 @@ func (suite *DataTypeSuite) TestDelete() {
 	assert.Nil(suite.T(), err)
 
 	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), dataType)
+	suite.ErrorIs(err, ErrNotFound)
+	suite.Empty(dataType)
 }
 
 func (suite *DataTypeSuite) TestQuery() {
@@ -250,10 +250,10 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 			CollectionMax:    t_IntPtr(20),
 		},
 	})
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	dataTypes, err := QueryDataTypes(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), []model_data_type.DataType{
 		{
 			Key:              "key1",

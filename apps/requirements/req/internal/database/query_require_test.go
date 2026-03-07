@@ -60,7 +60,7 @@ func (suite *QueryRequireSuite) SetupTest() {
 func (suite *QueryRequireSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no query_require join row yet.
 	_, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 
 	// Insert the query_require join row.
 	err = dbExec(suite.db, `
@@ -98,7 +98,7 @@ func (suite *QueryRequireSuite) TestRemove() {
 
 	// Query require should be gone.
 	_, err = LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 func (suite *QueryRequireSuite) TestQuery() {

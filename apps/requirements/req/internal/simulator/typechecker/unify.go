@@ -2,6 +2,7 @@ package typechecker
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
@@ -171,9 +172,7 @@ func UnifyAll(pairs [][2]types.Type) (types.Substitution, error) {
 func UnifyWithSubst(t1, t2 types.Type, subst types.Substitution) (types.Substitution, error) {
 	// Create a copy of the substitution
 	newSubst := make(types.Substitution, len(subst))
-	for k, v := range subst {
-		newSubst[k] = v
-	}
+	maps.Copy(newSubst, subst)
 
 	if err := unifyOne(t1, t2, newSubst); err != nil {
 		return nil, err

@@ -53,10 +53,10 @@ func (suite *ParenExprSuite) TestString() {
 	}
 }
 
-func (suite *ParenExprSuite) TestAscii() {
-	// Ascii should be same as String for ParenExpr
+func (suite *ParenExprSuite) TestASCII() {
+	// ASCII should be same as String for ParenExpr
 	p := &ParenExpr{Inner: &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}}
-	assert.Equal(suite.T(), p.String(), p.Ascii())
+	assert.Equal(suite.T(), p.String(), p.ASCII())
 }
 
 func (suite *ParenExprSuite) TestValidate() {

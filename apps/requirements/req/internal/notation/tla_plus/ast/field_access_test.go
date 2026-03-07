@@ -64,7 +64,7 @@ func (suite *FieldIdentifierSuite) TestString() {
 	}
 }
 
-func (suite *FieldIdentifierSuite) TestAscii() {
+func (suite *FieldIdentifierSuite) TestASCII() {
 	tests := []struct {
 		testName   string
 		identifier *Identifier
@@ -90,7 +90,7 @@ func (suite *FieldIdentifierSuite) TestAscii() {
 				Identifier: tt.identifier,
 				Member:     tt.member,
 			}
-			assert.Equal(t, tt.expected, f.Ascii())
+			assert.Equal(t, tt.expected, f.ASCII())
 		})
 	}
 }

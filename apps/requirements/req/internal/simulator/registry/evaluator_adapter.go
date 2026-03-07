@@ -54,9 +54,9 @@ func NewRuntimeAdapter(r *Registry) *RuntimeAdapter {
 // ResolveAndEval implements evaluator.RegistryEvalInterface.
 // It resolves a call expression and evaluates it using the registry.
 func (a *RuntimeAdapter) ResolveAndEval(
-	call *ast.CallExpression,
-	typedArgs []*typechecker.TypedNode,
-	bindings interface{},
+	call *ast.ScopedCall,
+	_ []*typechecker.TypedNode,
+	_ any,
 	scopeLevel int,
 	domain, subdomain, class string,
 ) (object.Object, error) {
@@ -102,7 +102,7 @@ func (a *RuntimeAdapter) ResolveAndEval(
 // GetDefinitionForCall resolves a call and returns the definition.
 // This is used by the pipeline to get the definition before evaluation.
 func (a *RuntimeAdapter) GetDefinitionForCall(
-	call *ast.CallExpression,
+	call *ast.ScopedCall,
 	scopeLevel int,
 	domain, subdomain, class string,
 ) (DefinitionKey, *Definition, error) {

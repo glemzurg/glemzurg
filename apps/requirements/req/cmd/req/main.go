@@ -244,5 +244,5 @@ func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
-	log.Fatal(srv.ListenAndServe())
+	log.Fatal(srv.ListenAndServe()) //nolint:gocritic // server blocks until error, defer runs on normal exit
 }

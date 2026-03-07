@@ -6,7 +6,7 @@ import (
 )
 
 // evalCase evaluates a CASE expression.
-func evalCase(node *ast.ExpressionCase, bindings *Bindings) *EvalResult {
+func evalCase(node *ast.CaseExpr, bindings *Bindings) *EvalResult {
 	// Evaluate each branch condition
 	for _, branch := range node.Branches {
 		condResult := EvalAST(branch.Condition, bindings)

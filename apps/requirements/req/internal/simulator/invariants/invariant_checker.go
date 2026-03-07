@@ -102,7 +102,7 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 // CheckModelInvariants evaluates all model-level invariants against the current state.
 // Returns violations for any invariant that evaluates to FALSE.
 func (c *InvariantChecker) CheckModelInvariants(
-	simState *state.SimulationState,
+	_ *state.SimulationState,
 	bindingsBuilder *state.BindingsBuilder,
 ) ViolationErrors {
 	var violations ViolationErrors

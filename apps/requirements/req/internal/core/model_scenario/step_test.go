@@ -9,8 +9,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,35 +39,35 @@ func TestScenarioStepsSuite(t *testing.T) {
 func (suite *ScenarioStepsSuite) SetupSuite() {
 	var err error
 	suite.domainKey, err = identity.NewDomainKey("test_domain")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.subdomainKey, err = identity.NewSubdomainKey(suite.domainKey, "default")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.classKey, err = identity.NewClassKey(suite.subdomainKey, "test_class")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.useCaseKey, err = identity.NewUseCaseKey(suite.subdomainKey, "test_use_case")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.scenarioKey, err = identity.NewScenarioKey(suite.useCaseKey, "test_scenario")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	fromObjKey, err := identity.NewScenarioObjectKey(suite.scenarioKey, "from_obj")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.fromObjKey = &fromObjKey
 	toObjKey, err := identity.NewScenarioObjectKey(suite.scenarioKey, "to_obj")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.toObjKey = &toObjKey
 	eventKey, err := identity.NewEventKey(suite.classKey, "test_event")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.eventKey = &eventKey
 	scenarioRef, err := identity.NewScenarioKey(suite.useCaseKey, "ref_scenario")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.scenarioRef = &scenarioRef
 	queryKey, err := identity.NewQueryKey(suite.classKey, "test_query")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.queryKey = &queryKey
 
 	// Pre-create a pool of step keys.
 	for i := range 20 {
 		k, err := identity.NewScenarioStepKey(suite.scenarioKey, fmt.Sprintf("%d", i))
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 		suite.stepKeys = append(suite.stepKeys, k)
 	}
 }
@@ -89,7 +87,7 @@ func (suite *ScenarioStepsSuite) TestValidateSequence() {
 		},
 	}
 	err := step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: empty statements
 	step = Step{
@@ -98,7 +96,7 @@ func (suite *ScenarioStepsSuite) TestValidateSequence() {
 		Statements: []Step{},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "sequence must have at least one statement")
+	suite.ErrorContains(err,"sequence must have at least one statement")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateSwitch() {
@@ -118,7 +116,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 		},
 	}
 	err := step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: no cases
 	step = Step{
@@ -127,7 +125,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 		Statements: []Step{},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "switch must have at least one case")
+	suite.ErrorContains(err,"switch must have at least one case")
 
 	// Invalid: non-case child
 	step = Step{
@@ -138,7 +136,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 		},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "switch children must all be case steps")
+	suite.ErrorContains(err,"switch children must all be case steps")
 
 	// Invalid: case without condition
 	step = Step{
@@ -155,7 +153,7 @@ func (suite *ScenarioStepsSuite) TestValidateSwitch() {
 		},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "case must have a condition")
+	suite.ErrorContains(err,"case must have a condition")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateCase() {
@@ -169,7 +167,7 @@ func (suite *ScenarioStepsSuite) TestValidateCase() {
 		},
 	}
 	err := step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Valid case with no statements (empty case is allowed)
 	step = Step{
@@ -178,7 +176,7 @@ func (suite *ScenarioStepsSuite) TestValidateCase() {
 		Condition: "some condition",
 	}
 	err = step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: no condition
 	step = Step{
@@ -186,7 +184,7 @@ func (suite *ScenarioStepsSuite) TestValidateCase() {
 		StepType: STEP_TYPE_CASE,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "case must have a condition")
+	suite.ErrorContains(err,"case must have a condition")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateLoop() {
@@ -200,7 +198,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 		},
 	}
 	err := step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: no condition
 	step = Step{
@@ -211,7 +209,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 		},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "loop must have a condition")
+	suite.ErrorContains(err,"loop must have a condition")
 
 	// Invalid: no statements
 	step = Step{
@@ -221,7 +219,7 @@ func (suite *ScenarioStepsSuite) TestValidateLoop() {
 		Statements: []Step{},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "loop must have at least one statement")
+	suite.ErrorContains(err,"loop must have at least one statement")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateLeaf() {
@@ -236,7 +234,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:      suite.eventKey,
 	}
 	err := step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Valid scenario leaf
 	step = Step{
@@ -249,7 +247,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = step.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Valid query leaf
 	step = Step{
@@ -262,7 +260,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		QueryKey:      suite.queryKey,
 	}
 	err = step.Validate()
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Valid delete leaf
 	step = Step{
@@ -273,7 +271,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		FromObjectKey: suite.fromObjKey,
 	}
 	err = step.Validate()
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: missing leaf_type
 	step = Step{
@@ -284,7 +282,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "leaf must have a leaf_type")
+	suite.ErrorContains(err,"leaf must have a leaf_type")
 
 	// Invalid: unknown leaf_type
 	step = Step{
@@ -295,7 +293,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ToObjectKey:   suite.toObjKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "unknown leaf type 'bogus'")
+	suite.ErrorContains(err,"unknown leaf type 'bogus'")
 
 	// Invalid event: no from_object_key
 	step = Step{
@@ -306,7 +304,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:    suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+	suite.ErrorContains(err,"event leaf must have a from_object_key")
 
 	// Invalid event: no to_object_key
 	step = Step{
@@ -317,7 +315,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have a to_object_key")
+	suite.ErrorContains(err,"event leaf must have a to_object_key")
 
 	// Invalid event: no event_key
 	step = Step{
@@ -328,7 +326,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ToObjectKey:   suite.toObjKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have an event_key")
+	suite.ErrorContains(err,"event leaf must have an event_key")
 
 	// Invalid query: no query_key
 	step = Step{
@@ -339,7 +337,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ToObjectKey:   suite.toObjKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "query leaf must have a query_key")
+	suite.ErrorContains(err,"query leaf must have a query_key")
 
 	// Invalid scenario: no scenario_key
 	step = Step{
@@ -350,7 +348,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ToObjectKey:   suite.toObjKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "scenario leaf must have a scenario_key")
+	suite.ErrorContains(err,"scenario leaf must have a scenario_key")
 
 	// Invalid delete: has to_object_key
 	step = Step{
@@ -361,7 +359,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ToObjectKey:   suite.toObjKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "delete leaf cannot have a to_object_key")
+	suite.ErrorContains(err,"delete leaf cannot have a to_object_key")
 
 	// Invalid delete: has event_key
 	step = Step{
@@ -372,7 +370,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
+	suite.ErrorContains(err,"delete leaf cannot have event_key, scenario_key, or query_key")
 
 	// Invalid delete: no from_object_key
 	step = Step{
@@ -381,7 +379,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		LeafType: t_strPtr(LEAF_TYPE_DELETE),
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "delete leaf must have a from_object_key")
+	suite.ErrorContains(err,"delete leaf must have a from_object_key")
 
 	// Invalid query: no from_object_key
 	step = Step{
@@ -392,7 +390,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		QueryKey:    suite.queryKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "query leaf must have a from_object_key")
+	suite.ErrorContains(err,"query leaf must have a from_object_key")
 
 	// Invalid query: no to_object_key
 	step = Step{
@@ -403,7 +401,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		QueryKey:      suite.queryKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "query leaf must have a to_object_key")
+	suite.ErrorContains(err,"query leaf must have a to_object_key")
 
 	// Invalid scenario: no from_object_key
 	step = Step{
@@ -414,7 +412,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey: suite.scenarioRef,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "scenario leaf must have a from_object_key")
+	suite.ErrorContains(err,"scenario leaf must have a from_object_key")
 
 	// Invalid scenario: no to_object_key
 	step = Step{
@@ -425,7 +423,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "scenario leaf must have a to_object_key")
+	suite.ErrorContains(err,"scenario leaf must have a to_object_key")
 
 	// Cross-validation: event leaf with scenario_key
 	step = Step{
@@ -438,7 +436,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf cannot have scenario_key or query_key")
+	suite.ErrorContains(err,"event leaf cannot have scenario_key or query_key")
 
 	// Cross-validation: event leaf with query_key
 	step = Step{
@@ -451,7 +449,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		QueryKey:      suite.queryKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf cannot have scenario_key or query_key")
+	suite.ErrorContains(err,"event leaf cannot have scenario_key or query_key")
 
 	// Cross-validation: query leaf with event_key
 	step = Step{
@@ -464,7 +462,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "query leaf cannot have event_key or scenario_key")
+	suite.ErrorContains(err,"query leaf cannot have event_key or scenario_key")
 
 	// Cross-validation: query leaf with scenario_key
 	step = Step{
@@ -477,7 +475,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "query leaf cannot have event_key or scenario_key")
+	suite.ErrorContains(err,"query leaf cannot have event_key or scenario_key")
 
 	// Cross-validation: scenario leaf with event_key
 	step = Step{
@@ -490,7 +488,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "scenario leaf cannot have event_key or query_key")
+	suite.ErrorContains(err,"scenario leaf cannot have event_key or query_key")
 
 	// Cross-validation: scenario leaf with query_key
 	step = Step{
@@ -503,7 +501,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		QueryKey:      suite.queryKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "scenario leaf cannot have event_key or query_key")
+	suite.ErrorContains(err,"scenario leaf cannot have event_key or query_key")
 
 	// Cross-validation: delete leaf with scenario_key
 	step = Step{
@@ -514,7 +512,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
+	suite.ErrorContains(err,"delete leaf cannot have event_key, scenario_key, or query_key")
 
 	// Cross-validation: delete leaf with query_key
 	step = Step{
@@ -525,7 +523,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeaf() {
 		QueryKey:      suite.queryKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "delete leaf cannot have event_key, scenario_key, or query_key")
+	suite.ErrorContains(err,"delete leaf cannot have event_key, scenario_key, or query_key")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
@@ -542,7 +540,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 		EventKey:      suite.eventKey,
 	}
 	err := step.Validate()
-	assert.ErrorContains(suite.T(), err, "FromObjectKey: invalid key type 'domain' for scenario object")
+	suite.ErrorContains(err,"FromObjectKey: invalid key type 'domain' for scenario object")
 
 	// ToObjectKey with wrong key type.
 	step = Step{
@@ -554,7 +552,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "ToObjectKey: invalid key type 'domain' for scenario object")
+	suite.ErrorContains(err,"ToObjectKey: invalid key type 'domain' for scenario object")
 
 	// EventKey with wrong key type.
 	step = Step{
@@ -566,7 +564,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 		EventKey:      wrongKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "EventKey: invalid key type 'domain' for event")
+	suite.ErrorContains(err,"EventKey: invalid key type 'domain' for event")
 
 	// QueryKey with wrong key type.
 	step = Step{
@@ -578,7 +576,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 		QueryKey:      wrongKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "QueryKey: invalid key type 'domain' for query")
+	suite.ErrorContains(err,"QueryKey: invalid key type 'domain' for query")
 
 	// ScenarioKey with wrong key type.
 	step = Step{
@@ -590,7 +588,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 		ScenarioKey:   wrongKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "ScenarioKey: invalid key type 'domain' for scenario")
+	suite.ErrorContains(err,"ScenarioKey: invalid key type 'domain' for scenario")
 
 	// FromObjectKey with wrong key type on delete leaf.
 	step = Step{
@@ -600,7 +598,7 @@ func (suite *ScenarioStepsSuite) TestValidateLeafKeyTypes() {
 		FromObjectKey: wrongKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "FromObjectKey: invalid key type 'domain' for scenario object")
+	suite.ErrorContains(err,"FromObjectKey: invalid key type 'domain' for scenario object")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
@@ -619,7 +617,7 @@ func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 		Statements: []Step{badChild},
 	}
 	err := step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+	suite.ErrorContains(err,"event leaf must have a from_object_key")
 
 	// Loop with bad child.
 	step = Step{
@@ -629,7 +627,7 @@ func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 		Statements: []Step{badChild},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+	suite.ErrorContains(err,"event leaf must have a from_object_key")
 
 	// Case with bad child.
 	step = Step{
@@ -639,7 +637,7 @@ func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 		Statements: []Step{badChild},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+	suite.ErrorContains(err,"event leaf must have a from_object_key")
 
 	// Switch with bad case child (case itself is valid, but its child is bad).
 	step = Step{
@@ -655,7 +653,7 @@ func (suite *ScenarioStepsSuite) TestValidateRecursiveChildFailure() {
 		},
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+	suite.ErrorContains(err,"event leaf must have a from_object_key")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateUnknownStepType() {
@@ -664,7 +662,7 @@ func (suite *ScenarioStepsSuite) TestValidateUnknownStepType() {
 		StepType: "bogus",
 	}
 	err := step.Validate()
-	assert.ErrorContains(suite.T(), err, "unknown step type 'bogus'")
+	suite.ErrorContains(err,"unknown step type 'bogus'")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
@@ -677,7 +675,7 @@ func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
 		EventKey:      suite.eventKey,
 	}
 	err := step.Validate()
-	assert.ErrorContains(suite.T(), err, "KeyType")
+	suite.ErrorContains(err,"KeyType")
 
 	// Wrong key type
 	step = Step{
@@ -689,7 +687,7 @@ func (suite *ScenarioStepsSuite) TestValidateKeyErrors() {
 		EventKey:      suite.eventKey,
 	}
 	err = step.Validate()
-	assert.ErrorContains(suite.T(), err, "invalid key type 'domain' for scenario step")
+	suite.ErrorContains(err,"invalid key type 'domain' for scenario step")
 }
 
 func (suite *ScenarioStepsSuite) TestValidateWithParent() {
@@ -703,13 +701,13 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 		EventKey:      suite.eventKey,
 	}
 	err := step.ValidateWithParent(&suite.scenarioKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: wrong parent
 	otherScenarioKey, err := identity.NewScenarioKey(suite.useCaseKey, "other_scenario")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	err = step.ValidateWithParent(&otherScenarioKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent")
+	suite.ErrorContains(err,"does not match expected parent")
 
 	// Validate calls Validate (propagates validation error)
 	badStep := Step{
@@ -721,7 +719,7 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 		EventKey:    suite.eventKey,
 	}
 	err = badStep.ValidateWithParent(&suite.scenarioKey)
-	assert.ErrorContains(suite.T(), err, "event leaf must have a from_object_key")
+	suite.ErrorContains(err,"event leaf must have a from_object_key")
 
 	// ValidateWithParent recurses into children
 	root := Step{
@@ -732,7 +730,7 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 		},
 	}
 	err = root.ValidateWithParent(&suite.scenarioKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: scenario leaf references its own scenario (self-referencing)
 	selfRefStep := Step{
@@ -744,7 +742,7 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 		ScenarioKey:   &suite.scenarioKey,
 	}
 	err = selfRefStep.ValidateWithParent(&suite.scenarioKey)
-	assert.ErrorContains(suite.T(), err, "scenario leaf cannot reference its own scenario")
+	suite.ErrorContains(err,"scenario leaf cannot reference its own scenario")
 
 	// Valid: scenario leaf references a different scenario (not self-referencing)
 	validRefStep := Step{
@@ -756,7 +754,7 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 		ScenarioKey:   suite.scenarioRef,
 	}
 	err = validRefStep.ValidateWithParent(&suite.scenarioKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Invalid: self-referencing scenario leaf nested inside a sequence
 	selfRefRoot := Step{
@@ -774,7 +772,7 @@ func (suite *ScenarioStepsSuite) TestValidateWithParent() {
 		},
 	}
 	err = selfRefRoot.ValidateWithParent(&suite.scenarioKey)
-	assert.ErrorContains(suite.T(), err, "scenario leaf cannot reference its own scenario")
+	suite.ErrorContains(err,"scenario leaf cannot reference its own scenario")
 }
 
 func (suite *ScenarioStepsSuite) TestJSON() {
@@ -810,23 +808,23 @@ func (suite *ScenarioStepsSuite) TestJSON() {
 
 	// Marshal to JSON
 	data, err := json.Marshal(root)
-	assert.Nil(suite.T(), err)
-	assert.NotEmpty(suite.T(), data)
+	suite.NoError(err)
+	suite.NotEmpty(data)
 
 	// Unmarshal back
 	var unmarshaled Step
 	err = json.Unmarshal(data, &unmarshaled)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Validate
 	err = unmarshaled.Validate()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Check structure
-	assert.Equal(suite.T(), STEP_TYPE_SEQUENCE, unmarshaled.StepType)
-	assert.Len(suite.T(), unmarshaled.Statements, 2)
-	assert.Equal(suite.T(), STEP_TYPE_SWITCH, unmarshaled.Statements[0].StepType)
-	assert.Equal(suite.T(), STEP_TYPE_LOOP, unmarshaled.Statements[1].StepType)
+	suite.Equal(STEP_TYPE_SEQUENCE, unmarshaled.StepType)
+	suite.Len(unmarshaled.Statements, 2)
+	suite.Equal(STEP_TYPE_SWITCH, unmarshaled.Statements[0].StepType)
+	suite.Equal(STEP_TYPE_LOOP, unmarshaled.Statements[1].StepType)
 }
 
 func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
@@ -902,14 +900,14 @@ func (suite *ScenarioStepsSuite) TestJSONRoundTrip() {
 	// Parse into structure
 	var step Step
 	err := step.FromJSON(jsonLiteral)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Export back to JSON
 	jsonStr, err := step.ToJSON()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Compare values are the same
-	assert.Equal(suite.T(), t_OrderedJson(jsonLiteral), t_OrderedJson(jsonStr))
+	suite.Equal(t_OrderedJson(jsonLiteral), t_OrderedJson(jsonStr))
 }
 
 func (suite *ScenarioStepsSuite) TestYAMLRoundTrip() {
@@ -963,20 +961,20 @@ statements:
 	// Parse into structure
 	var step Step
 	err := step.FromYAML(yamlLiteral)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Export back to YAML
 	yamlStr, err := step.ToYAML()
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Parse the exported YAML back into a second struct for comparison
 	// (This avoids string comparison issues with YAML key ordering)
 	var step2 Step
 	err = step2.FromYAML(yamlStr)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Compare the two structures
-	assert.Equal(suite.T(), step, step2)
+	suite.Equal(step, step2)
 }
 
 func t_OrderedJson(value string) (sorted string) {

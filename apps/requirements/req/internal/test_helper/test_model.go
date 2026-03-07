@@ -1436,7 +1436,7 @@ func buildNamedSets(k testKeys) (map[identity.Key]model_named_set.NamedSet, erro
 // =========================================================================
 
 type testParams struct {
-	quantity, productId, reason model_state.Parameter
+	quantity, productID, reason model_state.Parameter
 	priority, tags, items       model_state.Parameter
 	format                      model_state.Parameter
 	unparseable                 model_state.Parameter
@@ -1452,7 +1452,7 @@ func buildParameters() (testParams, error) {
 	if err != nil {
 		return p, err
 	}
-	p.productId, err = model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
+	p.productID, err = model_state.NewParameter("product_id", "ref from domain_a>subdomain_a>product")
 	if err != nil {
 		return p, err
 	}
@@ -1552,7 +1552,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 
 	// eventSubmit: rich (3 parameters).
 	eventSubmit, err := model_state.NewEvent(k.eventSubmit, "Submit", "Customer submits the order.",
-		[]model_state.Parameter{p.quantity, p.productId, p.reason})
+		[]model_state.Parameter{p.quantity, p.productID, p.reason})
 	if err != nil {
 		return sm, err
 	}
@@ -1640,7 +1640,7 @@ func buildStateMachine(k testKeys, l testLogic, p testParams) (testStateMachine,
 		k.queryStatus, "Get Status", "Returns the current status of the order.",
 		[]model_logic.Logic{l.queryRequireLet, l.queryRequire1, l.queryRequire2, l.queryRequire3},
 		[]model_logic.Logic{l.queryGuarLet, l.queryGuarantee1, l.queryGuarantee2, l.queryGuarantee3},
-		[]model_state.Parameter{p.productId, p.items, p.format},
+		[]model_state.Parameter{p.productID, p.items, p.format},
 	)
 	if err != nil {
 		return sm, err

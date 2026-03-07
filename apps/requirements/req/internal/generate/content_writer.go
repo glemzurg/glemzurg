@@ -20,7 +20,7 @@ type ContentWriter interface {
 }
 
 // GenerateMdToWriter generates markdown documentation to a ContentWriter.
-func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error {
+func GenerateMdToWriter(parsedModel core.Model, writer ContentWriter) error { //nolint:revive // public API name
 	// Create the flattened requirements from the model.
 	reqs := req_flat.NewRequirements(parsedModel)
 

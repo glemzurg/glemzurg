@@ -6,7 +6,7 @@ import (
 )
 
 // evalLogicInfixBag evaluates a bag comparison (⊑).
-func evalLogicInfixBag(node *ast.LogicInfixBag, bindings *Bindings) *EvalResult {
+func evalLogicInfixBag(node *ast.BinaryBagComparison, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

@@ -110,7 +110,7 @@ func (s *IdentifiersSuite) TestIdentifier_SelfNotDefined() {
 
 func (s *IdentifiersSuite) TestFieldIdentifier_Simple() {
 	// person.name
-	node := &ast.FieldIdentifier{
+	node := &ast.FieldAccess{
 		Identifier: &ast.Identifier{Value: "person"},
 		Member:     "name",
 	}
@@ -132,7 +132,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_Simple() {
 
 func (s *IdentifiersSuite) TestFieldIdentifier_FieldNotFound() {
 	// person.nonexistent
-	node := &ast.FieldIdentifier{
+	node := &ast.FieldAccess{
 		Identifier: &ast.Identifier{Value: "person"},
 		Member:     "nonexistent",
 	}
@@ -152,7 +152,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_FieldNotFound() {
 
 func (s *IdentifiersSuite) TestFieldIdentifier_NotARecord() {
 	// x.member where x is a number
-	node := &ast.FieldIdentifier{
+	node := &ast.FieldAccess{
 		Identifier: &ast.Identifier{Value: "x"},
 		Member:     "value",
 	}
@@ -168,7 +168,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_NotARecord() {
 
 func (s *IdentifiersSuite) TestFieldIdentifier_ExclamationMember() {
 	// !.member - access field from existing value in EXCEPT context
-	node := &ast.FieldIdentifier{
+	node := &ast.FieldAccess{
 		Identifier: nil, // nil means use existing value
 		Member:     "name",
 	}
@@ -190,7 +190,7 @@ func (s *IdentifiersSuite) TestFieldIdentifier_ExclamationMember() {
 
 func (s *IdentifiersSuite) TestFieldIdentifier_ExclamationOutsideExcept() {
 	// !.member outside of EXCEPT context
-	node := &ast.FieldIdentifier{
+	node := &ast.FieldAccess{
 		Identifier: nil,
 		Member:     "name",
 	}

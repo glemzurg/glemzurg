@@ -44,8 +44,7 @@ func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
 		name := file.Name()
 
 		// Check for .input.json suffix
-		if strings.HasSuffix(name, ".input.json") {
-			baseName := strings.TrimSuffix(name, ".input.json")
+		if baseName, ok := strings.CutSuffix(name, ".input.json"); ok {
 			testFile := fileLookup[baseName]
 			testFile.Filename = filename
 			testFile.InputJSON = strings.TrimSpace(string(content))
@@ -54,8 +53,7 @@ func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
 		}
 
 		// Check for .expected.json suffix
-		if strings.HasSuffix(name, ".expected.json") {
-			baseName := strings.TrimSuffix(name, ".expected.json")
+		if baseName, ok := strings.CutSuffix(name, ".expected.json"); ok {
 			testFile := fileLookup[baseName]
 			testFile.ExpectedJSON = strings.TrimSpace(string(content))
 			fileLookup[baseName] = testFile
@@ -133,8 +131,7 @@ func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, er
 		name := file.Name()
 
 		// Check for .err.json suffix (input file)
-		if strings.HasSuffix(name, ".err.json") {
-			baseName := strings.TrimSuffix(name, ".err.json")
+		if baseName, found := strings.CutSuffix(name, ".err.json"); found {
 			content, err := os.ReadFile(filename)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -147,8 +144,7 @@ func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, er
 		}
 
 		// Check for .expected.json suffix (expected error)
-		if strings.HasSuffix(name, ".expected.json") {
-			baseName := strings.TrimSuffix(name, ".expected.json")
+		if baseName, found := strings.CutSuffix(name, ".expected.json"); found {
 			content, err := os.ReadFile(filename)
 			if err != nil {
 				return nil, errors.WithStack(err)

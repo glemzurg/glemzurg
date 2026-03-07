@@ -270,7 +270,7 @@ func (s *BagSuite) TestPrecedence_MultHigherThanConcat() {
 	s.Equal("∘", concat.Operator)
 	s.Len(concat.Operands, 2)
 
-	_, ok = concat.Operands[0].(*ast.RealInfixExpression)
+	_, ok = concat.Operands[0].(*ast.BinaryArithmetic)
 	s.True(ok, "expected first operand to be RealInfixExpression, got %T", concat.Operands[0])
 }
 

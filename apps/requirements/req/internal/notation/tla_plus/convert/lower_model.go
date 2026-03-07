@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -201,9 +202,7 @@ func ContextWithParameters(base *LowerContext, params []model_state.Parameter) *
 	child := *base
 	child.Parameters = make(map[string]bool)
 	if base.Parameters != nil {
-		for k, v := range base.Parameters {
-			child.Parameters[k] = v
-		}
+		maps.Copy(child.Parameters, base.Parameters)
 	}
 	for _, p := range params {
 		child.Parameters[p.Name] = true

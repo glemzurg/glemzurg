@@ -73,7 +73,7 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 	// 6. Compare scenarios individually for better error diagnostics on steps.
 	inputScenarios := test_helper.ExtractScenarios(input)
 	outputScenarios := test_helper.ExtractScenarios(output)
-	assert.Equal(suite.T(), len(inputScenarios), len(outputScenarios), "scenario count mismatch")
+	suite.Len(outputScenarios, len(inputScenarios), "scenario count mismatch")
 	for i := range inputScenarios {
 		if i >= len(outputScenarios) {
 			break

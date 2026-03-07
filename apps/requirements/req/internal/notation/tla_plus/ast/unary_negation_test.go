@@ -58,10 +58,10 @@ func (suite *NumericPrefixExpressionSuite) TestString() {
 	}
 }
 
-func (suite *NumericPrefixExpressionSuite) TestAscii() {
-	// Ascii should be same as String for NumericPrefixExpression
+func (suite *NumericPrefixExpressionSuite) TestASCII() {
+	// ASCII should be same as String for NumericPrefixExpression
 	n := &NumericPrefixExpression{Operator: "-", Right: &NumberLiteral{Base: BaseDecimal, IntegerPart: "1"}}
-	assert.Equal(suite.T(), n.String(), n.Ascii())
+	assert.Equal(suite.T(), n.String(), n.ASCII())
 }
 
 func (suite *NumericPrefixExpressionSuite) TestValidate() {

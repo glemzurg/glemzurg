@@ -47,7 +47,7 @@ func (suite *SetLiteralIntSuite) TestString() {
 	}
 }
 
-func (suite *SetLiteralIntSuite) TestAscii() {
+func (suite *SetLiteralIntSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		values   []int
@@ -74,7 +74,7 @@ func (suite *SetLiteralIntSuite) TestAscii() {
 			s := &SetLiteralInt{
 				Values: tt.values,
 			}
-			assert.Equal(t, tt.expected, s.Ascii())
+			assert.Equal(t, tt.expected, s.ASCII())
 		})
 	}
 }

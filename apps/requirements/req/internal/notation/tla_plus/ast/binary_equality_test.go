@@ -39,7 +39,7 @@ func TestLogicEquality_String(t *testing.T) {
 	}
 }
 
-func TestLogicEquality_Ascii(t *testing.T) {
+func TestLogicEquality_ASCII(t *testing.T) {
 	tests := []struct {
 		name     string
 		expr     *LogicEquality
@@ -67,7 +67,7 @@ func TestLogicEquality_Ascii(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.expr.Ascii())
+			assert.Equal(t, tt.expected, tt.expr.ASCII())
 		})
 	}
 }

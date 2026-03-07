@@ -69,11 +69,11 @@ func (s *ControlFlowSuite) TestIfThenElse_WithArithmetic() {
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
 
-	_, ok = ite.Then.(*ast.RealInfixExpression)
-	s.True(ok, "then should be *ast.RealInfixExpression, got %T", ite.Then)
+	_, ok = ite.Then.(*ast.BinaryArithmetic)
+	s.True(ok, "then should be *ast.BinaryArithmetic, got %T", ite.Then)
 
-	_, ok = ite.Else.(*ast.RealInfixExpression)
-	s.True(ok, "else should be *ast.RealInfixExpression, got %T", ite.Else)
+	_, ok = ite.Else.(*ast.BinaryArithmetic)
+	s.True(ok, "else should be *ast.BinaryArithmetic, got %T", ite.Else)
 }
 
 func (s *ControlFlowSuite) TestIfThenElse_String() {
@@ -83,7 +83,7 @@ func (s *ControlFlowSuite) TestIfThenElse_String() {
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
 	s.Equal("IF x > 0 THEN 1 ELSE 0", ite.String())
-	s.Equal("IF x > 0 THEN 1 ELSE 0", ite.Ascii())
+	s.Equal("IF x > 0 THEN 1 ELSE 0", ite.ASCII())
 }
 
 // =============================================================================
@@ -96,7 +96,7 @@ func (s *ControlFlowSuite) TestCaseExpr_SingleBranch() {
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
-	s.Equal(1, len(caseExpr.Branches))
+	s.Len(caseExpr.Branches, 1)
 	s.Nil(caseExpr.Other)
 }
 
@@ -106,7 +106,7 @@ func (s *ControlFlowSuite) TestCaseExpr_MultipleBranches() {
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
-	s.Equal(3, len(caseExpr.Branches))
+	s.Len(caseExpr.Branches, 3)
 	s.Nil(caseExpr.Other)
 }
 
@@ -116,7 +116,7 @@ func (s *ControlFlowSuite) TestCaseExpr_WithOther() {
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
-	s.Equal(1, len(caseExpr.Branches))
+	s.Len(caseExpr.Branches, 1)
 	s.NotNil(caseExpr.Other)
 }
 
@@ -126,7 +126,7 @@ func (s *ControlFlowSuite) TestCaseExpr_UnicodeArrow() {
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
-	s.Equal(1, len(caseExpr.Branches))
+	s.Len(caseExpr.Branches, 1)
 	s.NotNil(caseExpr.Other)
 }
 
@@ -136,11 +136,11 @@ func (s *ControlFlowSuite) TestCaseExpr_WithExpressions() {
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
-	s.Equal(2, len(caseExpr.Branches))
+	s.Len(caseExpr.Branches, 2)
 
 	// Check first branch result is multiplication
-	_, ok = caseExpr.Branches[0].Result.(*ast.RealInfixExpression)
-	s.True(ok, "first branch result should be *ast.RealInfixExpression")
+	_, ok = caseExpr.Branches[0].Result.(*ast.BinaryArithmetic)
+	s.True(ok, "first branch result should be *ast.BinaryArithmetic")
 }
 
 // =============================================================================
@@ -153,9 +153,9 @@ func (s *ControlFlowSuite) TestFunctionCall_NoArgs() {
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
-	s.Equal(0, len(call.ScopePath))
+	s.Empty(call.ScopePath)
 	s.Equal("Func", call.Name.Value)
-	s.Equal(0, len(call.Args))
+	s.Empty(call.Args)
 }
 
 func (s *ControlFlowSuite) TestFunctionCall_SingleArg() {
@@ -164,9 +164,9 @@ func (s *ControlFlowSuite) TestFunctionCall_SingleArg() {
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
-	s.Equal(0, len(call.ScopePath))
+	s.Empty(call.ScopePath)
 	s.Equal("Len", call.Name.Value)
-	s.Equal(1, len(call.Args))
+	s.Len(call.Args, 1)
 }
 
 func (s *ControlFlowSuite) TestFunctionCall_MultipleArgs() {
@@ -176,7 +176,7 @@ func (s *ControlFlowSuite) TestFunctionCall_MultipleArgs() {
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
 	s.Equal("SubSeq", call.Name.Value)
-	s.Equal(3, len(call.Args))
+	s.Len(call.Args, 3)
 }
 
 func (s *ControlFlowSuite) TestFunctionCall_WithModule() {
@@ -185,10 +185,10 @@ func (s *ControlFlowSuite) TestFunctionCall_WithModule() {
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
-	s.Equal(1, len(call.ScopePath))
+	s.Len(call.ScopePath, 1)
 	s.Equal("_Seq", call.ScopePath[0].Value)
 	s.Equal("Len", call.Name.Value)
-	s.Equal(1, len(call.Args))
+	s.Len(call.Args, 1)
 	s.True(call.IsGlobalOrBuiltin())
 }
 
@@ -198,12 +198,12 @@ func (s *ControlFlowSuite) TestFunctionCall_MultiLevelScope() {
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
-	s.Equal(3, len(call.ScopePath))
+	s.Len(call.ScopePath, 3)
 	s.Equal("Domain", call.ScopePath[0].Value)
 	s.Equal("Subdomain", call.ScopePath[1].Value)
 	s.Equal("Class", call.ScopePath[2].Value)
 	s.Equal("Action", call.Name.Value)
-	s.Equal(2, len(call.Args))
+	s.Len(call.Args, 2)
 	s.False(call.IsGlobalOrBuiltin())
 	s.Equal("Domain!Subdomain!Class!Action", call.FullName())
 }
@@ -215,7 +215,7 @@ func (s *ControlFlowSuite) TestFunctionCall_TwoLevelScope() {
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
-	s.Equal(1, len(call.ScopePath))
+	s.Len(call.ScopePath, 1)
 	s.Equal("Class", call.ScopePath[0].Value)
 	s.Equal("Action", call.Name.Value)
 	s.Equal("Class!Action", call.FullName())
@@ -227,7 +227,7 @@ func (s *ControlFlowSuite) TestFunctionCall_BuiltinModule() {
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
-	s.Equal(1, len(call.ScopePath))
+	s.Len(call.ScopePath, 1)
 	s.Equal("_Bags", call.ScopePath[0].Value)
 	s.Equal("SetToBag", call.Name.Value)
 	s.True(call.IsGlobalOrBuiltin())
@@ -241,7 +241,7 @@ func (s *ControlFlowSuite) TestFunctionCall_String() {
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
 	s.Equal("_Seq!Len(seq)", call.String())
-	s.Equal("_Seq!Len(seq)", call.Ascii())
+	s.Equal("_Seq!Len(seq)", call.ASCII())
 }
 
 func (s *ControlFlowSuite) TestFunctionCall_Cardinality() {
@@ -251,7 +251,7 @@ func (s *ControlFlowSuite) TestFunctionCall_Cardinality() {
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
 	s.Equal("Cardinality", call.Name.Value)
-	s.Equal(1, len(call.Args))
+	s.Len(call.Args, 1)
 
 	// Argument should be a set literal
 	_, ok = call.Args[0].(*ast.SetLiteral)
@@ -265,13 +265,13 @@ func (s *ControlFlowSuite) TestFunctionCall_WithExpressionArgs() {
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
 	s.Equal("Max", call.Name.Value)
-	s.Equal(2, len(call.Args))
+	s.Len(call.Args, 2)
 
 	// Both args should be arithmetic expressions
-	_, ok = call.Args[0].(*ast.RealInfixExpression)
-	s.True(ok, "first arg should be *ast.RealInfixExpression")
-	_, ok = call.Args[1].(*ast.RealInfixExpression)
-	s.True(ok, "second arg should be *ast.RealInfixExpression")
+	_, ok = call.Args[0].(*ast.BinaryArithmetic)
+	s.True(ok, "first arg should be *ast.BinaryArithmetic")
+	_, ok = call.Args[1].(*ast.BinaryArithmetic)
+	s.True(ok, "second arg should be *ast.BinaryArithmetic")
 }
 
 func (s *ControlFlowSuite) TestFunctionCall_Nested() {
@@ -281,7 +281,7 @@ func (s *ControlFlowSuite) TestFunctionCall_Nested() {
 	outer, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected outer *ast.FunctionCall, got %T", expr)
 	s.Equal("Len", outer.Name.Value)
-	s.Equal(1, len(outer.Args))
+	s.Len(outer.Args, 1)
 
 	inner, ok := outer.Args[0].(*ast.FunctionCall)
 	s.True(ok, "inner arg should be *ast.FunctionCall, got %T", outer.Args[0])
@@ -320,7 +320,7 @@ func (s *ControlFlowSuite) TestCombined_FunctionCallInSet() {
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
-	s.Equal(3, len(set.Elements))
+	s.Len(set.Elements, 3)
 
 	// Each element should be a function call
 	for i, elem := range set.Elements {

@@ -23,7 +23,7 @@ type SimulationTrace struct {
 }
 
 // TraceStep is a serializable view of one simulation step.
-type TraceStep struct {
+type TraceStep struct { //nolint:revive // public API name
 	StepNumber    int               `json:"step_number"`
 	Kind          string            `json:"kind"`
 	ClassName     string            `json:"class_name"`

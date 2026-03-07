@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -128,13 +127,13 @@ func (s *NamedSetTestSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.ns.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -165,7 +164,7 @@ func (s *NamedSetTestSuite) TestNew() {
 	ns, err = NewNamedSet(validKey, "Valid Statuses", "", validSpec(), nil)
 	s.NoError(err)
 	s.Equal("Valid Statuses", ns.Name)
-	s.Equal("", ns.Description)
+	s.Empty(ns.Description)
 	s.Nil(ns.TypeSpec)
 
 	// Test that Validate is called (invalid name should fail).

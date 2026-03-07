@@ -1,6 +1,8 @@
 package generate
 
 import (
+	"strings"
+
 	svgsequence "github.com/aorith/svg-sequence"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
@@ -89,7 +91,8 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 					return errors.Errorf("unknown to class key: '%s'", toObject.ClassKey.String())
 				}
 
-				text := stmt.Description
+				var textBuilder strings.Builder
+				textBuilder.WriteString(stmt.Description)
 
 				// Events can be fully described.
 				if stmt.EventKey != nil {
@@ -97,23 +100,23 @@ func addSteps(eventLookup map[string]model_state.Event, s *svgsequence.Sequence,
 					if !found {
 						return errors.Errorf("unknown event key: '%s'", stmt.EventKey.String())
 					}
-					text += event.Name
+					textBuilder.WriteString(event.Name)
 					if len(event.Parameters) > 0 {
-						text += "("
+						textBuilder.WriteString("(")
 						for i, param := range event.Parameters {
 							if i > 0 {
-								text += ", "
+								textBuilder.WriteString(", ")
 							}
-							text += param.Name
+							textBuilder.WriteString(param.Name)
 						}
-						text += ")"
+						textBuilder.WriteString(")")
 					}
 				}
 
 				s.AddStep(svgsequence.Step{
 					Source: fromObject.GetName(fromClass),
 					Target: toObject.GetName(toClass),
-					Text:   text,
+					Text:   textBuilder.String(),
 				})
 
 			case model_scenario.LEAF_TYPE_QUERY:

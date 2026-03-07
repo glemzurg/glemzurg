@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -111,12 +110,12 @@ func (suite *StateActionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.stateAction.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -133,8 +132,8 @@ func (suite *StateActionSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	stateAction, err := NewStateAction(key, actionKey, "entry")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), StateAction{
+	suite.Require().NoError(err)
+	suite.Equal(StateAction{
 		Key:       key,
 		ActionKey: actionKey,
 		When:      "entry",
@@ -142,7 +141,7 @@ func (suite *StateActionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewStateAction(key, actionKey, "")
-	assert.ErrorContains(suite.T(), err, "When")
+	suite.ErrorContains(err,"When")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -162,7 +161,7 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		When:      "", // Invalid
 	}
 	err := stateAction.ValidateWithParent(&stateKey)
-	assert.ErrorContains(suite.T(), err, "When", "ValidateWithParent should call Validate()")
+	suite.ErrorContains(err,"When", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - stateAction key has state1 as parent, but we pass other_state.
 	stateAction = StateAction{
@@ -171,11 +170,11 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		When:      "entry",
 	}
 	err = stateAction.ValidateWithParent(&otherStateKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.ErrorContains(err,"does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = stateAction.ValidateWithParent(&stateKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates action references correctly.
@@ -220,12 +219,12 @@ func (suite *StateActionSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.stateAction.ValidateReferences(tt.actions)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}

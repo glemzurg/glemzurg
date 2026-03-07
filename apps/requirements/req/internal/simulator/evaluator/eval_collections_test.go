@@ -20,7 +20,7 @@ type CollectionsSuite struct {
 
 func (s *CollectionsSuite) TestSetUnion_Simple() {
 	// {1, 2} ∪ {2, 3} = {1, 2, 3}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "∪",
 		Right:    &ast.SetLiteralInt{Values: []int{2, 3}},
@@ -39,7 +39,7 @@ func (s *CollectionsSuite) TestSetUnion_Simple() {
 
 func (s *CollectionsSuite) TestSetUnion_EmptySet() {
 	// {} ∪ {1, 2} = {1, 2}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{}},
 		Operator: "∪",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2}},
@@ -57,7 +57,7 @@ func (s *CollectionsSuite) TestSetUnion_EmptySet() {
 
 func (s *CollectionsSuite) TestSetIntersection_Simple() {
 	// {1, 2, 3} ∩ {2, 3, 4} = {2, 3}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Operator: "∩",
 		Right:    &ast.SetLiteralInt{Values: []int{2, 3, 4}},
@@ -75,7 +75,7 @@ func (s *CollectionsSuite) TestSetIntersection_Simple() {
 
 func (s *CollectionsSuite) TestSetIntersection_Disjoint() {
 	// {1, 2} ∩ {3, 4} = {}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "∩",
 		Right:    &ast.SetLiteralInt{Values: []int{3, 4}},
@@ -93,7 +93,7 @@ func (s *CollectionsSuite) TestSetIntersection_Disjoint() {
 
 func (s *CollectionsSuite) TestSetDifference_Simple() {
 	// {1, 2, 3} \ {2} = {1, 3}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Operator: "\\",
 		Right:    &ast.SetLiteralInt{Values: []int{2}},
@@ -112,7 +112,7 @@ func (s *CollectionsSuite) TestSetDifference_Simple() {
 
 func (s *CollectionsSuite) TestSetDifference_NoOverlap() {
 	// {1, 2} \ {3, 4} = {1, 2}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "\\",
 		Right:    &ast.SetLiteralInt{Values: []int{3, 4}},
@@ -130,12 +130,12 @@ func (s *CollectionsSuite) TestSetDifference_NoOverlap() {
 
 func (s *CollectionsSuite) TestSetNested_UnionIntersection() {
 	// ({1, 2} ∪ {2, 3}) ∩ {2, 4} = {1, 2, 3} ∩ {2, 4} = {2}
-	union := &ast.SetInfix{
+	union := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "∪",
 		Right:    &ast.SetLiteralInt{Values: []int{2, 3}},
 	}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     union,
 		Operator: "∩",
 		Right:    &ast.SetLiteralInt{Values: []int{2, 4}},
@@ -154,7 +154,7 @@ func (s *CollectionsSuite) TestSetNested_UnionIntersection() {
 
 func (s *CollectionsSuite) TestMembership_Contains() {
 	// 2 ∈ {1, 2, 3} = TRUE
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(2),
 		Operator: "∈",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -170,7 +170,7 @@ func (s *CollectionsSuite) TestMembership_Contains() {
 
 func (s *CollectionsSuite) TestMembership_NotContains() {
 	// 5 ∈ {1, 2, 3} = FALSE
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "∈",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -186,7 +186,7 @@ func (s *CollectionsSuite) TestMembership_NotContains() {
 
 func (s *CollectionsSuite) TestMembership_NotIn() {
 	// 5 ∉ {1, 2, 3} = TRUE
-	node := &ast.LogicMembership{
+	node := &ast.Membership{
 		Left:     ast.NewIntLiteral(5),
 		Operator: "∉",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -204,7 +204,7 @@ func (s *CollectionsSuite) TestMembership_NotIn() {
 
 func (s *CollectionsSuite) TestSetSubset() {
 	// {1, 2} ⊆ {1, 2, 3} = TRUE
-	node := &ast.LogicInfixSet{
+	node := &ast.BinarySetComparison{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "⊆",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -220,7 +220,7 @@ func (s *CollectionsSuite) TestSetSubset() {
 
 func (s *CollectionsSuite) TestSetSubsetEqual() {
 	// {1, 2, 3} ⊆ {1, 2, 3} = TRUE
-	node := &ast.LogicInfixSet{
+	node := &ast.BinarySetComparison{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Operator: "⊆",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -236,7 +236,7 @@ func (s *CollectionsSuite) TestSetSubsetEqual() {
 
 func (s *CollectionsSuite) TestSetProperSubset() {
 	// {1, 2} ⊂ {1, 2, 3} = TRUE
-	node := &ast.LogicInfixSet{
+	node := &ast.BinarySetComparison{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "⊂",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -252,7 +252,7 @@ func (s *CollectionsSuite) TestSetProperSubset() {
 
 func (s *CollectionsSuite) TestSetProperSubsetEqual_False() {
 	// {1, 2, 3} ⊂ {1, 2, 3} = FALSE (equal sets are not proper subsets)
-	node := &ast.LogicInfixSet{
+	node := &ast.BinarySetComparison{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Operator: "⊂",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -268,7 +268,7 @@ func (s *CollectionsSuite) TestSetProperSubsetEqual_False() {
 
 func (s *CollectionsSuite) TestSetEquals() {
 	// {1, 2, 3} = {3, 2, 1} = TRUE (sets are unordered)
-	node := &ast.LogicInfixSet{
+	node := &ast.BinarySetComparison{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2, 3}},
 		Operator: "=",
 		Right:    &ast.SetLiteralInt{Values: []int{3, 2, 1}},
@@ -284,7 +284,7 @@ func (s *CollectionsSuite) TestSetEquals() {
 
 func (s *CollectionsSuite) TestSetNotEquals() {
 	// {1, 2} ≠ {1, 2, 3} = TRUE
-	node := &ast.LogicInfixSet{
+	node := &ast.BinarySetComparison{
 		Left:     &ast.SetLiteralInt{Values: []int{1, 2}},
 		Operator: "≠",
 		Right:    &ast.SetLiteralInt{Values: []int{1, 2, 3}},
@@ -367,7 +367,7 @@ func (s *CollectionsSuite) TestBagToSet() {
 
 func (s *CollectionsSuite) TestSetWithStrings() {
 	// {"a", "b"} ∪ {"b", "c"} = {"a", "b", "c"}
-	node := &ast.SetInfix{
+	node := &ast.BinarySetOperation{
 		Left:     &ast.SetLiteralEnum{Values: []string{"a", "b"}},
 		Operator: "∪",
 		Right:    &ast.SetLiteralEnum{Values: []string{"b", "c"}},

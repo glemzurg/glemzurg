@@ -81,7 +81,7 @@ func (p *RegistryPipeline) RebuildDefinitions(changedKeys []registry.DefinitionK
 	invalidated := p.registry.InvalidateMultiple(changedKeys)
 
 	// Create type check function
-	typeCheckFn := func(def *registry.Definition, tc *typechecker.TypeChecker, scopeCtx *registry.ScopeContext) error {
+	typeCheckFn := func(def *registry.Definition, _ *typechecker.TypeChecker, scopeCtx *registry.ScopeContext) error {
 		return p.typeCheckDefinition(def, scopeCtx)
 	}
 
@@ -96,7 +96,7 @@ func (p *RegistryPipeline) RebuildDefinitions(changedKeys []registry.DefinitionK
 
 // RebuildAll re-type-checks all definitions from scratch.
 func (p *RegistryPipeline) RebuildAll() error {
-	typeCheckFn := func(def *registry.Definition, tc *typechecker.TypeChecker, scopeCtx *registry.ScopeContext) error {
+	typeCheckFn := func(def *registry.Definition, _ *typechecker.TypeChecker, scopeCtx *registry.ScopeContext) error {
 		return p.typeCheckDefinition(def, scopeCtx)
 	}
 

@@ -10,7 +10,7 @@ import (
 )
 
 // GenerateMdFromModel generates markdown documentation from an already-parsed model.
-func GenerateMdFromModel(outputPath string, parsedModel core.Model) (err error) {
+func GenerateMdFromModel(outputPath string, parsedModel core.Model) (err error) { //nolint:revive // public API name
 	// Create necessary output paths if we don't have them.
 	if err = createMissingPaths([]string{outputPath}); err != nil {
 		return err

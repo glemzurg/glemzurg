@@ -518,7 +518,7 @@ func TestParseAtomic(t *testing.T) {
 				assert.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
-				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {

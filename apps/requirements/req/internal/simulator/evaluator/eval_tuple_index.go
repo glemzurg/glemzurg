@@ -6,7 +6,7 @@ import (
 )
 
 // evalTupleIndex evaluates tuple[index].
-func evalTupleIndex(node *ast.ExpressionTupleIndex, bindings *Bindings) *EvalResult {
+func evalTupleIndex(node *ast.TupleIndex, bindings *Bindings) *EvalResult {
 	tupleResult := EvalAST(node.Tuple, bindings)
 	if tupleResult.IsError() {
 		return tupleResult

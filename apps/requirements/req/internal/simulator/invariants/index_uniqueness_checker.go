@@ -1,6 +1,7 @@
 package invariants
 
 import (
+	"slices"
 	"sort"
 	"strings"
 
@@ -62,7 +63,7 @@ func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 				for num := range indexGroups {
 					indexNums = append(indexNums, num)
 				}
-				sort.Slice(indexNums, func(i, j int) bool { return indexNums[i] < indexNums[j] })
+				slices.Sort(indexNums)
 
 				for _, indexNum := range indexNums {
 					attrs := indexGroups[indexNum]

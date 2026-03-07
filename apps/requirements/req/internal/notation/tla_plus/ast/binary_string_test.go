@@ -79,7 +79,7 @@ func (suite *StringInfixExpressionSuite) TestString() {
 	}
 }
 
-func (suite *StringInfixExpressionSuite) TestAscii() {
+func (suite *StringInfixExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operands []Expression
@@ -127,7 +127,7 @@ func (suite *StringInfixExpressionSuite) TestAscii() {
 				Operator: tt.operator,
 				Operands: tt.operands,
 			}
-			assert.Equal(t, tt.expected, s.Ascii())
+			assert.Equal(t, tt.expected, s.ASCII())
 		})
 	}
 }

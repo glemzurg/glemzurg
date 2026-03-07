@@ -67,7 +67,7 @@ func (suite *MultiplicitySuite) TestValidate() {
 func (suite *MultiplicitySuite) TestNew() {
 	// Test struct population.
 	obj, err := NewMultiplicity("2..3")
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 	assert.Equal(suite.T(), Multiplicity{LowerBound: 2, HigherBound: 3}, obj, "struct should be populated")
 
 	// Test that Validate is called (parsing error).
@@ -184,13 +184,13 @@ func (suite *MultiplicitySuite) TestParseMultiplicity() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		lowerBound, higherBound, err := parseMultiplicity(test.multiplicity)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.NoError(err, testName)
 			assert.Equal(suite.T(), test.lowerBound, lowerBound, testName)
 			assert.Equal(suite.T(), test.higherBound, higherBound, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), lowerBound, testName)
-			assert.Empty(suite.T(), higherBound, testName)
+			suite.Empty(lowerBound, testName)
+			suite.Empty(higherBound, testName)
 		}
 	}
 }

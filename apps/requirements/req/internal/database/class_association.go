@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -223,14 +224,16 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO association (model_key, association_key, name, details, from_class_key, from_multiplicity_lower, from_multiplicity_higher, to_class_key, to_multiplicity_lower, to_multiplicity_higher, association_class_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(associations)*12)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO association (model_key, association_key, name, details, from_class_key, from_multiplicity_lower, from_multiplicity_higher, to_class_key, to_multiplicity_lower, to_multiplicity_higher, association_class_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(associations)*12)
 	for i, assoc := range associations {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 12
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10, base+11, base+12))
+
 
 		// Handle optional association class key.
 		var associationClassKeyPtr *string
@@ -242,7 +245,7 @@ func AddAssociations(dbOrTx DbOrTx, modelKey string, associations []model_class.
 		args = append(args, modelKey, assoc.Key.String(), assoc.Name, assoc.Details, assoc.FromClassKey.String(), assoc.FromMultiplicity.LowerBound, assoc.FromMultiplicity.HigherBound, assoc.ToClassKey.String(), assoc.ToMultiplicity.LowerBound, assoc.ToMultiplicity.HigherBound, associationClassKeyPtr, assoc.UmlComment)
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

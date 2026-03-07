@@ -23,18 +23,18 @@ func (s *LogicSuite) TestParseNotUnicode() {
 	expr, err := ParseExpression("¬TRUE")
 	s.NoError(err)
 
-	not := expr.(*ast.LogicPrefixExpression)
+	not := expr.(*ast.UnaryLogic)
 	s.Equal("¬", not.Operator)
 
 	inner := not.Right.(*ast.BooleanLiteral)
 	s.True(inner.Value)
 }
 
-func (s *LogicSuite) TestParseNotAscii() {
+func (s *LogicSuite) TestParseNotASCII() {
 	expr, err := ParseExpression("~FALSE")
 	s.NoError(err)
 
-	not := expr.(*ast.LogicPrefixExpression)
+	not := expr.(*ast.UnaryLogic)
 	s.Equal("¬", not.Operator) // Normalized to Unicode
 
 	inner := not.Right.(*ast.BooleanLiteral)
@@ -45,10 +45,10 @@ func (s *LogicSuite) TestParseDoubleNot() {
 	expr, err := ParseExpression("~~TRUE")
 	s.NoError(err)
 
-	outer := expr.(*ast.LogicPrefixExpression)
+	outer := expr.(*ast.UnaryLogic)
 	s.Equal("¬", outer.Operator)
 
-	inner := outer.Right.(*ast.LogicPrefixExpression)
+	inner := outer.Right.(*ast.UnaryLogic)
 	s.Equal("¬", inner.Operator)
 
 	val := inner.Right.(*ast.BooleanLiteral)
@@ -63,7 +63,7 @@ func (s *LogicSuite) TestParseAndUnicode() {
 	expr, err := ParseExpression("TRUE ∧ FALSE")
 	s.NoError(err)
 
-	and := expr.(*ast.LogicInfixExpression)
+	and := expr.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 
 	left := and.Left.(*ast.BooleanLiteral)
@@ -73,11 +73,11 @@ func (s *LogicSuite) TestParseAndUnicode() {
 	s.False(right.Value)
 }
 
-func (s *LogicSuite) TestParseAndAscii() {
+func (s *LogicSuite) TestParseAndASCII() {
 	expr, err := ParseExpression(`TRUE /\ FALSE`)
 	s.NoError(err)
 
-	and := expr.(*ast.LogicInfixExpression)
+	and := expr.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator) // Normalized to Unicode
 }
 
@@ -86,7 +86,7 @@ func (s *LogicSuite) TestParseAndChain() {
 	expr, err := ParseExpression(`TRUE /\ FALSE /\ TRUE`)
 	s.NoError(err)
 
-	outer := expr.(*ast.LogicInfixExpression)
+	outer := expr.(*ast.BinaryLogic)
 	s.Equal("∧", outer.Operator)
 
 	// Right is the last TRUE
@@ -94,7 +94,7 @@ func (s *LogicSuite) TestParseAndChain() {
 	s.True(right.Value)
 
 	// Left is (TRUE /\ FALSE)
-	inner := outer.Left.(*ast.LogicInfixExpression)
+	inner := outer.Left.(*ast.BinaryLogic)
 	s.Equal("∧", inner.Operator)
 }
 
@@ -106,15 +106,15 @@ func (s *LogicSuite) TestParseOrUnicode() {
 	expr, err := ParseExpression("TRUE ∨ FALSE")
 	s.NoError(err)
 
-	or := expr.(*ast.LogicInfixExpression)
+	or := expr.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
 }
 
-func (s *LogicSuite) TestParseOrAscii() {
+func (s *LogicSuite) TestParseOrASCII() {
 	expr, err := ParseExpression(`TRUE \/ FALSE`)
 	s.NoError(err)
 
-	or := expr.(*ast.LogicInfixExpression)
+	or := expr.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator) // Normalized to Unicode
 }
 
@@ -123,11 +123,11 @@ func (s *LogicSuite) TestParseOrChain() {
 	expr, err := ParseExpression(`TRUE \/ FALSE \/ TRUE`)
 	s.NoError(err)
 
-	outer := expr.(*ast.LogicInfixExpression)
+	outer := expr.(*ast.BinaryLogic)
 	s.Equal("∨", outer.Operator)
 
 	// Left is (TRUE \/ FALSE)
-	inner := outer.Left.(*ast.LogicInfixExpression)
+	inner := outer.Left.(*ast.BinaryLogic)
 	s.Equal("∨", inner.Operator)
 }
 
@@ -139,15 +139,15 @@ func (s *LogicSuite) TestParseImpliesUnicode() {
 	expr, err := ParseExpression("TRUE ⇒ FALSE")
 	s.NoError(err)
 
-	implies := expr.(*ast.LogicInfixExpression)
+	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
 }
 
-func (s *LogicSuite) TestParseImpliesAscii() {
+func (s *LogicSuite) TestParseImpliesASCII() {
 	expr, err := ParseExpression("TRUE => FALSE")
 	s.NoError(err)
 
-	implies := expr.(*ast.LogicInfixExpression)
+	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator) // Normalized to Unicode
 }
 
@@ -156,7 +156,7 @@ func (s *LogicSuite) TestParseImpliesRightAssociative() {
 	expr, err := ParseExpression("TRUE => FALSE => TRUE")
 	s.NoError(err)
 
-	outer := expr.(*ast.LogicInfixExpression)
+	outer := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", outer.Operator)
 
 	// Left is the first TRUE
@@ -164,7 +164,7 @@ func (s *LogicSuite) TestParseImpliesRightAssociative() {
 	s.True(left.Value)
 
 	// Right is (FALSE => TRUE)
-	inner := outer.Right.(*ast.LogicInfixExpression)
+	inner := outer.Right.(*ast.BinaryLogic)
 	s.Equal("⇒", inner.Operator)
 
 	innerLeft := inner.Left.(*ast.BooleanLiteral)
@@ -182,15 +182,15 @@ func (s *LogicSuite) TestParseEquivUnicode() {
 	expr, err := ParseExpression("TRUE ≡ FALSE")
 	s.NoError(err)
 
-	equiv := expr.(*ast.LogicInfixExpression)
+	equiv := expr.(*ast.BinaryLogic)
 	s.Equal("≡", equiv.Operator)
 }
 
-func (s *LogicSuite) TestParseEquivAscii() {
+func (s *LogicSuite) TestParseEquivASCII() {
 	expr, err := ParseExpression("TRUE <=> FALSE")
 	s.NoError(err)
 
-	equiv := expr.(*ast.LogicInfixExpression)
+	equiv := expr.(*ast.BinaryLogic)
 	s.Equal("≡", equiv.Operator) // Normalized to Unicode
 }
 
@@ -203,11 +203,11 @@ func (s *LogicSuite) TestPrecedenceNotOverAnd() {
 	expr, err := ParseExpression("~TRUE /\\ FALSE")
 	s.NoError(err)
 
-	and := expr.(*ast.LogicInfixExpression)
+	and := expr.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 
 	// Left is ~TRUE
-	not := and.Left.(*ast.LogicPrefixExpression)
+	not := and.Left.(*ast.UnaryLogic)
 	s.Equal("¬", not.Operator)
 }
 
@@ -216,11 +216,11 @@ func (s *LogicSuite) TestPrecedenceAndOverOr() {
 	expr, err := ParseExpression(`TRUE /\ FALSE \/ TRUE`)
 	s.NoError(err)
 
-	or := expr.(*ast.LogicInfixExpression)
+	or := expr.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
 
 	// Left is (TRUE /\ FALSE)
-	and := or.Left.(*ast.LogicInfixExpression)
+	and := or.Left.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 }
 
@@ -229,11 +229,11 @@ func (s *LogicSuite) TestPrecedenceOrOverEquiv() {
 	expr, err := ParseExpression(`TRUE \/ FALSE <=> TRUE`)
 	s.NoError(err)
 
-	equiv := expr.(*ast.LogicInfixExpression)
+	equiv := expr.(*ast.BinaryLogic)
 	s.Equal("≡", equiv.Operator)
 
 	// Left is (TRUE \/ FALSE)
-	or := equiv.Left.(*ast.LogicInfixExpression)
+	or := equiv.Left.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
 }
 
@@ -242,11 +242,11 @@ func (s *LogicSuite) TestPrecedenceEquivOverImplies() {
 	expr, err := ParseExpression("TRUE <=> FALSE => TRUE")
 	s.NoError(err)
 
-	implies := expr.(*ast.LogicInfixExpression)
+	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
 
 	// Left is (TRUE <=> FALSE)
-	equiv := implies.Left.(*ast.LogicInfixExpression)
+	equiv := implies.Left.(*ast.BinaryLogic)
 	s.Equal("≡", equiv.Operator)
 }
 
@@ -255,7 +255,7 @@ func (s *LogicSuite) TestPrecedenceComplexExpression() {
 	expr, err := ParseExpression("~TRUE /\\ FALSE \\/ TRUE => FALSE")
 	s.NoError(err)
 
-	implies := expr.(*ast.LogicInfixExpression)
+	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
 
 	// Right is FALSE
@@ -263,7 +263,7 @@ func (s *LogicSuite) TestPrecedenceComplexExpression() {
 	s.False(right.Value)
 
 	// Left is ((~TRUE /\ FALSE) \/ TRUE)
-	or := implies.Left.(*ast.LogicInfixExpression)
+	or := implies.Left.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
 
 	// or.Right is TRUE
@@ -271,11 +271,11 @@ func (s *LogicSuite) TestPrecedenceComplexExpression() {
 	s.True(orRight.Value)
 
 	// or.Left is (~TRUE /\ FALSE)
-	and := or.Left.(*ast.LogicInfixExpression)
+	and := or.Left.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 
 	// and.Left is ~TRUE
-	not := and.Left.(*ast.LogicPrefixExpression)
+	not := and.Left.(*ast.UnaryLogic)
 	s.Equal("¬", not.Operator)
 }
 
@@ -288,11 +288,11 @@ func (s *LogicSuite) TestParenthesesOverridePrecedence() {
 	expr, err := ParseExpression(`TRUE /\ (FALSE \/ TRUE)`)
 	s.NoError(err)
 
-	and := expr.(*ast.LogicInfixExpression)
+	and := expr.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
 
 	// Right is (FALSE \/ TRUE) wrapped in paren
-	paren := and.Right.(*ast.ParenExpr)
-	or := paren.Inner.(*ast.LogicInfixExpression)
+	paren := and.Right.(*ast.Parenthesized)
+	or := paren.Inner.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
 }

@@ -289,7 +289,7 @@ func (s *BuiltinsSuite) TestSetToBag_Simple() {
 
 	s.False(result.IsError())
 	bag := result.Value.(*object.Bag)
-	s.Equal(3, len(bag.Elements()))
+	s.Len(bag.Elements(), 3)
 }
 
 func (s *BuiltinsSuite) TestBagToSet_Simple() {

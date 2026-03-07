@@ -91,13 +91,13 @@ func (suite *FractionExprSuite) TestString() {
 	}
 }
 
-func (suite *FractionExprSuite) TestAscii() {
-	// Ascii should be same as String for FractionExpr
+func (suite *FractionExprSuite) TestASCII() {
+	// ASCII should be same as String for FractionExpr
 	f := &FractionExpr{
 		Numerator:   &NumberLiteral{Base: BaseDecimal, IntegerPart: "1"},
 		Denominator: &NumberLiteral{Base: BaseDecimal, IntegerPart: "2"},
 	}
-	assert.Equal(suite.T(), f.String(), f.Ascii())
+	suite.Equal(f.String(), f.ASCII())
 }
 
 func (suite *FractionExprSuite) TestValidate() {
@@ -185,8 +185,8 @@ func (suite *FractionExprSuite) TestNewFractionExpr() {
 	numerator := &NumberLiteral{Base: BaseDecimal, IntegerPart: "3"}
 	denominator := &NumberLiteral{Base: BaseDecimal, IntegerPart: "4"}
 	f := NewFractionExpr(numerator, denominator)
-	assert.Equal(suite.T(), numerator, f.Numerator)
-	assert.Equal(suite.T(), denominator, f.Denominator)
+	suite.Equal(numerator, f.Numerator)
+	suite.Equal(denominator, f.Denominator)
 }
 
 func (suite *FractionExprSuite) TestExpressionNode() {

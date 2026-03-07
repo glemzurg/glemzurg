@@ -2,6 +2,7 @@ package registry
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
@@ -117,7 +118,7 @@ func (sc *ScopeContext) ScopePath() ScopePath {
 //	_FuncName()                       -> _FuncName (global function, any scope)
 //
 // Returns an error if the scope level doesn't match the call structure.
-func (sc *ScopeContext) ResolveCall(call *ast.CallExpression) (DefinitionKey, *Definition, error) {
+func (sc *ScopeContext) ResolveCall(call *ast.ScopedCall) (DefinitionKey, *Definition, error) {
 	// Handle global function calls (_FuncName)
 	if call.ModelScope {
 		return sc.resolveGlobalCall(call)
@@ -128,7 +129,7 @@ func (sc *ScopeContext) ResolveCall(call *ast.CallExpression) (DefinitionKey, *D
 }
 
 // resolveGlobalCall handles calls to global functions (_FuncName).
-func (sc *ScopeContext) resolveGlobalCall(call *ast.CallExpression) (DefinitionKey, *Definition, error) {
+func (sc *ScopeContext) resolveGlobalCall(call *ast.ScopedCall) (DefinitionKey, *Definition, error) {
 	if call.Domain != nil || call.Subdomain != nil || call.Class != nil {
 		// This looks like a builtin call (_Module!Func), not a global function
 		// Builtins are handled elsewhere, return an appropriate error
@@ -147,7 +148,7 @@ func (sc *ScopeContext) resolveGlobalCall(call *ast.CallExpression) (DefinitionK
 }
 
 // resolveClassCall handles calls to class functions with various scope depths.
-func (sc *ScopeContext) resolveClassCall(call *ast.CallExpression) (DefinitionKey, *Definition, error) {
+func (sc *ScopeContext) resolveClassCall(call *ast.ScopedCall) (DefinitionKey, *Definition, error) {
 	// Count how many scope parts are provided in the call
 	callDepth := sc.countCallDepth(call)
 
@@ -178,7 +179,7 @@ func (sc *ScopeContext) resolveClassCall(call *ast.CallExpression) (DefinitionKe
 
 // countCallDepth counts how many scope parts are specified in the call.
 // 0 = FuncName(), 1 = Class!FuncName(), 2 = Subdomain!Class!FuncName(), 3 = Domain!Subdomain!Class!FuncName().
-func (sc *ScopeContext) countCallDepth(call *ast.CallExpression) int {
+func (sc *ScopeContext) countCallDepth(call *ast.ScopedCall) int {
 	count := 0
 	if call.Domain != nil {
 		count++
@@ -193,7 +194,7 @@ func (sc *ScopeContext) countCallDepth(call *ast.CallExpression) int {
 }
 
 // buildClassFunctionKey builds the fully-qualified key for a class function call.
-func (sc *ScopeContext) buildClassFunctionKey(call *ast.CallExpression, callDepth int) DefinitionKey {
+func (sc *ScopeContext) buildClassFunctionKey(call *ast.ScopedCall, callDepth int) DefinitionKey {
 	var parts []string
 
 	switch callDepth {
@@ -212,15 +213,7 @@ func (sc *ScopeContext) buildClassFunctionKey(call *ast.CallExpression, callDept
 	}
 
 	// Join with ! separator
-	result := ""
-	for i, part := range parts {
-		if i > 0 {
-			result += "!"
-		}
-		result += part
-	}
-
-	return DefinitionKey(result)
+	return DefinitionKey(strings.Join(parts, "!"))
 }
 
 // AtClassScope creates a new scope context at the class level of the given definition.

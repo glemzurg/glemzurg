@@ -50,7 +50,7 @@ func (suite *SetConstantSuite) TestString() {
 	}
 }
 
-func (suite *SetConstantSuite) TestAscii() {
+func (suite *SetConstantSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		value    string
@@ -80,7 +80,7 @@ func (suite *SetConstantSuite) TestAscii() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			s := &SetConstant{Value: tt.value}
-			assert.Equal(t, tt.expected, s.Ascii())
+			assert.Equal(t, tt.expected, s.ASCII())
 		})
 	}
 }

@@ -13,8 +13,8 @@ const (
 	ComparisonGreaterThanOrEqual = "≥" // Greater than or equal (Unicode)
 )
 
-// comparisonAscii maps Unicode operators to ASCII equivalents.
-var comparisonAscii = map[string]string{
+// comparisonASCII maps Unicode operators to ASCII equivalents.
+var comparisonASCII = map[string]string{
 	ComparisonLessThan:           "<",
 	ComparisonGreaterThan:        ">",
 	ComparisonLessThanOrEqual:    "=<",
@@ -40,17 +40,17 @@ func (b *BinaryComparison) String() (value string) {
 	return out.String()
 }
 
-func (b *BinaryComparison) Ascii() (value string) {
+func (b *BinaryComparison) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(b.Left.Ascii())
+	out.WriteString(b.Left.ASCII())
 	out.WriteString(" ")
-	if ascii, ok := comparisonAscii[b.Operator]; ok {
+	if ascii, ok := comparisonASCII[b.Operator]; ok {
 		out.WriteString(ascii)
 	} else {
 		out.WriteString(b.Operator)
 	}
 	out.WriteString(" ")
-	out.WriteString(b.Right.Ascii())
+	out.WriteString(b.Right.ASCII())
 	return out.String()
 }
 
@@ -68,10 +68,12 @@ func (b *BinaryComparison) Validate() error {
 }
 
 // LogicRealComparison is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryComparison instead.
 type LogicRealComparison = BinaryComparison
 
 // Backwards compatibility constants.
+//
 // Deprecated: Use Comparison* constants instead.
 const (
 	RealComparisonLessThan           = ComparisonLessThan

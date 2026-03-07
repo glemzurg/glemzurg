@@ -58,7 +58,7 @@ func (suite *StringIndexSuite) TestString() {
 	}
 }
 
-func (suite *StringIndexSuite) TestAscii() {
+func (suite *StringIndexSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		str      Expression
@@ -90,7 +90,7 @@ func (suite *StringIndexSuite) TestAscii() {
 				Str:   tt.str,
 				Index: tt.index,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			assert.Equal(t, tt.expected, expr.ASCII())
 		})
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,12 +36,12 @@ func (suite *ActorSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.obj.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -73,11 +72,11 @@ func (suite *ActorSuite) TestNew() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		obj, err := NewActor(test.umlComment)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.obj, obj, testName)
+			suite.NoError(err, testName)
+			suite.Equal(test.obj, obj, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), obj, testName)
+			suite.ErrorContains(err, test.errstr, testName)
+			suite.Empty(obj, testName)
 		}
 	}
 }
@@ -89,5 +88,5 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err := obj.ValidateWithParent()
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }

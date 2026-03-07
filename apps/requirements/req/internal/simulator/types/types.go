@@ -7,7 +7,7 @@
 // - Concrete types: Boolean, Number, String, Set, Tuple, Record, Bag, Function
 // - Type variables: For polymorphic inference
 // - Type schemes: For let-polymorphism (∀a. Type)
-package types
+package types //nolint:revive // package name is intentional
 
 import (
 	"bytes"

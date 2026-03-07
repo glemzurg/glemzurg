@@ -116,7 +116,7 @@ func (suite *RecordInstanceSuite) TestString() {
 	}
 }
 
-func (suite *RecordInstanceSuite) TestAscii() {
+func (suite *RecordInstanceSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		bindings []*FieldBinding
@@ -170,7 +170,7 @@ func (suite *RecordInstanceSuite) TestAscii() {
 			r := &RecordInstance{
 				Bindings: tt.bindings,
 			}
-			assert.Equal(t, tt.expected, r.Ascii())
+			assert.Equal(t, tt.expected, r.ASCII())
 		})
 	}
 }

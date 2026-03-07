@@ -24,7 +24,7 @@ type StateMachineSuite struct {
 
 func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_STATE_MACHINE_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
@@ -32,13 +32,13 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			var expected inputStateMachine
 
 			actual, err := parseStateMachine([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			// Compare states
-			assert.Equal(t, len(expected.States), len(actual.States), testName+" states count")
+			assert.Len(t, actual.States, len(expected.States), testName+" states count")
 			for key, expectedState := range expected.States {
 				actualState, exists := actual.States[key]
 				assert.True(t, exists, testName+" state '"+key+"' should exist")
@@ -46,7 +46,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 					assert.Equal(t, expectedState.Name, actualState.Name, testName+" state '"+key+"' name")
 					assert.Equal(t, expectedState.Details, actualState.Details, testName+" state '"+key+"' details")
 					assert.Equal(t, expectedState.UMLComment, actualState.UMLComment, testName+" state '"+key+"' uml_comment")
-					assert.Equal(t, len(expectedState.Actions), len(actualState.Actions), testName+" state '"+key+"' actions count")
+					assert.Len(t, actualState.Actions, len(expectedState.Actions), testName+" state '"+key+"' actions count")
 					for i, expectedAction := range expectedState.Actions {
 						assert.Equal(t, expectedAction.ActionKey, actualState.Actions[i].ActionKey, testName+" state '"+key+"' action["+string(rune('0'+i))+"] action_key")
 						assert.Equal(t, expectedAction.When, actualState.Actions[i].When, testName+" state '"+key+"' action["+string(rune('0'+i))+"] when")
@@ -55,14 +55,14 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			}
 
 			// Compare events
-			assert.Equal(t, len(expected.Events), len(actual.Events), testName+" events count")
+			assert.Len(t, actual.Events, len(expected.Events), testName+" events count")
 			for key, expectedEvent := range expected.Events {
 				actualEvent, exists := actual.Events[key]
 				assert.True(t, exists, testName+" event '"+key+"' should exist")
 				if exists {
 					assert.Equal(t, expectedEvent.Name, actualEvent.Name, testName+" event '"+key+"' name")
 					assert.Equal(t, expectedEvent.Details, actualEvent.Details, testName+" event '"+key+"' details")
-					assert.Equal(t, len(expectedEvent.Parameters), len(actualEvent.Parameters), testName+" event '"+key+"' parameters count")
+					assert.Len(t, actualEvent.Parameters, len(expectedEvent.Parameters), testName+" event '"+key+"' parameters count")
 					for i, expectedParam := range expectedEvent.Parameters {
 						assert.Equal(t, expectedParam.Name, actualEvent.Parameters[i].Name, testName+" event '"+key+"' param["+string(rune('0'+i))+"] name")
 						assert.Equal(t, expectedParam.DataTypeRules, actualEvent.Parameters[i].DataTypeRules, testName+" event '"+key+"' param["+string(rune('0'+i))+"] data_type_rules")
@@ -71,7 +71,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			}
 
 			// Compare guards
-			assert.Equal(t, len(expected.Guards), len(actual.Guards), testName+" guards count")
+			assert.Len(t, actual.Guards, len(expected.Guards), testName+" guards count")
 			for key, expectedGuard := range expected.Guards {
 				actualGuard, exists := actual.Guards[key]
 				assert.True(t, exists, testName+" guard '"+key+"' should exist")
@@ -82,7 +82,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			}
 
 			// Compare transitions
-			assert.Equal(t, len(expected.Transitions), len(actual.Transitions), testName+" transitions count")
+			assert.Len(t, actual.Transitions, len(expected.Transitions), testName+" transitions count")
 			for i, expectedTrans := range expected.Transitions {
 				actualTrans := actual.Transitions[i]
 				assert.Equal(t, expectedTrans.FromStateKey, actualTrans.FromStateKey, testName+" transition["+string(rune('0'+i))+"] from_state_key")
@@ -113,7 +113,7 @@ func (suite *StateMachineSuite) TestParseStateMachineErrors() {
 		testName := testData.Filename
 		suite.T().Run(testName, func(t *testing.T) {
 			_, err := parseStateMachine([]byte(testData.InputJSON), testData.Filename)
-			assert.NotNil(t, err, testName+" should return an error")
+			assert.Error(t, err, testName+" should return an error")
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)

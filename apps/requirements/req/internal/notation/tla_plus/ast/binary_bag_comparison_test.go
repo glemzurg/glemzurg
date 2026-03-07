@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -43,18 +42,18 @@ func (suite *LogicInfixBagSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			ib := &LogicInfixBag{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, ib.String())
+			suite.Equal(tt.expected, ib.String())
 		})
 	}
 }
 
-func (suite *LogicInfixBagSuite) TestAscii() {
+func (suite *LogicInfixBagSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -71,13 +70,13 @@ func (suite *LogicInfixBagSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			ib := &LogicInfixBag{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, ib.Ascii())
+			suite.Equal(tt.expected, ib.ASCII())
 		})
 	}
 }
@@ -152,12 +151,12 @@ func (suite *LogicInfixBagSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.ib.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}

@@ -81,7 +81,7 @@ func (suite *StringLiteralSuite) TestString() {
 	}
 }
 
-func (suite *StringLiteralSuite) TestAscii() {
+func (suite *StringLiteralSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		value    string
@@ -101,7 +101,7 @@ func (suite *StringLiteralSuite) TestAscii() {
 	for _, tt := range tests {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			s := &StringLiteral{Value: tt.value}
-			assert.Equal(t, tt.expected, s.Ascii())
+			assert.Equal(t, tt.expected, s.ASCII())
 		})
 	}
 }

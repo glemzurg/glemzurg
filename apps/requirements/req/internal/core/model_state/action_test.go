@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -287,12 +286,12 @@ func (suite *ActionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.action.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -325,8 +324,8 @@ func (suite *ActionSuite) TestNew() {
 	}
 	action, err := NewAction(key, "Name", "Details",
 		requires, guarantees, safetyRules, params)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Action{
+	suite.NoError(err)
+	suite.Equal(Action{
 		Key:         key,
 		Name:        "Name",
 		Details:     "Details",
@@ -342,8 +341,8 @@ func (suite *ActionSuite) TestNew() {
 	// Test with nil optional fields (all Logic slice fields are optional).
 	action, err = NewAction(key, "Name", "Details",
 		nil, nil, nil, nil)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Action{
+	suite.NoError(err)
+	suite.Equal(Action{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
@@ -351,7 +350,7 @@ func (suite *ActionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAction(key, "", "Details", nil, nil, nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -371,7 +370,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := action.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - action key has class1 as parent, but we pass other_class.
 	action = Action{
@@ -379,11 +378,11 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = action.ValidateWithParent(&otherClassKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = action.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Test valid with logic children.
 	action = Action{
@@ -400,7 +399,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 
 	// Test logic key validation - require with wrong parent should fail.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
@@ -413,7 +412,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "requires 0", "ValidateWithParent should validate logic key parent")
+	suite.ErrorContains(err, "requires 0", "ValidateWithParent should validate logic key parent")
 
 	// Test child Parameter validation propagates error.
 	action = Action{
@@ -424,7 +423,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	action = Action{
@@ -435,5 +434,5 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }

@@ -12,7 +12,7 @@ const _OP_AND = "∧"
 const _OP_OR = "∨"
 
 // evalLogicInfix evaluates a logic infix expression (∧, ∨, ⇒, ≡).
-func evalLogicInfix(node *ast.LogicInfixExpression, bindings *Bindings) *EvalResult {
+func evalLogicInfix(node *ast.BinaryLogic, bindings *Bindings) *EvalResult {
 	leftResult := EvalAST(node.Left, bindings)
 	if leftResult.IsError() {
 		return leftResult

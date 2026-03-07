@@ -246,7 +246,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]mode
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, totalFields*4)
+	args := make([]any, 0, totalFields*4)
 	valueStrings := make([]string, 0, totalFields)
 	i := 0
 	for dataTypeKey, fields := range fieldMap {

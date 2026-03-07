@@ -11,7 +11,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -62,7 +61,7 @@ func (suite *AttributeInvariantSuite) SetupTest() {
 func (suite *AttributeInvariantSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no attribute_invariant join row yet.
 	_, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 
 	// Insert the attribute_invariant join row.
 	err = dbExec(suite.db, `
@@ -75,43 +74,43 @@ func (suite *AttributeInvariantSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attr_key/ainvariant/0'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	key, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *AttributeInvariantSuite) TestAdd() {
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	key, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *AttributeInvariantSuite) TestRemove() {
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	err = RemoveAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	// Attribute invariant should be gone.
 	_, err = LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 func (suite *AttributeInvariantSuite) TestQuery() {
 	err := AddAttributeInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.NoError(err)
 
 	invariants, err := QueryAttributeInvariants(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.NoError(err)
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKey, suite.logicKeyB},
 	}, invariants)
 }

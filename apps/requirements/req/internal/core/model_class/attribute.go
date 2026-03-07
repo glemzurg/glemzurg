@@ -65,7 +65,7 @@ func (a *Attribute) Validate() error {
 		return err
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ATTRIBUTE {
-		return errors.Errorf("Key: invalid key type '%s' for attribute.", a.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for attribute", a.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

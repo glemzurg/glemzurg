@@ -94,10 +94,10 @@ func outputText(simTrace *trace.SimulationTrace, violationReport *report.Violati
 }
 
 func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
-	output := make(map[string]interface{})
+	output := make(map[string]any)
 
 	if !quiet {
-		output["summary"] = map[string]interface{}{
+		output["summary"] = map[string]any{
 			"steps_taken":        simTrace.StepsTaken,
 			"termination_reason": simTrace.TerminationReason,
 		}

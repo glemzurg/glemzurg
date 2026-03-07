@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"maps"
 	"math/big"
 	"strings"
 
@@ -778,9 +779,7 @@ func withLocalVar(ctx *LowerContext, name string) *LowerContext {
 	child := *ctx
 	child.localVars = make(map[string]bool)
 	if ctx.localVars != nil {
-		for k, v := range ctx.localVars {
-			child.localVars[k] = v
-		}
+		maps.Copy(child.localVars, ctx.localVars)
 	}
 	child.localVars[name] = true
 	return &child

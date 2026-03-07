@@ -25,14 +25,14 @@ func (e *IfThenElse) String() (value string) {
 	return out.String()
 }
 
-func (e *IfThenElse) Ascii() (value string) {
+func (e *IfThenElse) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("IF ")
-	out.WriteString(e.Condition.Ascii())
+	out.WriteString(e.Condition.ASCII())
 	out.WriteString(" THEN ")
-	out.WriteString(e.Then.Ascii())
+	out.WriteString(e.Then.ASCII())
 	out.WriteString(" ELSE ")
-	out.WriteString(e.Else.Ascii())
+	out.WriteString(e.Else.ASCII())
 	return out.String()
 }
 
@@ -53,5 +53,6 @@ func (e *IfThenElse) Validate() error {
 }
 
 // ExpressionIfElse is an alias for backwards compatibility.
+//
 // Deprecated: Use IfThenElse instead.
 type ExpressionIfElse = IfThenElse

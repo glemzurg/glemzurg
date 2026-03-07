@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -113,11 +114,8 @@ func (sw *SourceWatcher) handleFileChange(path string) {
 		extensions = SourceExtensionsYAML
 	}
 
-	for _, ext := range extensions {
-		if suffix == ext {
-			sw.debounceUpdate()
-			break
-		}
+	if slices.Contains(extensions, suffix) {
+		sw.debounceUpdate()
 	}
 }
 

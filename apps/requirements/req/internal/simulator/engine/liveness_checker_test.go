@@ -155,7 +155,7 @@ func (s *LivenessCheckerSuite) TestAllClassesInstantiated_NoViolations() {
 
 	violations := checker.Check(result)
 	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
-	s.Len(classViolations, 0)
+	s.Empty(classViolations)
 }
 
 func (s *LivenessCheckerSuite) TestClassNotInstantiated_Violation() {
@@ -201,7 +201,7 @@ func (s *LivenessCheckerSuite) TestCascadedCreationStepsCounted() {
 
 	violations := checker.Check(result)
 	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
-	s.Len(classViolations, 0)
+	s.Empty(classViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
@@ -219,7 +219,7 @@ func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAttributeNotWritten_Violation() {
@@ -284,7 +284,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
@@ -303,7 +303,7 @@ func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
@@ -328,7 +328,7 @@ func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
@@ -362,7 +362,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 
 	violations := checker.Check(result)
 	assocViolations := violations.ByType(invariants.ViolationTypeLivenessAssociationNotLinked)
-	s.Len(assocViolations, 0)
+	s.Empty(assocViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
@@ -418,7 +418,7 @@ func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	s.Len(violations, 0)
+	s.Empty(violations)
 }
 
 func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {

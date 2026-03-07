@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -184,22 +185,24 @@ func AddGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations map[iden
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO class_generalization (model_key, subdomain_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*8)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO class_generalization (model_key, subdomain_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `)
+	args := make([]any, 0, count*8)
 	i := 0
 	for subdomainKey, gens := range generalizations {
 		for _, gen := range gens {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 8
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
+
 			args = append(args, modelKey, subdomainKey.String(), gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 			i++
 		}
 	}
 
-	err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

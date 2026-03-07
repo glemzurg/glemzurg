@@ -27,7 +27,7 @@ func (f *Fraction) String() string {
 	return out.String()
 }
 
-func (f *Fraction) Ascii() string {
+func (f *Fraction) ASCII() string {
 	return f.String()
 }
 
@@ -53,9 +53,11 @@ func NewFraction(numerator, denominator Expression) *Fraction {
 }
 
 // FractionExpr is an alias for backwards compatibility.
+//
 // Deprecated: Use Fraction instead.
 type FractionExpr = Fraction
 
 // NewFractionExpr is an alias for backwards compatibility.
+//
 // Deprecated: Use NewFraction instead.
 var NewFractionExpr = NewFraction

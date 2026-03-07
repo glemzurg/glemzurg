@@ -240,7 +240,7 @@ func (s *NumberSuite) TestMod() {
 	n1 := NewNatural(10)
 	n2 := NewNatural(3)
 	result, err := n1.Mod(n2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("1", result.Inspect())
 
 	// Division by zero
