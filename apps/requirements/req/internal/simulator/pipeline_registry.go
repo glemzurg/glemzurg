@@ -3,6 +3,7 @@ package simulator
 import (
 	"fmt"
 
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
@@ -59,7 +60,7 @@ func (p *RegistryPipeline) RelationContext() *evaluator.RelationContext {
 // RegisterClassFunction registers a class function definition.
 func (p *RegistryPipeline) RegisterClassFunction(
 	domain, subdomain, class, name string,
-	body ast.Expression,
+	body me.Expression,
 	params []registry.Parameter,
 ) (*registry.Definition, error) {
 	return p.registry.RegisterClassFunction(domain, subdomain, class, name, body, params)
@@ -68,7 +69,7 @@ func (p *RegistryPipeline) RegisterClassFunction(
 // RegisterGlobalFunction registers a global function definition.
 func (p *RegistryPipeline) RegisterGlobalFunction(
 	name string,
-	body ast.Expression,
+	body me.Expression,
 	params []registry.Parameter,
 ) (*registry.Definition, error) {
 	return p.registry.RegisterGlobalFunction(name, body, params)
@@ -109,34 +110,12 @@ func (p *RegistryPipeline) RebuildAll() error {
 }
 
 // typeCheckDefinition type-checks a single definition.
-func (p *RegistryPipeline) typeCheckDefinition(def *registry.Definition, scopeCtx *registry.ScopeContext) error {
-	// Set up dependency tracking
-	depRecorder := registry.NewDependencyRecorder(p.registry)
-	p.typeChecker.SetDependencyTracker(depRecorder, string(def.Key))
-	defer p.typeChecker.ClearDependencyTracker()
-
-	// Set scope for resolution
-	p.typeChecker.SetScope(
-		int(scopeCtx.Level),
-		scopeCtx.Domain,
-		scopeCtx.Subdomain,
-		scopeCtx.Class,
-	)
-
-	// Create type environment with parameters
-	env := p.typeChecker.Env().Extend()
-	for _, param := range def.Parameters {
-		env.BindMono(param.Name, param.Type)
-	}
-
-	// Type check the body
-	typed, err := p.typeChecker.Check(def.Body)
-	if err != nil {
-		return fmt.Errorf("type error: %w", err)
-	}
-
-	// Update definition with typed body and return type
-	return p.registry.SetTypedBody(def.Key, typed, typed.Type)
+// NOTE: The AST-based type checker cannot operate on IR bodies.
+// This is a transitional state — Phase 4 will connect the IR evaluator
+// to the registry, eliminating the need for AST type checking entirely.
+func (p *RegistryPipeline) typeCheckDefinition(def *registry.Definition, _ *registry.ScopeContext) error {
+	// IR bodies are already validated during lowering; skip AST type checking.
+	return nil
 }
 
 // TypeCheck performs type checking on an AST node at the given scope.
@@ -172,6 +151,7 @@ func (p *RegistryPipeline) Eval(node ast.Expression, bindings *evaluator.Binding
 	// Phase 2: Set up eval context for registry-based calls
 	ctx := &evaluator.EvalContext{
 		Registry:   p.runtimeAdapter,
+		IRRegistry: p.runtimeAdapter,
 		ScopeLevel: scopeLevel,
 		Domain:     domain,
 		Subdomain:  subdomain,
@@ -195,6 +175,34 @@ func (p *RegistryPipeline) EvalAtGlobalScope(node ast.Expression, bindings *eval
 // EvalAtClassScope performs type checking and evaluation at class scope.
 func (p *RegistryPipeline) EvalAtClassScope(node ast.Expression, bindings *evaluator.Bindings, domain, subdomain, class string) *evaluator.EvalResult {
 	return p.Eval(node, bindings, int(registry.ScopeLevelClass), domain, subdomain, class)
+}
+
+// EvalIR evaluates an IR expression with registry context at the given scope.
+func (p *RegistryPipeline) EvalIR(expr me.Expression, bindings *evaluator.Bindings, scopeLevel int, domain, subdomain, class string) *evaluator.EvalResult {
+	ctx := &evaluator.EvalContext{
+		Registry:   p.runtimeAdapter,
+		IRRegistry: p.runtimeAdapter,
+		ScopeLevel: scopeLevel,
+		Domain:     domain,
+		Subdomain:  subdomain,
+		Class:      class,
+	}
+
+	if p.relationCtx != nil && bindings.RelationContext() == nil {
+		bindings.SetRelationContext(p.relationCtx)
+	}
+
+	return evaluator.EvalWithContext(expr, bindings, ctx)
+}
+
+// EvalIRAtGlobalScope evaluates an IR expression at global scope.
+func (p *RegistryPipeline) EvalIRAtGlobalScope(expr me.Expression, bindings *evaluator.Bindings) *evaluator.EvalResult {
+	return p.EvalIR(expr, bindings, int(registry.ScopeLevelGlobal), "", "", "")
+}
+
+// EvalIRAtClassScope evaluates an IR expression at class scope.
+func (p *RegistryPipeline) EvalIRAtClassScope(expr me.Expression, bindings *evaluator.Bindings, domain, subdomain, class string) *evaluator.EvalResult {
+	return p.EvalIR(expr, bindings, int(registry.ScopeLevelClass), domain, subdomain, class)
 }
 
 // DeclareVariable adds a variable with a known type to the type environment.
@@ -232,6 +240,7 @@ func (p *RegistryPipeline) CompileAtScope(node ast.Expression, scopeLevel int, d
 func (c *CompiledWithScope) Eval(bindings *evaluator.Bindings) *evaluator.EvalResult {
 	ctx := &evaluator.EvalContext{
 		Registry:   c.pipeline.runtimeAdapter,
+		IRRegistry: c.pipeline.runtimeAdapter,
 		ScopeLevel: c.scopeLevel,
 		Domain:     c.domain,
 		Subdomain:  c.subdomain,

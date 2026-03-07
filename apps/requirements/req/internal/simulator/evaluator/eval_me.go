@@ -948,7 +948,9 @@ func evalMEBuiltinCall(n *me.BuiltinCall, bindings *Bindings) *EvalResult {
 }
 
 func evalMEGlobalCall(n *me.GlobalCall, bindings *Bindings) *EvalResult {
-	// Global functions are looked up in builtins using the function name.
+	funcName := n.FunctionKey.SubKey
+
+	// Try builtins first.
 	args := make([]object.Object, len(n.Args))
 	for i, argExpr := range n.Args {
 		result := Eval(argExpr, bindings)
@@ -958,15 +960,39 @@ func evalMEGlobalCall(n *me.GlobalCall, bindings *Bindings) *EvalResult {
 		args[i] = result.Value
 	}
 
-	funcName := n.FunctionKey.SubKey
 	fn, ok := LookupBuiltin(funcName)
-	if !ok {
-		return NewEvalError("unknown global function: %s", funcName)
+	if ok {
+		return fn(args)
 	}
-	return fn(args)
+
+	// Fall back to registry for user-defined global functions.
+	ctx := GetEvalContext()
+	if ctx != nil && ctx.IRRegistry != nil {
+		body, params, found := ctx.IRRegistry.LookupGlobal(funcName)
+		if found {
+			return evalRegistryCall(body, params, args, bindings)
+		}
+	}
+
+	return NewEvalError("unknown global function: %s", funcName)
 }
 
-func evalMEActionCall(n *me.ActionCall) *EvalResult {
-	// Action calls are not yet implemented in the model_expression evaluator.
-	return NewEvalError("action calls not yet implemented: %s", n.ActionKey.String())
+func evalMEActionCall(n *me.ActionCall, bindings *Bindings) *EvalResult {
+	// Action calls represent cross-class action/query invocations.
+	// These are resolved at the simulator level, not the expression evaluator level.
+	return NewEvalError("action calls not yet supported in expression evaluator: %s", n.ActionKey.String())
+}
+
+// evalRegistryCall evaluates a registry function body with parameter bindings.
+func evalRegistryCall(body me.Expression, params []string, args []object.Object, bindings *Bindings) *EvalResult {
+	if len(params) != len(args) {
+		return NewEvalError("function expects %d arguments, got %d", len(params), len(args))
+	}
+
+	childBindings := NewEnclosedBindings(bindings)
+	for i, paramName := range params {
+		childBindings.Set(paramName, args[i], NamespaceLocal)
+	}
+
+	return Eval(body, childBindings)
 }

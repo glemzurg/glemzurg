@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
@@ -133,7 +133,7 @@ type Definition struct {
 	Kind       DefinitionKind
 	Scope      ScopePath              // Full path (empty for global)
 	LocalName  string                 // Just "Func"
-	Body       ast.Expression         // Untyped AST
+	Body       me.Expression         // Untyped AST
 	Parameters []Parameter            // Ordered list of typed parameters (can be empty)
 	ReturnType types.Type             // Inferred return type (nil until type-checked)
 	TypedBody  *typechecker.TypedNode // Cached typed AST (nil = needs recheck)
@@ -167,7 +167,7 @@ func NewRegistry() *Registry {
 // The key will be Domain!Subdomain!Class!name.
 func (r *Registry) RegisterClassFunction(
 	domain, subdomain, class, name string,
-	body ast.Expression,
+	body me.Expression,
 	params []Parameter,
 ) (*Definition, error) {
 	scope, err := ParseScopePath(domain, subdomain, class)
@@ -208,7 +208,7 @@ func (r *Registry) RegisterClassFunction(
 // The key will be _name.
 func (r *Registry) RegisterGlobalFunction(
 	name string,
-	body ast.Expression,
+	body me.Expression,
 	params []Parameter,
 ) (*Definition, error) {
 	if name == "" {
@@ -262,7 +262,7 @@ func (r *Registry) GetGlobal(localName string) (*Definition, bool) {
 
 // Update updates an existing definition's body and parameters.
 // This clears the typed body and increments the version, requiring re-type-checking.
-func (r *Registry) Update(key DefinitionKey, body ast.Expression, params []Parameter) error {
+func (r *Registry) Update(key DefinitionKey, body me.Expression, params []Parameter) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

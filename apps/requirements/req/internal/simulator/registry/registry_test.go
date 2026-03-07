@@ -1,12 +1,18 @@
 package registry
 
 import (
+	"math/big"
 	"testing"
 
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 	"github.com/stretchr/testify/suite"
 )
+
+func big0(v int64) *big.Int {
+	return big.NewInt(v)
+}
 
 // RegistryTestSuite tests the registry package.
 type RegistryTestSuite struct {
@@ -15,6 +21,16 @@ type RegistryTestSuite struct {
 
 func TestRegistrySuite(t *testing.T) {
 	suite.Run(t, new(RegistryTestSuite))
+}
+
+// irInt creates a simple IR integer literal for testing.
+func irInt(v int64) me.Expression {
+	return &me.IntLiteral{Value: big0(v)}
+}
+
+// irBool creates a simple IR boolean literal for testing.
+func irBool(v bool) me.Expression {
+	return &me.BoolLiteral{Value: v}
 }
 
 // =============================================================================
@@ -31,8 +47,7 @@ func (s *RegistryTestSuite) TestNewRegistry() {
 func (s *RegistryTestSuite) TestRegisterClassFunction() {
 	r := NewRegistry()
 
-	// Create a simple body expression
-	body := ast.NewIntLiteral(42)
+	body := irInt(42)
 
 	def, err := r.RegisterClassFunction(
 		"DomainA", "SubdomainB", "ClassC", "Func",
@@ -60,7 +75,7 @@ func (s *RegistryTestSuite) TestRegisterClassFunction() {
 func (s *RegistryTestSuite) TestRegisterGlobalFunction() {
 	r := NewRegistry()
 
-	body := ast.NewIntLiteral(100)
+	body := irInt(100)
 
 	def, err := r.RegisterGlobalFunction(
 		"IsoCurrency",
@@ -84,7 +99,7 @@ func (s *RegistryTestSuite) TestRegisterGlobalFunction() {
 
 func (s *RegistryTestSuite) TestRegisterDuplicateFails() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 
 	_, err := r.RegisterGlobalFunction("Test", body, nil)
 	s.Require().NoError(err)
@@ -96,7 +111,7 @@ func (s *RegistryTestSuite) TestRegisterDuplicateFails() {
 
 func (s *RegistryTestSuite) TestGet() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 
 	_, err := r.RegisterClassFunction("A", "B", "C", "F", body, nil)
 	s.Require().NoError(err)
@@ -111,8 +126,8 @@ func (s *RegistryTestSuite) TestGet() {
 
 func (s *RegistryTestSuite) TestUpdate() {
 	r := NewRegistry()
-	body1 := ast.NewIntLiteral(1)
-	body2 := ast.NewIntLiteral(2)
+	body1 := irInt(1)
+	body2 := irInt(2)
 
 	def, _ := r.RegisterGlobalFunction("Test", body1, nil)
 	originalVersion := def.Version
@@ -130,7 +145,7 @@ func (s *RegistryTestSuite) TestUpdate() {
 
 func (s *RegistryTestSuite) TestDelete() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 
 	_, err := r.RegisterGlobalFunction("Test", body, nil)
 	s.Require().NoError(err)
@@ -229,7 +244,7 @@ func (s *RegistryTestSuite) TestNewScopeContext() {
 
 func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 	_, err := r.RegisterGlobalFunction("GlobalFunc", body, nil)
 	s.Require().NoError(err)
 
@@ -249,7 +264,7 @@ func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
 
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
 	s.Require().NoError(err)
 
@@ -268,7 +283,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
 
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
 	s.Require().NoError(err)
 
@@ -288,7 +303,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
 
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
 	s.Require().NoError(err)
 
@@ -309,7 +324,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
 
 func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
 	s.Require().NoError(err)
 
@@ -331,7 +346,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
 
 func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
 	s.Require().NoError(err)
 
@@ -354,7 +369,7 @@ func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
 
 func (s *RegistryTestSuite) TestAddDependency() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 
 	_, err := r.RegisterGlobalFunction("A", body, nil)
 	s.Require().NoError(err)
@@ -372,7 +387,7 @@ func (s *RegistryTestSuite) TestAddDependency() {
 
 func (s *RegistryTestSuite) TestFindTransitiveDependents() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 
 	// A -> B -> C (A depends on B, B depends on C)
 	_, err := r.RegisterGlobalFunction("A", body, nil)
@@ -394,7 +409,7 @@ func (s *RegistryTestSuite) TestFindTransitiveDependents() {
 
 func (s *RegistryTestSuite) TestInvalidateDefinition() {
 	r := NewRegistry()
-	body := ast.NewIntLiteral(1)
+	body := irInt(1)
 
 	_, err := r.RegisterGlobalFunction("A", body, nil)
 	s.Require().NoError(err)

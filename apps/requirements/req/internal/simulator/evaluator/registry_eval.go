@@ -1,18 +1,24 @@
 package evaluator
 
 import (
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 )
 
+// IRRegistryInterface allows the IR evaluator to look up custom function definitions.
+// This interface is implemented by the registry's RuntimeAdapter.
+type IRRegistryInterface interface {
+	// LookupGlobal looks up a global function by its local name (without underscore).
+	// Returns the IR body and parameter names, or nil if not found.
+	LookupGlobal(localName string) (body me.Expression, params []string, found bool)
+}
+
 // RegistryEvalInterface allows the evaluator to call back to the registry for function evaluation.
 // This interface is implemented by the registry package.
-// Note: bindings is interface{} to avoid import cycles - implementations should type assert to *Bindings.
+// LEGACY: Used by the AST evaluation path. New code should use IRRegistryInterface.
 type RegistryEvalInterface interface {
-	// ResolveAndEval resolves a call expression and evaluates it.
-	// Returns the result or an error.
-	// The bindings parameter should be *Bindings but is any to avoid import cycles.
 	ResolveAndEval(
 		call *ast.ScopedCall,
 		typedArgs []*typechecker.TypedNode,
@@ -24,7 +30,8 @@ type RegistryEvalInterface interface {
 
 // EvalContext holds context for registry-based evaluation.
 type EvalContext struct {
-	Registry   RegistryEvalInterface
+	Registry   RegistryEvalInterface // LEGACY: AST-based registry interface
+	IRRegistry IRRegistryInterface   // IR-based registry interface
 	ScopeLevel int
 	Domain     string
 	Subdomain  string
@@ -57,4 +64,13 @@ func EvalTypedWithContext(typed *typechecker.TypedNode, bindings *Bindings, ctx 
 	defer func() { globalEvalContext = oldCtx }()
 
 	return evalTypedNode(typed, bindings)
+}
+
+// EvalWithContext evaluates an IR expression with registry context.
+func EvalWithContext(expr me.Expression, bindings *Bindings, ctx *EvalContext) *EvalResult {
+	oldCtx := globalEvalContext
+	globalEvalContext = ctx
+	defer func() { globalEvalContext = oldCtx }()
+
+	return Eval(expr, bindings)
 }

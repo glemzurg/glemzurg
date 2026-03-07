@@ -3,6 +3,7 @@ package registry
 import (
 	"fmt"
 
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
@@ -122,6 +123,20 @@ func (a *RuntimeAdapter) GetDefinitionForCall(
 	}
 
 	return scopeCtx.ResolveCall(call)
+}
+
+// LookupGlobal implements evaluator.IRRegistryInterface.
+// It looks up a global function by local name (without underscore prefix).
+func (a *RuntimeAdapter) LookupGlobal(localName string) (me.Expression, []string, bool) {
+	def, ok := a.registry.GetGlobal(localName)
+	if !ok {
+		return nil, nil, false
+	}
+	params := make([]string, len(def.Parameters))
+	for i, p := range def.Parameters {
+		params[i] = p.Name
+	}
+	return def.Body, params, true
 }
 
 // EvalError represents an evaluation error for a specific definition.

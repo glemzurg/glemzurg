@@ -51,7 +51,7 @@ func extractModelInvariants(model *core.Model) []ExtractedExpression {
 	for i, inv := range model.Invariants {
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceModelInvariant,
-			Expression: inv.Spec.Specification,
+			Expression: inv.Spec.Expression,
 			ScopeKey:   nil, // Model invariants have global scope
 			Name:       inv.Description,
 			Index:      i,
@@ -68,7 +68,7 @@ func extractGlobalFunctions(model *core.Model) []ExtractedExpression {
 	for _, gf := range model.GlobalFunctions {
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceTlaDefinition,
-			Expression: gf.Logic.Spec.Specification,
+			Expression: gf.Logic.Spec.Expression,
 			ScopeKey:   nil, // Global functions have global scope
 			Name:       gf.Name,
 			Parameters: gf.Parameters,
@@ -88,7 +88,7 @@ func extractActionExpressions(action *model_state.Action) []ExtractedExpression 
 		key := action.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceActionRequires,
-			Expression: req.Spec.Specification,
+			Expression: req.Spec.Expression,
 			ScopeKey:   &key,
 			Name:       action.Name,
 			Index:      i,
@@ -100,7 +100,7 @@ func extractActionExpressions(action *model_state.Action) []ExtractedExpression 
 		key := action.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceActionGuarantees,
-			Expression: guar.Spec.Specification,
+			Expression: guar.Spec.Expression,
 			ScopeKey:   &key,
 			Name:       action.Name,
 			Index:      i,
@@ -119,7 +119,7 @@ func extractQueryExpressions(query *model_state.Query) []ExtractedExpression {
 		key := query.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceQueryRequires,
-			Expression: req.Spec.Specification,
+			Expression: req.Spec.Expression,
 			ScopeKey:   &key,
 			Name:       query.Name,
 			Index:      i,
@@ -131,7 +131,7 @@ func extractQueryExpressions(query *model_state.Query) []ExtractedExpression {
 		key := query.Key // Copy to get addressable value
 		expressions = append(expressions, ExtractedExpression{
 			Source:     SourceQueryGuarantees,
-			Expression: guar.Spec.Specification,
+			Expression: guar.Spec.Expression,
 			ScopeKey:   &key,
 			Name:       query.Name,
 			Index:      i,
@@ -143,7 +143,7 @@ func extractQueryExpressions(query *model_state.Query) []ExtractedExpression {
 
 // extractGuardExpressions extracts TLA+ guard conditions from a guard.
 func extractGuardExpressions(guard *model_state.Guard) []ExtractedExpression {
-	if guard.Logic.Spec.Specification == "" {
+	if guard.Logic.Spec.Expression == nil {
 		return nil
 	}
 
@@ -151,7 +151,7 @@ func extractGuardExpressions(guard *model_state.Guard) []ExtractedExpression {
 	return []ExtractedExpression{
 		{
 			Source:     SourceGuardCondition,
-			Expression: guard.Logic.Spec.Specification,
+			Expression: guard.Logic.Spec.Expression,
 			ScopeKey:   &key,
 			Name:       guard.Name,
 			Index:      0,

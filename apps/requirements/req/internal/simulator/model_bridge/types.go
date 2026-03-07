@@ -2,7 +2,10 @@
 // for use by the simulator.
 package model_bridge
 
-import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+import (
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+)
 
 const _UNKNOWN = "unknown"
 
@@ -54,8 +57,8 @@ type ExtractedExpression struct {
 	// Source indicates where this expression comes from (invariant, action, etc.)
 	Source ExpressionSource
 
-	// Expression is the raw TLA+ string.
-	Expression string
+	// Expression is the parsed IR expression tree.
+	Expression me.Expression
 
 	// ScopeKey is the identity.Key of the containing entity.
 	// For model invariants and TLA definitions: nil (global scope)

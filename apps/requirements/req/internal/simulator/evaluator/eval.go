@@ -167,7 +167,7 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	case *me.GlobalCall:
 		return evalMEGlobalCall(n, bindings)
 	case *me.ActionCall:
-		return evalMEActionCall(n)
+		return evalMEActionCall(n, bindings)
 
 	default:
 		return NewEvalError("unknown model expression type: %T", node)

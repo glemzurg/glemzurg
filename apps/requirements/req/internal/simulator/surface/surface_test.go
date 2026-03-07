@@ -27,9 +27,23 @@ func mustKey(s string) identity.Key {
 	return k
 }
 
+// emptySpec creates a TLA+ ExpressionSpec with no specification body (nil Expression).
+func emptySpec() model_spec.ExpressionSpec {
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", "", nil))
+	return spec
+}
+
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
-func parsedSpec(tla string) model_spec.ExpressionSpec {
-	pf := convert.NewExpressionParseFunc(nil)
+// Any unresolved identifiers in the expression should be passed as extra parameters.
+func parsedSpec(tla string, params ...string) model_spec.ExpressionSpec {
+	ctx := &convert.LowerContext{}
+	if len(params) > 0 {
+		ctx.Parameters = make(map[string]bool, len(params))
+		for _, p := range params {
+			ctx.Parameters[p] = true
+		}
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
 	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
@@ -498,8 +512,8 @@ func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 	// Build a model with two domains so Payment is a known class.
 	model2 := buildTwoDomainModel()
 	model2.Invariants = []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", parsedSpec("Payment.count > 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", parsedSpec("Payment.count > 0", "Payment"), nil)),
 	}
 	spec2 := &SurfaceSpecification{
 		IncludeDomains: []identity.Key{domainKey},
@@ -538,8 +552,8 @@ type InvariantScopingSuite struct {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0", "Item"), nil)),
 	}
 	inScope := map[string]bool{"Order": true, "Item": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -549,8 +563,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -563,8 +577,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -572,12 +586,12 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfSc
 	s.Len(included, 1)
 	s.Equal("Order.count > 0", included[0].Spec.Specification)
 	s.Len(excluded, 1)
-	s.Equal("Payment.count >= 0", excluded[0].Spec.Specification)
+	s.Equal("Payment.count ≥ 0", excluded[0].Spec.Specification)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_KeepsNonClassIdentifiers() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("x + y > 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("x + y > 0", "x", "y"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
@@ -593,13 +607,13 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_EmptyInvariant
 	s.Empty(excluded)
 }
 
-func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInvariant() {
+func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_NilExpressionInvariant() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("!!@@## invalid TLA+"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", emptySpec(), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
-	// Unparseable invariants should be kept (fail-open).
+	// Invariants with nil IR should be kept (fail-open).
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
 	s.Empty(excluded)
@@ -607,7 +621,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInv
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassReferences() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0 /\\ Payment.count > 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0 /\\ Payment.count > 0", "Order", "Payment"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -637,7 +651,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations:    map[identity.Key]model_class.Association{},
-		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil))},
+		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil))},
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
