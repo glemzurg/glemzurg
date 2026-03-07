@@ -243,7 +243,7 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 			if tt.errstr == `` {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

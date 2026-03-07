@@ -68,7 +68,7 @@ func (suite *DomainSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -91,7 +91,7 @@ func (suite *DomainSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewDomain(key, "", "Details", true, "UmlComment")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -105,7 +105,7 @@ func (suite *DomainSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := domain.ValidateWithParent(nil)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domains should have nil parent.
 	domain = Domain{
@@ -113,7 +113,7 @@ func (suite *DomainSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = domain.ValidateWithParent(&otherDomainKey)
-	suite.ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = domain.ValidateWithParent(nil)
@@ -182,7 +182,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	err = domain.SetClassAssociations(map[identity.Key]model_class.Association{
 		modelLevelAssocKey: modelLevelAssoc,
 	})
-	suite.ErrorContains(err, "has no parent")
+	suite.Require().ErrorContains(err, "has no parent")
 
 	// Test: error when association parent is a different domain.
 	// For domain-level association, we need two classes in different subdomains of that domain.
@@ -193,7 +193,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	err = domain.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongDomainAssocKey: wrongDomainAssoc,
 	})
-	suite.ErrorContains(err, "parent does not match domain")
+	suite.Require().ErrorContains(err, "parent does not match domain")
 }
 
 // TestGetClassAssociations tests that GetClassAssociations returns associations from domain and subdomains.
@@ -324,7 +324,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err = domain.ValidateWithParent(nil)
-	suite.ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
+	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
 
 	// Test that an action require key with wrong parent deep in the tree is caught.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
@@ -347,7 +347,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err = domain.ValidateWithParent(nil)
-	suite.ErrorContains(err, "requires 0", "Should catch action require key error in deep tree")
+	suite.Require().ErrorContains(err, "requires 0", "Should catch action require key error in deep tree")
 }
 
 // TestValidateWithParentAndActorsAndClasses tests child validation propagation.
@@ -374,7 +374,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err := domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	suite.ErrorContains(err, "Name", "Should validate child Subdomains")
+	suite.Require().ErrorContains(err, "Name", "Should validate child Subdomains")
 
 	// Test invalid ClassAssociation child propagates error.
 	// Domain-level associations require classes in different subdomains.
@@ -387,7 +387,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	suite.ErrorContains(err, "Name", "Should validate child ClassAssociations")
+	suite.Require().ErrorContains(err, "Name", "Should validate child ClassAssociations")
 
 	// Test valid domain with single subdomain named "default".
 	domain = Domain{
@@ -409,7 +409,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	suite.ErrorContains(err, "must be 'default'", "Single subdomain must have key 'default'")
+	suite.Require().ErrorContains(err, "must be 'default'", "Single subdomain must have key 'default'")
 
 	// Test multiple subdomains with "default" key fails.
 	domain = Domain{
@@ -421,7 +421,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	suite.ErrorContains(err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
+	suite.Require().ErrorContains(err, "reserved for single-subdomain", "Multiple subdomains cannot include 'default'")
 
 	// Test multiple subdomains without "default" key passes.
 	domain = Domain{

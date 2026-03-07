@@ -202,7 +202,7 @@ func (suite *ModelSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -252,7 +252,7 @@ func (suite *ModelSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewModel("model1", "", "Details", nil, nil, nil)
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateTree tests that Validate validates the entire model tree.
@@ -282,7 +282,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	suite.ErrorContains(err, "Name", "Validate should validate child fields")
+	suite.Require().ErrorContains(err, "Name", "Validate should validate child fields")
 
 	// Test 3: Validate validates parent relationships - wrong parent key should fail.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
@@ -308,7 +308,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	suite.ErrorContains(err, "does not match expected parent", "Validate should validate parent relationships")
+	suite.Require().ErrorContains(err, "does not match expected parent", "Validate should validate parent relationships")
 
 	// Test 4: Validate validates child DomainAssociation fields through the tree.
 	domain2Key := helper.Must(identity.NewDomainKey("domain2"))
@@ -330,7 +330,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	suite.ErrorContains(err, "ProblemDomainKey and SolutionDomainKey cannot be the same", "Validate should validate child DomainAssociations")
+	suite.Require().ErrorContains(err, "ProblemDomainKey and SolutionDomainKey cannot be the same", "Validate should validate child DomainAssociations")
 
 	// Test 5: Validate validates child ClassAssociation fields through the tree.
 	subdomain1Key := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
@@ -352,7 +352,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	suite.ErrorContains(err, "Name", "Validate should validate child ClassAssociations")
+	suite.Require().ErrorContains(err, "Name", "Validate should validate child ClassAssociations")
 
 	// Test 6: Valid model should pass.
 	validSubdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "default"))
@@ -516,7 +516,7 @@ func (suite *ModelSuite) TestSetClassAssociations() {
 	err = model.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongParentAssocKey: wrongParentAssoc,
 	})
-	suite.ErrorContains(err, "does not match any domain")
+	suite.Require().ErrorContains(err, "does not match any domain")
 }
 
 // TestGetClassAssociations tests that GetClassAssociations returns associations from model, domains, and subdomains.

@@ -291,7 +291,7 @@ func (suite *ActionSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -350,7 +350,7 @@ func (suite *ActionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAction(key, "", "Details", nil, nil, nil, nil)
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -370,7 +370,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := action.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - action key has class1 as parent, but we pass other_class.
 	action = Action{
@@ -378,7 +378,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = action.ValidateWithParent(&otherClassKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = action.ValidateWithParent(&classKey)
@@ -412,7 +412,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "requires 0", "ValidateWithParent should validate logic key parent")
+	suite.Require().ErrorContains(err, "requires 0", "ValidateWithParent should validate logic key parent")
 
 	// Test child Parameter validation propagates error.
 	action = Action{
@@ -423,7 +423,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	action = Action{

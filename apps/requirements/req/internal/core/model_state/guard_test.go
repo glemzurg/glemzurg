@@ -111,7 +111,7 @@ func (suite *GuardSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func (suite *GuardSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGuard(key, "", logic)
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -166,7 +166,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Logic: validLogic,
 	}
 	err = guard.ValidateWithParent(&otherClassKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = guard.ValidateWithParent(&classKey)
@@ -180,7 +180,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 		Logic: helper.Must(model_logic.NewLogic(differentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 	}
 	err = guard.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "does not match guard key", "ValidateWithParent should enforce logic key == guard key")
+	suite.Require().ErrorContains(err, "does not match guard key", "ValidateWithParent should enforce logic key == guard key")
 
 	// Test logic ValidateWithParent is called - wrong parent should fail.
 	otherClassKey2 := helper.Must(identity.NewClassKey(subdomainKey, "wrong_class"))
@@ -192,5 +192,5 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	}
 	// The guard key has otherClassKey2 as parent, but we pass otherClassKey as the parent.
 	err = guard.ValidateWithParent(&otherClassKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should validate logic key parent")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should validate logic key parent")
 }

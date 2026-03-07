@@ -254,7 +254,7 @@ func (suite *AttributeSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAttribute(key, "", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", nil)
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -272,7 +272,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := attr.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - attribute key has class1 as parent, but we pass other_class.
 	attr = Attribute{
@@ -280,7 +280,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = attr.ValidateWithParent(&otherClassKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = attr.ValidateWithParent(&classKey)
@@ -306,7 +306,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		DerivationPolicy: &wrongParentDerivPolicy,
 	}
 	err = attr.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "DerivationPolicy", "ValidateWithParent should validate derivation policy key parent")
+	suite.Require().ErrorContains(err, "DerivationPolicy", "ValidateWithParent should validate derivation policy key parent")
 
 	// Test valid with invariants.
 	invKey := helper.Must(identity.NewAttributeInvariantKey(validKey, "0"))
@@ -328,5 +328,5 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Invariants: []model_logic.Logic{wrongParentInvariant},
 	}
 	err = attr.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "attribute invariant 0", "ValidateWithParent should validate invariant key parent")
+	suite.Require().ErrorContains(err, "attribute invariant 0", "ValidateWithParent should validate invariant key parent")
 }

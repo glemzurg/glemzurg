@@ -153,7 +153,7 @@ func (suite *UseCaseSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -195,7 +195,7 @@ func (suite *UseCaseSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, nil, nil, "UmlComment")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -212,7 +212,7 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 		Level: _USE_CASE_LEVEL_SEA,
 	}
 	err := useCase.ValidateWithParent(&subdomainKey)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - use case key has subdomain1 as parent, but we pass other_subdomain.
 	useCase = UseCase{
@@ -221,7 +221,7 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 		Level: _USE_CASE_LEVEL_SEA,
 	}
 	err = useCase.ValidateWithParent(&otherSubdomainKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = useCase.ValidateWithParent(&subdomainKey)
@@ -296,7 +296,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -312,7 +312,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err := useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
-	suite.ErrorContains(err, "Name", "Should validate child Scenarios")
+	suite.Require().ErrorContains(err, "Name", "Should validate child Scenarios")
 
 	// Test valid with child Scenario.
 	useCase = UseCase{
@@ -392,7 +392,7 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		SuperclassOfKey: &genKeyC,
 	}
 	err = useCase.ValidateReferences(generalizations)
-	suite.ErrorContains(err, "non-existent generalization")
+	suite.Require().ErrorContains(err, "non-existent generalization")
 
 	// Error: subclass references non-existent generalization.
 	useCase = UseCase{
@@ -402,5 +402,5 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		SubclassOfKey: &genKeyC,
 	}
 	err = useCase.ValidateReferences(generalizations)
-	suite.ErrorContains(err, "non-existent generalization")
+	suite.Require().ErrorContains(err, "non-existent generalization")
 }

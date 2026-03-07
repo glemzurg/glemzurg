@@ -110,7 +110,7 @@ func (suite *AssociationSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -132,7 +132,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.ErrorContains(err, "'KeyType' failed on the 'required' tag")
+	suite.Require().ErrorContains(err, "'KeyType' failed on the 'required' tag")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -147,7 +147,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
 	err := assoc.ValidateWithParent(nil)
-	suite.ErrorContains(err, "'KeyType' failed on the 'required' tag", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "'KeyType' failed on the 'required' tag", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domain association is a root key, so it should not have a parent.
 	assoc = Association{
@@ -156,7 +156,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
 	err = assoc.ValidateWithParent(&otherDomainKey)
-	suite.ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case - domain association key has no parent (root-level entity).
 	err = assoc.ValidateWithParent(nil)
@@ -216,7 +216,7 @@ func (suite *AssociationSuite) TestValidateReferences() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

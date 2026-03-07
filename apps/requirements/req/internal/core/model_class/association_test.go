@@ -151,7 +151,7 @@ func (suite *AssociationSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -185,7 +185,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -307,7 +307,7 @@ func (suite *AssociationSuite) TestValidateReferences() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -405,7 +405,7 @@ func (suite *AssociationSuite) TestOther() {
 				suite.Require().NoError(err)
 				suite.Equal(tt.otherKey, otherKey)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				suite.Empty(otherKey)
 			}
 		})

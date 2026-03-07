@@ -80,7 +80,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			suite.Require().NoError(err, "expected no error for %+v", dataType)
 		} else {
 			suite.Error(err, "expected error for %+v", dataType)
-			suite.ErrorContains(err, tt.errstr, "error message mismatch for %+v", dataType)
+			suite.Require().ErrorContains(err, tt.errstr, "error message mismatch for %+v", dataType)
 		}
 	}
 
@@ -221,7 +221,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			suite.Require().NoError(err, "expected no error for %s", tt.name)
 		} else {
 			suite.Error(err, "expected error for %s", tt.name)
-			suite.ErrorContains(err, tt.errstr, "error message mismatch for %s", tt.name)
+			suite.Require().ErrorContains(err, tt.errstr, "error message mismatch for %s", tt.name)
 		}
 	}
 }

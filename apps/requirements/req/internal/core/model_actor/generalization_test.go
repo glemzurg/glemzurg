@@ -63,7 +63,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -87,7 +87,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -100,7 +100,7 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := gen.ValidateWithParent(nil)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actor generalizations should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
@@ -109,7 +109,7 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = gen.ValidateWithParent(&domainKey)
-	suite.ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = gen.ValidateWithParent(nil)

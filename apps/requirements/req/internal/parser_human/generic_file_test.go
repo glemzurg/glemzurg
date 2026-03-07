@@ -54,7 +54,7 @@ func (suite *FileSuite) TestParseFilesErr() {
 		errstr := testData.Json
 
 		actual, err := parseFile(testData.Filename, testData.Contents)
-		suite.ErrorContains(err, errstr, testName)
+		suite.Require().ErrorContains(err, errstr, testName)
 		suite.Empty(actual, testName)
 	}
 }

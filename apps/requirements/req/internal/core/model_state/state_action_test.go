@@ -115,7 +115,7 @@ func (suite *StateActionSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -141,7 +141,7 @@ func (suite *StateActionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewStateAction(key, actionKey, "")
-	suite.ErrorContains(err, "When")
+	suite.Require().ErrorContains(err, "When")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -161,7 +161,7 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		When:      "", // Invalid
 	}
 	err := stateAction.ValidateWithParent(&stateKey)
-	suite.ErrorContains(err, "When", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "When", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - stateAction key has state1 as parent, but we pass other_state.
 	stateAction = StateAction{
@@ -170,7 +170,7 @@ func (suite *StateActionSuite) TestValidateWithParent() {
 		When:      "entry",
 	}
 	err = stateAction.ValidateWithParent(&otherStateKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = stateAction.ValidateWithParent(&stateKey)
@@ -224,7 +224,7 @@ func (suite *StateActionSuite) TestValidateReferences() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

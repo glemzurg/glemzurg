@@ -374,7 +374,7 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				suite.Require().NoError(err)
 				suite.Equal(tt.expected, result)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

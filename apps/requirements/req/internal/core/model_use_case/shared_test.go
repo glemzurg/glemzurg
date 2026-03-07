@@ -58,7 +58,7 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -76,7 +76,7 @@ func (suite *UseCaseSharedSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewUseCaseShared("", "UmlComment")
-	suite.ErrorContains(err, "ShareType")
+	suite.Require().ErrorContains(err, "ShareType")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
@@ -87,7 +87,7 @@ func (suite *UseCaseSharedSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err := obj.ValidateWithParent()
-	suite.ErrorContains(err, "ShareType", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "ShareType", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
 	obj = UseCaseShared{

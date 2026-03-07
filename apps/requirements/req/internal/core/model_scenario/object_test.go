@@ -135,7 +135,7 @@ func (suite *ObjectSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -165,7 +165,7 @@ func (suite *ObjectSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewObject(key, 1, "", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	suite.ErrorContains(err, "Name: Name cannot be blank")
+	suite.Require().ErrorContains(err, "Name: Name cannot be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -186,7 +186,7 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 		ClassKey:  classKey,
 	}
 	err := obj.ValidateWithParent(&scenarioKey)
-	suite.ErrorContains(err, "Name: Name cannot be blank", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name: Name cannot be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - object key has scenario1 as parent, but we pass other_scenario.
 	obj = Object{
@@ -196,7 +196,7 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 		ClassKey:  classKey,
 	}
 	err = obj.ValidateWithParent(&otherScenarioKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = obj.ValidateWithParent(&scenarioKey)
@@ -252,7 +252,7 @@ func (suite *ObjectSuite) TestValidateReferences() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

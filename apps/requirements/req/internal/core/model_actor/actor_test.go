@@ -142,7 +142,7 @@ func (suite *ActorSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -180,7 +180,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -194,7 +194,7 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		Type: _USER_TYPE_PERSON,
 	}
 	err := actor.ValidateWithParent(nil)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actors should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
@@ -204,7 +204,7 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		Type: _USER_TYPE_PERSON,
 	}
 	err = actor.ValidateWithParent(&domainKey)
-	suite.ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "should not have a parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = actor.ValidateWithParent(nil)
@@ -251,7 +251,7 @@ func (suite *ActorSuite) TestValidateReferences() {
 		SuperclassOfKey: &genKeyC,
 	}
 	err = actor.ValidateReferences(generalizations)
-	suite.ErrorContains(err, "non-existent generalization")
+	suite.Require().ErrorContains(err, "non-existent generalization")
 
 	// Error: subclass references non-existent generalization.
 	actor = Actor{
@@ -261,5 +261,5 @@ func (suite *ActorSuite) TestValidateReferences() {
 		SubclassOfKey: &genKeyC,
 	}
 	err = actor.ValidateReferences(generalizations)
-	suite.ErrorContains(err, "non-existent generalization")
+	suite.Require().ErrorContains(err, "non-existent generalization")
 }

@@ -66,7 +66,7 @@ func (suite *StateSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -91,7 +91,7 @@ func (suite *StateSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewState(key, "", "Details", "UmlComment")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -108,7 +108,7 @@ func (suite *StateSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := state.ValidateWithParent(&classKey)
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - state key has class1 as parent, but we pass other_class.
 	state = State{
@@ -116,7 +116,7 @@ func (suite *StateSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = state.ValidateWithParent(&otherClassKey)
-	suite.ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = state.ValidateWithParent(&classKey)
@@ -168,7 +168,7 @@ func (suite *StateSuite) TestValidateWithParentAndActions() {
 		},
 	}
 	err = state.ValidateWithParentAndActions(&classKey, actionKeys)
-	suite.ErrorContains(err, "references non-existent action", "Should validate action references")
+	suite.Require().ErrorContains(err, "references non-existent action", "Should validate action references")
 }
 
 // TestSetActions tests that SetActions sets and sorts actions.

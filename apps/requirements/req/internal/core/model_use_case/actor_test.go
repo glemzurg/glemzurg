@@ -41,7 +41,7 @@ func (suite *ActorSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -75,7 +75,7 @@ func (suite *ActorSuite) TestNew() {
 			suite.Require().NoError(err, testName)
 			suite.Equal(test.obj, obj, testName)
 		} else {
-			suite.ErrorContains(err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(obj, testName)
 		}
 	}

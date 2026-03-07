@@ -51,7 +51,7 @@ func (suite *ParameterSuite) TestValidate() {
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -68,7 +68,7 @@ func (suite *ParameterSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewParameter("", "Nat")
-	suite.ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.
@@ -79,7 +79,7 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		DataTypeRules: "Nat",
 	}
 	err := param.ValidateWithParent()
-	suite.ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test valid case.
 	param = Parameter{

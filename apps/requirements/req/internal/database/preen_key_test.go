@@ -57,7 +57,7 @@ func (suite *PreenSuite) TestPreen() {
 				suite.Require().NoError(err)
 				suite.Equal(tt.preened, preened)
 			} else {
-				suite.ErrorContains(err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				suite.Empty(preened)
 			}
 		})
