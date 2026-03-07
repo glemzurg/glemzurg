@@ -51,7 +51,7 @@ func (suite *StateSuite) SetupTest() {
 func (suite *StateSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(state)
 
@@ -75,10 +75,10 @@ func (suite *StateSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, state, err = LoadState(suite.db, suite.model.Key, suite.stateKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.State{
 		Key:        suite.stateKey,
@@ -95,10 +95,10 @@ func (suite *StateSuite) TestAdd() {
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.State{
 		Key:        suite.stateKey,
@@ -115,7 +115,7 @@ func (suite *StateSuite) TestUpdate() {
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateState(suite.db, suite.model.Key, suite.class.Key, model_state.State{
 		Key:        suite.stateKey,
@@ -123,10 +123,10 @@ func (suite *StateSuite) TestUpdate() {
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.State{
 		Key:        suite.stateKey,
@@ -143,13 +143,13 @@ func (suite *StateSuite) TestRemove() {
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveState(suite.db, suite.model.Key, suite.class.Key, suite.stateKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(state)
 }
@@ -171,10 +171,10 @@ func (suite *StateSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	states, err := QueryStates(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.State{
 		suite.class.Key: {
 			{

@@ -24,7 +24,7 @@ type AssociationSuite struct {
 
 func (suite *AssociationSuite) TestParseAssociationFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_ASSOCIATION_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

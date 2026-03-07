@@ -11,7 +11,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -68,7 +67,7 @@ func (suite *TransitionSuite) SetupTest() {
 func (suite *TransitionSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(transition)
 
@@ -98,10 +97,10 @@ func (suite *TransitionSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, transition, err = LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
@@ -124,10 +123,10 @@ func (suite *TransitionSuite) TestAdd() {
 		ToStateKey:   &suite.stateB.Key,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
@@ -150,10 +149,10 @@ func (suite *TransitionSuite) TestAddNulls() {
 		ToStateKey:   nil,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
@@ -176,7 +175,7 @@ func (suite *TransitionSuite) TestUpdate() {
 		ToStateKey:   &suite.stateB.Key,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
@@ -187,10 +186,10 @@ func (suite *TransitionSuite) TestUpdate() {
 		ToStateKey:   &suite.stateA.Key,
 		UmlComment:   "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
@@ -213,7 +212,7 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 		ToStateKey:   &suite.stateB.Key,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateTransition(suite.db, suite.model.Key, suite.class.Key, model_state.Transition{
 		Key:          suite.transitionKey,
@@ -224,10 +223,10 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 		ToStateKey:   nil,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
@@ -250,13 +249,13 @@ func (suite *TransitionSuite) TestRemove() {
 		ToStateKey:   &suite.stateB.Key,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveTransition(suite.db, suite.model.Key, suite.class.Key, suite.transitionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(transition)
 }
@@ -284,10 +283,10 @@ func (suite *TransitionSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	transitions, err := QueryTransitions(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.Transition{
 		suite.class.Key: {
 			{

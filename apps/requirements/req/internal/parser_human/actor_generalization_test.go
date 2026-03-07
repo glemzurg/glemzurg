@@ -32,10 +32,10 @@ func (suite *ActorGeneralizationFileSuite) TestParseActorGeneralizationFiles() {
 		var expected, actual model_actor.Generalization
 
 		actual, err := parseActorGeneralization(generalizationSubKey, testData.Filename, testData.Contents)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		suite.Equal(expected, actual, testName)
 

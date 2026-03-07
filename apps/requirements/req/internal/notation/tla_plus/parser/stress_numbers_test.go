@@ -35,7 +35,7 @@ func (s *StressNumberTestSuite) TestDecimalNumbers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.NumberLiteral)
 			s.True(ok, "expected NumberLiteral, got %T for %q", expr, tt.input)
@@ -85,7 +85,7 @@ func (s *StressNumberTestSuite) TestBinaryNumbers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 			s.NotNil(expr)
 		})
 	}
@@ -106,7 +106,7 @@ func (s *StressNumberTestSuite) TestOctalNumbers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 			s.NotNil(expr)
 		})
 	}
@@ -129,7 +129,7 @@ func (s *StressNumberTestSuite) TestHexNumbers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 			s.NotNil(expr)
 		})
 	}
@@ -181,7 +181,7 @@ func (s *StressNumberTestSuite) TestNegativeNumbers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -204,7 +204,7 @@ func (s *StressNumberTestSuite) TestNumbersInExpressions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

@@ -45,7 +45,7 @@ func (suite *SubdomainSuite) SetupTest() {
 func (suite *SubdomainSuite) TestLoad() {
 	// Nothing in database yet.
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(domainKey)
 	suite.Empty(subdomain)
 
@@ -69,10 +69,10 @@ func (suite *SubdomainSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	domainKey, subdomain, err = LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.domain.Key, domainKey)
 	suite.Equal(model_domain.Subdomain{
 		Key:        suite.subdomainKey,
@@ -89,10 +89,10 @@ func (suite *SubdomainSuite) TestAdd() {
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.domain.Key, domainKey)
 	suite.Equal(model_domain.Subdomain{
 		Key:        suite.subdomainKey,
@@ -109,7 +109,7 @@ func (suite *SubdomainSuite) TestUpdate() {
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateSubdomain(suite.db, suite.model.Key, model_domain.Subdomain{
 		Key:        suite.subdomainKey,
@@ -117,10 +117,10 @@ func (suite *SubdomainSuite) TestUpdate() {
 		Details:    "DetailsX",
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.domain.Key, domainKey)
 	suite.Equal(model_domain.Subdomain{
 		Key:        suite.subdomainKey,
@@ -137,13 +137,13 @@ func (suite *SubdomainSuite) TestRemove() {
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(domainKey)
 	suite.Empty(subdomain)
 }
@@ -165,10 +165,10 @@ func (suite *SubdomainSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomains, err := QuerySubdomains(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{

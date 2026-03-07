@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,16 +21,16 @@ func (suite *RoundTripSuite) TestRoundTrip() {
 
 	// Validate the model before writing.
 	err := input.Validate()
-	assert.Nil(suite.T(), err, "input model should be valid")
+	suite.Require().NoError(err, "input model should be valid")
 
 	// Write to a temporary folder.
 	tempDir := suite.T().TempDir()
 	err = Write(input, tempDir)
-	assert.Nil(suite.T(), err, "writing model should succeed")
+	suite.Require().NoError(err, "writing model should succeed")
 
 	// Read from the temporary folder.
 	output, err := Parse(tempDir)
-	assert.Nil(suite.T(), err, "parsing model should succeed")
+	suite.Require().NoError(err, "parsing model should succeed")
 
 	// The parsed model's Key will be the tempDir path, not our original key.
 	// Overwrite it for comparison since the parser uses the modelPath as the key.

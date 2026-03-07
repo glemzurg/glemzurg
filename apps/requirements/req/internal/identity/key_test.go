@@ -1822,12 +1822,12 @@ func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
 
 	// Marshal the map to JSON.
 	jsonBytes, err := json.Marshal(originalMap)
-	suite.NoError(err, "Failed to marshal map to JSON")
+	suite.Require().NoError(err, "Failed to marshal map to JSON")
 
 	// Unmarshal back.
 	var parsedMap map[Key]string
 	err = json.Unmarshal(jsonBytes, &parsedMap)
-	suite.NoError(err, "Failed to unmarshal map from JSON")
+	suite.Require().NoError(err, "Failed to unmarshal map from JSON")
 
 	// Verify the parsed map matches the original.
 	suite.Len(parsedMap, len(originalMap), "Map length mismatch")

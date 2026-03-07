@@ -74,10 +74,10 @@ func (suite *QueryParameterSuite) TestLoad() {
 				'Nat'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err = LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
@@ -89,10 +89,10 @@ func (suite *QueryParameterSuite) TestAdd() {
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
@@ -104,16 +104,16 @@ func (suite *QueryParameterSuite) TestUpdate() {
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateQueryParameter(suite.db, suite.model.Key, suite.queryKey, 2, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
@@ -125,10 +125,10 @@ func (suite *QueryParameterSuite) TestRemove() {
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	suite.ErrorIs(err, ErrNotFound)
@@ -148,10 +148,10 @@ func (suite *QueryParameterSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	params, err := QueryQueryParameters(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.queryKey: {
 			{

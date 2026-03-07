@@ -119,7 +119,7 @@ func (suite *FieldSuite) TestValidate() {
 		suite.Run(tt.name, func() {
 			err := tt.field.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err, "expected no error for %+v", tt.field)
+				suite.Require().NoError(err, "expected no error for %+v", tt.field)
 			} else {
 				suite.Error(err, "expected error for %+v", tt.field)
 				suite.ErrorContains(err, tt.errstr, "error message mismatch for %+v", tt.field)

@@ -24,7 +24,7 @@ type LogicSuite struct {
 
 func (suite *LogicSuite) TestParseLogicFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_LOGIC_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

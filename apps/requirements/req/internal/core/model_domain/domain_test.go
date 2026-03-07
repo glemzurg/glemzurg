@@ -302,7 +302,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err := domain.ValidateWithParent(nil)
-	suite.NoError(err, "Valid full tree should pass")
+	suite.Require().NoError(err, "Valid full tree should pass")
 
 	// Test that a guard logic key mismatch deep in the tree is caught.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
@@ -398,7 +398,7 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	suite.NoError(err, "Valid domain with single 'default' subdomain should pass")
+	suite.Require().NoError(err, "Valid domain with single 'default' subdomain should pass")
 
 	// Test single subdomain with non-"default" key fails.
 	domain = Domain{
@@ -433,5 +433,5 @@ func (suite *DomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = domain.ValidateWithParentAndActorsAndClasses(nil, actors, classes)
-	suite.NoError(err, "Multiple subdomains without 'default' should pass")
+	suite.Require().NoError(err, "Multiple subdomains without 'default' should pass")
 }

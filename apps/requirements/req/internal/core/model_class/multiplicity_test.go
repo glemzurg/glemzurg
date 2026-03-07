@@ -184,7 +184,7 @@ func (suite *MultiplicitySuite) TestParseMultiplicity() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		lowerBound, higherBound, err := parseMultiplicity(test.multiplicity)
 		if test.errstr == "" {
-			suite.NoError(err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.lowerBound, lowerBound, testName)
 			suite.Equal(test.higherBound, higherBound, testName)
 		} else {

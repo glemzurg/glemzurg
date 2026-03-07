@@ -24,7 +24,7 @@ type DomainSuite struct {
 
 func (suite *DomainSuite) TestParseDomainFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_DOMAIN_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

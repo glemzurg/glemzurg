@@ -32,10 +32,10 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 		var expected, actual model_domain.Domain
 
 		actual, associations, err := parseDomain(key, testData.Filename, testData.Contents)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		suite.Equal(expected, actual, testName)
 
@@ -43,7 +43,7 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 		if testData.JsonChildren != "" {
 			var expectedAssociations []model_domain.Association
 			err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
-			suite.NoError(err, testName+" associations json")
+			suite.Require().NoError(err, testName+" associations json")
 			suite.Equal(expectedAssociations, associations, testName+" associations")
 		}
 

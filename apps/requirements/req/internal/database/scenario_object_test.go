@@ -88,10 +88,10 @@ func (suite *ObjectSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err = LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.scenario.Key, scenarioKey)
 	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
@@ -114,10 +114,10 @@ func (suite *ObjectSuite) TestAdd() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.scenario.Key, scenarioKey)
 	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
@@ -140,7 +140,7 @@ func (suite *ObjectSuite) TestUpdate() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateObject(suite.db, suite.model.Key, model_scenario.Object{
 		Key:          suite.objectKey,
@@ -151,10 +151,10 @@ func (suite *ObjectSuite) TestUpdate() {
 		Multi:        false,
 		UmlComment:   "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.scenario.Key, scenarioKey)
 	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
@@ -177,10 +177,10 @@ func (suite *ObjectSuite) TestRemove() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -211,10 +211,10 @@ func (suite *ObjectSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	objects, err := QueryObjects(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	expected := map[identity.Key][]model_scenario.Object{
 		suite.scenario.Key: {
 			{

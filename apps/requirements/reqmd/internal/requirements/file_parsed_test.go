@@ -216,7 +216,7 @@ Some text.`)),
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		newLastRef, file, fileReqs, err := parseFileContents(test.lastRef, `filename`, test.contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.newLastRef, newLastRef, testName)
 		suite.Equal(test.file, file, testName)
 		suite.Equal(test.fileReqs, fileReqs, testName)
@@ -320,11 +320,11 @@ Some text.`,
 
 		// Parse contents.
 		_, file, fileReqs, err := parseFileContents(0, `filename`, test.contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
 		// Generate contents.
 		generated, err := file.Generate(Config{}, fileReqs)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.generated, generated, testName)
 	}
 }

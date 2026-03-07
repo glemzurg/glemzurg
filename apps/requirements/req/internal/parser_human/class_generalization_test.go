@@ -39,10 +39,10 @@ func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
 		var expected, actual model_class.Generalization
 
 		actual, err := parseClassGeneralization(subdomainKey, generalizationSubKey, testData.Filename, testData.Contents)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		suite.Equal(expected, actual, testName)
 

@@ -30,7 +30,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 
 	// Validate the model tree before testing.
 	err := original.Validate()
-	suite.NoError(err, "original model should be valid")
+	suite.Require().NoError(err, "original model should be valid")
 
 	// Nothing in database yet.
 	output, err := ReadModel(suite.db, original.Key)

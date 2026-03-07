@@ -9,7 +9,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,28 +55,28 @@ func (suite *InvariantSuite) TestLoad() {
 		VALUES
 			('model_key', 'invariant/0')
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.invariantKey, key)
 }
 
 func (suite *InvariantSuite) TestAdd() {
 	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.invariantKey, key)
 }
 
 func (suite *InvariantSuite) TestRemove() {
 	err := AddInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Invariant should be gone.
 	_, err = LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
@@ -89,10 +88,10 @@ func (suite *InvariantSuite) TestQuery() {
 		suite.invariantKeyB,
 		suite.invariantKey,
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	keys, err := QueryInvariants(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]identity.Key{
 		suite.invariantKey,
 		suite.invariantKeyB,

@@ -34,7 +34,7 @@ func (s *StressQuantifierTestSuite) TestNestedQuantifiers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			// Verify it's a quantifier
 			quant, ok := expr.(*ast.Quantifier)
@@ -51,7 +51,7 @@ func (s *StressQuantifierTestSuite) TestNestedQuantifiers() {
 // name as an outer quantifier (variable shadowing).
 func (s *StressQuantifierTestSuite) TestVariableShadowing() {
 	expr, err := ParseExpression(`\A x \in S : \A x \in T : x > 0`)
-	s.NoError(err, "variable shadowing should parse")
+	s.Require().NoError(err, "variable shadowing should parse")
 
 	outer, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected Quantifier")
@@ -89,7 +89,7 @@ func (s *StressQuantifierTestSuite) TestComplexPredicates() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.Quantifier)
 			s.True(ok, "expected Quantifier, got %T", expr)
@@ -114,7 +114,7 @@ func (s *StressQuantifierTestSuite) TestQuantifierDomainExpressions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			quant, ok := expr.(*ast.Quantifier)
 			s.True(ok, "expected Quantifier, got %T", expr)
@@ -145,7 +145,7 @@ func (s *StressQuantifierTestSuite) TestQuantifierUnicodeVariants() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			quant, ok := expr.(*ast.Quantifier)
 			s.True(ok, "expected Quantifier, got %T", expr)
@@ -190,7 +190,7 @@ func (s *StressQuantifierTestSuite) TestSetFilter() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.SetFilter)
 			s.True(ok, "expected SetFilter, got %T for %q", expr, tt.input)
@@ -202,7 +202,7 @@ func (s *StressQuantifierTestSuite) TestSetFilter() {
 func (s *StressQuantifierTestSuite) TestSetFilterWithNestedQuantifier() {
 	input := `{x \in {1, 2, 3} : \E y \in {2, 3, 4} : x = y}`
 	expr, err := ParseExpression(input)
-	s.NoError(err, "set filter with nested quantifier should parse")
+	s.Require().NoError(err, "set filter with nested quantifier should parse")
 
 	sf, ok := expr.(*ast.SetFilter)
 	s.True(ok, "expected SetFilter, got %T", expr)

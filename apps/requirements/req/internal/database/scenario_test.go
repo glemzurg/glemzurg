@@ -74,10 +74,10 @@ func (suite *ScenarioSuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, scenario, err = LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.useCase.Key, useCaseKey)
 	suite.Equal(model_scenario.Scenario{
 		Key:     suite.scenarioKey,
@@ -94,10 +94,10 @@ func (suite *ScenarioSuite) TestAdd() {
 	}
 
 	err := AddScenario(suite.db, suite.model.Key, suite.useCase.Key, scenarioToAdd)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.useCase.Key, useCaseKey)
 	suite.Equal(model_scenario.Scenario{
 		Key:     suite.scenarioKey,
@@ -112,17 +112,17 @@ func (suite *ScenarioSuite) TestUpdate() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateScenario(suite.db, suite.model.Key, model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.useCase.Key, useCaseKey)
 	suite.Equal(model_scenario.Scenario{
 		Key:     suite.scenarioKey,
@@ -137,10 +137,10 @@ func (suite *ScenarioSuite) TestRemove() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -163,10 +163,10 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarios, err := QueryScenarios(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_scenario.Scenario{
 		suite.useCase.Key: {
 			{

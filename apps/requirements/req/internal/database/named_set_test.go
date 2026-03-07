@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,10 +52,10 @@ func (suite *NamedSetSuite) TestLoad() {
 		VALUES
 			('model_key', 'nset/_key', '_ValidStatuses', 'Valid statuses', 'tla_plus', '{"pending", "active"}')
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
@@ -72,10 +71,10 @@ func (suite *NamedSetSuite) TestAdd() {
 		Description: "Valid statuses",
 		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
@@ -93,10 +92,10 @@ func (suite *NamedSetSuite) TestAddWithTypeSpec() {
 		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 		TypeSpec:    &ts,
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
@@ -113,10 +112,10 @@ func (suite *NamedSetSuite) TestRemove() {
 		Description: "Valid statuses",
 		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{"pending", "active"}`},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveNamedSet(suite.db, suite.model.Key, suite.nsKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Named set should be gone.
 	_, err = LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
@@ -138,10 +137,10 @@ func (suite *NamedSetSuite) TestQuery() {
 			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: `{3, 4}`},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	nss, err := QueryNamedSets(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_named_set.NamedSet{
 		{
 			Key:         suite.nsKey,

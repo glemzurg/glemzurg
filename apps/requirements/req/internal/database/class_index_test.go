@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -73,36 +72,36 @@ func (suite *ClassIndexSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attribute_key'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	indexes, err = LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestAdd() {
 	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 2)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestRemove() {
 	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 2)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]uint{2}, indexes)
 }

@@ -72,7 +72,7 @@ func (suite *ActorSuite) TestNew() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		obj, err := NewActor(test.umlComment)
 		if test.errstr == "" {
-			suite.NoError(err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.obj, obj, testName)
 		} else {
 			suite.ErrorContains(err, test.errstr, testName)

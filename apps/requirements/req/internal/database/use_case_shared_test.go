@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,7 +47,7 @@ func (suite *UseCaseSharedSuite) SetupTest() {
 func (suite *UseCaseSharedSuite) TestLoad() {
 	// Nothing in database yet.
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(useCaseShared)
 
 	err = dbExec(suite.db, `
@@ -69,10 +68,10 @@ func (suite *UseCaseSharedSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseShared, err = LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
@@ -84,10 +83,10 @@ func (suite *UseCaseSharedSuite) TestAdd() {
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
@@ -99,16 +98,16 @@ func (suite *UseCaseSharedSuite) TestUpdate() {
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key, model_use_case.UseCaseShared{
 		ShareType:  "extend",
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_use_case.UseCaseShared{
 		ShareType:  "extend",
 		UmlComment: "UmlCommentX",
@@ -120,13 +119,13 @@ func (suite *UseCaseSharedSuite) TestRemove() {
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(useCaseShared)
 }
 
@@ -143,10 +142,10 @@ func (suite *UseCaseSharedSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseShareds, err := QueryUseCaseShareds(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 		suite.seaUseCase.Key: {
 			suite.mudUseCase.Key: {

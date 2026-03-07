@@ -135,7 +135,7 @@ The body text.`,
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		requirement, err := newRequirement(test.ref, test.filename, test.text)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.requirement, requirement, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
@@ -206,7 +206,7 @@ The body text.`,
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		value, err := test.requirement.String(nil)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.text, value, testName)
 	}
 }
@@ -222,7 +222,7 @@ The body text.
 
 The body text.`,
 	)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		fromFilename    string
@@ -269,7 +269,7 @@ The body text.`,
 
 		refLinkMarkdown, err := req.RefLink(test.fromFilename)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.refLinkMarkdown, refLinkMarkdown, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
@@ -289,7 +289,7 @@ The body text.
 
 The body text.`,
 	)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		fromFilename               string
@@ -336,7 +336,7 @@ The body text.`,
 
 		refLinkMarkdown, err := req.ReferencedFromLink(test.fromFilename)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.referencedFromLinkMarkdown, refLinkMarkdown, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)

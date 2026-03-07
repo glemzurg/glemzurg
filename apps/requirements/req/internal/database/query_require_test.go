@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -73,28 +72,28 @@ func (suite *QueryRequireSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key/qrequire/req_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryRequireSuite) TestAdd() {
 	err := AddQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryRequireSuite) TestRemove() {
 	err := AddQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Query require should be gone.
 	_, err = LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
@@ -105,10 +104,10 @@ func (suite *QueryRequireSuite) TestQuery() {
 	err := AddQueryRequires(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	requires, err := QueryQueryRequires(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)

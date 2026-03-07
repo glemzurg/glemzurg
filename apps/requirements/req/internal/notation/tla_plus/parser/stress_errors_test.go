@@ -173,7 +173,7 @@ func (s *StressErrorTestSuite) TestValidEdgeCasesNotErrors() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "expected no parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "expected no parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

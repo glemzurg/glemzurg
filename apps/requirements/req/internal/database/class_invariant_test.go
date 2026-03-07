@@ -11,7 +11,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -70,28 +69,28 @@ func (suite *ClassInvariantSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/cinvariant/0'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ClassInvariantSuite) TestAdd() {
 	err := AddClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ClassInvariantSuite) TestRemove() {
 	err := AddClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Class invariant should be gone.
 	_, err = LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
@@ -102,10 +101,10 @@ func (suite *ClassInvariantSuite) TestQuery() {
 	err := AddClassInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.classKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	invariants, err := QueryClassInvariants(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.classKey: {suite.logicKey, suite.logicKeyB},
 	}, invariants)

@@ -109,7 +109,7 @@ func (s *StressPrecedenceTestSuite) TestNegationBinding() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %s", tt.input)
+			s.Require().NoError(err, "should parse: %s", tt.input)
 		})
 	}
 }
@@ -416,7 +416,7 @@ func (s *StressPrecedenceTestSuite) TestSetOperationPrecedence() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %s", tt.input)
+			s.Require().NoError(err, "should parse: %s", tt.input)
 		})
 	}
 }

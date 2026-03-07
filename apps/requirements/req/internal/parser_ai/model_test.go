@@ -24,7 +24,7 @@ type ModelSuite struct {
 
 func (suite *ModelSuite) TestParseModelFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_MODEL_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

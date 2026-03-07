@@ -77,7 +77,7 @@ func (suite *DataTypeSuite) TestValidate() {
 		}
 		err := dataType.Validate()
 		if tt.errstr == "" {
-			suite.NoError(err, "expected no error for %+v", dataType)
+			suite.Require().NoError(err, "expected no error for %+v", dataType)
 		} else {
 			suite.Error(err, "expected error for %+v", dataType)
 			suite.ErrorContains(err, tt.errstr, "error message mismatch for %+v", dataType)
@@ -218,7 +218,7 @@ func (suite *DataTypeSuite) TestValidate() {
 	for _, tt := range collectionTests {
 		err := tt.dt.Validate()
 		if tt.errstr == "" {
-			suite.NoError(err, "expected no error for %s", tt.name)
+			suite.Require().NoError(err, "expected no error for %s", tt.name)
 		} else {
 			suite.Error(err, "expected error for %s", tt.name)
 			suite.ErrorContains(err, tt.errstr, "error message mismatch for %s", tt.name)

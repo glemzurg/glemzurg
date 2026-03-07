@@ -40,7 +40,7 @@ func (s *StressRecordExceptTestSuite) TestRecordLiteralVariations() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			rec, ok := expr.(*ast.RecordInstance)
 			s.True(ok, "expected RecordInstance, got %T", expr)
@@ -64,7 +64,7 @@ func (s *StressRecordExceptTestSuite) TestRecordExceptBasic() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			rec, ok := expr.(*ast.RecordAltered)
 			s.True(ok, "expected RecordAltered, got %T", expr)
@@ -89,7 +89,7 @@ func (s *StressRecordExceptTestSuite) TestRecordExceptWithAt() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.RecordAltered)
 			s.True(ok, "expected RecordAltered, got %T", expr)
@@ -113,7 +113,7 @@ func (s *StressRecordExceptTestSuite) TestRecordExceptWithComplexValues() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.RecordAltered)
 			s.True(ok, "expected RecordAltered, got %T", expr)
@@ -127,7 +127,7 @@ func (s *StressRecordExceptTestSuite) TestRecordExceptWithComplexValues() {
 func (s *StressRecordExceptTestSuite) TestChainedExcept() {
 	input := `[[r EXCEPT !.x = 1] EXCEPT !.y = 2]`
 	expr, err := ParseExpression(input)
-	s.NoError(err, "chained EXCEPT should parse")
+	s.Require().NoError(err, "chained EXCEPT should parse")
 
 	outer, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected RecordAltered, got %T", expr)
@@ -161,7 +161,7 @@ func (s *StressRecordExceptTestSuite) TestRecordFieldAccess() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

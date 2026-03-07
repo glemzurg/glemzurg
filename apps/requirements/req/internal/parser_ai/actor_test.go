@@ -24,7 +24,7 @@ type ActorSuite struct {
 
 func (suite *ActorSuite) TestParseActorFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_ACTOR_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
@@ -32,10 +32,10 @@ func (suite *ActorSuite) TestParseActorFiles() {
 			var expected inputActor
 
 			actual, err := parseActor([]byte(testData.InputJSON), testData.Filename)
-			suite.NoError(err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			suite.NoError(err, testName)
+			suite.Require().NoError(err, testName)
 
 			assert.Equal(t, expected, *actual, testName)
 		})

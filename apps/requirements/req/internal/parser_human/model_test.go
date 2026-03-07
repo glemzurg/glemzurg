@@ -33,10 +33,10 @@ func (suite *ModelFileSuite) TestParseModelFiles() {
 		var expected, actual core.Model
 
 		actual, err := parseModel(key, testData.Filename, testData.Contents)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		suite.Equal(expected, actual, testName)
 

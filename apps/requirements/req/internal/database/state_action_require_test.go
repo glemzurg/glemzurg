@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -60,7 +59,7 @@ func (suite *ActionRequireSuite) SetupTest() {
 func (suite *ActionRequireSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no action_require join row yet.
 	_, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 
 	// Insert the action_require join row.
 	err = dbExec(suite.db, `
@@ -73,42 +72,42 @@ func (suite *ActionRequireSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key/arequire/req_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionRequireSuite) TestAdd() {
 	err := AddActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionRequireSuite) TestRemove() {
 	err := AddActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Action require should be gone.
 	_, err = LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ActionRequireSuite) TestQuery() {
 	err := AddActionRequires(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	requires, err := QueryActionRequires(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)

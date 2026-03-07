@@ -384,7 +384,7 @@ func (suite *ModelSuite) TestValidateTree() {
 		},
 	}
 	err = model.Validate()
-	suite.NoError(err, "Valid model should pass Validate()")
+	suite.Require().NoError(err, "Valid model should pass Validate()")
 }
 
 // TestSetClassAssociations tests that SetClassAssociations validates and routes associations.

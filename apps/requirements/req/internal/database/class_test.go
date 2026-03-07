@@ -87,10 +87,10 @@ func (suite *ClassSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err = LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
@@ -113,10 +113,10 @@ func (suite *ClassSuite) TestAdd() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
@@ -139,10 +139,10 @@ func (suite *ClassSuite) TestAddNulls() {
 		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
@@ -165,7 +165,7 @@ func (suite *ClassSuite) TestUpdate() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateClass(suite.db, suite.model.Key, model_class.Class{
 		Key:             suite.classKey,
@@ -176,10 +176,10 @@ func (suite *ClassSuite) TestUpdate() {
 		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
@@ -202,7 +202,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateClass(suite.db, suite.model.Key, model_class.Class{
 		Key:             suite.classKey,
@@ -213,10 +213,10 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
@@ -237,10 +237,10 @@ func (suite *ClassSuite) TestRemove() {
 		ActorKey:   &suite.actor.Key,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -271,10 +271,10 @@ func (suite *ClassSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classes, err := QueryClasses(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_class.Class{
 		suite.subdomain.Key: {
 			{

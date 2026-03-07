@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -73,28 +72,28 @@ func (suite *ActionGuaranteeSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key/aguarantee/guar_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionGuaranteeSuite) TestAdd() {
 	err := AddActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionGuaranteeSuite) TestRemove() {
 	err := AddActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Action guarantee should be gone.
 	_, err = LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
@@ -105,10 +104,10 @@ func (suite *ActionGuaranteeSuite) TestQuery() {
 	err := AddActionGuarantees(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	guarantees, err := QueryActionGuarantees(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, guarantees)

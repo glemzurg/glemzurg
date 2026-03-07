@@ -103,7 +103,7 @@ func (suite *RefLinkSuite) TestNew() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		link, err := newRefLink(test.match)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			test.refLink.Match = test.match // Set the match since it should be identical.
 			suite.Equal(test.refLink, link, testName)
 		} else {
@@ -157,7 +157,7 @@ func (suite *RefLinkSuite) TestFindRefLinks() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		links, err := findRefLinks(test.text)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.refLinks, links, testName)
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,7 +23,7 @@ type AspectSuite struct {
 func (suite *AspectSuite) TestNew() {
 
 	aspect, err := newAspect("name", "value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(Aspect{
 		name:  "name",
 		value: "value",
@@ -38,26 +37,26 @@ func (suite *AspectSuite) TestNew() {
 func (suite *AspectSuite) TestValuePadWidth() {
 
 	aspect, err := newAspect("name", "#value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(uint(0), aspect.valuePadWidth())
 
 	aspect, err = newAspect("name", "&*1value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(uint(1), aspect.valuePadWidth())
 
 	aspect, err = newAspect("name", "23value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(uint(2), aspect.valuePadWidth())
 
 	aspect, err = newAspect("name", "456value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(uint(3), aspect.valuePadWidth())
 }
 
 func (suite *AspectSuite) TestSetSortValue() {
 
 	aspect, err := newAspect("name", "1value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	aspect.SetSortValue(3)
 
@@ -576,7 +575,7 @@ more stuff`,
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		updated, aspects, err := extractAspects(test.body)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.updated, updated, testName)
 		suite.Equal(test.aspects, aspects, testName)
 	}
@@ -666,7 +665,7 @@ func (suite *FileParsedSuite) TestGenerateAspectBlock() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		block, err := generateAspectBlock(test.order, test.aspects)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.block, block, testName)
 	}
 }

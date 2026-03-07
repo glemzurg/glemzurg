@@ -327,7 +327,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	suite.NoError(err, "Valid subdomain with all children should pass")
+	suite.Require().NoError(err, "Valid subdomain with all children should pass")
 }
 
 // TestValidateWithParentDeepTree tests that key validation propagates through the full tree:
@@ -372,7 +372,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err := subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	suite.NoError(err, "Valid full tree should pass")
+	suite.Require().NoError(err, "Valid full tree should pass")
 
 	// Test guard logic key mismatch is caught deep in the tree.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))

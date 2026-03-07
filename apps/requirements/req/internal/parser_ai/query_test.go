@@ -24,7 +24,7 @@ type QuerySuite struct {
 
 func (suite *QuerySuite) TestParseQueryFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_QUERY_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

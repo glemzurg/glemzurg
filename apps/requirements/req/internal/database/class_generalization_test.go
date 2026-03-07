@@ -76,10 +76,10 @@ func (suite *GeneralizationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err = LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -100,10 +100,10 @@ func (suite *GeneralizationSuite) TestAdd() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -124,10 +124,10 @@ func (suite *GeneralizationSuite) TestAddNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -148,7 +148,7 @@ func (suite *GeneralizationSuite) TestUpdate() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateGeneralization(suite.db, suite.model.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -158,10 +158,10 @@ func (suite *GeneralizationSuite) TestUpdate() {
 		IsStatic:   true,
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -182,7 +182,7 @@ func (suite *GeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateGeneralization(suite.db, suite.model.Key, model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -192,10 +192,10 @@ func (suite *GeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
@@ -216,10 +216,10 @@ func (suite *GeneralizationSuite) TestRemove() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	suite.Require().ErrorIs(err, ErrNotFound)
@@ -248,10 +248,10 @@ func (suite *GeneralizationSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalizations, err := QueryGeneralizations(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_class.Generalization{
 		suite.subdomain.Key: {
 			{

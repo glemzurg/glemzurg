@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -60,7 +59,7 @@ func (suite *ActionSafetySuite) SetupTest() {
 func (suite *ActionSafetySuite) TestLoad() {
 	// Logic row exists from SetupTest, but no action_safety join row yet.
 	_, err := LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 
 	// Insert the action_safety join row.
 	err = dbExec(suite.db, `
@@ -73,42 +72,42 @@ func (suite *ActionSafetySuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key/asafety/safety_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionSafetySuite) TestAdd() {
 	err := AddActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionSafetySuite) TestRemove() {
 	err := AddActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Action safety should be gone.
 	_, err = LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ActionSafetySuite) TestQuery() {
 	err := AddActionSafeties(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	safeties, err := QueryActionSafeties(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, safeties)

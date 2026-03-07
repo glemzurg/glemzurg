@@ -32,10 +32,10 @@ func (suite *ActorFileSuite) TestParseActorFiles() {
 		var expected, actual model_actor.Actor
 
 		actual, err := parseActor(key, testData.Filename, testData.Contents)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		suite.NoError(err, testName)
+		suite.Require().NoError(err, testName)
 
 		suite.Equal(expected, actual, testName)
 

@@ -24,7 +24,7 @@ type SubdomainSuite struct {
 
 func (suite *SubdomainSuite) TestParseSubdomainFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_SUBDOMAIN_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

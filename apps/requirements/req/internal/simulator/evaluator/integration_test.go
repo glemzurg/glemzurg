@@ -50,7 +50,7 @@ func (s *IntegrationTestSuite) TestLiterals() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -98,7 +98,7 @@ func (s *IntegrationTestSuite) TestArithmetic() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -147,7 +147,7 @@ func (s *IntegrationTestSuite) TestComparison() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -198,7 +198,7 @@ func (s *IntegrationTestSuite) TestLogic() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -240,7 +240,7 @@ func (s *IntegrationTestSuite) TestSets() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -273,7 +273,7 @@ func (s *IntegrationTestSuite) TestSetMembership() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -308,7 +308,7 @@ func (s *IntegrationTestSuite) TestQuantifiers() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -426,7 +426,7 @@ func (s *IntegrationTestSuite) TestIfThenElse() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -471,7 +471,7 @@ func (s *IntegrationTestSuite) TestBuiltinFunctionCalls() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -503,7 +503,7 @@ func (s *IntegrationTestSuite) TestComplexExpressions() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -533,10 +533,10 @@ func (s *IntegrationTestSuite) TestASTValidation() {
 
 	for _, input := range expressions {
 		expr, err := parser.ParseExpression(input)
-		s.NoError(err, "parsing %q", input)
+		s.Require().NoError(err, "parsing %q", input)
 
 		err = expr.Validate()
-		s.NoError(err, "validating AST for %q", input)
+		s.Require().NoError(err, "validating AST for %q", input)
 	}
 }
 

@@ -51,7 +51,7 @@ func (suite *EventSuite) SetupTest() {
 func (suite *EventSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(event)
 
@@ -73,10 +73,10 @@ func (suite *EventSuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, event, err = LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Event{
 		Key:     suite.eventKey,
@@ -91,10 +91,10 @@ func (suite *EventSuite) TestAdd() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Event{
 		Key:     suite.eventKey,
@@ -109,17 +109,17 @@ func (suite *EventSuite) TestUpdate() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateEvent(suite.db, suite.model.Key, suite.class.Key, model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Event{
 		Key:     suite.eventKey,
@@ -134,13 +134,13 @@ func (suite *EventSuite) TestRemove() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveEvent(suite.db, suite.model.Key, suite.class.Key, suite.eventKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(event)
 }
@@ -160,10 +160,10 @@ func (suite *EventSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	events, err := QueryEvents(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.Event{
 		suite.class.Key: {
 			{

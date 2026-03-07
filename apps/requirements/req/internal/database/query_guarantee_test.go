@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -73,28 +72,28 @@ func (suite *QueryGuaranteeSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key/qguarantee/guar_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryGuaranteeSuite) TestAdd() {
 	err := AddQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryGuaranteeSuite) TestRemove() {
 	err := AddQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Query guarantee should be gone.
 	_, err = LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
@@ -105,10 +104,10 @@ func (suite *QueryGuaranteeSuite) TestQuery() {
 	err := AddQueryGuarantees(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	guarantees, err := QueryQueryGuarantees(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, guarantees)

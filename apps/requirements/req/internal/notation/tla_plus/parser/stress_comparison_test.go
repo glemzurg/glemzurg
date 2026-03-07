@@ -119,7 +119,7 @@ func (s *StressComparisonTestSuite) TestCrossLevelComparisonInteractions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

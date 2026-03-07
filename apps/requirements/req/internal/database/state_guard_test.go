@@ -55,7 +55,7 @@ func (suite *GuardSuite) SetupTest() {
 func (suite *GuardSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(guard)
 
@@ -75,10 +75,10 @@ func (suite *GuardSuite) TestLoad() {
 				'Name'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err = LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Guard{
 		Key:  suite.guardKey,
@@ -91,10 +91,10 @@ func (suite *GuardSuite) TestAdd() {
 		Key:  suite.guardKey,
 		Name: "Name",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Guard{
 		Key:  suite.guardKey,
@@ -107,16 +107,16 @@ func (suite *GuardSuite) TestUpdate() {
 		Key:  suite.guardKey,
 		Name: "Name",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "NameX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Guard{
 		Key:  suite.guardKey,
@@ -129,13 +129,13 @@ func (suite *GuardSuite) TestRemove() {
 		Key:  suite.guardKey,
 		Name: "Name",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveGuard(suite.db, suite.model.Key, suite.class.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(guard)
 }
@@ -153,10 +153,10 @@ func (suite *GuardSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	guards, err := QueryGuards(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.Guard{
 		suite.class.Key: {
 			{

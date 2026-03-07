@@ -24,7 +24,7 @@ type UseCaseGeneralizationSuite struct {
 
 func (suite *UseCaseGeneralizationSuite) TestParseUseCaseGeneralizationFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_USE_CASE_GENERALIZATION_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

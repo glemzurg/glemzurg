@@ -11,7 +11,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -57,7 +56,7 @@ func (suite *StateActionSuite) SetupTest() {
 func (suite *StateActionSuite) TestLoad() {
 	// Nothing in database yet.
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(stateKey)
 	suite.Empty(stateAction)
 
@@ -79,10 +78,10 @@ func (suite *StateActionSuite) TestLoad() {
 				'entry'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err = LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.state.Key, stateKey)
 	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
@@ -97,10 +96,10 @@ func (suite *StateActionSuite) TestAdd() {
 		ActionKey: suite.action.Key,
 		When:      "entry",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.state.Key, stateKey)
 	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
@@ -115,17 +114,17 @@ func (suite *StateActionSuite) TestUpdate() {
 		ActionKey: suite.action.Key,
 		When:      "do",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.actionB.Key,
 		When:      "exit",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.state.Key, stateKey)
 	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
@@ -140,13 +139,13 @@ func (suite *StateActionSuite) TestRemove() {
 		ActionKey: suite.action.Key,
 		When:      "entry",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveStateAction(suite.db, suite.model.Key, suite.state.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(stateKey)
 	suite.Empty(stateAction)
 }
@@ -166,10 +165,10 @@ func (suite *StateActionSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateActions, err := QueryStateActions(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.StateAction{
 		suite.state.Key: {
 			{

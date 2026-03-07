@@ -48,7 +48,7 @@ func (suite *UseCaseGeneralizationSuite) SetupTest() {
 func (suite *UseCaseGeneralizationSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(generalization)
 
@@ -76,10 +76,10 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err = LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -100,10 +100,10 @@ func (suite *UseCaseGeneralizationSuite) TestAdd() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -124,10 +124,10 @@ func (suite *UseCaseGeneralizationSuite) TestAddNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -148,7 +148,7 @@ func (suite *UseCaseGeneralizationSuite) TestUpdate() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateUseCaseGeneralization(suite.db, suite.model.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -158,10 +158,10 @@ func (suite *UseCaseGeneralizationSuite) TestUpdate() {
 		IsStatic:   true,
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -182,7 +182,7 @@ func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateUseCaseGeneralization(suite.db, suite.model.Key, model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -192,10 +192,10 @@ func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
@@ -216,13 +216,13 @@ func (suite *UseCaseGeneralizationSuite) TestRemove() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(generalization)
 }
@@ -248,10 +248,10 @@ func (suite *UseCaseGeneralizationSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalizations, err := QueryUseCaseGeneralizations(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_use_case.Generalization{
 		suite.subdomain.Key: {
 			{

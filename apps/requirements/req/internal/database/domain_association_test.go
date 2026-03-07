@@ -9,7 +9,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -68,10 +67,10 @@ func (suite *DomainAssociationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err = LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
@@ -87,10 +86,10 @@ func (suite *DomainAssociationSuite) TestAdd() {
 		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
@@ -106,7 +105,7 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Update swaps problem and solution domains.
 	err = UpdateDomainAssociation(suite.db, suite.model.Key, model_domain.Association{
@@ -115,10 +114,10 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 		SolutionDomainKey: suite.domain.Key,
 		UmlComment:        "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domainB.Key,
@@ -134,10 +133,10 @@ func (suite *DomainAssociationSuite) TestRemove() {
 		SolutionDomainKey: suite.domainB.Key,
 		UmlComment:        "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -159,10 +158,10 @@ func (suite *DomainAssociationSuite) TestQuery() {
 			UmlComment:        "UmlComment",
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	associations, err := QueryDomainAssociations(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_domain.Association{
 		{
 			Key:               suite.associationKey,

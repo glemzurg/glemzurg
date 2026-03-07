@@ -52,7 +52,7 @@ func (suite *UseCaseSuite) SetupTest() {
 func (suite *UseCaseSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(useCase)
 
@@ -84,10 +84,10 @@ func (suite *UseCaseSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err = LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -112,10 +112,10 @@ func (suite *UseCaseSuite) TestAdd() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -140,10 +140,10 @@ func (suite *UseCaseSuite) TestAddNulls() {
 		SubclassOfKey:   nil,
 		UmlComment:      "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -168,7 +168,7 @@ func (suite *UseCaseSuite) TestUpdate() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateUseCase(suite.db, suite.model.Key, model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -180,10 +180,10 @@ func (suite *UseCaseSuite) TestUpdate() {
 		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -208,7 +208,7 @@ func (suite *UseCaseSuite) TestUpdateNulls() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateUseCase(suite.db, suite.model.Key, model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -220,10 +220,10 @@ func (suite *UseCaseSuite) TestUpdateNulls() {
 		SubclassOfKey:   nil,
 		UmlComment:      "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.subdomain.Key, subdomainKey)
 	suite.Equal(model_use_case.UseCase{
 		Key:             suite.useCaseKey,
@@ -246,13 +246,13 @@ func (suite *UseCaseSuite) TestRemove() {
 		ReadOnly:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(useCase)
 }
@@ -283,10 +283,10 @@ func (suite *UseCaseSuite) TestQuery() {
 			UmlComment:      "UmlComment",
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKeys, useCases, err := QueryUseCases(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key]identity.Key{
 		suite.useCaseKeyB: suite.subdomain.Key,
 		suite.useCaseKey:  suite.subdomain.Key,

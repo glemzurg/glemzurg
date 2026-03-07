@@ -38,7 +38,7 @@ func (s *StressCaseTestSuite) TestCaseBasicParsing() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q", tt.input)
+			s.Require().NoError(err, "should parse: %q", tt.input)
 
 			caseExpr, ok := expr.(*ast.CaseExpr)
 			s.True(ok, "expected CaseExpr, got %T", expr)
@@ -82,7 +82,7 @@ func (s *StressCaseTestSuite) TestCaseWithIndexingInResults() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			caseExpr, ok := expr.(*ast.CaseExpr)
 			s.True(ok, "expected CaseExpr, got %T", expr)
@@ -118,7 +118,7 @@ func (s *StressCaseTestSuite) TestCaseConditionOrExprRestriction() {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
 			if tt.shouldParse {
-				s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+				s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 			} else {
 				s.Error(err, "should fail: %q (%s)", tt.input, tt.desc)
 			}
@@ -141,7 +141,7 @@ func (s *StressCaseTestSuite) TestCaseWithUnicodeDelimiters() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.CaseExpr)
 			s.True(ok, "expected CaseExpr, got %T", expr)
@@ -167,7 +167,7 @@ func (s *StressCaseTestSuite) TestCaseWithComplexConditions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			caseExpr, ok := expr.(*ast.CaseExpr)
 			s.True(ok, "expected CaseExpr, got %T", expr)

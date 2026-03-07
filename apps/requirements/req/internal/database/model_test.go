@@ -46,10 +46,10 @@ func (suite *ModelSuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err = LoadModel(suite.db, "Key") // Test case-insensitive.
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
@@ -63,10 +63,10 @@ func (suite *ModelSuite) TestAdd() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
@@ -80,17 +80,17 @@ func (suite *ModelSuite) TestUpdate() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateModel(suite.db, core.Model{
 		Key:     "kEy", // Test case-insensitive.
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "NameX",
@@ -104,10 +104,10 @@ func (suite *ModelSuite) TestRemove() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveModel(suite.db, "kEy") // Test case-insensitive.
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
 	suite.ErrorIs(err, ErrNotFound)
@@ -120,17 +120,17 @@ func (suite *ModelSuite) TestQuery() {
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = AddModel(suite.db, core.Model{
 		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	models, err := QueryModels(suite.db)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal([]core.Model{
 		{
 			Key:     "key",

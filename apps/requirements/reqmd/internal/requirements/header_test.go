@@ -72,7 +72,7 @@ func (suite *HeaderSuite) TestNew() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		header, err := newHeader(test.ref, test.textline)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.header, header, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
@@ -135,7 +135,7 @@ func (suite *HeaderSuite) TestLink() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		header, err := newHeader(1, test.textline)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 		suite.Equal(test.link, header.Link(), testName)
 	}
 }
@@ -305,7 +305,7 @@ func (suite *HeaderSuite) TestParseRequirementHeader() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		prefix, kind, num, title, err := parseRequirementHeader(test.textline)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			suite.Equal(test.prefix, prefix, testName)
 			suite.Equal(test.kind, kind, testName)
 			suite.Equal(test.num, num, testName)

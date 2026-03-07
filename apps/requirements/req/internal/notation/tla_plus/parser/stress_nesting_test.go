@@ -35,7 +35,7 @@ func (s *StressNestingTestSuite) TestDeepParentheses() {
 			// Build ((((... 1 ...))))
 			input := strings.Repeat("(", tt.depth) + "1" + strings.Repeat(")", tt.depth)
 			_, err := ParseExpression(input)
-			s.NoError(err, "should parse %d-level nested parens", tt.depth)
+			s.Require().NoError(err, "should parse %d-level nested parens", tt.depth)
 		})
 	}
 }
@@ -61,7 +61,7 @@ func (s *StressNestingTestSuite) TestDeepArithmeticChains() {
 			}
 			input := strings.Join(parts, " "+tt.op+" ")
 			_, err := ParseExpression(input)
-			s.NoError(err, "should parse %d-term %s chain", tt.count, tt.op)
+			s.Require().NoError(err, "should parse %d-term %s chain", tt.count, tt.op)
 		})
 	}
 }
@@ -86,7 +86,7 @@ func (s *StressNestingTestSuite) TestDeepLogicChains() {
 			}
 			input := strings.Join(parts, " "+tt.op+" ")
 			_, err := ParseExpression(input)
-			s.NoError(err, "should parse %d-term logic chain", tt.count)
+			s.Require().NoError(err, "should parse %d-term logic chain", tt.count)
 		})
 	}
 }
@@ -114,7 +114,7 @@ func (s *StressNestingTestSuite) TestDeepNestedIF() {
 				b.WriteString(fmt.Sprintf(" ELSE %d", i+2))
 			}
 			_, err := ParseExpression(b.String())
-			s.NoError(err, "should parse %d-level nested IF", tt.depth)
+			s.Require().NoError(err, "should parse %d-level nested IF", tt.depth)
 		})
 	}
 }
@@ -142,7 +142,7 @@ func (s *StressNestingTestSuite) TestDeepNestedTuples() {
 				b.WriteString(">>")
 			}
 			_, err := ParseExpression(b.String())
-			s.NoError(err, "should parse %d-level nested tuples", tt.depth)
+			s.Require().NoError(err, "should parse %d-level nested tuples", tt.depth)
 		})
 	}
 }
@@ -169,7 +169,7 @@ func (s *StressNestingTestSuite) TestDeepNestedSets() {
 				b.WriteString("}")
 			}
 			_, err := ParseExpression(b.String())
-			s.NoError(err, "should parse %d-level nested sets", tt.depth)
+			s.Require().NoError(err, "should parse %d-level nested sets", tt.depth)
 		})
 	}
 }
@@ -178,7 +178,7 @@ func (s *StressNestingTestSuite) TestDeepNestedSets() {
 func (s *StressNestingTestSuite) TestDeepNestedRecords() {
 	expr := `[a |-> [b |-> [c |-> 1]]]`
 	_, err := ParseExpression(expr)
-	s.NoError(err, "should parse nested records")
+	s.Require().NoError(err, "should parse nested records")
 }
 
 // TestDeepSetUnionChain tests a long chain of set union operations.
@@ -190,7 +190,7 @@ func (s *StressNestingTestSuite) TestDeepSetUnionChain() {
 	}
 	input := strings.Join(parts, " ∪ ")
 	_, err := ParseExpression(input)
-	s.NoError(err, "should parse 10-term set union chain")
+	s.Require().NoError(err, "should parse 10-term set union chain")
 }
 
 // TestDeepNestedArithmetic tests deeply left-nested arithmetic.
@@ -209,7 +209,7 @@ func (s *StressNestingTestSuite) TestDeepNestedArithmetic() {
 			}
 			b.WriteString(")")
 			_, err := ParseExpression(b.String())
-			s.NoError(err, "should parse %d-level nested arithmetic", depth)
+			s.Require().NoError(err, "should parse %d-level nested arithmetic", depth)
 		})
 	}
 }

@@ -42,7 +42,7 @@ func (s *StressIdentifierTestSuite) TestKeywordPrefixIdentifiers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse as identifier: %q", tt.input)
+			s.Require().NoError(err, "should parse as identifier: %q", tt.input)
 
 			ident, ok := expr.(*ast.Identifier)
 			s.True(ok, "expected Identifier, got %T for %q", expr, tt.input)
@@ -67,7 +67,7 @@ func (s *StressIdentifierTestSuite) TestUnderscoreIdentifiers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			ident, ok := expr.(*ast.Identifier)
 			s.True(ok, "expected Identifier, got %T", expr)
@@ -94,7 +94,7 @@ func (s *StressIdentifierTestSuite) TestSimpleIdentifiers() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			ident, ok := expr.(*ast.Identifier)
 			s.True(ok, "expected Identifier, got %T", expr)
@@ -120,7 +120,7 @@ func (s *StressIdentifierTestSuite) TestIdentifiersInExpressions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

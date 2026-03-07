@@ -223,7 +223,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
-	suite.NoError(err, "Class with let in invariants should be valid")
+	suite.Require().NoError(err, "Class with let in invariants should be valid")
 
 	// Test duplicate let target in class invariants.
 	class = Class{
@@ -345,7 +345,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Transitions: map[identity.Key]model_state.Transition{transitionKey: validTransition},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
-	suite.NoError(err, "Valid class with all children should pass")
+	suite.Require().NoError(err, "Valid class with all children should pass")
 
 	// Test guard logic key mismatch is caught through class validation.
 	otherGuardKey := helper.Must(identity.NewGuardKey(validKey, "other_guard"))

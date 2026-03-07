@@ -73,10 +73,10 @@ func (suite *QuerySuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err = LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
@@ -91,10 +91,10 @@ func (suite *QuerySuite) TestAdd() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
@@ -109,17 +109,17 @@ func (suite *QuerySuite) TestUpdate() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.class.Key, classKey)
 	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
@@ -134,10 +134,10 @@ func (suite *QuerySuite) TestRemove() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQuery(suite.db, suite.model.Key, suite.class.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -160,10 +160,10 @@ func (suite *QuerySuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	queries, err := QueryQueries(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{

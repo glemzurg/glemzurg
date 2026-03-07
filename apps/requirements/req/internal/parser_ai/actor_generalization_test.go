@@ -24,7 +24,7 @@ type ActorGeneralizationSuite struct {
 
 func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_ACTOR_GENERALIZATION_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
