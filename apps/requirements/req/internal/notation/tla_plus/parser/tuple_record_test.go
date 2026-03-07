@@ -426,7 +426,7 @@ func (s *TupleRecordSuite) TestRecordType_Validate() {
 
 	rt, ok := expr.(*ast.RecordTypeExpr)
 	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
-	s.NoError(rt.Validate())
+	s.Require().NoError(rt.Validate())
 }
 
 // Ensure record value syntax still works alongside record type syntax.
@@ -495,5 +495,5 @@ func (s *TupleRecordSuite) TestCartesianProduct_Validate() {
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
-	s.NoError(cp.Validate())
+	s.Require().NoError(cp.Validate())
 }

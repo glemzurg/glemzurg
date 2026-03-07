@@ -359,67 +359,67 @@ func (s *LowerModelTestSuite) TestLowerModelAllExpressionsValidate() {
 	// Validate every lowered expression.
 	for _, inv := range model.Invariants {
 		if inv.Spec.Expression != nil {
-			s.NoError(inv.Spec.Expression.Validate())
+			s.Require().NoError(inv.Spec.Expression.Validate())
 		}
 	}
 	for _, gf := range model.GlobalFunctions {
 		if gf.Logic.Spec.Expression != nil {
-			s.NoError(gf.Logic.Spec.Expression.Validate())
+			s.Require().NoError(gf.Logic.Spec.Expression.Validate())
 		}
 	}
 	for _, ns := range model.NamedSets {
 		if ns.Spec.Expression != nil {
-			s.NoError(ns.Spec.Expression.Validate())
+			s.Require().NoError(ns.Spec.Expression.Validate())
 		}
 	}
 
 	class := getClassFromModel(model)
 	for _, inv := range class.Invariants {
 		if inv.Spec.Expression != nil {
-			s.NoError(inv.Spec.Expression.Validate())
+			s.Require().NoError(inv.Spec.Expression.Validate())
 		}
 	}
 	for _, attr := range class.Attributes {
 		if attr.DerivationPolicy != nil && attr.DerivationPolicy.Spec.Expression != nil {
-			s.NoError(attr.DerivationPolicy.Spec.Expression.Validate())
+			s.Require().NoError(attr.DerivationPolicy.Spec.Expression.Validate())
 		}
 		for _, inv := range attr.Invariants {
 			if inv.Spec.Expression != nil {
-				s.NoError(inv.Spec.Expression.Validate())
+				s.Require().NoError(inv.Spec.Expression.Validate())
 			}
 		}
 	}
 	for _, guard := range class.Guards {
 		if guard.Logic.Spec.Expression != nil {
-			s.NoError(guard.Logic.Spec.Expression.Validate())
+			s.Require().NoError(guard.Logic.Spec.Expression.Validate())
 		}
 	}
 	for _, action := range class.Actions {
 		for _, r := range action.Requires {
 			if r.Spec.Expression != nil {
-				s.NoError(r.Spec.Expression.Validate())
+				s.Require().NoError(r.Spec.Expression.Validate())
 			}
 		}
 		for _, g := range action.Guarantees {
 			if g.Spec.Expression != nil {
-				s.NoError(g.Spec.Expression.Validate())
+				s.Require().NoError(g.Spec.Expression.Validate())
 			}
 		}
 		for _, sr := range action.SafetyRules {
 			if sr.Spec.Expression != nil {
-				s.NoError(sr.Spec.Expression.Validate())
+				s.Require().NoError(sr.Spec.Expression.Validate())
 			}
 		}
 	}
 	for _, query := range class.Queries {
 		for _, r := range query.Requires {
 			if r.Spec.Expression != nil {
-				s.NoError(r.Spec.Expression.Validate())
+				s.Require().NoError(r.Spec.Expression.Validate())
 			}
 		}
 		for _, g := range query.Guarantees {
 			if g.Spec.Expression != nil {
-				s.NoError(g.Spec.Expression.Validate())
+				s.Require().NoError(g.Spec.Expression.Validate())
 			}
 		}
 	}

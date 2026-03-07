@@ -157,7 +157,7 @@ func (s *StressPrecedenceTestSuite) TestMultiplicationWithNegatedOperand() {
 	if err != nil {
 		// If it fails, parentheses should fix it:
 		_, err2 := ParseExpression("x * (-y)")
-		s.NoError(err2, "parenthesized negation should always work")
+		s.Require().NoError(err2, "parenthesized negation should always work")
 	}
 }
 
@@ -167,7 +167,7 @@ func (s *StressPrecedenceTestSuite) TestBothOperandsNegated() {
 	// If it fails, test the parenthesized form:
 	if err != nil {
 		_, err2 := ParseExpression("(-1) * (-2)")
-		s.NoError(err2)
+		s.Require().NoError(err2)
 	}
 }
 

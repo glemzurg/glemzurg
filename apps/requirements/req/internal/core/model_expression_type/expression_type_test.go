@@ -142,7 +142,7 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 			},
 		},
 	}
-	s.NoError(et.Validate())
+	s.Require().NoError(et.Validate())
 
 	// Nested with error deep inside.
 	etBad := &SetType{
@@ -176,9 +176,9 @@ func (s *ExpressionTypeTestSuite) TestTypeName() {
 
 func (s *ExpressionTypeTestSuite) TestValidateExpressionTypeHelper() {
 	// Nil is valid.
-	s.NoError(ValidateExpressionType(nil))
+	s.Require().NoError(ValidateExpressionType(nil))
 	// Valid type.
-	s.NoError(ValidateExpressionType(&BooleanType{}))
+	s.Require().NoError(ValidateExpressionType(&BooleanType{}))
 	// Invalid type.
 	err := ValidateExpressionType(&SetType{})
 	s.Require().Error(err)

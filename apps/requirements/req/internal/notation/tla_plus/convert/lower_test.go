@@ -882,7 +882,7 @@ func (s *LowerTestSuite) TestLoweredExpressionValidates() {
 	}
 	result, err := Lower(expr, s.ctx)
 	s.Require().NoError(err)
-	s.NoError(result.Validate())
+	s.Require().NoError(result.Validate())
 }
 
 // --- Test local variable scoping ---

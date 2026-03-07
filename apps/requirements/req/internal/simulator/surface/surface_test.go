@@ -248,7 +248,7 @@ func (s *SurfaceSuite) TestValidate_ValidSpec() {
 		IncludeClasses:    []identity.Key{orderClassKey},
 		ExcludeClasses:    []identity.Key{itemClassKey},
 	}
-	s.NoError(spec.Validate(model))
+	s.Require().NoError(spec.Validate(model))
 }
 
 func (s *SurfaceSuite) TestValidate_UnknownDomain() {
