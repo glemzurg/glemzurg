@@ -53,7 +53,8 @@ func (suite *MultiplicitySuite) TestValidate() {
 		},
 	}
 	for _, test := range tests {
-		suite.T().Run(test.name, func(t *testing.T) {
+		suite.Run(test.name, func() {
+			t := suite.T()
 			err := test.obj.Validate()
 			if test.errstr == "" {
 				require.NoError(t, err)
@@ -225,7 +226,8 @@ func (suite *MultiplicitySuite) TestParsedString() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.name, func(t *testing.T) {
+		suite.Run(tt.name, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.multiplicity.ParsedString())
 		})
 	}

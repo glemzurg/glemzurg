@@ -122,7 +122,8 @@ func (suite *ClassSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.class.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -581,7 +582,8 @@ func (suite *ClassSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.class.ValidateReferences(tt.actors, tt.generalizations)
 			if tt.errstr == "" {
 				require.NoError(t, err)

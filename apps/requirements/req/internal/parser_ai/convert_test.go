@@ -1313,7 +1313,8 @@ func (suite *ConvertSuite) TestConvertMultiplicityFormats() {
 	}
 
 	for _, tt := range tests {
-		suite.T().Run(tt.expected, func(t *testing.T) {
+		suite.Run(tt.expected, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.mult.String())
 		})
 	}

@@ -53,7 +53,8 @@ func (suite *ScenarioSuite) TestObjectMarshalUnmarshal() {
 	}
 
 	for _, tc := range tests {
-		suite.T().Run(tc.name, func(t *testing.T) {
+		suite.Run(tc.name, func() {
+			t := suite.T()
 			data, err := json.Marshal(tc.input)
 			require.NoError(t, err)
 
@@ -198,7 +199,8 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 	}
 
 	for _, tc := range tests {
-		suite.T().Run(tc.name, func(t *testing.T) {
+		suite.Run(tc.name, func() {
+			t := suite.T()
 			data, err := json.Marshal(tc.input)
 			require.NoError(t, err)
 
@@ -261,7 +263,8 @@ func (suite *ScenarioSuite) TestScenarioMarshalUnmarshal() {
 	}
 
 	for _, tc := range tests {
-		suite.T().Run(tc.name, func(t *testing.T) {
+		suite.Run(tc.name, func() {
+			t := suite.T()
 			data, err := json.Marshal(tc.input)
 			require.NoError(t, err)
 
