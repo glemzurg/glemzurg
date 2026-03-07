@@ -405,7 +405,7 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(&domainKey)
-	s.ErrorContains(err, "should not have a parent")
+	s.Require().ErrorContains(err, "should not have a parent")
 
 	// Test with action require key and action parent.
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))

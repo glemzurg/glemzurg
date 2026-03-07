@@ -319,7 +319,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
-	suite.Error(err, "Should validate child Transitions")
+	suite.Require().Error(err, "Should validate child Transitions")
 
 	// Test valid class with all child types.
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
