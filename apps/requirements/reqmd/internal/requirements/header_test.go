@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -75,7 +74,7 @@ func (suite *HeaderSuite) TestNew() {
 			suite.Require().NoError(err, testName)
 			suite.Equal(test.header, header, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(header, testName)
 		}
 	}
@@ -311,7 +310,7 @@ func (suite *HeaderSuite) TestParseRequirementHeader() {
 			suite.Equal(test.num, num, testName)
 			suite.Equal(test.title, title, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(prefix, testName)
 			suite.Empty(kind, testName)
 			suite.Empty(num, testName)

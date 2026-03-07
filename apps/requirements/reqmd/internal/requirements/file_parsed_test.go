@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -89,7 +88,7 @@ func (suite *FileParsedSuite) TestNew() {
 
 	// Errors.
 	file, err := newFileParsed("", "contents", "header", []uint{2, 3})
-	assert.ErrorContains(suite.T(), err, "cannot be blank")
+	suite.Require().ErrorContains(err, "cannot be blank")
 	suite.Empty(file)
 }
 

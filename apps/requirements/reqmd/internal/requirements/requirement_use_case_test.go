@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -191,7 +190,7 @@ Something. [A13][A13]
 			suite.Require().NoError(err, testName)
 			suite.Equal(test.incompletes, incompletes, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(incompletes, testName)
 		}
 	}

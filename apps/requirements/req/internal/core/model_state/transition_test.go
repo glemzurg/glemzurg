@@ -195,7 +195,7 @@ func (suite *TransitionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewTransition(key, nil, eventKey, nil, nil, nil, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "FromStateKey, ToStateKey: cannot both be blank")
+	suite.Require().ErrorContains(err, "FromStateKey, ToStateKey: cannot both be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -217,7 +217,7 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 		ToStateKey:   nil, // Invalid - both nil
 	}
 	err := transition.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "FromStateKey, ToStateKey: cannot both be blank", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "FromStateKey, ToStateKey: cannot both be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - transition key has class1 as parent, but we pass other_class.
 	transition = Transition{
@@ -227,7 +227,7 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 		ToStateKey:   &toStateKey,
 	}
 	err = transition.ValidateWithParent(&otherClassKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = transition.ValidateWithParent(&classKey)

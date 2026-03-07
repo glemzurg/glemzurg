@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -138,7 +137,7 @@ The body text.`,
 			suite.Require().NoError(err, testName)
 			suite.Equal(test.requirement, requirement, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(requirement, testName)
 		}
 	}
@@ -272,7 +271,7 @@ The body text.`,
 			suite.Require().NoError(err, testName)
 			suite.Equal(test.refLinkMarkdown, refLinkMarkdown, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(refLinkMarkdown, testName)
 		}
 	}
@@ -339,7 +338,7 @@ The body text.`,
 			suite.Require().NoError(err, testName)
 			suite.Equal(test.referencedFromLinkMarkdown, refLinkMarkdown, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(refLinkMarkdown, testName)
 		}
 	}

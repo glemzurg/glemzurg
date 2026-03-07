@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -110,7 +109,7 @@ func (suite *LinkSuite) TestNew() {
 			test.link.Match = test.match // Set the match since it should be identical.
 			suite.Equal(test.link, link, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(link, testName)
 		}
 	}

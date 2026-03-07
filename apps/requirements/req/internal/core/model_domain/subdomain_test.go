@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -96,7 +95,7 @@ func (suite *SubdomainSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewSubdomain(key, "", "Details", "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -110,7 +109,7 @@ func (suite *SubdomainSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := subdomain.ValidateWithParent(&suite.domainKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - subdomain key has domain1 as parent, but we pass other_domain.
 	subdomain = Subdomain{
@@ -118,7 +117,7 @@ func (suite *SubdomainSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = subdomain.ValidateWithParent(&otherDomainKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = subdomain.ValidateWithParent(&suite.domainKey)
@@ -158,7 +157,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		modelLevelAssocKey: modelLevelAssoc,
 	})
-	assert.ErrorContains(suite.T(), err, "has no parent")
+	suite.Require().ErrorContains(err, "has no parent")
 
 	// Test: error when association parent is different subdomain.
 	wrongParentAssocKey := helper.Must(identity.NewClassAssociationKey(otherSubdomainKey, otherClassKey1, otherClassKey2, "wrong parent association"))
@@ -166,7 +165,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	err = subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongParentAssocKey: wrongParentAssoc,
 	})
-	assert.ErrorContains(suite.T(), err, "parent does not match subdomain")
+	suite.Require().ErrorContains(err, "parent does not match subdomain")
 }
 
 // TestGetClassAssociations tests that GetClassAssociations returns a copy of the associations.
@@ -235,7 +234,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err := subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Generalizations")
+	suite.Require().ErrorContains(err, "Name", "Should validate child Generalizations")
 
 	// Test invalid Class child propagates error.
 	subdomain = Subdomain{
@@ -246,7 +245,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Classes")
+	suite.Require().ErrorContains(err, "Name", "Should validate child Classes")
 
 	// Test invalid UseCase child propagates error.
 	subdomain = Subdomain{
@@ -257,7 +256,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "Name", "Should validate child UseCases")
+	suite.Require().ErrorContains(err, "Name", "Should validate child UseCases")
 
 	// Test invalid ClassAssociation child propagates error.
 	assocKey := helper.Must(identity.NewClassAssociationKey(subdomainKey, classKey, classKey2, "assoc1"))
@@ -269,7 +268,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "Name", "Should validate child ClassAssociations")
+	suite.Require().ErrorContains(err, "Name", "Should validate child ClassAssociations")
 
 	// Test invalid UseCaseShares - sea-level key not a use case.
 	nonExistentUseCaseKey := helper.Must(identity.NewUseCaseKey(subdomainKey, "nonexistent"))
@@ -286,7 +285,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "sea-level key", "Should validate UseCaseShares sea-level key")
+	suite.Require().ErrorContains(err, "sea-level key", "Should validate UseCaseShares sea-level key")
 
 	// Test invalid UseCaseShares - mud-level key not a use case.
 	subdomain = Subdomain{
@@ -302,7 +301,7 @@ func (suite *SubdomainSuite) TestValidateWithParentAndActorsAndClasses() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "mud-level key", "Should validate UseCaseShares mud-level key")
+	suite.Require().ErrorContains(err, "mud-level key", "Should validate UseCaseShares mud-level key")
 
 	// Test valid subdomain with all children.
 	subdomain = Subdomain{
@@ -390,7 +389,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
+	suite.Require().ErrorContains(err, "does not match guard key", "Should catch guard logic key mismatch in deep tree")
 
 	// Test action require key with wrong parent is caught deep in the tree.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
@@ -409,7 +408,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "requires 0", "Should catch action require key error in deep tree")
+	suite.Require().ErrorContains(err, "requires 0", "Should catch action require key error in deep tree")
 
 	// Test attribute derivation key with wrong parent is caught deep in the tree.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
@@ -428,5 +427,5 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 		},
 	}
 	err = subdomain.ValidateWithParentAndActorsAndClasses(&suite.domainKey, actors, classes)
-	assert.ErrorContains(suite.T(), err, "DerivationPolicy", "Should catch attribute derivation key error in deep tree")
+	suite.Require().ErrorContains(err, "DerivationPolicy", "Should catch attribute derivation key error in deep tree")
 }
