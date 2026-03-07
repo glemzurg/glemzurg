@@ -42,7 +42,8 @@ func (suite *PrimedSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			p := &Primed{Base: tt.base}
 			assert.Equal(t, tt.expected, p.String())
 		})
@@ -88,7 +89,8 @@ func (suite *PrimedSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.p.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)

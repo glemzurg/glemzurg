@@ -101,7 +101,8 @@ func (suite *CallExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			c := &CallExpression{
 				ModelScope:   tt.modelScope,
 				Domain:       tt.domain,
@@ -174,7 +175,8 @@ func (suite *CallExpressionSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			c := &CallExpression{
 				ModelScope:   tt.modelScope,
 				Domain:       tt.domain,
@@ -401,7 +403,8 @@ func (suite *CallExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.c.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

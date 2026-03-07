@@ -158,7 +158,8 @@ func (suite *TransitionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.transition.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -381,7 +382,8 @@ func (suite *TransitionSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.transition.ValidateReferences(tt.states, tt.events, tt.guards, tt.actions)
 			if tt.errstr == "" {
 				require.NoError(t, err)

@@ -49,7 +49,8 @@ func (suite *StringIndexSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			expr := &StringIndex{
 				Str:   tt.str,
 				Index: tt.index,
@@ -86,7 +87,8 @@ func (suite *StringIndexSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			expr := &StringIndex{
 				Str:   tt.str,
 				Index: tt.index,
@@ -128,7 +130,8 @@ func (suite *StringIndexSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.s.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

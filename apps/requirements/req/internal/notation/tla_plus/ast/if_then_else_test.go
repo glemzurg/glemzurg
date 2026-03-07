@@ -73,7 +73,8 @@ func (suite *ExpressionIfElseSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			expr := &ExpressionIfElse{
 				Condition: tt.condition,
 				Then:      tt.then,
@@ -119,7 +120,8 @@ func (suite *ExpressionIfElseSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			expr := &ExpressionIfElse{
 				Condition: tt.condition,
 				Then:      tt.then,
@@ -224,7 +226,8 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.e.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

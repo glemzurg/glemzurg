@@ -53,7 +53,8 @@ func (suite *NumericPrefixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.n.String())
 		})
 	}
@@ -89,7 +90,8 @@ func (suite *NumericPrefixExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.n.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)

@@ -34,7 +34,8 @@ func (suite *IdentifierSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			i := &Identifier{Value: tt.value}
 			assert.Equal(t, tt.expected, i.String())
 		})
@@ -59,7 +60,8 @@ func (suite *IdentifierSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			i := &Identifier{Value: tt.value}
 			assert.Equal(t, tt.expected, i.ASCII())
 		})
@@ -95,7 +97,8 @@ func (suite *IdentifierSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.i.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

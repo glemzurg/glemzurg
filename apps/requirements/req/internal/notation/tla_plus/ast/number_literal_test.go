@@ -74,7 +74,8 @@ func (suite *NumberLiteralSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.n.String())
 		})
 	}
@@ -150,7 +151,8 @@ func (suite *NumberLiteralSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.n.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -179,7 +181,8 @@ func (suite *NumberLiteralSuite) TestIsInteger() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.n.IsInteger())
 		})
 	}
@@ -203,7 +206,8 @@ func (suite *NumberLiteralSuite) TestIsDecimal() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.n.IsDecimal())
 		})
 	}
@@ -242,7 +246,8 @@ func (suite *NumberLiteralSuite) TestConstructors() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.n.String())
 		})
 	}

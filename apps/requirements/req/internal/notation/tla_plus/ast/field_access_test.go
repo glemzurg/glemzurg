@@ -55,7 +55,8 @@ func (suite *FieldIdentifierSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			f := &FieldIdentifier{
 				Identifier: tt.identifier,
 				Member:     tt.member,
@@ -86,7 +87,8 @@ func (suite *FieldIdentifierSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			f := &FieldIdentifier{
 				Identifier: tt.identifier,
 				Member:     tt.member,
@@ -143,7 +145,8 @@ func (suite *FieldIdentifierSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.f.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

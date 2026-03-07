@@ -110,7 +110,8 @@ func (suite *ExpressionCaseSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			expr := &ExpressionCase{
 				Branches: tt.branches,
 				Other:    tt.other,
@@ -172,7 +173,8 @@ func (suite *ExpressionCaseSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			expr := &ExpressionCase{
 				Branches: tt.branches,
 				Other:    tt.other,
@@ -291,7 +293,8 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.e.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

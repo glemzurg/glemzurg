@@ -37,7 +37,8 @@ func (suite *LogicPrefixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			pe := &LogicPrefixExpression{
 				Operator: tt.operator,
 				Right:    tt.right,
@@ -68,7 +69,8 @@ func (suite *LogicPrefixExpressionSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			pe := &LogicPrefixExpression{
 				Operator: tt.operator,
 				Right:    tt.right,
@@ -141,7 +143,8 @@ func (suite *LogicPrefixExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.pe.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

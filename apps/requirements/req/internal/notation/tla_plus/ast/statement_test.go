@@ -65,7 +65,8 @@ func (suite *AssignmentSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			stmt := &Assignment{
 				Target: tt.target,
 				Value:  tt.value,
@@ -101,7 +102,8 @@ func (suite *AssignmentSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			stmt := &Assignment{
 				Target: tt.target,
 				Value:  tt.value,
@@ -159,7 +161,8 @@ func (suite *AssignmentSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.a.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

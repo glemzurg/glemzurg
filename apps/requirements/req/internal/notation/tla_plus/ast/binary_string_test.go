@@ -70,7 +70,8 @@ func (suite *StringInfixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			s := &StringInfixExpression{
 				Operator: tt.operator,
 				Operands: tt.operands,
@@ -123,7 +124,8 @@ func (suite *StringInfixExpressionSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			s := &StringInfixExpression{
 				Operator: tt.operator,
 				Operands: tt.operands,
@@ -230,7 +232,8 @@ func (suite *StringInfixExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.s.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

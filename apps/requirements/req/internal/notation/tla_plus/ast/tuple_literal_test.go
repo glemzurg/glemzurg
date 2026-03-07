@@ -92,7 +92,8 @@ func (suite *TupleLiteralSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			tup := &TupleLiteral{
 				Elements: tt.elements,
 			}
@@ -134,7 +135,8 @@ func (suite *TupleLiteralSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			tup := &TupleLiteral{
 				Elements: tt.elements,
 			}
@@ -207,7 +209,8 @@ func (suite *TupleLiteralSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.t.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

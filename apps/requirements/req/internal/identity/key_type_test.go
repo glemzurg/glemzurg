@@ -39,7 +39,8 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewActorKey(tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -77,7 +78,8 @@ func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewActorGeneralizationKey(tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -136,7 +138,8 @@ func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewUseCaseGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -174,7 +177,8 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewDomainKey(tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -217,7 +221,8 @@ func (suite *KeyTypeSuite) TestNewInvariantKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewInvariantKey(tt.subKey)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
@@ -260,7 +265,8 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewGlobalFunctionKey(tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -330,7 +336,8 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewDomainAssociationKey(tt.problemDomainKey, tt.solutionDomainKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -386,7 +393,8 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewSubdomainKey(tt.domainKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -451,7 +459,8 @@ func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewAttributeDerivationKey(tt.attributeKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -516,7 +525,8 @@ func (suite *KeyTypeSuite) TestNewActionRequireKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewActionRequireKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -581,7 +591,8 @@ func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewActionGuaranteeKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -646,7 +657,8 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewActionSafetyKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -711,7 +723,8 @@ func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewQueryRequireKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -776,7 +789,8 @@ func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewQueryGuaranteeKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -835,7 +849,8 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewUseCaseKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -891,7 +906,8 @@ func (suite *KeyTypeSuite) TestNewClassKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewClassKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -950,7 +966,8 @@ func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1012,7 +1029,8 @@ func (suite *KeyTypeSuite) TestNewScenarioKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewScenarioKey(tt.useCaseKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1077,7 +1095,8 @@ func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewScenarioObjectKey(tt.scenarioKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1142,7 +1161,8 @@ func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewScenarioStepKey(tt.scenarioKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1204,7 +1224,8 @@ func (suite *KeyTypeSuite) TestNewStateKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewStateKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1266,7 +1287,8 @@ func (suite *KeyTypeSuite) TestNewEventKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewEventKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1328,7 +1350,8 @@ func (suite *KeyTypeSuite) TestNewGuardKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewGuardKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1390,7 +1413,8 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewActionKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				suite.Require().NoError(err)
@@ -1452,7 +1476,8 @@ func (suite *KeyTypeSuite) TestNewQueryKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewQueryKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1520,7 +1545,8 @@ func (suite *KeyTypeSuite) TestClassInvariant() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewClassInvariantKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1582,7 +1608,8 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewAttributeKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1827,7 +1854,8 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewClassAssociationKey(tt.parentKey, tt.fromClassKey, tt.toClassKey, tt.name)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1901,7 +1929,8 @@ func (suite *KeyTypeSuite) TestNewStateActionKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewStateActionKey(tt.stateKey, tt.when, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -2015,7 +2044,8 @@ func (suite *KeyTypeSuite) TestNewTransitionKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := NewTransitionKey(tt.classKey, tt.from, tt.event, tt.guard, tt.action, tt.to)
 			if tt.errstr == "" {
 				require.NoError(t, err)

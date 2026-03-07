@@ -40,7 +40,8 @@ func (suite *LogicMembershipSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			m := &LogicMembership{
 				Operator: tt.operator,
 				Left:     tt.left,
@@ -75,7 +76,8 @@ func (suite *LogicMembershipSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			m := &LogicMembership{
 				Operator: tt.operator,
 				Left:     tt.left,
@@ -164,7 +166,8 @@ func (suite *LogicMembershipSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.m.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

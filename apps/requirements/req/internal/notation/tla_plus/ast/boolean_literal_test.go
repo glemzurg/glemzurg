@@ -34,7 +34,8 @@ func (suite *BooleanLiteralSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			b := &BooleanLiteral{Value: tt.value}
 			assert.Equal(t, tt.expected, b.String())
 		})
@@ -59,7 +60,8 @@ func (suite *BooleanLiteralSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			b := &BooleanLiteral{Value: tt.value}
 			assert.Equal(t, tt.expected, b.ASCII())
 		})
@@ -83,7 +85,8 @@ func (suite *BooleanLiteralSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.b.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

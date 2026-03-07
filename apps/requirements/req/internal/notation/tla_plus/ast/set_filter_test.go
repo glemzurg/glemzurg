@@ -49,7 +49,8 @@ func (suite *SetConditionalSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			sc := &SetConditional{
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
@@ -92,7 +93,8 @@ func (suite *SetConditionalSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			sc := &SetConditional{
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
@@ -185,7 +187,8 @@ func (suite *SetConditionalSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.sc.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

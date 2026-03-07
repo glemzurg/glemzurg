@@ -61,7 +61,8 @@ func (suite *KeySuite) TestNewKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := newKey(tt.parentKey, tt.keyType, tt.subKey)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -192,7 +193,8 @@ func (suite *KeySuite) TestParseKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			key, err := ParseKey(tt.input)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -273,7 +275,8 @@ func (suite *KeySuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			assert.Equal(t, tt.expected, tt.key.String())
 		})
 		if !pass {
@@ -575,7 +578,8 @@ func (suite *KeySuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.key.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1334,7 +1338,8 @@ func (suite *KeySuite) TestValidateParent() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.key.ValidateParent(tt.parent)
 			if tt.errstr == "" {
 				require.NoError(t, err)
@@ -1391,7 +1396,8 @@ func (suite *KeySuite) TestHasNoParent() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			result := tt.key.HasNoParent()
 			assert.Equal(t, tt.expected, result)
 		})
@@ -1489,7 +1495,8 @@ func (suite *KeySuite) TestIsParent() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			result := tt.key.IsParent(tt.parentKey)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -1557,7 +1564,8 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			// Create the key.
 			originalKey, err := tt.createKey()
 			require.NoError(t, err, "Failed to create key for: %s", tt.description)
@@ -1628,7 +1636,8 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 		{testName: "class invariant key", key: classInvariantKey},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			// Marshal to JSON.
 			jsonBytes, err := json.Marshal(tt.key)
 			require.NoError(t, err, "Failed to marshal key to JSON")
@@ -1685,7 +1694,8 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			var key Key
 			err := json.Unmarshal([]byte(tt.jsonStr), &key)
 			assert.ErrorContains(t, err, tt.errstr)
@@ -1743,7 +1753,8 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 		{testName: "class invariant key", key: classInvariantKey},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			// Marshal to text.
 			textBytes, err := tt.key.MarshalText()
 			require.NoError(t, err, "Failed to marshal key to text")
@@ -1793,7 +1804,8 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			var key Key
 			err := key.UnmarshalText([]byte(tt.text))
 			assert.ErrorContains(t, err, tt.errstr)
@@ -1881,7 +1893,8 @@ func (suite *KeySuite) TestYAMLRoundTrip() {
 		{testName: "class association key", key: classAssocKey},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			// Marshal to YAML.
 			yamlBytes, err := yaml.Marshal(tt.key)
 			require.NoError(t, err, "Failed to marshal key to YAML")
@@ -1928,7 +1941,8 @@ func (suite *KeySuite) TestYAMLUnmarshalInvalid() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
+			t := suite.T()
 			var key Key
 			err := yaml.Unmarshal([]byte(tt.yamlStr), &key)
 			assert.ErrorContains(t, err, tt.errstr)

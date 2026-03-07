@@ -44,7 +44,8 @@ func (suite *SetConstantSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			s := &SetConstant{Value: tt.value}
 			assert.Equal(t, tt.expected, s.String())
 		})
@@ -79,7 +80,8 @@ func (suite *SetConstantSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			s := &SetConstant{Value: tt.value}
 			assert.Equal(t, tt.expected, s.ASCII())
 		})
@@ -133,7 +135,8 @@ func (suite *SetConstantSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.s.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)

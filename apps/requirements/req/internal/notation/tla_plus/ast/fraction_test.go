@@ -82,7 +82,8 @@ func (suite *FractionExprSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			f := &FractionExpr{
 				Numerator:   tt.numerator,
 				Denominator: tt.denominator,
@@ -171,7 +172,8 @@ func (suite *FractionExprSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.f.Validate()
 			if tt.errstr == "" {
 				require.NoError(t, err)

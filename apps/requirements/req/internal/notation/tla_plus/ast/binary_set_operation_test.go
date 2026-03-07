@@ -47,7 +47,8 @@ func (suite *SetInfixSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			si := &SetInfix{
 				Operator: tt.operator,
 				Left:     tt.left,
@@ -89,7 +90,8 @@ func (suite *SetInfixSuite) TestASCII() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			si := &SetInfix{
 				Operator: tt.operator,
 				Left:     tt.left,
@@ -186,7 +188,8 @@ func (suite *SetInfixSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
+			t := suite.T()
 			err := tt.si.Validate()
 			if tt.errstr == `` {
 				require.NoError(t, err)
