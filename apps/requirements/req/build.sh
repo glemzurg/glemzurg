@@ -92,8 +92,16 @@ golangci-lint run ./...
 
 # Complexity linter.
 echo -e "\nCOMPLEXITY\n"
-go-complexity-lint ./...
+go-complexity-lint -exclude="*.generated.go" -nestdepth.warn=6 -nestdepth.fail=6 -cyclo.warn=14 -cyclo.fail=14 -params.warn=7 -params.fail=7 -fanout.warn=9 -fanout.fail=9 ./...
 [ $? -ne 0 ] && exit 1
+
+# With custom thresholds (flags are namespaced by analyzer)
+go-complexity-lint  ./...
+
+# Exclude files by glob pattern (matched against base filename)
+go-complexity-lint -exclude="*_gen.go,mock_*.go" ./...
+
+
 
 # Everything is fine.
 exit 0

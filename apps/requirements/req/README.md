@@ -11,6 +11,13 @@ add linters in a way that AI will make use of them:
   add complexity linter to req
   replace all fmt.Errorf() with errors.Errorf()
 
+grep -R "notation/tla_plus/ast" ./apps/requirements/req
+re-enable linter staticcheck
+
+
+grep -R "notation/tla_plus" ./apps/requirements/req
+
+
 update ai parser to be an ai desitned cli:
   - move error codes to req_model
   https://grok.com/c/e1be5ee4-1771-499f-9d52-4cb80e9c3b46?rid=36cf9e90-0129-47a9-9437-aab9eb24c280
