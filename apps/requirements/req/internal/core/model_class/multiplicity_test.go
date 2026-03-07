@@ -72,7 +72,7 @@ func (suite *MultiplicitySuite) TestNew() {
 
 	// Test that Validate is called (parsing error).
 	_, err = NewMultiplicity("unknown")
-	assert.ErrorContains(suite.T(), err, "invalid multiplicity", "NewMultiplicity should fail on invalid input")
+	suite.Require().ErrorContains(err, "invalid multiplicity", "NewMultiplicity should fail on invalid input")
 }
 
 func (suite *MultiplicitySuite) TestParseMultiplicity() {
@@ -188,7 +188,7 @@ func (suite *MultiplicitySuite) TestParseMultiplicity() {
 			suite.Equal(test.lowerBound, lowerBound, testName)
 			suite.Equal(test.higherBound, higherBound, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
 			suite.Empty(lowerBound, testName)
 			suite.Empty(higherBound, testName)
 		}
