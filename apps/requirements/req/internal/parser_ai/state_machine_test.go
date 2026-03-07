@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,7 +28,6 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputStateMachine
 
 			actual, err := parseStateMachine([]byte(testData.InputJSON), testData.Filename)
@@ -40,15 +37,15 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			suite.Require().NoError(err, testName)
 
 			// Compare states
-			assert.Len(t, actual.States, len(expected.States), testName+" states count")
+			suite.Len(actual.States, len(expected.States), testName+" states count")
 			for key, expectedState := range expected.States {
 				actualState, exists := actual.States[key]
-				assert.True(t, exists, testName+" state '"+key+"' should exist")
+				suite.True(exists, testName+" state '"+key+"' should exist")
 				if exists {
 					suite.Equal(expectedState.Name, actualState.Name, testName+" state '"+key+"' name")
 					suite.Equal(expectedState.Details, actualState.Details, testName+" state '"+key+"' details")
 					suite.Equal(expectedState.UMLComment, actualState.UMLComment, testName+" state '"+key+"' uml_comment")
-					assert.Len(t, actualState.Actions, len(expectedState.Actions), testName+" state '"+key+"' actions count")
+					suite.Len(actualState.Actions, len(expectedState.Actions), testName+" state '"+key+"' actions count")
 					for i, expectedAction := range expectedState.Actions {
 						suite.Equal(expectedAction.ActionKey, actualState.Actions[i].ActionKey, testName+" state '"+key+"' action["+string(rune('0'+i))+"] action_key")
 						suite.Equal(expectedAction.When, actualState.Actions[i].When, testName+" state '"+key+"' action["+string(rune('0'+i))+"] when")
@@ -57,14 +54,14 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			}
 
 			// Compare events
-			assert.Len(t, actual.Events, len(expected.Events), testName+" events count")
+			suite.Len(actual.Events, len(expected.Events), testName+" events count")
 			for key, expectedEvent := range expected.Events {
 				actualEvent, exists := actual.Events[key]
-				assert.True(t, exists, testName+" event '"+key+"' should exist")
+				suite.True(exists, testName+" event '"+key+"' should exist")
 				if exists {
 					suite.Equal(expectedEvent.Name, actualEvent.Name, testName+" event '"+key+"' name")
 					suite.Equal(expectedEvent.Details, actualEvent.Details, testName+" event '"+key+"' details")
-					assert.Len(t, actualEvent.Parameters, len(expectedEvent.Parameters), testName+" event '"+key+"' parameters count")
+					suite.Len(actualEvent.Parameters, len(expectedEvent.Parameters), testName+" event '"+key+"' parameters count")
 					for i, expectedParam := range expectedEvent.Parameters {
 						suite.Equal(expectedParam.Name, actualEvent.Parameters[i].Name, testName+" event '"+key+"' param["+string(rune('0'+i))+"] name")
 						suite.Equal(expectedParam.DataTypeRules, actualEvent.Parameters[i].DataTypeRules, testName+" event '"+key+"' param["+string(rune('0'+i))+"] data_type_rules")
@@ -73,10 +70,10 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			}
 
 			// Compare guards
-			assert.Len(t, actual.Guards, len(expected.Guards), testName+" guards count")
+			suite.Len(actual.Guards, len(expected.Guards), testName+" guards count")
 			for key, expectedGuard := range expected.Guards {
 				actualGuard, exists := actual.Guards[key]
-				assert.True(t, exists, testName+" guard '"+key+"' should exist")
+				suite.True(exists, testName+" guard '"+key+"' should exist")
 				if exists {
 					suite.Equal(expectedGuard.Name, actualGuard.Name, testName+" guard '"+key+"' name")
 					suite.Equal(expectedGuard.Logic.Description, actualGuard.Logic.Description, testName+" guard '"+key+"' logic description")
@@ -84,7 +81,7 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			}
 
 			// Compare transitions
-			assert.Len(t, actual.Transitions, len(expected.Transitions), testName+" transitions count")
+			suite.Len(actual.Transitions, len(expected.Transitions), testName+" transitions count")
 			for i, expectedTrans := range expected.Transitions {
 				actualTrans := actual.Transitions[i]
 				suite.Equal(expectedTrans.FromStateKey, actualTrans.FromStateKey, testName+" transition["+string(rune('0'+i))+"] from_state_key")
@@ -114,13 +111,12 @@ func (suite *StateMachineSuite) TestParseStateMachineErrors() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		suite.Run(testName, func() {
-			t := suite.T()
 			_, err := parseStateMachine([]byte(testData.InputJSON), testData.Filename)
-			require.Error(t, err, testName+" should return an error")
+			suite.Require().Error(err, testName+" should return an error")
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			assert.True(t, ok, testName+" should return a ParseError")
+			suite.True(ok, testName+" should return a ParseError")
 			if !ok {
 				return
 			}
@@ -132,18 +128,18 @@ func (suite *StateMachineSuite) TestParseStateMachineErrors() {
 			if expected.Message != "" {
 				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
-				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+				suite.True(len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
 					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
 			}
 
 			if expected.HasSchema {
-				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+				suite.NotEmpty(parseErr.Schema, testName+" should have schema content")
 			} else {
 				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
-			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
 			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {

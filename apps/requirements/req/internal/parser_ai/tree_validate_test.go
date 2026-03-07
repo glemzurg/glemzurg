@@ -4,8 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,18 +25,16 @@ func (suite *TreeValidateSuite) TestValidTree() {
 
 // TestClassActorNotFound verifies error when class references missing actor.
 func (suite *TreeValidateSuite) TestClassActorNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	// Add class with invalid actor reference
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].ActorKey = "nonexistent_actor"
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassActorNotFound, parseErr.Code)
 	suite.Equal("actor_key", parseErr.Field)
 }
@@ -55,26 +51,22 @@ func (suite *TreeValidateSuite) TestClassActorValid() {
 
 // TestClassIndexAttrNotFound verifies error when index references missing attribute.
 func (suite *TreeValidateSuite) TestClassIndexAttrNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	// Add index referencing non-existent attribute
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"missing_attr"}}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassIndexAttrNotFound, parseErr.Code)
 	suite.Equal("indexes[0][0]", parseErr.Field)
 }
 
 // TestClassIndexDuplicateAttr verifies error when index has duplicate attributes.
 func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	// Add attribute and index with duplicate
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = map[string]*inputAttribute{
@@ -83,19 +75,17 @@ func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"id", "id"}}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassIndexAttrNotFound, parseErr.Code)
-	assert.Contains(t, parseErr.Message, "duplicate")
+	suite.Contains(parseErr.Message, "duplicate")
 }
 
 // TestStateMachineStateActionNotFound verifies error when state action references missing action.
 func (suite *TreeValidateSuite) TestStateMachineStateActionNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	class.StateMachine = &inputStateMachine{
@@ -114,19 +104,17 @@ func (suite *TreeValidateSuite) TestStateMachineStateActionNotFound() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineActionNotFound, parseErr.Code)
 	suite.Equal("states.pending.actions[0].action_key", parseErr.Field)
 }
 
 // TestTransitionNoStates verifies error when transition has neither from nor to state.
 func (suite *TreeValidateSuite) TestTransitionNoStates() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	class.StateMachine = &inputStateMachine{
@@ -148,19 +136,17 @@ func (suite *TreeValidateSuite) TestTransitionNoStates() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeTransitionNoStates, parseErr.Code)
 	suite.Equal("transitions[0]", parseErr.Field)
 }
 
 // TestTransitionFromStateNotFound verifies error when transition from_state_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionFromStateNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	missingState := "missing_state"
@@ -184,19 +170,17 @@ func (suite *TreeValidateSuite) TestTransitionFromStateNotFound() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineStateNotFound, parseErr.Code)
 	suite.Equal("transitions[0].from_state_key", parseErr.Field)
 }
 
 // TestTransitionToStateNotFound verifies error when transition to_state_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	fromState := "pending"
@@ -220,19 +204,17 @@ func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineStateNotFound, parseErr.Code)
 	suite.Equal("transitions[0].to_state_key", parseErr.Field)
 }
 
 // TestTransitionEventNotFound verifies error when transition event_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	toState := "pending"
@@ -253,19 +235,17 @@ func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineEventNotFound, parseErr.Code)
 	suite.Equal("transitions[0].event_key", parseErr.Field)
 }
 
 // TestTransitionGuardNotFound verifies error when transition guard_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	toState := "pending"
@@ -290,19 +270,17 @@ func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineGuardNotFound, parseErr.Code)
 	suite.Equal("transitions[0].guard_key", parseErr.Field)
 }
 
 // TestTransitionActionNotFound verifies error when transition action_key doesn't exist.
 func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	toState := "pending"
@@ -327,19 +305,17 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 	class.Actions = map[string]*inputAction{}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineActionNotFound, parseErr.Code)
 	suite.Equal("transitions[0].action_key", parseErr.Field)
 }
 
 // TestActionUnreferenced verifies error when an action exists but is not referenced.
 func (suite *TreeValidateSuite) TestActionUnreferenced() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	toState := "pending"
@@ -366,15 +342,15 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeActionUnreferenced, parseErr.Code)
 	suite.Equal("action_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "unreferenced_action")
-	assert.Contains(t, parseErr.Message, "not referenced")
+	suite.Contains(parseErr.Message, "unreferenced_action")
+	suite.Contains(parseErr.Message, "not referenced")
 }
 
 // TestActionReferencedByStateAction verifies that action referenced by state action passes.
@@ -444,8 +420,6 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 
 // TestGenSuperclassNotFound verifies error when generalization superclass doesn't exist.
 func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["book"] = &inputClass{Name: "Book"}
@@ -458,19 +432,17 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassGenSuperclassNotFound, parseErr.Code)
 	suite.Equal("superclass_key", parseErr.Field)
 }
 
 // TestGenSubclassNotFound verifies error when generalization subclass doesn't exist.
 func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
@@ -483,19 +455,17 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassGenSubclassNotFound, parseErr.Code)
 	suite.Equal("subclass_keys[0]", parseErr.Field)
 }
 
 // TestGenSubclassDuplicate verifies error when generalization has duplicate subclass.
 func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
@@ -509,19 +479,17 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassGenSubclassDuplicate, parseErr.Code)
 	suite.Equal("subclass_keys[1]", parseErr.Field)
 }
 
 // TestGenSuperclassIsSubclass verifies error when superclass is also listed as subclass.
 func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["product"] = &inputClass{Name: "Product"}
@@ -535,18 +503,16 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassGenSuperclassIsSubclass, parseErr.Code)
 }
 
 // TestSubdomainAssocFromClassNotFound verifies error when subdomain association from_class_key doesn't exist.
 func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
@@ -560,19 +526,17 @@ func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 	suite.Equal("from_class_key", parseErr.Field)
 }
 
 // TestSubdomainAssocToClassNotFound verifies error when subdomain association to_class_key doesn't exist.
 func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.ClassAssociations = map[string]*inputClassAssociation{
@@ -586,19 +550,17 @@ func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocToClassNotFound, parseErr.Code)
 	suite.Equal("to_class_key", parseErr.Field)
 }
 
 // TestSubdomainAssocClassNotFound verifies error when subdomain association association_class_key doesn't exist.
 func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
@@ -615,19 +577,17 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocClassNotFound, parseErr.Code)
 	suite.Equal("association_class_key", parseErr.Field)
 }
 
 // TestSubdomainAssocClassSameAsFromClass verifies error when association_class_key equals from_class_key.
 func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
@@ -644,20 +604,18 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
 	suite.Equal("association_class_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "from_class_key")
+	suite.Contains(parseErr.Message, "from_class_key")
 }
 
 // TestSubdomainAssocClassSameAsToClass verifies error when association_class_key equals to_class_key.
 func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
@@ -674,20 +632,18 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
 	suite.Equal("association_class_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "to_class_key")
+	suite.Contains(parseErr.Message, "to_class_key")
 }
 
 // TestSubdomainAssocMultiplicityInvalid verifies error when multiplicity format is invalid.
 func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	subdomain := model.Domains["domain1"].Subdomains["subdomain1"]
 	subdomain.Classes["class2"] = &inputClass{Name: "Class 2"}
@@ -702,19 +658,17 @@ func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocMultiplicityInvalid, parseErr.Code)
 	suite.Equal("from_multiplicity", parseErr.Field)
 }
 
 // TestDomainAssocFromClassNotFound verifies error when domain association from_class_key doesn't exist.
 func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	// Add another subdomain with a class
 	model.Domains["domain1"].Subdomains["subdomain2"] = &inputSubdomain{
@@ -734,19 +688,17 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 	suite.Equal("from_class_key", parseErr.Field)
 }
 
 // TestDomainAssocInvalidKeyFormat verifies error when domain association has invalid key format.
 func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	model.Domains["domain1"].ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
@@ -759,18 +711,16 @@ func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 }
 
 // TestModelAssocFromClassNotFound verifies error when model association from_class_key doesn't exist.
 func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	// Add another domain with subdomain and class
 	model.Domains["domain2"] = &inputDomain{
@@ -796,19 +746,17 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 	suite.Equal("from_class_key", parseErr.Field)
 }
 
 // TestModelAssocToClassNotFound verifies error when model association to_class_key doesn't exist.
 func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	model.Domains["domain2"] = &inputDomain{
 		Name: "Domain 2",
@@ -833,19 +781,17 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocToClassNotFound, parseErr.Code)
 	suite.Equal("to_class_key", parseErr.Field)
 }
 
 // TestModelAssocInvalidKeyFormat verifies error when model association has invalid key format.
 func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	model.ClassAssociations = map[string]*inputClassAssociation{
 		"test_assoc": {
@@ -858,18 +804,16 @@ func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 }
 
 // TestMultiplicityValidation tests various multiplicity formats.
 func (suite *TreeValidateSuite) TestMultiplicityValidation() {
-	t := suite.T()
-
 	tests := []struct {
 		name     string
 		mult     string
@@ -890,12 +834,12 @@ func (suite *TreeValidateSuite) TestMultiplicityValidation() {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		suite.Run(tt.name, func() {
 			err := validateMultiplicity(tt.mult)
 			if tt.expected {
 				suite.Require().NoError(err)
 			} else {
-				require.Error(t, err)
+				suite.Require().Error(err)
 			}
 		})
 	}
@@ -914,87 +858,77 @@ func (suite *TreeValidateSuite) TestCompletenessValidModel() {
 
 // TestCompletenessModelNoActors verifies error when model has no actors.
 func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Actors = map[string]*inputActor{} // Remove all actors
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeModelNoActors, parseErr.Code)
 	suite.Equal("actors", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least one actor")
-	assert.Contains(t, parseErr.Message, "actors/") // Check for guidance about file location
+	suite.Contains(parseErr.Message, "at least one actor")
+	suite.Contains(parseErr.Message, "actors/") // Check for guidance about file location
 }
 
 // TestCompletenessModelNoDomains verifies error when model has no domains.
 func (suite *TreeValidateSuite) TestCompletenessModelNoDomains() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Domains = map[string]*inputDomain{} // Remove all domains
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeModelNoDomains, parseErr.Code)
 	suite.Equal("domains", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least one domain")
-	assert.Contains(t, parseErr.Message, "domains/") // Check for guidance about file location
+	suite.Contains(parseErr.Message, "at least one domain")
+	suite.Contains(parseErr.Message, "domains/") // Check for guidance about file location
 }
 
 // TestCompletenessDomainNoSubdomains verifies error when domain has no subdomains.
 func (suite *TreeValidateSuite) TestCompletenessDomainNoSubdomains() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains = map[string]*inputSubdomain{} // Remove all subdomains
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeDomainNoSubdomains, parseErr.Code)
 	suite.Equal("subdomains", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least one subdomain")
-	assert.Contains(t, parseErr.Message, "orders") // Check for specific domain name
+	suite.Contains(parseErr.Message, "at least one subdomain")
+	suite.Contains(parseErr.Message, "orders") // Check for specific domain name
 }
 
 // TestSingleSubdomainNotDefault verifies error when a single subdomain is not named "default".
 func (suite *TreeValidateSuite) TestSingleSubdomainNotDefault() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	// Rename "default" subdomain to something else (single subdomain case)
 	model.Domains["orders"].Subdomains["core"] = model.Domains["orders"].Subdomains["default"]
 	delete(model.Domains["orders"].Subdomains, "default")
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeSingleSubdomainNotDefault, parseErr.Code)
 	suite.Equal("subdomain_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "core")
-	assert.Contains(t, parseErr.Message, "must be renamed to 'default'")
-	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/core")
+	suite.Contains(parseErr.Message, "core")
+	suite.Contains(parseErr.Message, "must be renamed to 'default'")
+	suite.Contains(parseErr.Message, "domains/orders/subdomains/core")
 }
 
 // TestMultipleSubdomainsHasDefault verifies error when multiple subdomains include one named "default".
 func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	// Add a second subdomain while keeping "default" (multiple subdomains case)
 	model.Domains["orders"].Subdomains["shipping"] = &inputSubdomain{
@@ -1016,16 +950,16 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
 	}
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeMultipleSubdomainsHasDefault, parseErr.Code)
 	suite.Equal("subdomain_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "multiple subdomains")
-	assert.Contains(t, parseErr.Message, "named 'default'")
-	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/default")
+	suite.Contains(parseErr.Message, "multiple subdomains")
+	suite.Contains(parseErr.Message, "named 'default'")
+	suite.Contains(parseErr.Message, "domains/orders/subdomains/default")
 }
 
 // TestMultipleSubdomainsValid verifies that multiple subdomains without "default" is valid.
@@ -1059,8 +993,6 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
 
 // TestCompletenessSubdomainTooFewClasses verifies error when subdomain has less than 2 classes.
 func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	// Keep only one class
 	model.Domains["orders"].Subdomains["default"].Classes = map[string]*inputClass{
@@ -1078,96 +1010,86 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 	}
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeSubdomainTooFewClasses, parseErr.Code)
 	suite.Equal("classes", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least 2 classes")
-	assert.Contains(t, parseErr.Message, "has 1")
+	suite.Contains(parseErr.Message, "at least 2 classes")
+	suite.Contains(parseErr.Message, "has 1")
 }
 
 // TestCompletenessSubdomainNoAssociations verifies error when subdomain has no associations.
 func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["default"].ClassAssociations = map[string]*inputClassAssociation{} // Remove all associations
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeSubdomainNoAssociations, parseErr.Code)
 	suite.Equal("associations", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least one association")
-	assert.Contains(t, parseErr.Message, "associations/") // Check for guidance about file location
+	suite.Contains(parseErr.Message, "at least one association")
+	suite.Contains(parseErr.Message, "associations/") // Check for guidance about file location
 }
 
 // TestCompletenessClassNoAttributes verifies error when class has no attributes.
 func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["default"].Classes["order"].Attributes = map[string]*inputAttribute{} // Remove all attributes
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassNoAttributes, parseErr.Code)
 	suite.Equal("attributes", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least one attribute")
-	assert.Contains(t, parseErr.Message, "order") // Check for specific class name
+	suite.Contains(parseErr.Message, "at least one attribute")
+	suite.Contains(parseErr.Message, "order") // Check for specific class name
 }
 
 // TestCompletenessClassNoStateMachine verifies error when class has no state machine.
 func (suite *TreeValidateSuite) TestCompletenessClassNoStateMachine() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["default"].Classes["order"].StateMachine = nil // Remove state machine
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeClassNoStateMachine, parseErr.Code)
 	suite.Equal("state_machine", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "must have a state machine")
-	assert.Contains(t, parseErr.Message, "state_machine.json") // Check for guidance about file
+	suite.Contains(parseErr.Message, "must have a state machine")
+	suite.Contains(parseErr.Message, "state_machine.json") // Check for guidance about file
 }
 
 // TestCompletenessStateMachineNoTransitions verifies error when state machine has no transitions.
 func (suite *TreeValidateSuite) TestCompletenessStateMachineNoTransitions() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	model.Domains["orders"].Subdomains["default"].Classes["order"].StateMachine.Transitions = []inputTransition{} // Remove all transitions
 
 	err := validateModelCompleteness(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeStateMachineNoTransitions, parseErr.Code)
 	suite.Equal("transitions", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "at least one transition")
+	suite.Contains(parseErr.Message, "at least one transition")
 }
 
 // TestCompletenessAllErrorsProvideGuidance verifies all completeness errors provide helpful guidance.
 func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
-	t := suite.T()
-
 	// Test each error type and verify it contains actionable guidance
 	tests := []struct {
 		name          string
@@ -1297,19 +1219,19 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		suite.Run(tt.name, func() {
 			model := tt.buildModel()
 			err := validateModelCompleteness(model)
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok, "error should be a ParseError")
+			suite.True(ok, "error should be a ParseError")
 			suite.Equal(tt.expectedCode, parseErr.Code, "error code should match")
 
 			// Verify all expected guidance strings are present
 			for _, s := range tt.shouldContain {
-				assert.Contains(t, parseErr.Message, s,
+				suite.Contains(parseErr.Message, s,
 					"error message should contain guidance: %s", s)
 			}
 		})
@@ -1318,8 +1240,6 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 
 // New tests for tree-level validations added in tree_validate.go.
 func (suite *TreeValidateSuite) TestModelDomainAssocDomainNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	model.DomainAssociations = map[string]*inputDomainAssociation{
 		"bad_da": {
@@ -1329,18 +1249,16 @@ func (suite *TreeValidateSuite) TestModelDomainAssocDomainNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeDomainAssocDomainNotFound, parseErr.Code)
 	suite.Equal("problem_domain_key", parseErr.Field)
 }
 
 func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	model.ActorGeneralizations = map[string]*inputActorGeneralization{
 		"ag1": {
@@ -1351,18 +1269,16 @@ func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
 	}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeActorGenActorNotFound, parseErr.Code)
 	suite.Equal("superclass_key", parseErr.Field)
 }
 
 func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
-	t := suite.T()
-
 	model := t_buildValidModelTree()
 
 	// Prepare use case and scenario containers
@@ -1384,10 +1300,10 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 	sub.UseCases = map[string]*inputUseCase{"uc_missing_obj": uc1}
 
 	err := validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeScenarioStepObjectNotFound, parseErr.Code)
 	suite.Equal("steps.from_object_key", parseErr.Field)
 
@@ -1408,9 +1324,9 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 	sub.UseCases = map[string]*inputUseCase{"uc_event": uc2}
 
 	err = validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 	ok = errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeScenarioStepEventNotFound, parseErr.Code)
 	suite.Equal("steps.event_key", parseErr.Field)
 
@@ -1430,9 +1346,9 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 	sub.UseCases = map[string]*inputUseCase{"uc_query": uc3}
 
 	err = validateModelTree(model)
-	require.Error(t, err)
+	suite.Require().Error(err)
 	ok = errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrTreeScenarioStepQueryNotFound, parseErr.Code)
 	suite.Equal("steps.query_key", parseErr.Field)
 }

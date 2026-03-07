@@ -4,8 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,8 +18,6 @@ func TestKeyValidateSuite(t *testing.T) {
 
 // TestValidKeys verifies that valid keys pass validation.
 func (suite *KeyValidateSuite) TestValidKeys() {
-	t := suite.T()
-
 	validKeys := []string{
 		"order",
 		"book_order",
@@ -40,7 +36,7 @@ func (suite *KeyValidateSuite) TestValidKeys() {
 	}
 
 	for _, key := range validKeys {
-		t.Run(key, func(t *testing.T) {
+		suite.Run(key, func() {
 			err := ValidateKey(key, "test_key", "test.json")
 			suite.Require().NoError(err, "key '%s' should be valid", key)
 		})
@@ -49,8 +45,6 @@ func (suite *KeyValidateSuite) TestValidKeys() {
 
 // TestInvalidKeysUppercase verifies that uppercase letters are rejected.
 func (suite *KeyValidateSuite) TestInvalidKeysUppercase() {
-	t := suite.T()
-
 	invalidKeys := []string{
 		"BookOrder",
 		"bookOrder",
@@ -61,23 +55,21 @@ func (suite *KeyValidateSuite) TestInvalidKeysUppercase() {
 	}
 
 	for _, key := range invalidKeys {
-		t.Run(key, func(t *testing.T) {
+		suite.Run(key, func() {
 			err := ValidateKey(key, "test_key", "test.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-			assert.Contains(t, parseErr.Message, "lowercase")
+			suite.Contains(parseErr.Message, "lowercase")
 		})
 	}
 }
 
 // TestInvalidKeysHyphens verifies that hyphens are rejected.
 func (suite *KeyValidateSuite) TestInvalidKeysHyphens() {
-	t := suite.T()
-
 	invalidKeys := []string{
 		"book-order",
 		"order-line-item",
@@ -85,46 +77,42 @@ func (suite *KeyValidateSuite) TestInvalidKeysHyphens() {
 	}
 
 	for _, key := range invalidKeys {
-		t.Run(key, func(t *testing.T) {
+		suite.Run(key, func() {
 			err := ValidateKey(key, "test_key", "test.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-			assert.Contains(t, parseErr.Message, "hyphen")
+			suite.Contains(parseErr.Message, "hyphen")
 		})
 	}
 }
 
 // TestInvalidKeysSpaces verifies that spaces are rejected.
 func (suite *KeyValidateSuite) TestInvalidKeysSpaces() {
-	t := suite.T()
-
 	invalidKeys := []string{
 		"book order",
 		"order line item",
 	}
 
 	for _, key := range invalidKeys {
-		t.Run(key, func(t *testing.T) {
+		suite.Run(key, func() {
 			err := ValidateKey(key, "test_key", "test.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-			assert.Contains(t, parseErr.Message, "space")
+			suite.Contains(parseErr.Message, "space")
 		})
 	}
 }
 
 // TestInvalidKeysStartsWithNumber verifies that keys starting with numbers are rejected.
 func (suite *KeyValidateSuite) TestInvalidKeysStartsWithNumber() {
-	t := suite.T()
-
 	invalidKeys := []string{
 		"2order",
 		"123_order",
@@ -132,23 +120,21 @@ func (suite *KeyValidateSuite) TestInvalidKeysStartsWithNumber() {
 	}
 
 	for _, key := range invalidKeys {
-		t.Run(key, func(t *testing.T) {
+		suite.Run(key, func() {
 			err := ValidateKey(key, "test_key", "test.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-			assert.Contains(t, parseErr.Message, "number")
+			suite.Contains(parseErr.Message, "number")
 		})
 	}
 }
 
 // TestInvalidKeysUnderscoreIssues verifies that underscore placement issues are rejected.
 func (suite *KeyValidateSuite) TestInvalidKeysUnderscoreIssues() {
-	t := suite.T()
-
 	tests := []struct {
 		key      string
 		contains string
@@ -159,87 +145,77 @@ func (suite *KeyValidateSuite) TestInvalidKeysUnderscoreIssues() {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.key, func(t *testing.T) {
+		suite.Run(tt.key, func() {
 			err := ValidateKey(tt.key, "test_key", "test.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-			assert.Contains(t, parseErr.Message, tt.contains)
+			suite.Contains(parseErr.Message, tt.contains)
 		})
 	}
 }
 
 // TestInvalidKeysDots verifies that dots are rejected.
 func (suite *KeyValidateSuite) TestInvalidKeysDots() {
-	t := suite.T()
-
 	invalidKeys := []string{
 		"order.line",
 		"book.order.line",
 	}
 
 	for _, key := range invalidKeys {
-		t.Run(key, func(t *testing.T) {
+		suite.Run(key, func() {
 			err := ValidateKey(key, "test_key", "test.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-			assert.Contains(t, parseErr.Message, "dot")
+			suite.Contains(parseErr.Message, "dot")
 		})
 	}
 }
 
 // TestEmptyKey verifies that empty keys are rejected.
 func (suite *KeyValidateSuite) TestEmptyKey() {
-	t := suite.T()
-
 	err := ValidateKey("", "test_key", "test.json")
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
-	assert.Contains(t, parseErr.Message, "empty")
+	suite.Contains(parseErr.Message, "empty")
 }
 
 // TestErrorContainsKeyType verifies that the error message contains the key type.
 func (suite *KeyValidateSuite) TestErrorContainsKeyType() {
-	t := suite.T()
-
 	err := ValidateKey("Invalid", "actor_key", "actors/Invalid.actor.json")
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal("actor_key", parseErr.Field)
-	assert.Contains(t, parseErr.Message, "actor_key")
+	suite.Contains(parseErr.Message, "actor_key")
 }
 
 // TestErrorContainsFilePath verifies that the error message contains the file path.
 func (suite *KeyValidateSuite) TestErrorContainsFilePath() {
-	t := suite.T()
-
 	err := ValidateKey("Invalid", "class_key", "domains/orders/subdomains/default/classes/Invalid/class.json")
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
-	assert.Contains(t, parseErr.File, "Invalid/class.json")
+	suite.True(ok)
+	suite.Contains(parseErr.File, "Invalid/class.json")
 }
 
 // TestNormalizeToKey tests the helper function for suggesting fixes.
 func (suite *KeyValidateSuite) TestNormalizeToKey() {
-	t := suite.T()
-
 	tests := []struct {
 		input    string
 		expected string
@@ -263,7 +239,7 @@ func (suite *KeyValidateSuite) TestNormalizeToKey() {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
+		suite.Run(tt.input, func() {
 			result := NormalizeToKey(tt.input)
 			suite.Equal(tt.expected, result)
 		})
@@ -272,19 +248,17 @@ func (suite *KeyValidateSuite) TestNormalizeToKey() {
 
 // TestMixedInvalidCharacters verifies keys with multiple issues.
 func (suite *KeyValidateSuite) TestMixedInvalidCharacters() {
-	t := suite.T()
-
 	err := ValidateKey("Book-Order Line", "test_key", "test.json")
-	require.Error(t, err)
+	suite.Require().Error(err)
 
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
-	require.True(t, ok)
+	suite.True(ok)
 	suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 	// Should mention multiple issues
-	assert.Contains(t, parseErr.Message, "lowercase")
-	assert.Contains(t, parseErr.Message, "hyphen")
-	assert.Contains(t, parseErr.Message, "space")
+	suite.Contains(parseErr.Message, "lowercase")
+	suite.Contains(parseErr.Message, "hyphen")
+	suite.Contains(parseErr.Message, "space")
 }
 
 // ======================================
@@ -293,8 +267,6 @@ func (suite *KeyValidateSuite) TestMixedInvalidCharacters() {
 
 // TestValidSubdomainAssociationFilenames verifies valid subdomain-level association filenames.
 func (suite *KeyValidateSuite) TestValidSubdomainAssociationFilenames() {
-	t := suite.T()
-
 	validFilenames := []string{
 		"order--line_item--order_lines",
 		"book_order--customer--customer_orders",
@@ -303,7 +275,7 @@ func (suite *KeyValidateSuite) TestValidSubdomainAssociationFilenames() {
 	}
 
 	for _, filename := range validFilenames {
-		t.Run(filename, func(t *testing.T) {
+		suite.Run(filename, func() {
 			err := ValidateAssociationFilename(filename, AssocLevelSubdomain, "test.assoc.json")
 			suite.Require().NoError(err, "filename '%s' should be valid", filename)
 		})
@@ -312,8 +284,6 @@ func (suite *KeyValidateSuite) TestValidSubdomainAssociationFilenames() {
 
 // TestValidDomainAssociationFilenames verifies valid domain-level association filenames.
 func (suite *KeyValidateSuite) TestValidDomainAssociationFilenames() {
-	t := suite.T()
-
 	validFilenames := []string{
 		"orders.book_order--shipping.shipment--order_shipment",
 		"sub1.class1--sub2.class2--assoc_name",
@@ -321,7 +291,7 @@ func (suite *KeyValidateSuite) TestValidDomainAssociationFilenames() {
 	}
 
 	for _, filename := range validFilenames {
-		t.Run(filename, func(t *testing.T) {
+		suite.Run(filename, func() {
 			err := ValidateAssociationFilename(filename, AssocLevelDomain, "test.assoc.json")
 			suite.Require().NoError(err, "filename '%s' should be valid", filename)
 		})
@@ -330,15 +300,13 @@ func (suite *KeyValidateSuite) TestValidDomainAssociationFilenames() {
 
 // TestValidModelAssociationFilenames verifies valid model-level association filenames.
 func (suite *KeyValidateSuite) TestValidModelAssociationFilenames() {
-	t := suite.T()
-
 	validFilenames := []string{
 		"order_fulfillment.default.book_order_line--inventory.default.inventory_item--order_inventory",
 		"domain1.sub1.class1--domain2.sub2.class2--cross_domain_assoc",
 	}
 
 	for _, filename := range validFilenames {
-		t.Run(filename, func(t *testing.T) {
+		suite.Run(filename, func() {
 			err := ValidateAssociationFilename(filename, AssocLevelModel, "test.assoc.json")
 			suite.Require().NoError(err, "filename '%s' should be valid", filename)
 		})
@@ -347,8 +315,6 @@ func (suite *KeyValidateSuite) TestValidModelAssociationFilenames() {
 
 // TestInvalidAssociationFilenameWrongPartCount verifies filenames with wrong number of parts.
 func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPartCount() {
-	t := suite.T()
-
 	tests := []struct {
 		filename string
 		level    AssociationLevel
@@ -362,13 +328,13 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPartCount() {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
+		suite.Run(tt.filename, func() {
 			err := ValidateAssociationFilename(tt.filename, tt.level, "test.assoc.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrAssocFilenameInvalidFormat, parseErr.Code)
 		})
 	}
@@ -376,8 +342,6 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPartCount() {
 
 // TestInvalidAssociationFilenameInvalidComponent verifies filenames with invalid components.
 func (suite *KeyValidateSuite) TestInvalidAssociationFilenameInvalidComponent() {
-	t := suite.T()
-
 	tests := []struct {
 		filename string
 		level    AssociationLevel
@@ -394,23 +358,21 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameInvalidComponent() 
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
+		suite.Run(tt.filename, func() {
 			err := ValidateAssociationFilename(tt.filename, tt.level, "test.assoc.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			suite.Equal(ErrAssocFilenameInvalidComponent, parseErr.Code)
-			assert.Contains(t, parseErr.Field, tt.badField)
+			suite.Contains(parseErr.Field, tt.badField)
 		})
 	}
 }
 
 // TestInvalidAssociationFilenameWrongPathDepth verifies filenames with wrong path depth for level.
 func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPathDepth() {
-	t := suite.T()
-
 	tests := []struct {
 		filename string
 		level    AssociationLevel
@@ -426,15 +388,15 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPathDepth() {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
+		suite.Run(tt.filename, func() {
 			err := ValidateAssociationFilename(tt.filename, tt.level, "test.assoc.json")
-			require.Error(t, err)
+			suite.Require().Error(err)
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			require.True(t, ok)
+			suite.True(ok)
 			// Should be either format error or component error
-			assert.True(t, parseErr.Code == ErrAssocFilenameInvalidFormat ||
+			suite.True(parseErr.Code == ErrAssocFilenameInvalidFormat ||
 				parseErr.Code == ErrAssocFilenameInvalidComponent)
 		})
 	}

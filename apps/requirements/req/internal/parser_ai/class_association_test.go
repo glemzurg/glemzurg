@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -66,13 +64,12 @@ func (suite *AssociationSuite) TestParseAssociationErrors() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		suite.Run(testName, func() {
-			t := suite.T()
 			_, err := parseAssociation([]byte(testData.InputJSON), testData.Filename)
-			require.Error(t, err, testName+" should return an error")
+			suite.Require().Error(err, testName+" should return an error")
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
-			assert.True(t, ok, testName+" should return a ParseError")
+			suite.True(ok, testName+" should return a ParseError")
 			if !ok {
 				return
 			}
@@ -84,18 +81,18 @@ func (suite *AssociationSuite) TestParseAssociationErrors() {
 			if expected.Message != "" {
 				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
-				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+				suite.True(len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
 					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
 			}
 
 			if expected.HasSchema {
-				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+				suite.NotEmpty(parseErr.Schema, testName+" should have schema content")
 			} else {
-				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
-			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
 			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
