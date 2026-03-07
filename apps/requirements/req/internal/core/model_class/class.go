@@ -171,35 +171,29 @@ func (c *Class) SetTransitions(transitions map[identity.Key]model_state.Transiti
 // ValidateWithParent validates the Class, its key's parent relationship, and all children.
 // The parent must be a Subdomain.
 func (c *Class) ValidateWithParent(parent *identity.Key) error {
-	// Validate the object itself.
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	// Validate the key has the correct parent.
 	if err := c.Key.ValidateParent(parent); err != nil {
 		return err
 	}
+	if err := c.validateClassInvariants(); err != nil {
+		return err
+	}
+	if err := c.validateClassChildren(); err != nil {
+		return err
+	}
+	if err := c.validateActionGuarantees(); err != nil {
+		return err
+	}
+	if err := c.validateTransitions(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	// Build lookup maps for cross-reference validation within this class.
-	stateKeys := make(map[identity.Key]bool)
-	for stateKey := range c.States {
-		stateKeys[stateKey] = true
-	}
-	eventKeys := make(map[identity.Key]bool)
-	for eventKey := range c.Events {
-		eventKeys[eventKey] = true
-	}
-	guardKeys := make(map[identity.Key]bool)
-	for guardKey := range c.Guards {
-		guardKeys[guardKey] = true
-	}
-	actionKeys := make(map[identity.Key]bool)
-	for actionKey := range c.Actions {
-		actionKeys[actionKey] = true
-	}
-
-	// Validate all children.
-	invLetTargets := make(map[string]bool)
+func (c *Class) validateClassInvariants() error {
+	letTargets := make(map[string]bool)
 	for i, inv := range c.Invariants {
 		if err := inv.ValidateWithParent(&c.Key); err != nil {
 			return errors.Wrapf(err, "invariant %d", i)
@@ -208,11 +202,19 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
 		}
 		if inv.Type == model_logic.LogicTypeLet {
-			if invLetTargets[inv.Target] {
+			if letTargets[inv.Target] {
 				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
 			}
-			invLetTargets[inv.Target] = true
+			letTargets[inv.Target] = true
 		}
+	}
+	return nil
+}
+
+func (c *Class) validateClassChildren() error {
+	actionKeys := make(map[identity.Key]bool)
+	for actionKey := range c.Actions {
+		actionKeys[actionKey] = true
 	}
 	for _, attr := range c.Attributes {
 		if err := attr.ValidateWithParent(&c.Key); err != nil {
@@ -234,7 +236,15 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 			return err
 		}
 	}
-	// Build attribute SubKey lookup for action target validation.
+	for _, query := range c.Queries {
+		if err := query.ValidateWithParent(&c.Key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Class) validateActionGuarantees() error {
 	attrSubKeys := make(map[string]bool)
 	for _, attr := range c.Attributes {
 		attrSubKeys[attr.Key.SubKey] = true
@@ -243,8 +253,6 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 		if err := action.ValidateWithParent(&c.Key); err != nil {
 			return err
 		}
-		// Validate that each action guarantee target is a valid attribute SubKey on this class.
-		// Let targets are local variables, not attribute references — skip them.
 		for i, guar := range action.Guarantees {
 			if guar.Type == model_logic.LogicTypeLet {
 				continue
@@ -254,10 +262,25 @@ func (c *Class) ValidateWithParent(parent *identity.Key) error {
 			}
 		}
 	}
-	for _, query := range c.Queries {
-		if err := query.ValidateWithParent(&c.Key); err != nil {
-			return err
-		}
+	return nil
+}
+
+func (c *Class) validateTransitions() error {
+	stateKeys := make(map[identity.Key]bool)
+	for stateKey := range c.States {
+		stateKeys[stateKey] = true
+	}
+	eventKeys := make(map[identity.Key]bool)
+	for eventKey := range c.Events {
+		eventKeys[eventKey] = true
+	}
+	guardKeys := make(map[identity.Key]bool)
+	for guardKey := range c.Guards {
+		guardKeys[guardKey] = true
+	}
+	actionKeys := make(map[identity.Key]bool)
+	for actionKey := range c.Actions {
+		actionKeys[actionKey] = true
 	}
 	for _, transition := range c.Transitions {
 		if err := transition.ValidateWithParent(&c.Key); err != nil {

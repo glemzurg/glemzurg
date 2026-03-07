@@ -66,87 +66,126 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 				if len(class.States) == 0 {
 					continue // Skip classes without state machines.
 				}
-
-				info := &ClassInfo{
-					Class:       class,
-					ClassKey:    class.Key,
-					StateEvents: make(map[string][]EventInfo),
-					DoActions:   make(map[string][]model_state.Action),
-					HasStates:   true,
-				}
-
-				// Build event lookup by key.
-				eventByKey := make(map[identity.Key]model_state.Event)
-				for _, e := range class.Events {
-					eventByKey[e.Key] = e
-				}
-
-				// Find creation events: transitions where FromStateKey==nil.
-				creationEventKeys := make(map[identity.Key]bool)
-				for _, t := range class.Transitions {
-					if t.FromStateKey == nil {
-						creationEventKeys[t.EventKey] = true
-					}
-				}
-				for ek := range creationEventKeys {
-					if ev, ok := eventByKey[ek]; ok {
-						info.CreationEvents = append(info.CreationEvents, ev)
-					}
-				}
-				// Sort creation events for deterministic ordering.
-				sort.Slice(info.CreationEvents, func(i, j int) bool {
-					return info.CreationEvents[i].Key.String() < info.CreationEvents[j].Key.String()
-				})
-
-				// Build per-state event info.
-				for _, s := range class.States {
-					var eventInfos []EventInfo
-					// Group transitions by event key for this state.
-					eventTransitions := make(map[identity.Key][]model_state.Transition)
-					for _, t := range class.Transitions {
-						if t.FromStateKey != nil && *t.FromStateKey == s.Key {
-							eventTransitions[t.EventKey] = append(eventTransitions[t.EventKey], t)
-						}
-					}
-					for ek, transitions := range eventTransitions {
-						if ev, ok := eventByKey[ek]; ok {
-							eventInfos = append(eventInfos, EventInfo{
-								Event:       ev,
-								Transitions: transitions,
-							})
-						}
-					}
-					// Sort for determinism.
-					sort.Slice(eventInfos, func(i, j int) bool {
-						return eventInfos[i].Event.Key.String() < eventInfos[j].Event.Key.String()
-					})
-					if len(eventInfos) > 0 {
-						info.StateEvents[s.Name] = eventInfos
-					}
-
-					// Build "do" actions for this state.
-					var doActions []model_state.Action
-					for _, sa := range s.Actions {
-						if sa.When == "do" {
-							if action, ok := class.Actions[sa.ActionKey]; ok {
-								doActions = append(doActions, action)
-							}
-						}
-					}
-					if len(doActions) > 0 {
-						sort.Slice(doActions, func(i, j int) bool {
-							return doActions[i].Key.String() < doActions[j].Key.String()
-						})
-						info.DoActions[s.Name] = doActions
-					}
-				}
-
-				catalog.classes[class.Key] = info
+				catalog.classes[class.Key] = buildClassInfo(class)
 			}
 		}
 	}
 
 	// Build association info.
+	catalog.buildAssociationInfo(model)
+
+	return catalog
+}
+
+// buildClassInfo creates pre-computed simulation metadata for a single class.
+func buildClassInfo(class model_class.Class) *ClassInfo {
+	info := &ClassInfo{
+		Class:       class,
+		ClassKey:    class.Key,
+		StateEvents: make(map[string][]EventInfo),
+		DoActions:   make(map[string][]model_state.Action),
+		HasStates:   true,
+	}
+
+	// Build event lookup by key.
+	eventByKey := make(map[identity.Key]model_state.Event)
+	for _, e := range class.Events {
+		eventByKey[e.Key] = e
+	}
+
+	info.CreationEvents = findCreationEvents(class, eventByKey)
+	buildPerStateInfo(info, class, eventByKey)
+
+	return info
+}
+
+// findCreationEvents finds events that trigger creation transitions (FromStateKey==nil).
+func findCreationEvents(class model_class.Class, eventByKey map[identity.Key]model_state.Event) []model_state.Event {
+	creationEventKeys := make(map[identity.Key]bool)
+	for _, t := range class.Transitions {
+		if t.FromStateKey == nil {
+			creationEventKeys[t.EventKey] = true
+		}
+	}
+
+	var events []model_state.Event
+	for ek := range creationEventKeys {
+		if ev, ok := eventByKey[ek]; ok {
+			events = append(events, ev)
+		}
+	}
+
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].Key.String() < events[j].Key.String()
+	})
+	return events
+}
+
+// buildPerStateInfo populates StateEvents and DoActions for each state in the class.
+func buildPerStateInfo(info *ClassInfo, class model_class.Class, eventByKey map[identity.Key]model_state.Event) {
+	for _, s := range class.States {
+		eventInfos := buildStateEventInfos(class, s, eventByKey)
+		if len(eventInfos) > 0 {
+			info.StateEvents[s.Name] = eventInfos
+		}
+
+		doActions := buildDoActions(class, s)
+		if len(doActions) > 0 {
+			info.DoActions[s.Name] = doActions
+		}
+	}
+}
+
+// buildStateEventInfos builds the event infos for transitions from a specific state.
+func buildStateEventInfos(
+	class model_class.Class,
+	s model_state.State,
+	eventByKey map[identity.Key]model_state.Event,
+) []EventInfo {
+	// Group transitions by event key for this state.
+	eventTransitions := make(map[identity.Key][]model_state.Transition)
+	for _, t := range class.Transitions {
+		if t.FromStateKey != nil && *t.FromStateKey == s.Key {
+			eventTransitions[t.EventKey] = append(eventTransitions[t.EventKey], t)
+		}
+	}
+
+	var eventInfos []EventInfo
+	for ek, transitions := range eventTransitions {
+		if ev, ok := eventByKey[ek]; ok {
+			eventInfos = append(eventInfos, EventInfo{
+				Event:       ev,
+				Transitions: transitions,
+			})
+		}
+	}
+
+	sort.Slice(eventInfos, func(i, j int) bool {
+		return eventInfos[i].Event.Key.String() < eventInfos[j].Event.Key.String()
+	})
+	return eventInfos
+}
+
+// buildDoActions builds "do" actions for a specific state.
+func buildDoActions(class model_class.Class, s model_state.State) []model_state.Action {
+	var doActions []model_state.Action
+	for _, sa := range s.Actions {
+		if sa.When == "do" {
+			if action, ok := class.Actions[sa.ActionKey]; ok {
+				doActions = append(doActions, action)
+			}
+		}
+	}
+	if len(doActions) > 0 {
+		sort.Slice(doActions, func(i, j int) bool {
+			return doActions[i].Key.String() < doActions[j].Key.String()
+		})
+	}
+	return doActions
+}
+
+// buildAssociationInfo builds association metadata from the model.
+func (c *ClassCatalog) buildAssociationInfo(model *core.Model) {
 	allAssocs := model.GetClassAssociations()
 	for _, assoc := range allAssocs {
 		ai := AssociationInfo{
@@ -158,18 +197,16 @@ func NewClassCatalog(model *core.Model) *ClassCatalog {
 			MinTo:         assoc.ToMultiplicity.LowerBound,
 			MinFrom:       assoc.FromMultiplicity.LowerBound,
 		}
-		catalog.associations = append(catalog.associations, ai)
-		catalog.classAssocs[assoc.FromClassKey] = append(catalog.classAssocs[assoc.FromClassKey], ai)
+		c.associations = append(c.associations, ai)
+		c.classAssocs[assoc.FromClassKey] = append(c.classAssocs[assoc.FromClassKey], ai)
 		if assoc.FromClassKey != assoc.ToClassKey {
-			catalog.classAssocs[assoc.ToClassKey] = append(catalog.classAssocs[assoc.ToClassKey], ai)
+			c.classAssocs[assoc.ToClassKey] = append(c.classAssocs[assoc.ToClassKey], ai)
 		}
 	}
 	// Sort associations for determinism.
-	sort.Slice(catalog.associations, func(i, j int) bool {
-		return catalog.associations[i].Association.Key.String() < catalog.associations[j].Association.Key.String()
+	sort.Slice(c.associations, func(i, j int) bool {
+		return c.associations[i].Association.Key.String() < c.associations[j].Association.Key.String()
 	})
-
-	return catalog
 }
 
 // SetEventSentBy records which classes send a given event.

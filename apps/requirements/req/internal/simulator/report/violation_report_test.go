@@ -91,7 +91,16 @@ func (s *ViolationReportSuite) TestMixedViolations() {
 		invariants.NewModelInvariantViolation(0, "TRUE", "failed"),
 		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
 		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
-		invariants.NewMultiplicityViolation(1, classKey, "items", "to", 0, 1, 10, "too few"),
+		invariants.NewMultiplicityViolation(invariants.MultiplicityViolationParams{
+			InstanceID:      1,
+			ClassKey:        classKey,
+			AssociationName: "items",
+			Direction:       "to",
+			ActualCount:     0,
+			RequiredMin:     1,
+			RequiredMax:     10,
+			Message:         "too few",
+		}),
 	}
 
 	report := FromViolations(violations)

@@ -45,37 +45,7 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 	}
 
 	// 1. Collect candidate classes by walking includes.
-	if spec == nil || spec.IsEmpty() {
-		// Empty spec — include ALL classes from ALL non-realized domains.
-		addAllNonRealizedClasses(model, resolved)
-	} else {
-		// Walk includes.
-		includeDomainSet := toKeySet(spec.IncludeDomains)
-		includeSubdomainSet := toKeySet(spec.IncludeSubdomains)
-		includeClassSet := toKeySet(spec.IncludeClasses)
-
-		for domainKey, domain := range model.Domains {
-			if domain.Realized {
-				if includeDomainSet[domainKey] {
-					resolved.Warnings = append(resolved.Warnings,
-						fmt.Sprintf("domain %s is realized (external system) and was excluded", domain.Name))
-				}
-				continue
-			}
-
-			includeDomain := includeDomainSet[domainKey]
-
-			for subdomainKey, subdomain := range domain.Subdomains {
-				includeSubdomain := includeSubdomainSet[subdomainKey]
-
-				for classKey, class := range subdomain.Classes {
-					if includeDomain || includeSubdomain || includeClassSet[classKey] {
-						resolved.Classes[classKey] = class
-					}
-				}
-			}
-		}
-	}
+	collectIncludedClasses(spec, model, resolved)
 
 	// 2. Apply excludes.
 	if spec != nil {
@@ -91,7 +61,56 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 		}
 	}
 
-	// 4. Resolve associations: keep only those where both endpoints are in scope.
+	// 4. Resolve associations.
+	resolveAssociations(model, resolved)
+
+	// 5. Scope invariants.
+	scopeModelInvariants(model, resolved)
+
+	// 6. Validate: at least one simulatable class must remain.
+	if len(resolved.Classes) == 0 {
+		return nil, fmt.Errorf("no simulatable classes remain after surface area filtering")
+	}
+
+	return resolved, nil
+}
+
+// collectIncludedClasses populates resolved.Classes based on spec includes.
+func collectIncludedClasses(spec *SurfaceSpecification, model *core.Model, resolved *ResolvedSurface) {
+	if spec == nil || spec.IsEmpty() {
+		addAllNonRealizedClasses(model, resolved)
+		return
+	}
+
+	includeDomainSet := toKeySet(spec.IncludeDomains)
+	includeSubdomainSet := toKeySet(spec.IncludeSubdomains)
+	includeClassSet := toKeySet(spec.IncludeClasses)
+
+	for domainKey, domain := range model.Domains {
+		if domain.Realized {
+			if includeDomainSet[domainKey] {
+				resolved.Warnings = append(resolved.Warnings,
+					fmt.Sprintf("domain %s is realized (external system) and was excluded", domain.Name))
+			}
+			continue
+		}
+
+		includeDomain := includeDomainSet[domainKey]
+
+		for subdomainKey, subdomain := range domain.Subdomains {
+			includeSubdomain := includeSubdomainSet[subdomainKey]
+
+			for classKey, class := range subdomain.Classes {
+				if includeDomain || includeSubdomain || includeClassSet[classKey] {
+					resolved.Classes[classKey] = class
+				}
+			}
+		}
+	}
+}
+
+// resolveAssociations keeps only associations where both endpoints are in scope.
+func resolveAssociations(model *core.Model, resolved *ResolvedSurface) {
 	allAssocs := model.GetClassAssociations()
 	for assocKey, assoc := range allAssocs {
 		_, fromIn := resolved.Classes[assoc.FromClassKey]
@@ -102,7 +121,6 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 			resolved.Warnings = append(resolved.Warnings,
 				fmt.Sprintf("association %s dropped: one endpoint is outside the surface", assoc.Name))
 
-			// Check for broken mandatory chains.
 			if fromIn && assoc.ToMultiplicity.LowerBound >= 1 {
 				resolved.Warnings = append(resolved.Warnings,
 					fmt.Sprintf("class %s has mandatory association to excluded class via %s — creation chain will not cascade",
@@ -110,8 +128,10 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 			}
 		}
 	}
+}
 
-	// 5. Scope invariants.
+// scopeModelInvariants filters model invariants to those relevant to the resolved surface.
+func scopeModelInvariants(model *core.Model, resolved *ResolvedSurface) {
 	inScopeClassNames := make(map[string]bool, len(resolved.Classes))
 	for _, class := range resolved.Classes {
 		inScopeClassNames[class.Name] = true
@@ -130,13 +150,6 @@ func Resolve(spec *SurfaceSpecification, model *core.Model) (*ResolvedSurface, e
 		resolved.Warnings = append(resolved.Warnings,
 			fmt.Sprintf("invariant excluded (references out-of-scope class): %s", inv.Description))
 	}
-
-	// 6. Validate: at least one simulatable class must remain.
-	if len(resolved.Classes) == 0 {
-		return nil, fmt.Errorf("no simulatable classes remain after surface area filtering")
-	}
-
-	return resolved, nil
 }
 
 // addAllNonRealizedClasses adds all classes from non-realized domains.

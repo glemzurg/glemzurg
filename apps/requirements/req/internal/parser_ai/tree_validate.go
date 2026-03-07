@@ -350,77 +350,75 @@ func validateStateMachineTree(class *inputClass, domainKey, subdomainKey, classK
 
 	// Validate transitions
 	for i, transition := range sm.Transitions {
-		// Check that at least one state is specified
-		if transition.FromStateKey == nil && transition.ToStateKey == nil {
-			return NewParseError(
-				ErrTreeTransitionNoStates,
-				fmt.Sprintf("transition[%d] must have at least one of from_state_key or to_state_key", i),
-				smPath,
-			).WithField(fmt.Sprintf("transitions[%d]", i))
-		}
-
-		// Check that it's not both initial and final (from=nil and to=nil is already caught above)
-		// Initial: from_state_key is nil, to_state_key is set
-		// Final: from_state_key is set, to_state_key is nil
-		// This check is redundant given the above, but kept for clarity
-
-		// Validate from_state_key if present
-		if transition.FromStateKey != nil {
-			if _, ok := sm.States[*transition.FromStateKey]; !ok {
-				return NewParseError(
-					ErrTreeStateMachineStateNotFound,
-					fmt.Sprintf("transition[%d] from_state_key '%s' does not exist", i, *transition.FromStateKey),
-					smPath,
-				).WithField(fmt.Sprintf("transitions[%d].from_state_key", i))
-			}
-		}
-
-		// Validate to_state_key if present
-		if transition.ToStateKey != nil {
-			if _, ok := sm.States[*transition.ToStateKey]; !ok {
-				return NewParseError(
-					ErrTreeStateMachineStateNotFound,
-					fmt.Sprintf("transition[%d] to_state_key '%s' does not exist", i, *transition.ToStateKey),
-					smPath,
-				).WithField(fmt.Sprintf("transitions[%d].to_state_key", i))
-			}
-		}
-
-		// Validate event_key
-		if _, ok := sm.Events[transition.EventKey]; !ok {
-			return NewParseError(
-				ErrTreeStateMachineEventNotFound,
-				fmt.Sprintf("transition[%d] event_key '%s' does not exist", i, transition.EventKey),
-				smPath,
-			).WithField(fmt.Sprintf("transitions[%d].event_key", i))
-		}
-
-		// Validate guard_key if present
-		if transition.GuardKey != nil {
-			if _, ok := sm.Guards[*transition.GuardKey]; !ok {
-				return NewParseError(
-					ErrTreeStateMachineGuardNotFound,
-					fmt.Sprintf("transition[%d] guard_key '%s' does not exist", i, *transition.GuardKey),
-					smPath,
-				).WithField(fmt.Sprintf("transitions[%d].guard_key", i))
-			}
-		}
-
-		// Validate action_key if present
-		if transition.ActionKey != nil {
-			if _, ok := class.Actions[*transition.ActionKey]; !ok {
-				return NewParseError(
-					ErrTreeStateMachineActionNotFound,
-					fmt.Sprintf("transition[%d] action_key '%s' does not exist in class '%s'", i, *transition.ActionKey, classKey),
-					smPath,
-				).WithField(fmt.Sprintf("transitions[%d].action_key", i))
-			}
+		if err := validateSingleTransitionTree(class, sm, i, transition, classKey, smPath); err != nil {
+			return err
 		}
 	}
 
 	// Validate that every action is referenced by at least one state action or transition
 	if err := validateActionsReferenced(class, domainKey, subdomainKey, classKey); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// validateSingleTransitionTree validates a single transition's cross-references.
+func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i int, transition inputTransition, classKey, smPath string) error {
+	if transition.FromStateKey == nil && transition.ToStateKey == nil {
+		return NewParseError(
+			ErrTreeTransitionNoStates,
+			fmt.Sprintf("transition[%d] must have at least one of from_state_key or to_state_key", i),
+			smPath,
+		).WithField(fmt.Sprintf("transitions[%d]", i))
+	}
+
+	if transition.FromStateKey != nil {
+		if _, ok := sm.States[*transition.FromStateKey]; !ok {
+			return NewParseError(
+				ErrTreeStateMachineStateNotFound,
+				fmt.Sprintf("transition[%d] from_state_key '%s' does not exist", i, *transition.FromStateKey),
+				smPath,
+			).WithField(fmt.Sprintf("transitions[%d].from_state_key", i))
+		}
+	}
+
+	if transition.ToStateKey != nil {
+		if _, ok := sm.States[*transition.ToStateKey]; !ok {
+			return NewParseError(
+				ErrTreeStateMachineStateNotFound,
+				fmt.Sprintf("transition[%d] to_state_key '%s' does not exist", i, *transition.ToStateKey),
+				smPath,
+			).WithField(fmt.Sprintf("transitions[%d].to_state_key", i))
+		}
+	}
+
+	if _, ok := sm.Events[transition.EventKey]; !ok {
+		return NewParseError(
+			ErrTreeStateMachineEventNotFound,
+			fmt.Sprintf("transition[%d] event_key '%s' does not exist", i, transition.EventKey),
+			smPath,
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i))
+	}
+
+	if transition.GuardKey != nil {
+		if _, ok := sm.Guards[*transition.GuardKey]; !ok {
+			return NewParseError(
+				ErrTreeStateMachineGuardNotFound,
+				fmt.Sprintf("transition[%d] guard_key '%s' does not exist", i, *transition.GuardKey),
+				smPath,
+			).WithField(fmt.Sprintf("transitions[%d].guard_key", i))
+		}
+	}
+
+	if transition.ActionKey != nil {
+		if _, ok := class.Actions[*transition.ActionKey]; !ok {
+			return NewParseError(
+				ErrTreeStateMachineActionNotFound,
+				fmt.Sprintf("transition[%d] action_key '%s' does not exist in class '%s'", i, *transition.ActionKey, classKey),
+				smPath,
+			).WithField(fmt.Sprintf("transitions[%d].action_key", i))
+		}
 	}
 
 	return nil
@@ -1057,6 +1055,16 @@ func validateUseCaseTree(model *inputModel, domainKey, subdomainKey, useCaseKey 
 	return nil
 }
 
+// scenarioValidationContext holds context for scenario step validation.
+type scenarioValidationContext struct {
+	model        *inputModel
+	domainKey    string
+	subdomainKey string
+	scenarioKey  string
+	scenario     *inputScenario
+	scenarioPath string
+}
+
 // validateScenarioTree validates a scenario's cross-references.
 func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey, scenarioKey string, scenario *inputScenario) error {
 	scenarioPath := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/scenarios/%s.scenario.json", domainKey, subdomainKey, useCaseKey, scenarioKey)
@@ -1065,7 +1073,7 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 	for objectKey, object := range scenario.Objects {
 		if _, ok := model.Domains[domainKey].Subdomains[subdomainKey].Classes[object.ClassKey]; !ok {
 			return NewParseError(
-				ErrTreeAssocClassNotFound, // reusing error code
+				ErrTreeAssocClassNotFound,
 				fmt.Sprintf("scenario '%s' object '%s' references class '%s' which does not exist", scenarioKey, objectKey, object.ClassKey),
 				scenarioPath,
 			).WithField("objects")
@@ -1074,125 +1082,153 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 
 	// Validate steps recursively
 	if scenario.Steps != nil {
-		var walk func(step inputStep, path string) error
-		walk = func(step inputStep, path string) error {
-			// Validate referenced objects
-			if step.FromObjectKey != nil {
-				if _, ok := scenario.Objects[*step.FromObjectKey]; !ok {
-					return NewParseError(
-						ErrTreeScenarioStepObjectNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references from_object_key '%s' which does not exist",
-							scenarioKey, path, *step.FromObjectKey),
-						scenarioPath,
-					).WithField(path + ".from_object_key")
-				}
-			}
-			if step.ToObjectKey != nil {
-				if _, ok := scenario.Objects[*step.ToObjectKey]; !ok {
-					return NewParseError(
-						ErrTreeScenarioStepObjectNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references to_object_key '%s' which does not exist",
-							scenarioKey, path, *step.ToObjectKey),
-						scenarioPath,
-					).WithField(path + ".to_object_key")
-				}
-			}
-
-			// Validate event references (check both from and to objects for the event)
-			if step.EventKey != nil {
-				if step.FromObjectKey == nil && step.ToObjectKey == nil {
-					return NewParseError(
-						ErrTreeScenarioStepEventNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but no object is specified to resolve the class",
-							scenarioKey, path, *step.EventKey),
-						scenarioPath,
-					).WithField(path + ".event_key")
-				}
-				found := false
-				for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
-					if objKey == nil {
-						continue
-					}
-					obj := scenario.Objects[*objKey]
-					class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[obj.ClassKey]
-					if class != nil && class.StateMachine != nil {
-						if _, ok := class.StateMachine.Events[*step.EventKey]; ok {
-							found = true
-							break
-						}
-					}
-				}
-				if !found {
-					var classNames []string
-					for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
-						if objKey != nil {
-							classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
-						}
-					}
-					return NewParseError(
-						ErrTreeScenarioStepEventNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on classes %v",
-							scenarioKey, path, *step.EventKey, classNames),
-						scenarioPath,
-					).WithField(path + ".event_key")
-				}
-			}
-
-			// Validate query references (check both from and to objects for the query)
-			if step.QueryKey != nil {
-				if step.FromObjectKey == nil && step.ToObjectKey == nil {
-					return NewParseError(
-						ErrTreeScenarioStepQueryNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but no object is specified to resolve the class",
-							scenarioKey, path, *step.QueryKey),
-						scenarioPath,
-					).WithField(path + ".query_key")
-				}
-				found := false
-				for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
-					if objKey == nil {
-						continue
-					}
-					obj := scenario.Objects[*objKey]
-					class := model.Domains[domainKey].Subdomains[subdomainKey].Classes[obj.ClassKey]
-					if class != nil {
-						if _, ok := class.Queries[*step.QueryKey]; ok {
-							found = true
-							break
-						}
-					}
-				}
-				if !found {
-					var classNames []string
-					for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
-						if objKey != nil {
-							classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
-						}
-					}
-					return NewParseError(
-						ErrTreeScenarioStepQueryNotFound,
-						fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on classes %v",
-							scenarioKey, path, *step.QueryKey, classNames),
-						scenarioPath,
-					).WithField(path + ".query_key")
-				}
-			}
-
-			// Recurse into nested statements
-			for i, st := range step.Statements {
-				if err := walk(st, fmt.Sprintf("%s.statements[%d]", path, i)); err != nil {
-					return err
-				}
-			}
-			return nil
+		ctx := scenarioValidationContext{
+			model:        model,
+			domainKey:    domainKey,
+			subdomainKey: subdomainKey,
+			scenarioKey:  scenarioKey,
+			scenario:     scenario,
+			scenarioPath: scenarioPath,
 		}
-
-		if err := walk(*scenario.Steps, "steps"); err != nil {
+		if err := walkValidateSteps(*scenario.Steps, "steps", ctx); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// walkValidateSteps recursively validates step cross-references.
+func walkValidateSteps(step inputStep, path string, ctx scenarioValidationContext) error {
+	if err := validateStepObjectRefs(step, path, ctx); err != nil {
+		return err
+	}
+	if err := validateStepEventRef(step, path, ctx); err != nil {
+		return err
+	}
+	if err := validateStepQueryRef(step, path, ctx); err != nil {
+		return err
+	}
+	for i, st := range step.Statements {
+		if err := walkValidateSteps(st, fmt.Sprintf("%s.statements[%d]", path, i), ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateStepObjectRefs validates from_object_key and to_object_key references in a step.
+func validateStepObjectRefs(step inputStep, path string, ctx scenarioValidationContext) error {
+	if step.FromObjectKey != nil {
+		if _, ok := ctx.scenario.Objects[*step.FromObjectKey]; !ok {
+			return NewParseError(
+				ErrTreeScenarioStepObjectNotFound,
+				fmt.Sprintf("scenario '%s' step at '%s' references from_object_key '%s' which does not exist",
+					ctx.scenarioKey, path, *step.FromObjectKey),
+				ctx.scenarioPath,
+			).WithField(path + ".from_object_key")
+		}
+	}
+	if step.ToObjectKey != nil {
+		if _, ok := ctx.scenario.Objects[*step.ToObjectKey]; !ok {
+			return NewParseError(
+				ErrTreeScenarioStepObjectNotFound,
+				fmt.Sprintf("scenario '%s' step at '%s' references to_object_key '%s' which does not exist",
+					ctx.scenarioKey, path, *step.ToObjectKey),
+				ctx.scenarioPath,
+			).WithField(path + ".to_object_key")
+		}
+	}
+	return nil
+}
+
+// validateStepEventRef validates event_key references in a step.
+func validateStepEventRef(step inputStep, path string, ctx scenarioValidationContext) error {
+	if step.EventKey == nil {
+		return nil
+	}
+	if step.FromObjectKey == nil && step.ToObjectKey == nil {
+		return NewParseError(
+			ErrTreeScenarioStepEventNotFound,
+			fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but no object is specified to resolve the class",
+				ctx.scenarioKey, path, *step.EventKey),
+			ctx.scenarioPath,
+		).WithField(path + ".event_key")
+	}
+	found := false
+	for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+		if objKey == nil {
+			continue
+		}
+		obj := ctx.scenario.Objects[*objKey]
+		class := ctx.model.Domains[ctx.domainKey].Subdomains[ctx.subdomainKey].Classes[obj.ClassKey]
+		if class != nil && class.StateMachine != nil {
+			if _, ok := class.StateMachine.Events[*step.EventKey]; ok {
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		classNames := collectStepClassNames(step, ctx.scenario)
+		return NewParseError(
+			ErrTreeScenarioStepEventNotFound,
+			fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on classes %v",
+				ctx.scenarioKey, path, *step.EventKey, classNames),
+			ctx.scenarioPath,
+		).WithField(path + ".event_key")
+	}
+	return nil
+}
+
+// validateStepQueryRef validates query_key references in a step.
+func validateStepQueryRef(step inputStep, path string, ctx scenarioValidationContext) error {
+	if step.QueryKey == nil {
+		return nil
+	}
+	if step.FromObjectKey == nil && step.ToObjectKey == nil {
+		return NewParseError(
+			ErrTreeScenarioStepQueryNotFound,
+			fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but no object is specified to resolve the class",
+				ctx.scenarioKey, path, *step.QueryKey),
+			ctx.scenarioPath,
+		).WithField(path + ".query_key")
+	}
+	found := false
+	for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+		if objKey == nil {
+			continue
+		}
+		obj := ctx.scenario.Objects[*objKey]
+		class := ctx.model.Domains[ctx.domainKey].Subdomains[ctx.subdomainKey].Classes[obj.ClassKey]
+		if class != nil {
+			if _, ok := class.Queries[*step.QueryKey]; ok {
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		classNames := collectStepClassNames(step, ctx.scenario)
+		return NewParseError(
+			ErrTreeScenarioStepQueryNotFound,
+			fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on classes %v",
+				ctx.scenarioKey, path, *step.QueryKey, classNames),
+			ctx.scenarioPath,
+		).WithField(path + ".query_key")
+	}
+	return nil
+}
+
+// collectStepClassNames collects class names from a step's object references.
+func collectStepClassNames(step inputStep, scenario *inputScenario) []string {
+	var classNames []string
+	for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
+		if objKey != nil {
+			classNames = append(classNames, scenario.Objects[*objKey].ClassKey)
+		}
+	}
+	return classNames
 }
 
 // validateUseCaseGeneralizationTree validates a use case generalization's cross-references.

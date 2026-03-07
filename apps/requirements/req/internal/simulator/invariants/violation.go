@@ -328,22 +328,25 @@ func NewSafetyRuleViolation(
 	}
 }
 
+// MultiplicityViolationParams holds the parameters for creating a multiplicity violation.
+type MultiplicityViolationParams struct {
+	InstanceID      state.InstanceID
+	ClassKey        identity.Key
+	AssociationName string
+	Direction       string
+	ActualCount     int
+	RequiredMin     uint
+	RequiredMax     uint
+	Message         string
+}
+
 // NewMultiplicityViolation creates a violation for an association multiplicity constraint failure.
-func NewMultiplicityViolation(
-	instanceID state.InstanceID,
-	classKey identity.Key,
-	associationName string,
-	direction string,
-	_ int,
-	_ uint,
-	_ uint,
-	message string,
-) *ViolationError {
+func NewMultiplicityViolation(params MultiplicityViolationParams) *ViolationError {
 	return &ViolationError{
 		Type:       ViolationTypeMultiplicity,
-		Message:    fmt.Sprintf("multiplicity violation on instance %d of class %s: association %s (%s) %s", instanceID, classKey.String(), associationName, direction, message),
-		InstanceID: instanceID,
-		ClassKey:   classKey,
+		Message:    fmt.Sprintf("multiplicity violation on instance %d of class %s: association %s (%s) %s", params.InstanceID, params.ClassKey.String(), params.AssociationName, params.Direction, params.Message),
+		InstanceID: params.InstanceID,
+		ClassKey:   params.ClassKey,
 	}
 }
 

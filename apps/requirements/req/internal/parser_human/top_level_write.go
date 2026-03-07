@@ -35,39 +35,47 @@ func Write(model core.Model, outputPath string) error {
 	}
 
 	// Write actors and actor generalizations.
-	if len(model.Actors) > 0 || len(model.ActorGeneralizations) > 0 {
-		actorsDir := filepath.Join(outputPath, _PATH_ACTORS)
-		if err := os.MkdirAll(actorsDir, 0755); err != nil {
-			return errors.Wrap(err, "failed to create actors directory")
-		}
-
-		for _, actor := range model.Actors {
-			actorContent := generateActorContent(actor)
-			actorPath := filepath.Join(actorsDir, actor.Key.SubKey+_EXT_ACTOR)
-			if err := os.WriteFile(actorPath, []byte(actorContent), 0600); err != nil {
-				return errors.Wrapf(err, "failed to write actor file: %s", actor.Key.SubKey)
-			}
-		}
-
-		for _, actorGen := range model.ActorGeneralizations {
-			genContent := generateActorGeneralizationContent(actorGen)
-			genPath := filepath.Join(actorsDir, actorGen.Key.SubKey+_EXT_GENERALIZATION)
-			if err := os.WriteFile(genPath, []byte(genContent), 0600); err != nil {
-				return errors.Wrapf(err, "failed to write actor generalization file: %s", actorGen.Key.SubKey)
-			}
-		}
+	if err := writeActors(outputPath, model); err != nil {
+		return err
 	}
 
-	// Build a lookup of domain associations by domain key.
+	// Build association lookups and write domains.
 	domainAssocsByDomain := buildDomainAssociationsLookup(model.DomainAssociations)
-
-	// Build a lookup of all class associations (from all levels) by from-class key.
 	classAssocsByClass := buildClassAssociationsLookup(model.GetClassAssociations())
 
-	// Write domains.
 	for _, domain := range model.Domains {
 		if err := writeDomain(outputPath, domain, domainAssocsByDomain, classAssocsByClass); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// writeActors writes actor and actor generalization files to the actors directory.
+func writeActors(outputPath string, model core.Model) error {
+	if len(model.Actors) == 0 && len(model.ActorGeneralizations) == 0 {
+		return nil
+	}
+
+	actorsDir := filepath.Join(outputPath, _PATH_ACTORS)
+	if err := os.MkdirAll(actorsDir, 0755); err != nil {
+		return errors.Wrap(err, "failed to create actors directory")
+	}
+
+	for _, actor := range model.Actors {
+		actorContent := generateActorContent(actor)
+		actorPath := filepath.Join(actorsDir, actor.Key.SubKey+_EXT_ACTOR)
+		if err := os.WriteFile(actorPath, []byte(actorContent), 0600); err != nil {
+			return errors.Wrapf(err, "failed to write actor file: %s", actor.Key.SubKey)
+		}
+	}
+
+	for _, actorGen := range model.ActorGeneralizations {
+		genContent := generateActorGeneralizationContent(actorGen)
+		genPath := filepath.Join(actorsDir, actorGen.Key.SubKey+_EXT_GENERALIZATION)
+		if err := os.WriteFile(genPath, []byte(genContent), 0600); err != nil {
+			return errors.Wrapf(err, "failed to write actor generalization file: %s", actorGen.Key.SubKey)
 		}
 	}
 

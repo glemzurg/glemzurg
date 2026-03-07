@@ -65,140 +65,126 @@ func collectIdentifiersFromIR(expr me.Expression) map[string]bool {
 }
 
 // walkIdentifiersIR recursively walks an IR expression and adds identifier-like
-// names to the set.
+// names to the set. It dispatches to category-specific walkers.
 func walkIdentifiersIR(expr me.Expression, result map[string]bool) {
 	if expr == nil {
 		return
 	}
+	if walkIdentifiersLeaf(expr, result) {
+		return
+	}
+	if walkIdentifiersOperator(expr, result) {
+		return
+	}
+	walkIdentifiersCompound(expr, result)
+}
 
+// walkIdentifiersLeaf handles leaf nodes and references. Returns true if handled.
+func walkIdentifiersLeaf(expr me.Expression, result map[string]bool) bool {
 	switch e := expr.(type) {
-	// References that carry names.
 	case *me.LocalVar:
 		result[e.Name] = true
-	case *me.AttributeRef:
-		// AttributeRef keys contain class/attribute hierarchy — not simple identifiers.
-	case *me.SelfRef:
-		// No name.
-	case *me.PriorFieldValue:
-		// Field name, not a class reference.
-
-	// Leaf nodes.
+	case *me.AttributeRef, *me.SelfRef, *me.PriorFieldValue:
+		// No identifier names to collect.
 	case *me.BoolLiteral, *me.IntLiteral, *me.RationalLiteral,
 		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef:
 		// No expression children.
+	default:
+		return false
+	}
+	return true
+}
 
-	// Set literal.
-	case *me.SetLiteral:
-		for _, elem := range e.Elements {
-			walkIdentifiersIR(elem, result)
-		}
-
-	// Tuple literal.
-	case *me.TupleLiteral:
-		for _, elem := range e.Elements {
-			walkIdentifiersIR(elem, result)
-		}
-
-	// Record literal.
-	case *me.RecordLiteral:
-		for _, f := range e.Fields {
-			walkIdentifiersIR(f.Value, result)
-		}
-
-	// Binary operators.
+// walkIdentifiersOperator handles unary/binary operators and comparisons. Returns true if handled.
+func walkIdentifiersOperator(expr me.Expression, result map[string]bool) bool {
+	switch e := expr.(type) {
 	case *me.BinaryArith:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.BinaryLogic:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.Compare:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.SetOp:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.SetCompare:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.BagOp:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.BagCompare:
-		walkIdentifiersIR(e.Left, result)
-		walkIdentifiersIR(e.Right, result)
+		walkBinaryIR(e.Left, e.Right, result)
 	case *me.Membership:
-		walkIdentifiersIR(e.Element, result)
-		walkIdentifiersIR(e.Set, result)
-
-	// Unary operators.
+		walkBinaryIR(e.Element, e.Set, result)
 	case *me.Negate:
 		walkIdentifiersIR(e.Expr, result)
 	case *me.Not:
 		walkIdentifiersIR(e.Expr, result)
 	case *me.NextState:
 		walkIdentifiersIR(e.Expr, result)
+	default:
+		return false
+	}
+	return true
+}
 
-	// Access and indexing.
+// walkIdentifiersCompound handles compound expressions (collections, control flow, calls).
+func walkIdentifiersCompound(expr me.Expression, result map[string]bool) {
+	switch e := expr.(type) {
+	case *me.SetLiteral:
+		walkSliceIR(e.Elements, result)
+	case *me.TupleLiteral:
+		walkSliceIR(e.Elements, result)
+	case *me.RecordLiteral:
+		for _, f := range e.Fields {
+			walkIdentifiersIR(f.Value, result)
+		}
 	case *me.FieldAccess:
 		walkIdentifiersIR(e.Base, result)
 	case *me.TupleIndex:
-		walkIdentifiersIR(e.Tuple, result)
-		walkIdentifiersIR(e.Index, result)
+		walkBinaryIR(e.Tuple, e.Index, result)
 	case *me.StringIndex:
-		walkIdentifiersIR(e.Str, result)
-		walkIdentifiersIR(e.Index, result)
+		walkBinaryIR(e.Str, e.Index, result)
 	case *me.RecordUpdate:
 		walkIdentifiersIR(e.Base, result)
 		for _, alt := range e.Alterations {
 			walkIdentifiersIR(alt.Value, result)
 		}
-
-	// Concatenation.
 	case *me.StringConcat:
-		for _, op := range e.Operands {
-			walkIdentifiersIR(op, result)
-		}
+		walkSliceIR(e.Operands, result)
 	case *me.TupleConcat:
-		for _, op := range e.Operands {
-			walkIdentifiersIR(op, result)
-		}
-
-	// Quantifiers.
+		walkSliceIR(e.Operands, result)
 	case *me.Quantifier:
-		walkIdentifiersIR(e.Domain, result)
-		walkIdentifiersIR(e.Predicate, result)
+		walkBinaryIR(e.Domain, e.Predicate, result)
 	case *me.SetFilter:
-		walkIdentifiersIR(e.Set, result)
-		walkIdentifiersIR(e.Predicate, result)
+		walkBinaryIR(e.Set, e.Predicate, result)
 	case *me.SetRange:
-		walkIdentifiersIR(e.Start, result)
-		walkIdentifiersIR(e.End, result)
-
-	// Conditional.
+		walkBinaryIR(e.Start, e.End, result)
 	case *me.IfThenElse:
 		walkIdentifiersIR(e.Condition, result)
 		walkIdentifiersIR(e.Then, result)
 		walkIdentifiersIR(e.Else, result)
 	case *me.Case:
 		for _, branch := range e.Branches {
-			walkIdentifiersIR(branch.Condition, result)
-			walkIdentifiersIR(branch.Result, result)
+			walkBinaryIR(branch.Condition, branch.Result, result)
 		}
 		walkIdentifiersIR(e.Otherwise, result)
-
-	// Calls.
 	case *me.ActionCall:
-		for _, arg := range e.Args {
-			walkIdentifiersIR(arg, result)
-		}
+		walkSliceIR(e.Args, result)
 	case *me.GlobalCall:
-		for _, arg := range e.Args {
-			walkIdentifiersIR(arg, result)
-		}
+		walkSliceIR(e.Args, result)
 	case *me.BuiltinCall:
-		for _, arg := range e.Args {
-			walkIdentifiersIR(arg, result)
-		}
+		walkSliceIR(e.Args, result)
+	}
+}
+
+// walkBinaryIR walks two child expressions.
+func walkBinaryIR(left, right me.Expression, result map[string]bool) {
+	walkIdentifiersIR(left, result)
+	walkIdentifiersIR(right, result)
+}
+
+// walkSliceIR walks a slice of child expressions.
+func walkSliceIR(exprs []me.Expression, result map[string]bool) {
+	for _, expr := range exprs {
+		walkIdentifiersIR(expr, result)
 	}
 }

@@ -207,6 +207,49 @@ func evalNextState(n *me.NextState, bindings *Bindings) *EvalResult {
 	}
 }
 
+// resolveRootValue resolves the root expression of a primed field access chain,
+// checking primed values first.
+func resolveRootValue(current me.Expression, bindings *Bindings) (object.Object, *EvalResult) {
+	switch root := current.(type) {
+	case *me.LocalVar:
+		if val, found := bindings.GetPrimedValue(root.Name); found {
+			return val, nil
+		}
+		val, found := bindings.GetValue(root.Name)
+		if !found {
+			return nil, NewEvalError("identifier not found: %s", root.Name)
+		}
+		return val, nil
+	case *me.AttributeRef:
+		attrName := root.AttributeKey.SubKey
+		if val, found := bindings.GetPrimedValue(attrName); found {
+			return val, nil
+		}
+		self := bindings.Self()
+		if self == nil {
+			return nil, NewEvalError("attribute reference requires self scope")
+		}
+		value := self.Get(attrName)
+		if value == nil {
+			return nil, NewEvalError("attribute not found: %s", attrName)
+		}
+		return value, nil
+	case *me.SelfRef:
+		self := bindings.Self()
+		if self == nil {
+			return nil, NewEvalError("self is not defined in this scope")
+		}
+		return self, nil
+	default:
+		// For other expression types, evaluate normally.
+		result := Eval(current, bindings)
+		if result.IsError() {
+			return nil, result
+		}
+		return result.Value, nil
+	}
+}
+
 // evalNextStateFieldAccess handles primed field access chains like record.field'.
 func evalNextStateFieldAccess(fa *me.FieldAccess, bindings *Bindings) *EvalResult {
 	// Collect the field access chain and find the root.
@@ -223,51 +266,18 @@ func evalNextStateFieldAccess(fa *me.FieldAccess, bindings *Bindings) *EvalResul
 	}
 
 	// Get the root value (check primed first).
-	var rootValue object.Object
-
-	switch root := current.(type) {
-	case *me.LocalVar:
-		if val, found := bindings.GetPrimedValue(root.Name); found {
-			rootValue = val
-		} else {
-			val, found := bindings.GetValue(root.Name)
-			if !found {
-				return NewEvalError("identifier not found: %s", root.Name)
-			}
-			rootValue = val
-		}
-	case *me.AttributeRef:
-		attrName := root.AttributeKey.SubKey
-		if val, found := bindings.GetPrimedValue(attrName); found {
-			rootValue = val
-		} else {
-			self := bindings.Self()
-			if self == nil {
-				return NewEvalError("attribute reference requires self scope")
-			}
-			value := self.Get(attrName)
-			if value == nil {
-				return NewEvalError("attribute not found: %s", attrName)
-			}
-			rootValue = value
-		}
-	case *me.SelfRef:
-		self := bindings.Self()
-		if self == nil {
-			return NewEvalError("self is not defined in this scope")
-		}
-		rootValue = self
-	default:
-		// For other expression types, evaluate normally.
-		result := Eval(current, bindings)
-		if result.IsError() {
-			return result
-		}
-		rootValue = result.Value
+	rootValue, errResult := resolveRootValue(current, bindings)
+	if errResult != nil {
+		return errResult
 	}
 
 	// Apply the field access chain.
-	currentValue := rootValue
+	return applyFieldChain(rootValue, fields)
+}
+
+// applyFieldChain traverses a chain of field names on a record value.
+func applyFieldChain(value object.Object, fields []string) *EvalResult {
+	currentValue := value
 	for _, field := range fields {
 		record, ok := currentValue.(*object.Record)
 		if !ok {
@@ -279,7 +289,6 @@ func evalNextStateFieldAccess(fa *me.FieldAccess, bindings *Bindings) *EvalResul
 		}
 		currentValue = fieldValue
 	}
-
 	return NewEvalResult(currentValue)
 }
 
@@ -294,26 +303,109 @@ func evalNamedSetRef(n *me.NamedSetRef, bindings *Bindings) *EvalResult {
 }
 
 // ============================================================
-// Binary operators
+// Binary operand helpers
 // ============================================================
 
-func evalMEBinaryArith(n *me.BinaryArith, bindings *Bindings) *EvalResult {
-	leftResult := Eval(n.Left, bindings)
+// evalBinaryNumericOperands evaluates left and right expressions and type-checks
+// them as *object.Number, returning both or an error.
+func evalBinaryNumericOperands(left, right me.Expression, bindings *Bindings) (*object.Number, *object.Number, *EvalResult) {
+	leftResult := Eval(left, bindings)
 	if leftResult.IsError() {
-		return leftResult
+		return nil, nil, leftResult
 	}
-	rightResult := Eval(n.Right, bindings)
+	rightResult := Eval(right, bindings)
 	if rightResult.IsError() {
-		return rightResult
+		return nil, nil, rightResult
 	}
 
 	leftNum, ok := leftResult.Value.(*object.Number)
 	if !ok {
-		return NewEvalError("left operand must be Number, got %s", leftResult.Value.Type())
+		return nil, nil, NewEvalError("left operand must be Number, got %s", leftResult.Value.Type())
 	}
 	rightNum, ok := rightResult.Value.(*object.Number)
 	if !ok {
-		return NewEvalError("right operand must be Number, got %s", rightResult.Value.Type())
+		return nil, nil, NewEvalError("right operand must be Number, got %s", rightResult.Value.Type())
+	}
+	return leftNum, rightNum, nil
+}
+
+// evalBinaryBooleanOperands evaluates left and right expressions and type-checks
+// them as *object.Boolean, returning both or an error.
+func evalBinaryBooleanOperands(left, right me.Expression, bindings *Bindings) (*object.Boolean, *object.Boolean, *EvalResult) {
+	leftResult := Eval(left, bindings)
+	if leftResult.IsError() {
+		return nil, nil, leftResult
+	}
+	rightResult := Eval(right, bindings)
+	if rightResult.IsError() {
+		return nil, nil, rightResult
+	}
+
+	leftBool, ok := leftResult.Value.(*object.Boolean)
+	if !ok {
+		return nil, nil, NewEvalError("left operand must be Boolean, got %s", leftResult.Value.Type())
+	}
+	rightBool, ok := rightResult.Value.(*object.Boolean)
+	if !ok {
+		return nil, nil, NewEvalError("right operand must be Boolean, got %s", rightResult.Value.Type())
+	}
+	return leftBool, rightBool, nil
+}
+
+// evalBinarySetOperands evaluates left and right expressions and type-checks
+// them as *object.Set, returning both or an error.
+func evalBinarySetOperands(left, right me.Expression, bindings *Bindings) (*object.Set, *object.Set, *EvalResult) {
+	leftResult := Eval(left, bindings)
+	if leftResult.IsError() {
+		return nil, nil, leftResult
+	}
+	rightResult := Eval(right, bindings)
+	if rightResult.IsError() {
+		return nil, nil, rightResult
+	}
+
+	leftSet, ok := leftResult.Value.(*object.Set)
+	if !ok {
+		return nil, nil, NewEvalError("left operand must be Set, got %s", leftResult.Value.Type())
+	}
+	rightSet, ok := rightResult.Value.(*object.Set)
+	if !ok {
+		return nil, nil, NewEvalError("right operand must be Set, got %s", rightResult.Value.Type())
+	}
+	return leftSet, rightSet, nil
+}
+
+// evalBinaryBagOperands evaluates left and right expressions and type-checks
+// them as *object.Bag, returning both or an error.
+func evalBinaryBagOperands(left, right me.Expression, bindings *Bindings) (*object.Bag, *object.Bag, *EvalResult) {
+	leftResult := Eval(left, bindings)
+	if leftResult.IsError() {
+		return nil, nil, leftResult
+	}
+	rightResult := Eval(right, bindings)
+	if rightResult.IsError() {
+		return nil, nil, rightResult
+	}
+
+	leftBag, ok := leftResult.Value.(*object.Bag)
+	if !ok {
+		return nil, nil, NewEvalError("left operand must be Bag, got %s", leftResult.Value.Type())
+	}
+	rightBag, ok := rightResult.Value.(*object.Bag)
+	if !ok {
+		return nil, nil, NewEvalError("right operand must be Bag, got %s", rightResult.Value.Type())
+	}
+	return leftBag, rightBag, nil
+}
+
+// ============================================================
+// Binary operators
+// ============================================================
+
+func evalMEBinaryArith(n *me.BinaryArith, bindings *Bindings) *EvalResult {
+	leftNum, rightNum, errResult := evalBinaryNumericOperands(n.Left, n.Right, bindings)
+	if errResult != nil {
+		return errResult
 	}
 
 	var result *object.Number
@@ -357,24 +449,15 @@ func evalMEBinaryLogic(n *me.BinaryLogic, bindings *Bindings) *EvalResult {
 		return NewEvalError("left operand must be Boolean, got %s", leftResult.Value.Type())
 	}
 
-	// Short-circuit evaluation
-	switch n.Op {
-	case me.LogicAnd:
-		if !leftBool.Value() {
-			return NewEvalResult(FALSE)
-		}
-	case me.LogicOr:
-		if leftBool.Value() {
-			return NewEvalResult(TRUE)
-		}
-	case me.LogicImplies:
-		if !leftBool.Value() {
-			return NewEvalResult(TRUE)
-		}
-	case me.LogicEquiv:
-		// No short-circuit possible for equivalence.
-	default:
-		return NewEvalError("unknown logic operator: %s", n.Op)
+	// Short-circuit: return early when the left operand alone determines the result.
+	if n.Op == me.LogicAnd && !leftBool.Value() {
+		return NewEvalResult(FALSE)
+	}
+	if n.Op == me.LogicOr && leftBool.Value() {
+		return NewEvalResult(TRUE)
+	}
+	if n.Op == me.LogicImplies && !leftBool.Value() {
+		return NewEvalResult(TRUE)
 	}
 
 	rightResult := Eval(n.Right, bindings)
@@ -452,22 +535,9 @@ func evalMECompare(n *me.Compare, bindings *Bindings) *EvalResult {
 }
 
 func evalMESetOp(n *me.SetOp, bindings *Bindings) *EvalResult {
-	leftResult := Eval(n.Left, bindings)
-	if leftResult.IsError() {
-		return leftResult
-	}
-	rightResult := Eval(n.Right, bindings)
-	if rightResult.IsError() {
-		return rightResult
-	}
-
-	leftSet, ok := leftResult.Value.(*object.Set)
-	if !ok {
-		return NewEvalError("left operand must be Set, got %s", leftResult.Value.Type())
-	}
-	rightSet, ok := rightResult.Value.(*object.Set)
-	if !ok {
-		return NewEvalError("right operand must be Set, got %s", rightResult.Value.Type())
+	leftSet, rightSet, errResult := evalBinarySetOperands(n.Left, n.Right, bindings)
+	if errResult != nil {
+		return errResult
 	}
 
 	var result *object.Set
@@ -485,22 +555,9 @@ func evalMESetOp(n *me.SetOp, bindings *Bindings) *EvalResult {
 }
 
 func evalMESetCompare(n *me.SetCompare, bindings *Bindings) *EvalResult {
-	leftResult := Eval(n.Left, bindings)
-	if leftResult.IsError() {
-		return leftResult
-	}
-	rightResult := Eval(n.Right, bindings)
-	if rightResult.IsError() {
-		return rightResult
-	}
-
-	leftSet, ok := leftResult.Value.(*object.Set)
-	if !ok {
-		return NewEvalError("left operand must be Set, got %s", leftResult.Value.Type())
-	}
-	rightSet, ok := rightResult.Value.(*object.Set)
-	if !ok {
-		return NewEvalError("right operand must be Set, got %s", rightResult.Value.Type())
+	leftSet, rightSet, errResult := evalBinarySetOperands(n.Left, n.Right, bindings)
+	if errResult != nil {
+		return errResult
 	}
 
 	var result bool
@@ -520,22 +577,9 @@ func evalMESetCompare(n *me.SetCompare, bindings *Bindings) *EvalResult {
 }
 
 func evalMEBagOp(n *me.BagOp, bindings *Bindings) *EvalResult {
-	leftResult := Eval(n.Left, bindings)
-	if leftResult.IsError() {
-		return leftResult
-	}
-	rightResult := Eval(n.Right, bindings)
-	if rightResult.IsError() {
-		return rightResult
-	}
-
-	leftBag, ok := leftResult.Value.(*object.Bag)
-	if !ok {
-		return NewEvalError("left operand must be Bag, got %s", leftResult.Value.Type())
-	}
-	rightBag, ok := rightResult.Value.(*object.Bag)
-	if !ok {
-		return NewEvalError("right operand must be Bag, got %s", rightResult.Value.Type())
+	leftBag, rightBag, errResult := evalBinaryBagOperands(n.Left, n.Right, bindings)
+	if errResult != nil {
+		return errResult
 	}
 
 	var result *object.Bag
@@ -551,22 +595,9 @@ func evalMEBagOp(n *me.BagOp, bindings *Bindings) *EvalResult {
 }
 
 func evalMEBagCompare(n *me.BagCompare, bindings *Bindings) *EvalResult {
-	leftResult := Eval(n.Left, bindings)
-	if leftResult.IsError() {
-		return leftResult
-	}
-	rightResult := Eval(n.Right, bindings)
-	if rightResult.IsError() {
-		return rightResult
-	}
-
-	leftBag, ok := leftResult.Value.(*object.Bag)
-	if !ok {
-		return NewEvalError("left operand must be Bag, got %s", leftResult.Value.Type())
-	}
-	rightBag, ok := rightResult.Value.(*object.Bag)
-	if !ok {
-		return NewEvalError("right operand must be Bag, got %s", rightResult.Value.Type())
+	leftBag, rightBag, errResult := evalBinaryBagOperands(n.Left, n.Right, bindings)
+	if errResult != nil {
+		return errResult
 	}
 
 	var result bool
@@ -639,6 +670,21 @@ func evalMENot(n *me.Not, bindings *Bindings) *EvalResult {
 // Collections
 // ============================================================
 
+// resolveFieldRelation checks if a field access is a relation traversal and evaluates it.
+// Returns nil if the field is not a relation.
+func resolveFieldRelation(record *object.Record, field string, bindings *Bindings) *EvalResult {
+	classKey := bindings.SelfClassKey()
+	relCtx := bindings.RelationContext()
+	if classKey == "" || relCtx == nil {
+		return nil
+	}
+	relInfo := lookupRelation(classKey, field, relCtx)
+	if relInfo == nil {
+		return nil
+	}
+	return evalRelationTraversal(record, relInfo, relCtx)
+}
+
 func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 	baseResult := Eval(n.Base, bindings)
 	if baseResult.IsError() {
@@ -651,12 +697,8 @@ func evalMEFieldAccess(n *me.FieldAccess, bindings *Bindings) *EvalResult {
 	}
 
 	// Check for relation traversal.
-	classKey := bindings.SelfClassKey()
-	relCtx := bindings.RelationContext()
-	if classKey != "" && relCtx != nil {
-		if relInfo := lookupRelation(classKey, n.Field, relCtx); relInfo != nil {
-			return evalRelationTraversal(record, relInfo, relCtx)
-		}
+	if relResult := resolveFieldRelation(record, n.Field, bindings); relResult != nil {
+		return relResult
 	}
 
 	value := record.Get(n.Field)
@@ -693,20 +735,11 @@ func evalMETupleIndex(n *me.TupleIndex, bindings *Bindings) *EvalResult {
 	return NewEvalResult(value)
 }
 
-func evalMERecordUpdate(n *me.RecordUpdate, bindings *Bindings) *EvalResult {
-	baseResult := Eval(n.Base, bindings)
-	if baseResult.IsError() {
-		return baseResult
-	}
+// applyAlterations applies a list of record alterations to a cloned record.
+func applyAlterations(record *object.Record, alterations []me.FieldAlteration, bindings *Bindings) *EvalResult {
+	result := record.Clone().(*object.Record)
 
-	baseRecord, ok := baseResult.Value.(*object.Record)
-	if !ok {
-		return NewEvalError("EXCEPT requires Record, got %s", baseResult.Value.Type())
-	}
-
-	result := baseRecord.Clone().(*object.Record)
-
-	for _, alt := range n.Alterations {
+	for _, alt := range alterations {
 		currentValue := result.Get(alt.Field)
 
 		childBindings := NewEnclosedBindings(bindings)
@@ -723,6 +756,20 @@ func evalMERecordUpdate(n *me.RecordUpdate, bindings *Bindings) *EvalResult {
 	}
 
 	return NewEvalResult(result)
+}
+
+func evalMERecordUpdate(n *me.RecordUpdate, bindings *Bindings) *EvalResult {
+	baseResult := Eval(n.Base, bindings)
+	if baseResult.IsError() {
+		return baseResult
+	}
+
+	baseRecord, ok := baseResult.Value.(*object.Record)
+	if !ok {
+		return NewEvalError("EXCEPT requires Record, got %s", baseResult.Value.Type())
+	}
+
+	return applyAlterations(baseRecord, n.Alterations, bindings)
 }
 
 func evalMEStringIndex(n *me.StringIndex, bindings *Bindings) *EvalResult {
@@ -889,6 +936,27 @@ func evalMEQuantifier(n *me.Quantifier, bindings *Bindings) *EvalResult {
 	}
 }
 
+// filterSetElements filters a set's elements by a predicate, returning matching elements.
+func filterSetElements(sourceSet *object.Set, variable string, predicate me.Expression, bindings *Bindings) ([]object.Object, *EvalResult) {
+	resultElements := make([]object.Object, 0)
+	for _, elem := range sourceSet.Elements() {
+		childBindings := NewEnclosedBindings(bindings)
+		childBindings.Set(variable, elem, NamespaceLocal)
+		predResult := Eval(predicate, childBindings)
+		if predResult.IsError() {
+			return nil, predResult
+		}
+		predBool, ok := predResult.Value.(*object.Boolean)
+		if !ok {
+			return nil, NewEvalError("predicate must return Boolean, got %s", predResult.Value.Type())
+		}
+		if predBool.Value() {
+			resultElements = append(resultElements, elem)
+		}
+	}
+	return resultElements, nil
+}
+
 func evalMESetFilter(n *me.SetFilter, bindings *Bindings) *EvalResult {
 	setResult := Eval(n.Set, bindings)
 	if setResult.IsError() {
@@ -899,21 +967,9 @@ func evalMESetFilter(n *me.SetFilter, bindings *Bindings) *EvalResult {
 		return NewEvalError("set filter requires Set, got %s", setResult.Value.Type())
 	}
 
-	resultElements := make([]object.Object, 0)
-	for _, elem := range sourceSet.Elements() {
-		childBindings := NewEnclosedBindings(bindings)
-		childBindings.Set(n.Variable, elem, NamespaceLocal)
-		predResult := Eval(n.Predicate, childBindings)
-		if predResult.IsError() {
-			return predResult
-		}
-		predBool, ok := predResult.Value.(*object.Boolean)
-		if !ok {
-			return NewEvalError("predicate must return Boolean, got %s", predResult.Value.Type())
-		}
-		if predBool.Value() {
-			resultElements = append(resultElements, elem)
-		}
+	resultElements, errResult := filterSetElements(sourceSet, n.Variable, n.Predicate, bindings)
+	if errResult != nil {
+		return errResult
 	}
 	return NewEvalResult(object.NewSetFromElements(resultElements))
 }
@@ -1003,49 +1059,22 @@ func objectsEqual(left, right object.Object) bool {
 		return false
 	}
 
+	// The type switch guarantees the type, so the assertion cannot fail.
 	switch l := left.(type) {
 	case *object.Number:
-		r, ok := right.(*object.Number)
-		if !ok {
-			return false
-		}
-		return l.Equals(r)
+		return l.Equals(right.(*object.Number))
 	case *object.String:
-		r, ok := right.(*object.String)
-		if !ok {
-			return false
-		}
-		return l.Value() == r.Value()
+		return l.Value() == right.(*object.String).Value()
 	case *object.Boolean:
-		r, ok := right.(*object.Boolean)
-		if !ok {
-			return false
-		}
-		return l.Value() == r.Value()
+		return l.Value() == right.(*object.Boolean).Value()
 	case *object.Set:
-		r, ok := right.(*object.Set)
-		if !ok {
-			return false
-		}
-		return l.Equals(r)
+		return l.Equals(right.(*object.Set))
 	case *object.Tuple:
-		r, ok := right.(*object.Tuple)
-		if !ok {
-			return false
-		}
-		return l.Equals(r)
+		return l.Equals(right.(*object.Tuple))
 	case *object.Record:
-		r, ok := right.(*object.Record)
-		if !ok {
-			return false
-		}
-		return l.Equals(r)
+		return l.Equals(right.(*object.Record))
 	case *object.Bag:
-		r, ok := right.(*object.Bag)
-		if !ok {
-			return false
-		}
-		return l.Equals(r)
+		return l.Equals(right.(*object.Bag))
 	default:
 		return left.Inspect() == right.Inspect()
 	}

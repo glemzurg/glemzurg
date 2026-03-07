@@ -106,17 +106,8 @@ func (e *StepExecutor) executeTransition(
 	step.Parameters = params
 
 	// 2. Execute exit StateActions (if not creation).
-	if pending.Instance != nil {
-		fromStateKey := getCurrentStateKey(pending.Instance, pending.Class)
-		if fromStateKey != nil {
-			exitViolations, err := e.stateActionExec.ExecuteExitActions(
-				pending.Class.Class, *fromStateKey, pending.Instance,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("exit actions error: %w", err)
-			}
-			step.Violations = append(step.Violations, exitViolations...)
-		}
+	if err := e.executeExitActions(pending, step); err != nil {
+		return nil, err
 	}
 
 	// 3. Execute the transition.
@@ -144,53 +135,113 @@ func (e *StepExecutor) executeTransition(
 	}
 
 	// 4. Execute entry StateActions (if not deletion).
-	if !result.WasDeletion && result.ToState != "" {
-		toStateKey := stateNameToKey(result.ToState, pending.Class.Class)
-		if toStateKey != nil {
-			entryInstance := simState.GetInstance(result.InstanceID)
-			if entryInstance != nil {
-				entryViolations, err := e.stateActionExec.ExecuteEntryActions(
-					pending.Class.Class, *toStateKey, entryInstance,
-				)
-				if err != nil {
-					return nil, fmt.Errorf("entry actions error: %w", err)
-				}
-				step.Violations = append(step.Violations, entryViolations...)
-			}
-		}
+	if err := e.executeEntryActions(pending, result, simState, step); err != nil {
+		return nil, err
 	}
 
 	// 5. Handle creation chains (if creation).
-	if result.WasCreation {
-		cascadedSteps, cascadeViolations, err := e.chainHandler.HandleCreationChain(
-			result.InstanceID, simState, 0,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("creation chain error: %w", err)
-		}
-		step.CascadedSteps = cascadedSteps
-		step.Violations = append(step.Violations, cascadeViolations...)
+	if err := e.handleCreationChain(result, simState, step); err != nil {
+		return nil, err
 	}
 
 	// 6. Check multiplicity constraints.
-	instance := simState.GetInstance(result.InstanceID)
-	if instance != nil {
-		multViolations := e.multChecker.CheckInstance(instance, simState)
-		for _, mv := range multViolations {
-			step.Violations = append(step.Violations, invariants.NewMultiplicityViolation(
-				mv.InstanceID,
-				mv.ClassKey,
-				mv.AssociationName,
-				mv.Direction,
-				mv.ActualCount,
-				mv.RequiredMin,
-				mv.RequiredMax,
-				mv.Message,
-			))
-		}
-	}
+	e.checkMultiplicityConstraints(result, simState, step)
 
 	return step, nil
+}
+
+// executeExitActions runs exit state actions for a non-creation transition.
+func (e *StepExecutor) executeExitActions(pending *PendingAction, step *SimulationStep) error {
+	if pending.Instance == nil {
+		return nil
+	}
+	fromStateKey := getCurrentStateKey(pending.Instance, pending.Class)
+	if fromStateKey == nil {
+		return nil
+	}
+	exitViolations, err := e.stateActionExec.ExecuteExitActions(
+		pending.Class.Class, *fromStateKey, pending.Instance,
+	)
+	if err != nil {
+		return fmt.Errorf("exit actions error: %w", err)
+	}
+	step.Violations = append(step.Violations, exitViolations...)
+	return nil
+}
+
+// executeEntryActions runs entry state actions after a non-deletion transition.
+func (e *StepExecutor) executeEntryActions(
+	pending *PendingAction,
+	result *actions.TransitionResult,
+	simState *state.SimulationState,
+	step *SimulationStep,
+) error {
+	if result.WasDeletion || result.ToState == "" {
+		return nil
+	}
+	toStateKey := stateNameToKey(result.ToState, pending.Class.Class)
+	if toStateKey == nil {
+		return nil
+	}
+	entryInstance := simState.GetInstance(result.InstanceID)
+	if entryInstance == nil {
+		return nil
+	}
+	entryViolations, err := e.stateActionExec.ExecuteEntryActions(
+		pending.Class.Class, *toStateKey, entryInstance,
+	)
+	if err != nil {
+		return fmt.Errorf("entry actions error: %w", err)
+	}
+	step.Violations = append(step.Violations, entryViolations...)
+	return nil
+}
+
+// handleCreationChain handles cascaded creation steps for a creation transition.
+func (e *StepExecutor) handleCreationChain(
+	result *actions.TransitionResult,
+	simState *state.SimulationState,
+	step *SimulationStep,
+) error {
+	if !result.WasCreation {
+		return nil
+	}
+	cascadedSteps, cascadeViolations, err := e.chainHandler.HandleCreationChain(
+		result.InstanceID, simState, 0,
+	)
+	if err != nil {
+		return fmt.Errorf("creation chain error: %w", err)
+	}
+	step.CascadedSteps = cascadedSteps
+	step.Violations = append(step.Violations, cascadeViolations...)
+	return nil
+}
+
+// checkMultiplicityConstraints checks multiplicity constraints on the result instance.
+func (e *StepExecutor) checkMultiplicityConstraints(
+	result *actions.TransitionResult,
+	simState *state.SimulationState,
+	step *SimulationStep,
+) {
+	instance := simState.GetInstance(result.InstanceID)
+	if instance == nil {
+		return
+	}
+	multViolations := e.multChecker.CheckInstance(instance, simState)
+	for _, mv := range multViolations {
+		step.Violations = append(step.Violations, invariants.NewMultiplicityViolation(
+			invariants.MultiplicityViolationParams{
+				InstanceID:      mv.InstanceID,
+				ClassKey:        mv.ClassKey,
+				AssociationName: mv.AssociationName,
+				Direction:       mv.Direction,
+				ActualCount:     mv.ActualCount,
+				RequiredMin:     mv.RequiredMin,
+				RequiredMax:     mv.RequiredMax,
+				Message:         mv.Message,
+			},
+		))
+	}
 }
 
 // getCurrentStateKey looks up the instance's current state key from its _state attribute.

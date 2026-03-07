@@ -40,49 +40,51 @@ func ConvertFromModel(model *core.Model) (*inputModel, error) { //nolint:revive 
 		ClassAssociations:    make(map[string]*inputClassAssociation),
 	}
 
-	// Convert actors
+	convertActorsFromModelToInput(model, result)
+	convertTopLevelCollectionsFromModel(model, result)
+	convertDomainsAndAssociationsFromModel(model, result)
+
+	return result, nil
+}
+
+// convertActorsFromModelToInput converts actors and actor generalizations from model to input.
+func convertActorsFromModelToInput(model *core.Model, result *inputModel) {
 	for key, actor := range model.Actors {
 		converted := convertActorFromModel(&actor)
 		result.Actors[key.SubKey] = converted
 	}
-
-	// Convert actor generalizations
 	for key, gen := range model.ActorGeneralizations {
 		converted := convertActorGeneralizationFromModel(&gen, model.Actors)
 		result.ActorGeneralizations[key.SubKey] = converted
 	}
+}
 
-	// Convert global functions (SubKey has underscore stripped, add it back)
+// convertTopLevelCollectionsFromModel converts global functions and named sets from model to input.
+func convertTopLevelCollectionsFromModel(model *core.Model, result *inputModel) {
 	for key, gf := range model.GlobalFunctions {
 		converted := convertGlobalFunctionFromModel(&gf)
 		result.GlobalFunctions["_"+key.SubKey] = converted
 	}
-
-	// Convert named sets
 	for key, ns := range model.NamedSets {
 		converted := convertNamedSetFromModel(&ns)
 		result.NamedSets[key.SubKey] = converted
 	}
+}
 
-	// Convert domains
+// convertDomainsAndAssociationsFromModel converts domains, domain associations, and class associations from model to input.
+func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputModel) {
 	for key, domain := range model.Domains {
 		converted := convertDomainFromModel(&domain)
 		result.Domains[key.SubKey] = converted
 	}
-
-	// Convert domain associations
 	for key, assoc := range model.DomainAssociations {
 		converted := convertDomainAssocFromModel(&assoc)
 		result.DomainAssociations[key.SubKey+"."+key.SubKey2] = converted
 	}
-
-	// Convert model-level class associations
 	for key, assoc := range model.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, "")
 		result.ClassAssociations[key.SubKey3] = converted
 	}
-
-	return result, nil
 }
 
 // convertActorFromModel converts a model_actor.Actor to an inputActor.

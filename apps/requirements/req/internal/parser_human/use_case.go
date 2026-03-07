@@ -21,40 +21,27 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 		return model_use_case.UseCase{}, err
 	}
 
-	// Unmarshal into a format that can be easily checked for informative error messages.
 	yamlData := map[string]any{}
 	if err := yaml.Unmarshal([]byte(parsedFile.Data), yamlData); err != nil {
 		return model_use_case.UseCase{}, errors.WithStack(err)
 	}
 
 	level := "sea"
-	levelAny, found := yamlData["level"]
-	if found {
+	if levelAny, found := yamlData["level"]; found {
 		level = levelAny.(string)
 	}
 
-	// If the title of the use case ends with "?" it is read-only.
 	readOnly := strings.HasSuffix(parsedFile.Title, "?")
 
-	// Parse optional superclass/subclass generalization keys.
-	var superclassOfKey *identity.Key
-	if s, ok := yamlData["superclass_of_key"]; ok {
-		k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
-		if err != nil {
-			return model_use_case.UseCase{}, errors.WithStack(err)
-		}
-		superclassOfKey = &k
+	superclassOfKey, err := parseUseCaseGenRefKey(subdomainKey, yamlData, "superclass_of_key")
+	if err != nil {
+		return model_use_case.UseCase{}, err
 	}
-	var subclassOfKey *identity.Key
-	if s, ok := yamlData["subclass_of_key"]; ok {
-		k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
-		if err != nil {
-			return model_use_case.UseCase{}, errors.WithStack(err)
-		}
-		subclassOfKey = &k
+	subclassOfKey, err := parseUseCaseGenRefKey(subdomainKey, yamlData, "subclass_of_key")
+	if err != nil {
+		return model_use_case.UseCase{}, err
 	}
 
-	// Construct the identity key for this use case.
 	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, useCaseSubKey)
 	if err != nil {
 		return model_use_case.UseCase{}, errors.WithStack(err)
@@ -66,112 +53,148 @@ func parseUseCase(subdomainKey identity.Key, useCaseSubKey, filename, contents s
 	}
 
 	// Parse actors.
-	actorsAny, found := yamlData["actors"]
-	if found {
-		useCase.Actors = map[identity.Key]model_use_case.Actor{}
-		actorsMap := actorsAny.(map[string]any)
-		for actorKeyStr, commentAny := range actorsMap {
-			comment := ""
-			if commentStr, ok := commentAny.(string); ok {
-				comment = commentStr
-			}
-			actor, err := model_use_case.NewActor(comment)
-			if err != nil {
-				return model_use_case.UseCase{}, err
-			}
-			// Construct the actor key from the string.
-			actorKey, err := identity.NewClassKey(subdomainKey, actorKeyStr)
-			if err != nil {
-				return model_use_case.UseCase{}, errors.WithStack(err)
-			}
-			useCase.Actors[actorKey] = actor
-		}
+	if err := parseUseCaseActors(&useCase, subdomainKey, yamlData); err != nil {
+		return model_use_case.UseCase{}, err
 	}
 
 	// Parse scenarios.
-	scenariosAny, found := yamlData["scenarios"]
-	if found {
-		useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
-		scenariosMap := scenariosAny.(map[string]any)
-		for scenarioSubKey, scenarioData := range scenariosMap {
-			// Construct the scenario key.
-			scenarioKey, err := identity.NewScenarioKey(useCaseKey, strings.ToLower(scenarioSubKey))
-			if err != nil {
-				return model_use_case.UseCase{}, errors.WithStack(err)
-			}
-			scenarioData := scenarioData.(map[string]any)
-
-			name := ""
-			details := ""
-
-			nameAny, found := scenarioData["name"]
-			if found {
-				name = nameAny.(string)
-			}
-
-			detailsAny, found := scenarioData["details"]
-			if found {
-				details = detailsAny.(string)
-			}
-
-			scenario, err := model_scenario.NewScenario(scenarioKey, name, details)
-			if err != nil {
-				return model_use_case.UseCase{}, err
-			}
-
-			// Parse objects for this scenario.
-			objectsAny, found := scenarioData["objects"]
-			if found {
-				scenario.Objects = make(map[identity.Key]model_scenario.Object)
-				objectsSlice := objectsAny.([]any)
-				for i, objAny := range objectsSlice {
-					object, err := objectFromYamlData(scenarioKey, i, objAny)
-					if err != nil {
-						return model_use_case.UseCase{}, err
-					}
-					scenario.Objects[object.Key] = object
-				}
-			}
-
-			// Parse steps for this scenario.
-			stepsAny, found := scenarioData["steps"]
-			if found {
-				stepsData := stepsAny.([]any)
-
-				// Wrap in outer sequence step.
-				nodeData := map[string]any{
-					"step_type":  "sequence",
-					"statements": stepsData,
-				}
-
-				// Scope compact keys to fully qualified keys before parsing into Step objects.
-				if err = scopeObjectKeys(scenarioKey, subdomainKey, nodeData); err != nil {
-					return model_use_case.UseCase{}, err
-				}
-
-				// Turn into yaml.
-				nodeYaml, err := yaml.Marshal(nodeData)
-				if err != nil {
-					return model_use_case.UseCase{}, err
-				}
-
-				var node model_scenario.Step
-				if err = node.FromYAML(string(nodeYaml)); err != nil {
-					return model_use_case.UseCase{}, err
-				}
-
-				// Auto-assign step keys from tree position.
-				assignStepKeys(&node, scenarioKey)
-
-				scenario.Steps = &node
-			}
-
-			// Add scenario to use case.
-			useCase.Scenarios[scenario.Key] = scenario
-		}
+	if err := parseUseCaseScenarios(&useCase, subdomainKey, useCaseKey, yamlData); err != nil {
+		return model_use_case.UseCase{}, err
 	}
 
 	return useCase, nil
+}
+
+// parseUseCaseGenRefKey extracts an optional generalization reference key from use case YAML data.
+func parseUseCaseGenRefKey(subdomainKey identity.Key, yamlData map[string]any, field string) (*identity.Key, error) {
+	s, ok := yamlData[field]
+	if !ok {
+		return nil, nil
+	}
+	k, err := identity.NewUseCaseGeneralizationKey(subdomainKey, s.(string))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return &k, nil
+}
+
+// parseUseCaseActors parses the actors section from YAML data and sets them on the use case.
+func parseUseCaseActors(useCase *model_use_case.UseCase, subdomainKey identity.Key, yamlData map[string]any) error {
+	actorsAny, found := yamlData["actors"]
+	if !found {
+		return nil
+	}
+	useCase.Actors = map[identity.Key]model_use_case.Actor{}
+	actorsMap := actorsAny.(map[string]any)
+	for actorKeyStr, commentAny := range actorsMap {
+		comment := ""
+		if commentStr, ok := commentAny.(string); ok {
+			comment = commentStr
+		}
+		actor, err := model_use_case.NewActor(comment)
+		if err != nil {
+			return err
+		}
+		actorKey, err := identity.NewClassKey(subdomainKey, actorKeyStr)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		useCase.Actors[actorKey] = actor
+	}
+	return nil
+}
+
+// parseUseCaseScenarios parses the scenarios section from YAML data and sets them on the use case.
+func parseUseCaseScenarios(useCase *model_use_case.UseCase, subdomainKey, useCaseKey identity.Key, yamlData map[string]any) error {
+	scenariosAny, found := yamlData["scenarios"]
+	if !found {
+		return nil
+	}
+	useCase.Scenarios = make(map[identity.Key]model_scenario.Scenario)
+	scenariosMap := scenariosAny.(map[string]any)
+	for scenarioSubKey, scenarioDataAny := range scenariosMap {
+		scenarioKey, err := identity.NewScenarioKey(useCaseKey, strings.ToLower(scenarioSubKey))
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		scenario, err := parseOneScenario(scenarioKey, subdomainKey, scenarioDataAny)
+		if err != nil {
+			return err
+		}
+		useCase.Scenarios[scenario.Key] = scenario
+	}
+	return nil
+}
+
+// parseOneScenario parses a single scenario from YAML data.
+func parseOneScenario(scenarioKey, subdomainKey identity.Key, scenarioDataAny any) (model_scenario.Scenario, error) {
+	scenarioData := scenarioDataAny.(map[string]any)
+
+	name := ""
+	if nameAny, found := scenarioData["name"]; found {
+		name = nameAny.(string)
+	}
+	details := ""
+	if detailsAny, found := scenarioData["details"]; found {
+		details = detailsAny.(string)
+	}
+
+	scenario, err := model_scenario.NewScenario(scenarioKey, name, details)
+	if err != nil {
+		return model_scenario.Scenario{}, err
+	}
+
+	// Parse objects.
+	if objectsAny, found := scenarioData["objects"]; found {
+		scenario.Objects = make(map[identity.Key]model_scenario.Object)
+		objectsSlice := objectsAny.([]any)
+		for i, objAny := range objectsSlice {
+			object, err := objectFromYamlData(scenarioKey, i, objAny)
+			if err != nil {
+				return model_scenario.Scenario{}, err
+			}
+			scenario.Objects[object.Key] = object
+		}
+	}
+
+	// Parse steps.
+	if err := parseScenarioSteps(&scenario, scenarioKey, subdomainKey, scenarioData); err != nil {
+		return model_scenario.Scenario{}, err
+	}
+
+	return scenario, nil
+}
+
+// parseScenarioSteps parses the steps section for a scenario.
+func parseScenarioSteps(scenario *model_scenario.Scenario, scenarioKey, subdomainKey identity.Key, scenarioData map[string]any) error {
+	stepsAny, found := scenarioData["steps"]
+	if !found {
+		return nil
+	}
+	stepsData := stepsAny.([]any)
+
+	nodeData := map[string]any{
+		"step_type":  "sequence",
+		"statements": stepsData,
+	}
+
+	if err := scopeObjectKeys(scenarioKey, subdomainKey, nodeData); err != nil {
+		return err
+	}
+
+	nodeYaml, err := yaml.Marshal(nodeData)
+	if err != nil {
+		return err
+	}
+
+	var node model_scenario.Step
+	if err = node.FromYAML(string(nodeYaml)); err != nil {
+		return err
+	}
+
+	assignStepKeys(&node, scenarioKey)
+	scenario.Steps = &node
+	return nil
 }
 
 func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (object model_scenario.Object, err error) {
@@ -277,84 +300,10 @@ func objectFromYamlData(scenarioKey identity.Key, objectI int, objectAny any) (o
 
 func generateUseCaseContent(useCase model_use_case.UseCase) string {
 	var yb strings.Builder
-	if useCase.Level != "sea" {
-		yb.WriteString("level: " + useCase.Level + "\n")
-	}
-	if useCase.SuperclassOfKey != nil {
-		yb.WriteString("superclass_of_key: " + useCase.SuperclassOfKey.SubKey + "\n")
-	}
-	if useCase.SubclassOfKey != nil {
-		yb.WriteString("subclass_of_key: " + useCase.SubclassOfKey.SubKey + "\n")
-	}
 
-	if len(useCase.Actors) > 0 {
-		actors := make(map[string]string)
-		for actorKey, actor := range useCase.Actors {
-			if actor.UmlComment != "" {
-				actors[actorKey.SubKey] = actor.UmlComment
-			}
-		}
-		if len(actors) > 0 {
-			yb.WriteString("\nactors:\n")
-			keys := make([]string, 0, len(actors))
-			for k := range actors {
-				keys = append(keys, k)
-			}
-			sort.Sort(sort.Reverse(sort.StringSlice(keys)))
-			for _, k := range keys {
-				yb.WriteString("    " + k + ": " + actors[k] + "\n")
-			}
-		}
-	}
-
-	if len(useCase.Scenarios) > 0 {
-		yb.WriteString("\nscenarios:\n")
-		// Sort scenarios by key for deterministic output.
-		scenarios := make([]model_scenario.Scenario, 0, len(useCase.Scenarios))
-		for _, scenario := range useCase.Scenarios {
-			scenarios = append(scenarios, scenario)
-		}
-		sort.Slice(scenarios, func(i, j int) bool {
-			return scenarios[i].Key.String() < scenarios[j].Key.String()
-		})
-		for _, scenario := range scenarios {
-			name := scenario.Key.SubKey
-			yb.WriteString("\n    " + name + ":\n")
-			yb.WriteString("        name: " + scenario.Name + "\n")
-			yb.WriteString(formatYamlField("details", scenario.Details, 8))
-			if len(scenario.Objects) > 0 {
-				yb.WriteString("        objects:\n")
-				// Sort objects by ObjectNumber for deterministic output.
-				objects := make([]model_scenario.Object, 0, len(scenario.Objects))
-				for _, obj := range scenario.Objects {
-					objects = append(objects, obj)
-				}
-				sort.Slice(objects, func(i, j int) bool {
-					return objects[i].ObjectNumber < objects[j].ObjectNumber
-				})
-				for _, obj := range objects {
-					objName := obj.Key.SubKey
-					yb.WriteString("            - key: " + objName + "\n")
-					yb.WriteString(formatYamlField("name", obj.Name, 14))
-					if obj.NameStyle != "" && obj.NameStyle != "unnamed" {
-						yb.WriteString("              style: " + obj.NameStyle + "\n")
-					}
-					if obj.ClassKey.String() != "" {
-						// Output only the subkey for backwards compatibility with the md format.
-						yb.WriteString("              class_key: " + obj.ClassKey.SubKey + "\n")
-					}
-					if obj.Multi {
-						yb.WriteString("              multi: true\n")
-					}
-					yb.WriteString(formatYamlField("uml_comment", obj.UmlComment, 14))
-				}
-			}
-			if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
-				yb.WriteString("        steps:\n")
-				yb.WriteString(generateSteps(scenario.Steps.Statements, "            ", useCase.Key))
-			}
-		}
-	}
+	generateUseCaseTopFields(&yb, useCase)
+	generateUseCaseActorsYaml(&yb, useCase)
+	generateUseCaseScenariosYaml(&yb, useCase)
 
 	yamlStr := strings.TrimSpace(yb.String())
 	if yamlStr == "" {
@@ -365,6 +314,103 @@ func generateUseCaseContent(useCase model_use_case.UseCase) string {
 		content += "\n\n" + yamlStr
 	}
 	return strings.TrimSpace(content)
+}
+
+// generateUseCaseTopFields writes the top-level YAML fields (level, superclass_of_key, subclass_of_key).
+func generateUseCaseTopFields(yb *strings.Builder, useCase model_use_case.UseCase) {
+	if useCase.Level != "sea" {
+		yb.WriteString("level: " + useCase.Level + "\n")
+	}
+	if useCase.SuperclassOfKey != nil {
+		yb.WriteString("superclass_of_key: " + useCase.SuperclassOfKey.SubKey + "\n")
+	}
+	if useCase.SubclassOfKey != nil {
+		yb.WriteString("subclass_of_key: " + useCase.SubclassOfKey.SubKey + "\n")
+	}
+}
+
+// generateUseCaseActorsYaml writes the actors YAML section.
+func generateUseCaseActorsYaml(yb *strings.Builder, useCase model_use_case.UseCase) {
+	if len(useCase.Actors) == 0 {
+		return
+	}
+	actors := make(map[string]string)
+	for actorKey, actor := range useCase.Actors {
+		if actor.UmlComment != "" {
+			actors[actorKey.SubKey] = actor.UmlComment
+		}
+	}
+	if len(actors) == 0 {
+		return
+	}
+	yb.WriteString("\nactors:\n")
+	keys := make([]string, 0, len(actors))
+	for k := range actors {
+		keys = append(keys, k)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(keys)))
+	for _, k := range keys {
+		yb.WriteString("    " + k + ": " + actors[k] + "\n")
+	}
+}
+
+// generateUseCaseScenariosYaml writes the scenarios YAML section.
+func generateUseCaseScenariosYaml(yb *strings.Builder, useCase model_use_case.UseCase) {
+	if len(useCase.Scenarios) == 0 {
+		return
+	}
+	yb.WriteString("\nscenarios:\n")
+	scenarios := make([]model_scenario.Scenario, 0, len(useCase.Scenarios))
+	for _, scenario := range useCase.Scenarios {
+		scenarios = append(scenarios, scenario)
+	}
+	sort.Slice(scenarios, func(i, j int) bool {
+		return scenarios[i].Key.String() < scenarios[j].Key.String()
+	})
+	for _, scenario := range scenarios {
+		generateOneScenarioYaml(yb, scenario, useCase.Key)
+	}
+}
+
+// generateOneScenarioYaml writes a single scenario's YAML content.
+func generateOneScenarioYaml(yb *strings.Builder, scenario model_scenario.Scenario, useCaseKey identity.Key) {
+	yb.WriteString("\n    " + scenario.Key.SubKey + ":\n")
+	yb.WriteString("        name: " + scenario.Name + "\n")
+	yb.WriteString(formatYamlField("details", scenario.Details, 8))
+	generateScenarioObjectsYaml(yb, scenario)
+	if scenario.Steps != nil && len(scenario.Steps.Statements) > 0 {
+		yb.WriteString("        steps:\n")
+		yb.WriteString(generateSteps(scenario.Steps.Statements, "            ", useCaseKey))
+	}
+}
+
+// generateScenarioObjectsYaml writes the objects section within a scenario.
+func generateScenarioObjectsYaml(yb *strings.Builder, scenario model_scenario.Scenario) {
+	if len(scenario.Objects) == 0 {
+		return
+	}
+	yb.WriteString("        objects:\n")
+	objects := make([]model_scenario.Object, 0, len(scenario.Objects))
+	for _, obj := range scenario.Objects {
+		objects = append(objects, obj)
+	}
+	sort.Slice(objects, func(i, j int) bool {
+		return objects[i].ObjectNumber < objects[j].ObjectNumber
+	})
+	for _, obj := range objects {
+		yb.WriteString("            - key: " + obj.Key.SubKey + "\n")
+		yb.WriteString(formatYamlField("name", obj.Name, 14))
+		if obj.NameStyle != "" && obj.NameStyle != "unnamed" {
+			yb.WriteString("              style: " + obj.NameStyle + "\n")
+		}
+		if obj.ClassKey.String() != "" {
+			yb.WriteString("              class_key: " + obj.ClassKey.SubKey + "\n")
+		}
+		if obj.Multi {
+			yb.WriteString("              multi: true\n")
+		}
+		yb.WriteString(formatYamlField("uml_comment", obj.UmlComment, 14))
+	}
 }
 
 func generateSteps(steps []model_scenario.Step, indent string, useCaseKey identity.Key) string {

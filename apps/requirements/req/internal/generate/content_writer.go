@@ -185,59 +185,77 @@ func generateDomainFilesToWriter(reqs *req_flat.Requirements, writer ContentWrit
 		}
 
 		if hasMultipleSubdomains {
-			// Generate subdomains diagram.
-			subdomainsFilename := convertKeyToFilename("domain", domain.Key.String(), "subdomains", ".svg")
-			svgContents, err := generateSubdomainsSvgContents(reqs, domain)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteSVG(subdomainsFilename, []byte(svgContents)); err != nil {
+			if err := generateDomainSubdomainsDiagram(reqs, writer, domain); err != nil {
 				return err
 			}
 		} else {
-			// Single subdomain: generate use cases and classes diagrams at domain level.
-			var domainClasses []model_class.Class
-			for _, subdomain := range domain.Subdomains {
-				for _, class := range subdomain.Classes {
-					domainClasses = append(domainClasses, class)
-				}
-			}
-
-			// Generate use cases diagram.
-			useCasesFilename := convertKeyToFilename("domain", domain.Key.String(), "use-cases", ".svg")
-			var domainUseCases []model_use_case.UseCase
-			for _, subdomain := range domain.Subdomains {
-				for _, useCase := range subdomain.UseCases {
-					domainUseCases = append(domainUseCases, useCase)
-				}
-			}
-
-			relevantUseCases, relevantActors, err := reqs.RegardingUseCases(domainUseCases)
-			if err != nil {
-				return err
-			}
-			useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteSVG(useCasesFilename, []byte(useCasesSvgContents)); err != nil {
-				return err
-			}
-
-			// Generate classes diagram.
-			generalizations, classes, classAssociations := reqs.RegardingClasses(domainClasses)
-			classesFilename := convertKeyToFilename("domain", domain.Key.String(), "classes", ".svg")
-			classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, classes, classAssociations)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteSVG(classesFilename, []byte(classesSvgContents)); err != nil {
+			if err := generateDomainSingleSubdomainDiagrams(reqs, writer, domain); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+// generateDomainSubdomainsDiagram generates the subdomains diagram for a domain with multiple subdomains.
+func generateDomainSubdomainsDiagram(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) error {
+	subdomainsFilename := convertKeyToFilename("domain", domain.Key.String(), "subdomains", ".svg")
+	svgContents, err := generateSubdomainsSvgContents(reqs, domain)
+	if err != nil {
+		return err
+	}
+	return writer.WriteSVG(subdomainsFilename, []byte(svgContents))
+}
+
+// generateDomainSingleSubdomainDiagrams generates use case and class diagrams for a domain with a single subdomain.
+func generateDomainSingleSubdomainDiagrams(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) error {
+	var domainClasses []model_class.Class
+	for _, subdomain := range domain.Subdomains {
+		for _, class := range subdomain.Classes {
+			domainClasses = append(domainClasses, class)
+		}
+	}
+
+	// Generate use cases diagram.
+	if err := generateDomainUseCasesDiagram(reqs, writer, domain); err != nil {
+		return err
+	}
+
+	// Generate classes diagram.
+	return generateClassesDiagramForKey(reqs, writer, "domain", domain.Key.String(), domainClasses)
+}
+
+// generateDomainUseCasesDiagram generates a use cases SVG diagram for a domain.
+func generateDomainUseCasesDiagram(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain) error {
+	useCasesFilename := convertKeyToFilename("domain", domain.Key.String(), "use-cases", ".svg")
+	var domainUseCases []model_use_case.UseCase
+	for _, subdomain := range domain.Subdomains {
+		for _, useCase := range subdomain.UseCases {
+			domainUseCases = append(domainUseCases, useCase)
+		}
+	}
+
+	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(domainUseCases)
+	if err != nil {
+		return err
+	}
+	useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
+	if err != nil {
+		return err
+	}
+	return writer.WriteSVG(useCasesFilename, []byte(useCasesSvgContents))
+}
+
+// generateClassesDiagramForKey generates a classes SVG diagram for a given key prefix and set of classes.
+func generateClassesDiagramForKey(reqs *req_flat.Requirements, writer ContentWriter, keyType, keyStr string, classes []model_class.Class) error {
+	generalizations, allClasses, associations := reqs.RegardingClasses(classes)
+	classesFilename := convertKeyToFilename(keyType, keyStr, "classes", ".svg")
+	classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, allClasses, associations)
+	if err != nil {
+		return err
+	}
+	return writer.WriteSVG(classesFilename, []byte(classesSvgContents))
 }
 
 // generateSubdomainFilesToWriter generates subdomain files to a ContentWriter.
@@ -251,55 +269,58 @@ func generateSubdomainFilesToWriter(reqs *req_flat.Requirements, writer ContentW
 		}
 
 		for _, subdomain := range domain.Subdomains {
-			// Generate subdomain markdown page.
-			subdomainFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "", ".md")
-			mdContents, err := generateSubdomainMdContents(reqs, reqs.Model, domain, subdomain)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteMarkdown(subdomainFilename, []byte(mdContents)); err != nil {
-				return err
-			}
-
-			// Gather classes for this subdomain.
-			var subdomainClasses []model_class.Class
-			for _, class := range subdomain.Classes {
-				subdomainClasses = append(subdomainClasses, class)
-			}
-
-			// Generate use cases diagram for subdomain.
-			useCasesFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "use-cases", ".svg")
-			var subdomainUseCases []model_use_case.UseCase
-			for _, useCase := range subdomain.UseCases {
-				subdomainUseCases = append(subdomainUseCases, useCase)
-			}
-
-			relevantUseCases, relevantActors, err := reqs.RegardingUseCases(subdomainUseCases)
-			if err != nil {
-				return err
-			}
-			useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteSVG(useCasesFilename, []byte(useCasesSvgContents)); err != nil {
-				return err
-			}
-
-			// Generate classes diagram.
-			generalizations, classes, associations := reqs.RegardingClasses(subdomainClasses)
-			classesFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "classes", ".svg")
-			classesSvgContents, err := generateClassesSvgContents(reqs, generalizations, classes, associations)
-			if err != nil {
-				return err
-			}
-			if err := writer.WriteSVG(classesFilename, []byte(classesSvgContents)); err != nil {
+			if err := generateSingleSubdomainFiles(reqs, writer, domain, subdomain); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+// generateSingleSubdomainFiles generates all files for a single subdomain.
+func generateSingleSubdomainFiles(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain, subdomain model_domain.Subdomain) error {
+	// Generate subdomain markdown page.
+	subdomainFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "", ".md")
+	mdContents, err := generateSubdomainMdContents(reqs, reqs.Model, domain, subdomain)
+	if err != nil {
+		return err
+	}
+	if err := writer.WriteMarkdown(subdomainFilename, []byte(mdContents)); err != nil {
+		return err
+	}
+
+	// Generate use cases diagram for subdomain.
+	if err := generateSubdomainUseCasesDiagram(reqs, writer, domain, subdomain); err != nil {
+		return err
+	}
+
+	// Gather classes for this subdomain and generate classes diagram.
+	var subdomainClasses []model_class.Class
+	for _, class := range subdomain.Classes {
+		subdomainClasses = append(subdomainClasses, class)
+	}
+
+	return generateClassesDiagramForKey(reqs, writer, "subdomain", subdomain.Key.String(), subdomainClasses)
+}
+
+// generateSubdomainUseCasesDiagram generates a use cases SVG diagram for a subdomain.
+func generateSubdomainUseCasesDiagram(reqs *req_flat.Requirements, writer ContentWriter, domain model_domain.Domain, subdomain model_domain.Subdomain) error {
+	useCasesFilename := convertKeyToFilename("subdomain", subdomain.Key.String(), "use-cases", ".svg")
+	var subdomainUseCases []model_use_case.UseCase
+	for _, useCase := range subdomain.UseCases {
+		subdomainUseCases = append(subdomainUseCases, useCase)
+	}
+
+	relevantUseCases, relevantActors, err := reqs.RegardingUseCases(subdomainUseCases)
+	if err != nil {
+		return err
+	}
+	useCasesSvgContents, err := generateUseCasesSvgContents(reqs, domain, relevantUseCases, relevantActors)
+	if err != nil {
+		return err
+	}
+	return writer.WriteSVG(useCasesFilename, []byte(useCasesSvgContents))
 }
 
 // generateClassFilesToWriter generates class files to a ContentWriter.

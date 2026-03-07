@@ -52,36 +52,35 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 // Validate validates the Model struct and all its children.
 // This is the entry point for validating the entire model tree.
 func (m *Model) Validate() error {
-	// Validate the model's own fields.
 	if err := _validate.Struct(m); err != nil {
 		return err
 	}
-
-	// Build a set of actor keys for reference validation.
-	actorKeys := make(map[identity.Key]bool)
-	for actorKey := range m.Actors {
-		actorKeys[actorKey] = true
+	if err := m.validateInvariants(); err != nil {
+		return err
 	}
-
-	// Build a set of domain keys for domain association reference validation.
-	domainKeys := make(map[identity.Key]bool)
-	for domainKey := range m.Domains {
-		domainKeys[domainKey] = true
+	if err := m.validateGlobalFunctions(); err != nil {
+		return err
 	}
-
-	// Build a set of all class keys in the model for association reference validation.
-	// Classes only exist in subdomains.
-	classKeys := make(map[identity.Key]bool)
-	for _, domain := range m.Domains {
-		for _, subdomain := range domain.Subdomains {
-			for classKey := range subdomain.Classes {
-				classKeys[classKey] = true
-			}
-		}
+	if err := m.validateNamedSets(); err != nil {
+		return err
 	}
+	if err := m.validateActors(); err != nil {
+		return err
+	}
+	if err := m.validateDomains(); err != nil {
+		return err
+	}
+	if err := m.validateDomainAssociations(); err != nil {
+		return err
+	}
+	if err := m.validateClassAssociations(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	// Validate invariants.
-	modelInvLetTargets := make(map[string]bool)
+func (m *Model) validateInvariants() error {
+	letTargets := make(map[string]bool)
 	for i, inv := range m.Invariants {
 		if err := inv.ValidateWithParent(nil); err != nil {
 			return errors.Wrapf(err, "invariant %d", i)
@@ -90,50 +89,49 @@ func (m *Model) Validate() error {
 			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
 		}
 		if inv.Type == model_logic.LogicTypeLet {
-			if modelInvLetTargets[inv.Target] {
+			if letTargets[inv.Target] {
 				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
 			}
-			modelInvLetTargets[inv.Target] = true
+			letTargets[inv.Target] = true
 		}
 	}
+	return nil
+}
 
-	// Validate global functions.
+func (m *Model) validateGlobalFunctions() error {
 	for gfKey, gf := range m.GlobalFunctions {
 		if err := gf.ValidateWithParent(); err != nil {
 			return errors.Wrapf(err, "global function '%s'", gfKey.String())
 		}
-		// Ensure the map key matches the function key.
 		if gfKey != gf.Key {
 			return errors.Errorf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String())
 		}
 	}
+	return nil
+}
 
-	// Validate named sets.
+func (m *Model) validateNamedSets() error {
 	for nsKey, ns := range m.NamedSets {
 		if err := ns.ValidateWithParent(); err != nil {
 			return errors.Wrapf(err, "named set '%s'", nsKey.String())
 		}
-		// Ensure the map key matches the named set key.
 		if nsKey != ns.Key {
 			return errors.Errorf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String())
 		}
 	}
+	return nil
+}
 
-	// Build a set of actor generalization keys for reference validation.
+func (m *Model) validateActors() error {
 	actorGeneralizationKeys := make(map[identity.Key]bool)
 	for agKey := range m.ActorGeneralizations {
 		actorGeneralizationKeys[agKey] = true
 	}
-
-	// Validate actor generalizations.
 	for _, ag := range m.ActorGeneralizations {
 		if err := ag.ValidateWithParent(nil); err != nil {
 			return err
 		}
 	}
-
-	// Validate all children - they all have nil as their parent since Model
-	// doesn't have an identity.Key.
 	for _, actor := range m.Actors {
 		if err := actor.ValidateWithParent(nil); err != nil {
 			return err
@@ -142,32 +140,65 @@ func (m *Model) Validate() error {
 			return err
 		}
 	}
-
-	// Check that each actor generalization is in use by exactly one superclass and at least one subclass.
 	for _, ag := range m.ActorGeneralizations {
-		superCount := 0
-		subCount := 0
-		for _, actor := range m.Actors {
-			if actor.SuperclassOfKey != nil && *actor.SuperclassOfKey == ag.Key {
-				superCount++
-			}
-			if actor.SubclassOfKey != nil && *actor.SubclassOfKey == ag.Key {
-				subCount++
-			}
-		}
-		if superCount != 1 {
-			return errors.Errorf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount)
-		}
-		if subCount < 1 {
-			return errors.Errorf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount)
+		if err := m.validateGeneralizationUsage(ag); err != nil {
+			return err
 		}
 	}
+	return nil
+}
+
+func (m *Model) validateGeneralizationUsage(ag model_actor.Generalization) error {
+	superCount := 0
+	subCount := 0
+	for _, actor := range m.Actors {
+		if actor.SuperclassOfKey != nil && *actor.SuperclassOfKey == ag.Key {
+			superCount++
+		}
+		if actor.SubclassOfKey != nil && *actor.SubclassOfKey == ag.Key {
+			subCount++
+		}
+	}
+	if superCount != 1 {
+		return errors.Errorf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount)
+	}
+	if subCount < 1 {
+		return errors.Errorf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount)
+	}
+	return nil
+}
+
+func (m *Model) validateDomains() error {
+	actorKeys := make(map[identity.Key]bool)
+	for actorKey := range m.Actors {
+		actorKeys[actorKey] = true
+	}
+	classKeys := m.buildClassKeys()
 	for _, domain := range m.Domains {
 		if err := domain.ValidateWithParentAndActorsAndClasses(nil, actorKeys, classKeys); err != nil {
 			return err
 		}
 	}
-	// DomainAssociations need to be validated.
+	return nil
+}
+
+func (m *Model) buildClassKeys() map[identity.Key]bool {
+	classKeys := make(map[identity.Key]bool)
+	for _, domain := range m.Domains {
+		for _, subdomain := range domain.Subdomains {
+			for classKey := range subdomain.Classes {
+				classKeys[classKey] = true
+			}
+		}
+	}
+	return classKeys
+}
+
+func (m *Model) validateDomainAssociations() error {
+	domainKeys := make(map[identity.Key]bool)
+	for domainKey := range m.Domains {
+		domainKeys[domainKey] = true
+	}
 	for _, domainAssoc := range m.DomainAssociations {
 		if err := domainAssoc.ValidateWithParent(nil); err != nil {
 			return err
@@ -176,7 +207,11 @@ func (m *Model) Validate() error {
 			return err
 		}
 	}
-	// Model-level Associations (spanning domains) have nil parent.
+	return nil
+}
+
+func (m *Model) validateClassAssociations() error {
+	classKeys := m.buildClassKeys()
 	for _, classAssoc := range m.ClassAssociations {
 		if err := classAssoc.ValidateWithParent(nil); err != nil {
 			return err

@@ -27,92 +27,17 @@ func convErr(code int, msg, file string) *ParseError {
 // The input model is assumed to have been validated by readModelTree.
 // This function performs the conversion and validates the resulting core.Model.
 func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
-	// Convert invariants
-	invariants, err := convertInvariantsToModel(input.Invariants)
+	result, err := convertModelScalars(input, modelKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert global functions
-	globalFunctions := make(map[identity.Key]model_logic.GlobalFunction)
-	for key, gf := range input.GlobalFunctions {
-		converted, err := convertGlobalFunctionToModel(key, gf)
-		if err != nil {
-			return nil, err
-		}
-		globalFunctions[converted.Key] = converted
+	if err := convertActorsToModel(input, result); err != nil {
+		return nil, err
 	}
 
-	// Convert named sets
-	var namedSets map[identity.Key]model_named_set.NamedSet
-	if len(input.NamedSets) > 0 {
-		namedSets = make(map[identity.Key]model_named_set.NamedSet)
-		for key, ns := range input.NamedSets {
-			converted, err := convertNamedSetToModel(key, ns)
-			if err != nil {
-				return nil, err
-			}
-			namedSets[converted.Key] = converted
-		}
-	}
-
-	result := &core.Model{
-		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
-		Name:                 input.Name,
-		Details:              input.Details,
-		Invariants:           invariants,
-		GlobalFunctions:      globalFunctions,
-		NamedSets:            namedSets,
-		Actors:               make(map[identity.Key]model_actor.Actor),
-		ActorGeneralizations: make(map[identity.Key]model_actor.Generalization),
-		Domains:              make(map[identity.Key]model_domain.Domain),
-		DomainAssociations:   make(map[identity.Key]model_domain.Association),
-		ClassAssociations:    make(map[identity.Key]model_class.Association),
-	}
-
-	// Convert actors
-	for key, actor := range input.Actors {
-		converted, err := convertActorToModel(key, actor, input.ActorGeneralizations)
-		if err != nil {
-			return nil, err
-		}
-		result.Actors[converted.Key] = converted
-	}
-
-	// Convert actor generalizations
-	for key, gen := range input.ActorGeneralizations {
-		converted, err := convertActorGeneralizationToModel(key, gen)
-		if err != nil {
-			return nil, err
-		}
-		result.ActorGeneralizations[converted.Key] = converted
-	}
-
-	// Convert domains
-	for key, domain := range input.Domains {
-		converted, err := convertDomainToModel(key, domain)
-		if err != nil {
-			return nil, err
-		}
-		result.Domains[converted.Key] = converted
-	}
-
-	// Convert domain associations
-	for key, assoc := range input.DomainAssociations {
-		converted, err := convertDomainAssocToModel(key, assoc)
-		if err != nil {
-			return nil, err
-		}
-		result.DomainAssociations[converted.Key] = converted
-	}
-
-	// Convert model-level class associations
-	for key, assoc := range input.ClassAssociations {
-		converted, err := convertModelAssociationToModel(key, assoc, result.Domains)
-		if err != nil {
-			return nil, err
-		}
-		result.ClassAssociations[converted.Key] = converted
+	if err := convertDomainsAndAssociationsToModel(input, result); err != nil {
+		return nil, err
 	}
 
 	// Validate the resulting model
@@ -125,6 +50,112 @@ func ConvertToModel(input *inputModel, modelKey string) (*core.Model, error) {
 	}
 
 	return result, nil
+}
+
+// convertModelScalars converts invariants, global functions, and named sets to create the initial core.Model.
+func convertModelScalars(input *inputModel, modelKey string) (*core.Model, error) {
+	invariants, err := convertInvariantsToModel(input.Invariants)
+	if err != nil {
+		return nil, err
+	}
+
+	globalFunctions, err := convertGlobalFunctionsMap(input.GlobalFunctions)
+	if err != nil {
+		return nil, err
+	}
+
+	namedSets, err := convertNamedSetsMap(input.NamedSets)
+	if err != nil {
+		return nil, err
+	}
+
+	return &core.Model{
+		Key:                  strings.TrimSpace(strings.ToLower(modelKey)),
+		Name:                 input.Name,
+		Details:              input.Details,
+		Invariants:           invariants,
+		GlobalFunctions:      globalFunctions,
+		NamedSets:            namedSets,
+		Actors:               make(map[identity.Key]model_actor.Actor),
+		ActorGeneralizations: make(map[identity.Key]model_actor.Generalization),
+		Domains:              make(map[identity.Key]model_domain.Domain),
+		DomainAssociations:   make(map[identity.Key]model_domain.Association),
+		ClassAssociations:    make(map[identity.Key]model_class.Association),
+	}, nil
+}
+
+// convertGlobalFunctionsMap converts the global functions map.
+func convertGlobalFunctionsMap(input map[string]*inputGlobalFunction) (map[identity.Key]model_logic.GlobalFunction, error) {
+	globalFunctions := make(map[identity.Key]model_logic.GlobalFunction)
+	for key, gf := range input {
+		converted, err := convertGlobalFunctionToModel(key, gf)
+		if err != nil {
+			return nil, err
+		}
+		globalFunctions[converted.Key] = converted
+	}
+	return globalFunctions, nil
+}
+
+// convertNamedSetsMap converts the named sets map.
+func convertNamedSetsMap(input map[string]*inputNamedSet) (map[identity.Key]model_named_set.NamedSet, error) {
+	if len(input) == 0 {
+		return nil, nil
+	}
+	namedSets := make(map[identity.Key]model_named_set.NamedSet)
+	for key, ns := range input {
+		converted, err := convertNamedSetToModel(key, ns)
+		if err != nil {
+			return nil, err
+		}
+		namedSets[converted.Key] = converted
+	}
+	return namedSets, nil
+}
+
+// convertActorsToModel converts actors and actor generalizations into the result model.
+func convertActorsToModel(input *inputModel, result *core.Model) error {
+	for key, actor := range input.Actors {
+		converted, err := convertActorToModel(key, actor, input.ActorGeneralizations)
+		if err != nil {
+			return err
+		}
+		result.Actors[converted.Key] = converted
+	}
+	for key, gen := range input.ActorGeneralizations {
+		converted, err := convertActorGeneralizationToModel(key, gen)
+		if err != nil {
+			return err
+		}
+		result.ActorGeneralizations[converted.Key] = converted
+	}
+	return nil
+}
+
+// convertDomainsAndAssociationsToModel converts domains, domain associations, and class associations into the result model.
+func convertDomainsAndAssociationsToModel(input *inputModel, result *core.Model) error {
+	for key, domain := range input.Domains {
+		converted, err := convertDomainToModel(key, domain)
+		if err != nil {
+			return err
+		}
+		result.Domains[converted.Key] = converted
+	}
+	for key, assoc := range input.DomainAssociations {
+		converted, err := convertDomainAssocToModel(key, assoc)
+		if err != nil {
+			return err
+		}
+		result.DomainAssociations[converted.Key] = converted
+	}
+	for key, assoc := range input.ClassAssociations {
+		converted, err := convertModelAssociationToModel(key, assoc, result.Domains)
+		if err != nil {
+			return err
+		}
+		result.ClassAssociations[converted.Key] = converted
+	}
+	return nil
 }
 
 // convertInvariantsToModel converts a slice of inputLogic to model_logic.Logic for model invariants.
@@ -344,6 +375,14 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 	return result, nil
 }
 
+// subdomainConvContext holds the context needed for subdomain-level conversions.
+type subdomainConvContext struct {
+	subdomainKey   identity.Key
+	domainKeyStr   string
+	subdomainKeyStr string
+	subdomainFile  string
+}
+
 // convertSubdomainToModel converts an inputSubdomain to a model_domain.Subdomain.
 func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey identity.Key, domainKeyStr string) (model_domain.Subdomain, error) {
 	subdomainFile := fmt.Sprintf("domains/%s/subdomains/%s/subdomain.json", domainKeyStr, keyStr)
@@ -355,6 +394,13 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 			fmt.Sprintf("failed to create subdomain key '%s': %s", keyStr, err.Error()),
 			subdomainFile,
 		).WithField("key")
+	}
+
+	ctx := subdomainConvContext{
+		subdomainKey:    subdomainKey,
+		domainKeyStr:    domainKeyStr,
+		subdomainKeyStr: keyStr,
+		subdomainFile:   subdomainFile,
 	}
 
 	result := model_domain.Subdomain{
@@ -370,72 +416,12 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 		UseCaseShares:          make(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared),
 	}
 
-	// Convert class generalizations first to get the key mappings
-	genKeyMap := make(map[string]identity.Key)
-	for key, gen := range subdomain.ClassGeneralizations {
-		converted, err := convertClassGeneralizationToModel(key, gen, subdomainKey, domainKeyStr, keyStr)
-		if err != nil {
-			return model_domain.Subdomain{}, err
-		}
-		result.Generalizations[converted.Key] = converted
-		genKeyMap[key] = converted.Key
+	if err := convertSubdomainClassesAndGeneralizations(ctx, subdomain, &result); err != nil {
+		return model_domain.Subdomain{}, err
 	}
 
-	// Convert classes
-	for key, class := range subdomain.Classes {
-		converted, err := convertClassToModel(key, class, subdomainKey, subdomain.ClassGeneralizations, genKeyMap, domainKeyStr, keyStr)
-		if err != nil {
-			return model_domain.Subdomain{}, err
-		}
-		result.Classes[converted.Key] = converted
-	}
-
-	// Convert use case generalizations first to get the key mappings
-	ucGenKeyMap := make(map[string]identity.Key)
-	for key, gen := range subdomain.UseCaseGeneralizations {
-		converted, err := convertUseCaseGeneralizationToModel(key, gen, subdomainKey, domainKeyStr, keyStr)
-		if err != nil {
-			return model_domain.Subdomain{}, err
-		}
-		result.UseCaseGeneralizations[converted.Key] = converted
-		ucGenKeyMap[key] = converted.Key
-	}
-
-	// Convert use cases
-	for key, useCase := range subdomain.UseCases {
-		converted, err := convertUseCaseToModel(key, useCase, subdomainKey, subdomain.UseCaseGeneralizations, ucGenKeyMap, result.Classes, domainKeyStr, keyStr)
-		if err != nil {
-			return model_domain.Subdomain{}, err
-		}
-		result.UseCases[converted.Key] = converted
-	}
-
-	// Convert use case shares
-	for seaKeyStr, mudMap := range subdomain.UseCaseShares {
-		seaKey, err := identity.NewUseCaseKey(subdomainKey, seaKeyStr)
-		if err != nil {
-			return model_domain.Subdomain{}, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create use case key '%s': %s", seaKeyStr, err.Error()),
-				subdomainFile,
-			).WithField("use_case_shares")
-		}
-		innerMap := make(map[identity.Key]model_use_case.UseCaseShared)
-		for mudKeyStr, shared := range mudMap {
-			mudKey, err := identity.NewUseCaseKey(subdomainKey, mudKeyStr)
-			if err != nil {
-				return model_domain.Subdomain{}, convErr(
-					ErrConvKeyConstruction,
-					fmt.Sprintf("failed to create use case key '%s': %s", mudKeyStr, err.Error()),
-					subdomainFile,
-				).WithField("use_case_shares")
-			}
-			innerMap[mudKey] = model_use_case.UseCaseShared{
-				ShareType:  shared.ShareType,
-				UmlComment: shared.UmlComment,
-			}
-		}
-		result.UseCaseShares[seaKey] = innerMap
+	if err := convertSubdomainUseCases(ctx, subdomain, &result); err != nil {
+		return model_domain.Subdomain{}, err
 	}
 
 	// Convert subdomain-level class associations
@@ -450,11 +436,104 @@ func convertSubdomainToModel(keyStr string, subdomain *inputSubdomain, domainKey
 	return result, nil
 }
 
-// convertUseCaseToModel converts an inputUseCase to a model_use_case.UseCase.
-func convertUseCaseToModel(keyStr string, uc *inputUseCase, subdomainKey identity.Key, ucGeneralizations map[string]*inputUseCaseGeneralization, ucGenKeyMap map[string]identity.Key, classes map[identity.Key]model_class.Class, domainKeyStr, subdomainKeyStr string) (model_use_case.UseCase, error) {
-	useCaseFile := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/use_case.json", domainKeyStr, subdomainKeyStr, keyStr)
+// convertSubdomainClassesAndGeneralizations converts class generalizations and classes for a subdomain.
+func convertSubdomainClassesAndGeneralizations(ctx subdomainConvContext, subdomain *inputSubdomain, result *model_domain.Subdomain) error {
+	genKeyMap := make(map[string]identity.Key)
+	for key, gen := range subdomain.ClassGeneralizations {
+		converted, err := convertClassGeneralizationToModel(key, gen, ctx.subdomainKey, ctx.domainKeyStr, ctx.subdomainKeyStr)
+		if err != nil {
+			return err
+		}
+		result.Generalizations[converted.Key] = converted
+		genKeyMap[key] = converted.Key
+	}
 
-	useCaseKey, err := identity.NewUseCaseKey(subdomainKey, keyStr)
+	for key, class := range subdomain.Classes {
+		converted, err := convertClassToModel(key, class, ctx.subdomainKey, subdomain.ClassGeneralizations, genKeyMap, ctx.domainKeyStr, ctx.subdomainKeyStr)
+		if err != nil {
+			return err
+		}
+		result.Classes[converted.Key] = converted
+	}
+	return nil
+}
+
+// convertSubdomainUseCases converts use case generalizations, use cases, and use case shares for a subdomain.
+func convertSubdomainUseCases(ctx subdomainConvContext, subdomain *inputSubdomain, result *model_domain.Subdomain) error {
+	ucGenKeyMap := make(map[string]identity.Key)
+	for key, gen := range subdomain.UseCaseGeneralizations {
+		converted, err := convertUseCaseGeneralizationToModel(key, gen, ctx.subdomainKey, ctx.domainKeyStr, ctx.subdomainKeyStr)
+		if err != nil {
+			return err
+		}
+		result.UseCaseGeneralizations[converted.Key] = converted
+		ucGenKeyMap[key] = converted.Key
+	}
+
+	ucCtx := useCaseConvContext{
+		subdomainKey:    ctx.subdomainKey,
+		domainKeyStr:    ctx.domainKeyStr,
+		subdomainKeyStr: ctx.subdomainKeyStr,
+	}
+	for key, useCase := range subdomain.UseCases {
+		converted, err := convertUseCaseToModel(key, useCase, ucCtx, subdomain.UseCaseGeneralizations, ucGenKeyMap, result.Classes)
+		if err != nil {
+			return err
+		}
+		result.UseCases[converted.Key] = converted
+	}
+
+	// Convert use case shares
+	if err := convertUseCaseSharesMap(ctx, subdomain.UseCaseShares, result); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// convertUseCaseSharesMap converts the use case shares map for a subdomain.
+func convertUseCaseSharesMap(ctx subdomainConvContext, shares map[string]map[string]*inputUseCaseShared, result *model_domain.Subdomain) error {
+	for seaKeyStr, mudMap := range shares {
+		seaKey, err := identity.NewUseCaseKey(ctx.subdomainKey, seaKeyStr)
+		if err != nil {
+			return convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create use case key '%s': %s", seaKeyStr, err.Error()),
+				ctx.subdomainFile,
+			).WithField("use_case_shares")
+		}
+		innerMap := make(map[identity.Key]model_use_case.UseCaseShared)
+		for mudKeyStr, shared := range mudMap {
+			mudKey, err := identity.NewUseCaseKey(ctx.subdomainKey, mudKeyStr)
+			if err != nil {
+				return convErr(
+					ErrConvKeyConstruction,
+					fmt.Sprintf("failed to create use case key '%s': %s", mudKeyStr, err.Error()),
+					ctx.subdomainFile,
+				).WithField("use_case_shares")
+			}
+			innerMap[mudKey] = model_use_case.UseCaseShared{
+				ShareType:  shared.ShareType,
+				UmlComment: shared.UmlComment,
+			}
+		}
+		result.UseCaseShares[seaKey] = innerMap
+	}
+	return nil
+}
+
+// useCaseConvContext holds the context needed for use-case-level conversions.
+type useCaseConvContext struct {
+	subdomainKey    identity.Key
+	domainKeyStr    string
+	subdomainKeyStr string
+}
+
+// convertUseCaseToModel converts an inputUseCase to a model_use_case.UseCase.
+func convertUseCaseToModel(keyStr string, uc *inputUseCase, ctx useCaseConvContext, ucGeneralizations map[string]*inputUseCaseGeneralization, ucGenKeyMap map[string]identity.Key, classes map[identity.Key]model_class.Class) (model_use_case.UseCase, error) {
+	useCaseFile := fmt.Sprintf("domains/%s/subdomains/%s/use_cases/%s/use_case.json", ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr)
+
+	useCaseKey, err := identity.NewUseCaseKey(ctx.subdomainKey, keyStr)
 	if err != nil {
 		return model_use_case.UseCase{}, convErr(
 			ErrConvKeyConstruction,
@@ -497,7 +576,7 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, subdomainKey identit
 		}
 		if classKey.SubKey == "" {
 			// Try creating a class key from the subdomain
-			classKey, err = identity.NewClassKey(subdomainKey, classKeyStr)
+			classKey, err = identity.NewClassKey(ctx.subdomainKey, classKeyStr)
 			if err != nil {
 				return model_use_case.UseCase{}, convErr(
 					ErrConvKeyConstruction,
@@ -513,7 +592,7 @@ func convertUseCaseToModel(keyStr string, uc *inputUseCase, subdomainKey identit
 
 	// Convert scenarios
 	for scenKeyStr, scenario := range uc.Scenarios {
-		converted, err := convertScenarioToModel(scenKeyStr, scenario, useCaseKey, subdomainKey, domainKeyStr, subdomainKeyStr, keyStr)
+		converted, err := convertScenarioToModel(scenKeyStr, scenario, useCaseKey, ctx.subdomainKey, ctx.domainKeyStr, ctx.subdomainKeyStr, keyStr)
 		if err != nil {
 			return model_use_case.UseCase{}, err
 		}
@@ -554,7 +633,14 @@ func convertScenarioToModel(keyStr string, scenario *inputScenario, useCaseKey, 
 
 	// Convert steps
 	if scenario.Steps != nil {
-		converted, err := convertStepToModel(scenario.Steps, scenarioKey, useCaseKey, subdomainKey, scenario.Objects, 0, scenarioFile)
+		stepCtx := stepConvContext{
+			scenarioKey:  scenarioKey,
+			useCaseKey:   useCaseKey,
+			subdomainKey: subdomainKey,
+			objects:      scenario.Objects,
+			scenarioFile: scenarioFile,
+		}
+		converted, err := convertStepToModel(scenario.Steps, stepCtx, 0)
 		if err != nil {
 			return model_scenario.Scenario{}, err
 		}
@@ -595,14 +681,23 @@ func convertScenarioObjectToModel(keyStr string, obj *inputObject, scenarioKey, 
 	}, nil
 }
 
+// stepConvContext holds the context needed for step-level conversions.
+type stepConvContext struct {
+	scenarioKey  identity.Key
+	useCaseKey   identity.Key
+	subdomainKey identity.Key
+	objects      map[string]*inputObject
+	scenarioFile string
+}
+
 // convertStepToModel recursively converts an inputStep to a model_scenario.Step.
-func convertStepToModel(step *inputStep, scenarioKey, useCaseKey, subdomainKey identity.Key, objects map[string]*inputObject, stepIndex int, scenarioFile string) (*model_scenario.Step, error) {
-	stepKey, err := identity.NewScenarioStepKey(scenarioKey, fmt.Sprintf("step_%d", stepIndex))
+func convertStepToModel(step *inputStep, ctx stepConvContext, stepIndex int) (*model_scenario.Step, error) {
+	stepKey, err := identity.NewScenarioStepKey(ctx.scenarioKey, fmt.Sprintf("step_%d", stepIndex))
 	if err != nil {
 		return nil, convErr(
 			ErrConvKeyConstruction,
 			fmt.Sprintf("failed to create scenario step key 'step_%d': %s", stepIndex, err.Error()),
-			scenarioFile,
+			ctx.scenarioFile,
 		).WithField(fmt.Sprintf("steps[%d]", stepIndex))
 	}
 
@@ -615,76 +710,17 @@ func convertStepToModel(step *inputStep, scenarioKey, useCaseKey, subdomainKey i
 	}
 
 	// Convert reference keys for leaf steps
-	if step.FromObjectKey != nil {
-		objKey, err := identity.NewScenarioObjectKey(scenarioKey, *step.FromObjectKey)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create from object key '%s': %s", *step.FromObjectKey, err.Error()),
-				scenarioFile,
-			).WithField(fmt.Sprintf("steps[%d].from_object_key", stepIndex))
-		}
-		result.FromObjectKey = &objKey
+	if err := convertStepObjectKeys(step, result, ctx, stepIndex); err != nil {
+		return nil, err
 	}
-	if step.ToObjectKey != nil {
-		objKey, err := identity.NewScenarioObjectKey(scenarioKey, *step.ToObjectKey)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create to object key '%s': %s", *step.ToObjectKey, err.Error()),
-				scenarioFile,
-			).WithField(fmt.Sprintf("steps[%d].to_object_key", stepIndex))
-		}
-		result.ToObjectKey = &objKey
-	}
-	if step.EventKey != nil {
-		// Resolve the class key from the to_object (receiver) or from_object.
-		classKey, err := resolveClassKeyFromStep(step, objects, subdomainKey, scenarioFile, stepIndex)
-		if err != nil {
-			return nil, err
-		}
-		eventKey, err := identity.NewEventKey(classKey, *step.EventKey)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create event key '%s': %s", *step.EventKey, err.Error()),
-				scenarioFile,
-			).WithField(fmt.Sprintf("steps[%d].event_key", stepIndex))
-		}
-		result.EventKey = &eventKey
-	}
-	if step.QueryKey != nil {
-		// Resolve the class key from the to_object (target) or from_object.
-		classKey, err := resolveClassKeyFromStep(step, objects, subdomainKey, scenarioFile, stepIndex)
-		if err != nil {
-			return nil, err
-		}
-		queryKey, err := identity.NewQueryKey(classKey, *step.QueryKey)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create query key '%s': %s", *step.QueryKey, err.Error()),
-				scenarioFile,
-			).WithField(fmt.Sprintf("steps[%d].query_key", stepIndex))
-		}
-		result.QueryKey = &queryKey
-	}
-	if step.ScenarioKey != nil {
-		scenKey, err := identity.NewScenarioKey(useCaseKey, *step.ScenarioKey)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create scenario key '%s': %s", *step.ScenarioKey, err.Error()),
-				scenarioFile,
-			).WithField(fmt.Sprintf("steps[%d].scenario_key", stepIndex))
-		}
-		result.ScenarioKey = &scenKey
+	if err := convertStepBehaviorKeys(step, result, ctx, stepIndex); err != nil {
+		return nil, err
 	}
 
 	// Convert sub-statements
 	for i, subStep := range step.Statements {
 		subStepCopy := subStep
-		converted, err := convertStepToModel(&subStepCopy, scenarioKey, useCaseKey, subdomainKey, objects, stepIndex*100+i+1, scenarioFile)
+		converted, err := convertStepToModel(&subStepCopy, ctx, stepIndex*100+i+1)
 		if err != nil {
 			return nil, err
 		}
@@ -692,6 +728,79 @@ func convertStepToModel(step *inputStep, scenarioKey, useCaseKey, subdomainKey i
 	}
 
 	return result, nil
+}
+
+// convertStepObjectKeys converts from_object_key and to_object_key references in a step.
+func convertStepObjectKeys(step *inputStep, result *model_scenario.Step, ctx stepConvContext, stepIndex int) error {
+	if step.FromObjectKey != nil {
+		objKey, err := identity.NewScenarioObjectKey(ctx.scenarioKey, *step.FromObjectKey)
+		if err != nil {
+			return convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create from object key '%s': %s", *step.FromObjectKey, err.Error()),
+				ctx.scenarioFile,
+			).WithField(fmt.Sprintf("steps[%d].from_object_key", stepIndex))
+		}
+		result.FromObjectKey = &objKey
+	}
+	if step.ToObjectKey != nil {
+		objKey, err := identity.NewScenarioObjectKey(ctx.scenarioKey, *step.ToObjectKey)
+		if err != nil {
+			return convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create to object key '%s': %s", *step.ToObjectKey, err.Error()),
+				ctx.scenarioFile,
+			).WithField(fmt.Sprintf("steps[%d].to_object_key", stepIndex))
+		}
+		result.ToObjectKey = &objKey
+	}
+	return nil
+}
+
+// convertStepBehaviorKeys converts event_key, query_key, and scenario_key references in a step.
+func convertStepBehaviorKeys(step *inputStep, result *model_scenario.Step, ctx stepConvContext, stepIndex int) error {
+	if step.EventKey != nil {
+		classKey, err := resolveClassKeyFromStep(step, ctx.objects, ctx.subdomainKey, ctx.scenarioFile, stepIndex)
+		if err != nil {
+			return err
+		}
+		eventKey, err := identity.NewEventKey(classKey, *step.EventKey)
+		if err != nil {
+			return convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create event key '%s': %s", *step.EventKey, err.Error()),
+				ctx.scenarioFile,
+			).WithField(fmt.Sprintf("steps[%d].event_key", stepIndex))
+		}
+		result.EventKey = &eventKey
+	}
+	if step.QueryKey != nil {
+		classKey, err := resolveClassKeyFromStep(step, ctx.objects, ctx.subdomainKey, ctx.scenarioFile, stepIndex)
+		if err != nil {
+			return err
+		}
+		queryKey, err := identity.NewQueryKey(classKey, *step.QueryKey)
+		if err != nil {
+			return convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create query key '%s': %s", *step.QueryKey, err.Error()),
+				ctx.scenarioFile,
+			).WithField(fmt.Sprintf("steps[%d].query_key", stepIndex))
+		}
+		result.QueryKey = &queryKey
+	}
+	if step.ScenarioKey != nil {
+		scenKey, err := identity.NewScenarioKey(ctx.useCaseKey, *step.ScenarioKey)
+		if err != nil {
+			return convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create scenario key '%s': %s", *step.ScenarioKey, err.Error()),
+				ctx.scenarioFile,
+			).WithField(fmt.Sprintf("steps[%d].scenario_key", stepIndex))
+		}
+		result.ScenarioKey = &scenKey
+	}
+	return nil
 }
 
 // resolveClassKeyFromStep resolves the class identity.Key from a step's object references.
@@ -800,21 +909,10 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		}
 	}
 
-	// Convert attributes with index tracking
-	for attrKeyStr, attr := range class.Attributes {
-		converted, err := convertAttributeToModel(attrKeyStr, attr, classKey, class.Indexes, classFile)
-		if err != nil {
-			return model_class.Class{}, err
-		}
-		result.Attributes[converted.Key] = converted
+	// Convert attributes and invariants
+	if err := convertClassAttributesAndInvariants(class, &result, classKey, classFile); err != nil {
+		return model_class.Class{}, err
 	}
-
-	// Convert class invariants
-	classInvariants, err := convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
-	if err != nil {
-		return model_class.Class{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
-	}
-	result.SetInvariants(classInvariants)
 
 	// Convert state machine if present
 	if class.StateMachine != nil {
@@ -823,25 +921,49 @@ func convertClassToModel(keyStr string, class *inputClass, subdomainKey identity
 		}
 	}
 
-	// Convert actions
-	for actionKeyStr, action := range class.Actions {
-		converted, err := convertActionToModel(actionKeyStr, action, classKey, domainKeyStr, subdomainKeyStr, keyStr)
-		if err != nil {
-			return model_class.Class{}, err
-		}
-		result.Actions[converted.Key] = converted
-	}
-
-	// Convert queries
-	for queryKeyStr, query := range class.Queries {
-		converted, err := convertQueryToModel(queryKeyStr, query, classKey, domainKeyStr, subdomainKeyStr, keyStr)
-		if err != nil {
-			return model_class.Class{}, err
-		}
-		result.Queries[converted.Key] = converted
+	// Convert actions and queries
+	if err := convertClassActionsAndQueries(class, &result, classKey, domainKeyStr, subdomainKeyStr, keyStr); err != nil {
+		return model_class.Class{}, err
 	}
 
 	return result, nil
+}
+
+// convertClassAttributesAndInvariants converts attributes and class-level invariants into the result class.
+func convertClassAttributesAndInvariants(class *inputClass, result *model_class.Class, classKey identity.Key, classFile string) error {
+	for attrKeyStr, attr := range class.Attributes {
+		converted, err := convertAttributeToModel(attrKeyStr, attr, classKey, class.Indexes, classFile)
+		if err != nil {
+			return err
+		}
+		result.Attributes[converted.Key] = converted
+	}
+
+	classInvariants, err := convertLogicsToModel(class.Invariants, model_logic.LogicTypeAssessment, classKey, identity.NewClassInvariantKey)
+	if err != nil {
+		return convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert class invariants: %s", err.Error()), classFile)
+	}
+	result.SetInvariants(classInvariants)
+	return nil
+}
+
+// convertClassActionsAndQueries converts actions and queries into the result class.
+func convertClassActionsAndQueries(class *inputClass, result *model_class.Class, classKey identity.Key, domainKeyStr, subdomainKeyStr, classKeyStr string) error {
+	for actionKeyStr, action := range class.Actions {
+		converted, err := convertActionToModel(actionKeyStr, action, classKey, domainKeyStr, subdomainKeyStr, classKeyStr)
+		if err != nil {
+			return err
+		}
+		result.Actions[converted.Key] = converted
+	}
+	for queryKeyStr, query := range class.Queries {
+		converted, err := convertQueryToModel(queryKeyStr, query, classKey, domainKeyStr, subdomainKeyStr, classKeyStr)
+		if err != nil {
+			return err
+		}
+		result.Queries[converted.Key] = converted
+	}
+	return nil
 }
 
 // convertAttributeToModel converts an inputAttribute to a model_class.Attribute.
@@ -902,7 +1024,23 @@ func convertAttributeToModel(keyStr string, attr *inputAttribute, classKey ident
 func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class, classKey identity.Key, domainKeyStr, subdomainKeyStr, classKeyStr string) error {
 	smFile := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKeyStr, subdomainKeyStr, classKeyStr)
 
-	// Convert states
+	if err := convertSMStatesToModel(sm, class, classKey, smFile); err != nil {
+		return err
+	}
+	if err := convertSMEventsToModel(sm, class, classKey, smFile); err != nil {
+		return err
+	}
+	if err := convertSMGuardsToModel(sm, class, classKey, smFile); err != nil {
+		return err
+	}
+	if err := convertSMTransitionsToModel(sm, class, classKey, smFile); err != nil {
+		return err
+	}
+	return nil
+}
+
+// convertSMStatesToModel converts state machine states into the class.
+func convertSMStatesToModel(sm *inputStateMachine, class *model_class.Class, classKey identity.Key, smFile string) error {
 	for stateKeyStr, state := range sm.States {
 		stateKey, err := identity.NewStateKey(classKey, stateKeyStr)
 		if err != nil {
@@ -921,7 +1059,6 @@ func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class,
 			Actions:    []model_state.StateAction{},
 		}
 
-		// Convert state actions
 		for _, stateAction := range state.Actions {
 			actionKey, err := identity.NewActionKey(classKey, stateAction.ActionKey)
 			if err != nil {
@@ -948,8 +1085,11 @@ func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class,
 
 		class.States[converted.Key] = converted
 	}
+	return nil
+}
 
-	// Convert events
+// convertSMEventsToModel converts state machine events into the class.
+func convertSMEventsToModel(sm *inputStateMachine, class *model_class.Class, classKey identity.Key, smFile string) error {
 	for eventKeyStr, event := range sm.Events {
 		eventKey, err := identity.NewEventKey(classKey, eventKeyStr)
 		if err != nil {
@@ -967,7 +1107,6 @@ func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class,
 			Parameters: []model_state.Parameter{},
 		}
 
-		// Convert event parameters
 		for _, param := range event.Parameters {
 			converted.Parameters = append(converted.Parameters, model_state.Parameter{
 				Name:          param.Name,
@@ -977,8 +1116,11 @@ func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class,
 
 		class.Events[converted.Key] = converted
 	}
+	return nil
+}
 
-	// Convert guards
+// convertSMGuardsToModel converts state machine guards into the class.
+func convertSMGuardsToModel(sm *inputStateMachine, class *model_class.Class, classKey identity.Key, smFile string) error {
 	for guardKeyStr, guard := range sm.Guards {
 		guardKey, err := identity.NewGuardKey(classKey, guardKeyStr)
 		if err != nil {
@@ -1001,108 +1143,112 @@ func convertStateMachineToModel(sm *inputStateMachine, class *model_class.Class,
 
 		class.Guards[converted.Key] = converted
 	}
+	return nil
+}
 
-	// Convert transitions
+// convertSMTransitionsToModel converts state machine transitions into the class.
+func convertSMTransitionsToModel(sm *inputStateMachine, class *model_class.Class, classKey identity.Key, smFile string) error {
 	for i, transition := range sm.Transitions {
-		// Determine from and to state keys
-		var fromStr, toStr string
-		if transition.FromStateKey != nil {
-			fromStr = *transition.FromStateKey
-		}
-		if transition.ToStateKey != nil {
-			toStr = *transition.ToStateKey
-		}
-
-		// Get guard and action keys as strings
-		var guardStr, actionStr string
-		if transition.GuardKey != nil {
-			guardStr = *transition.GuardKey
-		}
-		if transition.ActionKey != nil {
-			actionStr = *transition.ActionKey
-		}
-
-		transitionKey, err := identity.NewTransitionKey(classKey, fromStr, transition.EventKey, guardStr, actionStr, toStr)
+		converted, err := convertSingleTransitionToModel(transition, i, classKey, smFile)
 		if err != nil {
-			return convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create transition key for transition[%d]: %s", i, err.Error()),
-				smFile,
-			).WithField(fmt.Sprintf("transitions[%d]", i))
+			return err
 		}
-
-		converted := model_state.Transition{
-			Key:        transitionKey,
-			UmlComment: transition.UMLComment,
-		}
-
-		// Set event key (required)
-		eventKey, err := identity.NewEventKey(classKey, transition.EventKey)
-		if err != nil {
-			return convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to create event key reference '%s' for transition[%d]: %s", transition.EventKey, i, err.Error()),
-				smFile,
-			).WithField(fmt.Sprintf("transitions[%d].event_key", i))
-		}
-		converted.EventKey = eventKey
-
-		// Set from state key (optional)
-		if transition.FromStateKey != nil {
-			stateKey, err := identity.NewStateKey(classKey, *transition.FromStateKey)
-			if err != nil {
-				return convErr(
-					ErrConvKeyConstruction,
-					fmt.Sprintf("failed to create from state key reference '%s' for transition[%d]: %s", *transition.FromStateKey, i, err.Error()),
-					smFile,
-				).WithField(fmt.Sprintf("transitions[%d].from_state_key", i))
-			}
-			converted.FromStateKey = &stateKey
-		}
-
-		// Set to state key (optional)
-		if transition.ToStateKey != nil {
-			stateKey, err := identity.NewStateKey(classKey, *transition.ToStateKey)
-			if err != nil {
-				return convErr(
-					ErrConvKeyConstruction,
-					fmt.Sprintf("failed to create to state key reference '%s' for transition[%d]: %s", *transition.ToStateKey, i, err.Error()),
-					smFile,
-				).WithField(fmt.Sprintf("transitions[%d].to_state_key", i))
-			}
-			converted.ToStateKey = &stateKey
-		}
-
-		// Set guard key (optional)
-		if transition.GuardKey != nil {
-			guardKey, err := identity.NewGuardKey(classKey, *transition.GuardKey)
-			if err != nil {
-				return convErr(
-					ErrConvKeyConstruction,
-					fmt.Sprintf("failed to create guard key reference '%s' for transition[%d]: %s", *transition.GuardKey, i, err.Error()),
-					smFile,
-				).WithField(fmt.Sprintf("transitions[%d].guard_key", i))
-			}
-			converted.GuardKey = &guardKey
-		}
-
-		// Set action key (optional)
-		if transition.ActionKey != nil {
-			actionKey, err := identity.NewActionKey(classKey, *transition.ActionKey)
-			if err != nil {
-				return convErr(
-					ErrConvKeyConstruction,
-					fmt.Sprintf("failed to create action key reference '%s' for transition[%d]: %s", *transition.ActionKey, i, err.Error()),
-					smFile,
-				).WithField(fmt.Sprintf("transitions[%d].action_key", i))
-			}
-			converted.ActionKey = &actionKey
-		}
-
 		class.Transitions[converted.Key] = converted
 	}
-
 	return nil
+}
+
+// convertSingleTransitionToModel converts a single inputTransition to a model_state.Transition.
+func convertSingleTransitionToModel(transition inputTransition, i int, classKey identity.Key, smFile string) (model_state.Transition, error) {
+	var fromStr, toStr string
+	if transition.FromStateKey != nil {
+		fromStr = *transition.FromStateKey
+	}
+	if transition.ToStateKey != nil {
+		toStr = *transition.ToStateKey
+	}
+
+	var guardStr, actionStr string
+	if transition.GuardKey != nil {
+		guardStr = *transition.GuardKey
+	}
+	if transition.ActionKey != nil {
+		actionStr = *transition.ActionKey
+	}
+
+	transitionKey, err := identity.NewTransitionKey(classKey, fromStr, transition.EventKey, guardStr, actionStr, toStr)
+	if err != nil {
+		return model_state.Transition{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create transition key for transition[%d]: %s", i, err.Error()),
+			smFile,
+		).WithField(fmt.Sprintf("transitions[%d]", i))
+	}
+
+	converted := model_state.Transition{
+		Key:        transitionKey,
+		UmlComment: transition.UMLComment,
+	}
+
+	eventKey, err := identity.NewEventKey(classKey, transition.EventKey)
+	if err != nil {
+		return model_state.Transition{}, convErr(
+			ErrConvKeyConstruction,
+			fmt.Sprintf("failed to create event key reference '%s' for transition[%d]: %s", transition.EventKey, i, err.Error()),
+			smFile,
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i))
+	}
+	converted.EventKey = eventKey
+
+	if transition.FromStateKey != nil {
+		stateKey, err := identity.NewStateKey(classKey, *transition.FromStateKey)
+		if err != nil {
+			return model_state.Transition{}, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create from state key reference '%s' for transition[%d]: %s", *transition.FromStateKey, i, err.Error()),
+				smFile,
+			).WithField(fmt.Sprintf("transitions[%d].from_state_key", i))
+		}
+		converted.FromStateKey = &stateKey
+	}
+
+	if transition.ToStateKey != nil {
+		stateKey, err := identity.NewStateKey(classKey, *transition.ToStateKey)
+		if err != nil {
+			return model_state.Transition{}, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create to state key reference '%s' for transition[%d]: %s", *transition.ToStateKey, i, err.Error()),
+				smFile,
+			).WithField(fmt.Sprintf("transitions[%d].to_state_key", i))
+		}
+		converted.ToStateKey = &stateKey
+	}
+
+	if transition.GuardKey != nil {
+		guardKey, err := identity.NewGuardKey(classKey, *transition.GuardKey)
+		if err != nil {
+			return model_state.Transition{}, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create guard key reference '%s' for transition[%d]: %s", *transition.GuardKey, i, err.Error()),
+				smFile,
+			).WithField(fmt.Sprintf("transitions[%d].guard_key", i))
+		}
+		converted.GuardKey = &guardKey
+	}
+
+	if transition.ActionKey != nil {
+		actionKey, err := identity.NewActionKey(classKey, *transition.ActionKey)
+		if err != nil {
+			return model_state.Transition{}, convErr(
+				ErrConvKeyConstruction,
+				fmt.Sprintf("failed to create action key reference '%s' for transition[%d]: %s", *transition.ActionKey, i, err.Error()),
+				smFile,
+			).WithField(fmt.Sprintf("transitions[%d].action_key", i))
+		}
+		converted.ActionKey = &actionKey
+	}
+
+	return converted, nil
 }
 
 // convertActionToModel converts an inputAction to a model_state.Action.

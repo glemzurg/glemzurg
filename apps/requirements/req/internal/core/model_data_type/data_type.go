@@ -86,86 +86,80 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 
 // Validate validates the DataType struct.
 func (d DataType) Validate() error {
-	// Validate struct tags (Key required, CollectionType required + oneof).
 	if err := _validate.Struct(d); err != nil {
 		return err
 	}
+	if err := d.validateAtomic(); err != nil {
+		return err
+	}
+	if err := d.validateRecordFields(); err != nil {
+		return err
+	}
+	if err := d.validateCollectionFields(); err != nil {
+		return err
+	}
+	if d.TypeSpec != nil {
+		if err := d.TypeSpec.Validate(); err != nil {
+			return fmt.Errorf("typeSpec: %w", err)
+		}
+	}
+	return nil
+}
 
-	// Atomic: required when atomic; validate if present.
-	if d.CollectionType == COLLECTION_TYPE_ATOMIC {
-		if d.Atomic == nil {
-			return fmt.Errorf("atomic: cannot be blank")
-		}
-		if err := d.Atomic.Validate(); err != nil {
-			return fmt.Errorf("atomic: (%s)", err.Error())
-		}
-	} else if d.Atomic != nil {
+func (d DataType) validateAtomic() error {
+	if d.CollectionType == COLLECTION_TYPE_ATOMIC && d.Atomic == nil {
+		return fmt.Errorf("atomic: cannot be blank")
+	}
+	if d.Atomic != nil {
 		if err := d.Atomic.Validate(); err != nil {
 			return fmt.Errorf("atomic: (%s)", err.Error())
 		}
 	}
+	return nil
+}
 
-	// RecordFields: required when record; each field validated.
-	if d.CollectionType == COLLECTION_TYPE_RECORD {
-		if len(d.RecordFields) == 0 {
-			return fmt.Errorf("recordFields: cannot be blank")
-		}
-		for _, f := range d.RecordFields {
-			if err := f.Validate(); err != nil {
-				return fmt.Errorf("recordFields: (%s)", err.Error())
-			}
-		}
-	} else {
-		for _, f := range d.RecordFields {
-			if err := f.Validate(); err != nil {
-				return fmt.Errorf("recordFields: (%s)", err.Error())
-			}
+func (d DataType) validateRecordFields() error {
+	if d.CollectionType == COLLECTION_TYPE_RECORD && len(d.RecordFields) == 0 {
+		return fmt.Errorf("recordFields: cannot be blank")
+	}
+	for _, f := range d.RecordFields {
+		if err := f.Validate(); err != nil {
+			return fmt.Errorf("recordFields: (%s)", err.Error())
 		}
 	}
+	return nil
+}
 
-	// Collection field rules.
+func (d DataType) validateCollectionFields() error {
 	isCollection := d.CollectionType == COLLECTION_TYPE_STACK ||
 		d.CollectionType == COLLECTION_TYPE_UNORDERED ||
 		d.CollectionType == COLLECTION_TYPE_ORDERED ||
 		d.CollectionType == COLLECTION_TYPE_QUEUE
 
 	if isCollection {
-		// CollectionUnique is required for collections.
 		if d.CollectionUnique == nil {
 			return fmt.Errorf("collectionUnique: cannot be blank")
 		}
-		// CollectionMin if set must be >= 1.
 		if d.CollectionMin != nil && *d.CollectionMin < 1 {
 			return fmt.Errorf("collectionMin: must be no less than 1")
 		}
-		// CollectionMax if set must be >= 1.
 		if d.CollectionMax != nil && *d.CollectionMax < 1 {
 			return fmt.Errorf("collectionMax: must be no less than 1")
 		}
-		// If both defined, max >= min.
 		if d.CollectionMin != nil && d.CollectionMax != nil && *d.CollectionMax < *d.CollectionMin {
 			return fmt.Errorf("collectionMax: must be no less than collectionMin")
 		}
-	} else {
-		// Non-collections must not have collection fields.
-		if d.CollectionUnique != nil {
-			return fmt.Errorf("collectionUnique: must be blank")
-		}
-		if d.CollectionMin != nil {
-			return fmt.Errorf("collectionMin: must be blank")
-		}
-		if d.CollectionMax != nil {
-			return fmt.Errorf("collectionMax: must be blank")
-		}
+		return nil
 	}
-
-	// Validate TypeSpec if present.
-	if d.TypeSpec != nil {
-		if err := d.TypeSpec.Validate(); err != nil {
-			return fmt.Errorf("typeSpec: %w", err)
-		}
+	if d.CollectionUnique != nil {
+		return fmt.Errorf("collectionUnique: must be blank")
 	}
-
+	if d.CollectionMin != nil {
+		return fmt.Errorf("collectionMin: must be blank")
+	}
+	if d.CollectionMax != nil {
+		return fmt.Errorf("collectionMax: must be blank")
+	}
 	return nil
 }
 

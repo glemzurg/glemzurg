@@ -35,6 +35,21 @@ type UseCaseShare struct {
 //go:embed templates/*
 var _templateFS embed.FS
 
+// _templateRegistry maps template filenames to pointers where the parsed templates should be stored.
+var _templateRegistry = map[string]**template.Template{
+	"model.md.template":        &_modelMdTemplate,
+	"actor.md.template":        &_actorMdTemplate,
+	"domain.md.template":       &_domainMdTemplate,
+	"domains.dot.template":     &_domainsDotTemplate,
+	"use_cases.dot.template":   &_useCasesDotTemplate,
+	"classes.dot.template":     &_classesDotTemplate,
+	"class.md.template":        &_classMdTemplate,
+	"class-state.dot.template": &_classStateDotTemplate,
+	"use_case.md.template":     &_useCaseMdTemplate,
+	"subdomain.md.template":    &_subdomainMdTemplate,
+	"subdomains.dot.template":  &_subdomainsDotTemplate,
+}
+
 func init() {
 	// Walk through the embedded file system to find and parse all .template files.
 	err := fs.WalkDir(_templateFS, "templates", func(path string, d fs.DirEntry, err error) error {
@@ -53,55 +68,38 @@ func init() {
 			return nil
 		}
 
-		// Read from the embedded file system.
-		content, err := _templateFS.ReadFile(path)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		// Parse the template and add it to the set.
-		tmplName := filepath.Base(path)
-		tmpl, err := template.New(tmplName).Funcs(_funcMap).Parse(string(content))
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		log.Printf("Parsed template: %s", tmplName)
-
-		// Put the template into specific vars based on their use.
-		// So this must be exact.
-		switch tmplName {
-		case "model.md.template":
-			_modelMdTemplate = tmpl
-		case "actor.md.template":
-			_actorMdTemplate = tmpl
-		case "domain.md.template":
-			_domainMdTemplate = tmpl
-		case "domains.dot.template":
-			_domainsDotTemplate = tmpl
-		case "use_cases.dot.template":
-			_useCasesDotTemplate = tmpl
-		case "classes.dot.template":
-			_classesDotTemplate = tmpl
-		case "class.md.template":
-			_classMdTemplate = tmpl
-		case "class-state.dot.template":
-			_classStateDotTemplate = tmpl
-		case "use_case.md.template":
-			_useCaseMdTemplate = tmpl
-		case "subdomain.md.template":
-			_subdomainMdTemplate = tmpl
-		case "subdomains.dot.template":
-			_subdomainsDotTemplate = tmpl
-		default:
-			return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
-		}
-
-		return nil
+		return parseAndRegisterTemplate(path)
 	})
 	if err != nil {
 		log.Fatalf("Failed to parse templates: %+v", err)
 	}
+}
+
+// parseAndRegisterTemplate reads, parses, and registers a single template file.
+func parseAndRegisterTemplate(path string) error {
+	// Read from the embedded file system.
+	content, err := _templateFS.ReadFile(path)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Parse the template and add it to the set.
+	tmplName := filepath.Base(path)
+	tmpl, err := template.New(tmplName).Funcs(_funcMap).Parse(string(content))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	log.Printf("Parsed template: %s", tmplName)
+
+	// Register the template using the registry.
+	target, found := _templateRegistry[tmplName]
+	if !found {
+		return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
+	}
+	*target = tmpl
+
+	return nil
 }
 
 // The templates in the system.

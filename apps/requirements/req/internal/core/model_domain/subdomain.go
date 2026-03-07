@@ -74,39 +74,37 @@ func (s *Subdomain) ValidateWithParentAndActors(parent *identity.Key, actors map
 // The actors map is used to validate that class ActorKey references exist.
 // The classes map is used to validate that association class references exist.
 func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, actors map[identity.Key]bool, classes map[identity.Key]bool) error {
-	// Validate the object itself.
 	if err := s.Validate(); err != nil {
 		return err
 	}
-	// Validate the key has the correct parent.
 	if err := s.Key.ValidateParent(parent); err != nil {
 		return err
 	}
-
-	// Build a set of generalization keys for reference validation.
-	generalizationKeys := make(map[identity.Key]bool)
-	for genKey := range s.Generalizations {
-		generalizationKeys[genKey] = true
+	if err := s.validateGeneralizations(); err != nil {
+		return err
 	}
-
-	// Build a set of this subdomain's class keys for use case scenario object validation.
-	// Also build a set of class keys that have an ActorKey defined (actor classes).
-	subdomainClassKeys := make(map[identity.Key]bool)
-	actorClassKeys := make(map[identity.Key]bool)
-	for classKey, class := range s.Classes {
-		subdomainClassKeys[classKey] = true
-		if class.ActorKey != nil {
-			actorClassKeys[classKey] = true
-		}
+	if err := s.validateClasses(actors); err != nil {
+		return err
 	}
-
-	// Build a set of use case generalization keys for reference validation.
-	useCaseGeneralizationKeys := make(map[identity.Key]bool)
-	for ucGenKey := range s.UseCaseGeneralizations {
-		useCaseGeneralizationKeys[ucGenKey] = true
+	if err := s.validateClassGeneralizationUsage(); err != nil {
+		return err
 	}
+	if err := s.validateUseCases(); err != nil {
+		return err
+	}
+	if err := s.validateUseCaseGeneralizationUsage(); err != nil {
+		return err
+	}
+	if err := s.validateSubdomainAssociations(classes); err != nil {
+		return err
+	}
+	if err := s.validateUseCaseShares(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	// Validate all children.
+func (s *Subdomain) validateGeneralizations() error {
 	for _, gen := range s.Generalizations {
 		if err := gen.ValidateWithParent(&s.Key); err != nil {
 			return err
@@ -117,6 +115,14 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return err
 		}
 	}
+	return nil
+}
+
+func (s *Subdomain) validateClasses(actors map[identity.Key]bool) error {
+	generalizationKeys := make(map[identity.Key]bool)
+	for genKey := range s.Generalizations {
+		generalizationKeys[genKey] = true
+	}
 	for _, class := range s.Classes {
 		if err := class.ValidateWithParent(&s.Key); err != nil {
 			return err
@@ -125,8 +131,10 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return err
 		}
 	}
+	return nil
+}
 
-	// Check that each class generalization is in use by exactly one superclass and at least one subclass.
+func (s *Subdomain) validateClassGeneralizationUsage() error {
 	for _, gen := range s.Generalizations {
 		superCount := 0
 		subCount := 0
@@ -145,6 +153,22 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return errors.Errorf("class generalization '%s' must have at least one subclass, found %d", gen.Key.String(), subCount)
 		}
 	}
+	return nil
+}
+
+func (s *Subdomain) validateUseCases() error {
+	subdomainClassKeys := make(map[identity.Key]bool)
+	actorClassKeys := make(map[identity.Key]bool)
+	for classKey, class := range s.Classes {
+		subdomainClassKeys[classKey] = true
+		if class.ActorKey != nil {
+			actorClassKeys[classKey] = true
+		}
+	}
+	useCaseGeneralizationKeys := make(map[identity.Key]bool)
+	for ucGenKey := range s.UseCaseGeneralizations {
+		useCaseGeneralizationKeys[ucGenKey] = true
+	}
 	for _, useCase := range s.UseCases {
 		if err := useCase.ValidateWithParentAndClasses(&s.Key, subdomainClassKeys, actorClassKeys); err != nil {
 			return err
@@ -153,8 +177,10 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return err
 		}
 	}
+	return nil
+}
 
-	// Check that each use case generalization is in use by exactly one superclass and at least one subclass.
+func (s *Subdomain) validateUseCaseGeneralizationUsage() error {
 	for _, ucGen := range s.UseCaseGeneralizations {
 		superCount := 0
 		subCount := 0
@@ -173,6 +199,10 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return errors.Errorf("use case generalization '%s' must have at least one subclass, found %d", ucGen.Key.String(), subCount)
 		}
 	}
+	return nil
+}
+
+func (s *Subdomain) validateSubdomainAssociations(classes map[identity.Key]bool) error {
 	for _, classAssoc := range s.ClassAssociations {
 		if err := classAssoc.ValidateWithParent(&s.Key); err != nil {
 			return err
@@ -181,7 +211,10 @@ func (s *Subdomain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, 
 			return err
 		}
 	}
-	// Validate UseCaseShares - both keys must be use cases in this subdomain.
+	return nil
+}
+
+func (s *Subdomain) validateUseCaseShares() error {
 	for seaLevelKey, mudLevelShares := range s.UseCaseShares {
 		if _, exists := s.UseCases[seaLevelKey]; !exists {
 			return errors.Errorf("UseCaseShares sea-level key '%s' is not a use case in this subdomain", seaLevelKey.String())
