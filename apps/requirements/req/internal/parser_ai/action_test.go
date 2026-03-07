@@ -64,7 +64,7 @@ func (suite *ActionSuite) TestParseActionErrors() {
 		testName := testData.Filename
 		suite.Run(testName, func() {
 			_, err := parseAction([]byte(testData.InputJSON), testData.Filename)
-			suite.Error(err, testName+" should return an error")
+			suite.Require().Error(err, testName+" should return an error")
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)

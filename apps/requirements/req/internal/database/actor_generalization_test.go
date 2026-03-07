@@ -43,7 +43,7 @@ func (suite *ActorGeneralizationSuite) SetupTest() {
 func (suite *ActorGeneralizationSuite) TestLoad() {
 	// Nothing in database yet.
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(generalization)
 
 	err = dbExec(suite.db, `
@@ -209,7 +209,7 @@ func (suite *ActorGeneralizationSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(generalization)
 }
 

@@ -51,7 +51,7 @@ func (suite *ActionParameterSuite) SetupTest() {
 func (suite *ActionParameterSuite) TestLoad() {
 	// Nothing in database yet.
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(param)
 
 	err = dbExec(suite.db, `
@@ -131,7 +131,7 @@ func (suite *ActionParameterSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(param)
 }
 

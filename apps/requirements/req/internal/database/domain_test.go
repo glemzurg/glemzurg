@@ -43,7 +43,7 @@ func (suite *DomainSuite) SetupTest() {
 func (suite *DomainSuite) TestLoad() {
 	// Nothing in database yet.
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(domain)
 
 	err = dbExec(suite.db, `
@@ -144,7 +144,7 @@ func (suite *DomainSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(domain)
 }
 

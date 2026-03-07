@@ -59,7 +59,7 @@ func (suite *ActionSafetySuite) SetupTest() {
 func (suite *ActionSafetySuite) TestLoad() {
 	// Logic row exists from SetupTest, but no action_safety join row yet.
 	_, err := LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the action_safety join row.
 	err = dbExec(suite.db, `
@@ -97,7 +97,7 @@ func (suite *ActionSafetySuite) TestRemove() {
 
 	// Action safety should be gone.
 	_, err = LoadActionSafety(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ActionSafetySuite) TestQuery() {

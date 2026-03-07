@@ -45,7 +45,7 @@ func (suite *SubdomainSuite) SetupTest() {
 func (suite *SubdomainSuite) TestLoad() {
 	// Nothing in database yet.
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(domainKey)
 	suite.Empty(subdomain)
 
@@ -143,7 +143,7 @@ func (suite *SubdomainSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(domainKey)
 	suite.Empty(subdomain)
 }

@@ -43,7 +43,7 @@ func (suite *AtomicEnumSuite) SetupTest() {
 func (suite *AtomicEnumSuite) TestLoad() {
 	// Nothing in database yet.
 	atomicEnums, err := LoadAtomicEnums(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(atomicEnums)
 
 	err = dbExec(suite.db, `
@@ -129,7 +129,7 @@ func (suite *AtomicEnumSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	atomicEnums, err := LoadAtomicEnums(suite.db, suite.model.Key, suite.dataType.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(atomicEnums)
 }
 

@@ -58,7 +58,7 @@ func (suite *ObjectSuite) SetupTest() {
 func (suite *ObjectSuite) TestLoad() {
 	// Nothing in database yet.
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(scenarioKey)
 	suite.Empty(object)
 
@@ -183,7 +183,7 @@ func (suite *ObjectSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(scenarioKey)
 	suite.Empty(object)
 }

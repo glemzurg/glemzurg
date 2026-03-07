@@ -51,7 +51,7 @@ func (suite *ScenarioSuite) SetupTest() {
 func (suite *ScenarioSuite) TestLoad() {
 	// Nothing in database yet.
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(useCaseKey)
 	suite.Empty(scenario)
 
@@ -143,7 +143,7 @@ func (suite *ScenarioSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(useCaseKey)
 	suite.Empty(scenario)
 }

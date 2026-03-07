@@ -47,7 +47,7 @@ func (suite *UseCaseSharedSuite) SetupTest() {
 func (suite *UseCaseSharedSuite) TestLoad() {
 	// Nothing in database yet.
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(useCaseShared)
 
 	err = dbExec(suite.db, `
@@ -125,7 +125,7 @@ func (suite *UseCaseSharedSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(useCaseShared)
 }
 

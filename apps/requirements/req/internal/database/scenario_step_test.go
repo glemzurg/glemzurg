@@ -80,7 +80,7 @@ func t_strPtr(s string) *string { return &s }
 func (suite *StepSuite) TestLoad() {
 	// Nothing in database yet.
 	_, _, _, _, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert a step directly with raw SQL.
 	err = dbExec(suite.db, `
@@ -240,7 +240,7 @@ func (suite *StepSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *StepSuite) TestQuerySteps() {
@@ -326,7 +326,7 @@ func (suite *StepSuite) TestFKScenarioCascade() {
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 // TestFKParent tests fk_step_parent: parent_step_key must reference an existing step.
@@ -378,7 +378,7 @@ func (suite *StepSuite) TestFKParentCascade() {
 
 	// Child should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 // TestFKFromObject tests fk_step_from_object: from_object_key must reference an existing scenario_object.
@@ -420,7 +420,7 @@ func (suite *StepSuite) TestFKFromObjectCascade() {
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 // TestFKToObject tests fk_step_to_object: to_object_key must reference an existing scenario_object.
@@ -462,7 +462,7 @@ func (suite *StepSuite) TestFKToObjectCascade() {
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 // TestFKEvent tests fk_step_event: event_key must reference an existing event.
@@ -504,7 +504,7 @@ func (suite *StepSuite) TestFKEventCascade() {
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 // TestFKQuery tests fk_step_query: query_key must reference an existing query.
@@ -546,7 +546,7 @@ func (suite *StepSuite) TestFKQueryCascade() {
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 // TestFKScenarioRef tests fk_step_scenario_ref: scenario_ref_key must reference an existing scenario.
@@ -592,5 +592,5 @@ func (suite *StepSuite) TestFKScenarioRefCascade() {
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }

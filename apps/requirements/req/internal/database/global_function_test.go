@@ -46,7 +46,7 @@ func (suite *GlobalFunctionSuite) SetupTest() {
 func (suite *GlobalFunctionSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no global function row yet.
 	_, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the global function row with raw SQL.
 	err = dbExec(suite.db, `
@@ -161,7 +161,7 @@ func (suite *GlobalFunctionSuite) TestRemove() {
 
 	// Global function should be gone.
 	_, err = LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *GlobalFunctionSuite) TestQuery() {

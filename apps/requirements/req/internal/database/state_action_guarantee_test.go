@@ -59,7 +59,7 @@ func (suite *ActionGuaranteeSuite) SetupTest() {
 func (suite *ActionGuaranteeSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no action_guarantee join row yet.
 	_, err := LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the action_guarantee join row.
 	err = dbExec(suite.db, `
@@ -97,7 +97,7 @@ func (suite *ActionGuaranteeSuite) TestRemove() {
 
 	// Action guarantee should be gone.
 	_, err = LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ActionGuaranteeSuite) TestQuery() {

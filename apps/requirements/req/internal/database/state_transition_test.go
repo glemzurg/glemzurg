@@ -67,7 +67,7 @@ func (suite *TransitionSuite) SetupTest() {
 func (suite *TransitionSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(transition)
 
@@ -255,7 +255,7 @@ func (suite *TransitionSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(transition)
 }

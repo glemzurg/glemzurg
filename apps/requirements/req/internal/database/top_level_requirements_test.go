@@ -34,7 +34,7 @@ func (suite *RequirementsSuite) TestWriteRead() {
 
 	// Nothing in database yet.
 	output, err := ReadModel(suite.db, original.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(output)
 
 	// Write model to the database.

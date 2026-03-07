@@ -37,7 +37,7 @@ func (suite *DataTypeSuite) SetupTest() {
 func (suite *DataTypeSuite) TestLoad() {
 	// Nothing in database yet.
 	dataType, err := LoadDataType(suite.db, strings.ToUpper(suite.model.Key), "Key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(dataType)
 
 	err = dbExec(suite.db, `
@@ -189,7 +189,7 @@ func (suite *DataTypeSuite) TestDelete() {
 	suite.Require().NoError(err)
 
 	dataType, err := LoadDataType(suite.db, suite.model.Key, "key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(dataType)
 }
 

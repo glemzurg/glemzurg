@@ -51,7 +51,7 @@ func (suite *StateSuite) SetupTest() {
 func (suite *StateSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(state)
 
@@ -149,7 +149,7 @@ func (suite *StateSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	classKey, state, err := LoadState(suite.db, suite.model.Key, suite.stateKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(state)
 }

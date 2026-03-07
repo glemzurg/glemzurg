@@ -51,7 +51,7 @@ func (suite *ActorSuite) SetupTest() {
 func (suite *ActorSuite) TestLoad() {
 	// Nothing in database yet.
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(actor)
 
 	err = dbExec(suite.db, `
@@ -231,7 +231,7 @@ func (suite *ActorSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(actor)
 }
 

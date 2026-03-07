@@ -261,7 +261,7 @@ func (suite *AssociationSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(association)
 }
 

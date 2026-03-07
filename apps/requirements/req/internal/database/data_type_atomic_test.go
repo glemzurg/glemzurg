@@ -40,7 +40,7 @@ func (suite *AtomicSuite) SetupTest() {
 func (suite *AtomicSuite) TestLoad() {
 	// Nothing in database yet.
 	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(parentDataTypeKey)
 	suite.Empty(atomic)
 
@@ -186,7 +186,7 @@ func (suite *AtomicSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	parentDataTypeKey, atomic, err := LoadAtomic(suite.db, suite.model.Key, suite.dataType.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(parentDataTypeKey)
 	suite.Empty(atomic)
 }

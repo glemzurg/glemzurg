@@ -52,7 +52,7 @@ func (suite *UseCaseSuite) SetupTest() {
 func (suite *UseCaseSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(useCase)
 
@@ -252,7 +252,7 @@ func (suite *UseCaseSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	subdomainKey, useCase, err := LoadUseCase(suite.db, suite.model.Key, suite.useCaseKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(useCase)
 }

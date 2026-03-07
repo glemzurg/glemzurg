@@ -48,7 +48,7 @@ func (suite *UseCaseActorSuite) SetupTest() {
 func (suite *UseCaseActorSuite) TestLoad() {
 	// Nothing in database yet.
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(actor)
 
 	err = dbExec(suite.db, `
@@ -117,7 +117,7 @@ func (suite *UseCaseActorSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(actor)
 }
 

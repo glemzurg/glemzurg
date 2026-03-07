@@ -59,7 +59,7 @@ func (suite *ActionRequireSuite) SetupTest() {
 func (suite *ActionRequireSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no action_require join row yet.
 	_, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the action_require join row.
 	err = dbExec(suite.db, `
@@ -97,7 +97,7 @@ func (suite *ActionRequireSuite) TestRemove() {
 
 	// Action require should be gone.
 	_, err = LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ActionRequireSuite) TestQuery() {

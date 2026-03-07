@@ -55,7 +55,7 @@ func (suite *GuardSuite) SetupTest() {
 func (suite *GuardSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(guard)
 
@@ -135,7 +135,7 @@ func (suite *GuardSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(guard)
 }

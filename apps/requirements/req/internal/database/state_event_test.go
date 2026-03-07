@@ -51,7 +51,7 @@ func (suite *EventSuite) SetupTest() {
 func (suite *EventSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(event)
 
@@ -140,7 +140,7 @@ func (suite *EventSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(event)
 }

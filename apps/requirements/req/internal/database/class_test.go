@@ -57,7 +57,7 @@ func (suite *ClassSuite) SetupTest() {
 func (suite *ClassSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(class)
 
@@ -243,7 +243,7 @@ func (suite *ClassSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(class)
 }

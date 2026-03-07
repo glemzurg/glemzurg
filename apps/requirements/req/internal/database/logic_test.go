@@ -44,7 +44,7 @@ func (suite *LogicSuite) SetupTest() {
 func (suite *LogicSuite) TestLoad() {
 	// Nothing in database yet.
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(logic)
 
 	err = dbExec(suite.db, `
@@ -200,7 +200,7 @@ func (suite *LogicSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	logic, err := LoadLogic(suite.db, suite.model.Key, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(logic)
 }
 

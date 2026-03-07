@@ -64,7 +64,7 @@ func (suite *AttributeSuite) SetupTest() {
 func (suite *AttributeSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(attribute)
 

@@ -48,7 +48,7 @@ func (suite *UseCaseGeneralizationSuite) SetupTest() {
 func (suite *UseCaseGeneralizationSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(generalization)
 
@@ -222,7 +222,7 @@ func (suite *UseCaseGeneralizationSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(generalization)
 }

@@ -51,7 +51,7 @@ func (suite *ActionSuite) SetupTest() {
 func (suite *ActionSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(action)
 
@@ -140,7 +140,7 @@ func (suite *ActionSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(classKey)
 	suite.Empty(action)
 }

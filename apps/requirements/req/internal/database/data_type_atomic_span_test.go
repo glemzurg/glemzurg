@@ -43,7 +43,7 @@ func (suite *AtomicSpanSuite) SetupTest() {
 func (suite *AtomicSpanSuite) TestLoad() {
 	// Nothing in database yet.
 	parentDataTypeKey, span, err := LoadAtomicSpan(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(parentDataTypeKey)
 	suite.Empty(span)
 
@@ -246,7 +246,7 @@ func (suite *AtomicSpanSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	_, _, err = LoadAtomicSpan(suite.db, suite.model.Key, suite.dataType.Key)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *AtomicSpanSuite) TestQuery() {

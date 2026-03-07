@@ -51,7 +51,7 @@ func (suite *EventParameterSuite) SetupTest() {
 func (suite *EventParameterSuite) TestLoad() {
 	// Nothing in database yet.
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(param)
 
 	err = dbExec(suite.db, `
@@ -131,7 +131,7 @@ func (suite *EventParameterSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(param)
 }
 

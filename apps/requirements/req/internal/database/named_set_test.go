@@ -43,7 +43,7 @@ func (suite *NamedSetSuite) SetupTest() {
 func (suite *NamedSetSuite) TestLoad() {
 	// Nothing in database yet.
 	_, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the named set row with raw SQL.
 	err = dbExec(suite.db, `
@@ -119,7 +119,7 @@ func (suite *NamedSetSuite) TestRemove() {
 
 	// Named set should be gone.
 	_, err = LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *NamedSetSuite) TestQuery() {

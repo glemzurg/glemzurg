@@ -59,7 +59,7 @@ func (suite *QueryGuaranteeSuite) SetupTest() {
 func (suite *QueryGuaranteeSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no query_guarantee join row yet.
 	_, err := LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the query_guarantee join row.
 	err = dbExec(suite.db, `
@@ -97,7 +97,7 @@ func (suite *QueryGuaranteeSuite) TestRemove() {
 
 	// Query guarantee should be gone.
 	_, err = LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *QueryGuaranteeSuite) TestQuery() {

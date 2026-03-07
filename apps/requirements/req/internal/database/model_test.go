@@ -29,7 +29,7 @@ func (suite *ModelSuite) SetupTest() {
 func (suite *ModelSuite) TestLoad() {
 	// Nothing in database yet.
 	model, err := LoadModel(suite.db, "Key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(model)
 
 	err = dbExec(suite.db, `
@@ -110,7 +110,7 @@ func (suite *ModelSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(model)
 }
 

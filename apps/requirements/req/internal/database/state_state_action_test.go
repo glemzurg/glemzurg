@@ -56,7 +56,7 @@ func (suite *StateActionSuite) SetupTest() {
 func (suite *StateActionSuite) TestLoad() {
 	// Nothing in database yet.
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(stateKey)
 	suite.Empty(stateAction)
 
@@ -145,7 +145,7 @@ func (suite *StateActionSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(stateKey)
 	suite.Empty(stateAction)
 }

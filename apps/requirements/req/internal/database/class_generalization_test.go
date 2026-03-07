@@ -48,7 +48,7 @@ func (suite *GeneralizationSuite) SetupTest() {
 func (suite *GeneralizationSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(subdomainKey)
 	suite.Empty(generalization)
 

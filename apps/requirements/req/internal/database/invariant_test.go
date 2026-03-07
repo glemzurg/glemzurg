@@ -46,7 +46,7 @@ func (suite *InvariantSuite) SetupTest() {
 func (suite *InvariantSuite) TestLoad() {
 	// Logic row exists from SetupTest, but no invariant join row yet.
 	_, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the invariant join row.
 	err = dbExec(suite.db, `
@@ -80,7 +80,7 @@ func (suite *InvariantSuite) TestRemove() {
 
 	// Invariant should be gone.
 	_, err = LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *InvariantSuite) TestQuery() {

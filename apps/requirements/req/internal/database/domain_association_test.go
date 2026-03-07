@@ -46,7 +46,7 @@ func (suite *DomainAssociationSuite) SetupTest() {
 func (suite *DomainAssociationSuite) TestLoad() {
 	// Nothing in database yet.
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(association)
 
 	err = dbExec(suite.db, `
@@ -139,7 +139,7 @@ func (suite *DomainAssociationSuite) TestRemove() {
 	suite.Require().NoError(err)
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.ErrorIs(err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 	suite.Empty(association)
 }
 

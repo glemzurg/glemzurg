@@ -156,7 +156,7 @@ func (suite *StateSuite) TestValidateWithParentAndActions() {
 		},
 	}
 	err = state.ValidateWithParentAndActions(&classKey, actionKeys)
-	suite.Error(err, "Invalid child StateAction should propagate error")
+	suite.Require().Error(err, "Invalid child StateAction should propagate error")
 
 	// Test action reference validation - reference non-existent action.
 	nonExistentActionKey := helper.Must(identity.NewActionKey(classKey, "nonexistent"))
