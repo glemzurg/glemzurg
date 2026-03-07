@@ -305,6 +305,8 @@ func containsPrimedME(expr me.Expression) bool {
 }
 
 // ContainsAnyPrimedME recursively walks a model_expression tree to detect any NextState node.
+//
+//complexity:cyclo:warn=50,fail=50 Simple routing switch.
 func ContainsAnyPrimedME(expr me.Expression) bool {
 	if expr == nil {
 		return false

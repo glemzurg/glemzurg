@@ -130,8 +130,8 @@ type Parameter struct {
 type Definition struct {
 	Key        DefinitionKey
 	Kind       DefinitionKind
-	Scope      ScopePath              // Full path (empty for global)
-	LocalName  string                 // Just "Func"
+	Scope      ScopePath       // Full path (empty for global)
+	LocalName  string          // Just "Func"
 	Body       me.Expression   // IR expression body
 	Parameters []Parameter     // Ordered list of typed parameters (can be empty)
 	ReturnType types.Type      // Inferred return type (nil until validated)

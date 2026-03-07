@@ -123,6 +123,8 @@ func (k *Key) GetParentKey() string {
 // ValidateParent validates that this key is correctly constructed based on the expected parent.
 // The parent may be nil if this key type should have no parent (e.g., actor, domain).
 // For class associations, the parent is determined by parsing the key structure.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func (k *Key) ValidateParent(parent *Key) error {
 	// First validate the key itself.
 	if err := k.Validate(); err != nil {

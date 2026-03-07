@@ -40,4 +40,3 @@ func evalRelationTraversal(record *object.Record, relInfo *RelationInfo, relCtx 
 
 	return NewEvalResult(object.NewSetFromElements(elements))
 }
-

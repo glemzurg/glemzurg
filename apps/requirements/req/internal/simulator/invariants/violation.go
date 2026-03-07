@@ -61,6 +61,8 @@ const (
 )
 
 // String returns a human-readable name for the violation type.
+//
+//complexity:cyclo:warn=30,fail=30 Simple switch.
 func (v ViolationType) String() string {
 	switch v {
 	case ViolationTypeModelInvariant:

@@ -39,6 +39,8 @@ type Step struct { //nolint:recvcheck
 }
 
 // Validate validates the step and its sub-steps.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func (s *Step) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {

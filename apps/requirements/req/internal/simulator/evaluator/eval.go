@@ -74,6 +74,9 @@ func (r *EvalResult) HasPrimedBindings() bool {
 // Eval evaluates a model expression and returns the result.
 // This is the primary evaluator entry point. It dispatches on the concrete
 // model_expression.Expression type to the appropriate handler.
+//
+//complexity:cyclo:warn=50,fail=50 A simple routing switch.
+//complexity:fanout:warn=50,fail=50 A simple routing switch.
 func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	switch n := node.(type) {
 	// === Literals ===

@@ -50,6 +50,9 @@ type LowerContext struct {
 // Lower converts a TLA+ AST expression into a notation-independent model expression.
 // The LowerContext provides semantic resolution: identifiers are resolved to AttributeRef,
 // SelfRef, LocalVar, etc. based on what names are in scope.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
+//complexity:fanout:warn=60,fail=60 Simple routing switch.
 func Lower(expr ast.Expression, ctx *LowerContext) (me.Expression, error) {
 	if expr == nil {
 		return nil, fmt.Errorf("cannot lower nil expression")

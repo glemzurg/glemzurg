@@ -35,6 +35,9 @@ type RaiseContext struct {
 
 // Raise converts a model_expression.Expression tree into a TLA+ AST expression.
 // This is the inverse of Lower().
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
+//complexity:fanout:warn=60,fail=60 Simple routing switch.
 func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 	if expr == nil {
 		return nil, fmt.Errorf("cannot raise nil expression")

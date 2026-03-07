@@ -19,6 +19,9 @@ func Print(expr Expression) string {
 type printer struct{}
 
 // print returns the TLA+ string for an expression.
+//
+//complexity:cyclo:warn=60,fail=60 Mostly simple routing switch.
+//complexity:fanout:warn=60,fail=60 Mostly simple routing switch.
 func (p *printer) print(expr Expression) string {
 	switch e := expr.(type) {
 	// --- Literals ---

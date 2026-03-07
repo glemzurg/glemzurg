@@ -21,6 +21,8 @@ func ScopeInvariants(invariants []model_logic.Logic, _ map[string]bool) (include
 // ScopeInvariantsWithAllClasses filters invariants using both in-scope and
 // all class names. An invariant is excluded if it references a class name
 // that exists in the model but is NOT in the in-scope set.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func ScopeInvariantsWithAllClasses(
 	invariants []model_logic.Logic,
 	inScopeClassNames map[string]bool,

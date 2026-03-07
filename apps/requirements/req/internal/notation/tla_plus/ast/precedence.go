@@ -70,6 +70,8 @@ type opInfo struct {
 // precedenceOf returns the precedence and associativity of an AST expression.
 // Atomic/compound expressions (literals, IF/THEN/ELSE, CASE, etc.) return
 // precAtom — they never need wrapping as children.
+//
+//complexity:cyclo:warn=40,fail=40 Simple routing switch.
 func precedenceOf(expr Expression) opInfo {
 	switch e := expr.(type) {
 	// --- Binary logic ---

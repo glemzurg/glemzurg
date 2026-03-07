@@ -370,4 +370,3 @@ func formatYamlField(key, value string, indent int) string {
 	// Single line - simple format
 	return indentStr + key + ": " + value + "\n"
 }
-

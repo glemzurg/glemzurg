@@ -29,6 +29,10 @@ cd $SCRIPT_PATH
 # go install github.com/mna/pigeon@latest
 # [ $? -ne 0 ] && exit 1
 
+# # Complexity linter.
+# go install github.com/glemzurg/go-complexity-lint/cmd/go-complexity-lint@latest
+# [ $? -ne 0 ] && exit 1
+
 # # SQL library.
 # go get -d "github.com/lib/pq"
 # [ $? -ne 0 ] && exit 1
@@ -49,39 +53,13 @@ cd $SCRIPT_PATH
 # rm -fr parser/pigeon_parser/temp.txt 
 # [ $? -ne 0 ] && exit 1
 
-# Run unit tests.
-echo -e "\nTEST\n" 
-if [ -z "$TEST_TO_RUN" ]; then
+# ================================================
 
-  # No explicit test, running all tests.
-  go test -count=1 -p=1 ./...
-  [ $? -ne 0 ] && exit 1
-
-  # The core is working fine. Format.
-  echo -e "\nFMT\n" ; go fmt ./...
-  [ $? -ne 0 ] && exit 1
-
-else 
-
-  # An explicit test, run only that.
-  go test -count=1 -p=1 -v ./... -run "$TEST_TO_RUN"
-  [ $? -ne 0 ] && exit 1
-
-fi 
-
-# Build and install any executables.
-echo -e "\nINSTALL\n" ; go install ./...
+# The core is working fine. Format.
+echo -e "\nFMT\n" ; go fmt ./...
 [ $? -ne 0 ] && exit 1
 
-# Setting up default data.
-# echo -e "\nPOPULATING DATABASE\n"
-# mysql -uroot psp_test < $GOPATH/../test_files/psp_test.sql
-# [ $? -ne 0 ] && exit 1
-
-# Indicate the command.
-echo -e "\nLAUNCH COMMAND\n"
-echo -e "\$GOBIN/reqmodel -rootsource example/models -rootoutput example/output/models -model model_a -plantuml /usr/bin/plantuml\n"
-echo -e "\$GOBIN/reqmodelhttp -rootsource example/models -rootmd example/output/models -port 8087 -plantuml /usr/bin/plantuml -nodb\n"
+# ================================================
 
 # Linting tool.
 echo -e "\nLINTING\n"
@@ -92,16 +70,32 @@ golangci-lint run ./...
 
 # Complexity linter.
 echo -e "\nCOMPLEXITY\n"
-go-complexity-lint -exclude="*.generated.go" -nestdepth.warn=6 -nestdepth.fail=6 -cyclo.warn=14 -cyclo.fail=14 -params.warn=7 -params.fail=7 -fanout.warn=9 -fanout.fail=9 ./...
+go-complexity-lint -exclude="*.generated.go,test_model.go" -nestdepth.warn=6 -nestdepth.fail=6 -cyclo.warn=14 -cyclo.fail=14 -params.warn=7 -params.fail=7 -fanout.warn=9 -fanout.fail=9 ./...
 [ $? -ne 0 ] && exit 1
 
-# With custom thresholds (flags are namespaced by analyzer)
-go-complexity-lint  ./...
+# ================================================
 
-# Exclude files by glob pattern (matched against base filename)
-go-complexity-lint -exclude="*_gen.go,mock_*.go" ./...
+# Run unit tests.
+echo -e "\nTEST\n" 
 
+# Run all tests (except slow database tests).
+go test ./...
+[ $? -ne 0 ] && exit 1
 
+# Run slow database tests
+go test ./internal/database/... -dbtests
+[ $? -ne 0 ] && exit 1
+
+# ================================================
+
+# Build and install any executables.
+echo -e "\nINSTALL\n" ; go install ./...
+[ $? -ne 0 ] && exit 1
+
+# Indicate the command.
+echo -e "\nLAUNCH COMMAND\n"
+# echo -e "\$GOBIN/reqmodel -rootsource example/models -rootoutput example/output/models -model model_a -plantuml /usr/bin/plantuml\n"
+# echo -e "\$GOBIN/reqmodelhttp -rootsource example/models -rootmd example/output/models -port 8087 -plantuml /usr/bin/plantuml -nodb\n"
 
 # Everything is fine.
 exit 0
