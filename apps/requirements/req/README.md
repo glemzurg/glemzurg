@@ -9,66 +9,40 @@ todo:
 
 
 cleanup: 
-  replace all fmt.Errorf() with errors.Errorf()
   clean up linter:
     grep -R "notation/tla_plus/ast" ./apps/requirements/req
     re-enable linter staticcheck
     grep -R "notation/tla_plus" ./apps/requirements/req
   add complexity linter to req
+  replace all fmt.Errorf() with errors.Errorf()
 
 
 update ai parser to be an ai desitned cli:
   - move error codes to req_model
   https://grok.com/c/e1be5ee4-1771-499f-9d52-4cb80e9c3b46?rid=36cf9e90-0129-47a9-9437-aab9eb24c280
 
-feb (in parallel)
-  - create complete model
-    - make ast notation neutral
-    - make ast clearly semantically meaining
-      - add validations for ast semantic meaning (primes, etc)
-    - move ast to the database
-    - remvoe the json markup in req_model tree, and any json handling code
-      - move to the parser_ai package
-  
-
-
 march (art workshops)
   - enter the evenplay model
   - steven tockey model review
 
-april
+april (in parallel)
   - generate data models compilers
   - generate protocols compilers
-
-when:
-  - generate ui designs compilers
-  - generate to the level of architecture diagrams
-    - model an AST with an Adjacency Listf and CTE query
-
-
-
-april (in parallel)
   - generate model compilers
   - manage design models
   - update simulators to run models together
+  - generate ui designs compilers
+  - generate to the level of architecture diagrams
+
+
 
 
 ---------------------------
 
-simulator todo:
+cleanup:
+  - remove the json markup in req_model tree, and any json handling code
+    - move to the parser_ai package
 
-- LET in TLA (it's is started by AI)
-- Bags in TLA
-- Simulator code
-- data type in simulators
-- unit test all the tla+ calls
-- remove the monkey stubs in ast/old_stubs.go
-- fix object float constructor to use the strings avlues from tla
-- migrate into main repo
-  - extend into database and input/outputs
-- implement stubbed simulator logic
-
----------------------------
 
 - use case shared display in graphviz and capturing the meaning
 
