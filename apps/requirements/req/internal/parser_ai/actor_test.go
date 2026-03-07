@@ -32,10 +32,10 @@ func (suite *ActorSuite) TestParseActorFiles() {
 			var expected inputActor
 
 			actual, err := parseActor([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			suite.NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			suite.NoError(err, testName)
 
 			assert.Equal(t, expected, *actual, testName)
 		})

@@ -52,7 +52,7 @@ func (suite *EventParameterSuite) TestLoad() {
 	// Nothing in database yet.
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Empty(param)
 
 	err = dbExec(suite.db, `
 		INSERT INTO event_parameter
@@ -78,7 +78,7 @@ func (suite *EventParameterSuite) TestLoad() {
 
 	param, err = LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -93,7 +93,7 @@ func (suite *EventParameterSuite) TestAdd() {
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -114,7 +114,7 @@ func (suite *EventParameterSuite) TestUpdate() {
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
@@ -132,7 +132,7 @@ func (suite *EventParameterSuite) TestRemove() {
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Empty(param)
 }
 
 func (suite *EventParameterSuite) TestQuery() {
@@ -152,7 +152,7 @@ func (suite *EventParameterSuite) TestQuery() {
 
 	params, err := QueryEventParameters(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Parameter{
+	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.eventKey: {
 			{
 				Name:          "Alpha",
@@ -172,23 +172,23 @@ func (suite *EventParameterSuite) TestQuery() {
 
 func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	err = AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	param, err = LoadEventParameter(dbOrTx, modelKey, eventKey, paramKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return param
 }
 
 func (suite *EventParameterSuite) TestVerifyTestObjects() {
 	param := t_AddEventParameter(suite.T(), suite.db, suite.model.Key, suite.eventKey, "Amount")
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

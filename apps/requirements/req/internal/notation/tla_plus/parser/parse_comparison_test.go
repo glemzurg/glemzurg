@@ -21,7 +21,7 @@ type ComparisonSuite struct {
 
 func (s *ComparisonSuite) TestParseEqual() {
 	expr, err := ParseExpression("1 = 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
@@ -35,7 +35,7 @@ func (s *ComparisonSuite) TestParseEqual() {
 
 func (s *ComparisonSuite) TestParseEqualBooleans() {
 	expr, err := ParseExpression("TRUE = FALSE")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
@@ -49,7 +49,7 @@ func (s *ComparisonSuite) TestParseEqualBooleans() {
 
 func (s *ComparisonSuite) TestParseEqualStrings() {
 	expr, err := ParseExpression(`"hello" = "world"`)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
@@ -67,7 +67,7 @@ func (s *ComparisonSuite) TestParseEqualStrings() {
 
 func (s *ComparisonSuite) TestParseNotEqualUnicode() {
 	expr, err := ParseExpression("1 ≠ 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	neq := expr.(*ast.BinaryEquality)
 	s.Equal("≠", neq.Operator)
@@ -75,7 +75,7 @@ func (s *ComparisonSuite) TestParseNotEqualUnicode() {
 
 func (s *ComparisonSuite) TestParseNotEqualSlash() {
 	expr, err := ParseExpression("1 /= 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	neq := expr.(*ast.BinaryEquality)
 	s.Equal("≠", neq.Operator) // Normalized to Unicode
@@ -83,7 +83,7 @@ func (s *ComparisonSuite) TestParseNotEqualSlash() {
 
 func (s *ComparisonSuite) TestParseNotEqualHash() {
 	expr, err := ParseExpression("1 # 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	neq := expr.(*ast.BinaryEquality)
 	s.Equal("≠", neq.Operator) // Normalized to Unicode
@@ -95,7 +95,7 @@ func (s *ComparisonSuite) TestParseNotEqualHash() {
 
 func (s *ComparisonSuite) TestParseLessThan() {
 	expr, err := ParseExpression("1 < 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	lt := expr.(*ast.BinaryComparison)
 	s.Equal("<", lt.Operator)
@@ -107,7 +107,7 @@ func (s *ComparisonSuite) TestParseLessThan() {
 
 func (s *ComparisonSuite) TestParseGreaterThan() {
 	expr, err := ParseExpression("5 > 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	gt := expr.(*ast.BinaryComparison)
 	s.Equal(">", gt.Operator)
@@ -119,7 +119,7 @@ func (s *ComparisonSuite) TestParseGreaterThan() {
 
 func (s *ComparisonSuite) TestParseLessOrEqualUnicode() {
 	expr, err := ParseExpression("1 ≤ 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	le := expr.(*ast.BinaryComparison)
 	s.Equal("≤", le.Operator)
@@ -127,7 +127,7 @@ func (s *ComparisonSuite) TestParseLessOrEqualUnicode() {
 
 func (s *ComparisonSuite) TestParseLessOrEqualASCII() {
 	expr, err := ParseExpression("1 =< 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	le := expr.(*ast.BinaryComparison)
 	s.Equal("≤", le.Operator) // Normalized to Unicode
@@ -135,7 +135,7 @@ func (s *ComparisonSuite) TestParseLessOrEqualASCII() {
 
 func (s *ComparisonSuite) TestParseLessOrEqualAlternate() {
 	expr, err := ParseExpression("1 <= 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	le := expr.(*ast.BinaryComparison)
 	s.Equal("≤", le.Operator) // Normalized to Unicode
@@ -147,7 +147,7 @@ func (s *ComparisonSuite) TestParseLessOrEqualAlternate() {
 
 func (s *ComparisonSuite) TestParseGreaterOrEqualUnicode() {
 	expr, err := ParseExpression("5 ≥ 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ge := expr.(*ast.BinaryComparison)
 	s.Equal("≥", ge.Operator)
@@ -155,7 +155,7 @@ func (s *ComparisonSuite) TestParseGreaterOrEqualUnicode() {
 
 func (s *ComparisonSuite) TestParseGreaterOrEqualASCII() {
 	expr, err := ParseExpression("5 >= 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ge := expr.(*ast.BinaryComparison)
 	s.Equal("≥", ge.Operator) // Normalized to Unicode
@@ -168,7 +168,7 @@ func (s *ComparisonSuite) TestParseGreaterOrEqualASCII() {
 func (s *ComparisonSuite) TestPrecedenceComparisonOverAnd() {
 	// x > 5 /\ y < 10 = (x > 5) /\ (y < 10)
 	expr, err := ParseExpression("1 > 0 /\\ 2 < 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	and := expr.(*ast.BinaryLogic)
 	s.Equal("∧", and.Operator)
@@ -185,7 +185,7 @@ func (s *ComparisonSuite) TestPrecedenceComparisonOverAnd() {
 func (s *ComparisonSuite) TestPrecedenceComparisonOverOr() {
 	// x = 1 \/ y = 2 = (x = 1) \/ (y = 2)
 	expr, err := ParseExpression("1 = 1 \\/ 2 = 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	or := expr.(*ast.BinaryLogic)
 	s.Equal("∨", or.Operator)
@@ -202,7 +202,7 @@ func (s *ComparisonSuite) TestPrecedenceComparisonOverOr() {
 func (s *ComparisonSuite) TestPrecedenceComparisonOverImplies() {
 	// x < y => a > b = (x < y) => (a > b)
 	expr, err := ParseExpression("1 < 2 => 3 > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
@@ -223,7 +223,7 @@ func (s *ComparisonSuite) TestPrecedenceComparisonOverImplies() {
 func (s *ComparisonSuite) TestPrecedenceArithmeticOverComparison() {
 	// 1 + 2 < 5 = (1 + 2) < 5
 	expr, err := ParseExpression("1 + 2 < 5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	lt := expr.(*ast.BinaryComparison)
 	s.Equal("<", lt.Operator)
@@ -240,7 +240,7 @@ func (s *ComparisonSuite) TestPrecedenceArithmeticOverComparison() {
 func (s *ComparisonSuite) TestPrecedenceArithmeticBothSides() {
 	// 2 * 3 = 3 + 3 = (2 * 3) = (3 + 3)
 	expr, err := ParseExpression("2 * 3 = 3 + 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	eq := expr.(*ast.BinaryEquality)
 	s.Equal("=", eq.Operator)
@@ -257,7 +257,7 @@ func (s *ComparisonSuite) TestPrecedenceArithmeticBothSides() {
 func (s *ComparisonSuite) TestPrecedencePowerOverComparison() {
 	// 2 ^ 3 > 5 = (2 ^ 3) > 5
 	expr, err := ParseExpression("2 ^ 3 > 5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	gt := expr.(*ast.BinaryComparison)
 	s.Equal(">", gt.Operator)
@@ -276,7 +276,7 @@ func (s *ComparisonSuite) TestComplexExpression() {
 	// = ((1 + 2) = 3) /\ ((4 * 2) > 5) => TRUE
 	// = (((1 + 2) = 3) /\ ((4 * 2) > 5)) => TRUE
 	expr, err := ParseExpression("1 + 2 = 3 /\\ 4 * 2 > 5 => TRUE")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	implies := expr.(*ast.BinaryLogic)
 	s.Equal("⇒", implies.Operator)
@@ -309,7 +309,7 @@ func (s *ComparisonSuite) TestComplexExpression() {
 func (s *ComparisonSuite) TestNegationWithComparison() {
 	// ~(1 = 2) - negation of comparison
 	expr, err := ParseExpression("~(1 = 2)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	not := expr.(*ast.UnaryLogic)
 	s.Equal("¬", not.Operator)

@@ -675,13 +675,13 @@ func (s *RaiseTestSuite) TestRoundTripPrecedenceComparisonAndLogic() {
 
 func (s *RaiseTestSuite) TestRaiseNilExpression() {
 	_, err := Raise(nil, s.raiseCtx)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *RaiseTestSuite) TestRaisePriorFieldValue() {
 	// PriorFieldValue raises to ExistingValue (@).
 	raised, err := Raise(&me.PriorFieldValue{Field: "count"}, s.raiseCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	_, ok := raised.(*ast.ExistingValue)
 	s.True(ok)
 }
@@ -694,7 +694,7 @@ func (s *RaiseTestSuite) TestRaiseStringConcat() {
 			&me.StringLiteral{Value: "b"},
 		},
 	}, s.raiseCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	tc, ok := raised.(*ast.TupleConcat)
 	s.True(ok)
 	s.Len(tc.Operands, 2)

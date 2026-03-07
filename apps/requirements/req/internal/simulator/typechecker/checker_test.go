@@ -29,40 +29,40 @@ func (s *CheckerSuite) TestCheck_BooleanLiteral() {
 	node := &ast.BooleanLiteral{Value: true}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 func (s *CheckerSuite) TestCheck_NaturalLiteral() {
 	node := ast.NewIntLiteral(42)
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_IntegerLiteral() {
 	node := ast.NewIntLiteral(-5)
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_RealLiteral() {
 	node := ast.NewFraction(ast.NewIntLiteral(7), ast.NewIntLiteral(2))
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_StringLiteral() {
 	node := &ast.StringLiteral{Value: "hello"}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.String{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.String{}))
 }
 
 // === Identifiers ===
@@ -72,16 +72,16 @@ func (s *CheckerSuite) TestCheck_Identifier_Bound() {
 	node := &ast.Identifier{Value: "x"}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_Identifier_Unbound() {
 	node := &ast.Identifier{Value: "undefined"}
 	_, err := s.tc.Check(node)
 
-	s.Error(err)
-	s.Contains( err.Error(), "unbound variable")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "unbound variable")
 }
 
 // === Arithmetic ===
@@ -94,8 +94,8 @@ func (s *CheckerSuite) TestCheck_RealInfix_Valid() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 	s.Len(typed.Children, 2)
 }
 
@@ -109,8 +109,8 @@ func (s *CheckerSuite) TestCheck_LogicInfix_Valid() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 func (s *CheckerSuite) TestCheck_LogicPrefix_Valid() {
@@ -120,8 +120,8 @@ func (s *CheckerSuite) TestCheck_LogicPrefix_Valid() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 func (s *CheckerSuite) TestCheck_RealComparison_Valid() {
@@ -132,8 +132,8 @@ func (s *CheckerSuite) TestCheck_RealComparison_Valid() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 // === Sets ===
@@ -142,7 +142,7 @@ func (s *CheckerSuite) TestCheck_SetLiteralInt() {
 	node := &ast.SetLiteralInt{Values: []int{1, 2, 3}}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	setType, ok := typed.Type.(types.Set)
 	s.True(ok)
 	s.True(setType.Element.Equals(types.Number{}))
@@ -152,7 +152,7 @@ func (s *CheckerSuite) TestCheck_SetLiteralEnum_Strings() {
 	node := &ast.SetLiteralEnum{Values: []string{"a", "b", "c"}}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	setType, ok := typed.Type.(types.Set)
 	s.True(ok)
 	s.True(setType.Element.Equals(types.String{}))
@@ -162,7 +162,7 @@ func (s *CheckerSuite) TestCheck_SetRange() {
 	node := &ast.SetRange{Start: 1, End: 10}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	setType, ok := typed.Type.(types.Set)
 	s.True(ok)
 	s.True(setType.Element.Equals(types.Number{}))
@@ -176,7 +176,7 @@ func (s *CheckerSuite) TestCheck_SetInfix_Union() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	setType, ok := typed.Type.(types.Set)
 	s.True(ok)
 	s.True(setType.Element.Equals(types.Number{}))
@@ -186,7 +186,7 @@ func (s *CheckerSuite) TestCheck_SetConstant_Boolean() {
 	node := &ast.SetConstant{Value: "BOOLEAN"}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	setType, ok := typed.Type.(types.Set)
 	s.True(ok)
 	s.True(setType.Element.Equals(types.Boolean{}))
@@ -202,8 +202,8 @@ func (s *CheckerSuite) TestCheck_Membership_Valid() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 // === Quantifiers ===
@@ -220,8 +220,8 @@ func (s *CheckerSuite) TestCheck_ForAll() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 func (s *CheckerSuite) TestCheck_Exists() {
@@ -236,8 +236,8 @@ func (s *CheckerSuite) TestCheck_Exists() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Boolean{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Boolean{}))
 }
 
 // === Tuples ===
@@ -252,7 +252,7 @@ func (s *CheckerSuite) TestCheck_TupleLiteral() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	tupleType, ok := typed.Type.(types.Tuple)
 	s.True(ok)
 	s.True(tupleType.Element.Equals(types.Number{}))
@@ -270,8 +270,8 @@ func (s *CheckerSuite) TestCheck_TupleIndex() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 // === Records ===
@@ -285,7 +285,7 @@ func (s *CheckerSuite) TestCheck_RecordInstance() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	recType, ok := typed.Type.(types.Record)
 	s.True(ok)
 	s.True(recType.Fields["x"].Equals(types.Number{}))
@@ -304,8 +304,8 @@ func (s *CheckerSuite) TestCheck_FieldAccess() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_FieldAccess_UndefinedField() {
@@ -319,8 +319,8 @@ func (s *CheckerSuite) TestCheck_FieldAccess_UndefinedField() {
 	}
 	_, err := s.tc.Check(node)
 
-	s.Error(err)
-	s.Contains( err.Error(), "does not have field")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "does not have field")
 }
 
 // === Control Flow ===
@@ -333,8 +333,8 @@ func (s *CheckerSuite) TestCheck_IfElse() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_IfElse_BranchMismatch() {
@@ -345,8 +345,8 @@ func (s *CheckerSuite) TestCheck_IfElse_BranchMismatch() {
 	}
 	_, err := s.tc.Check(node)
 
-	s.Error(err)
-	s.Contains( err.Error(), "same type")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "same type")
 }
 
 func (s *CheckerSuite) TestCheck_Case() {
@@ -364,8 +364,8 @@ func (s *CheckerSuite) TestCheck_Case() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 func (s *CheckerSuite) TestCheck_Case_WithOther() {
@@ -380,8 +380,8 @@ func (s *CheckerSuite) TestCheck_Case_WithOther() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 // === Builtin Calls ===
@@ -400,7 +400,7 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_SeqHead() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Head of Tuple[Number] should return Number
 	s.True(typed.Type.Equals(types.Number{}))
 }
@@ -419,7 +419,7 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_SeqTail() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	tupleType, ok := typed.Type.(types.Tuple)
 	s.True(ok)
 	s.True(tupleType.Element.Equals(types.Number{}))
@@ -439,7 +439,7 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_SeqAppend() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	tupleType, ok := typed.Type.(types.Tuple)
 	s.True(ok)
 	s.True(tupleType.Element.Equals(types.Number{}))
@@ -459,8 +459,8 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_SeqLen() {
 	}
 	typed, err := s.tc.Check(node)
 
-	s.NoError(err)
-	s.True( typed.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed.Type.Equals(types.Number{}))
 }
 
 // Note: SetToBag and Cardinality tests need SetLiteralInt to implement Expression
@@ -473,8 +473,8 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_UnknownBuiltin() {
 	}
 	_, err := s.tc.Check(node)
 
-	s.Error(err)
-	s.Contains( err.Error(), "unknown builtin")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "unknown builtin")
 }
 
 func (s *CheckerSuite) TestCheck_BuiltinCall_WrongArgCount() {
@@ -487,8 +487,8 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_WrongArgCount() {
 	}
 	_, err := s.tc.Check(node)
 
-	s.Error(err)
-	s.Contains( err.Error(), "expects 1 arguments")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "expects 1 arguments")
 }
 
 func (s *CheckerSuite) TestCheck_BuiltinCall_WrongArgType() {
@@ -500,8 +500,8 @@ func (s *CheckerSuite) TestCheck_BuiltinCall_WrongArgType() {
 	}
 	_, err := s.tc.Check(node)
 
-	s.Error(err)
-	s.Contains( err.Error(), "expected Tuple")
+	s.Require().Error(err)
+	s.Contains(err.Error(), "expected Tuple")
 }
 
 // === Polymorphism ===
@@ -517,8 +517,8 @@ func (s *CheckerSuite) TestCheck_Polymorphic_Instantiation() {
 		},
 	}
 	typed1, err := s.tc.Check(node1)
-	s.NoError(err)
-	s.True( typed1.Type.Equals(types.Number{}))
+	s.Require().NoError(err)
+	s.True(typed1.Type.Equals(types.Number{}))
 
 	// Reset for fresh type variables
 	types.ResetTypeVarCounter()
@@ -532,8 +532,8 @@ func (s *CheckerSuite) TestCheck_Polymorphic_Instantiation() {
 		},
 	}
 	typed2, err := s.tc.Check(node2)
-	s.NoError(err)
-	s.True( typed2.Type.Equals(types.String{}))
+	s.Require().NoError(err)
+	s.True(typed2.Type.Equals(types.String{}))
 }
 
 // === Type Inference with Variables ===

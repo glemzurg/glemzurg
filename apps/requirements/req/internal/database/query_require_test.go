@@ -77,7 +77,7 @@ func (suite *QueryRequireSuite) TestLoad() {
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryRequireSuite) TestAdd() {
@@ -86,7 +86,7 @@ func (suite *QueryRequireSuite) TestAdd() {
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryRequireSuite) TestRemove() {
@@ -109,7 +109,7 @@ func (suite *QueryRequireSuite) TestQuery() {
 
 	requires, err := QueryQueryRequires(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)
 }

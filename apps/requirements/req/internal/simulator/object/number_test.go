@@ -97,7 +97,7 @@ func (s *NumberSuite) TestSetValue() {
 	source := NewInteger(42)
 
 	err := n.SetValue(source)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("42", n.Inspect())
 }
 
@@ -106,7 +106,7 @@ func (s *NumberSuite) TestSetValueIncompatible() {
 	source := NewBoolean(true)
 
 	err := n.SetValue(source)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *NumberSuite) TestClone() {
@@ -220,19 +220,19 @@ func (s *NumberSuite) TestIntDiv() {
 	n1 := NewNatural(10)
 	n2 := NewNatural(3)
 	result, err := n1.IntDiv(n2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("3", result.Inspect())
 
 	// Division by zero
 	n2 = NewNatural(0)
 	_, err = n1.IntDiv(n2)
-	s.Error(err)
+	s.Require().Error(err)
 
 	// Real operand not allowed
 	n1 = NewReal(21, 2) // 10.5
 	n2 = NewNatural(3)
 	_, err = n1.IntDiv(n2)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *NumberSuite) TestMod() {
@@ -246,7 +246,7 @@ func (s *NumberSuite) TestMod() {
 	// Division by zero
 	n2 = NewNatural(0)
 	_, err = n1.Mod(n2)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *NumberSuite) TestNeg() {
@@ -360,26 +360,26 @@ func (s *NumberSuite) TestRealFromPow() {
 	base := NewNatural(2)
 	exp := NewRational(1, 2)
 	result, err := base.Pow(exp)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(KindReal, result.Kind())
 	s.InDelta(1.4142135623730951, result.Float64(), 0.0000001)
 
 	// 4^(1/2) = 2 is rational, returns Natural
 	base = NewNatural(4)
 	result, err = base.Pow(exp)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(KindNatural, result.Kind())
 	s.Equal("2", result.Inspect())
 
 	// Real base with any exponent = Real
 	realBase := NewFloat(2.5)
 	result, err = realBase.Pow(NewNatural(2))
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(KindReal, result.Kind())
 
 	// Any base with Real exponent = Real
 	result, err = NewNatural(2).Pow(NewFloat(0.5))
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(KindReal, result.Kind())
 }
 

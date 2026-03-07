@@ -65,7 +65,7 @@ func (suite *ScenarioSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.scenario.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -82,7 +82,7 @@ func (suite *ScenarioSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	scenario, err := NewScenario(key, "Name", "Details")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Scenario{
 		Key:     key,
 		Name:    "Name",
@@ -120,7 +120,7 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = scenario.ValidateWithParent(&useCaseKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateWithParentAndClasses tests that ValidateWithParentAndClasses validates child Objects.
@@ -146,7 +146,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err := scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test invalid child Object (blank name with name style) propagates error.
 	scenario = Scenario{

@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -238,14 +237,14 @@ func (suite *TopLevelDataTypeSuite) TestAddAndLoadTopLevelDataTypes() {
 			},
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Load from database
 	loaded, err := LoadTopLevelDataTypes(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Verify that loaded matches original.
-	assert.Equal(suite.T(), map[string]model_data_type.DataType{
+	suite.Equal(map[string]model_data_type.DataType{
 
 		"enum_type": {
 			Key:            "enum_type",

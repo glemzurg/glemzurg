@@ -22,7 +22,7 @@ type SetEvalSuite struct {
 
 func (s *SetEvalSuite) TestSetLiteral_Empty() {
 	expr, err := parser.ParseExpression("{}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -35,7 +35,7 @@ func (s *SetEvalSuite) TestSetLiteral_Empty() {
 
 func (s *SetEvalSuite) TestSetLiteral_Integers() {
 	expr, err := parser.ParseExpression("{1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -48,7 +48,7 @@ func (s *SetEvalSuite) TestSetLiteral_Integers() {
 
 func (s *SetEvalSuite) TestSetLiteral_WithVariables() {
 	expr, err := parser.ParseExpression("{x, y, z}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(10), NamespaceGlobal)
@@ -66,7 +66,7 @@ func (s *SetEvalSuite) TestSetLiteral_WithVariables() {
 func (s *SetEvalSuite) TestSetLiteral_Duplicates() {
 	// {1, 1, 2} should result in {1, 2} (sets don't have duplicates)
 	expr, err := parser.ParseExpression("{1, 1, 2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -83,7 +83,7 @@ func (s *SetEvalSuite) TestSetLiteral_Duplicates() {
 
 func (s *SetEvalSuite) TestSetRange_Simple() {
 	expr, err := parser.ParseExpression("1..5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -96,7 +96,7 @@ func (s *SetEvalSuite) TestSetRange_Simple() {
 
 func (s *SetEvalSuite) TestSetRange_Single() {
 	expr, err := parser.ParseExpression("5..5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -110,7 +110,7 @@ func (s *SetEvalSuite) TestSetRange_Single() {
 func (s *SetEvalSuite) TestSetRange_Empty() {
 	// 5..1 should be empty (start > end)
 	expr, err := parser.ParseExpression("5..1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -123,7 +123,7 @@ func (s *SetEvalSuite) TestSetRange_Empty() {
 
 func (s *SetEvalSuite) TestSetRange_WithVariables() {
 	expr, err := parser.ParseExpression("x..y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(3), NamespaceGlobal)
@@ -143,7 +143,7 @@ func (s *SetEvalSuite) TestSetRange_WithVariables() {
 
 func (s *SetEvalSuite) TestSetMembership_In_True() {
 	expr, err := parser.ParseExpression("2 ∈ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -156,7 +156,7 @@ func (s *SetEvalSuite) TestSetMembership_In_True() {
 
 func (s *SetEvalSuite) TestSetMembership_In_False() {
 	expr, err := parser.ParseExpression("5 ∈ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -169,7 +169,7 @@ func (s *SetEvalSuite) TestSetMembership_In_False() {
 
 func (s *SetEvalSuite) TestSetMembership_NotIn_True() {
 	expr, err := parser.ParseExpression("5 ∉ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -182,7 +182,7 @@ func (s *SetEvalSuite) TestSetMembership_NotIn_True() {
 
 func (s *SetEvalSuite) TestSetMembership_NotIn_False() {
 	expr, err := parser.ParseExpression("2 ∉ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -195,7 +195,7 @@ func (s *SetEvalSuite) TestSetMembership_NotIn_False() {
 
 func (s *SetEvalSuite) TestSetMembership_InRange() {
 	expr, err := parser.ParseExpression("5 ∈ 1..10")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -212,7 +212,7 @@ func (s *SetEvalSuite) TestSetMembership_InRange() {
 
 func (s *SetEvalSuite) TestSetUnion() {
 	expr, err := parser.ParseExpression("{1, 2} ∪ {2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -225,7 +225,7 @@ func (s *SetEvalSuite) TestSetUnion() {
 
 func (s *SetEvalSuite) TestSetIntersection() {
 	expr, err := parser.ParseExpression("{1, 2, 3} ∩ {2, 3, 4}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -238,7 +238,7 @@ func (s *SetEvalSuite) TestSetIntersection() {
 
 func (s *SetEvalSuite) TestSetDifference() {
 	expr, err := parser.ParseExpression("{1, 2, 3} \\ {2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -252,7 +252,7 @@ func (s *SetEvalSuite) TestSetDifference() {
 func (s *SetEvalSuite) TestSetOperations_Chained() {
 	// {1, 2} ∪ {3} ∪ {4} should be {1, 2, 3, 4}
 	expr, err := parser.ParseExpression("{1, 2} ∪ {3} ∪ {4}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -269,7 +269,7 @@ func (s *SetEvalSuite) TestSetOperations_Chained() {
 
 func (s *SetEvalSuite) TestSetComparison_SubsetEq_True() {
 	expr, err := parser.ParseExpression("{1, 2} ⊆ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -283,7 +283,7 @@ func (s *SetEvalSuite) TestSetComparison_SubsetEq_True() {
 func (s *SetEvalSuite) TestSetComparison_SubsetEq_Equal() {
 	// Equal sets should satisfy ⊆
 	expr, err := parser.ParseExpression("{1, 2} ⊆ {1, 2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -296,7 +296,7 @@ func (s *SetEvalSuite) TestSetComparison_SubsetEq_Equal() {
 
 func (s *SetEvalSuite) TestSetComparison_SubsetEq_False() {
 	expr, err := parser.ParseExpression("{1, 2, 4} ⊆ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -310,7 +310,7 @@ func (s *SetEvalSuite) TestSetComparison_SubsetEq_False() {
 func (s *SetEvalSuite) TestSetComparison_Subset_True() {
 	// Proper subset - must not be equal
 	expr, err := parser.ParseExpression("{1, 2} ⊂ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -324,7 +324,7 @@ func (s *SetEvalSuite) TestSetComparison_Subset_True() {
 func (s *SetEvalSuite) TestSetComparison_Subset_EqualSets() {
 	// Equal sets should NOT satisfy proper subset ⊂
 	expr, err := parser.ParseExpression("{1, 2} ⊂ {1, 2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -337,7 +337,7 @@ func (s *SetEvalSuite) TestSetComparison_Subset_EqualSets() {
 
 func (s *SetEvalSuite) TestSetComparison_SupersetEq_True() {
 	expr, err := parser.ParseExpression("{1, 2, 3} ⊇ {1, 2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -350,7 +350,7 @@ func (s *SetEvalSuite) TestSetComparison_SupersetEq_True() {
 
 func (s *SetEvalSuite) TestSetComparison_Superset_True() {
 	expr, err := parser.ParseExpression("{1, 2, 3} ⊃ {1, 2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -368,7 +368,7 @@ func (s *SetEvalSuite) TestSetComparison_Superset_True() {
 func (s *SetEvalSuite) TestCombined_RangeUnion() {
 	// 1..3 ∪ 5..7 = {1, 2, 3, 5, 6, 7}
 	expr, err := parser.ParseExpression("1..3 ∪ 5..7")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -382,7 +382,7 @@ func (s *SetEvalSuite) TestCombined_RangeUnion() {
 func (s *SetEvalSuite) TestCombined_MembershipInUnion() {
 	// 5 ∈ {1, 2} ∪ {3, 4, 5}
 	expr, err := parser.ParseExpression("5 ∈ {1, 2} ∪ {3, 4, 5}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)

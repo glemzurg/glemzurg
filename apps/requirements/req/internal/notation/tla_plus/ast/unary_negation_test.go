@@ -61,7 +61,7 @@ func (suite *NumericPrefixExpressionSuite) TestString() {
 func (suite *NumericPrefixExpressionSuite) TestASCII() {
 	// ASCII should be same as String for NumericPrefixExpression
 	n := &NumericPrefixExpression{Operator: "-", Right: &NumberLiteral{Base: BaseDecimal, IntegerPart: "1"}}
-	assert.Equal(suite.T(), n.String(), n.ASCII())
+	suite.Equal(n.String(), n.ASCII())
 }
 
 func (suite *NumericPrefixExpressionSuite) TestValidate() {
@@ -102,8 +102,8 @@ func (suite *NumericPrefixExpressionSuite) TestValidate() {
 func (suite *NumericPrefixExpressionSuite) TestNewNegation() {
 	inner := &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}
 	n := NewNegation(inner)
-	assert.Equal(suite.T(), "-", n.Operator)
-	assert.Equal(suite.T(), inner, n.Right)
+	suite.Equal("-", n.Operator)
+	suite.Equal(inner, n.Right)
 }
 
 func (suite *NumericPrefixExpressionSuite) TestExpressionNode() {

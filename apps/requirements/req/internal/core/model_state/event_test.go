@@ -72,7 +72,7 @@ func (suite *EventSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.event.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -141,7 +141,7 @@ func (suite *EventSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = event.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test child Parameter validation propagates error.
 	event = Event{
@@ -163,5 +163,5 @@ func (suite *EventSuite) TestValidateWithParent() {
 		},
 	}
 	err = event.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }

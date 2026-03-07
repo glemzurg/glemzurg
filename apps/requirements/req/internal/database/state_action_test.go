@@ -52,8 +52,8 @@ func (suite *ActionSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	suite.ErrorIs(err, ErrNotFound)
-	suite.Empty( classKey)
-	suite.Empty( action)
+	suite.Empty(classKey)
+	suite.Empty(action)
 
 	err = dbExec(suite.db, `
 		INSERT INTO action
@@ -73,12 +73,12 @@ func (suite *ActionSuite) TestLoad() {
 				'Details'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, action, err = LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	suite.NoError(err)
-	suite.Equal( suite.class.Key, classKey)
-	suite.Equal( model_state.Action{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
 		Details: "Details",
@@ -91,12 +91,12 @@ func (suite *ActionSuite) TestAdd() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	suite.NoError(err)
-	suite.Equal( suite.class.Key, classKey)
-	suite.Equal( model_state.Action{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "Name",
 		Details: "Details",
@@ -109,19 +109,19 @@ func (suite *ActionSuite) TestUpdate() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateAction(suite.db, suite.model.Key, suite.class.Key, model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
-	suite.NoError(err)
-	suite.Equal( suite.class.Key, classKey)
-	suite.Equal( model_state.Action{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Action{
 		Key:     suite.actionKey,
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -134,15 +134,15 @@ func (suite *ActionSuite) TestRemove() {
 		Name:    "Name",
 		Details: "Details",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveAction(suite.db, suite.model.Key, suite.class.Key, suite.actionKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, action, err := LoadAction(suite.db, suite.model.Key, suite.actionKey)
 	suite.ErrorIs(err, ErrNotFound)
-	suite.Empty( classKey)
-	suite.Empty( action)
+	suite.Empty(classKey)
+	suite.Empty(action)
 }
 
 func (suite *ActionSuite) TestQuery() {
@@ -160,11 +160,11 @@ func (suite *ActionSuite) TestQuery() {
 			},
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actions, err := QueryActions(suite.db, suite.model.Key)
-	suite.NoError(err)
-	suite.Equal( map[identity.Key][]model_state.Action{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Action{
 		suite.class.Key: {
 			{
 				Key:     suite.actionKey,
@@ -190,10 +190,10 @@ func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity
 		Name:    actionKey.String(),
 		Details: "Details",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, action, err = LoadAction(dbOrTx, modelKey, actionKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return action
 }

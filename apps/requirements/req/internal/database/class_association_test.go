@@ -84,10 +84,10 @@ func (suite *AssociationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	association, err = LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -113,10 +113,10 @@ func (suite *AssociationSuite) TestAdd() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -142,10 +142,10 @@ func (suite *AssociationSuite) TestAddNulls() {
 		AssociationClassKey: nil, // No association class
 		UmlComment:          "",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -171,7 +171,7 @@ func (suite *AssociationSuite) TestUpdate() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey, // Same key, updating other fields
@@ -184,10 +184,10 @@ func (suite *AssociationSuite) TestUpdate() {
 		AssociationClassKey: &suite.class.Key,
 		UmlComment:          "UmlCommentX",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "NameX",
@@ -213,7 +213,7 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
@@ -226,10 +226,10 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 		AssociationClassKey: nil, // No association class
 		UmlComment:          "",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "NameX",
@@ -255,10 +255,10 @@ func (suite *AssociationSuite) TestRemove() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveAssociation(suite.db, suite.model.Key, suite.associationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -293,10 +293,10 @@ func (suite *AssociationSuite) TestQuery() {
 			UmlComment:          "UmlComment",
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	associations, err := QueryAssociations(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_class.Association{
 		{
 			Key:                 suite.associationKey, // class/class_key comes before class/class_key_b

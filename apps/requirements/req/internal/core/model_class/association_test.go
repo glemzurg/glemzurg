@@ -149,7 +149,7 @@ func (suite *AssociationSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.association.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -166,11 +166,11 @@ func (suite *AssociationSuite) TestNew() {
 	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
 	key := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 	multiplicity, err := NewMultiplicity("2..3")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test parameters are mapped correctly.
 	assoc, err := NewAssociation(key, "Name", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",
@@ -219,7 +219,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = assoc.ValidateWithParent(&subdomainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates class references correctly.
@@ -305,7 +305,7 @@ func (suite *AssociationSuite) TestValidateReferences() {
 		suite.Run(tt.testName, func() {
 			err := tt.association.ValidateReferences(tt.classes)
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -344,7 +344,7 @@ func (suite *AssociationSuite) TestOther() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	multiplicity, err := NewMultiplicity("2..3")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))

@@ -289,7 +289,7 @@ func (suite *ActionSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.action.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -324,7 +324,7 @@ func (suite *ActionSuite) TestNew() {
 	}
 	action, err := NewAction(key, "Name", "Details",
 		requires, guarantees, safetyRules, params)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Action{
 		Key:         key,
 		Name:        "Name",
@@ -341,7 +341,7 @@ func (suite *ActionSuite) TestNew() {
 	// Test with nil optional fields (all Logic slice fields are optional).
 	action, err = NewAction(key, "Name", "Details",
 		nil, nil, nil, nil)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Action{
 		Key:     key,
 		Name:    "Name",
@@ -382,7 +382,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = action.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test valid with logic children.
 	action = Action{
@@ -399,7 +399,7 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test logic key validation - require with wrong parent should fail.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
@@ -434,5 +434,5 @@ func (suite *ActionSuite) TestValidateWithParent() {
 		},
 	}
 	err = action.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }

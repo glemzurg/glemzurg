@@ -104,7 +104,7 @@ func (s *RecordSuite) TestSetValue() {
 	})
 
 	err := target.SetValue(source)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("99", target.Get("value").(*Number).Inspect())
 }
 
@@ -113,7 +113,7 @@ func (s *RecordSuite) TestSetValueIncompatibleType() {
 	source := NewInteger(42)
 
 	err := target.SetValue(source)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *RecordSuite) TestEquals() {

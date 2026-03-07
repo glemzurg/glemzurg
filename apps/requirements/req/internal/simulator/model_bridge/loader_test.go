@@ -460,7 +460,7 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(result.HasErrors())
 	s.Equal(1, result.SuccessCount())
 }
@@ -475,7 +475,7 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Error() {
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.True(result.HasErrors())
 }
 

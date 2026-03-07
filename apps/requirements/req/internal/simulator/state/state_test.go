@@ -111,7 +111,7 @@ func (s *StateTestSuite) TestUpdateInstanceField() {
 
 	// Update a single field
 	err := state.UpdateInstanceField(instance.ID, "status", object.NewString("shipped"))
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	updated := state.GetInstance(instance.ID)
 	s.Equal("shipped", updated.GetAttribute("status").(*object.String).Value())
@@ -248,7 +248,7 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 
 	// Delete order - should remove links
 	err := state.DeleteInstance(order.ID)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, state.LinkCount())
 }
 

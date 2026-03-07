@@ -130,7 +130,7 @@ func (s *NamedSetTestSuite) TestValidate() {
 		s.Run(tt.testName, func() {
 			err := tt.ns.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -151,7 +151,7 @@ func (s *NamedSetTestSuite) TestNew() {
 
 	// Test all parameters are mapped correctly.
 	ns, err := NewNamedSet(validKey, "Valid Statuses", "The valid statuses.", spec, typeSpec)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(NamedSet{
 		Key:         validKey,
 		Name:        "Valid Statuses",
@@ -162,19 +162,19 @@ func (s *NamedSetTestSuite) TestNew() {
 
 	// Test with nil optional fields (Description and TypeSpec are optional).
 	ns, err = NewNamedSet(validKey, "Valid Statuses", "", validSpec(), nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("Valid Statuses", ns.Name)
 	s.Empty(ns.Description)
 	s.Nil(ns.TypeSpec)
 
 	// Test that Validate is called (invalid name should fail).
 	_, err = NewNamedSet(validKey, "", "desc", validSpec(), nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Name")
 
 	// Test that invalid key fails.
 	_, err = NewNamedSet(identity.Key{}, "Valid Statuses", "", validSpec(), nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "KeyType")
 }
 
@@ -189,7 +189,7 @@ func (s *NamedSetTestSuite) TestValidateWithParent() {
 		Spec: validSpec(),
 	}
 	err := ns.ValidateWithParent()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Test that Validate is called.
 	ns = NamedSet{
@@ -198,6 +198,6 @@ func (s *NamedSetTestSuite) TestValidateWithParent() {
 		Spec: validSpec(),
 	}
 	err = ns.ValidateWithParent()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Name")
 }

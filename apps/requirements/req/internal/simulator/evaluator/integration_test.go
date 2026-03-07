@@ -339,7 +339,7 @@ func (s *IntegrationTestSuite) TestTuples() {
 
 	for _, tt := range tests {
 		expr, err := parser.ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 
 		bindings := NewBindings()
 		result := EvalAST(expr, bindings)
@@ -350,7 +350,7 @@ func (s *IntegrationTestSuite) TestTuples() {
 
 func (s *IntegrationTestSuite) TestTupleIndex() {
 	expr, err := parser.ParseExpression("<<10, 20, 30>>[2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -365,7 +365,7 @@ func (s *IntegrationTestSuite) TestTupleIndex() {
 func (s *IntegrationTestSuite) TestRecords() {
 	// Record literal
 	expr, err := parser.ParseExpression("[name |-> \"Alice\", age |-> 30]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -385,7 +385,7 @@ func (s *IntegrationTestSuite) TestRecordFieldAccess() {
 	}), NamespaceGlobal)
 
 	expr, err := parser.ParseExpression("r.x + r.y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
@@ -399,7 +399,7 @@ func (s *IntegrationTestSuite) TestRecordExcept() {
 	}), NamespaceGlobal)
 
 	expr, err := parser.ParseExpression("[r EXCEPT !.count = @ + 1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)
@@ -440,7 +440,7 @@ func (s *IntegrationTestSuite) TestCaseExpression() {
 	bindings.Set("x", object.NewInteger(0), NamespaceGlobal)
 
 	expr, err := parser.ParseExpression("CASE x > 0 -> 1 [] x < 0 -> -1 [] OTHER -> 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	result := EvalAST(expr, bindings)
 	s.False(result.IsError(), "unexpected error: %v", result.Error)

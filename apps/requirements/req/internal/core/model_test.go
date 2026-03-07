@@ -200,7 +200,7 @@ func (suite *ModelSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.model.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -480,7 +480,7 @@ func (suite *ModelSuite) TestSetClassAssociations() {
 		domain2AssocKey:   domain2Assoc,
 		subdomainAssocKey: subdomainAssoc,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Verify model-level association.
 	suite.Len(model.ClassAssociations, 1)

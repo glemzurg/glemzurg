@@ -78,10 +78,10 @@ func (suite *ActorSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actor, err = LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -103,10 +103,10 @@ func (suite *ActorSuite) TestAdd() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -128,10 +128,10 @@ func (suite *ActorSuite) TestAddNulls() {
 		SubclassOfKey:   nil,
 		UmlComment:      "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -153,7 +153,7 @@ func (suite *ActorSuite) TestUpdate() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
@@ -164,10 +164,10 @@ func (suite *ActorSuite) TestUpdate() {
 		SubclassOfKey:   &suite.actorGeneralizationKey,
 		UmlComment:      "UmlCommentX",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "NameX",
@@ -189,7 +189,7 @@ func (suite *ActorSuite) TestUpdateNulls() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
@@ -200,10 +200,10 @@ func (suite *ActorSuite) TestUpdateNulls() {
 		SubclassOfKey:   nil,
 		UmlComment:      "UmlCommentX",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "NameX",
@@ -225,10 +225,10 @@ func (suite *ActorSuite) TestRemove() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveActor(suite.db, suite.model.Key, suite.actorKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -256,10 +256,10 @@ func (suite *ActorSuite) TestQuery() {
 			UmlComment:      "UmlComment",
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	actors, err := QueryActors(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_actor.Actor{
 		{
 			Key:             suite.actorKey,

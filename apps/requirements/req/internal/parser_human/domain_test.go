@@ -25,7 +25,7 @@ func (suite *DomainFileSuite) TestParseDomainFiles() {
 	key := "domain_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_DOMAIN_PATH_OK)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

@@ -64,7 +64,7 @@ func (suite *StateSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.state.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -81,7 +81,7 @@ func (suite *StateSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	state, err := NewState(key, "Name", "Details", "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(State{
 		Key:        key,
 		Name:       "Name",
@@ -120,7 +120,7 @@ func (suite *StateSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = state.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateWithParentAndActions tests that ValidateWithParentAndActions validates child StateActions.
@@ -145,7 +145,7 @@ func (suite *StateSuite) TestValidateWithParentAndActions() {
 		},
 	}
 	err := state.ValidateWithParentAndActions(&classKey, actionKeys)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test invalid child StateAction (empty action key) propagates error.
 	state = State{

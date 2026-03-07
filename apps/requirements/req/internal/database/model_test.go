@@ -50,7 +50,7 @@ func (suite *ModelSuite) TestLoad() {
 
 	model, err = LoadModel(suite.db, "Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), core.Model{
+	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
@@ -67,7 +67,7 @@ func (suite *ModelSuite) TestAdd() {
 
 	model, err := LoadModel(suite.db, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), core.Model{
+	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
@@ -91,7 +91,7 @@ func (suite *ModelSuite) TestUpdate() {
 
 	model, err := LoadModel(suite.db, "key")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), core.Model{
+	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -131,7 +131,7 @@ func (suite *ModelSuite) TestQuery() {
 
 	models, err := QueryModels(suite.db)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []core.Model{
+	suite.Equal([]core.Model{
 		{
 			Key:     "key",
 			Name:    "Name",
@@ -155,10 +155,10 @@ func t_AddModel(t *testing.T, dbOrTx DbOrTx) (model core.Model) {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	model, err = LoadModel(dbOrTx, "model_key")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return model
 }

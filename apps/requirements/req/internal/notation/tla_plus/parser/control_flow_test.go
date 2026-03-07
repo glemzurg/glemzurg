@@ -21,7 +21,7 @@ type ControlFlowSuite struct {
 
 func (s *ControlFlowSuite) TestIfThenElse_Simple() {
 	expr, err := ParseExpression("IF x > 0 THEN x ELSE -x")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
@@ -38,7 +38,7 @@ func (s *ControlFlowSuite) TestIfThenElse_Simple() {
 
 func (s *ControlFlowSuite) TestIfThenElse_Boolean() {
 	expr, err := ParseExpression("IF flag THEN TRUE ELSE FALSE")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
@@ -52,7 +52,7 @@ func (s *ControlFlowSuite) TestIfThenElse_Boolean() {
 
 func (s *ControlFlowSuite) TestIfThenElse_Nested() {
 	expr, err := ParseExpression("IF a THEN IF b THEN 1 ELSE 2 ELSE 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outer, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected outer *ast.IfThenElse, got %T", expr)
@@ -64,7 +64,7 @@ func (s *ControlFlowSuite) TestIfThenElse_Nested() {
 
 func (s *ControlFlowSuite) TestIfThenElse_WithArithmetic() {
 	expr, err := ParseExpression("IF n > 0 THEN n * 2 ELSE n + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
@@ -78,7 +78,7 @@ func (s *ControlFlowSuite) TestIfThenElse_WithArithmetic() {
 
 func (s *ControlFlowSuite) TestIfThenElse_String() {
 	expr, err := ParseExpression("IF x > 0 THEN 1 ELSE 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
@@ -92,7 +92,7 @@ func (s *ControlFlowSuite) TestIfThenElse_String() {
 
 func (s *ControlFlowSuite) TestCaseExpr_SingleBranch() {
 	expr, err := ParseExpression("CASE x > 0 -> 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
@@ -102,7 +102,7 @@ func (s *ControlFlowSuite) TestCaseExpr_SingleBranch() {
 
 func (s *ControlFlowSuite) TestCaseExpr_MultipleBranches() {
 	expr, err := ParseExpression("CASE x > 0 -> 1 [] x < 0 -> 2 [] x = 0 -> 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
@@ -112,7 +112,7 @@ func (s *ControlFlowSuite) TestCaseExpr_MultipleBranches() {
 
 func (s *ControlFlowSuite) TestCaseExpr_WithOther() {
 	expr, err := ParseExpression("CASE x > 0 -> 1 [] OTHER -> 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
@@ -122,7 +122,7 @@ func (s *ControlFlowSuite) TestCaseExpr_WithOther() {
 
 func (s *ControlFlowSuite) TestCaseExpr_UnicodeArrow() {
 	expr, err := ParseExpression("CASE x > 0 → 1 □ OTHER → 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
@@ -132,7 +132,7 @@ func (s *ControlFlowSuite) TestCaseExpr_UnicodeArrow() {
 
 func (s *ControlFlowSuite) TestCaseExpr_WithExpressions() {
 	expr, err := ParseExpression("CASE n >= 0 -> n * 2 [] n < 0 -> -n")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	caseExpr, ok := expr.(*ast.CaseExpr)
 	s.True(ok, "expected *ast.CaseExpr, got %T", expr)
@@ -149,7 +149,7 @@ func (s *ControlFlowSuite) TestCaseExpr_WithExpressions() {
 
 func (s *ControlFlowSuite) TestFunctionCall_NoArgs() {
 	expr, err := ParseExpression("Func()")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -160,7 +160,7 @@ func (s *ControlFlowSuite) TestFunctionCall_NoArgs() {
 
 func (s *ControlFlowSuite) TestFunctionCall_SingleArg() {
 	expr, err := ParseExpression("Len(seq)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -171,7 +171,7 @@ func (s *ControlFlowSuite) TestFunctionCall_SingleArg() {
 
 func (s *ControlFlowSuite) TestFunctionCall_MultipleArgs() {
 	expr, err := ParseExpression("SubSeq(seq, 1, 5)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -181,7 +181,7 @@ func (s *ControlFlowSuite) TestFunctionCall_MultipleArgs() {
 
 func (s *ControlFlowSuite) TestFunctionCall_WithModule() {
 	expr, err := ParseExpression("_Seq!Len(seq)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -194,7 +194,7 @@ func (s *ControlFlowSuite) TestFunctionCall_WithModule() {
 
 func (s *ControlFlowSuite) TestFunctionCall_MultiLevelScope() {
 	expr, err := ParseExpression("Domain!Subdomain!Class!Action(x, y)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -211,7 +211,7 @@ func (s *ControlFlowSuite) TestFunctionCall_MultiLevelScope() {
 func (s *ControlFlowSuite) TestFunctionCall_TwoLevelScope() {
 	// Class!Action pattern (from subdomain scope)
 	expr, err := ParseExpression("Class!Action()")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -223,7 +223,7 @@ func (s *ControlFlowSuite) TestFunctionCall_TwoLevelScope() {
 
 func (s *ControlFlowSuite) TestFunctionCall_BuiltinModule() {
 	expr, err := ParseExpression("_Bags!SetToBag(s)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -236,7 +236,7 @@ func (s *ControlFlowSuite) TestFunctionCall_BuiltinModule() {
 
 func (s *ControlFlowSuite) TestFunctionCall_String() {
 	expr, err := ParseExpression("_Seq!Len(seq)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -246,7 +246,7 @@ func (s *ControlFlowSuite) TestFunctionCall_String() {
 
 func (s *ControlFlowSuite) TestFunctionCall_Cardinality() {
 	expr, err := ParseExpression("Cardinality({1, 2, 3})")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -260,7 +260,7 @@ func (s *ControlFlowSuite) TestFunctionCall_Cardinality() {
 
 func (s *ControlFlowSuite) TestFunctionCall_WithExpressionArgs() {
 	expr, err := ParseExpression("Max(a + b, c * d)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -276,7 +276,7 @@ func (s *ControlFlowSuite) TestFunctionCall_WithExpressionArgs() {
 
 func (s *ControlFlowSuite) TestFunctionCall_Nested() {
 	expr, err := ParseExpression("Len(Tail(seq))")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outer, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected outer *ast.FunctionCall, got %T", expr)
@@ -290,7 +290,7 @@ func (s *ControlFlowSuite) TestFunctionCall_Nested() {
 
 func (s *ControlFlowSuite) TestFunctionCall_String_NoScope() {
 	expr, err := ParseExpression("Len(seq)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	call, ok := expr.(*ast.FunctionCall)
 	s.True(ok, "expected *ast.FunctionCall, got %T", expr)
@@ -304,7 +304,7 @@ func (s *ControlFlowSuite) TestFunctionCall_String_NoScope() {
 
 func (s *ControlFlowSuite) TestCombined_IfWithFunctionCall() {
 	expr, err := ParseExpression("IF Len(seq) > 0 THEN Head(seq) ELSE 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ite, ok := expr.(*ast.IfThenElse)
 	s.True(ok, "expected *ast.IfThenElse, got %T", expr)
@@ -316,7 +316,7 @@ func (s *ControlFlowSuite) TestCombined_IfWithFunctionCall() {
 
 func (s *ControlFlowSuite) TestCombined_FunctionCallInSet() {
 	expr, err := ParseExpression("{Len(a), Len(b), Len(c)}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)

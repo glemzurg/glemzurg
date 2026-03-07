@@ -144,8 +144,8 @@ func (suite *ClassSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	class, err := NewClass(key, "Name", "Details", &actorKey, &superclassOfKey, &subclassOfKey, "UmlComment")
-	suite.NoError(err)
-	assert.Equal(suite.T(), Class{
+	suite.Require().NoError(err)
+	suite.Equal(Class{
 		Key:             key,
 		Name:            "Name",
 		Details:         "Details",
@@ -185,7 +185,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = class.ValidateWithParent(&subdomainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test child Invariant validation propagates error.
 	class = Class{
@@ -421,35 +421,35 @@ func (suite *ClassSuite) TestSetters() {
 	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
 	invariants := []model_logic.Logic{helper.Must(model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))}
 	class.SetInvariants(invariants)
-	assert.Equal(suite.T(), invariants, class.Invariants)
+	suite.Equal(invariants, class.Invariants)
 
 	attrs := map[identity.Key]Attribute{attrKey: {Key: attrKey, Name: "Attr"}}
 	class.SetAttributes(attrs)
-	assert.Equal(suite.T(), attrs, class.Attributes)
+	suite.Equal(attrs, class.Attributes)
 
 	states := map[identity.Key]model_state.State{stateKey: helper.Must(model_state.NewState(stateKey, "State", "", ""))}
 	class.SetStates(states)
-	assert.Equal(suite.T(), states, class.States)
+	suite.Equal(states, class.States)
 
 	events := map[identity.Key]model_state.Event{eventKey: helper.Must(model_state.NewEvent(eventKey, "Event", "", nil))}
 	class.SetEvents(events)
-	assert.Equal(suite.T(), events, class.Events)
+	suite.Equal(events, class.Events)
 
 	guards := map[identity.Key]model_state.Guard{guardKey: {Key: guardKey, Name: "Guard"}}
 	class.SetGuards(guards)
-	assert.Equal(suite.T(), guards, class.Guards)
+	suite.Equal(guards, class.Guards)
 
 	actions := map[identity.Key]model_state.Action{actionKey: helper.Must(model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil))}
 	class.SetActions(actions)
-	assert.Equal(suite.T(), actions, class.Actions)
+	suite.Equal(actions, class.Actions)
 
 	queries := map[identity.Key]model_state.Query{queryKey: helper.Must(model_state.NewQuery(queryKey, "Query", "", nil, nil, nil))}
 	class.SetQueries(queries)
-	assert.Equal(suite.T(), queries, class.Queries)
+	suite.Equal(queries, class.Queries)
 
 	transitions := map[identity.Key]model_state.Transition{transitionKey: {Key: transitionKey, EventKey: eventKey}}
 	class.SetTransitions(transitions)
-	assert.Equal(suite.T(), transitions, class.Transitions)
+	suite.Equal(transitions, class.Transitions)
 }
 
 // TestValidateReferences tests that ValidateReferences validates cross-references correctly.

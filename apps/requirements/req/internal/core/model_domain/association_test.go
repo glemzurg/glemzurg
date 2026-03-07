@@ -108,7 +108,7 @@ func (suite *AssociationSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.association.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -122,7 +122,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	assoc, err := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Association{
 		Key:               key,
 		ProblemDomainKey:  suite.problemDomainKey,
@@ -160,7 +160,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 
 	// Test valid case - domain association key has no parent (root-level entity).
 	err = assoc.ValidateWithParent(nil)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates domain references correctly.
@@ -214,7 +214,7 @@ func (suite *AssociationSuite) TestValidateReferences() {
 		suite.Run(tt.testName, func() {
 			err := tt.association.ValidateReferences(tt.domains)
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}

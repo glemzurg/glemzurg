@@ -21,7 +21,7 @@ func TestArithmeticSuite(t *testing.T) {
 
 func (s *ArithmeticTestSuite) TestParseAddition() {
 	expr, err := ParseExpression("1 + 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Operator: "+",
@@ -31,7 +31,7 @@ func (s *ArithmeticTestSuite) TestParseAddition() {
 
 func (s *ArithmeticTestSuite) TestParseAdditionNoSpaces() {
 	expr, err := ParseExpression("1+2")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Operator: "+",
@@ -42,7 +42,7 @@ func (s *ArithmeticTestSuite) TestParseAdditionNoSpaces() {
 func (s *ArithmeticTestSuite) TestParseAdditionChain() {
 	// 1 + 2 + 3 = (1 + 2) + 3 (left-associative)
 	expr, err := ParseExpression("1 + 2 + 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.BinaryArithmetic{
 			Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
@@ -60,7 +60,7 @@ func (s *ArithmeticTestSuite) TestParseAdditionChain() {
 
 func (s *ArithmeticTestSuite) TestParseSubtraction() {
 	expr, err := ParseExpression("5 - 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 		Operator: "-",
@@ -71,7 +71,7 @@ func (s *ArithmeticTestSuite) TestParseSubtraction() {
 func (s *ArithmeticTestSuite) TestParseSubtractionChain() {
 	// 5 - 3 - 1 = (5 - 3) - 1 (left-associative)
 	expr, err := ParseExpression("5 - 3 - 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.BinaryArithmetic{
 			Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
@@ -86,7 +86,7 @@ func (s *ArithmeticTestSuite) TestParseSubtractionChain() {
 func (s *ArithmeticTestSuite) TestParseMixedAddSub() {
 	// 1 + 2 - 3 = 1 + (2 - 3) because - has higher precedence than + in TLA+
 	expr, err := ParseExpression("1 + 2 - 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Operator: "+",
@@ -104,7 +104,7 @@ func (s *ArithmeticTestSuite) TestParseMixedAddSub() {
 
 func (s *ArithmeticTestSuite) TestParseMultiplication() {
 	expr, err := ParseExpression("2 * 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		Operator: "*",
@@ -115,7 +115,7 @@ func (s *ArithmeticTestSuite) TestParseMultiplication() {
 func (s *ArithmeticTestSuite) TestParseMultiplicationChain() {
 	// 2 * 3 * 4 = (2 * 3) * 4 (left-associative)
 	expr, err := ParseExpression("2 * 3 * 4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.BinaryArithmetic{
 			Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
@@ -133,7 +133,7 @@ func (s *ArithmeticTestSuite) TestParseMultiplicationChain() {
 
 func (s *ArithmeticTestSuite) TestParseDivision() {
 	expr, err := ParseExpression("6 ÷ 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "6"},
 		Operator: "÷",
@@ -144,7 +144,7 @@ func (s *ArithmeticTestSuite) TestParseDivision() {
 func (s *ArithmeticTestSuite) TestParseDivisionASCII() {
 	// \div is the ASCII alternative for ÷
 	expr, err := ParseExpression(`6 \div 2`)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "6"},
 		Operator: "÷",
@@ -158,7 +158,7 @@ func (s *ArithmeticTestSuite) TestParseDivisionASCII() {
 
 func (s *ArithmeticTestSuite) TestParseModulo() {
 	expr, err := ParseExpression("7 % 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "7"},
 		Operator: "%",
@@ -169,7 +169,7 @@ func (s *ArithmeticTestSuite) TestParseModulo() {
 func (s *ArithmeticTestSuite) TestModuloLowestPrecedence() {
 	// 1 + 2 % 3 - 4 = (1 + 2) % (3 - 4) because % has lowest binary precedence
 	expr, err := ParseExpression("1 + 2 % 3 - 4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.BinaryArithmetic{
 			Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
@@ -191,7 +191,7 @@ func (s *ArithmeticTestSuite) TestModuloLowestPrecedence() {
 
 func (s *ArithmeticTestSuite) TestParsePower() {
 	expr, err := ParseExpression("2 ^ 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		Operator: "^",
@@ -206,7 +206,7 @@ func (s *ArithmeticTestSuite) TestParsePower() {
 func (s *ArithmeticTestSuite) TestPrecedenceMultOverAdd() {
 	// 1 + 2 * 3 = 1 + (2 * 3) because * has higher precedence
 	expr, err := ParseExpression("1 + 2 * 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Operator: "+",
@@ -221,7 +221,7 @@ func (s *ArithmeticTestSuite) TestPrecedenceMultOverAdd() {
 func (s *ArithmeticTestSuite) TestPrecedenceMultOverSub() {
 	// 5 - 2 * 3 = 5 - (2 * 3)
 	expr, err := ParseExpression("5 - 2 * 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 		Operator: "-",
@@ -236,7 +236,7 @@ func (s *ArithmeticTestSuite) TestPrecedenceMultOverSub() {
 func (s *ArithmeticTestSuite) TestPrecedenceDivOverAdd() {
 	// 1 + 6 ÷ 2 = 1 + (6 ÷ 2)
 	expr, err := ParseExpression("1 + 6 ÷ 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Operator: "+",
@@ -251,7 +251,7 @@ func (s *ArithmeticTestSuite) TestPrecedenceDivOverAdd() {
 func (s *ArithmeticTestSuite) TestPrecedenceComplexExpression() {
 	// 1 + 2 * 3 - 4 = 1 + ((2 * 3) - 4) because - > + and * > -
 	expr, err := ParseExpression("1 + 2 * 3 - 4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Operator: "+",
@@ -274,7 +274,7 @@ func (s *ArithmeticTestSuite) TestPrecedenceComplexExpression() {
 func (s *ArithmeticTestSuite) TestParenthesesOverridePrecedence() {
 	// (1 + 2) * 3 = explicit grouping
 	expr, err := ParseExpression("(1 + 2) * 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.Parenthesized{
 			Inner: &ast.BinaryArithmetic{
@@ -291,7 +291,7 @@ func (s *ArithmeticTestSuite) TestParenthesesOverridePrecedence() {
 func (s *ArithmeticTestSuite) TestParenthesesOnRight() {
 	// 2 * (3 + 4) = explicit grouping
 	expr, err := ParseExpression("2 * (3 + 4)")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		Operator: "*",
@@ -312,7 +312,7 @@ func (s *ArithmeticTestSuite) TestParenthesesOnRight() {
 func (s *ArithmeticTestSuite) TestNegationWithAddition() {
 	// -1 + 2 = (-1) + 2 because prefix - (at 12) has higher precedence than + (at 10)
 	expr, err := ParseExpression("-1 + 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.UnaryNegation{
 			Operator: "-",
@@ -328,7 +328,7 @@ func (s *ArithmeticTestSuite) TestNegationWithMultiplication() {
 	// Lower precedence = binds looser = captures more
 	// To get (-2) * 3, use parentheses explicitly
 	expr, err := ParseExpression("-2 * 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
 		Right: &ast.BinaryArithmetic{
@@ -342,7 +342,7 @@ func (s *ArithmeticTestSuite) TestNegationWithMultiplication() {
 func (s *ArithmeticTestSuite) TestParenthesizedNegationWithMultiplication() {
 	// (-2) * 3 = explicit negation on operand
 	expr, err := ParseExpression("(-2) * 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.Parenthesized{
 			Inner: &ast.UnaryNegation{
@@ -358,7 +358,7 @@ func (s *ArithmeticTestSuite) TestParenthesizedNegationWithMultiplication() {
 func (s *ArithmeticTestSuite) TestSubtractionVsNegation() {
 	// 5 - -3 = 5 - (-3) (binary minus followed by unary minus)
 	expr, err := ParseExpression("5 - -3")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "5"},
 		Operator: "-",
@@ -376,7 +376,7 @@ func (s *ArithmeticTestSuite) TestSubtractionVsNegation() {
 func (s *ArithmeticTestSuite) TestFractionWithMultiplication() {
 	// 2 * 3/4 = 2 * (3/4) because / (at 13.7) has higher precedence than * (at 13.5)
 	expr, err := ParseExpression("2 * 3/4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left:     &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "2"},
 		Operator: "*",
@@ -390,7 +390,7 @@ func (s *ArithmeticTestSuite) TestFractionWithMultiplication() {
 func (s *ArithmeticTestSuite) TestFractionWithAddition() {
 	// 1/2 + 3/4 = (1/2) + (3/4)
 	expr, err := ParseExpression("1/2 + 3/4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.Fraction{
 			Numerator:   &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
@@ -410,7 +410,7 @@ func (s *ArithmeticTestSuite) TestFractionWithAddition() {
 
 func (s *ArithmeticTestSuite) TestDecimalArithmetic() {
 	expr, err := ParseExpression("3.14 + 2.86")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BinaryArithmetic{
 		Left: &ast.NumberLiteral{
 			Base:            ast.BaseDecimal,

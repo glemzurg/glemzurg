@@ -59,14 +59,14 @@ func (s *TupleSuite) TestSet() {
 	})
 
 	err := t.Set(2, NewInteger(42))
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("42", t.At(2).(*Number).Inspect())
 
 	// Out of bounds returns error
 	err = t.Set(0, NewInteger(99))
-	s.Error(err)
+	s.Require().Error(err)
 	err = t.Set(4, NewInteger(99))
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *TupleSuite) TestHead() {
@@ -241,7 +241,7 @@ func (s *TupleSuite) TestSetValue() {
 	})
 
 	err := target.SetValue(source)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("<<1, 2>>", target.Inspect())
 }
 
@@ -250,7 +250,7 @@ func (s *TupleSuite) TestSetValueIncompatibleType() {
 	source := NewInteger(42)
 
 	err := target.SetValue(source)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *TupleSuite) TestEquals() {

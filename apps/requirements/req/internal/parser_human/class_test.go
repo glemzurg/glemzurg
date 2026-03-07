@@ -39,10 +39,10 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 			var expected, actual model_class.Class
 
 			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			assert.Equal(t, expected, actual, testName)
 
@@ -50,7 +50,7 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 			if testData.JsonChildren != "" {
 				var expectedAssociations []model_class.Association
 				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
-				assert.Nil(t, err, testName+" associations json")
+				assert.NoError(t, err, testName+" associations json")
 				assert.Equal(t, expectedAssociations, associations, testName+" associations")
 			}
 

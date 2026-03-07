@@ -54,11 +54,11 @@ func (suite *ScenarioSuite) TestObjectMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			var result inputObject
 			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})
@@ -199,11 +199,11 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			var result inputStep
 			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})
@@ -262,11 +262,11 @@ func (suite *ScenarioSuite) TestScenarioMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			var result inputScenario
 			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})

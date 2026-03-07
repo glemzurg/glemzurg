@@ -39,11 +39,11 @@ func (suite *UseCaseSharedSuite) TestMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			var result inputUseCaseShared
 			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})

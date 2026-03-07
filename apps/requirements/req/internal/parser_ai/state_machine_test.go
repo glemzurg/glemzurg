@@ -24,7 +24,7 @@ type StateMachineSuite struct {
 
 func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_STATE_MACHINE_PATH_OK)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

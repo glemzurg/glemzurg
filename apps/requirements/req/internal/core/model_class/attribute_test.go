@@ -284,7 +284,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = attr.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test valid with derivation policy.
 	validDerivPolicy := helper.Must(model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
@@ -294,7 +294,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		DerivationPolicy: &validDerivPolicy,
 	}
 	err = attr.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test derivation policy key validation - wrong parent should fail.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
@@ -317,7 +317,7 @@ func (suite *AttributeSuite) TestValidateWithParent() {
 		Invariants: []model_logic.Logic{validInvariant},
 	}
 	err = attr.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test invariant with wrong parent key - invariant key has other_attr as parent, but attribute key is validKey.
 	wrongInvKey := helper.Must(identity.NewAttributeInvariantKey(otherAttrKey, "0"))

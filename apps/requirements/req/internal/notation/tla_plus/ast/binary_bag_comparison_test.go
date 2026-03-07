@@ -154,7 +154,7 @@ func (suite *LogicInfixBagSuite) TestValidate() {
 		_ = suite.Run(tt.testName, func() {
 			err := tt.ib.Validate()
 			if tt.errstr == `` {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}

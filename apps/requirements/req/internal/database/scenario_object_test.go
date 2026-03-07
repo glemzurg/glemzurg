@@ -92,8 +92,8 @@ func (suite *ObjectSuite) TestLoad() {
 
 	scenarioKey, object, err = LoadObject(suite.db, suite.model.Key, suite.objectKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Equal(suite.T(), model_scenario.Object{
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -118,8 +118,8 @@ func (suite *ObjectSuite) TestAdd() {
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Equal(suite.T(), model_scenario.Object{
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -155,8 +155,8 @@ func (suite *ObjectSuite) TestUpdate() {
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Equal(suite.T(), model_scenario.Object{
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 2,
 		Name:         "NameX",
@@ -237,7 +237,7 @@ func (suite *ObjectSuite) TestQuery() {
 			},
 		},
 	}
-	assert.Equal(suite.T(), expected, objects)
+	suite.Equal(expected, objects)
 }
 
 //==================================================
@@ -254,10 +254,10 @@ func t_AddObject(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ident
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, object, err = LoadObject(dbOrTx, modelKey, objectKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return object
 }

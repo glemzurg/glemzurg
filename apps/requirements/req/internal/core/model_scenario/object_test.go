@@ -133,7 +133,7 @@ func (suite *ObjectSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.object.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -152,7 +152,7 @@ func (suite *ObjectSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	obj, err := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Object{
 		Key:          key,
 		ObjectNumber: 1,
@@ -200,7 +200,7 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = obj.ValidateWithParent(&scenarioKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates class references correctly.
@@ -250,7 +250,7 @@ func (suite *ObjectSuite) TestValidateReferences() {
 		suite.Run(tt.testName, func() {
 			err := tt.object.ValidateReferences(tt.classes)
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}

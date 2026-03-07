@@ -78,7 +78,7 @@ func (suite *QueryParameterSuite) TestLoad() {
 
 	param, err = LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -93,7 +93,7 @@ func (suite *QueryParameterSuite) TestAdd() {
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -114,7 +114,7 @@ func (suite *QueryParameterSuite) TestUpdate() {
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
@@ -152,7 +152,7 @@ func (suite *QueryParameterSuite) TestQuery() {
 
 	params, err := QueryQueryParameters(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Parameter{
+	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.queryKey: {
 			{
 				Name:          "Alpha",
@@ -172,23 +172,23 @@ func (suite *QueryParameterSuite) TestQuery() {
 
 func t_AddQueryParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	err = AddQueryParameter(dbOrTx, modelKey, queryKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	param, err = LoadQueryParameter(dbOrTx, modelKey, queryKey, paramKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return param
 }
 
 func (suite *QueryParameterSuite) TestVerifyTestObjects() {
 	param := t_AddQueryParameter(suite.T(), suite.db, suite.model.Key, suite.queryKey, "Amount")
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

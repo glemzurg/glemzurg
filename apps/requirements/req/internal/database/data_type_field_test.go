@@ -73,7 +73,7 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 
 	fields, err = LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_TYPE_Key") // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -96,7 +96,7 @@ func (suite *DataTypeFieldSuite) TestAdd() {
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -121,7 +121,7 @@ func (suite *DataTypeFieldSuite) TestUpdate() {
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -162,7 +162,7 @@ func (suite *DataTypeFieldSuite) TestQuery() {
 
 	fields, err := QueryFields(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -195,11 +195,11 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 			},
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	fields, err := QueryFields(suite.db, suite.model.Key)
-	suite.NoError(err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Require().NoError(err)
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",

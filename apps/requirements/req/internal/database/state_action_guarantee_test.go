@@ -77,7 +77,7 @@ func (suite *ActionGuaranteeSuite) TestLoad() {
 
 	key, err := LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionGuaranteeSuite) TestAdd() {
@@ -86,7 +86,7 @@ func (suite *ActionGuaranteeSuite) TestAdd() {
 
 	key, err := LoadActionGuarantee(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionGuaranteeSuite) TestRemove() {
@@ -109,7 +109,7 @@ func (suite *ActionGuaranteeSuite) TestQuery() {
 
 	guarantees, err := QueryActionGuarantees(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, guarantees)
 }

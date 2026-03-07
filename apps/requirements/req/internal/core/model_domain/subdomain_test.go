@@ -72,7 +72,7 @@ func (suite *SubdomainSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.subdomain.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -86,7 +86,7 @@ func (suite *SubdomainSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	subdomain, err := NewSubdomain(key, "Name", "Details", "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Subdomain{
 		Key:        key,
 		Name:       "Name",
@@ -122,7 +122,7 @@ func (suite *SubdomainSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = subdomain.ValidateWithParent(&suite.domainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestSetClassAssociations tests that SetClassAssociations validates parent relationships.
@@ -146,7 +146,7 @@ func (suite *SubdomainSuite) TestSetClassAssociations() {
 	err := subdomain.SetClassAssociations(map[identity.Key]model_class.Association{
 		validAssocKey: validAssoc,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(subdomain.ClassAssociations, 1)
 
 	// Test: error when association has no parent (model-level association).

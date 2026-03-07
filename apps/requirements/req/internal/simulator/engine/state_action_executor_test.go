@@ -89,7 +89,7 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	sae := NewStateActionExecutor(ae)
 
 	violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(violations)
 
 	// The exit action should have incremented exit_count.
@@ -136,7 +136,7 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	sae := NewStateActionExecutor(ae)
 
 	violations, err := sae.ExecuteEntryActions(class, stateOpenKey, instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(violations)
 
 	updated := simState.GetInstance(instance.ID)
@@ -169,7 +169,7 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	sae := NewStateActionExecutor(ae)
 
 	violations, err := sae.ExecuteExitActions(class, stateOpenKey, instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(violations)
 }
 
@@ -194,6 +194,6 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	sae := NewStateActionExecutor(ae)
 
 	_, err := sae.ExecuteEntryActions(class, bogusStateKey, instance)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "not found")
 }

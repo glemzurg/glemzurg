@@ -51,7 +51,7 @@ func (s *LowerTestSuite) SetupTest() {
 
 func (s *LowerTestSuite) TestLowerBooleanLiteral() {
 	result, err := Lower(&ast.BooleanLiteral{Value: true}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	boolLit, ok := result.(*me.BoolLiteral)
 	s.True(ok)
 	s.True(boolLit.Value)
@@ -59,7 +59,7 @@ func (s *LowerTestSuite) TestLowerBooleanLiteral() {
 
 func (s *LowerTestSuite) TestLowerNumberLiteralDecimal() {
 	result, err := Lower(ast.NewNumberLiteral("42"), s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	intLit, ok := result.(*me.IntLiteral)
 	s.True(ok)
 	s.Equal(0, intLit.Value.Cmp(big.NewInt(42)))
@@ -67,7 +67,7 @@ func (s *LowerTestSuite) TestLowerNumberLiteralDecimal() {
 
 func (s *LowerTestSuite) TestLowerNumberLiteralHex() {
 	result, err := Lower(ast.NewHexNumberLiteral("\\h", "FF"), s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	intLit, ok := result.(*me.IntLiteral)
 	s.True(ok)
 	s.Equal(0, intLit.Value.Cmp(big.NewInt(255)))
@@ -75,7 +75,7 @@ func (s *LowerTestSuite) TestLowerNumberLiteralHex() {
 
 func (s *LowerTestSuite) TestLowerNumberLiteralBinary() {
 	result, err := Lower(ast.NewBinaryNumberLiteral("\\b", "1010"), s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	intLit, ok := result.(*me.IntLiteral)
 	s.True(ok)
 	s.Equal(0, intLit.Value.Cmp(big.NewInt(10)))
@@ -83,7 +83,7 @@ func (s *LowerTestSuite) TestLowerNumberLiteralBinary() {
 
 func (s *LowerTestSuite) TestLowerNumberLiteralOctal() {
 	result, err := Lower(ast.NewOctalNumberLiteral("\\o", "17"), s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	intLit, ok := result.(*me.IntLiteral)
 	s.True(ok)
 	s.Equal(0, intLit.Value.Cmp(big.NewInt(15)))
@@ -92,13 +92,13 @@ func (s *LowerTestSuite) TestLowerNumberLiteralOctal() {
 func (s *LowerTestSuite) TestLowerNumberLiteralDecimalPointError() {
 	n := ast.NewDecimalNumberLiteral("3", "14")
 	_, err := Lower(n, s.ctx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Fraction")
 }
 
 func (s *LowerTestSuite) TestLowerStringLiteral() {
 	result, err := Lower(&ast.StringLiteral{Value: "hello"}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	strLit, ok := result.(*me.StringLiteral)
 	s.True(ok)
 	s.Equal("hello", strLit.Value)
@@ -108,7 +108,7 @@ func (s *LowerTestSuite) TestLowerFractionLiteralIntegers() {
 	// 3/4 with integer numerator and denominator → RationalLiteral.
 	frac := ast.NewFraction(ast.NewNumberLiteral("3"), ast.NewNumberLiteral("4"))
 	result, err := Lower(frac, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ratLit, ok := result.(*me.RationalLiteral)
 	s.True(ok)
 	expected := big.NewRat(3, 4)
@@ -119,7 +119,7 @@ func (s *LowerTestSuite) TestLowerFractionNonLiteral() {
 	// balance / 4 → BinaryArith{Op: div, ...}
 	frac := ast.NewFraction(&ast.Identifier{Value: "balance"}, ast.NewNumberLiteral("4"))
 	result, err := Lower(frac, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	arith, ok := result.(*me.BinaryArith)
 	s.True(ok)
 	s.Equal(me.ArithDiv, arith.Op)
@@ -132,7 +132,7 @@ func (s *LowerTestSuite) TestLowerSetLiteral() {
 		ast.NewNumberLiteral("1"),
 		ast.NewNumberLiteral("2"),
 	}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	setLit, ok := result.(*me.SetLiteral)
 	s.True(ok)
 	s.Len(setLit.Elements, 2)
@@ -140,7 +140,7 @@ func (s *LowerTestSuite) TestLowerSetLiteral() {
 
 func (s *LowerTestSuite) TestLowerSetLiteralEmpty() {
 	result, err := Lower(&ast.SetLiteral{}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	setLit, ok := result.(*me.SetLiteral)
 	s.True(ok)
 	s.Empty(setLit.Elements)
@@ -148,7 +148,7 @@ func (s *LowerTestSuite) TestLowerSetLiteralEmpty() {
 
 func (s *LowerTestSuite) TestLowerSetLiteralEnum() {
 	result, err := Lower(&ast.SetLiteralEnum{Values: []string{"a", "b"}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	setLit, ok := result.(*me.SetLiteral)
 	s.True(ok)
 	s.Len(setLit.Elements, 2)
@@ -157,7 +157,7 @@ func (s *LowerTestSuite) TestLowerSetLiteralEnum() {
 
 func (s *LowerTestSuite) TestLowerSetLiteralInt() {
 	result, err := Lower(&ast.SetLiteralInt{Values: []int{1, 2, 3}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	setLit, ok := result.(*me.SetLiteral)
 	s.True(ok)
 	s.Len(setLit.Elements, 3)
@@ -177,7 +177,7 @@ func (s *LowerTestSuite) TestLowerSetConstant() {
 	for _, tt := range tests {
 		s.Run(tt.astValue, func() {
 			result, err := Lower(&ast.SetConstant{Value: tt.astValue}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			sc, ok := result.(*me.SetConstant)
 			s.True(ok)
 			s.Equal(tt.kind, sc.Kind)
@@ -187,7 +187,7 @@ func (s *LowerTestSuite) TestLowerSetConstant() {
 
 func (s *LowerTestSuite) TestLowerSetRange() {
 	result, err := Lower(&ast.SetRange{Start: 1, End: 10}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	sr, ok := result.(*me.SetRange)
 	s.True(ok)
 	s.Equal(0, sr.Start.(*me.IntLiteral).Value.Cmp(big.NewInt(1)))
@@ -199,7 +199,7 @@ func (s *LowerTestSuite) TestLowerSetRangeExpr() {
 		Start: ast.NewNumberLiteral("1"),
 		End:   ast.NewNumberLiteral("10"),
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	sr, ok := result.(*me.SetRange)
 	s.True(ok)
 	s.NotNil(sr.Start)
@@ -211,7 +211,7 @@ func (s *LowerTestSuite) TestLowerTupleLiteral() {
 		ast.NewNumberLiteral("1"),
 		&ast.BooleanLiteral{Value: true},
 	}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	tup, ok := result.(*me.TupleLiteral)
 	s.True(ok)
 	s.Len(tup.Elements, 2)
@@ -222,7 +222,7 @@ func (s *LowerTestSuite) TestLowerRecordInstance() {
 		{Field: &ast.Identifier{Value: "x"}, Expression: ast.NewNumberLiteral("1")},
 		{Field: &ast.Identifier{Value: "y"}, Expression: ast.NewNumberLiteral("2")},
 	}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	rec, ok := result.(*me.RecordLiteral)
 	s.True(ok)
 	s.Len(rec.Fields, 2)
@@ -233,14 +233,14 @@ func (s *LowerTestSuite) TestLowerRecordInstance() {
 
 func (s *LowerTestSuite) TestLowerIdentifierSelf() {
 	result, err := Lower(&ast.Identifier{Value: "self"}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	_, ok := result.(*me.SelfRef)
 	s.True(ok)
 }
 
 func (s *LowerTestSuite) TestLowerIdentifierAttribute() {
 	result, err := Lower(&ast.Identifier{Value: "balance"}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	attrRef, ok := result.(*me.AttributeRef)
 	s.True(ok)
 	s.Contains(attrRef.AttributeKey.String(), "balance")
@@ -248,7 +248,7 @@ func (s *LowerTestSuite) TestLowerIdentifierAttribute() {
 
 func (s *LowerTestSuite) TestLowerIdentifierParameter() {
 	result, err := Lower(&ast.Identifier{Value: "amount"}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	localVar, ok := result.(*me.LocalVar)
 	s.True(ok)
 	s.Equal("amount", localVar.Name)
@@ -256,7 +256,7 @@ func (s *LowerTestSuite) TestLowerIdentifierParameter() {
 
 func (s *LowerTestSuite) TestLowerIdentifierNamedSet() {
 	result, err := Lower(&ast.Identifier{Value: "valid_statuses"}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ref, ok := result.(*me.NamedSetRef)
 	s.True(ok)
 	s.Contains(ref.SetKey.String(), "valid_statuses")
@@ -264,7 +264,7 @@ func (s *LowerTestSuite) TestLowerIdentifierNamedSet() {
 
 func (s *LowerTestSuite) TestLowerIdentifierUnresolved() {
 	_, err := Lower(&ast.Identifier{Value: "unknown"}, s.ctx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unresolved identifier")
 }
 
@@ -272,7 +272,7 @@ func (s *LowerTestSuite) TestLowerExistingValueInExcept() {
 	ctx := *s.ctx
 	ctx.exceptField = "count"
 	result, err := Lower(&ast.ExistingValue{}, &ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	pf, ok := result.(*me.PriorFieldValue)
 	s.True(ok)
 	s.Equal("count", pf.Field)
@@ -280,7 +280,7 @@ func (s *LowerTestSuite) TestLowerExistingValueInExcept() {
 
 func (s *LowerTestSuite) TestLowerExistingValueOutsideExcept() {
 	_, err := Lower(&ast.ExistingValue{}, s.ctx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "EXCEPT")
 }
 
@@ -288,7 +288,7 @@ func (s *LowerTestSuite) TestLowerExistingValueOutsideExcept() {
 
 func (s *LowerTestSuite) TestLowerUnaryNegation() {
 	result, err := Lower(&ast.UnaryNegation{Operator: "-", Right: ast.NewNumberLiteral("5")}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	neg, ok := result.(*me.Negate)
 	s.True(ok)
 	s.NotNil(neg.Expr)
@@ -296,7 +296,7 @@ func (s *LowerTestSuite) TestLowerUnaryNegation() {
 
 func (s *LowerTestSuite) TestLowerUnaryLogic() {
 	result, err := Lower(&ast.UnaryLogic{Operator: "¬", Right: &ast.BooleanLiteral{Value: true}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	not, ok := result.(*me.Not)
 	s.True(ok)
 	s.NotNil(not.Expr)
@@ -304,7 +304,7 @@ func (s *LowerTestSuite) TestLowerUnaryLogic() {
 
 func (s *LowerTestSuite) TestLowerPrimed() {
 	result, err := Lower(&ast.Primed{Base: &ast.Identifier{Value: "balance"}}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ns, ok := result.(*me.NextState)
 	s.True(ok)
 	_, isAttr := ns.Expr.(*me.AttributeRef)
@@ -330,7 +330,7 @@ func (s *LowerTestSuite) TestLowerBinaryArithmetic() {
 			result, err := Lower(&ast.BinaryArithmetic{
 				Left: ast.NewNumberLiteral("1"), Operator: tt.op, Right: ast.NewNumberLiteral("2"),
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			arith, ok := result.(*me.BinaryArith)
 			s.True(ok)
 			s.Equal(tt.expected, arith.Op)
@@ -353,7 +353,7 @@ func (s *LowerTestSuite) TestLowerBinaryLogic() {
 			result, err := Lower(&ast.BinaryLogic{
 				Operator: tt.op, Left: &ast.BooleanLiteral{Value: true}, Right: &ast.BooleanLiteral{Value: false},
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			logic, ok := result.(*me.BinaryLogic)
 			s.True(ok)
 			s.Equal(tt.expected, logic.Op)
@@ -374,7 +374,7 @@ func (s *LowerTestSuite) TestLowerBinaryEquality() {
 			result, err := Lower(&ast.BinaryEquality{
 				Operator: tt.op, Left: ast.NewNumberLiteral("1"), Right: ast.NewNumberLiteral("2"),
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			cmp, ok := result.(*me.Compare)
 			s.True(ok)
 			s.Equal(tt.expected, cmp.Op)
@@ -397,7 +397,7 @@ func (s *LowerTestSuite) TestLowerBinaryComparison() {
 			result, err := Lower(&ast.BinaryComparison{
 				Operator: tt.op, Left: ast.NewNumberLiteral("1"), Right: ast.NewNumberLiteral("2"),
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			cmp, ok := result.(*me.Compare)
 			s.True(ok)
 			s.Equal(tt.expected, cmp.Op)
@@ -419,7 +419,7 @@ func (s *LowerTestSuite) TestLowerBinarySetOperation() {
 			result, err := Lower(&ast.BinarySetOperation{
 				Operator: tt.op, Left: &ast.SetLiteral{}, Right: &ast.SetLiteral{},
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			setOp, ok := result.(*me.SetOp)
 			s.True(ok)
 			s.Equal(tt.expected, setOp.Op)
@@ -442,7 +442,7 @@ func (s *LowerTestSuite) TestLowerBinarySetComparison() {
 			result, err := Lower(&ast.BinarySetComparison{
 				Operator: tt.op, Left: &ast.SetLiteral{}, Right: &ast.SetLiteral{},
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			sc, ok := result.(*me.SetCompare)
 			s.True(ok)
 			s.Equal(tt.expected, sc.Op)
@@ -455,7 +455,7 @@ func (s *LowerTestSuite) TestLowerBinarySetComparisonEquality() {
 	result, err := Lower(&ast.BinarySetComparison{
 		Operator: "=", Left: &ast.SetLiteral{}, Right: &ast.SetLiteral{},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	cmp, ok := result.(*me.Compare)
 	s.True(ok)
 	s.Equal(me.CompareEq, cmp.Op)
@@ -465,7 +465,7 @@ func (s *LowerTestSuite) TestLowerMembership() {
 	result, err := Lower(&ast.Membership{
 		Operator: "∈", Left: ast.NewNumberLiteral("1"), Right: &ast.SetLiteral{},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	mem, ok := result.(*me.Membership)
 	s.True(ok)
 	s.False(mem.Negated)
@@ -475,7 +475,7 @@ func (s *LowerTestSuite) TestLowerMembershipNegated() {
 	result, err := Lower(&ast.Membership{
 		Operator: "∉", Left: ast.NewNumberLiteral("1"), Right: &ast.SetLiteral{},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	mem, ok := result.(*me.Membership)
 	s.True(ok)
 	s.True(mem.Negated)
@@ -494,7 +494,7 @@ func (s *LowerTestSuite) TestLowerBagOperation() {
 			result, err := Lower(&ast.BinaryBagOperation{
 				Operator: tt.op, Left: &ast.SetLiteral{}, Right: &ast.SetLiteral{},
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			bo, ok := result.(*me.BagOp)
 			s.True(ok)
 			s.Equal(tt.expected, bo.Op)
@@ -517,7 +517,7 @@ func (s *LowerTestSuite) TestLowerBagComparison() {
 			result, err := Lower(&ast.BinaryBagComparison{
 				Operator: tt.op, Left: &ast.SetLiteral{}, Right: &ast.SetLiteral{},
 			}, s.ctx)
-			s.NoError(err)
+			s.Require().NoError(err)
 			bc, ok := result.(*me.BagCompare)
 			s.True(ok)
 			s.Equal(tt.expected, bc.Op)
@@ -532,7 +532,7 @@ func (s *LowerTestSuite) TestLowerStringConcat() {
 		Operator: "∘",
 		Operands: []ast.Expression{&ast.StringLiteral{Value: "a"}, &ast.StringLiteral{Value: "b"}},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	sc, ok := result.(*me.StringConcat)
 	s.True(ok)
 	s.Len(sc.Operands, 2)
@@ -546,7 +546,7 @@ func (s *LowerTestSuite) TestLowerTupleConcat() {
 			&ast.TupleLiteral{Elements: []ast.Expression{ast.NewNumberLiteral("2")}},
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	tc, ok := result.(*me.TupleConcat)
 	s.True(ok)
 	s.Len(tc.Operands, 2)
@@ -559,7 +559,7 @@ func (s *LowerTestSuite) TestLowerTupleIndex() {
 		Tuple: &ast.TupleLiteral{Elements: []ast.Expression{ast.NewNumberLiteral("1")}},
 		Index: ast.NewNumberLiteral("1"),
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ti, ok := result.(*me.TupleIndex)
 	s.True(ok)
 	s.NotNil(ti.Tuple)
@@ -571,7 +571,7 @@ func (s *LowerTestSuite) TestLowerStringIndex() {
 		Str:   &ast.StringLiteral{Value: "abc"},
 		Index: ast.NewNumberLiteral("1"),
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	si, ok := result.(*me.StringIndex)
 	s.True(ok)
 	s.NotNil(si.Str)
@@ -583,7 +583,7 @@ func (s *LowerTestSuite) TestLowerFieldAccess() {
 		Base:   &ast.Identifier{Value: "self"},
 		Member: "name",
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	fa, ok := result.(*me.FieldAccess)
 	s.True(ok)
 	s.Equal("name", fa.Field)
@@ -603,7 +603,7 @@ func (s *LowerTestSuite) TestLowerRecordAltered() {
 			},
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ru, ok := result.(*me.RecordUpdate)
 	s.True(ok)
 	s.Len(ru.Alterations, 1)
@@ -625,7 +625,7 @@ func (s *LowerTestSuite) TestLowerRecordAlteredWithExistingValue() {
 			},
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ru, ok := result.(*me.RecordUpdate)
 	s.True(ok)
 
@@ -645,7 +645,7 @@ func (s *LowerTestSuite) TestLowerIfThenElse() {
 		Then:      ast.NewNumberLiteral("1"),
 		Else:      ast.NewNumberLiteral("2"),
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ite, ok := result.(*me.IfThenElse)
 	s.True(ok)
 	s.NotNil(ite.Condition)
@@ -660,7 +660,7 @@ func (s *LowerTestSuite) TestLowerCaseExpr() {
 		},
 		Other: ast.NewNumberLiteral("0"),
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	c, ok := result.(*me.Case)
 	s.True(ok)
 	s.Len(c.Branches, 1)
@@ -673,7 +673,7 @@ func (s *LowerTestSuite) TestLowerCaseExprNoOtherwise() {
 			{Condition: &ast.BooleanLiteral{Value: true}, Result: ast.NewNumberLiteral("1")},
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	c, ok := result.(*me.Case)
 	s.True(ok)
 	s.Nil(c.Otherwise)
@@ -695,7 +695,7 @@ func (s *LowerTestSuite) TestLowerQuantifierForall() {
 			Right:    ast.NewNumberLiteral("0"),
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	q, ok := result.(*me.Quantifier)
 	s.True(ok)
 	s.Equal(me.QuantifierForall, q.Kind)
@@ -718,7 +718,7 @@ func (s *LowerTestSuite) TestLowerQuantifierExists() {
 		},
 		Predicate: &ast.BooleanLiteral{Value: true},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	q, ok := result.(*me.Quantifier)
 	s.True(ok)
 	s.Equal(me.QuantifierExists, q.Kind)
@@ -737,7 +737,7 @@ func (s *LowerTestSuite) TestLowerSetFilter() {
 			Right:    ast.NewNumberLiteral("0"),
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	sf, ok := result.(*me.SetFilter)
 	s.True(ok)
 	s.Equal("x", sf.Variable)
@@ -751,7 +751,7 @@ func (s *LowerTestSuite) TestLowerBuiltinCallAst() {
 		Name: "_Seq!Len",
 		Args: []ast.Expression{&ast.TupleLiteral{Elements: []ast.Expression{ast.NewNumberLiteral("1")}}},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	bc, ok := result.(*me.BuiltinCall)
 	s.True(ok)
 	s.Equal("_Seq", bc.Module)
@@ -766,7 +766,7 @@ func (s *LowerTestSuite) TestLowerFunctionCallBuiltin() {
 		Name:      &ast.Identifier{Value: "Head"},
 		Args:      []ast.Expression{&ast.TupleLiteral{Elements: []ast.Expression{ast.NewNumberLiteral("1")}}},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	bc, ok := result.(*me.BuiltinCall)
 	s.True(ok)
 	s.Equal("_Seq", bc.Module)
@@ -779,7 +779,7 @@ func (s *LowerTestSuite) TestLowerFunctionCallGlobal() {
 		Name: &ast.Identifier{Value: "_Helper"},
 		Args: []ast.Expression{ast.NewNumberLiteral("1")},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	gc, ok := result.(*me.GlobalCall)
 	s.True(ok)
 	s.Contains(gc.FunctionKey.String(), "gfunc")
@@ -790,7 +790,7 @@ func (s *LowerTestSuite) TestLowerFunctionCallSameClassAction() {
 		Name: &ast.Identifier{Value: "Deposit"},
 		Args: []ast.Expression{ast.NewNumberLiteral("100")},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ac, ok := result.(*me.ActionCall)
 	s.True(ok)
 	s.Contains(ac.ActionKey.String(), "action")
@@ -801,7 +801,7 @@ func (s *LowerTestSuite) TestLowerFunctionCallSameClassQuery() {
 		Name: &ast.Identifier{Value: "GetBalance"},
 		Args: nil,
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ac, ok := result.(*me.ActionCall)
 	s.True(ok)
 	s.Contains(ac.ActionKey.String(), "query")
@@ -813,7 +813,7 @@ func (s *LowerTestSuite) TestLowerFunctionCallCrossClass() {
 		Name:      &ast.Identifier{Value: "OtherAction"},
 		Args:      nil,
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	ac, ok := result.(*me.ActionCall)
 	s.True(ok)
 	s.Contains(ac.ActionKey.String(), "otheraction")
@@ -825,7 +825,7 @@ func (s *LowerTestSuite) TestLowerScopedCallModelScope() {
 		FunctionName: &ast.Identifier{Value: "Helper"},
 		Parameter:    &ast.RecordInstance{Bindings: []*ast.FieldBinding{{Field: &ast.Identifier{Value: "x"}, Expression: ast.NewNumberLiteral("1")}}},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	gc, ok := result.(*me.GlobalCall)
 	s.True(ok)
 	s.Contains(gc.FunctionKey.String(), "gfunc")
@@ -835,7 +835,7 @@ func (s *LowerTestSuite) TestLowerScopedCallModelScope() {
 
 func (s *LowerTestSuite) TestLowerParenthesized() {
 	result, err := Lower(&ast.Parenthesized{Inner: ast.NewNumberLiteral("42")}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	intLit, ok := result.(*me.IntLiteral)
 	s.True(ok)
 	s.Equal(0, intLit.Value.Cmp(big.NewInt(42)))
@@ -845,13 +845,13 @@ func (s *LowerTestSuite) TestLowerParenthesized() {
 
 func (s *LowerTestSuite) TestLowerNilExpression() {
 	_, err := Lower(nil, s.ctx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "nil")
 }
 
 func (s *LowerTestSuite) TestLowerRecordTypeExprError() {
 	_, err := Lower(&ast.RecordTypeExpr{}, s.ctx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "type expression")
 }
 
@@ -881,7 +881,7 @@ func (s *LowerTestSuite) TestLoweredExpressionValidates() {
 		},
 	}
 	result, err := Lower(expr, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NoError(result.Validate())
 }
 
@@ -902,7 +902,7 @@ func (s *LowerTestSuite) TestLocalVarShadowsAttribute() {
 			Right:    ast.NewNumberLiteral("0"),
 		},
 	}, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	q, ok := result.(*me.Quantifier)
 	s.True(ok)
 	// Inside predicate, "balance" should be LocalVar, not AttributeRef.
@@ -919,7 +919,7 @@ func (s *LowerTestSuite) TestLowerBigInteger() {
 		IntegerPart: "999999999999999999999999999999",
 	}
 	result, err := Lower(n, s.ctx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	intLit, ok := result.(*me.IntLiteral)
 	s.True(ok)
 	expected, _ := new(big.Int).SetString("999999999999999999999999999999", 10)

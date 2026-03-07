@@ -48,7 +48,7 @@ func (suite *ClassIndexSuite) SetupTest() {
 func (suite *ClassIndexSuite) TestLoad() {
 	// Nothing in database yet.
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Empty(indexes)
 
 	err = dbExec(suite.db, `
@@ -77,7 +77,7 @@ func (suite *ClassIndexSuite) TestLoad() {
 
 	indexes, err = LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []uint{1, 2}, indexes)
+	suite.Equal([]uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestAdd() {
@@ -89,7 +89,7 @@ func (suite *ClassIndexSuite) TestAdd() {
 
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []uint{1, 2}, indexes)
+	suite.Equal([]uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestRemove() {
@@ -104,5 +104,5 @@ func (suite *ClassIndexSuite) TestRemove() {
 
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []uint{2}, indexes)
+	suite.Equal([]uint{2}, indexes)
 }

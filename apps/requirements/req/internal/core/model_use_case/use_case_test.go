@@ -151,7 +151,7 @@ func (suite *UseCaseSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.useCase.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -169,7 +169,7 @@ func (suite *UseCaseSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, &genKeyA, &genKeyB, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(UseCase{
 		Key:             key,
 		Name:            "Name",
@@ -183,7 +183,7 @@ func (suite *UseCaseSuite) TestNew() {
 
 	// Test with nil superclass/subclass.
 	useCase, err = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, nil, nil, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(UseCase{
 		Key:        key,
 		Name:       "Name",
@@ -225,7 +225,7 @@ func (suite *UseCaseSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = useCase.ValidateWithParent(&subdomainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateWithParentAndClasses tests that ValidateWithParentAndClasses validates actor class references.
@@ -294,7 +294,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 		suite.Run(tt.testName, func() {
 			err := tt.useCase.ValidateWithParentAndClasses(&subdomainKey, tt.classes, tt.actorClasses)
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -324,7 +324,7 @@ func (suite *UseCaseSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err = useCase.ValidateWithParentAndClasses(&subdomainKey, classes, actorClasses)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestSetters tests that SetActors and SetScenarios correctly set their fields.
@@ -373,7 +373,7 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		SubclassOfKey:   &genKeyB,
 	}
 	err := useCase.ValidateReferences(generalizations)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Valid: no references.
 	useCase = UseCase{
@@ -382,7 +382,7 @@ func (suite *UseCaseSuite) TestValidateReferences() {
 		Level: _USE_CASE_LEVEL_SEA,
 	}
 	err = useCase.ValidateReferences(generalizations)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Error: superclass references non-existent generalization.
 	useCase = UseCase{

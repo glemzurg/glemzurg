@@ -63,7 +63,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.generalization.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -79,7 +79,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Generalization{
 		Key:        key,
 		Name:       "Name",
@@ -119,5 +119,5 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = gen.ValidateWithParent(&subdomainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }

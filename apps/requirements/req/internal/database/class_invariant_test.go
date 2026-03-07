@@ -74,7 +74,7 @@ func (suite *ClassInvariantSuite) TestLoad() {
 
 	key, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ClassInvariantSuite) TestAdd() {
@@ -83,7 +83,7 @@ func (suite *ClassInvariantSuite) TestAdd() {
 
 	key, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ClassInvariantSuite) TestRemove() {
@@ -106,7 +106,7 @@ func (suite *ClassInvariantSuite) TestQuery() {
 
 	invariants, err := QueryClassInvariants(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.classKey: {suite.logicKey, suite.logicKeyB},
 	}, invariants)
 }

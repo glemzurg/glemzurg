@@ -25,14 +25,14 @@ type GeneralizationFileSuite struct {
 func (suite *GeneralizationFileSuite) TestParseGeneralizationFiles() {
 	// Create a parent subdomain key for testing.
 	domainKey, err := identity.NewDomainKey("test_domain")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	subdomainKey, err := identity.NewSubdomainKey(domainKey, "test_subdomain")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalizationSubKey := "generalization_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERALIZATION_PATH_OK)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

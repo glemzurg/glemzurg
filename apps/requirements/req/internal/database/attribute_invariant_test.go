@@ -74,28 +74,28 @@ func (suite *AttributeInvariantSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attr_key/ainvariant/0'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	key, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *AttributeInvariantSuite) TestAdd() {
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	key, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *AttributeInvariantSuite) TestRemove() {
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Attribute invariant should be gone.
 	_, err = LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
@@ -106,10 +106,10 @@ func (suite *AttributeInvariantSuite) TestQuery() {
 	err := AddAttributeInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKeyB, suite.logicKey},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	invariants, err := QueryAttributeInvariants(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKey, suite.logicKeyB},
 	}, invariants)

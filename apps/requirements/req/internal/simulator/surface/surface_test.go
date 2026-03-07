@@ -257,7 +257,7 @@ func (s *SurfaceSuite) TestValidate_UnknownDomain() {
 		IncludeDomains: []identity.Key{mustKey("domain/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown domain")
 }
 
@@ -267,7 +267,7 @@ func (s *SurfaceSuite) TestValidate_UnknownSubdomain() {
 		IncludeSubdomains: []identity.Key{mustKey("domain/d/subdomain/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown subdomain")
 }
 
@@ -277,7 +277,7 @@ func (s *SurfaceSuite) TestValidate_UnknownIncludeClass() {
 		IncludeClasses: []identity.Key{mustKey("domain/d/subdomain/s/class/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown class")
 }
 
@@ -287,7 +287,7 @@ func (s *SurfaceSuite) TestValidate_UnknownExcludeClass() {
 		ExcludeClasses: []identity.Key{mustKey("domain/d/subdomain/s/class/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown class")
 }
 
@@ -306,7 +306,7 @@ type ResolverSuite struct {
 func (s *ResolverSuite) TestResolve_NilSpec_IncludesAll() {
 	model := buildTwoDomainModel()
 	resolved, err := Resolve(nil, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Should include all 3 classes (Order, Item, Payment).
 	s.Len(resolved.Classes, 3)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -318,7 +318,7 @@ func (s *ResolverSuite) TestResolve_EmptySpec_IncludesAll() {
 	model := buildTwoDomainModel()
 	spec := &SurfaceSpecification{}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(resolved.Classes, 3)
 }
 
@@ -328,7 +328,7 @@ func (s *ResolverSuite) TestResolve_IncludeDomain() {
 		IncludeDomains: []identity.Key{domainKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Only Order and Item from domain D.
 	s.Len(resolved.Classes, 2)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -342,7 +342,7 @@ func (s *ResolverSuite) TestResolve_IncludeSubdomain() {
 		IncludeSubdomains: []identity.Key{subdomain2Key},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Only Payment from subdomain s2.
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, paymentClassKey)
@@ -354,7 +354,7 @@ func (s *ResolverSuite) TestResolve_IncludeClass() {
 		IncludeClasses: []identity.Key{orderClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
 }
@@ -366,7 +366,7 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 		ExcludeClasses: []identity.Key{itemClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Domain D has Order + Item, exclude Item.
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -393,7 +393,7 @@ func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
 	}
 
 	resolved, err := Resolve(nil, &model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Stateless class should be filtered out.
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -407,7 +407,7 @@ func (s *ResolverSuite) TestResolve_AssociationsBothEndpointsInScope() {
 		IncludeDomains: []identity.Key{domainKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(resolved.Associations, 1)
 	for _, assoc := range resolved.Associations {
 		s.Equal("order_items", assoc.Name)
@@ -421,7 +421,7 @@ func (s *ResolverSuite) TestResolve_AssociationOneEndpointExcluded() {
 		IncludeClasses: []identity.Key{orderClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(resolved.Associations)
 	// Should produce a warning about the dropped association.
 	s.NotEmpty(resolved.Warnings)
@@ -480,7 +480,7 @@ func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 	}
 
 	_, err := Resolve(nil, &model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no simulatable classes")
 }
 
@@ -490,7 +490,7 @@ func (s *ResolverSuite) TestResolve_InvalidSpec_Error() {
 		IncludeDomains: []identity.Key{mustKey("domain/nonexistent")},
 	}
 	_, err := Resolve(spec, model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "validation")
 }
 
@@ -505,7 +505,7 @@ func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 		IncludeDomains: []identity.Key{domainKey},
 	}
 	resolved2, err := Resolve(spec2, model2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Only "Order.count > 0" should be included.
 	s.Len(resolved2.ModelInvariants, 1)
 	s.Equal("Order.count > 0", resolved2.ModelInvariants[0].Spec.Specification)
@@ -641,7 +641,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(filtered)
 
 	// Count total classes in filtered model.
@@ -670,7 +670,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_ExcludesFilteredClasses() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Count total classes — should be 1.
 	totalClasses := 0
@@ -697,7 +697,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Count associations at all levels.
 	totalAssocs := len(filtered.ClassAssociations)
@@ -724,7 +724,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesModelMetadata() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("original_key", filtered.Key)
 	s.Equal("Original Name", filtered.Name)
 }
@@ -741,7 +741,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_EmptyDomainsOmitted() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Domain D should have no classes in its subdomain.
 	// Check that domain2 has Payment.

@@ -42,7 +42,7 @@ func (s *RegistryTestSuite) TestRegisterClassFunction() {
 		},
 	)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(def)
 	s.Equal(DefinitionKey("DomainA!SubdomainB!ClassC!Func"), def.Key)
 	s.Equal(KindClassFunction, def.Kind)
@@ -68,7 +68,7 @@ func (s *RegistryTestSuite) TestRegisterGlobalFunction() {
 		nil, // No parameters
 	)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(def)
 	s.Equal(DefinitionKey("_IsoCurrency"), def.Key)
 	s.Equal(KindGlobalFunction, def.Kind)
@@ -87,10 +87,10 @@ func (s *RegistryTestSuite) TestRegisterDuplicateFails() {
 	body := ast.NewIntLiteral(1)
 
 	_, err := r.RegisterGlobalFunction("Test", body, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	_, err = r.RegisterGlobalFunction("Test", body, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "already exists")
 }
 
@@ -118,7 +118,7 @@ func (s *RegistryTestSuite) TestUpdate() {
 	originalVersion := def.Version
 
 	err := r.Update("_Test", body2, []Parameter{{Name: "y", Type: types.String{}}})
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	def, _ = r.Get("_Test")
 	s.Equal(body2, def.Body)
@@ -137,7 +137,7 @@ func (s *RegistryTestSuite) TestDelete() {
 	s.Equal(1, r.Count())
 
 	err = r.Delete("_Test")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, r.Count())
 
 	_, ok := r.GetGlobal("Test")
@@ -151,20 +151,20 @@ func (s *RegistryTestSuite) TestDelete() {
 func (s *RegistryTestSuite) TestParseScopePath() {
 	// Valid class scope
 	path, err := ParseScopePath("A", "B", "C")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(ScopePath("A!B!C"), path)
 
 	// Valid global scope
 	path, err = ParseScopePath("", "", "")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(ScopePath(""), path)
 
 	// Invalid partial scope
 	_, err = ParseScopePath("A", "", "")
-	s.Error(err)
+	s.Require().Error(err)
 
 	_, err = ParseScopePath("A", "B", "")
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *RegistryTestSuite) TestScopePathParts() {
@@ -242,7 +242,7 @@ func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
 	}
 
 	key, def, err := ctx.ResolveCall(call)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(DefinitionKey("_GlobalFunc"), key)
 	s.NotNil(def)
 }
@@ -261,7 +261,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
 	}
 
 	key, def, err := ctx.ResolveCall(call)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
 	s.NotNil(def)
 }
@@ -281,7 +281,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
 	}
 
 	key, def, err := ctx.ResolveCall(call)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
 	s.NotNil(def)
 }
@@ -302,7 +302,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
 	}
 
 	key, def, err := ctx.ResolveCall(call)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
 	s.NotNil(def)
 }
@@ -324,7 +324,7 @@ func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
 	}
 
 	key, def, err := ctx.ResolveCall(call)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
 	s.NotNil(def)
 }
@@ -344,7 +344,7 @@ func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
 	}
 
 	_, _, err = ctx.ResolveCall(call)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "scope mismatch")
 }
 

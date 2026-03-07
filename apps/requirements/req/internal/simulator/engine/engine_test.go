@@ -263,7 +263,7 @@ func (s *EngineSuite) TestNoSimulatableClassesReturnsError() {
 
 	config := SimulationConfig{MaxSteps: 10, RandomSeed: 42}
 	_, err := NewSimulationEngine(model, config)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no simulatable classes")
 }
 

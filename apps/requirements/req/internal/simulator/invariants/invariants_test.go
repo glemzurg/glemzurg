@@ -408,7 +408,7 @@ func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 	model := createTestModel()
 	checker, err := NewInvariantChecker(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(checker)
 	s.Equal(1, checker.GetModelInvariantCount())
 }
@@ -417,7 +417,7 @@ func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	model := createTestModel()
 	checker, err := NewInvariantChecker(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
@@ -435,7 +435,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	checker, err := NewInvariantChecker(&model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
@@ -460,7 +460,7 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 
 	// The checker should handle nil Expression (skip unparsed invariants).
 	checker, err := NewInvariantChecker(&model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, checker.GetModelInvariantCount()) // Unparsed invariants are not counted.
 }
 
@@ -470,7 +470,7 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 
 	// Update model invariant to check something real (already parsed via parsedSpec in createTestModel).
 	invChecker, err := NewInvariantChecker(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	dtChecker, dtViolations := NewDataTypeChecker(model)
 	s.False(dtViolations.HasViolations())

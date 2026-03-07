@@ -21,7 +21,7 @@ func TestNumberSuite(t *testing.T) {
 
 func (s *NumberTestSuite) TestParseZero() {
 	expr, err := ParseExpression("0")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -33,7 +33,7 @@ func (s *NumberTestSuite) TestParseZero() {
 
 func (s *NumberTestSuite) TestParsePositive() {
 	expr, err := ParseExpression("42")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -45,7 +45,7 @@ func (s *NumberTestSuite) TestParsePositive() {
 
 func (s *NumberTestSuite) TestParseWithLeadingZeros() {
 	expr, err := ParseExpression("007")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -61,7 +61,7 @@ func (s *NumberTestSuite) TestParseWithLeadingZeros() {
 
 func (s *NumberTestSuite) TestParseDecimal() {
 	expr, err := ParseExpression("3.14")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -73,7 +73,7 @@ func (s *NumberTestSuite) TestParseDecimal() {
 
 func (s *NumberTestSuite) TestParseDecimalNoWholePart() {
 	expr, err := ParseExpression(".5")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -85,7 +85,7 @@ func (s *NumberTestSuite) TestParseDecimalNoWholePart() {
 
 func (s *NumberTestSuite) TestParseDecimalZeroWholePart() {
 	expr, err := ParseExpression("0.123")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -97,7 +97,7 @@ func (s *NumberTestSuite) TestParseDecimalZeroWholePart() {
 
 func (s *NumberTestSuite) TestParseDecimalWithTrailingZeros() {
 	expr, err := ParseExpression("3.140")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseDecimal,
 		BasePrefix:      "",
@@ -113,7 +113,7 @@ func (s *NumberTestSuite) TestParseDecimalWithTrailingZeros() {
 
 func (s *NumberTestSuite) TestParseBinaryLowerCase() {
 	expr, err := ParseExpression("\\b1010")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseBinary,
 		BasePrefix:      "\\b",
@@ -125,7 +125,7 @@ func (s *NumberTestSuite) TestParseBinaryLowerCase() {
 
 func (s *NumberTestSuite) TestParseBinaryUpperCase() {
 	expr, err := ParseExpression("\\B0011")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseBinary,
 		BasePrefix:      "\\B",
@@ -141,7 +141,7 @@ func (s *NumberTestSuite) TestParseBinaryUpperCase() {
 
 func (s *NumberTestSuite) TestParseOctalLowerCase() {
 	expr, err := ParseExpression("\\o17")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseOctal,
 		BasePrefix:      "\\o",
@@ -153,7 +153,7 @@ func (s *NumberTestSuite) TestParseOctalLowerCase() {
 
 func (s *NumberTestSuite) TestParseOctalUpperCase() {
 	expr, err := ParseExpression("\\O777")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseOctal,
 		BasePrefix:      "\\O",
@@ -169,7 +169,7 @@ func (s *NumberTestSuite) TestParseOctalUpperCase() {
 
 func (s *NumberTestSuite) TestParseHexLowerCase() {
 	expr, err := ParseExpression("\\hff")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseHex,
 		BasePrefix:      "\\h",
@@ -181,7 +181,7 @@ func (s *NumberTestSuite) TestParseHexLowerCase() {
 
 func (s *NumberTestSuite) TestParseHexUpperCase() {
 	expr, err := ParseExpression("\\H0ABC")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseHex,
 		BasePrefix:      "\\H",
@@ -193,7 +193,7 @@ func (s *NumberTestSuite) TestParseHexUpperCase() {
 
 func (s *NumberTestSuite) TestParseHexMixedCase() {
 	expr, err := ParseExpression("\\hDeAdBeEf")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.NumberLiteral{
 		Base:            ast.BaseHex,
 		BasePrefix:      "\\h",

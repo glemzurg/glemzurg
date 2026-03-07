@@ -92,7 +92,7 @@ func (s *CreationChainSuite) TestNoMandatoryAssociationsReturnsEmpty() {
 
 	// Handle creation chain — nothing should cascade.
 	steps, violations, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(steps)
 	s.Empty(violations)
 }
@@ -112,7 +112,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 
 	// Handle creation chain — should cascade and create an Item.
 	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(steps, 1)
 	s.Equal("Item", steps[0].ClassName)
 	s.Equal(StepKindCreation, steps[0].Kind)
@@ -139,7 +139,7 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 
 	// Simulate exceeding depth limit.
 	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, maxCascadeDepth+1)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "max depth")
 }
 
@@ -200,6 +200,6 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 
 	// Handle chain — should fail because Item has no creation transition.
 	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, 0)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no creation transition")
 }

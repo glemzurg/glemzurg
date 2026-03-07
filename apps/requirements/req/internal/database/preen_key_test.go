@@ -54,7 +54,7 @@ func (suite *PreenSuite) TestPreen() {
 		pass := suite.Run(tt.testName, func() {
 			preened, err := preenKey(tt.key)
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				suite.Equal(tt.preened, preened)
 			} else {
 				suite.ErrorContains(err, tt.errstr)

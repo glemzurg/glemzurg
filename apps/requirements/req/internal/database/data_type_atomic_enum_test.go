@@ -68,10 +68,10 @@ func (suite *AtomicEnumSuite) TestLoad() {
 				2
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	atomicEnums, err = LoadAtomicEnums(suite.db, strings.ToUpper(suite.model.Key), "data_Type_Key") // Test case-insensitive.
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.AtomicEnum{
 		"data_type_key": {
 			{Value: "Value1", SortOrder: 1},
@@ -85,10 +85,10 @@ func (suite *AtomicEnumSuite) TestAdd() {
 		Value:     "Value1",
 		SortOrder: 1,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	atomicEnums, err := LoadAtomicEnums(suite.db, suite.model.Key, suite.dataType.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.AtomicEnum{
 		suite.dataType.Key: {
 			{Value: "Value1", SortOrder: 1},
@@ -101,16 +101,16 @@ func (suite *AtomicEnumSuite) TestUpdate() {
 		Value:     "Value1",
 		SortOrder: 1,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateAtomicEnum(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), "Value1", model_data_type.AtomicEnum{
 		Value:     "Value1Updated",
 		SortOrder: 10,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	atomicEnums, err := LoadAtomicEnums(suite.db, suite.model.Key, suite.dataType.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.AtomicEnum{
 		suite.dataType.Key: {
 			{Value: "Value1Updated", SortOrder: 10},
@@ -123,10 +123,10 @@ func (suite *AtomicEnumSuite) TestRemove() {
 		Value:     "Value1",
 		SortOrder: 1,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveAtomicEnum(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), "Value1") // Test case-insensitive.
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	atomicEnums, err := LoadAtomicEnums(suite.db, suite.model.Key, suite.dataType.Key)
 	suite.ErrorIs(err, ErrNotFound)
@@ -138,17 +138,17 @@ func (suite *AtomicEnumSuite) TestQuery() {
 		Value:     "Value",
 		SortOrder: 1,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Add another data type and atomic enum
 	err = AddAtomicEnum(suite.db, suite.model.Key, suite.dataTypeB.Key, model_data_type.AtomicEnum{
 		Value:     "Value",
 		SortOrder: 10,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	atomicEnums, err := QueryAtomicEnums(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.AtomicEnum{
 		suite.dataType.Key: {
 			{Value: "Value", SortOrder: 1},
@@ -172,7 +172,7 @@ func (suite *AtomicEnumSuite) TestBulkInsertAtomicEnums() {
 	suite.Require().NoError(err)
 
 	atomicEnums, err := QueryAtomicEnums(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(map[string][]model_data_type.AtomicEnum{
 		"data_type_key": {
 			{Value: "Value1", SortOrder: 1},

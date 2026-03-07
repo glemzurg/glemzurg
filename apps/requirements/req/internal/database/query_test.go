@@ -77,8 +77,8 @@ func (suite *QuerySuite) TestLoad() {
 
 	classKey, query, err = LoadQuery(suite.db, suite.model.Key, suite.queryKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
@@ -95,8 +95,8 @@ func (suite *QuerySuite) TestAdd() {
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
@@ -120,8 +120,8 @@ func (suite *QuerySuite) TestUpdate() {
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -164,7 +164,7 @@ func (suite *QuerySuite) TestQuery() {
 
 	queries, err := QueryQueries(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Query{
+	suite.Equal(map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{
 				Key:     suite.queryKey,
@@ -190,17 +190,17 @@ func t_AddQuery(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.
 		Name:    queryKey.String(),
 		Details: "Details",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, query, err = LoadQuery(dbOrTx, modelKey, queryKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return query
 }
 
 func (suite *QuerySuite) TestVerifyTestObjects() {
 	query := t_AddQuery(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.queryKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    suite.queryKey.String(),
 		Details: "Details",

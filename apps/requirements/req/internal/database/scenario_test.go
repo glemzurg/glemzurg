@@ -78,8 +78,8 @@ func (suite *ScenarioSuite) TestLoad() {
 
 	useCaseKey, scenario, err = LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.useCase.Key, useCaseKey)
-	assert.Equal(suite.T(), model_scenario.Scenario{
+	suite.Equal(suite.useCase.Key, useCaseKey)
+	suite.Equal(model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
@@ -98,8 +98,8 @@ func (suite *ScenarioSuite) TestAdd() {
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.useCase.Key, useCaseKey)
-	assert.Equal(suite.T(), model_scenario.Scenario{
+	suite.Equal(suite.useCase.Key, useCaseKey)
+	suite.Equal(model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "Name",
 		Details: "Details",
@@ -123,8 +123,8 @@ func (suite *ScenarioSuite) TestUpdate() {
 
 	useCaseKey, scenario, err := LoadScenario(suite.db, suite.model.Key, suite.scenarioKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.useCase.Key, useCaseKey)
-	assert.Equal(suite.T(), model_scenario.Scenario{
+	suite.Equal(suite.useCase.Key, useCaseKey)
+	suite.Equal(model_scenario.Scenario{
 		Key:     suite.scenarioKey,
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -167,7 +167,7 @@ func (suite *ScenarioSuite) TestQueryScenarios() {
 
 	scenarios, err := QueryScenarios(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_scenario.Scenario{
+	suite.Equal(map[identity.Key][]model_scenario.Scenario{
 		suite.useCase.Key: {
 			{
 				Key:     suite.scenarioKey,
@@ -193,10 +193,10 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ide
 		Name:    scenarioKey.String(),
 		Details: "",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, scenario, err = LoadScenario(dbOrTx, modelKey, scenarioKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return scenario
 }

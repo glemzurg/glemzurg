@@ -52,8 +52,8 @@ func (suite *EventSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), event)
+	suite.Empty(classKey)
+	suite.Empty(event)
 
 	err = dbExec(suite.db, `
 		INSERT INTO event
@@ -77,8 +77,8 @@ func (suite *EventSuite) TestLoad() {
 
 	classKey, event, err = LoadEvent(suite.db, suite.model.Key, suite.eventKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Event{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "Name",
 		Details: "Details",
@@ -95,8 +95,8 @@ func (suite *EventSuite) TestAdd() {
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Event{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "Name",
 		Details: "Details",
@@ -120,8 +120,8 @@ func (suite *EventSuite) TestUpdate() {
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Event{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Event{
 		Key:     suite.eventKey,
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -141,8 +141,8 @@ func (suite *EventSuite) TestRemove() {
 
 	classKey, event, err := LoadEvent(suite.db, suite.model.Key, suite.eventKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), event)
+	suite.Empty(classKey)
+	suite.Empty(event)
 }
 
 func (suite *EventSuite) TestQuery() {
@@ -164,7 +164,7 @@ func (suite *EventSuite) TestQuery() {
 
 	events, err := QueryEvents(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Event{
+	suite.Equal(map[identity.Key][]model_state.Event{
 		suite.class.Key: {
 			{
 				Key:     suite.eventKey,
@@ -190,10 +190,10 @@ func t_AddEvent(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.
 		Name:    eventKey.String(),
 		Details: "Details",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, event, err = LoadEvent(dbOrTx, modelKey, eventKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return event
 }

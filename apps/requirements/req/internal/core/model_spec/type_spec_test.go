@@ -77,9 +77,9 @@ func (s *TypeSpecTestSuite) TestValidate() {
 		s.Run(tt.testName, func() {
 			err := tt.spec.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
-				s.Error(err)
+				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
 			}
 		})
@@ -89,7 +89,7 @@ func (s *TypeSpecTestSuite) TestValidate() {
 func (s *TypeSpecTestSuite) TestNew() {
 	// Valid construction with nil parseFunc.
 	spec, err := NewTypeSpec("tla_plus", "Nat", nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("tla_plus", spec.Notation)
 	s.Equal("Nat", spec.Specification)
 	s.Nil(spec.ExpressionType)
@@ -100,7 +100,7 @@ func (s *TypeSpecTestSuite) TestNew() {
 		return &model_expression_type.IntegerType{}, "Int"
 	}
 	spec, err = NewTypeSpec("tla_plus", "Nat", parseFunc)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(spec.ExpressionType)
 	s.True(spec.ParseOk())
 	s.Equal("Int", spec.Specification) // Normalized.
@@ -110,14 +110,14 @@ func (s *TypeSpecTestSuite) TestNew() {
 		return nil, ""
 	}
 	spec, err = NewTypeSpec("tla_plus", "Nat", failFunc)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Nil(spec.ExpressionType)
 	s.False(spec.ParseOk())
 	s.Equal("Nat", spec.Specification) // Unchanged.
 
 	// Invalid notation.
 	_, err = NewTypeSpec("", "Nat", nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Notation")
 
 	// Empty specification skips parseFunc.
@@ -127,7 +127,7 @@ func (s *TypeSpecTestSuite) TestNew() {
 		return nil, ""
 	}
 	spec, err = NewTypeSpec("tla_plus", "", trackFunc)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(called)
 	s.False(spec.ParseOk())
 }

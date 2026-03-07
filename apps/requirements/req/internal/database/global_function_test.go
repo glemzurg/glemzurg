@@ -55,10 +55,10 @@ func (suite *GlobalFunctionSuite) TestLoad() {
 		VALUES
 			('model_key', 'gfunc/key', '_Max', '{x,y}')
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -72,10 +72,10 @@ func (suite *GlobalFunctionSuite) TestAdd() {
 		Name:       "_Max",
 		Parameters: []string{"x", "y"},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -89,10 +89,10 @@ func (suite *GlobalFunctionSuite) TestAddNulls() {
 		Name:       "_Max",
 		Parameters: nil,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Max",
@@ -106,17 +106,17 @@ func (suite *GlobalFunctionSuite) TestUpdate() {
 		Name:       "_Max",
 		Parameters: []string{"x", "y"},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
 		Parameters: []string{"a", "b"},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
@@ -130,17 +130,17 @@ func (suite *GlobalFunctionSuite) TestUpdateNulls() {
 		Name:       "_Max",
 		Parameters: []string{"x", "y"},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateGlobalFunction(suite.db, suite.model.Key, model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
 		Parameters: nil,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	gf, err := LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_logic.GlobalFunction{
 		Key:        suite.gfKey,
 		Name:       "_Min",
@@ -154,10 +154,10 @@ func (suite *GlobalFunctionSuite) TestRemove() {
 		Name:       "_Max",
 		Parameters: []string{"x", "y"},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Global function should be gone.
 	_, err = LoadGlobalFunction(suite.db, suite.model.Key, suite.gfKey)
@@ -177,10 +177,10 @@ func (suite *GlobalFunctionSuite) TestQuery() {
 			Parameters: []string{"x", "y"},
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	gfs, err := QueryGlobalFunctions(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_logic.GlobalFunction{
 		{
 			Key:        suite.gfKey,

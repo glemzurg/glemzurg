@@ -56,7 +56,7 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.obj.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -68,7 +68,7 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 func (suite *UseCaseSharedSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	obj, err := NewUseCaseShared("include", "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
@@ -95,5 +95,5 @@ func (suite *UseCaseSharedSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err = obj.ValidateWithParent()
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }

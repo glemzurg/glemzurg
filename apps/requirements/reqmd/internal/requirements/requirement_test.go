@@ -136,10 +136,10 @@ The body text.`,
 		requirement, err := newRequirement(test.ref, test.filename, test.text)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.requirement, requirement, testName)
+			suite.Equal(test.requirement, requirement, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), requirement, testName)
+			suite.Empty(requirement, testName)
 		}
 	}
 }
@@ -207,7 +207,7 @@ The body text.`,
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		value, err := test.requirement.String(nil)
 		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.text, value, testName)
+		suite.Equal(test.text, value, testName)
 	}
 }
 
@@ -270,10 +270,10 @@ The body text.`,
 		refLinkMarkdown, err := req.RefLink(test.fromFilename)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.refLinkMarkdown, refLinkMarkdown, testName)
+			suite.Equal(test.refLinkMarkdown, refLinkMarkdown, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), refLinkMarkdown, testName)
+			suite.Empty(refLinkMarkdown, testName)
 		}
 	}
 }
@@ -337,10 +337,10 @@ The body text.`,
 		refLinkMarkdown, err := req.ReferencedFromLink(test.fromFilename)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.referencedFromLinkMarkdown, refLinkMarkdown, testName)
+			suite.Equal(test.referencedFromLinkMarkdown, refLinkMarkdown, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), refLinkMarkdown, testName)
+			suite.Empty(refLinkMarkdown, testName)
 		}
 	}
 }
@@ -376,7 +376,7 @@ Some text.`,
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		title, body := splitReq(test.reqText)
-		assert.Equal(suite.T(), test.title, title, testName)
-		assert.Equal(suite.T(), test.body, body, testName)
+		suite.Equal(test.title, title, testName)
+		suite.Equal(test.body, body, testName)
 	}
 }

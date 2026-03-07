@@ -49,7 +49,7 @@ func (suite *ParameterSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.param.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -61,7 +61,7 @@ func (suite *ParameterSuite) TestValidate() {
 func (suite *ParameterSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	param, err := NewParameter("amount", "Nat")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal("amount", param.Name)
 	suite.Equal("Nat", param.DataTypeRules)
 	// DataType may or may not be set depending on whether the parser is available
@@ -87,5 +87,5 @@ func (suite *ParameterSuite) TestValidateWithParent() {
 		DataTypeRules: "Nat",
 	}
 	err = param.ValidateWithParent()
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }

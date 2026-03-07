@@ -57,7 +57,7 @@ func (suite *NamedSetSuite) TestLoad() {
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_named_set.NamedSet{
+	suite.Equal(model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
@@ -76,7 +76,7 @@ func (suite *NamedSetSuite) TestAdd() {
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_named_set.NamedSet{
+	suite.Equal(model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
@@ -97,7 +97,7 @@ func (suite *NamedSetSuite) TestAddWithTypeSpec() {
 
 	ns, err := LoadNamedSet(suite.db, suite.model.Key, suite.nsKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_named_set.NamedSet{
+	suite.Equal(model_named_set.NamedSet{
 		Key:         suite.nsKey,
 		Name:        "_ValidStatuses",
 		Description: "Valid statuses",
@@ -142,7 +142,7 @@ func (suite *NamedSetSuite) TestQuery() {
 
 	nss, err := QueryNamedSets(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_named_set.NamedSet{
+	suite.Equal([]model_named_set.NamedSet{
 		{
 			Key:         suite.nsKey,
 			Name:        "_Max",

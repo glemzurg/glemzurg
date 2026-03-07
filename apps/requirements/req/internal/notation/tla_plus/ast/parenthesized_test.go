@@ -56,7 +56,7 @@ func (suite *ParenExprSuite) TestString() {
 func (suite *ParenExprSuite) TestASCII() {
 	// ASCII should be same as String for ParenExpr
 	p := &ParenExpr{Inner: &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}}
-	assert.Equal(suite.T(), p.String(), p.ASCII())
+	suite.Equal(p.String(), p.ASCII())
 }
 
 func (suite *ParenExprSuite) TestValidate() {
@@ -96,7 +96,7 @@ func (suite *ParenExprSuite) TestValidate() {
 func (suite *ParenExprSuite) TestNewParenExpr() {
 	inner := &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}
 	p := NewParenExpr(inner)
-	assert.Equal(suite.T(), inner, p.Inner)
+	suite.Equal(inner, p.Inner)
 }
 
 func (suite *ParenExprSuite) TestExpressionNode() {

@@ -32,10 +32,10 @@ func (suite *DomainSuite) TestParseDomainFiles() {
 			var expected inputDomain
 
 			actual, err := parseDomain([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			assert.Equal(t, expected, *actual, testName)
 		})

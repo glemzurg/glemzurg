@@ -60,7 +60,7 @@ func (suite *InvariantSuite) TestLoad() {
 
 	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.invariantKey, key)
+	suite.Equal(suite.invariantKey, key)
 }
 
 func (suite *InvariantSuite) TestAdd() {
@@ -69,7 +69,7 @@ func (suite *InvariantSuite) TestAdd() {
 
 	key, err := LoadInvariant(suite.db, suite.model.Key, suite.invariantKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.invariantKey, key)
+	suite.Equal(suite.invariantKey, key)
 }
 
 func (suite *InvariantSuite) TestRemove() {
@@ -93,7 +93,7 @@ func (suite *InvariantSuite) TestQuery() {
 
 	keys, err := QueryInvariants(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []identity.Key{
+	suite.Equal([]identity.Key{
 		suite.invariantKey,
 		suite.invariantKeyB,
 	}, keys)

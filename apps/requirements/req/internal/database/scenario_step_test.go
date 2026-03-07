@@ -119,10 +119,10 @@ func (suite *StepSuite) TestLoad() {
 				NULL
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	scenarioKey, parentStepKey, sortOrder, step, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.scenario.Key, scenarioKey)
 	suite.Nil(parentStepKey)
 	suite.Equal(0, sortOrder)
@@ -149,10 +149,10 @@ func (suite *StepSuite) TestAdd() {
 	}
 
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	scenarioKey, parentStepKey, sortOrder, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.scenario.Key, scenarioKey)
 	suite.Nil(parentStepKey)
 	suite.Equal(0, sortOrder)
@@ -166,7 +166,7 @@ func (suite *StepSuite) TestAddWithParent() {
 		StepType: model_scenario.STEP_TYPE_SEQUENCE,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, rootStep)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Add child step with parent.
 	parentKey := suite.stepKey(0)
@@ -180,10 +180,10 @@ func (suite *StepSuite) TestAddWithParent() {
 		EventKey:      &suite.event.Key,
 	}
 	err = AddStep(suite.db, suite.model.Key, suite.scenario.Key, &parentKey, 0, childStep)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	scenarioKey, loadedParent, sortOrder, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(suite.scenario.Key, scenarioKey)
 	suite.NotNil(loadedParent)
 	suite.Equal(suite.stepKey(0), *loadedParent)
@@ -203,7 +203,7 @@ func (suite *StepSuite) TestUpdate() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Update to a query leaf.
 	updated := model_scenario.Step{
@@ -216,10 +216,10 @@ func (suite *StepSuite) TestUpdate() {
 		QueryKey:      &suite.query.Key,
 	}
 	err = UpdateStep(suite.db, suite.model.Key, 0, updated)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	_, _, _, loaded, err := LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(updated, loaded)
 }
 
@@ -234,10 +234,10 @@ func (suite *StepSuite) TestRemove() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
 	suite.ErrorIs(err, ErrNotFound)
@@ -273,11 +273,11 @@ func (suite *StepSuite) TestQuerySteps() {
 	// Flatten and insert.
 	rows := flattenSteps(suite.scenario.Key, &rootStep)
 	err := AddSteps(suite.db, suite.model.Key, rows)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Query and reconstruct.
 	stepsMap, err := QuerySteps(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(stepsMap, 1)
 
 	reconstructed := stepsMap[suite.scenario.Key]
@@ -303,7 +303,7 @@ func (suite *StepSuite) TestFKScenario() {
 
 	// Insert with non-existent scenario_key should fail.
 	err := AddStep(suite.db, suite.model.Key, bogusScenarioKey, nil, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKScenarioCascade tests fk_step_scenario ON DELETE CASCADE: deleting the scenario deletes its steps.
@@ -318,11 +318,11 @@ func (suite *StepSuite) TestFKScenarioCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the scenario.
 	err = RemoveScenario(suite.db, suite.model.Key, suite.scenario.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
@@ -345,7 +345,7 @@ func (suite *StepSuite) TestFKParent() {
 
 	// Insert with non-existent parent_step_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, &bogusParentKey, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKParentCascade tests fk_step_parent ON DELETE CASCADE: deleting a parent step deletes its children.
@@ -356,7 +356,7 @@ func (suite *StepSuite) TestFKParentCascade() {
 		StepType: model_scenario.STEP_TYPE_SEQUENCE,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, rootStep)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Add child step.
 	parentKey := suite.stepKey(0)
@@ -370,11 +370,11 @@ func (suite *StepSuite) TestFKParentCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err = AddStep(suite.db, suite.model.Key, suite.scenario.Key, &parentKey, 0, childStep)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the parent step.
 	err = RemoveStep(suite.db, suite.model.Key, suite.stepKey(0))
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Child should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(1))
@@ -397,7 +397,7 @@ func (suite *StepSuite) TestFKFromObject() {
 
 	// Insert with non-existent from_object_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKFromObjectCascade tests fk_step_from_object ON DELETE CASCADE: deleting the from_object deletes the step.
@@ -412,11 +412,11 @@ func (suite *StepSuite) TestFKFromObjectCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the from_object.
 	err = RemoveObject(suite.db, suite.model.Key, suite.fromObj.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
@@ -439,7 +439,7 @@ func (suite *StepSuite) TestFKToObject() {
 
 	// Insert with non-existent to_object_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKToObjectCascade tests fk_step_to_object ON DELETE CASCADE: deleting the to_object deletes the step.
@@ -454,11 +454,11 @@ func (suite *StepSuite) TestFKToObjectCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the to_object.
 	err = RemoveObject(suite.db, suite.model.Key, suite.toObj.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
@@ -481,7 +481,7 @@ func (suite *StepSuite) TestFKEvent() {
 
 	// Insert with non-existent event_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKEventCascade tests fk_step_event ON DELETE CASCADE: deleting the event deletes the step.
@@ -496,11 +496,11 @@ func (suite *StepSuite) TestFKEventCascade() {
 		EventKey:      &suite.event.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the event.
 	err = RemoveEvent(suite.db, suite.model.Key, suite.class.Key, suite.event.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
@@ -523,7 +523,7 @@ func (suite *StepSuite) TestFKQuery() {
 
 	// Insert with non-existent query_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKQueryCascade tests fk_step_query ON DELETE CASCADE: deleting the query deletes the step.
@@ -538,11 +538,11 @@ func (suite *StepSuite) TestFKQueryCascade() {
 		QueryKey:      &suite.query.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the query.
 	err = RemoveQuery(suite.db, suite.model.Key, suite.class.Key, suite.query.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))
@@ -565,7 +565,7 @@ func (suite *StepSuite) TestFKScenarioRef() {
 
 	// Insert with non-existent scenario_ref_key should fail.
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.Error(err)
+	suite.Require().Error(err)
 }
 
 // TestFKScenarioRefCascade tests fk_step_scenario_ref ON DELETE CASCADE: deleting the referenced scenario deletes the step.
@@ -584,11 +584,11 @@ func (suite *StepSuite) TestFKScenarioRefCascade() {
 		ScenarioKey:   &scenarioB.Key,
 	}
 	err := AddStep(suite.db, suite.model.Key, suite.scenario.Key, nil, 0, step)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Delete the referenced scenario.
 	err = RemoveScenario(suite.db, suite.model.Key, scenarioB.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Step should be gone.
 	_, _, _, _, err = LoadStep(suite.db, suite.model.Key, suite.stepKey(0))

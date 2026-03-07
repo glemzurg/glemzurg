@@ -24,7 +24,7 @@ type IdentifierEvalSuite struct {
 func (s *IdentifierEvalSuite) TestIdentifier_EvalSimple() {
 	// Parse "x" and evaluate it with x = 42
 	expr, err := parser.ParseExpression("x")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -39,7 +39,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_EvalSimple() {
 func (s *IdentifierEvalSuite) TestIdentifier_EvalNotFound() {
 	// Parse "undefined" and evaluate it without binding
 	expr, err := parser.ParseExpression("undefined")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -51,7 +51,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_EvalNotFound() {
 func (s *IdentifierEvalSuite) TestIdentifier_EvalSelf() {
 	// Parse "self" and evaluate with self bound
 	expr, err := parser.ParseExpression("self")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	selfRecord := object.NewRecordFromFields(map[string]object.Object{
 		"id":   object.NewNatural(123),
@@ -75,7 +75,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_EvalSelf() {
 func (s *IdentifierEvalSuite) TestExistingValue_Eval() {
 	// Parse "@" and evaluate with existing value set
 	expr, err := parser.ParseExpression("@")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	existingValue := object.NewNatural(99)
 	bindings := NewBindings()
@@ -91,7 +91,7 @@ func (s *IdentifierEvalSuite) TestExistingValue_Eval() {
 func (s *IdentifierEvalSuite) TestExistingValue_OutsideExceptContext() {
 	// Parse "@" and evaluate without existing value set
 	expr, err := parser.ParseExpression("@")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -107,7 +107,7 @@ func (s *IdentifierEvalSuite) TestExistingValue_OutsideExceptContext() {
 func (s *IdentifierEvalSuite) TestFieldAccess_Eval() {
 	// Parse "person.name" and evaluate
 	expr, err := parser.ParseExpression("person.name")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	personRecord := object.NewRecordFromFields(map[string]object.Object{
 		"name": object.NewString("Alice"),
@@ -127,7 +127,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_Eval() {
 func (s *IdentifierEvalSuite) TestFieldAccess_FieldNotFound() {
 	// Parse "person.unknown" and evaluate
 	expr, err := parser.ParseExpression("person.unknown")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	personRecord := object.NewRecordFromFields(map[string]object.Object{
 		"name": object.NewString("Alice"),
@@ -145,7 +145,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_FieldNotFound() {
 func (s *IdentifierEvalSuite) TestFieldAccess_NotARecord() {
 	// Parse "x.value" where x is a number
 	expr, err := parser.ParseExpression("x.value")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -159,7 +159,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_NotARecord() {
 func (s *IdentifierEvalSuite) TestFieldAccess_ExistingValue() {
 	// Parse "@.status" and evaluate with existing record
 	expr, err := parser.ParseExpression("@.status")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	existingRecord := object.NewRecordFromFields(map[string]object.Object{
 		"status": object.NewString("active"),
@@ -183,7 +183,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_ExistingValue() {
 func (s *IdentifierEvalSuite) TestIdentifier_InArithmeticExpr() {
 	// Parse "x + y * 2" and evaluate
 	expr, err := parser.ParseExpression("x + y * 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(10), NamespaceGlobal)
@@ -200,7 +200,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_InArithmeticExpr() {
 func (s *IdentifierEvalSuite) TestIdentifier_InComparisonExpr() {
 	// Parse "age > 18" and evaluate
 	expr, err := parser.ParseExpression("age > 18")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("age", object.NewNatural(25), NamespaceGlobal)
@@ -215,7 +215,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_InComparisonExpr() {
 func (s *IdentifierEvalSuite) TestIdentifier_InLogicExpr() {
 	// Parse "a /\ b" and evaluate
 	expr, err := parser.ParseExpression("a /\\ b")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("a", object.NewBoolean(true), NamespaceGlobal)
@@ -231,7 +231,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_InLogicExpr() {
 func (s *IdentifierEvalSuite) TestFieldAccess_InComparisonExpr() {
 	// Parse "person.age > 18" and evaluate
 	expr, err := parser.ParseExpression("person.age > 18")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	personRecord := object.NewRecordFromFields(map[string]object.Object{
 		"name": object.NewString("Alice"),
@@ -251,7 +251,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_InComparisonExpr() {
 func (s *IdentifierEvalSuite) TestExistingValue_InArithmeticExpr() {
 	// Parse "@ + 1" and evaluate
 	expr, err := parser.ParseExpression("@ + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.SetExistingValue(object.NewNatural(41))
@@ -266,7 +266,7 @@ func (s *IdentifierEvalSuite) TestExistingValue_InArithmeticExpr() {
 func (s *IdentifierEvalSuite) TestFieldAccess_ExistingValueInExpr() {
 	// Parse "@.count + 1" and evaluate
 	expr, err := parser.ParseExpression("@.count + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	existingRecord := object.NewRecordFromFields(map[string]object.Object{
 		"count": object.NewNatural(9),
@@ -289,7 +289,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_ExistingValueInExpr() {
 func (s *IdentifierEvalSuite) TestIdentifier_Equality() {
 	// Parse "x = y" and evaluate
 	expr, err := parser.ParseExpression("x = y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -305,7 +305,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_Equality() {
 func (s *IdentifierEvalSuite) TestIdentifier_NotEqual() {
 	// Parse "x /= y" and evaluate (or x ≠ y)
 	expr, err := parser.ParseExpression("x /= y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -325,7 +325,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_NotEqual() {
 func (s *IdentifierEvalSuite) TestIdentifier_Negation() {
 	// Parse "-x" and evaluate
 	expr, err := parser.ParseExpression("-x")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -340,7 +340,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_Negation() {
 func (s *IdentifierEvalSuite) TestIdentifier_LogicNegation() {
 	// Parse "~flag" and evaluate
 	expr, err := parser.ParseExpression("~flag")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("flag", object.NewBoolean(true), NamespaceGlobal)
@@ -359,7 +359,7 @@ func (s *IdentifierEvalSuite) TestIdentifier_LogicNegation() {
 func (s *IdentifierEvalSuite) TestFieldAccess_Chained() {
 	// Parse "person.address.city" and evaluate
 	expr, err := parser.ParseExpression("person.address.city")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Create nested records
 	addressRecord := object.NewRecordFromFields(map[string]object.Object{
@@ -384,7 +384,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_Chained() {
 func (s *IdentifierEvalSuite) TestFieldAccess_ChainedExistingValue() {
 	// Parse "@.a.b" and evaluate
 	expr, err := parser.ParseExpression("@.a.b")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Create nested records
 	innerRecord := object.NewRecordFromFields(map[string]object.Object{
@@ -411,7 +411,7 @@ func (s *IdentifierEvalSuite) TestFieldAccess_ChainedExistingValue() {
 func (s *IdentifierEvalSuite) TestPrimed_ReadCurrentValue() {
 	// Parse "x'" and evaluate - should read current value if not primed
 	expr, err := parser.ParseExpression("x'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -426,7 +426,7 @@ func (s *IdentifierEvalSuite) TestPrimed_ReadCurrentValue() {
 func (s *IdentifierEvalSuite) TestPrimed_ReadPrimedValue() {
 	// Parse "x'" and evaluate - should read primed value if set
 	expr, err := parser.ParseExpression("x'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(42), NamespaceGlobal)
@@ -442,7 +442,7 @@ func (s *IdentifierEvalSuite) TestPrimed_ReadPrimedValue() {
 func (s *IdentifierEvalSuite) TestPrimed_InExpression() {
 	// Parse "x' + 1" and evaluate
 	expr, err := parser.ParseExpression("x' + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewNatural(41), NamespaceGlobal)
@@ -457,7 +457,7 @@ func (s *IdentifierEvalSuite) TestPrimed_InExpression() {
 func (s *IdentifierEvalSuite) TestPrimed_UndefinedVariable() {
 	// Parse "undefined'" and evaluate without binding
 	expr, err := parser.ParseExpression("undefined'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -469,7 +469,7 @@ func (s *IdentifierEvalSuite) TestPrimed_UndefinedVariable() {
 func (s *IdentifierEvalSuite) TestPrimed_FieldAccess() {
 	// Parse "record.field'" and evaluate
 	expr, err := parser.ParseExpression("record.field'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	recordObj := object.NewRecordFromFields(map[string]object.Object{
 		"field": object.NewNatural(42),
@@ -489,7 +489,7 @@ func (s *IdentifierEvalSuite) TestPrimed_FieldAccessWithPrimedRecord() {
 	// Test that record.field' reads from the primed record, not the current one.
 	// This is the key semantic: record.field' should read from record' (next state).
 	expr, err := parser.ParseExpression("record.field'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Current state: record.field = 10
 	currentRecord := object.NewRecordFromFields(map[string]object.Object{
@@ -517,7 +517,7 @@ func (s *IdentifierEvalSuite) TestPrimed_CompareCurrentAndNextState() {
 	// Test the use case: record.field' > record.field
 	// This tests that an integer field increased in value.
 	expr, err := parser.ParseExpression("record.value' > record.value")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Current state: record.value = 10
 	currentRecord := object.NewRecordFromFields(map[string]object.Object{
@@ -544,7 +544,7 @@ func (s *IdentifierEvalSuite) TestPrimed_CompareCurrentAndNextState() {
 func (s *IdentifierEvalSuite) TestPrimed_CompareCurrentAndNextState_NotIncreased() {
 	// Test the opposite: when the value didn't increase
 	expr, err := parser.ParseExpression("record.value' > record.value")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Current state: record.value = 10
 	currentRecord := object.NewRecordFromFields(map[string]object.Object{
@@ -571,7 +571,7 @@ func (s *IdentifierEvalSuite) TestPrimed_CompareCurrentAndNextState_NotIncreased
 func (s *IdentifierEvalSuite) TestPrimed_ChainedFieldAccessWithPrimedRecord() {
 	// Test record.a.b' with primed record
 	expr, err := parser.ParseExpression("record.inner.value'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Current state
 	currentInner := object.NewRecordFromFields(map[string]object.Object{

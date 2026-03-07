@@ -32,10 +32,10 @@ func (suite *ClassSuite) TestParseClassFiles() {
 			var expected inputClass
 
 			actual, err := parseClass([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			assert.Equal(t, expected.Name, actual.Name, testName+" name")
 			assert.Equal(t, expected.Details, actual.Details, testName+" details")

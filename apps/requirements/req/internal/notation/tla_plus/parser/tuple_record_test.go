@@ -21,7 +21,7 @@ type TupleRecordSuite struct {
 
 func (s *TupleRecordSuite) TestTupleLiteral_Empty_ASCII() {
 	expr, err := ParseExpression("<<>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -30,7 +30,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_Empty_ASCII() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_Empty_Unicode() {
 	expr, err := ParseExpression("⟨⟩")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -39,7 +39,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_Empty_Unicode() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_Single() {
 	expr, err := ParseExpression("<<1>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -48,7 +48,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_Single() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_Multiple_ASCII() {
 	expr, err := ParseExpression("<<1, 2, 3>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -57,7 +57,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_Multiple_ASCII() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_Multiple_Unicode() {
 	expr, err := ParseExpression("⟨1, 2, 3⟩")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -66,7 +66,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_Multiple_Unicode() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_WithVariables() {
 	expr, err := ParseExpression("<<a, b, c>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -81,7 +81,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_WithVariables() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_WithExpressions() {
 	expr, err := ParseExpression("<<1 + 2, x * y, TRUE>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -90,7 +90,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_WithExpressions() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_Nested() {
 	expr, err := ParseExpression("<<1, <<2, 3>>, 4>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -104,7 +104,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_Nested() {
 
 func (s *TupleRecordSuite) TestTupleLiteral_String() {
 	expr, err := ParseExpression("<<1, 2>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -118,7 +118,7 @@ func (s *TupleRecordSuite) TestTupleLiteral_String() {
 
 func (s *TupleRecordSuite) TestTupleIndex_Simple() {
 	expr, err := ParseExpression("tuple[1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	idx, ok := expr.(*ast.TupleIndex)
 	s.True(ok, "expected *ast.TupleIndex, got %T", expr)
@@ -130,7 +130,7 @@ func (s *TupleRecordSuite) TestTupleIndex_Simple() {
 
 func (s *TupleRecordSuite) TestTupleIndex_Literal() {
 	expr, err := ParseExpression("<<1, 2, 3>>[2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	idx, ok := expr.(*ast.TupleIndex)
 	s.True(ok, "expected *ast.TupleIndex, got %T", expr)
@@ -141,7 +141,7 @@ func (s *TupleRecordSuite) TestTupleIndex_Literal() {
 
 func (s *TupleRecordSuite) TestTupleIndex_WithExpression() {
 	expr, err := ParseExpression("tuple[i + 1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	idx, ok := expr.(*ast.TupleIndex)
 	s.True(ok, "expected *ast.TupleIndex, got %T", expr)
@@ -153,7 +153,7 @@ func (s *TupleRecordSuite) TestTupleIndex_WithExpression() {
 func (s *TupleRecordSuite) TestTupleIndex_Chained() {
 	// tuple[1][2] = (tuple[1])[2]
 	expr, err := ParseExpression("matrix[1][2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outerIdx, ok := expr.(*ast.TupleIndex)
 	s.True(ok, "expected outer *ast.TupleIndex, got %T", expr)
@@ -169,7 +169,7 @@ func (s *TupleRecordSuite) TestTupleIndex_Chained() {
 func (s *TupleRecordSuite) TestTupleIndex_MixedWithFieldAccess() {
 	// record.tuple[1] = (record.tuple)[1]
 	expr, err := ParseExpression("record.tuple[1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	idx, ok := expr.(*ast.TupleIndex)
 	s.True(ok, "expected *ast.TupleIndex, got %T", expr)
@@ -185,7 +185,7 @@ func (s *TupleRecordSuite) TestTupleIndex_MixedWithFieldAccess() {
 
 func (s *TupleRecordSuite) TestRecordInstance_Single_ASCII() {
 	expr, err := ParseExpression("[name |-> \"Alice\"]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -195,7 +195,7 @@ func (s *TupleRecordSuite) TestRecordInstance_Single_ASCII() {
 
 func (s *TupleRecordSuite) TestRecordInstance_Single_Unicode() {
 	expr, err := ParseExpression("[name ↦ \"Alice\"]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -205,7 +205,7 @@ func (s *TupleRecordSuite) TestRecordInstance_Single_Unicode() {
 
 func (s *TupleRecordSuite) TestRecordInstance_Multiple() {
 	expr, err := ParseExpression("[name |-> \"Alice\", age |-> 30]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -216,7 +216,7 @@ func (s *TupleRecordSuite) TestRecordInstance_Multiple() {
 
 func (s *TupleRecordSuite) TestRecordInstance_WithExpressions() {
 	expr, err := ParseExpression("[x |-> 1 + 2, y |-> a * b]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -229,7 +229,7 @@ func (s *TupleRecordSuite) TestRecordInstance_WithExpressions() {
 
 func (s *TupleRecordSuite) TestRecordInstance_Nested() {
 	expr, err := ParseExpression("[person |-> [name |-> \"Alice\", age |-> 30]]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -242,7 +242,7 @@ func (s *TupleRecordSuite) TestRecordInstance_Nested() {
 
 func (s *TupleRecordSuite) TestRecordInstance_String() {
 	expr, err := ParseExpression("[x |-> 1, y |-> 2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -256,7 +256,7 @@ func (s *TupleRecordSuite) TestRecordInstance_String() {
 
 func (s *TupleRecordSuite) TestRecordAltered_Single() {
 	expr, err := ParseExpression("[r EXCEPT !.count = 10]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
@@ -267,7 +267,7 @@ func (s *TupleRecordSuite) TestRecordAltered_Single() {
 
 func (s *TupleRecordSuite) TestRecordAltered_Multiple() {
 	expr, err := ParseExpression("[record EXCEPT !.field1 = 1, !.field2 = 2, !.field3 = 3]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
@@ -281,7 +281,7 @@ func (s *TupleRecordSuite) TestRecordAltered_Multiple() {
 func (s *TupleRecordSuite) TestRecordAltered_WithAt() {
 	// @ references the current value of the field
 	expr, err := ParseExpression("[r EXCEPT !.count = @ + 1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
@@ -298,7 +298,7 @@ func (s *TupleRecordSuite) TestRecordAltered_WithAt() {
 
 func (s *TupleRecordSuite) TestRecordAltered_MultipleWithAt() {
 	expr, err := ParseExpression("[r EXCEPT !.count = @ + 1, !.total = @ * 2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
@@ -309,7 +309,7 @@ func (s *TupleRecordSuite) TestRecordAltered_MultipleWithAt() {
 
 func (s *TupleRecordSuite) TestRecordAltered_WithExpression() {
 	expr, err := ParseExpression("[r EXCEPT !.value = x + y * 2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
@@ -318,7 +318,7 @@ func (s *TupleRecordSuite) TestRecordAltered_WithExpression() {
 
 func (s *TupleRecordSuite) TestRecordAltered_String() {
 	expr, err := ParseExpression("[r EXCEPT !.x = 1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	altered, ok := expr.(*ast.RecordAltered)
 	s.True(ok, "expected *ast.RecordAltered, got %T", expr)
@@ -332,7 +332,7 @@ func (s *TupleRecordSuite) TestRecordAltered_String() {
 
 func (s *TupleRecordSuite) TestMixed_RecordWithTuple() {
 	expr, err := ParseExpression("[point |-> <<1, 2, 3>>]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	record, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -345,7 +345,7 @@ func (s *TupleRecordSuite) TestMixed_RecordWithTuple() {
 
 func (s *TupleRecordSuite) TestMixed_TupleWithRecord() {
 	expr, err := ParseExpression("<<[x |-> 1], [x |-> 2]>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	tuple, ok := expr.(*ast.TupleLiteral)
 	s.True(ok, "expected *ast.TupleLiteral, got %T", expr)
@@ -360,7 +360,7 @@ func (s *TupleRecordSuite) TestMixed_TupleWithRecord() {
 func (s *TupleRecordSuite) TestMixed_TupleIndexOnRecord() {
 	// Access a tuple field on a record, then index it
 	expr, err := ParseExpression("person.positions[1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	idx, ok := expr.(*ast.TupleIndex)
 	s.True(ok, "expected *ast.TupleIndex, got %T", expr)
@@ -376,7 +376,7 @@ func (s *TupleRecordSuite) TestMixed_TupleIndexOnRecord() {
 
 func (s *TupleRecordSuite) TestRecordType_Single() {
 	expr, err := ParseExpression("[name: STRING]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rt, ok := expr.(*ast.RecordTypeExpr)
 	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
@@ -386,7 +386,7 @@ func (s *TupleRecordSuite) TestRecordType_Single() {
 
 func (s *TupleRecordSuite) TestRecordType_Multiple() {
 	expr, err := ParseExpression("[name: STRING, age: Int, active: BOOLEAN]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rt, ok := expr.(*ast.RecordTypeExpr)
 	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
@@ -398,7 +398,7 @@ func (s *TupleRecordSuite) TestRecordType_Multiple() {
 
 func (s *TupleRecordSuite) TestRecordType_WithIdentifierTypes() {
 	expr, err := ParseExpression("[x: Nat, y: Real]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rt, ok := expr.(*ast.RecordTypeExpr)
 	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
@@ -412,7 +412,7 @@ func (s *TupleRecordSuite) TestRecordType_WithIdentifierTypes() {
 
 func (s *TupleRecordSuite) TestRecordType_String() {
 	expr, err := ParseExpression("[name: STRING, age: Int]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rt, ok := expr.(*ast.RecordTypeExpr)
 	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
@@ -422,7 +422,7 @@ func (s *TupleRecordSuite) TestRecordType_String() {
 
 func (s *TupleRecordSuite) TestRecordType_Validate() {
 	expr, err := ParseExpression("[name: STRING]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rt, ok := expr.(*ast.RecordTypeExpr)
 	s.True(ok, "expected *ast.RecordTypeExpr, got %T", expr)
@@ -432,7 +432,7 @@ func (s *TupleRecordSuite) TestRecordType_Validate() {
 // Ensure record value syntax still works alongside record type syntax.
 func (s *TupleRecordSuite) TestRecordInstance_StillWorks_AfterRecordType() {
 	expr, err := ParseExpression("[name |-> \"Alice\", age |-> 30]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ri, ok := expr.(*ast.RecordInstance)
 	s.True(ok, "expected *ast.RecordInstance, got %T", expr)
@@ -445,7 +445,7 @@ func (s *TupleRecordSuite) TestRecordInstance_StillWorks_AfterRecordType() {
 
 func (s *TupleRecordSuite) TestCartesianProduct_ASCII() {
 	expr, err := ParseExpression("Int \\X STRING")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
@@ -454,7 +454,7 @@ func (s *TupleRecordSuite) TestCartesianProduct_ASCII() {
 
 func (s *TupleRecordSuite) TestCartesianProduct_Unicode() {
 	expr, err := ParseExpression("Int × STRING")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
@@ -463,7 +463,7 @@ func (s *TupleRecordSuite) TestCartesianProduct_Unicode() {
 
 func (s *TupleRecordSuite) TestCartesianProduct_Times() {
 	expr, err := ParseExpression("Nat \\times Real")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
@@ -472,7 +472,7 @@ func (s *TupleRecordSuite) TestCartesianProduct_Times() {
 
 func (s *TupleRecordSuite) TestCartesianProduct_Three() {
 	expr, err := ParseExpression("Nat \\X Int \\X STRING")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
@@ -481,7 +481,7 @@ func (s *TupleRecordSuite) TestCartesianProduct_Three() {
 
 func (s *TupleRecordSuite) TestCartesianProduct_String() {
 	expr, err := ParseExpression("Int \\X STRING")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)
@@ -491,7 +491,7 @@ func (s *TupleRecordSuite) TestCartesianProduct_String() {
 
 func (s *TupleRecordSuite) TestCartesianProduct_Validate() {
 	expr, err := ParseExpression("Int \\X STRING")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cp, ok := expr.(*ast.CartesianProduct)
 	s.True(ok, "expected *ast.CartesianProduct, got %T", expr)

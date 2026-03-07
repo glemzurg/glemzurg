@@ -22,7 +22,7 @@ type TupleRecordEvalSuite struct {
 
 func (s *TupleRecordEvalSuite) TestTupleLiteral_Empty() {
 	expr, err := parser.ParseExpression("<<>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -35,7 +35,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_Empty() {
 
 func (s *TupleRecordEvalSuite) TestTupleLiteral_Integers() {
 	expr, err := parser.ParseExpression("<<1, 2, 3>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -48,7 +48,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_Integers() {
 
 func (s *TupleRecordEvalSuite) TestTupleLiteral_WithVariables() {
 	expr, err := parser.ParseExpression("<<x, y, z>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(10), NamespaceGlobal)
@@ -70,7 +70,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_WithVariables() {
 
 func (s *TupleRecordEvalSuite) TestTupleLiteral_WithExpressions() {
 	expr, err := parser.ParseExpression("<<1 + 2, 3 * 4>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -85,7 +85,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_WithExpressions() {
 
 func (s *TupleRecordEvalSuite) TestTupleLiteral_Nested() {
 	expr, err := parser.ParseExpression("<<1, <<2, 3>>, 4>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -107,7 +107,7 @@ func (s *TupleRecordEvalSuite) TestTupleLiteral_Nested() {
 
 func (s *TupleRecordEvalSuite) TestTupleIndex_First() {
 	expr, err := parser.ParseExpression("tuple[1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("tuple", object.NewTupleFromElements([]object.Object{
@@ -126,7 +126,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_First() {
 
 func (s *TupleRecordEvalSuite) TestTupleIndex_Middle() {
 	expr, err := parser.ParseExpression("tuple[2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("tuple", object.NewTupleFromElements([]object.Object{
@@ -145,7 +145,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_Middle() {
 
 func (s *TupleRecordEvalSuite) TestTupleIndex_Last() {
 	expr, err := parser.ParseExpression("tuple[3]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("tuple", object.NewTupleFromElements([]object.Object{
@@ -164,7 +164,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_Last() {
 
 func (s *TupleRecordEvalSuite) TestTupleIndex_OutOfBounds() {
 	expr, err := parser.ParseExpression("tuple[10]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("tuple", object.NewTupleFromElements([]object.Object{
@@ -180,7 +180,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_OutOfBounds() {
 
 func (s *TupleRecordEvalSuite) TestTupleIndex_LiteralTuple() {
 	expr, err := parser.ParseExpression("<<10, 20, 30>>[2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -193,7 +193,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_LiteralTuple() {
 
 func (s *TupleRecordEvalSuite) TestTupleIndex_WithExpressionIndex() {
 	expr, err := parser.ParseExpression("tuple[i + 1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("tuple", object.NewTupleFromElements([]object.Object{
@@ -214,7 +214,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_WithExpressionIndex() {
 func (s *TupleRecordEvalSuite) TestTupleIndex_Chained() {
 	// matrix[1][2] where matrix is <<⟨10, 20⟩, ⟨30, 40⟩>>
 	expr, err := parser.ParseExpression("matrix[1][2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("matrix", object.NewTupleFromElements([]object.Object{
@@ -242,7 +242,7 @@ func (s *TupleRecordEvalSuite) TestTupleIndex_Chained() {
 
 func (s *TupleRecordEvalSuite) TestRecordInstance_Single() {
 	expr, err := parser.ParseExpression("[name |-> \"Alice\"]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -260,7 +260,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_Single() {
 
 func (s *TupleRecordEvalSuite) TestRecordInstance_Multiple() {
 	expr, err := parser.ParseExpression("[name |-> \"Alice\", age |-> 30]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -284,7 +284,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_Multiple() {
 
 func (s *TupleRecordEvalSuite) TestRecordInstance_WithExpressions() {
 	expr, err := parser.ParseExpression("[x |-> 1 + 2, y |-> 3 * 4]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -302,7 +302,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_WithExpressions() {
 
 func (s *TupleRecordEvalSuite) TestRecordInstance_WithVariables() {
 	expr, err := parser.ParseExpression("[a |-> x, b |-> y]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(100), NamespaceGlobal)
@@ -320,7 +320,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_WithVariables() {
 
 func (s *TupleRecordEvalSuite) TestRecordInstance_Nested() {
 	expr, err := parser.ParseExpression("[person |-> [name |-> \"Alice\", age |-> 30]]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -343,7 +343,7 @@ func (s *TupleRecordEvalSuite) TestRecordInstance_Nested() {
 
 func (s *TupleRecordEvalSuite) TestRecordFieldAccess() {
 	expr, err := parser.ParseExpression("record.name")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("record", object.NewRecordFromFields(map[string]object.Object{
@@ -365,7 +365,7 @@ func (s *TupleRecordEvalSuite) TestRecordFieldAccess() {
 
 func (s *TupleRecordEvalSuite) TestRecordAltered_Simple() {
 	expr, err := parser.ParseExpression("[r EXCEPT !.count = 10]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("r", object.NewRecordFromFields(map[string]object.Object{
@@ -387,7 +387,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_Simple() {
 
 func (s *TupleRecordEvalSuite) TestRecordAltered_Multiple() {
 	expr, err := parser.ParseExpression("[r EXCEPT !.x = 100, !.y = 200]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("r", object.NewRecordFromFields(map[string]object.Object{
@@ -410,7 +410,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_Multiple() {
 func (s *TupleRecordEvalSuite) TestRecordAltered_WithAt() {
 	// @ references the current value of the field
 	expr, err := parser.ParseExpression("[r EXCEPT !.count = @ + 1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("r", object.NewRecordFromFields(map[string]object.Object{
@@ -428,7 +428,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_WithAt() {
 
 func (s *TupleRecordEvalSuite) TestRecordAltered_MultipleWithAt() {
 	expr, err := parser.ParseExpression("[r EXCEPT !.count = @ + 1, !.total = @ * 2]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("r", object.NewRecordFromFields(map[string]object.Object{
@@ -449,7 +449,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_MultipleWithAt() {
 func (s *TupleRecordEvalSuite) TestRecordAltered_DoesNotMutateOriginal() {
 	// EXCEPT should create a new record, not mutate the original
 	expr, err := parser.ParseExpression("[r EXCEPT !.x = 999]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	originalRecord := object.NewRecordFromFields(map[string]object.Object{
 		"x": object.NewInteger(1),
@@ -477,7 +477,7 @@ func (s *TupleRecordEvalSuite) TestRecordAltered_DoesNotMutateOriginal() {
 
 func (s *TupleRecordEvalSuite) TestCombined_RecordWithTuple() {
 	expr, err := parser.ParseExpression("[point |-> <<1, 2, 3>>]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -494,7 +494,7 @@ func (s *TupleRecordEvalSuite) TestCombined_RecordWithTuple() {
 
 func (s *TupleRecordEvalSuite) TestCombined_TupleWithRecords() {
 	expr, err := parser.ParseExpression("<<[x |-> 1], [x |-> 2]>>")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -515,7 +515,7 @@ func (s *TupleRecordEvalSuite) TestCombined_TupleWithRecords() {
 func (s *TupleRecordEvalSuite) TestCombined_AccessTupleInRecord() {
 	// Access element of tuple stored in record
 	expr, err := parser.ParseExpression("record.points[1]")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("record", object.NewRecordFromFields(map[string]object.Object{
@@ -537,7 +537,7 @@ func (s *TupleRecordEvalSuite) TestCombined_AccessTupleInRecord() {
 func (s *TupleRecordEvalSuite) TestCombined_AccessRecordInTuple() {
 	// Access field of record stored in tuple
 	expr, err := parser.ParseExpression("tuple[1].name")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("tuple", object.NewTupleFromElements([]object.Object{

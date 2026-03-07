@@ -79,7 +79,7 @@ func (s *ExpressionTestSuite) TestValidateLiterals() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -108,7 +108,7 @@ func (s *ExpressionTestSuite) TestValidateReferences() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -149,7 +149,7 @@ func (s *ExpressionTestSuite) TestValidateBinaryOps() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -173,7 +173,7 @@ func (s *ExpressionTestSuite) TestValidateUnaryOps() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -207,7 +207,7 @@ func (s *ExpressionTestSuite) TestValidateCollections() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -239,7 +239,7 @@ func (s *ExpressionTestSuite) TestValidateControlFlow() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -276,7 +276,7 @@ func (s *ExpressionTestSuite) TestValidateQuantifiers() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -309,7 +309,7 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)

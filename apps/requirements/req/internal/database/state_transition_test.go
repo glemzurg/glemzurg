@@ -69,8 +69,8 @@ func (suite *TransitionSuite) TestLoad() {
 	// Nothing in database yet.
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), transition)
+	suite.Empty(classKey)
+	suite.Empty(transition)
 
 	err = dbExec(suite.db, `
 		INSERT INTO transition
@@ -102,8 +102,8 @@ func (suite *TransitionSuite) TestLoad() {
 
 	classKey, transition, err = LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Transition{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateA.Key,
 		EventKey:     suite.event.Key,
@@ -128,8 +128,8 @@ func (suite *TransitionSuite) TestAdd() {
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Transition{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateA.Key,
 		EventKey:     suite.event.Key,
@@ -154,8 +154,8 @@ func (suite *TransitionSuite) TestAddNulls() {
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Transition{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: nil,
 		EventKey:     suite.event.Key,
@@ -191,8 +191,8 @@ func (suite *TransitionSuite) TestUpdate() {
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Transition{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: &suite.stateB.Key,
 		EventKey:     suite.eventB.Key,
@@ -228,8 +228,8 @@ func (suite *TransitionSuite) TestUpdateNulls() {
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Transition{
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Transition{
 		Key:          suite.transitionKey,
 		FromStateKey: nil,
 		EventKey:     suite.event.Key,
@@ -257,8 +257,8 @@ func (suite *TransitionSuite) TestRemove() {
 
 	classKey, transition, err := LoadTransition(suite.db, suite.model.Key, suite.transitionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), transition)
+	suite.Empty(classKey)
+	suite.Empty(transition)
 }
 
 func (suite *TransitionSuite) TestQuery() {
@@ -288,7 +288,7 @@ func (suite *TransitionSuite) TestQuery() {
 
 	transitions, err := QueryTransitions(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Transition{
+	suite.Equal(map[identity.Key][]model_state.Transition{
 		suite.class.Key: {
 			{
 				Key:          suite.transitionKey,

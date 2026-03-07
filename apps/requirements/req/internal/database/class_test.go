@@ -91,8 +91,8 @@ func (suite *ClassSuite) TestLoad() {
 
 	subdomainKey, class, err = LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -117,8 +117,8 @@ func (suite *ClassSuite) TestAdd() {
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -143,8 +143,8 @@ func (suite *ClassSuite) TestAddNulls() {
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -180,8 +180,8 @@ func (suite *ClassSuite) TestUpdate() {
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -217,8 +217,8 @@ func (suite *ClassSuite) TestUpdateNulls() {
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -275,7 +275,7 @@ func (suite *ClassSuite) TestQuery() {
 
 	classes, err := QueryClasses(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_class.Class{
+	suite.Equal(map[identity.Key][]model_class.Class{
 		suite.subdomain.Key: {
 			{
 				Key:             suite.classKey,
@@ -311,17 +311,17 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey ident
 		ActorKey:   nil, // No actor.
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, class, err = LoadClass(dbOrTx, modelKey, classKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return class
 }
 
 func (suite *ClassSuite) TestVerifyTestObjects() {
 	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, suite.classKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(model_class.Class{
 		Key:        suite.classKey,
 		Name:       suite.classKey.String(),
 		Details:    "Details",

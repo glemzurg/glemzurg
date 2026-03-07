@@ -49,7 +49,7 @@ func (suite *UseCaseSharedSuite) TestLoad() {
 	// Nothing in database yet.
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), useCaseShared)
+	suite.Empty(useCaseShared)
 
 	err = dbExec(suite.db, `
 		INSERT INTO use_case_shared
@@ -73,7 +73,7 @@ func (suite *UseCaseSharedSuite) TestLoad() {
 
 	useCaseShared, err = LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_use_case.UseCaseShared{
+	suite.Equal(model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	}, useCaseShared)
@@ -88,7 +88,7 @@ func (suite *UseCaseSharedSuite) TestAdd() {
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_use_case.UseCaseShared{
+	suite.Equal(model_use_case.UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	}, useCaseShared)
@@ -109,7 +109,7 @@ func (suite *UseCaseSharedSuite) TestUpdate() {
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_use_case.UseCaseShared{
+	suite.Equal(model_use_case.UseCaseShared{
 		ShareType:  "extend",
 		UmlComment: "UmlCommentX",
 	}, useCaseShared)
@@ -127,7 +127,7 @@ func (suite *UseCaseSharedSuite) TestRemove() {
 
 	useCaseShared, err := LoadUseCaseShared(suite.db, suite.model.Key, suite.seaUseCase.Key, suite.mudUseCase.Key)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), useCaseShared)
+	suite.Empty(useCaseShared)
 }
 
 func (suite *UseCaseSharedSuite) TestQuery() {
@@ -147,7 +147,7 @@ func (suite *UseCaseSharedSuite) TestQuery() {
 
 	useCaseShareds, err := QueryUseCaseShareds(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
+	suite.Equal(map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 		suite.seaUseCase.Key: {
 			suite.mudUseCase.Key: {
 				ShareType:  "include",

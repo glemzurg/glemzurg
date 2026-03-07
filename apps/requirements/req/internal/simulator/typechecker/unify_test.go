@@ -23,13 +23,13 @@ func (s *UnifySuite) SetupTest() {
 
 func (s *UnifySuite) TestUnify_SameType() {
 	subst, err := Unify(types.Number{}, types.Number{})
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
 func (s *UnifySuite) TestUnify_DifferentPrimitives() {
 	_, err := Unify(types.Number{}, types.Boolean{})
-	s.Error(err)
+	s.Require().Error(err)
 	var target *UnificationError
 	s.ErrorAs(err, &target)
 }
@@ -38,7 +38,7 @@ func (s *UnifySuite) TestUnify_TypeVarWithPrimitive() {
 	tv := types.TypeVar{ID: 1, Name: "a"}
 	subst, err := Unify(tv, types.Number{})
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 }
 
@@ -46,7 +46,7 @@ func (s *UnifySuite) TestUnify_PrimitiveWithTypeVar() {
 	tv := types.TypeVar{ID: 1, Name: "a"}
 	subst, err := Unify(types.Number{}, tv)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 }
 
@@ -55,7 +55,7 @@ func (s *UnifySuite) TestUnify_TwoTypeVars() {
 	tv2 := types.TypeVar{ID: 2, Name: "b"}
 	subst, err := Unify(tv1, tv2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	// One should be mapped to the other
 	s.Len(subst, 1)
 }
@@ -64,7 +64,7 @@ func (s *UnifySuite) TestUnify_SameTypeVar() {
 	tv := types.TypeVar{ID: 1, Name: "a"}
 	subst, err := Unify(tv, tv)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -75,7 +75,7 @@ func (s *UnifySuite) TestUnify_Set_SameElement() {
 	s2 := types.Set{Element: types.Number{}}
 	subst, err := Unify(s1, s2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -84,7 +84,7 @@ func (s *UnifySuite) TestUnify_Set_DifferentElements() {
 	s2 := types.Set{Element: types.Boolean{}}
 	_, err := Unify(s1, s2)
 
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *UnifySuite) TestUnify_Set_WithTypeVar() {
@@ -93,7 +93,7 @@ func (s *UnifySuite) TestUnify_Set_WithTypeVar() {
 	s2 := types.Set{Element: types.Number{}}
 	subst, err := Unify(s1, s2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 }
 
@@ -102,7 +102,7 @@ func (s *UnifySuite) TestUnify_Set_TypeVarWithSet() {
 	set := types.Set{Element: types.Number{}}
 	subst, err := Unify(tv, set)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(set))
 }
 
@@ -113,7 +113,7 @@ func (s *UnifySuite) TestUnify_Tuple_SameElement() {
 	t2 := types.Tuple{Element: types.String{}}
 	subst, err := Unify(t1, t2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -123,7 +123,7 @@ func (s *UnifySuite) TestUnify_Tuple_WithTypeVar() {
 	t2 := types.Tuple{Element: types.Number{}}
 	subst, err := Unify(t1, t2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 }
 
@@ -134,7 +134,7 @@ func (s *UnifySuite) TestUnify_Function_Same() {
 	f2 := types.Function{Params: []types.Type{types.Number{}}, Return: types.Boolean{}}
 	subst, err := Unify(f1, f2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -143,7 +143,7 @@ func (s *UnifySuite) TestUnify_Function_ArityMismatch() {
 	f2 := types.Function{Params: []types.Type{types.Number{}, types.Number{}}, Return: types.Boolean{}}
 	_, err := Unify(f1, f2)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "arity mismatch")
 }
 
@@ -152,7 +152,7 @@ func (s *UnifySuite) TestUnify_Function_DifferentParam() {
 	f2 := types.Function{Params: []types.Type{types.String{}}, Return: types.Boolean{}}
 	_, err := Unify(f1, f2)
 
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *UnifySuite) TestUnify_Function_DifferentReturn() {
@@ -160,7 +160,7 @@ func (s *UnifySuite) TestUnify_Function_DifferentReturn() {
 	f2 := types.Function{Params: []types.Type{types.Number{}}, Return: types.String{}}
 	_, err := Unify(f1, f2)
 
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *UnifySuite) TestUnify_Function_WithTypeVars() {
@@ -171,7 +171,7 @@ func (s *UnifySuite) TestUnify_Function_WithTypeVars() {
 	f2 := types.Function{Params: []types.Type{types.Number{}}, Return: types.Boolean{}}
 	subst, err := Unify(f1, f2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 	s.True(subst[2].Equals(types.Boolean{}))
 }
@@ -183,7 +183,7 @@ func (s *UnifySuite) TestUnify_Record_Same() {
 	r2 := types.Record{Fields: map[string]types.Type{"x": types.Number{}, "y": types.Boolean{}}}
 	subst, err := Unify(r1, r2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -192,7 +192,7 @@ func (s *UnifySuite) TestUnify_Record_FieldCountMismatch() {
 	r2 := types.Record{Fields: map[string]types.Type{"x": types.Number{}, "y": types.Boolean{}}}
 	_, err := Unify(r1, r2)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "field count")
 }
 
@@ -201,7 +201,7 @@ func (s *UnifySuite) TestUnify_Record_MissingField() {
 	r2 := types.Record{Fields: map[string]types.Type{"y": types.Number{}}}
 	_, err := Unify(r1, r2)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "missing field")
 }
 
@@ -211,7 +211,7 @@ func (s *UnifySuite) TestUnify_Record_WithTypeVar() {
 	r2 := types.Record{Fields: map[string]types.Type{"x": types.Number{}}}
 	subst, err := Unify(r1, r2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 }
 
@@ -222,7 +222,7 @@ func (s *UnifySuite) TestUnify_Bag_Same() {
 	b2 := types.Bag{Element: types.Number{}}
 	subst, err := Unify(b1, b2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -232,7 +232,7 @@ func (s *UnifySuite) TestUnify_Bag_WithTypeVar() {
 	b2 := types.Bag{Element: types.String{}}
 	subst, err := Unify(b1, b2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.String{}))
 }
 
@@ -240,19 +240,19 @@ func (s *UnifySuite) TestUnify_Bag_WithTypeVar() {
 
 func (s *UnifySuite) TestUnify_Any_WithPrimitive() {
 	subst, err := Unify(types.Any{}, types.Number{})
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
 func (s *UnifySuite) TestUnify_Primitive_WithAny() {
 	subst, err := Unify(types.Number{}, types.Any{})
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
 func (s *UnifySuite) TestUnify_Any_WithComplex() {
 	subst, err := Unify(types.Any{}, types.Set{Element: types.Number{}})
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -264,7 +264,7 @@ func (s *UnifySuite) TestUnify_OccursCheck_Simple() {
 	set := types.Set{Element: tv}
 	_, err := Unify(tv, set)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "infinite type")
 }
 
@@ -274,7 +274,7 @@ func (s *UnifySuite) TestUnify_OccursCheck_Nested() {
 	nested := types.Tuple{Element: types.Set{Element: tv}}
 	_, err := Unify(tv, nested)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "infinite type")
 }
 
@@ -282,7 +282,7 @@ func (s *UnifySuite) TestUnify_OccursCheck_Nested() {
 
 func (s *UnifySuite) TestUnifyAll_Empty() {
 	subst, err := UnifyAll([][2]types.Type{})
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(subst)
 }
 
@@ -295,7 +295,7 @@ func (s *UnifySuite) TestUnifyAll_MultiplePairs() {
 	}
 	subst, err := UnifyAll(pairs)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 	s.True(subst[2].Equals(types.Boolean{}))
 }
@@ -308,7 +308,7 @@ func (s *UnifySuite) TestUnifyAll_Conflict() {
 	}
 	_, err := UnifyAll(pairs)
 
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 // === UnifyWithSubst ===
@@ -319,7 +319,7 @@ func (s *UnifySuite) TestUnifyWithSubst_ExtendsExisting() {
 	existingSubst := types.Substitution{1: types.Number{}}
 	newSubst, err := UnifyWithSubst(tv2, types.Boolean{}, existingSubst)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(newSubst[1].Equals(types.Number{}))
 	s.True(newSubst[2].Equals(types.Boolean{}))
 
@@ -335,7 +335,7 @@ func (s *UnifySuite) TestUnifyWithSubst_UsesExisting() {
 	// tv1 is already Number, so this should succeed
 	newSubst, err := UnifyWithSubst(tv1, types.Number{}, existingSubst)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(newSubst[1].Equals(types.Number{}))
 }
 
@@ -346,7 +346,7 @@ func (s *UnifySuite) TestUnifyWithSubst_Conflict() {
 	// tv1 is already Number, but we try to unify with Boolean
 	_, err := UnifyWithSubst(tv, types.Boolean{}, existingSubst)
 
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 // === Complex Scenarios ===
@@ -358,7 +358,7 @@ func (s *UnifySuite) TestUnify_NestedSets() {
 	s2 := types.Set{Element: types.Set{Element: types.Number{}}}
 	subst, err := Unify(s1, s2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 }
 
@@ -376,7 +376,7 @@ func (s *UnifySuite) TestUnify_FunctionReturnsSet() {
 	}
 	subst, err := Unify(f1, f2)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(subst[1].Equals(types.Number{}))
 	s.True(subst[2].Equals(types.Boolean{}))
 }
@@ -392,7 +392,7 @@ func (s *UnifySuite) TestUnify_TransitiveTypeVars() {
 	}
 	subst, err := UnifyAll(pairs)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	// After applying substitution, both should resolve to Number
 	resolvedA := subst.Apply(tvA)
 	resolvedB := subst.Apply(tvB)

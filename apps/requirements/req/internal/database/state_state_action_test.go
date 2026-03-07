@@ -58,8 +58,8 @@ func (suite *StateActionSuite) TestLoad() {
 	// Nothing in database yet.
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), stateKey)
-	assert.Empty(suite.T(), stateAction)
+	suite.Empty(stateKey)
+	suite.Empty(stateAction)
 
 	err = dbExec(suite.db, `
 		INSERT INTO state_action
@@ -83,8 +83,8 @@ func (suite *StateActionSuite) TestLoad() {
 
 	stateKey, stateAction, err = LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.state.Key, stateKey)
-	assert.Equal(suite.T(), model_state.StateAction{
+	suite.Equal(suite.state.Key, stateKey)
+	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "entry",
@@ -101,8 +101,8 @@ func (suite *StateActionSuite) TestAdd() {
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.state.Key, stateKey)
-	assert.Equal(suite.T(), model_state.StateAction{
+	suite.Equal(suite.state.Key, stateKey)
+	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "entry",
@@ -126,8 +126,8 @@ func (suite *StateActionSuite) TestUpdate() {
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.state.Key, stateKey)
-	assert.Equal(suite.T(), model_state.StateAction{
+	suite.Equal(suite.state.Key, stateKey)
+	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.actionB.Key,
 		When:      "exit",
@@ -147,8 +147,8 @@ func (suite *StateActionSuite) TestRemove() {
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), stateKey)
-	assert.Empty(suite.T(), stateAction)
+	suite.Empty(stateKey)
+	suite.Empty(stateAction)
 }
 
 func (suite *StateActionSuite) TestQuery() {
@@ -170,7 +170,7 @@ func (suite *StateActionSuite) TestQuery() {
 
 	stateActions, err := QueryStateActions(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.StateAction{
+	suite.Equal(map[identity.Key][]model_state.StateAction{
 		suite.state.Key: {
 			{
 				Key:       suite.stateActionKey,

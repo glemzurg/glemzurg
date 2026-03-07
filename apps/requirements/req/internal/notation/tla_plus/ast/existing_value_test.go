@@ -27,7 +27,7 @@ func (suite *ExistingValueSuite) TestASCII() {
 func (suite *ExistingValueSuite) TestValidate() {
 	e := &ExistingValue{}
 	err := e.Validate()
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 func (suite *ExistingValueSuite) TestExpressionNode() {

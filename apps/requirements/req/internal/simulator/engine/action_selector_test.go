@@ -33,7 +33,7 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 	simState := state.NewSimulationState()
 
 	action, err := selector.SelectAction(simState)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(action)
 	s.True(action.IsCreation)
 	s.Nil(action.Instance)
@@ -59,7 +59,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 	foundNormal := false
 	for range 50 {
 		action, err := selector.SelectAction(simState)
-		s.NoError(err)
+		s.Require().NoError(err)
 		if action.IsCreation {
 			foundCreation = true
 		} else if !action.IsDo {
@@ -109,7 +109,7 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 	// No creation transitions and no instances → deadlock.
 	simState := state.NewSimulationState()
 	_, err := selector.SelectAction(simState)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "deadlock")
 }
 
@@ -166,7 +166,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 	foundDo := false
 	for range 50 {
 		action, err := selector.SelectAction(simState)
-		s.NoError(err)
+		s.Require().NoError(err)
 		if action.IsDo {
 			foundDo = true
 			s.Equal("DoCount", action.DoAction.Name)

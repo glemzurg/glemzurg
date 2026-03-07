@@ -59,11 +59,11 @@ func (suite *UseCaseSuite) TestMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			var result inputUseCase
 			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			// Scenarios are json:"-", won't round-trip via JSON
 			assert.Equal(t, tc.input.Name, result.Name)
@@ -93,11 +93,11 @@ func (suite *UseCaseSuite) TestUseCaseActorMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			var result inputUseCaseActor
 			err = json.Unmarshal(data, &result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})

@@ -105,10 +105,10 @@ func (suite *RefLinkSuite) TestNew() {
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
 			test.refLink.Match = test.match // Set the match since it should be identical.
-			assert.Equal(suite.T(), test.refLink, link, testName)
+			suite.Equal(test.refLink, link, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), link, testName)
+			suite.Empty(link, testName)
 		}
 	}
 }
@@ -158,6 +158,6 @@ func (suite *RefLinkSuite) TestFindRefLinks() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		links, err := findRefLinks(test.text)
 		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.refLinks, links, testName)
+		suite.Equal(test.refLinks, links, testName)
 	}
 }

@@ -74,11 +74,11 @@ func (suite *ActionParameterSuite) TestLoad() {
 				'Nat'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	param, err = LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	suite.NoError(err)
-	suite.Equal( model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -89,11 +89,11 @@ func (suite *ActionParameterSuite) TestAdd() {
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	suite.NoError(err)
-	suite.Equal( model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
@@ -104,17 +104,17 @@ func (suite *ActionParameterSuite) TestUpdate() {
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateActionParameter(suite.db, suite.model.Key, suite.actionKey, 2, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	suite.NoError(err)
-	suite.Equal( model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
@@ -125,10 +125,10 @@ func (suite *ActionParameterSuite) TestRemove() {
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
 	suite.ErrorIs(err, ErrNotFound)
@@ -148,11 +148,11 @@ func (suite *ActionParameterSuite) TestQuery() {
 			},
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	params, err := QueryActionParameters(suite.db, suite.model.Key)
-	suite.NoError(err)
-	suite.Equal( map[identity.Key][]model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.actionKey: {
 			{
 				Name:          "Alpha",
@@ -172,23 +172,23 @@ func (suite *ActionParameterSuite) TestQuery() {
 
 func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	err = AddActionParameter(dbOrTx, modelKey, actionKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	param, err = LoadActionParameter(dbOrTx, modelKey, actionKey, paramKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return param
 }
 
 func (suite *ActionParameterSuite) TestVerifyTestObjects() {
 	param := t_AddActionParameter(suite.T(), suite.db, suite.model.Key, suite.actionKey, "Amount")
-	suite.Equal( model_state.Parameter{
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

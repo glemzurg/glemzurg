@@ -73,10 +73,10 @@ func (suite *HeaderSuite) TestNew() {
 		header, err := newHeader(test.ref, test.textline)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.header, header, testName)
+			suite.Equal(test.header, header, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), header, testName)
+			suite.Empty(header, testName)
 		}
 	}
 }
@@ -91,13 +91,13 @@ func (suite *HeaderSuite) TestId() {
 		Kind: "F",
 		Num:  0,
 	}
-	assert.Equal(suite.T(), "F", header.Id())
+	suite.Equal("F", header.Id())
 
 	header = Header{
 		Kind: "F",
 		Num:  1234,
 	}
-	assert.Equal(suite.T(), "F1234", header.Id())
+	suite.Equal("F1234", header.Id())
 }
 
 func (suite *HeaderSuite) TestString() {
@@ -108,7 +108,7 @@ func (suite *HeaderSuite) TestString() {
 		Num:    0,
 		Title:  "An interesting title",
 	}
-	assert.Equal(suite.T(), "# F. An interesting title", header.String())
+	suite.Equal("# F. An interesting title", header.String())
 
 	header = Header{
 		Prefix: "##",
@@ -116,7 +116,7 @@ func (suite *HeaderSuite) TestString() {
 		Num:    1234,
 		Title:  "An interesting title",
 	}
-	assert.Equal(suite.T(), "## F1234. An interesting title", header.String())
+	suite.Equal("## F1234. An interesting title", header.String())
 }
 
 func (suite *HeaderSuite) TestLink() {
@@ -136,7 +136,7 @@ func (suite *HeaderSuite) TestLink() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		header, err := newHeader(1, test.textline)
 		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.link, header.Link(), testName)
+		suite.Equal(test.link, header.Link(), testName)
 	}
 }
 
@@ -217,7 +217,7 @@ func (suite *HeaderSuite) TestIsRequirementHeader() {
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		assert.Equal(suite.T(), test.isRequirementHeader, isRequirementHeader(test.textline), testName)
+		suite.Equal(test.isRequirementHeader, isRequirementHeader(test.textline), testName)
 	}
 }
 
@@ -306,16 +306,16 @@ func (suite *HeaderSuite) TestParseRequirementHeader() {
 		prefix, kind, num, title, err := parseRequirementHeader(test.textline)
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.prefix, prefix, testName)
-			assert.Equal(suite.T(), test.kind, kind, testName)
-			assert.Equal(suite.T(), test.num, num, testName)
-			assert.Equal(suite.T(), test.title, title, testName)
+			suite.Equal(test.prefix, prefix, testName)
+			suite.Equal(test.kind, kind, testName)
+			suite.Equal(test.num, num, testName)
+			suite.Equal(test.title, title, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), prefix, testName)
-			assert.Empty(suite.T(), kind, testName)
-			assert.Empty(suite.T(), num, testName)
-			assert.Empty(suite.T(), title, testName)
+			suite.Empty(prefix, testName)
+			suite.Empty(kind, testName)
+			suite.Empty(num, testName)
+			suite.Empty(title, testName)
 		}
 	}
 }
@@ -382,6 +382,6 @@ func (suite *HeaderSuite) TestLessThan() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		less := lessThan(Header{Kind: test.kindA, Num: test.numA}, Header{Kind: test.kindB, Num: test.numB})
-		assert.Equal(suite.T(), test.less, less, testName)
+		suite.Equal(test.less, less, testName)
 	}
 }

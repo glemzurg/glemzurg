@@ -72,7 +72,7 @@ func (suite *DomainAssociationSuite) TestLoad() {
 
 	association, err = LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_domain.Association{
+	suite.Equal(model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
 		SolutionDomainKey: suite.domainB.Key,
@@ -91,7 +91,7 @@ func (suite *DomainAssociationSuite) TestAdd() {
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_domain.Association{
+	suite.Equal(model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domain.Key,
 		SolutionDomainKey: suite.domainB.Key,
@@ -119,7 +119,7 @@ func (suite *DomainAssociationSuite) TestUpdate() {
 
 	association, err := LoadDomainAssociation(suite.db, suite.model.Key, suite.associationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_domain.Association{
+	suite.Equal(model_domain.Association{
 		Key:               suite.associationKey,
 		ProblemDomainKey:  suite.domainB.Key,
 		SolutionDomainKey: suite.domain.Key,
@@ -163,7 +163,7 @@ func (suite *DomainAssociationSuite) TestQuery() {
 
 	associations, err := QueryDomainAssociations(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_domain.Association{
+	suite.Equal([]model_domain.Association{
 		{
 			Key:               suite.associationKey,
 			ProblemDomainKey:  suite.domain.Key,

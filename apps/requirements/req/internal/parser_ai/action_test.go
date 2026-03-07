@@ -24,7 +24,7 @@ type ActionSuite struct {
 
 func (suite *ActionSuite) TestParseActionFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_ACTION_PATH_OK)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

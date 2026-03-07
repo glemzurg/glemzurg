@@ -49,8 +49,8 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 	// Nothing in database yet.
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), generalization)
+	suite.Empty(subdomainKey)
+	suite.Empty(generalization)
 
 	err = dbExec(suite.db, `
 		INSERT INTO use_case_generalization
@@ -80,8 +80,8 @@ func (suite *UseCaseGeneralizationSuite) TestLoad() {
 
 	subdomainKey, generalization, err = LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_use_case.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -104,8 +104,8 @@ func (suite *UseCaseGeneralizationSuite) TestAdd() {
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_use_case.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -128,8 +128,8 @@ func (suite *UseCaseGeneralizationSuite) TestAddNulls() {
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_use_case.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "",
@@ -162,8 +162,8 @@ func (suite *UseCaseGeneralizationSuite) TestUpdate() {
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_use_case.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -196,8 +196,8 @@ func (suite *UseCaseGeneralizationSuite) TestUpdateNulls() {
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_use_case.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_use_case.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
 		Details:    "",
@@ -223,8 +223,8 @@ func (suite *UseCaseGeneralizationSuite) TestRemove() {
 
 	subdomainKey, generalization, err := LoadUseCaseGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), generalization)
+	suite.Empty(subdomainKey)
+	suite.Empty(generalization)
 }
 
 func (suite *UseCaseGeneralizationSuite) TestQuery() {
@@ -252,7 +252,7 @@ func (suite *UseCaseGeneralizationSuite) TestQuery() {
 
 	generalizations, err := QueryUseCaseGeneralizations(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_use_case.Generalization{
+	suite.Equal(map[identity.Key][]model_use_case.Generalization{
 		suite.subdomain.Key: {
 			{
 				Key:        suite.generalizationKey,
@@ -287,10 +287,10 @@ func t_AddUseCaseGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, su
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, generalization, err = LoadUseCaseGeneralization(dbOrTx, modelKey, generalizationKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return generalization
 }

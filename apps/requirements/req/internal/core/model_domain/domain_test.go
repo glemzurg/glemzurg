@@ -66,7 +66,7 @@ func (suite *DomainSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.domain.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -80,7 +80,7 @@ func (suite *DomainSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	domain, err := NewDomain(key, "Name", "Details", true, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Domain{
 		Key:        key,
 		Name:       "Name",
@@ -117,7 +117,7 @@ func (suite *DomainSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = domain.ValidateWithParent(nil)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestSetClassAssociations tests that SetClassAssociations validates and routes associations.
@@ -159,7 +159,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 		sub1AssocKey:   sub1Assoc,
 		sub2AssocKey:   sub2Assoc,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Verify domain-level association.
 	suite.Len(domain.ClassAssociations, 1)

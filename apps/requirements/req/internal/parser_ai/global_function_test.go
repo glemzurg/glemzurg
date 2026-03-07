@@ -32,10 +32,10 @@ func (suite *GlobalFunctionSuite) TestParseGlobalFunctionFiles() {
 			var expected inputGlobalFunction
 
 			actual, err := parseGlobalFunction([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			assert.NoError(t, err, testName)
 
 			assert.Equal(t, expected, *actual, testName)
 		})

@@ -66,10 +66,10 @@ func (suite *DomainSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	domain, err = LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
@@ -87,10 +87,10 @@ func (suite *DomainSuite) TestAdd() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "Name",
@@ -108,7 +108,7 @@ func (suite *DomainSuite) TestUpdate() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateDomain(suite.db, suite.model.Key, model_domain.Domain{
 		Key:        suite.domainKey,
@@ -117,10 +117,10 @@ func (suite *DomainSuite) TestUpdate() {
 		Realized:   false,
 		UmlComment: "UmlCommentX",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_domain.Domain{
 		Key:        suite.domainKey,
 		Name:       "NameX",
@@ -138,10 +138,10 @@ func (suite *DomainSuite) TestRemove() {
 		Realized:   true,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveDomain(suite.db, suite.model.Key, suite.domainKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	domain, err := LoadDomain(suite.db, suite.model.Key, suite.domainKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -165,10 +165,10 @@ func (suite *DomainSuite) TestQuery() {
 			UmlComment: "UmlComment",
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	domains, err := QueryDomains(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_domain.Domain{
 		{
 			Key:        suite.domainKey,

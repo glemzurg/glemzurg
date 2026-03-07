@@ -39,15 +39,15 @@ func (suite *RequirementsSuite) TestWriteRead() {
 
 	// Write model to the database.
 	err = WriteModel(suite.db, original)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Write model to the database a second time, should be safe (idempotent).
 	err = WriteModel(suite.db, original)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Read model from the database.
 	output, err = ReadModel(suite.db, original.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Compare progressively larger slices of the model tree to isolate mismatches.
 	// Each check focuses on a specific layer so failures point to the right area.

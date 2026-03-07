@@ -23,7 +23,7 @@ type QuantifierEvalSuite struct {
 func (s *QuantifierEvalSuite) TestForAll_AllTrue() {
 	// All elements in {1, 2, 3} are greater than 0
 	expr, err := parser.ParseExpression("∀ x ∈ {1, 2, 3} : x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -37,7 +37,7 @@ func (s *QuantifierEvalSuite) TestForAll_AllTrue() {
 func (s *QuantifierEvalSuite) TestForAll_SomeFalse() {
 	// Not all elements in {1, 2, 3} are greater than 2
 	expr, err := parser.ParseExpression("∀ x ∈ {1, 2, 3} : x > 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -51,7 +51,7 @@ func (s *QuantifierEvalSuite) TestForAll_SomeFalse() {
 func (s *QuantifierEvalSuite) TestForAll_EmptySet() {
 	// Vacuously true: all elements in {} satisfy any predicate
 	expr, err := parser.ParseExpression("∀ x ∈ {} : x > 1000")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -65,7 +65,7 @@ func (s *QuantifierEvalSuite) TestForAll_EmptySet() {
 func (s *QuantifierEvalSuite) TestForAll_WithRange() {
 	// All elements in 1..5 are less than 10
 	expr, err := parser.ParseExpression("∀ n ∈ 1..5 : n < 10")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -79,7 +79,7 @@ func (s *QuantifierEvalSuite) TestForAll_WithRange() {
 func (s *QuantifierEvalSuite) TestForAll_ASCII() {
 	// Using ASCII syntax
 	expr, err := parser.ParseExpression("\\A x \\in {1, 2, 3} : x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -97,7 +97,7 @@ func (s *QuantifierEvalSuite) TestForAll_ASCII() {
 func (s *QuantifierEvalSuite) TestExists_SomeTrue() {
 	// At least one element in {1, 2, 3} equals 2
 	expr, err := parser.ParseExpression("∃ x ∈ {1, 2, 3} : x = 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -111,7 +111,7 @@ func (s *QuantifierEvalSuite) TestExists_SomeTrue() {
 func (s *QuantifierEvalSuite) TestExists_NoneTrue() {
 	// No element in {1, 2, 3} equals 5
 	expr, err := parser.ParseExpression("∃ x ∈ {1, 2, 3} : x = 5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -125,7 +125,7 @@ func (s *QuantifierEvalSuite) TestExists_NoneTrue() {
 func (s *QuantifierEvalSuite) TestExists_EmptySet() {
 	// No element exists in empty set
 	expr, err := parser.ParseExpression("∃ x ∈ {} : x = 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -139,7 +139,7 @@ func (s *QuantifierEvalSuite) TestExists_EmptySet() {
 func (s *QuantifierEvalSuite) TestExists_WithRange() {
 	// There exists n in 1..10 where n = 5
 	expr, err := parser.ParseExpression("∃ n ∈ 1..10 : n = 5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -153,7 +153,7 @@ func (s *QuantifierEvalSuite) TestExists_WithRange() {
 func (s *QuantifierEvalSuite) TestExists_ASCII() {
 	// Using ASCII syntax
 	expr, err := parser.ParseExpression("\\E x \\in {1, 2, 3} : x = 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -171,7 +171,7 @@ func (s *QuantifierEvalSuite) TestExists_ASCII() {
 func (s *QuantifierEvalSuite) TestForAll_WithExternalVariable() {
 	// ∀ x ∈ S : x > threshold
 	expr, err := parser.ParseExpression("∀ x ∈ S : x > threshold")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("S", object.NewSetFromElements([]object.Object{
@@ -192,7 +192,7 @@ func (s *QuantifierEvalSuite) TestForAll_WithExternalVariable() {
 func (s *QuantifierEvalSuite) TestExists_WithExternalVariable() {
 	// ∃ x ∈ S : x = target
 	expr, err := parser.ParseExpression("∃ x ∈ S : x = target")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("S", object.NewSetFromElements([]object.Object{
@@ -218,7 +218,7 @@ func (s *QuantifierEvalSuite) TestNested_ForAllExists_True() {
 	// For all x in {1, 2}, there exists y in {1, 2, 3} such that x < y
 	// This is true because: for x=1, y=2 or y=3 work; for x=2, y=3 works
 	expr, err := parser.ParseExpression("∀ x ∈ {1, 2} : ∃ y ∈ {1, 2, 3} : x < y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -233,7 +233,7 @@ func (s *QuantifierEvalSuite) TestNested_ForAllExists_False() {
 	// For all x in {1, 2, 3}, there exists y in {1, 2} such that x < y
 	// This is false because: for x=3, there's no y in {1, 2} where 3 < y
 	expr, err := parser.ParseExpression("∀ x ∈ {1, 2, 3} : ∃ y ∈ {1, 2} : x < y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -248,7 +248,7 @@ func (s *QuantifierEvalSuite) TestNested_ExistsForAll_True() {
 	// There exists x in {3} such that for all y in {1, 2}, x > y
 	// This is true because x=3 > y for all y in {1, 2}
 	expr, err := parser.ParseExpression("∃ x ∈ {3} : ∀ y ∈ {1, 2} : x > y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -263,7 +263,7 @@ func (s *QuantifierEvalSuite) TestNested_ExistsForAll_False() {
 	// There exists x in {1, 2} such that for all y in {1, 2, 3}, x > y
 	// This is false because neither x=1 nor x=2 is greater than all of {1, 2, 3}
 	expr, err := parser.ParseExpression("∃ x ∈ {1, 2} : ∀ y ∈ {1, 2, 3} : x > y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -281,7 +281,7 @@ func (s *QuantifierEvalSuite) TestNested_ExistsForAll_False() {
 func (s *QuantifierEvalSuite) TestForAll_ComplexPredicate() {
 	// All elements in 1..5 are >= 1 AND <= 5
 	expr, err := parser.ParseExpression("∀ x ∈ 1..5 : x >= 1 ∧ x <= 5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -295,7 +295,7 @@ func (s *QuantifierEvalSuite) TestForAll_ComplexPredicate() {
 func (s *QuantifierEvalSuite) TestForAll_ImpliesPredicate() {
 	// For all x: if x > 5 then x > 0 (trivially true for 1..5)
 	expr, err := parser.ParseExpression("∀ x ∈ 1..5 : x > 5 => x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -309,7 +309,7 @@ func (s *QuantifierEvalSuite) TestForAll_ImpliesPredicate() {
 func (s *QuantifierEvalSuite) TestExists_OrPredicate() {
 	// There exists x in {1, 5, 10} where x = 1 OR x = 10
 	expr, err := parser.ParseExpression("∃ x ∈ {1, 5, 10} : x = 1 ∨ x = 10")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -327,7 +327,7 @@ func (s *QuantifierEvalSuite) TestExists_OrPredicate() {
 func (s *QuantifierEvalSuite) TestForAll_ArithmeticPredicate() {
 	// All x in {2, 4, 6} satisfy x % 2 = 0 (all even)
 	expr, err := parser.ParseExpression("∀ x ∈ {2, 4, 6} : x % 2 = 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -341,7 +341,7 @@ func (s *QuantifierEvalSuite) TestForAll_ArithmeticPredicate() {
 func (s *QuantifierEvalSuite) TestExists_ArithmeticPredicate() {
 	// There exists x in 1..10 where x * x = 25 (x = 5)
 	expr, err := parser.ParseExpression("∃ x ∈ 1..10 : x * x = 25")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)

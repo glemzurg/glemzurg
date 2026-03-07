@@ -25,7 +25,7 @@ func (suite *ActorFileSuite) TestParseActorFiles() {
 	key := "actor_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_ACTOR_PATH_OK)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

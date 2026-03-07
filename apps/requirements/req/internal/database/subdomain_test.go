@@ -46,8 +46,8 @@ func (suite *SubdomainSuite) TestLoad() {
 	// Nothing in database yet.
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), domainKey)
-	assert.Empty(suite.T(), subdomain)
+	suite.Empty(domainKey)
+	suite.Empty(subdomain)
 
 	err = dbExec(suite.db, `
 		INSERT INTO subdomain
@@ -73,8 +73,8 @@ func (suite *SubdomainSuite) TestLoad() {
 
 	domainKey, subdomain, err = LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.domain.Key, domainKey)
-	assert.Equal(suite.T(), model_domain.Subdomain{
+	suite.Equal(suite.domain.Key, domainKey)
+	suite.Equal(model_domain.Subdomain{
 		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -93,8 +93,8 @@ func (suite *SubdomainSuite) TestAdd() {
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.domain.Key, domainKey)
-	assert.Equal(suite.T(), model_domain.Subdomain{
+	suite.Equal(suite.domain.Key, domainKey)
+	suite.Equal(model_domain.Subdomain{
 		Key:        suite.subdomainKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -121,8 +121,8 @@ func (suite *SubdomainSuite) TestUpdate() {
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.domain.Key, domainKey)
-	assert.Equal(suite.T(), model_domain.Subdomain{
+	suite.Equal(suite.domain.Key, domainKey)
+	suite.Equal(model_domain.Subdomain{
 		Key:        suite.subdomainKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -144,8 +144,8 @@ func (suite *SubdomainSuite) TestRemove() {
 
 	domainKey, subdomain, err := LoadSubdomain(suite.db, suite.model.Key, suite.subdomainKey)
 	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), domainKey)
-	assert.Empty(suite.T(), subdomain)
+	suite.Empty(domainKey)
+	suite.Empty(subdomain)
 }
 
 func (suite *SubdomainSuite) TestQuery() {
@@ -169,7 +169,7 @@ func (suite *SubdomainSuite) TestQuery() {
 
 	subdomains, err := QuerySubdomains(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_domain.Subdomain{
+	suite.Equal(map[identity.Key][]model_domain.Subdomain{
 		suite.domain.Key: {
 			{
 				Key:        suite.subdomainKey,
@@ -198,10 +198,10 @@ func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey iden
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, subdomain, err = LoadSubdomain(dbOrTx, modelKey, subdomainKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return subdomain
 }

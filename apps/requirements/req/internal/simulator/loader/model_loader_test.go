@@ -119,7 +119,7 @@ func (s *ModelLoaderSuite) TestRoundTripWithDataTypeRules() {
 
 func (s *ModelLoaderSuite) TestNonExistentFile() {
 	_, err := LoadModel("/nonexistent/path/model.json")
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "reading model file")
 }
 
@@ -129,7 +129,7 @@ func (s *ModelLoaderSuite) TestInvalidJSON() {
 	s.Require().NoError(err)
 
 	_, err = LoadModel(path)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "parsing model JSON")
 }
 
@@ -140,7 +140,7 @@ func (s *ModelLoaderSuite) TestInvalidModel() {
 	s.Require().NoError(err)
 
 	_, err = LoadModel(path)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "validating model")
 }
 

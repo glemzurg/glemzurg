@@ -1656,8 +1656,8 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 func (suite *KeySuite) TestJSONUnmarshalEmpty() {
 	var key Key
 	err := json.Unmarshal([]byte(`""`), &key)
-	suite.NoError(err)
-	assert.Equal(suite.T(), Key{}, key)
+	suite.Require().NoError(err)
+	suite.Equal(Key{}, key)
 }
 
 // TestJSONUnmarshalInvalid tests that unmarshalling invalid JSON or key strings returns errors.
@@ -1769,8 +1769,8 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 func (suite *KeySuite) TestTextUnmarshalEmpty() {
 	var key Key
 	err := key.UnmarshalText([]byte(""))
-	suite.NoError(err)
-	assert.Equal(suite.T(), Key{}, key)
+	suite.Require().NoError(err)
+	suite.Equal(Key{}, key)
 }
 
 // TestTextUnmarshalInvalid tests that unmarshalling invalid key strings returns errors.
@@ -1834,7 +1834,7 @@ func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
 	for key, value := range originalMap {
 		parsedValue, ok := parsedMap[key]
 		suite.True(ok, "Key not found in parsed map: %s", key.String())
-		assert.Equal(suite.T(), value, parsedValue, "Value mismatch for key: %s", key.String())
+		suite.Equal(value, parsedValue, "Value mismatch for key: %s", key.String())
 	}
 }
 
@@ -1904,8 +1904,8 @@ func (suite *KeySuite) TestYAMLRoundTrip() {
 func (suite *KeySuite) TestYAMLUnmarshalEmpty() {
 	var key Key
 	err := yaml.Unmarshal([]byte(`""`), &key)
-	suite.NoError(err)
-	assert.Equal(suite.T(), Key{}, key)
+	suite.Require().NoError(err)
+	suite.Equal(Key{}, key)
 }
 
 // TestYAMLUnmarshalInvalid tests that unmarshalling invalid YAML key strings returns errors.

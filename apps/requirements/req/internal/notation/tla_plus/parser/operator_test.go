@@ -21,7 +21,7 @@ func TestOperatorSuite(t *testing.T) {
 
 func (s *OperatorTestSuite) TestParseNegation() {
 	expr, err := ParseExpression("-1")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
 		Right:    &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
@@ -30,7 +30,7 @@ func (s *OperatorTestSuite) TestParseNegation() {
 
 func (s *OperatorTestSuite) TestParseNegationDecimal() {
 	expr, err := ParseExpression("-.5")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
 		Right: &ast.NumberLiteral{
@@ -44,7 +44,7 @@ func (s *OperatorTestSuite) TestParseNegationDecimal() {
 
 func (s *OperatorTestSuite) TestParseDoubleNegation() {
 	expr, err := ParseExpression("--1")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
 		Right: &ast.UnaryNegation{
@@ -60,7 +60,7 @@ func (s *OperatorTestSuite) TestParseDoubleNegation() {
 
 func (s *OperatorTestSuite) TestParseFraction() {
 	expr, err := ParseExpression("3/4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Fraction{
 		Numerator:   &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 		Denominator: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"},
@@ -69,7 +69,7 @@ func (s *OperatorTestSuite) TestParseFraction() {
 
 func (s *OperatorTestSuite) TestParseFractionWithDecimals() {
 	expr, err := ParseExpression("1.5/2.5")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Fraction{
 		Numerator: &ast.NumberLiteral{
 			Base:            ast.BaseDecimal,
@@ -88,7 +88,7 @@ func (s *OperatorTestSuite) TestParseFractionWithDecimals() {
 
 func (s *OperatorTestSuite) TestParseDivisionByZero() {
 	expr, err := ParseExpression("1/0")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Fraction{
 		Numerator:   &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "1"},
 		Denominator: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "0"},
@@ -102,7 +102,7 @@ func (s *OperatorTestSuite) TestParseDivisionByZero() {
 func (s *OperatorTestSuite) TestParseNegatedFraction() {
 	// -3/4 parses as: operator - { operator / { number 3, number 4 } }
 	expr, err := ParseExpression("-3/4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
 		Right: &ast.Fraction{
@@ -115,7 +115,7 @@ func (s *OperatorTestSuite) TestParseNegatedFraction() {
 func (s *OperatorTestSuite) TestParseFractionWithNegatedDenominator() {
 	// 3/(-1.4) parses as: operator / { number 3, paren { operator - { number 1.4 } } }
 	expr, err := ParseExpression("3/(-1.4)")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Fraction{
 		Numerator: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 		Denominator: &ast.Parenthesized{
@@ -135,7 +135,7 @@ func (s *OperatorTestSuite) TestParseFractionWithNegatedDenominator() {
 func (s *OperatorTestSuite) TestParseComplexNested() {
 	// -3/-(1.4/.2) parses as complex nested structure
 	expr, err := ParseExpression("-3/-(1.4/.2)")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
 		Right: &ast.Fraction{
@@ -166,7 +166,7 @@ func (s *OperatorTestSuite) TestParseComplexNested() {
 func (s *OperatorTestSuite) TestParseParenthesizedNumerator() {
 	// (-3)/4 parses as: operator / { paren { operator - { number 3 } }, number 4 }
 	expr, err := ParseExpression("(-3)/4")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Fraction{
 		Numerator: &ast.Parenthesized{
 			Inner: &ast.UnaryNegation{
@@ -184,7 +184,7 @@ func (s *OperatorTestSuite) TestParseParenthesizedNumerator() {
 
 func (s *OperatorTestSuite) TestParseParenthesizedNumber() {
 	expr, err := ParseExpression("(42)")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Parenthesized{
 		Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 	}, expr)
@@ -192,7 +192,7 @@ func (s *OperatorTestSuite) TestParseParenthesizedNumber() {
 
 func (s *OperatorTestSuite) TestParseNestedParentheses() {
 	expr, err := ParseExpression("((123))")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Parenthesized{
 		Inner: &ast.Parenthesized{
 			Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "123"},
@@ -202,7 +202,7 @@ func (s *OperatorTestSuite) TestParseNestedParentheses() {
 
 func (s *OperatorTestSuite) TestParseParenthesesWithWhitespace() {
 	expr, err := ParseExpression("( 42 )")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.Parenthesized{
 		Inner: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"},
 	}, expr)

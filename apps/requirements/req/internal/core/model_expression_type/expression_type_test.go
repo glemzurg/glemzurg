@@ -41,9 +41,9 @@ func (s *ExpressionTypeTestSuite) TestValidateScalars() {
 		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
-				s.Error(err)
+				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
 			}
 		})
@@ -68,9 +68,9 @@ func (s *ExpressionTypeTestSuite) TestValidateCollections() {
 		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
-				s.Error(err)
+				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
 			}
 		})
@@ -99,9 +99,9 @@ func (s *ExpressionTypeTestSuite) TestValidateCompound() {
 		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
-				s.Error(err)
+				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
 			}
 		})
@@ -121,9 +121,9 @@ func (s *ExpressionTypeTestSuite) TestValidateReferences() {
 		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
-				s.Error(err)
+				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
 			}
 		})
@@ -155,7 +155,7 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 		},
 	}
 	err := etBad.Validate()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "ElementTypes")
 }
 
@@ -181,5 +181,5 @@ func (s *ExpressionTypeTestSuite) TestValidateExpressionTypeHelper() {
 	s.NoError(ValidateExpressionType(&BooleanType{}))
 	// Invalid type.
 	err := ValidateExpressionType(&SetType{})
-	s.Error(err)
+	s.Require().Error(err)
 }

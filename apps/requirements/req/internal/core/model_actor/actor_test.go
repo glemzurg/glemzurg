@@ -140,7 +140,7 @@ func (suite *ActorSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.actor.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -156,7 +156,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	actor, err := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, &genKeyA, &genKeyB, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Actor{
 		Key:             key,
 		Name:            "Name",
@@ -169,7 +169,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test with nil superclass/subclass.
 	actor, err = NewActor(key, "Name", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Actor{
 		Key:        key,
 		Name:       "Name",
@@ -208,7 +208,7 @@ func (suite *ActorSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = actor.ValidateWithParent(nil)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates actor references.
@@ -232,7 +232,7 @@ func (suite *ActorSuite) TestValidateReferences() {
 		SubclassOfKey:   &genKeyB,
 	}
 	err := actor.ValidateReferences(generalizations)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Valid: no references.
 	actor = Actor{
@@ -241,7 +241,7 @@ func (suite *ActorSuite) TestValidateReferences() {
 		Type: _USER_TYPE_PERSON,
 	}
 	err = actor.ValidateReferences(generalizations)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Error: superclass references non-existent generalization.
 	actor = Actor{

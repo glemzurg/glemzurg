@@ -68,10 +68,10 @@ func (suite *ActorGeneralizationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalization, err = LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -91,10 +91,10 @@ func (suite *ActorGeneralizationSuite) TestAdd() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -137,7 +137,7 @@ func (suite *ActorGeneralizationSuite) TestUpdate() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
@@ -147,10 +147,10 @@ func (suite *ActorGeneralizationSuite) TestUpdate() {
 		IsStatic:   true,
 		UmlComment: "UmlCommentX",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
@@ -170,7 +170,7 @@ func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
@@ -180,10 +180,10 @@ func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
@@ -203,10 +203,10 @@ func (suite *ActorGeneralizationSuite) TestRemove() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	suite.ErrorIs(err, ErrNotFound)
@@ -232,10 +232,10 @@ func (suite *ActorGeneralizationSuite) TestQuery() {
 			UmlComment: "UmlComment",
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	generalizations, err := QueryActorGeneralizations(suite.db, suite.model.Key)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal([]model_actor.Generalization{
 		{
 			Key:        suite.generalizationKey,

@@ -69,9 +69,8 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesNoIndexes() {
 	indexInfo := makeIndexInfo(classKey, nil) // no indexes
 	attrs := object.NewRecord()
 
-
 	err := generateIndexSafeValues(attrs, indexInfo, nil, rng)
-	s.NoError(err)
+	s.Require().NoError(err)
 }
 
 func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
@@ -93,11 +92,10 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesSpanUnique() {
 	existAttrs.Set("id", object.NewInteger(42))
 	simState.CreateInstance(classKey, existAttrs)
 
-
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The generated id should not be 42
 	generatedID := newAttrs.Get("id")
@@ -128,11 +126,10 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumUnique() {
 	a2.Set("color", object.NewString("green"))
 	simState.CreateInstance(classKey, a2)
 
-
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The generated color should be "blue" (the only unused value)
 	generated := newAttrs.Get("color")
@@ -166,7 +163,6 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 	a2.Set("color", object.NewString("green"))
 	simState.CreateInstance(classKey, a2)
 
-
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
@@ -199,11 +195,10 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesComposite() {
 	a1.Set("tenant", object.NewString("acme"))
 	simState.CreateInstance(classKey, a1)
 
-
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The generated tuple should not be (a@b.com, acme)
 	email := newAttrs.Get("email").(*object.String).Value()
@@ -235,14 +230,12 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesPresetAttribute() {
 	a1.Set("tenant", object.NewString("acme"))
 	simState.CreateInstance(classKey, a1)
 
-
-
 	// Pre-set email to "a@b.com" — generator should pick a different tenant
 	newAttrs := object.NewRecord()
 	newAttrs.Set("email", object.NewString("a@b.com"))
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Email should still be what we pre-set
 	s.Equal("a@b.com", newAttrs.Get("email").(*object.String).Value())

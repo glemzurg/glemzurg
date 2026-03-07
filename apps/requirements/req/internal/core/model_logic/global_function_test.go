@@ -194,9 +194,9 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 		s.Run(tt.testName, func() {
 			err := tt.gf.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
-				s.Error(err)
+				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
 			}
 		})
@@ -213,7 +213,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 
 	// Test all parameters are mapped correctly.
 	gf, err := NewGlobalFunction(gfKey1, "_Max", []string{"x", "y"}, spec)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(GlobalFunction{
 		Key:        gfKey1,
 		Name:       "_Max",
@@ -225,13 +225,13 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	gf, err = NewGlobalFunction(gfKey2, "_Constant", nil,
 		helper.Must(NewLogic(gfKey2, LogicTypeValue, "A constant.", "",
 			validSpecWithBody("42"), nil)))
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("_Constant", gf.Name)
 	s.Nil(gf.Parameters)
 
 	// Test that Validate is called (invalid name should fail).
 	_, err = NewGlobalFunction(gfKey1, "Max", []string{"x"}, spec)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "must start with underscore")
 
 	// Test that invalid specification fails.
@@ -241,7 +241,7 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 		Description: "Some desc.",
 		Spec:        validSpec(),
 	})
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "KeyType")
 }
 
@@ -259,7 +259,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		Logic:      validLogic,
 	}
 	err := gf.ValidateWithParent()
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Test that Validate is called.
 	gf = GlobalFunction{
@@ -269,7 +269,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		Logic:      validLogic,
 	}
 	err = gf.ValidateWithParent()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "must start with underscore")
 
 	// Test that Specification.ValidateWithParent is called - invalid spec description should fail.
@@ -285,7 +285,7 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 		},
 	}
 	err = gf.ValidateWithParent()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "specification")
 	s.Contains(err.Error(), "Description")
 }

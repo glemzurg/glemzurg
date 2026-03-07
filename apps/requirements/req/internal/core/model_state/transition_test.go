@@ -182,8 +182,8 @@ func (suite *TransitionSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	transition, err := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
-	suite.NoError(err)
-	assert.Equal(suite.T(), Transition{
+	suite.Require().NoError(err)
+	suite.Equal(Transition{
 		Key:          key,
 		FromStateKey: &fromStateKey,
 		EventKey:     eventKey,
@@ -231,7 +231,7 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = transition.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates all reference keys correctly.

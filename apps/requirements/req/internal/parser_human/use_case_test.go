@@ -46,10 +46,10 @@ func (suite *UseCaseFileSuite) TestParseUseCaseFiles() {
 		err = json.Unmarshal([]byte(testData.Json), &expected)
 		assert.Nil(suite.T(), err, testName)
 
-		assert.Equal(suite.T(), expected, actual, testName)
+		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
 		generated := generateUseCaseContent(actual)
-		assert.Equal(suite.T(), testData.Contents, generated, testName)
+		suite.Equal(testData.Contents, generated, testName)
 	}
 }

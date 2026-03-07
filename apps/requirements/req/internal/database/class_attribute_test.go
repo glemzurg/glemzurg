@@ -94,12 +94,12 @@ func (suite *AttributeSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, attribute, err = LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
-	suite.NoError(err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_class.Attribute{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
@@ -121,12 +121,12 @@ func (suite *AttributeSuite) TestAdd() {
 		UmlComment:       "UmlComment",
 		DataType:         &suite.dataType, // DataType is written as FK but not read back by LoadAttribute.
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
-	suite.NoError(err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_class.Attribute{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
@@ -148,12 +148,12 @@ func (suite *AttributeSuite) TestAddNulls() {
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
-	suite.NoError(err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_class.Attribute{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "Name",
 		Details:          "Details",
@@ -175,7 +175,7 @@ func (suite *AttributeSuite) TestUpdate() {
 		UmlComment:       "UmlComment",
 		DataType:         &suite.dataType,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
@@ -187,12 +187,12 @@ func (suite *AttributeSuite) TestUpdate() {
 		UmlComment:       "UmlCommentX",
 		DataType:         &suite.dataType,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
-	suite.NoError(err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_class.Attribute{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "NameX",
 		Details:          "DetailsX",
@@ -214,7 +214,7 @@ func (suite *AttributeSuite) TestUpdateNulls() {
 		UmlComment:       "UmlComment",
 		DataType:         &suite.dataType,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = UpdateAttribute(suite.db, suite.model.Key, suite.class.Key, model_class.Attribute{
 		Key:              suite.attributeKey,
@@ -226,12 +226,12 @@ func (suite *AttributeSuite) TestUpdateNulls() {
 		UmlComment:       "UmlCommentX",
 		DataType:         nil, // No data type.
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
-	suite.NoError(err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_class.Attribute{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             "NameX",
 		Details:          "DetailsX",
@@ -253,10 +253,10 @@ func (suite *AttributeSuite) TestRemove() {
 		UmlComment:       "UmlComment",
 		DataType:         &suite.dataType,
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	err = RemoveAttribute(suite.db, suite.model.Key, suite.class.Key, suite.attributeKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	classKey, attribute, err := LoadAttribute(suite.db, suite.model.Key, suite.attributeKey)
 	suite.Require().ErrorIs(err, ErrNotFound)
@@ -289,11 +289,11 @@ func (suite *AttributeSuite) TestQuery() {
 			},
 		},
 	})
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	attributes, err := QueryAttributes(suite.db, suite.model.Key)
-	suite.NoError(err)
-	assert.Equal(suite.T(), map[identity.Key][]model_class.Attribute{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_class.Attribute{
 		suite.class.Key: {
 			{
 				Key:              suite.attributeKey,
@@ -331,17 +331,17 @@ func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey ident
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, attribute, err = LoadAttribute(dbOrTx, modelKey, attributeKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return attribute
 }
 
 func (suite *AttributeSuite) TestVerifyTestObjects() {
 	attribute := t_AddAttribute(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.attributeKey)
-	assert.Equal(suite.T(), model_class.Attribute{
+	suite.Equal(model_class.Attribute{
 		Key:              suite.attributeKey,
 		Name:             suite.attributeKey.String(),
 		Details:          "Details",

@@ -80,8 +80,8 @@ func (suite *GeneralizationSuite) TestLoad() {
 
 	subdomainKey, generalization, err = LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -104,8 +104,8 @@ func (suite *GeneralizationSuite) TestAdd() {
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -128,8 +128,8 @@ func (suite *GeneralizationSuite) TestAddNulls() {
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "",
@@ -162,8 +162,8 @@ func (suite *GeneralizationSuite) TestUpdate() {
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -196,8 +196,8 @@ func (suite *GeneralizationSuite) TestUpdateNulls() {
 
 	subdomainKey, generalization, err := LoadGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Generalization{
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
 		Details:    "",
@@ -252,7 +252,7 @@ func (suite *GeneralizationSuite) TestQuery() {
 
 	generalizations, err := QueryGeneralizations(suite.db, suite.model.Key)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_class.Generalization{
+	suite.Equal(map[identity.Key][]model_class.Generalization{
 		suite.subdomain.Key: {
 			{
 				Key:        suite.generalizationKey,
@@ -287,10 +287,10 @@ func t_AddGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomain
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	_, generalization, err = LoadGeneralization(dbOrTx, modelKey, generalizationKey)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	return generalization
 }

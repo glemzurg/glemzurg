@@ -161,7 +161,7 @@ func (s *ActionsSuite) TestExecutionContextRecordPrimed() {
 	ctx := NewExecutionContext()
 
 	err := ctx.RecordPrimedAssignment(1, "count", object.NewInteger(42))
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	all := ctx.GetAllPrimedAssignments()
 	s.Len(all, 1)
@@ -172,7 +172,7 @@ func (s *ActionsSuite) TestExecutionContextRejectsStateField() {
 	ctx := NewExecutionContext()
 
 	err := ctx.RecordPrimedAssignment(1, "_state", object.NewString("Open"))
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "_state")
 }
 
@@ -182,7 +182,7 @@ func (s *ActionsSuite) TestExecutionContextReentrancyGuard() {
 	// First mutation is fine
 	s.True(ctx.CanMutate(1))
 	err := ctx.RecordPrimedAssignment(1, "count", object.NewInteger(1))
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// After mutation, instance 1 is locked
 	s.False(ctx.CanMutate(1))
@@ -196,12 +196,12 @@ func (s *ActionsSuite) TestExecutionContextDepthLimit() {
 
 	for range 100 {
 		err := ctx.IncrementDepth()
-		s.NoError(err)
+		s.Require().NoError(err)
 	}
 
 	// 101st should fail
 	err := ctx.IncrementDepth()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "depth exceeded")
 }
 
@@ -240,7 +240,7 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 	exec := buildTestExecutor(simState)
 
 	result, err := exec.ExecuteAction(action, instance, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(result)
 	s.True(result.Success)
 
@@ -275,7 +275,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 	exec := buildTestExecutor(simState)
 
 	result, err := exec.ExecuteAction(action, instance, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(result.Success)
 
 	updated := simState.GetInstance(instance.ID)
@@ -308,7 +308,7 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 	exec := buildTestExecutor(simState)
 
 	_, err := exec.ExecuteAction(action, instance, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "precondition failed")
 }
 
@@ -338,7 +338,7 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 	}
 
 	result, err := exec.ExecuteAction(action, instance, params)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(result.Success)
 
 	updated := simState.GetInstance(instance.ID)
@@ -370,7 +370,7 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	exec := buildTestExecutor(simState)
 
 	result, err := exec.ExecuteQuery(query, instance, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(result.Success)
 	s.NotNil(result.Outputs["result"])
 	s.Equal("100", result.Outputs["result"].Inspect())
@@ -397,7 +397,7 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 	exec := buildTestExecutor(simState)
 
 	_, err := exec.ExecuteQuery(query, instance, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// State should be unchanged
 	unchanged := simState.GetInstance(instance.ID)
@@ -430,7 +430,7 @@ func (s *ActionsSuite) TestExecuteQueryPreconditionFails() {
 	exec := buildTestExecutor(simState)
 
 	_, err := exec.ExecuteQuery(query, instance, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "precondition failed")
 }
 
@@ -461,7 +461,7 @@ func (s *ActionsSuite) TestGuardEvaluatorAllTrue() {
 	ge := NewGuardEvaluator(bb)
 
 	passes, err := ge.EvaluateGuard(guard, instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(passes)
 }
 
@@ -488,7 +488,7 @@ func (s *ActionsSuite) TestGuardEvaluatorOneFalse() {
 	ge := NewGuardEvaluator(bb)
 
 	passes, err := ge.EvaluateGuard(guard, instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(passes)
 }
 
@@ -516,7 +516,7 @@ func (s *ActionsSuite) TestExecuteTransitionNormal() {
 	event := class.Events[eventCloseKey]
 
 	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(result)
 
 	s.Equal("Open", result.FromState)
@@ -565,7 +565,7 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 	eventObj := class.Events[eventCreateKey]
 
 	result, err := exec.ExecuteTransition(class, eventObj, nil, nil, nil, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(result.WasCreation)
 	s.Equal("Open", result.ToState)
 
@@ -612,7 +612,7 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 	eventObj := class.Events[eventDeleteKey]
 
 	result, err := exec.ExecuteTransition(class, eventObj, instance, nil, nil, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(result.WasDeletion)
 
 	// Instance should be deleted
@@ -637,7 +637,7 @@ func (s *ActionsSuite) TestExecuteTransitionNoMatchingTransition() {
 	event := class.Events[eventCloseKey]
 
 	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no transitions")
 }
 
@@ -709,7 +709,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 
 	event := class.Events[eventReviewKey]
 	result, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("Approved", result.ToState)
 
 	// Case 2: Low value order -> should go to Rejected
@@ -720,7 +720,7 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	_ = simState.SetStateMachineState(instance2.ID, stateOpenKey)
 
 	result2, err := exec.ExecuteTransition(class, event, instance2, nil, nil, nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("Rejected", result2.ToState)
 }
 
@@ -777,7 +777,7 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 
 	event := class.Events[eventKey]
 	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "non-determinism")
 }
 
@@ -824,7 +824,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 
 	event := class.Events[eventKey]
 	_, err := exec.ExecuteTransition(class, event, instance, nil, nil, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "deadlock")
 }
 
@@ -837,7 +837,7 @@ func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
 	class.SetStates(map[identity.Key]model_state.State{})
 
 	err := ValidateClassForSimulation(class)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no states")
 }
 
@@ -850,7 +850,7 @@ func (s *ActionsSuite) TestValidateClassForSimulationWithStates() {
 	})
 
 	err := ValidateClassForSimulation(class)
-	s.NoError(err)
+	s.Require().NoError(err)
 }
 
 // ========================================================================
@@ -891,7 +891,7 @@ func (s *ActionsSuite) TestBindParametersSuccess() {
 	}
 
 	result, err := binder.BindParameters(paramDefs, values)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(result, 2)
 	s.Equal("50", result["amount"].Inspect())
 	s.Equal("test", result["name"].(*object.String).Value())
@@ -907,7 +907,7 @@ func (s *ActionsSuite) TestBindParametersMissing() {
 	values := map[string]object.Object{} // missing amount
 
 	_, err := binder.BindParameters(paramDefs, values)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "missing required parameter")
 }
 
@@ -1032,7 +1032,7 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 	executor := buildTestExecutor(simState)
 
 	_, err := executor.ExecuteAction(action, instance, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Requires must not contain primed variables")
 }
 
@@ -1057,7 +1057,7 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 	executor := buildTestExecutor(simState)
 
 	_, err := executor.ExecuteAction(action, instance, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "SafetyRules must reference primed variables")
 }
 
@@ -1154,7 +1154,7 @@ func (s *ActionsSuite) TestGuardRejectsPrimedVariables() {
 	ge := NewGuardEvaluator(bb)
 
 	_, err := ge.EvaluateGuard(guard, instance)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "guards must not contain primed variables")
 }
 
@@ -1188,6 +1188,6 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 	executor := buildTestExecutor(simState)
 
 	_, err := executor.ExecuteQuery(query, instance, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Requires must not contain primed variables")
 }

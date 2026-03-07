@@ -45,7 +45,7 @@ func (suite *FileSuite) TestParseFiles() {
 
 func (suite *FileSuite) TestParseFilesErr() {
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERIC_PATH_ERR)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename

@@ -109,7 +109,7 @@ func (suite *GuardSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.guard.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -128,7 +128,7 @@ func (suite *GuardSuite) TestNew() {
 
 	// Test all parameters are mapped correctly.
 	guard, err := NewGuard(key, "Name", logic)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Equal(Guard{
 		Key:   key,
 		Name:  "Name",
@@ -170,7 +170,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 
 	// Test valid case.
 	err = guard.ValidateWithParent(&classKey)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 
 	// Test logic key equality - logic key must match the guard's own key.
 	differentGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))

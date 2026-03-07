@@ -305,7 +305,7 @@ func (s *LogicTestSuite) TestValidate() {
 		s.Run(tt.testName, func() {
 			err := tt.logic.Validate()
 			if tt.errstr == "" {
-				s.NoError(err)
+				s.Require().NoError(err)
 			} else {
 				s.Require().Error(err)
 				s.Contains(err.Error(), tt.errstr)
@@ -342,33 +342,33 @@ func (s *LogicTestSuite) TestNew() {
 
 	// Test state_change with target.
 	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", validSpecWithBody("address"), nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("shipping", logic.Target)
 
 	// Test query with target.
 	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("result", logic.Target)
 
 	// Test let with target.
 	logic, err = NewLogic(validKey, LogicTypeLet, "Local variable.", "myVar", validSpecWithBody("1 + 2"), nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("myVar", logic.Target)
 	s.Equal(LogicTypeLet, logic.Type)
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", validSpec(), nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "KeyType")
 
 	// Test that invalid notation fails.
 	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", model_spec.ExpressionSpec{Notation: "Z"}, nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Notation")
 
 	// Test that invalid kind fails.
 	_, err = NewLogic(validKey, "bogus", "Some description.", "", validSpec(), nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Type")
 }
 
@@ -420,9 +420,9 @@ func (s *LogicTestSuite) TestValidateWithParent() {
 		Spec:        validSpec(),
 	}
 	err = logic.ValidateWithParent(&actionKey)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Test wrong parent for action require key.
 	err = logic.ValidateWithParent(&classKey)
-	s.Error(err)
+	s.Require().Error(err)
 }

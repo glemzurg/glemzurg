@@ -50,7 +50,7 @@ func (suite *PrimedSuite) TestString() {
 
 func (suite *PrimedSuite) TestASCII() {
 	p := &Primed{Base: &Identifier{Value: "x"}}
-	assert.Equal(suite.T(), "x'", p.ASCII())
+	suite.Equal("x'", p.ASCII())
 }
 
 func (suite *PrimedSuite) TestValidate() {

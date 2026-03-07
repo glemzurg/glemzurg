@@ -75,7 +75,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(dae)
 
 	// Create an instance with price=10.
@@ -84,7 +84,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	instance := simState.CreateInstance(classKey, attrs)
 
 	derived, err := dae.ResolveDerived(instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(derived)
 
 	doublePriceVal, ok := derived["doublePrice"]
@@ -119,7 +119,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(dae)
 	// Empty specification is silently skipped — no derived attributes.
 	s.False(dae.HasDerivedAttributes())
@@ -154,7 +154,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(dae)
 	s.Contains(err.Error(), "must not contain primed variables")
 }
@@ -189,7 +189,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Create an instance with price=5.
 	attrs := object.NewRecord()

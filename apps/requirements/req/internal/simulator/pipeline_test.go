@@ -94,7 +94,7 @@ func (s *PipelineSuite) TestInferType_NaturalLiteral() {
 	node := ast.NewIntLiteral(42)
 	typ, err := pipeline.InferType(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.IsType(types.Number{}, typ)
 }
 
@@ -104,7 +104,7 @@ func (s *PipelineSuite) TestInferType_BooleanLiteral() {
 	node := &ast.BooleanLiteral{Value: true}
 	typ, err := pipeline.InferType(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.IsType(types.Boolean{}, typ)
 }
 
@@ -118,7 +118,7 @@ func (s *PipelineSuite) TestInferType_SetLiteral() {
 
 	typ, err := pipeline.InferType(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	setType, ok := typ.(types.Set)
 	s.True(ok)
 	s.IsType(types.String{}, setType.Element)
@@ -130,7 +130,7 @@ func (s *PipelineSuite) TestCompile_ReusableExpression() {
 	node := ast.NewIntLiteral(100)
 	compiled, err := pipeline.Compile(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(compiled)
 
 	// Evaluate multiple times with different bindings
@@ -149,7 +149,7 @@ func (s *PipelineSuite) TestCompiledExpr_Type() {
 	node := &ast.BooleanLiteral{Value: false}
 	compiled, err := pipeline.Compile(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.IsType(types.Boolean{}, compiled.Type())
 }
 
@@ -168,7 +168,7 @@ func (s *PipelineSuite) TestCheck_ConvenienceFunction() {
 
 	typ, err := Check(node)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.IsType(types.String{}, typ)
 }
 

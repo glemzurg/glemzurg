@@ -189,10 +189,10 @@ Something. [A13][A13]
 		incompletes, err := test.requirement.incompleteUseCase()
 		if test.errstr == "" {
 			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.incompletes, incompletes, testName)
+			suite.Equal(test.incompletes, incompletes, testName)
 		} else {
 			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), incompletes, testName)
+			suite.Empty(incompletes, testName)
 		}
 	}
 }
@@ -243,7 +243,7 @@ func (suite *RequirementUseCaseSuite) TestIsBulletedLine() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		isBulletLine := isBulletedLine(test.textline)
-		assert.Equal(suite.T(), test.isBulletLine, isBulletLine, testName)
+		suite.Equal(test.isBulletLine, isBulletLine, testName)
 	}
 }
 
@@ -297,6 +297,6 @@ func (suite *RequirementUseCaseSuite) TestIsNumericBulletedLine() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		isBulletLine := isNumericBulletedLine(test.textline)
-		assert.Equal(suite.T(), test.isBulletLine, isBulletLine, testName)
+		suite.Equal(test.isBulletLine, isBulletLine, testName)
 	}
 }

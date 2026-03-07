@@ -22,7 +22,7 @@ type ControlFlowEvalSuite struct {
 
 func (s *ControlFlowEvalSuite) TestIfThenElse_TrueCondition() {
 	expr, err := parser.ParseExpression("IF TRUE THEN 1 ELSE 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -33,7 +33,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_TrueCondition() {
 
 func (s *ControlFlowEvalSuite) TestIfThenElse_FalseCondition() {
 	expr, err := parser.ParseExpression("IF FALSE THEN 1 ELSE 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -44,7 +44,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_FalseCondition() {
 
 func (s *ControlFlowEvalSuite) TestIfThenElse_WithComparison() {
 	expr, err := parser.ParseExpression("IF x > 0 THEN x ELSE -x")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Test with positive x
 	bindings := NewBindings()
@@ -66,7 +66,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_WithComparison() {
 func (s *ControlFlowEvalSuite) TestIfThenElse_Nested() {
 	// Signum function: returns -1, 0, or 1
 	expr, err := parser.ParseExpression("IF x > 0 THEN 1 ELSE IF x < 0 THEN -1 ELSE 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Positive
 	bindings := NewBindings()
@@ -89,7 +89,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_Nested() {
 
 func (s *ControlFlowEvalSuite) TestIfThenElse_NonBooleanCondition() {
 	expr, err := parser.ParseExpression("IF 1 THEN 2 ELSE 3")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -104,7 +104,7 @@ func (s *ControlFlowEvalSuite) TestIfThenElse_NonBooleanCondition() {
 
 func (s *ControlFlowEvalSuite) TestCaseExpr_FirstMatch() {
 	expr, err := parser.ParseExpression("CASE x > 0 -> 1 [] x < 0 -> 2 [] OTHER -> 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(5), NamespaceGlobal)
@@ -116,7 +116,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_FirstMatch() {
 
 func (s *ControlFlowEvalSuite) TestCaseExpr_SecondMatch() {
 	expr, err := parser.ParseExpression("CASE x > 0 -> 1 [] x < 0 -> 2 [] OTHER -> 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(-5), NamespaceGlobal)
@@ -128,7 +128,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_SecondMatch() {
 
 func (s *ControlFlowEvalSuite) TestCaseExpr_OtherMatch() {
 	expr, err := parser.ParseExpression("CASE x > 0 -> 1 [] x < 0 -> 2 [] OTHER -> 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(0), NamespaceGlobal)
@@ -140,7 +140,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_OtherMatch() {
 
 func (s *ControlFlowEvalSuite) TestCaseExpr_NoMatchNoOther() {
 	expr, err := parser.ParseExpression("CASE x > 0 -> 1 [] x < 0 -> 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("x", object.NewInteger(0), NamespaceGlobal)
@@ -152,7 +152,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_NoMatchNoOther() {
 
 func (s *ControlFlowEvalSuite) TestCaseExpr_WithExpressions() {
 	expr, err := parser.ParseExpression("CASE n >= 0 -> n * 2 [] OTHER -> -n")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Positive
 	bindings := NewBindings()
@@ -173,7 +173,7 @@ func (s *ControlFlowEvalSuite) TestCaseExpr_WithExpressions() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Len() {
 	expr, err := parser.ParseExpression("_Seq!Len(<<1, 2, 3>>)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -184,7 +184,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Len() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Len_Variable() {
 	expr, err := parser.ParseExpression("_Seq!Len(seq)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	bindings.Set("seq", object.NewTupleFromElements([]object.Object{
@@ -202,7 +202,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Len_Variable() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Head() {
 	expr, err := parser.ParseExpression("_Seq!Head(<<1, 2, 3>>)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -213,7 +213,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Head() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Tail() {
 	expr, err := parser.ParseExpression("_Seq!Tail(<<1, 2, 3>>)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -228,7 +228,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Tail() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Append() {
 	expr, err := parser.ParseExpression("_Seq!Append(<<1, 2>>, 3)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -243,7 +243,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Seq_Append() {
 func (s *ControlFlowEvalSuite) TestFunctionCall_Nested() {
 	// _Seq!Len(_Seq!Tail(seq)) where seq = <<1, 2, 3>>
 	expr, err := parser.ParseExpression("_Seq!Len(_Seq!Tail(<<1, 2, 3>>))")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -254,7 +254,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Nested() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Stack_Push() {
 	expr, err := parser.ParseExpression("_Stack!Push(<<1, 2>>, 0)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -268,7 +268,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Stack_Push() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Stack_Pop() {
 	expr, err := parser.ParseExpression("_Stack!Pop(<<1, 2, 3>>)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -279,7 +279,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Stack_Pop() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Queue_Enqueue() {
 	expr, err := parser.ParseExpression("_Queue!Enqueue(<<1, 2>>, 3)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -293,7 +293,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Queue_Enqueue() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_Queue_Dequeue() {
 	expr, err := parser.ParseExpression("_Queue!Dequeue(<<1, 2, 3>>)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -304,7 +304,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_Queue_Dequeue() {
 
 func (s *ControlFlowEvalSuite) TestFunctionCall_UnknownFunction() {
 	expr, err := parser.ParseExpression("UnknownFunc(1)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)
@@ -319,7 +319,7 @@ func (s *ControlFlowEvalSuite) TestFunctionCall_UnknownFunction() {
 
 func (s *ControlFlowEvalSuite) TestCombined_IfWithFunctionCall() {
 	expr, err := parser.ParseExpression("IF _Seq!Len(seq) > 0 THEN _Seq!Head(seq) ELSE 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Non-empty sequence
 	bindings := NewBindings()
@@ -344,7 +344,7 @@ func (s *ControlFlowEvalSuite) TestCombined_IfWithFunctionCall() {
 func (s *ControlFlowEvalSuite) TestCombined_FunctionCallInQuantifier() {
 	// All sequences have length > 0
 	expr, err := parser.ParseExpression("∀ seq ∈ {<<1>>, <<1, 2>>, <<1, 2, 3>>} : _Seq!Len(seq) > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	bindings := NewBindings()
 	result := EvalAST(expr, bindings)

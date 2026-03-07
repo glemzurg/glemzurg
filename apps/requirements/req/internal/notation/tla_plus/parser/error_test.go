@@ -16,20 +16,20 @@ func TestErrorSuite(t *testing.T) {
 
 func (s *ErrorTestSuite) TestParseEmptyInput() {
 	_, err := ParseExpression("")
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *ErrorTestSuite) TestParseUnmatchedParen() {
 	_, err := ParseExpression("(42")
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *ErrorTestSuite) TestParseUnterminatedString() {
 	_, err := ParseExpression(`"hello`)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *ErrorTestSuite) TestParseInvalidToken() {
 	_, err := ParseExpression("@#$")
-	s.Error(err)
+	s.Require().Error(err)
 }

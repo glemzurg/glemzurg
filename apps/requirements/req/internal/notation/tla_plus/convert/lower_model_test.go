@@ -228,7 +228,7 @@ func (s *LowerModelTestSuite) TestLowerModelSuccess() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Verify model invariant was lowered.
 	s.NotNil(model.Invariants[0].Spec.Expression)
@@ -292,14 +292,14 @@ func (s *LowerModelTestSuite) TestLowerModelSkipsAlreadyLowered() {
 
 	// Lower once.
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Capture the expression pointer.
 	expr := model.Invariants[0].Spec.Expression
 
 	// Lower again — should skip already-lowered specs.
 	err = LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The expression should be the same pointer (not re-lowered).
 	s.Equal(expr, model.Invariants[0].Spec.Expression)
@@ -312,7 +312,7 @@ func (s *LowerModelTestSuite) TestLowerModelSkipsEmptySpec() {
 	model.Invariants[0].Spec.Specification = ""
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Expression should remain nil.
 	s.Nil(model.Invariants[0].Spec.Expression)
@@ -322,7 +322,7 @@ func (s *LowerModelTestSuite) TestLowerModelActionParameterScope() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The action require "amount > 0" should resolve 'amount' as a LocalVar.
 	for _, action := range getClassFromModel(model).Actions {
@@ -339,7 +339,7 @@ func (s *LowerModelTestSuite) TestLowerModelAttributeResolves() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The class invariant "balance ≥ 0" should resolve 'balance' as an AttributeRef.
 	class := getClassFromModel(model)
@@ -354,7 +354,7 @@ func (s *LowerModelTestSuite) TestLowerModelAllExpressionsValidate() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Validate every lowered expression.
 	for _, inv := range model.Invariants {

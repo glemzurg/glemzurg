@@ -176,7 +176,7 @@ func (suite *BagInfixSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.bi.Validate()
 			if tt.errstr == `` {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}

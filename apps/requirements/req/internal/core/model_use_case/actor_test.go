@@ -39,7 +39,7 @@ func (suite *ActorSuite) TestValidate() {
 		suite.Run(tt.testName, func() {
 			err := tt.obj.Validate()
 			if tt.errstr == "" {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			} else {
 				suite.ErrorContains(err, tt.errstr)
 			}
@@ -88,5 +88,5 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		UmlComment: "UmlComment",
 	}
 	err := obj.ValidateWithParent()
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
