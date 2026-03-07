@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -36,14 +35,13 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T() //nolint:testifylint // captures subtest result
 			var expected, actual model_class.Class
 
 			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			suite.Equal(expected, actual, testName)
 
@@ -51,7 +49,7 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 			if testData.JsonChildren != "" {
 				var expectedAssociations []model_class.Association
 				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
-				require.NoError(t, err, testName+" associations json")
+				suite.Require().NoError(err, testName+" associations json")
 				suite.Equal(expectedAssociations, associations, testName+" associations")
 			}
 

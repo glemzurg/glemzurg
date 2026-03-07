@@ -42,7 +42,7 @@ func (suite *KeyValidateSuite) TestValidKeys() {
 	for _, key := range validKeys {
 		t.Run(key, func(t *testing.T) {
 			err := ValidateKey(key, "test_key", "test.json")
-			require.NoError(t, err, "key '%s' should be valid", key)
+			suite.Require().NoError(err, "key '%s' should be valid", key)
 		})
 	}
 }
@@ -305,7 +305,7 @@ func (suite *KeyValidateSuite) TestValidSubdomainAssociationFilenames() {
 	for _, filename := range validFilenames {
 		t.Run(filename, func(t *testing.T) {
 			err := ValidateAssociationFilename(filename, AssocLevelSubdomain, "test.assoc.json")
-			require.NoError(t, err, "filename '%s' should be valid", filename)
+			suite.Require().NoError(err, "filename '%s' should be valid", filename)
 		})
 	}
 }
@@ -323,7 +323,7 @@ func (suite *KeyValidateSuite) TestValidDomainAssociationFilenames() {
 	for _, filename := range validFilenames {
 		t.Run(filename, func(t *testing.T) {
 			err := ValidateAssociationFilename(filename, AssocLevelDomain, "test.assoc.json")
-			require.NoError(t, err, "filename '%s' should be valid", filename)
+			suite.Require().NoError(err, "filename '%s' should be valid", filename)
 		})
 	}
 }
@@ -340,7 +340,7 @@ func (suite *KeyValidateSuite) TestValidModelAssociationFilenames() {
 	for _, filename := range validFilenames {
 		t.Run(filename, func(t *testing.T) {
 			err := ValidateAssociationFilename(filename, AssocLevelModel, "test.assoc.json")
-			require.NoError(t, err, "filename '%s' should be valid", filename)
+			suite.Require().NoError(err, "filename '%s' should be valid", filename)
 		})
 	}
 }

@@ -34,10 +34,10 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			var expected inputStateMachine
 
 			actual, err := parseStateMachine([]byte(testData.InputJSON), testData.Filename)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			// Compare states
 			assert.Len(t, actual.States, len(expected.States), testName+" states count")
@@ -140,7 +140,7 @@ func (suite *StateMachineSuite) TestParseStateMachineErrors() {
 			if expected.HasSchema {
 				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
 			} else {
-				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
 			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")

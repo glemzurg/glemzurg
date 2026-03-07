@@ -28,8 +28,6 @@ func TestConvertSuite(t *testing.T) {
 
 // TestConvertFromModelMinimal tests converting a minimal valid core.Model to inputModel.
 func (suite *ConvertSuite) TestConvertFromModelMinimal() {
-	t := suite.T()
-
 	m := helper.Must(core.NewModel("testmodel", "Test Model", "Model details", nil, nil, nil))
 	m.Actors = make(map[identity.Key]model_actor.Actor)
 	m.Domains = make(map[identity.Key]model_domain.Domain)
@@ -39,15 +37,13 @@ func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	suite.Require().NoError(err)
 	suite.Equal("Test Model", input.Name)
 	suite.Equal("Model details", input.Details)
-	assert.Empty(t, input.Actors)
-	assert.Empty(t, input.Domains)
-	assert.Empty(t, input.ClassAssociations)
+	suite.Empty(input.Actors)
+	suite.Empty(input.Domains)
+	suite.Empty(input.ClassAssociations)
 }
 
 // TestConvertToModelMinimal tests converting a minimal inputModel to core.Model.
 func (suite *ConvertSuite) TestConvertToModelMinimal() {
-	t := suite.T()
-
 	input := &inputModel{
 		Name:              "Test Model",
 		Details:           "Model details",
@@ -61,8 +57,8 @@ func (suite *ConvertSuite) TestConvertToModelMinimal() {
 	suite.Equal("testmodel", model.Key)
 	suite.Equal("Test Model", model.Name)
 	suite.Equal("Model details", model.Details)
-	assert.Empty(t, model.Actors)
-	assert.Empty(t, model.Domains)
+	suite.Empty(model.Actors)
+	suite.Empty(model.Domains)
 }
 
 // TestConvertFromModelWithActor tests converting an actor.

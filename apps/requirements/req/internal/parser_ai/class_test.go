@@ -30,14 +30,13 @@ func (suite *ClassSuite) TestParseClassFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputClass
 
 			actual, err := parseClass([]byte(testData.InputJSON), testData.Filename)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			suite.Equal(expected.Name, actual.Name, testName+" name")
 			suite.Equal(expected.Details, actual.Details, testName+" details")
@@ -46,10 +45,10 @@ func (suite *ClassSuite) TestParseClassFiles() {
 			suite.Equal(expected.Indexes, actual.Indexes, testName+" indexes")
 
 			// Compare attributes map
-			assert.Len(t, actual.Attributes, len(expected.Attributes), testName+" attributes count")
+			suite.Len(actual.Attributes, len(expected.Attributes), testName+" attributes count")
 			for key, expectedAttr := range expected.Attributes {
 				actualAttr, exists := actual.Attributes[key]
-				assert.True(t, exists, testName+" attribute '"+key+"' should exist")
+				suite.True(exists, testName+" attribute '"+key+"' should exist")
 				if exists {
 					suite.Equal(expectedAttr.Name, actualAttr.Name, testName+" attribute '"+key+"' name")
 					suite.Equal(expectedAttr.DataTypeRules, actualAttr.DataTypeRules, testName+" attribute '"+key+"' data_type_rules")

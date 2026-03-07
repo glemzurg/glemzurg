@@ -30,14 +30,13 @@ func (suite *GlobalFunctionSuite) TestParseGlobalFunctionFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputGlobalFunction
 
 			actual, err := parseGlobalFunction([]byte(testData.InputJSON), testData.Filename)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			suite.Equal(expected, *actual, testName)
 		})

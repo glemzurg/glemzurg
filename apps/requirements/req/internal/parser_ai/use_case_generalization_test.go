@@ -30,14 +30,13 @@ func (suite *UseCaseGeneralizationSuite) TestParseUseCaseGeneralizationFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputUseCaseGeneralization
 
 			actual, err := parseUseCaseGeneralization([]byte(testData.InputJSON), testData.Filename)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			suite.Equal(expected, *actual, testName)
 		})
@@ -86,7 +85,7 @@ func (suite *UseCaseGeneralizationSuite) TestParseUseCaseGeneralizationErrors() 
 			if expected.HasSchema {
 				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
 			} else {
-				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
 			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")

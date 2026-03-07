@@ -30,14 +30,13 @@ func (suite *DomainSuite) TestParseDomainFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputDomain
 
 			actual, err := parseDomain([]byte(testData.InputJSON), testData.Filename)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			suite.Equal(expected, *actual, testName)
 		})
@@ -94,7 +93,7 @@ func (suite *DomainSuite) TestParseDomainErrors() {
 			if expected.HasSchema {
 				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
 			} else {
-				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
 			// Docs are always attached to all errors

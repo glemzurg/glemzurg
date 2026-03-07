@@ -30,14 +30,13 @@ func (suite *AssociationSuite) TestParseAssociationFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputClassAssociation
 
 			actual, err := parseAssociation([]byte(testData.InputJSON), testData.Filename)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			require.NoError(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			suite.Equal(expected.Name, actual.Name, testName+" name")
 			suite.Equal(expected.Details, actual.Details, testName+" details")

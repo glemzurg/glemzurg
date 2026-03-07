@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 )
@@ -1558,18 +1556,17 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			// Create the key.
 			originalKey, err := tt.createKey()
-			require.NoError(t, err, "Failed to create key for: %s", tt.description)
+			suite.Require().NoError(err, "Failed to create key for: %s", tt.description)
 
 			// Convert to string.
 			keyStr := originalKey.String()
-			assert.NotEmpty(t, keyStr, "Key string should not be empty for: %s", tt.description)
+			suite.NotEmpty(keyStr, "Key string should not be empty for: %s", tt.description)
 
 			// Parse the string back.
 			parsedKey, err := ParseKey(keyStr)
-			require.NoError(t, err, "Failed to parse key string '%s' for: %s", keyStr, tt.description)
+			suite.Require().NoError(err, "Failed to parse key string '%s' for: %s", keyStr, tt.description)
 
 			// Verify the parsed key matches the original.
 			suite.Equal(originalKey.ParentKey, parsedKey.ParentKey, "ParentKey mismatch for: %s", tt.description)
@@ -1630,20 +1627,19 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			// Marshal to JSON.
 			jsonBytes, err := json.Marshal(tt.key)
-			require.NoError(t, err, "Failed to marshal key to JSON")
+			suite.Require().NoError(err, "Failed to marshal key to JSON")
 
 			// Verify the JSON is a string (quoted).
 			jsonStr := string(jsonBytes)
-			assert.True(t, len(jsonStr) >= 2 && jsonStr[0] == '"' && jsonStr[len(jsonStr)-1] == '"',
+			suite.True(len(jsonStr) >= 2 && jsonStr[0] == '"' && jsonStr[len(jsonStr)-1] == '"',
 				"JSON should be a quoted string, got: %s", jsonStr)
 
 			// Unmarshal back.
 			var parsedKey Key
 			err = json.Unmarshal(jsonBytes, &parsedKey)
-			require.NoError(t, err, "Failed to unmarshal key from JSON")
+			suite.Require().NoError(err, "Failed to unmarshal key from JSON")
 
 			// Verify the parsed key matches the original.
 			suite.Equal(tt.key, parsedKey, "Round-trip key mismatch")
@@ -1746,10 +1742,9 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			// Marshal to text.
 			textBytes, err := tt.key.MarshalText()
-			require.NoError(t, err, "Failed to marshal key to text")
+			suite.Require().NoError(err, "Failed to marshal key to text")
 
 			// Verify the text matches the String() output.
 			suite.Equal(tt.key.String(), string(textBytes), "MarshalText should return String()")
@@ -1757,7 +1752,7 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 			// Unmarshal back.
 			var parsedKey Key
 			err = parsedKey.UnmarshalText(textBytes)
-			require.NoError(t, err, "Failed to unmarshal key from text")
+			suite.Require().NoError(err, "Failed to unmarshal key from text")
 
 			// Verify the parsed key matches the original.
 			suite.Equal(tt.key, parsedKey, "Round-trip key mismatch")
@@ -1885,15 +1880,14 @@ func (suite *KeySuite) TestYAMLRoundTrip() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			// Marshal to YAML.
 			yamlBytes, err := yaml.Marshal(tt.key)
-			require.NoError(t, err, "Failed to marshal key to YAML")
+			suite.Require().NoError(err, "Failed to marshal key to YAML")
 
 			// Unmarshal back.
 			var parsedKey Key
 			err = yaml.Unmarshal(yamlBytes, &parsedKey)
-			require.NoError(t, err, "Failed to unmarshal key from YAML")
+			suite.Require().NoError(err, "Failed to unmarshal key from YAML")
 
 			// Verify the parsed key matches the original.
 			suite.Equal(tt.key, parsedKey, "Round-trip key mismatch")
