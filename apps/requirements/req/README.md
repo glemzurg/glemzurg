@@ -7,15 +7,14 @@
 
 todo:
 
-add linters in a way that AI will make use of them:
-  add complexity linter to req
+
+cleanup: 
   replace all fmt.Errorf() with errors.Errorf()
-
-grep -R "notation/tla_plus/ast" ./apps/requirements/req
-re-enable linter staticcheck
-
-
-grep -R "notation/tla_plus" ./apps/requirements/req
+  clean up linter:
+    grep -R "notation/tla_plus/ast" ./apps/requirements/req
+    re-enable linter staticcheck
+    grep -R "notation/tla_plus" ./apps/requirements/req
+  add complexity linter to req
 
 
 update ai parser to be an ai desitned cli:
@@ -214,6 +213,8 @@ graphviz migration:
 
 
 Long time targets:
+
+- linux native ui designed off The Human Interface
 
 - optimize for speed of modeling
   - work with experienced ui designer
