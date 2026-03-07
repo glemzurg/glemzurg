@@ -169,7 +169,7 @@ func (s *StressQuantifierTestSuite) TestQuantifierMalformed() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "should fail: %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "should fail: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

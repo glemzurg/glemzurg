@@ -40,7 +40,7 @@ func (s *StressErrorTestSuite) TestIncompleteExpressions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -64,7 +64,7 @@ func (s *StressErrorTestSuite) TestUnmatchedDelimiters() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -85,7 +85,7 @@ func (s *StressErrorTestSuite) TestInvalidOperatorCombinations() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -106,7 +106,7 @@ func (s *StressErrorTestSuite) TestMalformedConstructs() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -128,7 +128,7 @@ func (s *StressErrorTestSuite) TestTrailingContent() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -147,7 +147,7 @@ func (s *StressErrorTestSuite) TestReservedKeywordMisuse() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
+			s.Require().Error(err, "expected parse error for %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

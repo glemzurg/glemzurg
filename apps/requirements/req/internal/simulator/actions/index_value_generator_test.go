@@ -166,7 +166,7 @@ func (s *ActionsSuite) TestGenerateIndexSafeValuesEnumExhausted() {
 	newAttrs := object.NewRecord()
 
 	err := generateIndexSafeValues(newAttrs, indexInfo, simState.InstancesByClass(classKey), rng)
-	s.Error(err, "Should fail when all enum values are exhausted")
+	s.Require().Error(err, "Should fail when all enum values are exhausted")
 	s.Contains(err.Error(), "unable to generate unique")
 }
 

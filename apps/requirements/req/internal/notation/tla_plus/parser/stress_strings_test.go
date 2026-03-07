@@ -81,7 +81,7 @@ func (s *StressStringTestSuite) TestUnterminatedStrings() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "unterminated string should fail: %q", tt.input)
+			s.Require().Error(err, "unterminated string should fail: %q", tt.input)
 		})
 	}
 }

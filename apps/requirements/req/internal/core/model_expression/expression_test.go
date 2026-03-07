@@ -322,7 +322,7 @@ func (s *ExpressionTestSuite) TestValidateExpression() {
 	// Test the ValidateExpression helper function.
 	s.NoError(ValidateExpression(nil))
 	s.NoError(ValidateExpression(&BoolLiteral{Value: true}))
-	s.Error(ValidateExpression(&RationalLiteral{}))
+	s.Require().Error(ValidateExpression(&RationalLiteral{}))
 }
 
 func (s *ExpressionTestSuite) TestNodeType() {

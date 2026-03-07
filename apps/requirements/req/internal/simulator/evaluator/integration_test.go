@@ -559,6 +559,6 @@ func (s *IntegrationTestSuite) TestParseErrors() {
 
 	for _, tt := range badInputs {
 		_, err := parser.ParseExpression(tt.input)
-		s.Error(err, "expected error for %s: %q", tt.desc, tt.input)
+		s.Require().Error(err, "expected error for %s: %q", tt.desc, tt.input)
 	}
 }

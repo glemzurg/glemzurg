@@ -88,7 +88,7 @@ func (s *StressComparisonTestSuite) TestComparisonChainingSameLevelMustFail() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "chaining same-level comparison should fail for %q", tt.input)
+			s.Require().Error(err, "chaining same-level comparison should fail for %q", tt.input)
 		})
 	}
 }

@@ -120,7 +120,7 @@ func (s *StressCaseTestSuite) TestCaseConditionOrExprRestriction() {
 			if tt.shouldParse {
 				s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 			} else {
-				s.Error(err, "should fail: %q (%s)", tt.input, tt.desc)
+				s.Require().Error(err, "should fail: %q (%s)", tt.input, tt.desc)
 			}
 		})
 	}

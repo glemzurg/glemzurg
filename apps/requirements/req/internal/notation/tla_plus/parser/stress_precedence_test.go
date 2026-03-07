@@ -395,7 +395,7 @@ func (s *StressPrecedenceTestSuite) TestPrimeThenFieldAccess() {
 	_, err := ParseExpression("record'.field")
 	// This should fail because after record' is parsed, .field is trailing content.
 	// RootExpression requires !. (end of input).
-	s.Error(err, "record'.field should be a parse error (trailing .field after prime)")
+	s.Require().Error(err, "record'.field should be a parse error (trailing .field after prime)")
 }
 
 // === Set operation precedence ===

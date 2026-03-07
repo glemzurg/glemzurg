@@ -159,7 +159,7 @@ func (s *StressBackslashTestSuite) TestSetDifferenceRequiresWhitespace() {
 			if tt.shouldParse {
 				s.Require().NoError(err, "should parse: %q", tt.input)
 			} else {
-				s.Error(err, "set difference without whitespace must fail: %q", tt.input)
+				s.Require().Error(err, "set difference without whitespace must fail: %q", tt.input)
 			}
 		})
 	}
