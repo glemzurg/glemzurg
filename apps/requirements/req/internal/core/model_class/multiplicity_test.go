@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,12 +52,11 @@ func (suite *MultiplicitySuite) TestValidate() {
 	}
 	for _, test := range tests {
 		suite.Run(test.name, func() {
-			t := suite.T()
 			err := test.obj.Validate()
 			if test.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				require.ErrorContains(t, err, test.errstr)
+				suite.Require().ErrorContains(err, test.errstr)
 			}
 		})
 	}
@@ -227,8 +224,7 @@ func (suite *MultiplicitySuite) TestParsedString() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			t := suite.T()
-			assert.Equal(t, tt.expected, tt.multiplicity.ParsedString())
+			suite.Equal(tt.expected, tt.multiplicity.ParsedString())
 		})
 	}
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -158,12 +157,11 @@ func (suite *TransitionSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			t := suite.T()
 			err := tt.transition.Validate()
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -382,12 +380,11 @@ func (suite *TransitionSuite) TestValidateReferences() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			t := suite.T()
 			err := tt.transition.ValidateReferences(tt.states, tt.events, tt.guards, tt.actions)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

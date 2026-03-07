@@ -65,10 +65,10 @@ func (suite *KeySuite) TestNewKey() {
 			t := suite.T()
 			key, err := newKey(tt.parentKey, tt.keyType, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -197,10 +197,10 @@ func (suite *KeySuite) TestParseKey() {
 			t := suite.T()
 			key, err := ParseKey(tt.input)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -579,12 +579,11 @@ func (suite *KeySuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			err := tt.key.Validate()
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -1339,12 +1338,11 @@ func (suite *KeySuite) TestValidateParent() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			err := tt.key.ValidateParent(tt.parent)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 		if !pass {
@@ -1695,10 +1693,9 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			var key Key
 			err := json.Unmarshal([]byte(tt.jsonStr), &key)
-			require.ErrorContains(t, err, tt.errstr)
+			suite.Require().ErrorContains(err, tt.errstr)
 		})
 		if !pass {
 			break
@@ -1805,10 +1802,9 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			var key Key
 			err := key.UnmarshalText([]byte(tt.text))
-			require.ErrorContains(t, err, tt.errstr)
+			suite.Require().ErrorContains(err, tt.errstr)
 		})
 		if !pass {
 			break
@@ -1942,10 +1938,9 @@ func (suite *KeySuite) TestYAMLUnmarshalInvalid() {
 	}
 	for _, tt := range tests {
 		pass := suite.Run(tt.testName, func() {
-			t := suite.T()
 			var key Key
 			err := yaml.Unmarshal([]byte(tt.yamlStr), &key)
-			require.ErrorContains(t, err, tt.errstr)
+			suite.Require().ErrorContains(err, tt.errstr)
 		})
 		if !pass {
 			break

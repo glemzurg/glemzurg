@@ -8,8 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -188,12 +186,11 @@ func (suite *AttributeSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.testName, func() {
-			t := suite.T()
 			err := tt.attribute.Validate()
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

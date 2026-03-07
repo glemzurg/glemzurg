@@ -36,7 +36,7 @@ func (suite *ConvertSuite) TestConvertFromModelMinimal() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	assert.Equal(t, "Test Model", input.Name)
 	assert.Equal(t, "Model details", input.Details)
 	assert.Empty(t, input.Actors)
@@ -57,7 +57,7 @@ func (suite *ConvertSuite) TestConvertToModelMinimal() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	assert.Equal(t, "testmodel", model.Key)
 	assert.Equal(t, "Test Model", model.Name)
 	assert.Equal(t, "Model details", model.Details)
@@ -81,7 +81,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithActor() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	require.Contains(t, input.Actors, "customer")
 	assert.Equal(t, "Customer", input.Actors["customer"].Name)
 	assert.Equal(t, "person", input.Actors["customer"].Type)
@@ -106,7 +106,7 @@ func (suite *ConvertSuite) TestConvertToModelWithActor() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	require.Len(t, model.Actors, 1)
 
 	// Find the actor by checking the key's SubKey
@@ -170,7 +170,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	require.Contains(t, input.Domains, "orders")
 	require.Contains(t, input.Domains["orders"].Subdomains, "default")
@@ -223,7 +223,7 @@ func (suite *ConvertSuite) TestConvertToModelWithClass() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Find domain
 	var domain model_domain.Domain
@@ -329,7 +329,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	class := input.Domains["orders"].Subdomains["default"].Classes["order"]
 	require.NotNil(t, class.StateMachine)
@@ -408,7 +408,7 @@ func (suite *ConvertSuite) TestConvertToModelWithStateMachine() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Navigate to the class
 	var class model_class.Class
@@ -478,7 +478,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	class := input.Domains["orders"].Subdomains["default"].Classes["order"]
 	require.Contains(t, class.Queries, "get_total")
@@ -534,7 +534,7 @@ func (suite *ConvertSuite) TestConvertToModelWithQueries() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Navigate to the class
 	var class model_class.Class
@@ -608,7 +608,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithGeneralization() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	inputSubdomain := input.Domains["products"].Subdomains["default"]
 	require.Contains(t, inputSubdomain.ClassGeneralizations, "product_types")
@@ -653,7 +653,7 @@ func (suite *ConvertSuite) TestConvertToModelWithGeneralization() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Navigate to the subdomain
 	var subdomain model_domain.Subdomain
@@ -742,7 +742,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	inputSubdomain := input.Domains["orders"].Subdomains["default"]
 	require.Contains(t, inputSubdomain.ClassAssociations, "order_lines")
@@ -791,7 +791,7 @@ func (suite *ConvertSuite) TestConvertToModelWithSubdomainAssociation() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Navigate to the subdomain
 	var subdomain model_domain.Subdomain
@@ -829,11 +829,11 @@ func (suite *ConvertSuite) TestRoundTripMinimal() {
 
 	// Convert to req_model
 	model, err := ConvertToModel(original, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Convert back to inputModel
 	result, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	assert.Equal(t, original.Name, result.Name)
 	assert.Equal(t, original.Details, result.Details)
@@ -937,11 +937,11 @@ func (suite *ConvertSuite) TestRoundTripComplete() {
 
 	// Convert to req_model
 	model, err := ConvertToModel(original, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Convert back to inputModel
 	result, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Verify top-level fields
 	assert.Equal(t, original.Name, result.Name)
@@ -1095,7 +1095,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	inputDomain := input.Domains["orders"]
 	require.Contains(t, inputDomain.ClassAssociations, "order_shipments")
@@ -1149,7 +1149,7 @@ func (suite *ConvertSuite) TestConvertToModelWithDomainAssociation() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	// Find the domain-level association
 	var domain model_domain.Domain
@@ -1227,7 +1227,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	model := &m
 
 	input, err := ConvertFromModel(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	require.Contains(t, input.ClassAssociations, "order_products")
 
@@ -1286,7 +1286,7 @@ func (suite *ConvertSuite) TestConvertToModelWithModelAssociation() {
 	}
 
 	model, err := ConvertToModel(input, "testmodel")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
 	require.Len(t, model.ClassAssociations, 1)
 

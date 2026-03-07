@@ -176,7 +176,7 @@ func (suite *FractionExprSuite) TestValidate() {
 			t := suite.T()
 			err := tt.f.Validate()
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
 				require.ErrorContains(t, err, tt.errstr)
 			}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -43,10 +42,10 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 			t := suite.T()
 			key, err := NewActorKey(tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -82,10 +81,10 @@ func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
 			t := suite.T()
 			key, err := NewActorGeneralizationKey(tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -142,10 +141,10 @@ func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
 			t := suite.T()
 			key, err := NewUseCaseGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -181,10 +180,10 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 			t := suite.T()
 			key, err := NewDomainKey(tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -269,10 +268,10 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 			t := suite.T()
 			key, err := NewGlobalFunctionKey(tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -340,10 +339,10 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 			t := suite.T()
 			key, err := NewDomainAssociationKey(tt.problemDomainKey, tt.solutionDomainKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -397,10 +396,10 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 			t := suite.T()
 			key, err := NewSubdomainKey(tt.domainKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -463,10 +462,10 @@ func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
 			t := suite.T()
 			key, err := NewAttributeDerivationKey(tt.attributeKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -529,10 +528,10 @@ func (suite *KeyTypeSuite) TestNewActionRequireKey() {
 			t := suite.T()
 			key, err := NewActionRequireKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -595,10 +594,10 @@ func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
 			t := suite.T()
 			key, err := NewActionGuaranteeKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -661,10 +660,10 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 			t := suite.T()
 			key, err := NewActionSafetyKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -727,10 +726,10 @@ func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
 			t := suite.T()
 			key, err := NewQueryRequireKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -793,10 +792,10 @@ func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
 			t := suite.T()
 			key, err := NewQueryGuaranteeKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -853,10 +852,10 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 			t := suite.T()
 			key, err := NewUseCaseKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -910,10 +909,10 @@ func (suite *KeyTypeSuite) TestNewClassKey() {
 			t := suite.T()
 			key, err := NewClassKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -970,10 +969,10 @@ func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
 			t := suite.T()
 			key, err := NewGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1033,10 +1032,10 @@ func (suite *KeyTypeSuite) TestNewScenarioKey() {
 			t := suite.T()
 			key, err := NewScenarioKey(tt.useCaseKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1099,10 +1098,10 @@ func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
 			t := suite.T()
 			key, err := NewScenarioObjectKey(tt.scenarioKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1165,10 +1164,10 @@ func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
 			t := suite.T()
 			key, err := NewScenarioStepKey(tt.scenarioKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1228,10 +1227,10 @@ func (suite *KeyTypeSuite) TestNewStateKey() {
 			t := suite.T()
 			key, err := NewStateKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1291,10 +1290,10 @@ func (suite *KeyTypeSuite) TestNewEventKey() {
 			t := suite.T()
 			key, err := NewEventKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1354,10 +1353,10 @@ func (suite *KeyTypeSuite) TestNewGuardKey() {
 			t := suite.T()
 			key, err := NewGuardKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1420,7 +1419,7 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1480,10 +1479,10 @@ func (suite *KeyTypeSuite) TestNewQueryKey() {
 			t := suite.T()
 			key, err := NewQueryKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1549,10 +1548,10 @@ func (suite *KeyTypeSuite) TestClassInvariant() {
 			t := suite.T()
 			key, err := NewClassInvariantKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1612,10 +1611,10 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 			t := suite.T()
 			key, err := NewAttributeKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1858,10 +1857,10 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 			t := suite.T()
 			key, err := NewClassAssociationKey(tt.parentKey, tt.fromClassKey, tt.toClassKey, tt.name)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -1933,10 +1932,10 @@ func (suite *KeyTypeSuite) TestNewStateActionKey() {
 			t := suite.T()
 			key, err := NewStateActionKey(tt.stateKey, tt.when, tt.subKey)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -2048,10 +2047,10 @@ func (suite *KeyTypeSuite) TestNewTransitionKey() {
 			t := suite.T()
 			key, err := NewTransitionKey(tt.classKey, tt.from, tt.event, tt.guard, tt.action, tt.to)
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})

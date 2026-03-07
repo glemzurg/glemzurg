@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,11 +55,11 @@ func (suite *ScenarioSuite) TestObjectMarshalUnmarshal() {
 		suite.Run(tc.name, func() {
 			t := suite.T()
 			data, err := json.Marshal(tc.input)
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			var result inputObject
 			err = json.Unmarshal(data, &result)
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			assert.Equal(t, tc.input, result)
 		})
@@ -202,11 +201,11 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 		suite.Run(tc.name, func() {
 			t := suite.T()
 			data, err := json.Marshal(tc.input)
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			var result inputStep
 			err = json.Unmarshal(data, &result)
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			assert.Equal(t, tc.input, result)
 		})
@@ -266,11 +265,11 @@ func (suite *ScenarioSuite) TestScenarioMarshalUnmarshal() {
 		suite.Run(tc.name, func() {
 			t := suite.T()
 			data, err := json.Marshal(tc.input)
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			var result inputScenario
 			err = json.Unmarshal(data, &result)
-			require.NoError(t, err)
+			suite.Require().NoError(err)
 
 			assert.Equal(t, tc.input, result)
 		})

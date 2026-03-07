@@ -20,11 +20,9 @@ func TestTreeValidateSuite(t *testing.T) {
 
 // TestValidTree verifies that a valid tree passes validation.
 func (suite *TreeValidateSuite) TestValidTree() {
-	t := suite.T()
-
 	model := t_buildValidModelTree()
 	err := validateModelTree(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 }
 
 // TestClassActorNotFound verifies error when class references missing actor.
@@ -47,14 +45,12 @@ func (suite *TreeValidateSuite) TestClassActorNotFound() {
 
 // TestClassActorValid verifies valid actor reference passes.
 func (suite *TreeValidateSuite) TestClassActorValid() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	model.Actors["customer"] = &inputActor{Name: "Customer", Type: "person"}
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].ActorKey = "customer"
 
 	err := validateModelTree(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 }
 
 // TestClassIndexAttrNotFound verifies error when index references missing attribute.
@@ -383,8 +379,6 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 
 // TestActionReferencedByStateAction verifies that action referenced by state action passes.
 func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	toState := "pending"
@@ -414,13 +408,11 @@ func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
 	}
 
 	err := validateModelTree(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 }
 
 // TestActionReferencedByTransition verifies that action referenced by transition passes.
 func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
-	t := suite.T()
-
 	model := t_buildMinimalModelTree()
 	class := model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"]
 	toState := "pending"
@@ -447,7 +439,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 	}
 
 	err := validateModelTree(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 }
 
 // TestGenSuperclassNotFound verifies error when generalization superclass doesn't exist.
@@ -901,7 +893,7 @@ func (suite *TreeValidateSuite) TestMultiplicityValidation() {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validateMultiplicity(tt.mult)
 			if tt.expected {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
 				require.Error(t, err)
 			}
@@ -915,11 +907,9 @@ func (suite *TreeValidateSuite) TestMultiplicityValidation() {
 
 // TestCompletenessValidModel verifies that a complete valid model passes completeness validation.
 func (suite *TreeValidateSuite) TestCompletenessValidModel() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	err := validateModelCompleteness(model)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 }
 
 // TestCompletenessModelNoActors verifies error when model has no actors.
@@ -1040,8 +1030,6 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
 
 // TestMultipleSubdomainsValid verifies that multiple subdomains without "default" is valid.
 func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
-	t := suite.T()
-
 	model := t_buildCompleteModelTree()
 	// Rename "default" to "ordering" and add "shipping" subdomain
 	model.Domains["orders"].Subdomains["ordering"] = model.Domains["orders"].Subdomains["default"]
@@ -1066,7 +1054,7 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
 
 	err := validateModelCompleteness(model)
 	// Should pass - multiple subdomains without "default" is valid
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 }
 
 // TestCompletenessSubdomainTooFewClasses verifies error when subdomain has less than 2 classes.

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -85,12 +84,11 @@ func (suite *ParenExprSuite) TestValidate() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			err := tt.p.Validate()
 			if tt.errstr == "" {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				require.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
