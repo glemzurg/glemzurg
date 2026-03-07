@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -164,7 +163,7 @@ func (suite *TransitionSuite) TestValidate() {
 			if tt.errstr == "" {
 				require.NoError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 			}
 		})
 	}
@@ -388,7 +387,7 @@ func (suite *TransitionSuite) TestValidateReferences() {
 			if tt.errstr == "" {
 				require.NoError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 			}
 		})
 	}

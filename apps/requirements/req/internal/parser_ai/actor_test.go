@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -63,7 +64,7 @@ func (suite *ActorSuite) TestParseActorErrors() {
 		suite.Run(testName, func() {
 			t := suite.T()
 			_, err := parseActor([]byte(testData.InputJSON), testData.Filename)
-			assert.Error(t, err, testName+" should return an error")
+			require.Error(t, err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.
 			var parseErr *ParseError

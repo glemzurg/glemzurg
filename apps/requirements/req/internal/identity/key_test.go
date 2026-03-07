@@ -68,7 +68,7 @@ func (suite *KeySuite) TestNewKey() {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -200,7 +200,7 @@ func (suite *KeySuite) TestParseKey() {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 				assert.Equal(t, Key{}, key)
 			}
 		})
@@ -584,7 +584,7 @@ func (suite *KeySuite) TestValidate() {
 			if tt.errstr == "" {
 				require.NoError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 			}
 		})
 	}
@@ -1344,7 +1344,7 @@ func (suite *KeySuite) TestValidateParent() {
 			if tt.errstr == "" {
 				require.NoError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 			}
 		})
 		if !pass {
@@ -1698,7 +1698,7 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 			t := suite.T()
 			var key Key
 			err := json.Unmarshal([]byte(tt.jsonStr), &key)
-			assert.ErrorContains(t, err, tt.errstr)
+			require.ErrorContains(t, err, tt.errstr)
 		})
 		if !pass {
 			break
@@ -1808,7 +1808,7 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 			t := suite.T()
 			var key Key
 			err := key.UnmarshalText([]byte(tt.text))
-			assert.ErrorContains(t, err, tt.errstr)
+			require.ErrorContains(t, err, tt.errstr)
 		})
 		if !pass {
 			break
@@ -1945,7 +1945,7 @@ func (suite *KeySuite) TestYAMLUnmarshalInvalid() {
 			t := suite.T()
 			var key Key
 			err := yaml.Unmarshal([]byte(tt.yamlStr), &key)
-			assert.ErrorContains(t, err, tt.errstr)
+			require.ErrorContains(t, err, tt.errstr)
 		})
 		if !pass {
 			break

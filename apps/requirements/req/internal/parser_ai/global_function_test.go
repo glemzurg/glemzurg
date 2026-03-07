@@ -62,7 +62,7 @@ func (suite *GlobalFunctionSuite) TestParseGlobalFunctionErrors() {
 		suite.Run(testName, func() {
 			t := suite.T()
 			_, err := parseGlobalFunction([]byte(testData.InputJSON), testData.Filename)
-			assert.Error(t, err, testName+" should return an error")
+			require.Error(t, err, testName+" should return an error")
 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)

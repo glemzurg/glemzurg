@@ -58,7 +58,7 @@ func (suite *MultiplicitySuite) TestValidate() {
 			if test.errstr == "" {
 				require.NoError(t, err)
 			} else {
-				assert.ErrorContains(t, err, test.errstr)
+				require.ErrorContains(t, err, test.errstr)
 			}
 		})
 	}

@@ -197,7 +197,7 @@ func (suite *ExpressionTupleIndexSuite) TestValidate() {
 			if tt.errstr == `` {
 				require.NoError(t, err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				require.ErrorContains(t, err, tt.errstr)
 			}
 		})
 	}

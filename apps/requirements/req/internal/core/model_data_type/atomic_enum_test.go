@@ -43,7 +43,7 @@ func TestAtomicEnumValidate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.atomicEnum.Validate()
 			if tt.errorMessage != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
 				require.NoError(t, err)

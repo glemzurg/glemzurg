@@ -128,7 +128,7 @@ func TestLogicEquality_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.expr.Validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}

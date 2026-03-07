@@ -266,7 +266,7 @@ func TestNewBlank(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := New(key, tt.input, nil)
 			if tt.errorMessage != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
 				require.NoError(t, err)
@@ -315,7 +315,7 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := New(key, tt.input, nil)
 			if tt.errorMessage != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
 				require.NoError(t, err)
@@ -509,7 +509,7 @@ func TestParseCollections(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -591,7 +591,7 @@ func TestParseRecordFields(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -778,7 +778,7 @@ func TestParseRecords(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -793,15 +793,15 @@ func TestNewUnparsable(t *testing.T) {
 	// If we cannot parse the text, no error but instead just a nil result.
 	result, err := New("key", "this cannot be parsed so it is just an unparsable blob", nil)
 	var targetType *CannotParseError
-	assert.ErrorAs(t, err, &targetType)
-	assert.ErrorContains(t, err, "failed to parse")
+	require.ErrorAs(t, err, &targetType)
+	require.ErrorContains(t, err, "failed to parse")
 	assert.Nil(t, result)
 }
 
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
 	result, err := New("", "", nil)
-	assert.ErrorContains(t, err, "Key")
+	require.ErrorContains(t, err, "Key")
 	assert.Nil(t, result)
 }
 

@@ -903,7 +903,7 @@ func (suite *TreeValidateSuite) TestMultiplicityValidation() {
 			if tt.expected {
 				require.NoError(t, err)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}

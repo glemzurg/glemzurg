@@ -523,7 +523,7 @@ func TestParseAtomic(t *testing.T) {
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
