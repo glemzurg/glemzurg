@@ -7,7 +7,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,19 +45,19 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 			err = json.Unmarshal([]byte(testData.Json), &expected)
 			require.NoError(t, err, testName)
 
-			assert.Equal(t, expected, actual, testName)
+			suite.Equal(expected, actual, testName)
 
 			// Test associations if expected data exists (via _children.json file).
 			if testData.JsonChildren != "" {
 				var expectedAssociations []model_class.Association
 				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
 				require.NoError(t, err, testName+" associations json")
-				assert.Equal(t, expectedAssociations, associations, testName+" associations")
+				suite.Equal(expectedAssociations, associations, testName+" associations")
 			}
 
 			// Test round-trip: generate content from parsed object and compare to original.
 			generated := generateClassContent(actual, associations)
-			assert.Equal(t, testData.Contents, generated, testName)
+			suite.Equal(testData.Contents, generated, testName)
 		})
 		if !pass {
 			// The earlier test set the basics for later tests, stop as soon as we have an error.

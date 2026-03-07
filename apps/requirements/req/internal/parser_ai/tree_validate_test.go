@@ -39,8 +39,8 @@ func (suite *TreeValidateSuite) TestClassActorNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassActorNotFound, parseErr.Code)
-	assert.Equal(t, "actor_key", parseErr.Field)
+	suite.Equal(ErrTreeClassActorNotFound, parseErr.Code)
+	suite.Equal("actor_key", parseErr.Field)
 }
 
 // TestClassActorValid verifies valid actor reference passes.
@@ -67,8 +67,8 @@ func (suite *TreeValidateSuite) TestClassIndexAttrNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassIndexAttrNotFound, parseErr.Code)
-	assert.Equal(t, "indexes[0][0]", parseErr.Field)
+	suite.Equal(ErrTreeClassIndexAttrNotFound, parseErr.Code)
+	suite.Equal("indexes[0][0]", parseErr.Field)
 }
 
 // TestClassIndexDuplicateAttr verifies error when index has duplicate attributes.
@@ -88,7 +88,7 @@ func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassIndexAttrNotFound, parseErr.Code)
+	suite.Equal(ErrTreeClassIndexAttrNotFound, parseErr.Code)
 	assert.Contains(t, parseErr.Message, "duplicate")
 }
 
@@ -119,8 +119,8 @@ func (suite *TreeValidateSuite) TestStateMachineStateActionNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineActionNotFound, parseErr.Code)
-	assert.Equal(t, "states.pending.actions[0].action_key", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineActionNotFound, parseErr.Code)
+	suite.Equal("states.pending.actions[0].action_key", parseErr.Field)
 }
 
 // TestTransitionNoStates verifies error when transition has neither from nor to state.
@@ -153,8 +153,8 @@ func (suite *TreeValidateSuite) TestTransitionNoStates() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeTransitionNoStates, parseErr.Code)
-	assert.Equal(t, "transitions[0]", parseErr.Field)
+	suite.Equal(ErrTreeTransitionNoStates, parseErr.Code)
+	suite.Equal("transitions[0]", parseErr.Field)
 }
 
 // TestTransitionFromStateNotFound verifies error when transition from_state_key doesn't exist.
@@ -189,8 +189,8 @@ func (suite *TreeValidateSuite) TestTransitionFromStateNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineStateNotFound, parseErr.Code)
-	assert.Equal(t, "transitions[0].from_state_key", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineStateNotFound, parseErr.Code)
+	suite.Equal("transitions[0].from_state_key", parseErr.Field)
 }
 
 // TestTransitionToStateNotFound verifies error when transition to_state_key doesn't exist.
@@ -225,8 +225,8 @@ func (suite *TreeValidateSuite) TestTransitionToStateNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineStateNotFound, parseErr.Code)
-	assert.Equal(t, "transitions[0].to_state_key", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineStateNotFound, parseErr.Code)
+	suite.Equal("transitions[0].to_state_key", parseErr.Field)
 }
 
 // TestTransitionEventNotFound verifies error when transition event_key doesn't exist.
@@ -258,8 +258,8 @@ func (suite *TreeValidateSuite) TestTransitionEventNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineEventNotFound, parseErr.Code)
-	assert.Equal(t, "transitions[0].event_key", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineEventNotFound, parseErr.Code)
+	suite.Equal("transitions[0].event_key", parseErr.Field)
 }
 
 // TestTransitionGuardNotFound verifies error when transition guard_key doesn't exist.
@@ -295,8 +295,8 @@ func (suite *TreeValidateSuite) TestTransitionGuardNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineGuardNotFound, parseErr.Code)
-	assert.Equal(t, "transitions[0].guard_key", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineGuardNotFound, parseErr.Code)
+	suite.Equal("transitions[0].guard_key", parseErr.Field)
 }
 
 // TestTransitionActionNotFound verifies error when transition action_key doesn't exist.
@@ -332,8 +332,8 @@ func (suite *TreeValidateSuite) TestTransitionActionNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineActionNotFound, parseErr.Code)
-	assert.Equal(t, "transitions[0].action_key", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineActionNotFound, parseErr.Code)
+	suite.Equal("transitions[0].action_key", parseErr.Field)
 }
 
 // TestActionUnreferenced verifies error when an action exists but is not referenced.
@@ -371,8 +371,8 @@ func (suite *TreeValidateSuite) TestActionUnreferenced() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeActionUnreferenced, parseErr.Code)
-	assert.Equal(t, "action_key", parseErr.Field)
+	suite.Equal(ErrTreeActionUnreferenced, parseErr.Code)
+	suite.Equal("action_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "unreferenced_action")
 	assert.Contains(t, parseErr.Message, "not referenced")
 }
@@ -463,8 +463,8 @@ func (suite *TreeValidateSuite) TestGenSuperclassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassGenSuperclassNotFound, parseErr.Code)
-	assert.Equal(t, "superclass_key", parseErr.Field)
+	suite.Equal(ErrTreeClassGenSuperclassNotFound, parseErr.Code)
+	suite.Equal("superclass_key", parseErr.Field)
 }
 
 // TestGenSubclassNotFound verifies error when generalization subclass doesn't exist.
@@ -488,8 +488,8 @@ func (suite *TreeValidateSuite) TestGenSubclassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassGenSubclassNotFound, parseErr.Code)
-	assert.Equal(t, "subclass_keys[0]", parseErr.Field)
+	suite.Equal(ErrTreeClassGenSubclassNotFound, parseErr.Code)
+	suite.Equal("subclass_keys[0]", parseErr.Field)
 }
 
 // TestGenSubclassDuplicate verifies error when generalization has duplicate subclass.
@@ -514,8 +514,8 @@ func (suite *TreeValidateSuite) TestGenSubclassDuplicate() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassGenSubclassDuplicate, parseErr.Code)
-	assert.Equal(t, "subclass_keys[1]", parseErr.Field)
+	suite.Equal(ErrTreeClassGenSubclassDuplicate, parseErr.Code)
+	suite.Equal("subclass_keys[1]", parseErr.Field)
 }
 
 // TestGenSuperclassIsSubclass verifies error when superclass is also listed as subclass.
@@ -540,7 +540,7 @@ func (suite *TreeValidateSuite) TestGenSuperclassIsSubclass() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassGenSuperclassIsSubclass, parseErr.Code)
+	suite.Equal(ErrTreeClassGenSuperclassIsSubclass, parseErr.Code)
 }
 
 // TestSubdomainAssocFromClassNotFound verifies error when subdomain association from_class_key doesn't exist.
@@ -565,8 +565,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocFromClassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
-	assert.Equal(t, "from_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
+	suite.Equal("from_class_key", parseErr.Field)
 }
 
 // TestSubdomainAssocToClassNotFound verifies error when subdomain association to_class_key doesn't exist.
@@ -591,8 +591,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocToClassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocToClassNotFound, parseErr.Code)
-	assert.Equal(t, "to_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocToClassNotFound, parseErr.Code)
+	suite.Equal("to_class_key", parseErr.Field)
 }
 
 // TestSubdomainAssocClassNotFound verifies error when subdomain association association_class_key doesn't exist.
@@ -620,8 +620,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocClassNotFound, parseErr.Code)
-	assert.Equal(t, "association_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocClassNotFound, parseErr.Code)
+	suite.Equal("association_class_key", parseErr.Field)
 }
 
 // TestSubdomainAssocClassSameAsFromClass verifies error when association_class_key equals from_class_key.
@@ -649,8 +649,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsFromClass() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
-	assert.Equal(t, "association_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
+	suite.Equal("association_class_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "from_class_key")
 }
 
@@ -679,8 +679,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocClassSameAsToClass() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
-	assert.Equal(t, "association_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocClassSameAsEndpoint, parseErr.Code)
+	suite.Equal("association_class_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "to_class_key")
 }
 
@@ -707,8 +707,8 @@ func (suite *TreeValidateSuite) TestSubdomainAssocMultiplicityInvalid() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocMultiplicityInvalid, parseErr.Code)
-	assert.Equal(t, "from_multiplicity", parseErr.Field)
+	suite.Equal(ErrTreeAssocMultiplicityInvalid, parseErr.Code)
+	suite.Equal("from_multiplicity", parseErr.Field)
 }
 
 // TestDomainAssocFromClassNotFound verifies error when domain association from_class_key doesn't exist.
@@ -739,8 +739,8 @@ func (suite *TreeValidateSuite) TestDomainAssocFromClassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
-	assert.Equal(t, "from_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
+	suite.Equal("from_class_key", parseErr.Field)
 }
 
 // TestDomainAssocInvalidKeyFormat verifies error when domain association has invalid key format.
@@ -764,7 +764,7 @@ func (suite *TreeValidateSuite) TestDomainAssocInvalidKeyFormat() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
+	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 }
 
 // TestModelAssocFromClassNotFound verifies error when model association from_class_key doesn't exist.
@@ -801,8 +801,8 @@ func (suite *TreeValidateSuite) TestModelAssocFromClassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
-	assert.Equal(t, "from_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
+	suite.Equal("from_class_key", parseErr.Field)
 }
 
 // TestModelAssocToClassNotFound verifies error when model association to_class_key doesn't exist.
@@ -838,8 +838,8 @@ func (suite *TreeValidateSuite) TestModelAssocToClassNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocToClassNotFound, parseErr.Code)
-	assert.Equal(t, "to_class_key", parseErr.Field)
+	suite.Equal(ErrTreeAssocToClassNotFound, parseErr.Code)
+	suite.Equal("to_class_key", parseErr.Field)
 }
 
 // TestModelAssocInvalidKeyFormat verifies error when model association has invalid key format.
@@ -863,7 +863,7 @@ func (suite *TreeValidateSuite) TestModelAssocInvalidKeyFormat() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeAssocFromClassNotFound, parseErr.Code)
+	suite.Equal(ErrTreeAssocFromClassNotFound, parseErr.Code)
 }
 
 // TestMultiplicityValidation tests various multiplicity formats.
@@ -925,8 +925,8 @@ func (suite *TreeValidateSuite) TestCompletenessModelNoActors() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeModelNoActors, parseErr.Code)
-	assert.Equal(t, "actors", parseErr.Field)
+	suite.Equal(ErrTreeModelNoActors, parseErr.Code)
+	suite.Equal("actors", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least one actor")
 	assert.Contains(t, parseErr.Message, "actors/") // Check for guidance about file location
 }
@@ -944,8 +944,8 @@ func (suite *TreeValidateSuite) TestCompletenessModelNoDomains() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeModelNoDomains, parseErr.Code)
-	assert.Equal(t, "domains", parseErr.Field)
+	suite.Equal(ErrTreeModelNoDomains, parseErr.Code)
+	suite.Equal("domains", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least one domain")
 	assert.Contains(t, parseErr.Message, "domains/") // Check for guidance about file location
 }
@@ -963,8 +963,8 @@ func (suite *TreeValidateSuite) TestCompletenessDomainNoSubdomains() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeDomainNoSubdomains, parseErr.Code)
-	assert.Equal(t, "subdomains", parseErr.Field)
+	suite.Equal(ErrTreeDomainNoSubdomains, parseErr.Code)
+	suite.Equal("subdomains", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least one subdomain")
 	assert.Contains(t, parseErr.Message, "orders") // Check for specific domain name
 }
@@ -984,8 +984,8 @@ func (suite *TreeValidateSuite) TestSingleSubdomainNotDefault() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeSingleSubdomainNotDefault, parseErr.Code)
-	assert.Equal(t, "subdomain_key", parseErr.Field)
+	suite.Equal(ErrTreeSingleSubdomainNotDefault, parseErr.Code)
+	suite.Equal("subdomain_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "core")
 	assert.Contains(t, parseErr.Message, "must be renamed to 'default'")
 	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/core")
@@ -1021,8 +1021,8 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsHasDefault() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeMultipleSubdomainsHasDefault, parseErr.Code)
-	assert.Equal(t, "subdomain_key", parseErr.Field)
+	suite.Equal(ErrTreeMultipleSubdomainsHasDefault, parseErr.Code)
+	suite.Equal("subdomain_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "multiple subdomains")
 	assert.Contains(t, parseErr.Message, "named 'default'")
 	assert.Contains(t, parseErr.Message, "domains/orders/subdomains/default")
@@ -1083,8 +1083,8 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainTooFewClasses() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeSubdomainTooFewClasses, parseErr.Code)
-	assert.Equal(t, "classes", parseErr.Field)
+	suite.Equal(ErrTreeSubdomainTooFewClasses, parseErr.Code)
+	suite.Equal("classes", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least 2 classes")
 	assert.Contains(t, parseErr.Message, "has 1")
 }
@@ -1102,8 +1102,8 @@ func (suite *TreeValidateSuite) TestCompletenessSubdomainNoAssociations() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeSubdomainNoAssociations, parseErr.Code)
-	assert.Equal(t, "associations", parseErr.Field)
+	suite.Equal(ErrTreeSubdomainNoAssociations, parseErr.Code)
+	suite.Equal("associations", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least one association")
 	assert.Contains(t, parseErr.Message, "associations/") // Check for guidance about file location
 }
@@ -1121,8 +1121,8 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoAttributes() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassNoAttributes, parseErr.Code)
-	assert.Equal(t, "attributes", parseErr.Field)
+	suite.Equal(ErrTreeClassNoAttributes, parseErr.Code)
+	suite.Equal("attributes", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least one attribute")
 	assert.Contains(t, parseErr.Message, "order") // Check for specific class name
 }
@@ -1140,8 +1140,8 @@ func (suite *TreeValidateSuite) TestCompletenessClassNoStateMachine() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeClassNoStateMachine, parseErr.Code)
-	assert.Equal(t, "state_machine", parseErr.Field)
+	suite.Equal(ErrTreeClassNoStateMachine, parseErr.Code)
+	suite.Equal("state_machine", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "must have a state machine")
 	assert.Contains(t, parseErr.Message, "state_machine.json") // Check for guidance about file
 }
@@ -1159,8 +1159,8 @@ func (suite *TreeValidateSuite) TestCompletenessStateMachineNoTransitions() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeStateMachineNoTransitions, parseErr.Code)
-	assert.Equal(t, "transitions", parseErr.Field)
+	suite.Equal(ErrTreeStateMachineNoTransitions, parseErr.Code)
+	suite.Equal("transitions", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "at least one transition")
 }
 
@@ -1305,7 +1305,7 @@ func (suite *TreeValidateSuite) TestCompletenessAllErrorsProvideGuidance() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok, "error should be a ParseError")
-			assert.Equal(t, tt.expectedCode, parseErr.Code, "error code should match")
+			suite.Equal(tt.expectedCode, parseErr.Code, "error code should match")
 
 			// Verify all expected guidance strings are present
 			for _, s := range tt.shouldContain {
@@ -1334,8 +1334,8 @@ func (suite *TreeValidateSuite) TestModelDomainAssocDomainNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeDomainAssocDomainNotFound, parseErr.Code)
-	assert.Equal(t, "problem_domain_key", parseErr.Field)
+	suite.Equal(ErrTreeDomainAssocDomainNotFound, parseErr.Code)
+	suite.Equal("problem_domain_key", parseErr.Field)
 }
 
 func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
@@ -1356,8 +1356,8 @@ func (suite *TreeValidateSuite) TestActorGenActorNotFound() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeActorGenActorNotFound, parseErr.Code)
-	assert.Equal(t, "superclass_key", parseErr.Field)
+	suite.Equal(ErrTreeActorGenActorNotFound, parseErr.Code)
+	suite.Equal("superclass_key", parseErr.Field)
 }
 
 func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
@@ -1388,8 +1388,8 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeScenarioStepObjectNotFound, parseErr.Code)
-	assert.Equal(t, "steps.from_object_key", parseErr.Field)
+	suite.Equal(ErrTreeScenarioStepObjectNotFound, parseErr.Code)
+	suite.Equal("steps.from_object_key", parseErr.Field)
 
 	// 2) event missing on class
 	// reuse same model but add a scenario with an object referencing class 'order'
@@ -1411,8 +1411,8 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 	require.Error(t, err)
 	ok = errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeScenarioStepEventNotFound, parseErr.Code)
-	assert.Equal(t, "steps.event_key", parseErr.Field)
+	suite.Equal(ErrTreeScenarioStepEventNotFound, parseErr.Code)
+	suite.Equal("steps.event_key", parseErr.Field)
 
 	// 3) query missing on class
 	scQuery := &inputScenario{
@@ -1433,8 +1433,8 @@ func (suite *TreeValidateSuite) TestScenarioStepReferencesValidation() {
 	require.Error(t, err)
 	ok = errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrTreeScenarioStepQueryNotFound, parseErr.Code)
-	assert.Equal(t, "steps.query_key", parseErr.Field)
+	suite.Equal(ErrTreeScenarioStepQueryNotFound, parseErr.Code)
+	suite.Equal("steps.query_key", parseErr.Field)
 }
 
 // helper to get *string.

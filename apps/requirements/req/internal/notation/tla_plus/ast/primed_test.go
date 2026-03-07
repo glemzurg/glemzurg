@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -42,9 +41,8 @@ func (suite *PrimedSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			p := &Primed{Base: tt.base}
-			assert.Equal(t, tt.expected, p.String())
+			suite.Equal(tt.expected, p.String())
 		})
 	}
 }

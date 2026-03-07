@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -108,11 +107,10 @@ func (suite *RecordInstanceSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			r := &RecordInstance{
 				Bindings: tt.bindings,
 			}
-			assert.Equal(t, tt.expected, r.String())
+			suite.Equal(tt.expected, r.String())
 		})
 	}
 }
@@ -168,11 +166,10 @@ func (suite *RecordInstanceSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			r := &RecordInstance{
 				Bindings: tt.bindings,
 			}
-			assert.Equal(t, tt.expected, r.ASCII())
+			suite.Equal(tt.expected, r.ASCII())
 		})
 	}
 }

@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,11 +38,10 @@ func (suite *SetLiteralEnumSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			s := &SetLiteralEnum{
 				Values: tt.values,
 			}
-			assert.Equal(t, tt.expected, s.String())
+			suite.Equal(tt.expected, s.String())
 		})
 	}
 }
@@ -72,11 +70,10 @@ func (suite *SetLiteralEnumSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			s := &SetLiteralEnum{
 				Values: tt.values,
 			}
-			assert.Equal(t, tt.expected, s.ASCII())
+			suite.Equal(tt.expected, s.ASCII())
 		})
 	}
 }

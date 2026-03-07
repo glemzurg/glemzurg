@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -49,12 +48,11 @@ func (suite *SetConditionalSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			sc := &SetConditional{
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, sc.String())
+			suite.Equal(tt.expected, sc.String())
 		})
 	}
 }
@@ -93,12 +91,11 @@ func (suite *SetConditionalSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			sc := &SetConditional{
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, sc.ASCII())
+			suite.Equal(tt.expected, sc.ASCII())
 		})
 	}
 }

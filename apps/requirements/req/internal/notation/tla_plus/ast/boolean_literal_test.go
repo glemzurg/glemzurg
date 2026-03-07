@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,9 +33,8 @@ func (suite *BooleanLiteralSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			b := &BooleanLiteral{Value: tt.value}
-			assert.Equal(t, tt.expected, b.String())
+			suite.Equal(tt.expected, b.String())
 		})
 	}
 }
@@ -60,9 +58,8 @@ func (suite *BooleanLiteralSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			b := &BooleanLiteral{Value: tt.value}
-			assert.Equal(t, tt.expected, b.ASCII())
+			suite.Equal(tt.expected, b.ASCII())
 		})
 	}
 }

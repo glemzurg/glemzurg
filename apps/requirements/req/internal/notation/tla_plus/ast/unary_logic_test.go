@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,12 +36,11 @@ func (suite *LogicPrefixExpressionSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			pe := &LogicPrefixExpression{
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, pe.String())
+			suite.Equal(tt.expected, pe.String())
 		})
 	}
 }
@@ -69,12 +67,11 @@ func (suite *LogicPrefixExpressionSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			pe := &LogicPrefixExpression{
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, pe.ASCII())
+			suite.Equal(tt.expected, pe.ASCII())
 		})
 	}
 }

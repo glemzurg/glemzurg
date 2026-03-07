@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,13 +46,12 @@ func (suite *SetInfixSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			si := &SetInfix{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, si.String())
+			suite.Equal(tt.expected, si.String())
 		})
 	}
 }
@@ -90,13 +88,12 @@ func (suite *SetInfixSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			si := &SetInfix{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, si.ASCII())
+			suite.Equal(tt.expected, si.ASCII())
 		})
 	}
 }

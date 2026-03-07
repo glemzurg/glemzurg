@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -40,13 +39,12 @@ func (suite *LogicMembershipSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			m := &LogicMembership{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, m.String())
+			suite.Equal(tt.expected, m.String())
 		})
 	}
 }
@@ -76,13 +74,12 @@ func (suite *LogicMembershipSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			m := &LogicMembership{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, m.ASCII())
+			suite.Equal(tt.expected, m.ASCII())
 		})
 	}
 }

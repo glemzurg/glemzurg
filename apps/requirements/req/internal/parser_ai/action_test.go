@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,10 +38,10 @@ func (suite *ActionSuite) TestParseActionFiles() {
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
 			require.NoError(t, err, testName)
 
-			assert.Equal(t, expected.Name, actual.Name, testName+" name")
-			assert.Equal(t, expected.Details, actual.Details, testName+" details")
-			assert.Equal(t, expected.Requires, actual.Requires, testName+" requires")
-			assert.Equal(t, expected.Guarantees, actual.Guarantees, testName+" guarantees")
+			suite.Equal(expected.Name, actual.Name, testName+" name")
+			suite.Equal(expected.Details, actual.Details, testName+" details")
+			suite.Equal(expected.Requires, actual.Requires, testName+" requires")
+			suite.Equal(expected.Guarantees, actual.Guarantees, testName+" guarantees")
 		})
 		if !pass {
 			break

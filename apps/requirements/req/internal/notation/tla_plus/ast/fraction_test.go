@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -83,12 +82,11 @@ func (suite *FractionExprSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			f := &FractionExpr{
 				Numerator:   tt.numerator,
 				Denominator: tt.denominator,
 			}
-			assert.Equal(t, tt.expected, f.String())
+			suite.Equal(tt.expected, f.String())
 		})
 	}
 }

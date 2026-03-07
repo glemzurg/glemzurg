@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -74,8 +73,7 @@ func (suite *NumberLiteralSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
-			assert.Equal(t, tt.expected, tt.n.String())
+			suite.Equal(tt.expected, tt.n.String())
 		})
 	}
 }
@@ -180,8 +178,7 @@ func (suite *NumberLiteralSuite) TestIsInteger() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
-			assert.Equal(t, tt.expected, tt.n.IsInteger())
+			suite.Equal(tt.expected, tt.n.IsInteger())
 		})
 	}
 }
@@ -205,8 +202,7 @@ func (suite *NumberLiteralSuite) TestIsDecimal() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
-			assert.Equal(t, tt.expected, tt.n.IsDecimal())
+			suite.Equal(tt.expected, tt.n.IsDecimal())
 		})
 	}
 }
@@ -245,8 +241,7 @@ func (suite *NumberLiteralSuite) TestConstructors() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
-			assert.Equal(t, tt.expected, tt.n.String())
+			suite.Equal(tt.expected, tt.n.String())
 		})
 	}
 }

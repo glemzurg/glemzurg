@@ -68,7 +68,7 @@ func (suite *KeyValidateSuite) TestInvalidKeysUppercase() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "lowercase")
 		})
 	}
@@ -92,7 +92,7 @@ func (suite *KeyValidateSuite) TestInvalidKeysHyphens() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "hyphen")
 		})
 	}
@@ -115,7 +115,7 @@ func (suite *KeyValidateSuite) TestInvalidKeysSpaces() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "space")
 		})
 	}
@@ -139,7 +139,7 @@ func (suite *KeyValidateSuite) TestInvalidKeysStartsWithNumber() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "number")
 		})
 	}
@@ -166,7 +166,7 @@ func (suite *KeyValidateSuite) TestInvalidKeysUnderscoreIssues() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, tt.contains)
 		})
 	}
@@ -189,7 +189,7 @@ func (suite *KeyValidateSuite) TestInvalidKeysDots() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+			suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 			assert.Contains(t, parseErr.Message, "dot")
 		})
 	}
@@ -205,7 +205,7 @@ func (suite *KeyValidateSuite) TestEmptyKey() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+	suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 	assert.Contains(t, parseErr.Message, "empty")
 }
 
@@ -219,7 +219,7 @@ func (suite *KeyValidateSuite) TestErrorContainsKeyType() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, "actor_key", parseErr.Field)
+	suite.Equal("actor_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "actor_key")
 }
 
@@ -265,7 +265,7 @@ func (suite *KeyValidateSuite) TestNormalizeToKey() {
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			result := NormalizeToKey(tt.input)
-			assert.Equal(t, tt.expected, result)
+			suite.Equal(tt.expected, result)
 		})
 	}
 }
@@ -280,7 +280,7 @@ func (suite *KeyValidateSuite) TestMixedInvalidCharacters() {
 	var parseErr *ParseError
 	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
-	assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
+	suite.Equal(ErrKeyInvalidFormat, parseErr.Code)
 	// Should mention multiple issues
 	assert.Contains(t, parseErr.Message, "lowercase")
 	assert.Contains(t, parseErr.Message, "hyphen")
@@ -369,7 +369,7 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameWrongPartCount() {
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrAssocFilenameInvalidFormat, parseErr.Code)
+			suite.Equal(ErrAssocFilenameInvalidFormat, parseErr.Code)
 		})
 	}
 }
@@ -401,7 +401,7 @@ func (suite *KeyValidateSuite) TestInvalidAssociationFilenameInvalidComponent() 
 			var parseErr *ParseError
 			ok := errors.As(err, &parseErr)
 			require.True(t, ok)
-			assert.Equal(t, ErrAssocFilenameInvalidComponent, parseErr.Code)
+			suite.Equal(ErrAssocFilenameInvalidComponent, parseErr.Code)
 			assert.Contains(t, parseErr.Field, tt.badField)
 		})
 	}

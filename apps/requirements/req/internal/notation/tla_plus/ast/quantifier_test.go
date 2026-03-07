@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -63,13 +62,12 @@ func (suite *LogicBoundQuantifierSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			q := &LogicBoundQuantifier{
 				Quantifier: tt.quantifier,
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, q.String())
+			suite.Equal(tt.expected, q.String())
 		})
 	}
 }
@@ -122,13 +120,12 @@ func (suite *LogicBoundQuantifierSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			q := &LogicBoundQuantifier{
 				Quantifier: tt.quantifier,
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, q.ASCII())
+			suite.Equal(tt.expected, q.ASCII())
 		})
 	}
 }

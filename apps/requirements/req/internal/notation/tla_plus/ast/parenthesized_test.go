@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,8 +47,7 @@ func (suite *ParenExprSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
-			assert.Equal(t, tt.expected, tt.p.String())
+			suite.Equal(tt.expected, tt.p.String())
 		})
 	}
 }

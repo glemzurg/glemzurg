@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -101,7 +100,6 @@ func (suite *CallExpressionSuite) TestString() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			c := &CallExpression{
 				ModelScope:   tt.modelScope,
 				Domain:       tt.domain,
@@ -110,7 +108,7 @@ func (suite *CallExpressionSuite) TestString() {
 				FunctionName: tt.functionName,
 				Parameter:    tt.parameter,
 			}
-			assert.Equal(t, tt.expected, c.String())
+			suite.Equal(tt.expected, c.String())
 		})
 	}
 }
@@ -175,7 +173,6 @@ func (suite *CallExpressionSuite) TestASCII() {
 	}
 	for _, tt := range tests {
 		_ = suite.Run(tt.testName, func() {
-			t := suite.T()
 			c := &CallExpression{
 				ModelScope:   tt.modelScope,
 				Domain:       tt.domain,
@@ -184,7 +181,7 @@ func (suite *CallExpressionSuite) TestASCII() {
 				FunctionName: tt.functionName,
 				Parameter:    tt.parameter,
 			}
-			assert.Equal(t, tt.expected, c.ASCII())
+			suite.Equal(tt.expected, c.ASCII())
 		})
 	}
 }

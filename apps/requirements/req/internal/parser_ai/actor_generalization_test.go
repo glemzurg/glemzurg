@@ -39,7 +39,7 @@ func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationFiles() {
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
 			require.NoError(t, err, testName)
 
-			assert.Equal(t, expected, *actual, testName)
+			suite.Equal(expected, *actual, testName)
 		})
 		if !pass {
 			break
@@ -72,11 +72,11 @@ func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationErrors() {
 			}
 
 			expected := testData.ExpectedError
-			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
-			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+			suite.Equal(expected.Code, parseErr.Code, testName+" error code")
+			suite.Equal(expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
 
 			if expected.Message != "" {
-				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
 				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
@@ -90,10 +90,10 @@ func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationErrors() {
 			}
 
 			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
-			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
-				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+				suite.Equal(expected.Field, parseErr.Field, testName+" error field")
 			}
 		})
 	}

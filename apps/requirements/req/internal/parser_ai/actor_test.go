@@ -30,7 +30,6 @@ func (suite *ActorSuite) TestParseActorFiles() {
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		pass := suite.Run(testName, func() {
-			t := suite.T()
 			var expected inputActor
 
 			actual, err := parseActor([]byte(testData.InputJSON), testData.Filename)
@@ -39,7 +38,7 @@ func (suite *ActorSuite) TestParseActorFiles() {
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
 			suite.Require().NoError(err, testName)
 
-			assert.Equal(t, expected, *actual, testName)
+			suite.Equal(expected, *actual, testName)
 		})
 		if !pass {
 			// The earlier test set the basics for later tests, stop as soon as we have an error.
@@ -75,15 +74,15 @@ func (suite *ActorSuite) TestParseActorErrors() {
 			}
 
 			expected := testData.ExpectedError
-			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
+			suite.Equal(expected.Code, parseErr.Code, testName+" error code")
 
 			// Test error file name separately from message content.
-			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+			suite.Equal(expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
 
 			// Test message string explicitly.
 			// For dynamic messages (like schema validation), use MessagePrefix to match the start.
 			if expected.Message != "" {
-				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
 				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
@@ -101,10 +100,10 @@ func (suite *ActorSuite) TestParseActorErrors() {
 			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
 
 			// File is always set to the input filename
-			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
-				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+				suite.Equal(expected.Field, parseErr.Field, testName+" error field")
 			}
 		})
 	}

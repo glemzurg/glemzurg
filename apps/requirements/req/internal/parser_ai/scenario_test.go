@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -53,7 +52,6 @@ func (suite *ScenarioSuite) TestObjectMarshalUnmarshal() {
 
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			t := suite.T()
 			data, err := json.Marshal(tc.input)
 			suite.Require().NoError(err)
 
@@ -61,7 +59,7 @@ func (suite *ScenarioSuite) TestObjectMarshalUnmarshal() {
 			err = json.Unmarshal(data, &result)
 			suite.Require().NoError(err)
 
-			assert.Equal(t, tc.input, result)
+			suite.Equal(tc.input, result)
 		})
 	}
 }
@@ -199,7 +197,6 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			t := suite.T()
 			data, err := json.Marshal(tc.input)
 			suite.Require().NoError(err)
 
@@ -207,7 +204,7 @@ func (suite *ScenarioSuite) TestStepMarshalUnmarshal() {
 			err = json.Unmarshal(data, &result)
 			suite.Require().NoError(err)
 
-			assert.Equal(t, tc.input, result)
+			suite.Equal(tc.input, result)
 		})
 	}
 }
@@ -263,7 +260,6 @@ func (suite *ScenarioSuite) TestScenarioMarshalUnmarshal() {
 
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
-			t := suite.T()
 			data, err := json.Marshal(tc.input)
 			suite.Require().NoError(err)
 
@@ -271,7 +267,7 @@ func (suite *ScenarioSuite) TestScenarioMarshalUnmarshal() {
 			err = json.Unmarshal(data, &result)
 			suite.Require().NoError(err)
 
-			assert.Equal(t, tc.input, result)
+			suite.Equal(tc.input, result)
 		})
 	}
 }

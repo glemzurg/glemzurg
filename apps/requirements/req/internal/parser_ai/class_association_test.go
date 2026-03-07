@@ -39,14 +39,14 @@ func (suite *AssociationSuite) TestParseAssociationFiles() {
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
 			require.NoError(t, err, testName)
 
-			assert.Equal(t, expected.Name, actual.Name, testName+" name")
-			assert.Equal(t, expected.Details, actual.Details, testName+" details")
-			assert.Equal(t, expected.FromClassKey, actual.FromClassKey, testName+" from_class_key")
-			assert.Equal(t, expected.FromMultiplicity, actual.FromMultiplicity, testName+" from_multiplicity")
-			assert.Equal(t, expected.ToClassKey, actual.ToClassKey, testName+" to_class_key")
-			assert.Equal(t, expected.ToMultiplicity, actual.ToMultiplicity, testName+" to_multiplicity")
-			assert.Equal(t, expected.AssociationClassKey, actual.AssociationClassKey, testName+" association_class_key")
-			assert.Equal(t, expected.UmlComment, actual.UmlComment, testName+" uml_comment")
+			suite.Equal(expected.Name, actual.Name, testName+" name")
+			suite.Equal(expected.Details, actual.Details, testName+" details")
+			suite.Equal(expected.FromClassKey, actual.FromClassKey, testName+" from_class_key")
+			suite.Equal(expected.FromMultiplicity, actual.FromMultiplicity, testName+" from_multiplicity")
+			suite.Equal(expected.ToClassKey, actual.ToClassKey, testName+" to_class_key")
+			suite.Equal(expected.ToMultiplicity, actual.ToMultiplicity, testName+" to_multiplicity")
+			suite.Equal(expected.AssociationClassKey, actual.AssociationClassKey, testName+" association_class_key")
+			suite.Equal(expected.UmlComment, actual.UmlComment, testName+" uml_comment")
 		})
 		if !pass {
 			break
@@ -79,11 +79,11 @@ func (suite *AssociationSuite) TestParseAssociationErrors() {
 			}
 
 			expected := testData.ExpectedError
-			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
-			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+			suite.Equal(expected.Code, parseErr.Code, testName+" error code")
+			suite.Equal(expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
 
 			if expected.Message != "" {
-				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
 				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
@@ -97,10 +97,10 @@ func (suite *AssociationSuite) TestParseAssociationErrors() {
 			}
 
 			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
-			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
-				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+				suite.Equal(expected.Field, parseErr.Field, testName+" error field")
 			}
 		})
 	}
