@@ -29,7 +29,8 @@ func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
+			t := suite.T()
 			var expected inputActorGeneralization
 
 			actual, err := parseActorGeneralization([]byte(testData.InputJSON), testData.Filename)
@@ -58,7 +59,8 @@ func (suite *ActorGeneralizationSuite) TestParseActorGeneralizationErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
+			t := suite.T()
 			_, err := parseActorGeneralization([]byte(testData.InputJSON), testData.Filename)
 			assert.Error(t, err, testName+" should return an error")
 

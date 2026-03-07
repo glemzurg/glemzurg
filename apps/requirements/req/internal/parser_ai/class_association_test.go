@@ -29,7 +29,8 @@ func (suite *AssociationSuite) TestParseAssociationFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
+			t := suite.T()
 			var expected inputClassAssociation
 
 			actual, err := parseAssociation([]byte(testData.InputJSON), testData.Filename)
@@ -65,7 +66,8 @@ func (suite *AssociationSuite) TestParseAssociationErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
+			t := suite.T()
 			_, err := parseAssociation([]byte(testData.InputJSON), testData.Filename)
 			assert.Error(t, err, testName+" should return an error")
 

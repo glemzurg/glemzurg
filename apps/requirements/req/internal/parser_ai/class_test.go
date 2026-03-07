@@ -29,7 +29,8 @@ func (suite *ClassSuite) TestParseClassFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
+			t := suite.T()
 			var expected inputClass
 
 			actual, err := parseClass([]byte(testData.InputJSON), testData.Filename)
@@ -79,7 +80,8 @@ func (suite *ClassSuite) TestParseClassErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
+			t := suite.T()
 			_, err := parseClass([]byte(testData.InputJSON), testData.Filename)
 			assert.Error(t, err, testName+" should return an error")
 

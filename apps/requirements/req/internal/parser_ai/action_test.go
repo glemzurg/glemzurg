@@ -29,7 +29,8 @@ func (suite *ActionSuite) TestParseActionFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) { //nolint:testifylint // captures subtest result
+		pass := suite.Run(testName, func() {
+			t := suite.T() //nolint:testifylint // captures subtest result
 			var expected inputAction
 
 			actual, err := parseAction([]byte(testData.InputJSON), testData.Filename)

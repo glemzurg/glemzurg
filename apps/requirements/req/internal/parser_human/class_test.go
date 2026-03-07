@@ -36,7 +36,8 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) { //nolint:testifylint // captures subtest result
+		pass := suite.Run(testName, func() {
+			t := suite.T() //nolint:testifylint // captures subtest result
 			var expected, actual model_class.Class
 
 			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)

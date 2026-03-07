@@ -29,7 +29,8 @@ func (suite *QuerySuite) TestParseQueryFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
+			t := suite.T()
 			var expected inputQuery
 
 			actual, err := parseQuery([]byte(testData.InputJSON), testData.Filename)
@@ -61,7 +62,8 @@ func (suite *QuerySuite) TestParseQueryErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
+			t := suite.T()
 			_, err := parseQuery([]byte(testData.InputJSON), testData.Filename)
 			assert.Error(t, err, testName+" should return an error")
 

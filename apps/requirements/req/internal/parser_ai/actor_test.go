@@ -28,7 +28,8 @@ func (suite *ActorSuite) TestParseActorFiles() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
+			t := suite.T()
 			var expected inputActor
 
 			actual, err := parseActor([]byte(testData.InputJSON), testData.Filename)
@@ -59,7 +60,8 @@ func (suite *ActorSuite) TestParseActorErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
+			t := suite.T()
 			_, err := parseActor([]byte(testData.InputJSON), testData.Filename)
 			assert.Error(t, err, testName+" should return an error")
 
