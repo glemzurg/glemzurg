@@ -2,9 +2,6 @@ package evaluator
 
 import (
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 )
 
 // IRRegistryInterface allows the IR evaluator to look up custom function definitions.
@@ -15,23 +12,9 @@ type IRRegistryInterface interface {
 	LookupGlobal(localName string) (body me.Expression, params []string, found bool)
 }
 
-// RegistryEvalInterface allows the evaluator to call back to the registry for function evaluation.
-// This interface is implemented by the registry package.
-// LEGACY: Used by the AST evaluation path. New code should use IRRegistryInterface.
-type RegistryEvalInterface interface {
-	ResolveAndEval(
-		call *ast.ScopedCall,
-		typedArgs []*typechecker.TypedNode,
-		bindings any,
-		scopeLevel int,
-		domain, subdomain, class string,
-	) (object.Object, error)
-}
-
 // EvalContext holds context for registry-based evaluation.
 type EvalContext struct {
-	Registry   RegistryEvalInterface // LEGACY: AST-based registry interface
-	IRRegistry IRRegistryInterface   // IR-based registry interface
+	IRRegistry IRRegistryInterface // IR-based registry interface
 	ScopeLevel int
 	Domain     string
 	Subdomain  string
@@ -54,16 +37,6 @@ func ClearEvalContext() {
 // GetEvalContext returns the current eval context, or nil if not set.
 func GetEvalContext() *EvalContext {
 	return globalEvalContext
-}
-
-// EvalTypedWithContext evaluates a typed node with registry context.
-func EvalTypedWithContext(typed *typechecker.TypedNode, bindings *Bindings, ctx *EvalContext) *EvalResult {
-	// Save and restore context
-	oldCtx := globalEvalContext
-	globalEvalContext = ctx
-	defer func() { globalEvalContext = oldCtx }()
-
-	return evalTypedNode(typed, bindings)
 }
 
 // EvalWithContext evaluates an IR expression with registry context.

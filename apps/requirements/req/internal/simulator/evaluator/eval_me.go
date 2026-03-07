@@ -996,3 +996,57 @@ func evalRegistryCall(body me.Expression, params []string, args []object.Object,
 
 	return Eval(body, childBindings)
 }
+
+// objectsEqual compares two objects for structural equality.
+func objectsEqual(left, right object.Object) bool {
+	if left.Type() != right.Type() {
+		return false
+	}
+
+	switch l := left.(type) {
+	case *object.Number:
+		r, ok := right.(*object.Number)
+		if !ok {
+			return false
+		}
+		return l.Equals(r)
+	case *object.String:
+		r, ok := right.(*object.String)
+		if !ok {
+			return false
+		}
+		return l.Value() == r.Value()
+	case *object.Boolean:
+		r, ok := right.(*object.Boolean)
+		if !ok {
+			return false
+		}
+		return l.Value() == r.Value()
+	case *object.Set:
+		r, ok := right.(*object.Set)
+		if !ok {
+			return false
+		}
+		return l.Equals(r)
+	case *object.Tuple:
+		r, ok := right.(*object.Tuple)
+		if !ok {
+			return false
+		}
+		return l.Equals(r)
+	case *object.Record:
+		r, ok := right.(*object.Record)
+		if !ok {
+			return false
+		}
+		return l.Equals(r)
+	case *object.Bag:
+		r, ok := right.(*object.Bag)
+		if !ok {
+			return false
+		}
+		return l.Equals(r)
+	default:
+		return left.Inspect() == right.Inspect()
+	}
+}

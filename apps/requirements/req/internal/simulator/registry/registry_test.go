@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 	"github.com/stretchr/testify/suite"
 )
@@ -66,7 +65,7 @@ func (s *RegistryTestSuite) TestRegisterClassFunction() {
 	s.Len(def.Parameters, 1)
 	s.Equal("x", def.Parameters[0].Name)
 	s.Equal(uint64(1), def.Version)
-	s.True(def.NeedsTypeCheck())
+	s.False(def.Validated)
 
 	s.Equal(1, r.Count())
 	s.Equal(uint64(1), r.Version())
@@ -140,7 +139,7 @@ func (s *RegistryTestSuite) TestUpdate() {
 	s.Len(def.Parameters, 1)
 	s.Equal("y", def.Parameters[0].Name)
 	s.Greater(def.Version, originalVersion)
-	s.True(def.NeedsTypeCheck())
+	s.False(def.Validated)
 }
 
 func (s *RegistryTestSuite) TestDelete() {
@@ -242,127 +241,6 @@ func (s *RegistryTestSuite) TestNewScopeContext() {
 	s.Equal("ClassC", ctx.Class)
 }
 
-func (s *RegistryTestSuite) TestResolveCallGlobalFunction() {
-	r := NewRegistry()
-	body := irInt(1)
-	_, err := r.RegisterGlobalFunction("GlobalFunc", body, nil)
-	s.Require().NoError(err)
-
-	// Can call global from any scope
-	ctx := NewClassScopeContext(r, "A", "B", "C")
-
-	call := &ast.ScopedCall{
-		ModelScope:   true,
-		FunctionName: &ast.Identifier{Value: "GlobalFunc"},
-	}
-
-	key, def, err := ctx.ResolveCall(call)
-	s.Require().NoError(err)
-	s.Equal(DefinitionKey("_GlobalFunc"), key)
-	s.NotNil(def)
-}
-
-func (s *RegistryTestSuite) TestResolveCallClassFunction_FromClassScope() {
-	r := NewRegistry()
-	body := irInt(1)
-	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
-	s.Require().NoError(err)
-
-	// From class scope, just use function name
-	ctx := NewClassScopeContext(r, "DomainA", "SubB", "ClassC")
-
-	call := &ast.ScopedCall{
-		FunctionName: &ast.Identifier{Value: "Func"},
-	}
-
-	key, def, err := ctx.ResolveCall(call)
-	s.Require().NoError(err)
-	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
-	s.NotNil(def)
-}
-
-func (s *RegistryTestSuite) TestResolveCallClassFunction_FromSubdomainScope() {
-	r := NewRegistry()
-	body := irInt(1)
-	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
-	s.Require().NoError(err)
-
-	// From subdomain scope, need Class!Func
-	ctx := NewSubdomainScopeContext(r, "DomainA", "SubB")
-
-	call := &ast.ScopedCall{
-		Class:        &ast.Identifier{Value: "ClassC"},
-		FunctionName: &ast.Identifier{Value: "Func"},
-	}
-
-	key, def, err := ctx.ResolveCall(call)
-	s.Require().NoError(err)
-	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
-	s.NotNil(def)
-}
-
-func (s *RegistryTestSuite) TestResolveCallClassFunction_FromDomainScope() {
-	r := NewRegistry()
-	body := irInt(1)
-	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
-	s.Require().NoError(err)
-
-	// From domain scope, need Subdomain!Class!Func
-	ctx := NewDomainScopeContext(r, "DomainA")
-
-	call := &ast.ScopedCall{
-		Subdomain:    &ast.Identifier{Value: "SubB"},
-		Class:        &ast.Identifier{Value: "ClassC"},
-		FunctionName: &ast.Identifier{Value: "Func"},
-	}
-
-	key, def, err := ctx.ResolveCall(call)
-	s.Require().NoError(err)
-	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
-	s.NotNil(def)
-}
-
-func (s *RegistryTestSuite) TestResolveCallClassFunction_FromGlobalScope() {
-	r := NewRegistry()
-	body := irInt(1)
-	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
-	s.Require().NoError(err)
-
-	// From global scope, need full path
-	ctx := NewGlobalScopeContext(r)
-
-	call := &ast.ScopedCall{
-		Domain:       &ast.Identifier{Value: "DomainA"},
-		Subdomain:    &ast.Identifier{Value: "SubB"},
-		Class:        &ast.Identifier{Value: "ClassC"},
-		FunctionName: &ast.Identifier{Value: "Func"},
-	}
-
-	key, def, err := ctx.ResolveCall(call)
-	s.Require().NoError(err)
-	s.Equal(DefinitionKey("DomainA!SubB!ClassC!Func"), key)
-	s.NotNil(def)
-}
-
-func (s *RegistryTestSuite) TestResolveCallScopeMismatch() {
-	r := NewRegistry()
-	body := irInt(1)
-	_, err := r.RegisterClassFunction("DomainA", "SubB", "ClassC", "Func", body, nil)
-	s.Require().NoError(err)
-
-	// From class scope, cannot use Class!Func (that requires subdomain scope)
-	ctx := NewClassScopeContext(r, "DomainA", "SubB", "ClassC")
-
-	call := &ast.ScopedCall{
-		Class:        &ast.Identifier{Value: "ClassC"},
-		FunctionName: &ast.Identifier{Value: "Func"},
-	}
-
-	_, _, err = ctx.ResolveCall(call)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "scope mismatch")
-}
-
 // =============================================================================
 // Dependency Tests
 // =============================================================================
@@ -424,11 +302,11 @@ func (s *RegistryTestSuite) TestInvalidateDefinition() {
 	s.Contains(invalidated.Keys, DefinitionKey("_B"))
 	s.Contains(invalidated.Keys, DefinitionKey("_A"))
 
-	// Both should need type check
+	// Both should need validation
 	defA, _ := r.Get("_A")
 	defB, _ := r.Get("_B")
-	s.True(defA.NeedsTypeCheck())
-	s.True(defB.NeedsTypeCheck())
+	s.False(defA.Validated)
+	s.False(defB.Validated)
 }
 
 // =============================================================================

@@ -164,7 +164,7 @@ func (r *Registry) InvalidateDefinition(key DefinitionKey) *InvalidationSet {
 	}
 
 	// Clear typed body and increment version
-	def.TypedBody = nil
+	def.Validated = false
 	def.ReturnType = nil
 	def.Version++
 	r.version++
@@ -193,7 +193,7 @@ func (r *Registry) InvalidateDefinition(key DefinitionKey) *InvalidationSet {
 	// Invalidate all dependents
 	for _, depKey := range dependents {
 		if depDef, ok := r.definitions[depKey]; ok {
-			depDef.TypedBody = nil
+			depDef.Validated = false
 			depDef.ReturnType = nil
 			depDef.Version++
 			result.versions[depKey] = depDef.Version

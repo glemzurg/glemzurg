@@ -15,7 +15,6 @@ import (
 	"sync"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
@@ -133,18 +132,13 @@ type Definition struct {
 	Kind       DefinitionKind
 	Scope      ScopePath              // Full path (empty for global)
 	LocalName  string                 // Just "Func"
-	Body       me.Expression         // Untyped AST
-	Parameters []Parameter            // Ordered list of typed parameters (can be empty)
-	ReturnType types.Type             // Inferred return type (nil until type-checked)
-	TypedBody  *typechecker.TypedNode // Cached typed AST (nil = needs recheck)
-	Version    uint64                 // Incremented on modification
-	DependsOn  []DefinitionKey        // Definitions this depends on
-	DependedBy []DefinitionKey        // Definitions that depend on this
-}
-
-// NeedsTypeCheck returns true if the definition needs type checking.
-func (d *Definition) NeedsTypeCheck() bool {
-	return d.TypedBody == nil
+	Body       me.Expression   // IR expression body
+	Parameters []Parameter     // Ordered list of typed parameters (can be empty)
+	ReturnType types.Type      // Inferred return type (nil until validated)
+	Validated  bool            // True if definition has been validated
+	Version    uint64          // Incremented on modification
+	DependsOn  []DefinitionKey // Definitions this depends on
+	DependedBy []DefinitionKey // Definitions that depend on this
 }
 
 // Registry manages all custom TLA+ definitions with scoped resolution.
@@ -273,7 +267,7 @@ func (r *Registry) Update(key DefinitionKey, body me.Expression, params []Parame
 
 	def.Body = body
 	def.Parameters = params
-	def.TypedBody = nil
+	def.Validated = false
 	def.ReturnType = nil
 	def.Version++
 	r.version++

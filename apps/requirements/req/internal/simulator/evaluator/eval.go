@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -174,153 +173,10 @@ func Eval(node me.Expression, bindings *Bindings) *EvalResult {
 	}
 }
 
-// EvalAST evaluates a TLA+ AST node and returns the result.
-// This is the legacy evaluator that operates on AST nodes directly.
-// New code should use Eval() with model_expression.Expression instead.
-//
-// Valid root nodes are:
-// - *ast.Assignment: Primes a binding, returns EvalResult with PrimedBindings populated
-// - Logic nodes: Returns Boolean for assertion checks
-// Other nodes can be evaluated but are typically sub-expressions.
-func EvalAST(node ast.Node, bindings *Bindings) *EvalResult {
-	switch n := node.(type) {
-	// === Root Nodes ===
-	case *ast.Assignment:
-		return evalAssignment(n, bindings)
-
-	// === Literals ===
-	case *ast.NumberLiteral:
-		return evalNumberLiteral(n)
-	case *ast.NumericPrefixExpression:
-		return evalNumericPrefixExpression(n, bindings)
-	case *ast.Fraction:
-		return evalFractionExpr(n, bindings)
-	case *ast.ParenExpr:
-		return evalParenExpr(n, bindings)
-	case *ast.StringLiteral:
-		return evalStringLiteral(n)
-	case *ast.BooleanLiteral:
-		return evalBooleanLiteral(n)
-	case *ast.TupleLiteral:
-		return evalTupleLiteral(n, bindings)
-	case *ast.SetLiteralInt:
-		return evalSetLiteralInt(n)
-	case *ast.SetLiteralEnum:
-		return evalSetLiteralEnum(n)
-	case *ast.SetLiteral:
-		return evalSetLiteral(n, bindings)
-	case *ast.SetRange:
-		return evalSetRange(n)
-	case *ast.SetRangeExpr:
-		return evalSetRangeExpr(n, bindings)
-	case *ast.SetConstant:
-		return evalSetConstant(n)
-	case *ast.RecordInstance:
-		return evalRecordInstance(n, bindings)
-
-	// === Identifiers ===
-	case *ast.Identifier:
-		return evalIdentifier(n, bindings)
-	case *ast.FieldAccess:
-		return evalFieldIdentifier(n, bindings)
-	case *ast.ExistingValue:
-		return evalExistingValue(bindings)
-	case *ast.Primed:
-		return evalPrimed(n, bindings)
-
-	// === Arithmetic ===
-	case *ast.BinaryArithmetic:
-		return evalRealInfix(n, bindings)
-
-	// === Logic ===
-	case *ast.BinaryLogic:
-		return evalLogicInfix(n, bindings)
-	case *ast.LogicPrefixExpression:
-		return evalLogicPrefix(n, bindings)
-	case *ast.BinaryComparison:
-		return evalLogicRealComparison(n, bindings)
-	case *ast.Membership:
-		return evalLogicMembership(n, bindings)
-	case *ast.Quantifier:
-		return evalLogicBoundQuantifier(n, bindings)
-	case *ast.BinarySetComparison:
-		return evalLogicInfixSet(n, bindings)
-	case *ast.BinaryBagComparison:
-		return evalLogicInfixBag(n, bindings)
-	case *ast.BinaryEquality:
-		return evalLogicEquality(n, bindings)
-
-	// === Sets ===
-	case *ast.BinarySetOperation:
-		return evalSetInfix(n, bindings)
-	case *ast.SetFilter:
-		return evalSetConditional(n, bindings)
-
-	// === Bags ===
-	case *ast.BinaryBagOperation:
-		return evalBagInfix(n, bindings)
-
-	// === Tuples/Sequences ===
-	case *ast.TupleIndex:
-		return evalTupleIndex(n, bindings)
-	case *ast.TupleConcat:
-		return evalTupleInfix(n, bindings)
-
-	// === Builtins ===
-	case *ast.BuiltinCall:
-		return evalBuiltinCall(n, bindings)
-
-	// === Records ===
-	case *ast.RecordAltered:
-		return evalRecordAltered(n, bindings)
-
-	// === Control Flow ===
-	case *ast.IfThenElse:
-		return evalIfElse(n, bindings)
-	case *ast.CaseExpr:
-		return evalCase(n, bindings)
-
-	// === Calls ===
-	case *ast.ScopedCall:
-		return evalCallExpression(n)
-	case *ast.FunctionCall:
-		return evalFunctionCall(n, bindings)
-
-	// === String operations ===
-	case *ast.StringIndex:
-		return evalStringIndex(n, bindings)
-	case *ast.StringConcat:
-		return evalStringInfix(n, bindings)
-
-	default:
-		return NewEvalError("unknown node type: %T", node)
-	}
-}
-
 // nativeBoolToBoolean converts a Go bool to the package Boolean constants.
 func nativeBoolToBoolean(value bool) *object.Boolean {
 	if value {
 		return TRUE
 	}
 	return FALSE
-}
-
-// evalBuiltinCall evaluates a builtin function call (AST version).
-func evalBuiltinCall(node *ast.BuiltinCall, bindings *Bindings) *EvalResult {
-	// Evaluate all arguments
-	args := make([]object.Object, len(node.Args))
-	for i, argExpr := range node.Args {
-		result := EvalAST(argExpr, bindings)
-		if result.IsError() {
-			return result
-		}
-		args[i] = result.Value
-	}
-
-	// Look up and call the builtin
-	fn, ok := LookupBuiltin(node.Name)
-	if !ok {
-		return NewEvalError("unknown builtin: %s", node.Name)
-	}
-	return fn(args)
 }
