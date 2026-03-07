@@ -6,6 +6,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -552,7 +553,7 @@ func TestTupleLiteralChildren(t *testing.T) {
 	tc := NewTypeChecker()
 	typed, err := tc.Check(node)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, typed)
 	assert.Len(t, typed.Children, 3, "TypedNode should have 3 children")
 }

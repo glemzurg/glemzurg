@@ -8,6 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,10 +40,10 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 			var expected, actual model_class.Class
 
 			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			assert.Equal(t, expected, actual, testName)
 
@@ -50,7 +51,7 @@ func (suite *ClassFileSuite) TestParseClassFiles() {
 			if testData.JsonChildren != "" {
 				var expectedAssociations []model_class.Association
 				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
-				assert.NoError(t, err, testName+" associations json")
+				require.NoError(t, err, testName+" associations json")
 				assert.Equal(t, expectedAssociations, associations, testName+" associations")
 			}
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,11 +40,11 @@ func (suite *UseCaseSharedSuite) TestMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			var result inputUseCaseShared
 			err = json.Unmarshal(data, &result)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})

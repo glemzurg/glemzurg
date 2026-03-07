@@ -11,7 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -204,10 +204,10 @@ func t_AddState(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, state, err = LoadState(dbOrTx, modelKey, stateKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return state
 }

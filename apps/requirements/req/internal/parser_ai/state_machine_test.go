@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,10 +33,10 @@ func (suite *StateMachineSuite) TestParseStateMachineFiles() {
 			var expected inputStateMachine
 
 			actual, err := parseStateMachine([]byte(testData.InputJSON), testData.Filename)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			// Compare states
 			assert.Len(t, actual.States, len(expected.States), testName+" states count")

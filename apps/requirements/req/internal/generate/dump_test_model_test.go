@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/test_helper"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // discardWriter is a ContentWriter that discards all output.
@@ -20,7 +20,7 @@ func (d discardWriter) WriteCSS(_ []byte) error                { return nil }
 func TestGenerateTemplates(t *testing.T) {
 	model := test_helper.GetTestModel()
 	err := GenerateMdToWriter(model, discardWriter{})
-	assert.NoError(t, err, "GenerateMdToWriter should succeed with test model")
+	require.NoError(t, err, "GenerateMdToWriter should succeed with test model")
 }
 
 func TestDumpTestModel(t *testing.T) {
@@ -31,7 +31,7 @@ func TestDumpTestModel(t *testing.T) {
 	// Write to the dump folder within this package for manual inspection.
 	outputDir := "/workspaces/glemzurg/test_model_dump"
 	err := GenerateMdFromModel(outputDir, model)
-	assert.NoError(t, err, "GenerateMdFromModel should succeed")
+	require.NoError(t, err, "GenerateMdFromModel should succeed")
 
 	fmt.Printf("Model written to: %s\n", outputDir)
 }

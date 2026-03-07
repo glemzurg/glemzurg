@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAtomicSpanValidate(t *testing.T) {
@@ -274,7 +275,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

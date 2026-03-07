@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -55,7 +56,7 @@ func (suite *MultiplicitySuite) TestValidate() {
 		suite.T().Run(test.name, func(t *testing.T) {
 			err := test.obj.Validate()
 			if test.errstr == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				assert.ErrorContains(t, err, test.errstr)
 			}

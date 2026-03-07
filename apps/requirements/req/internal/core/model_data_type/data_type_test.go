@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -268,7 +269,7 @@ func TestNewBlank(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -317,7 +318,7 @@ func TestNew(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -501,7 +502,7 @@ func TestParseCollections(t *testing.T) {
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("CollectionDataType"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
 				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
@@ -583,7 +584,7 @@ func TestParseRecordFields(t *testing.T) {
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("Field"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(Field)
 				assert.True(t, ok, "cannot type cast to Field: '%s'", tt.input)
@@ -770,7 +771,7 @@ func TestParseRecords(t *testing.T) {
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("RecordDataType"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
 				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)

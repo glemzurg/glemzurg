@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,10 +33,10 @@ func (suite *DomainAssociationSuite) TestParseDomainAssociationFiles() {
 			var expected inputDomainAssociation
 
 			actual, err := parseDomainAssociation([]byte(testData.InputJSON), testData.Filename)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			assert.Equal(t, expected, *actual, testName)
 		})

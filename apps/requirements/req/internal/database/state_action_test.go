@@ -11,7 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -190,10 +190,10 @@ func t_AddAction(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity
 		Name:    actionKey.String(),
 		Details: "Details",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, action, err = LoadAction(dbOrTx, modelKey, actionKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return action
 }

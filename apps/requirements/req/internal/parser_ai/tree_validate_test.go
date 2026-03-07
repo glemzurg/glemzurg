@@ -24,7 +24,7 @@ func (suite *TreeValidateSuite) TestValidTree() {
 
 	model := t_buildValidModelTree()
 	err := validateModelTree(model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestClassActorNotFound verifies error when class references missing actor.
@@ -54,7 +54,7 @@ func (suite *TreeValidateSuite) TestClassActorValid() {
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].ActorKey = "customer"
 
 	err := validateModelTree(model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestClassIndexAttrNotFound verifies error when index references missing attribute.
@@ -414,7 +414,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByStateAction() {
 	}
 
 	err := validateModelTree(model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestActionReferencedByTransition verifies that action referenced by transition passes.
@@ -447,7 +447,7 @@ func (suite *TreeValidateSuite) TestActionReferencedByTransition() {
 	}
 
 	err := validateModelTree(model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestGenSuperclassNotFound verifies error when generalization superclass doesn't exist.
@@ -901,7 +901,7 @@ func (suite *TreeValidateSuite) TestMultiplicityValidation() {
 		t.Run(tt.name, func(t *testing.T) {
 			err := validateMultiplicity(tt.mult)
 			if tt.expected {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				assert.Error(t, err)
 			}
@@ -919,7 +919,7 @@ func (suite *TreeValidateSuite) TestCompletenessValidModel() {
 
 	model := t_buildCompleteModelTree()
 	err := validateModelCompleteness(model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestCompletenessModelNoActors verifies error when model has no actors.
@@ -1066,7 +1066,7 @@ func (suite *TreeValidateSuite) TestMultipleSubdomainsValid() {
 
 	err := validateModelCompleteness(model)
 	// Should pass - multiple subdomains without "default" is valid
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestCompletenessSubdomainTooFewClasses verifies error when subdomain has less than 2 classes.

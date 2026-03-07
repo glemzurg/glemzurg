@@ -12,7 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -331,10 +331,10 @@ func t_AddAttribute(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey ident
 		Nullable:         true,
 		UmlComment:       "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, attribute, err = LoadAttribute(dbOrTx, modelKey, attributeKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return attribute
 }

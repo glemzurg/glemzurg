@@ -10,7 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -287,10 +287,10 @@ func t_AddUseCaseGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, su
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, generalization, err = LoadUseCaseGeneralization(dbOrTx, modelKey, generalizationKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return generalization
 }

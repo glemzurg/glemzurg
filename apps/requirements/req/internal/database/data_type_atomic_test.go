@@ -8,7 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -273,10 +273,10 @@ func t_AddAtomic(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string, cons
 		ObjectClassKey: nil,
 	}
 	err := AddAtomic(dbOrTx, modelKey, dataTypeKey, atomic)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, atomic, err = LoadAtomic(dbOrTx, modelKey, dataTypeKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return atomic
 }

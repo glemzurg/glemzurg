@@ -42,7 +42,7 @@ func (suite *KeyValidateSuite) TestValidKeys() {
 	for _, key := range validKeys {
 		t.Run(key, func(t *testing.T) {
 			err := ValidateKey(key, "test_key", "test.json")
-			assert.NoError(t, err, "key '%s' should be valid", key)
+			require.NoError(t, err, "key '%s' should be valid", key)
 		})
 	}
 }
@@ -203,7 +203,7 @@ func (suite *KeyValidateSuite) TestEmptyKey() {
 	require.Error(t, err)
 
 	var parseErr *ParseError
-			ok := errors.As(err, &parseErr)
+	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 	assert.Contains(t, parseErr.Message, "empty")
@@ -217,7 +217,7 @@ func (suite *KeyValidateSuite) TestErrorContainsKeyType() {
 	require.Error(t, err)
 
 	var parseErr *ParseError
-			ok := errors.As(err, &parseErr)
+	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, "actor_key", parseErr.Field)
 	assert.Contains(t, parseErr.Message, "actor_key")
@@ -231,7 +231,7 @@ func (suite *KeyValidateSuite) TestErrorContainsFilePath() {
 	require.Error(t, err)
 
 	var parseErr *ParseError
-			ok := errors.As(err, &parseErr)
+	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Contains(t, parseErr.File, "Invalid/class.json")
 }
@@ -278,7 +278,7 @@ func (suite *KeyValidateSuite) TestMixedInvalidCharacters() {
 	require.Error(t, err)
 
 	var parseErr *ParseError
-			ok := errors.As(err, &parseErr)
+	ok := errors.As(err, &parseErr)
 	require.True(t, ok)
 	assert.Equal(t, ErrKeyInvalidFormat, parseErr.Code)
 	// Should mention multiple issues
@@ -305,7 +305,7 @@ func (suite *KeyValidateSuite) TestValidSubdomainAssociationFilenames() {
 	for _, filename := range validFilenames {
 		t.Run(filename, func(t *testing.T) {
 			err := ValidateAssociationFilename(filename, AssocLevelSubdomain, "test.assoc.json")
-			assert.NoError(t, err, "filename '%s' should be valid", filename)
+			require.NoError(t, err, "filename '%s' should be valid", filename)
 		})
 	}
 }
@@ -323,7 +323,7 @@ func (suite *KeyValidateSuite) TestValidDomainAssociationFilenames() {
 	for _, filename := range validFilenames {
 		t.Run(filename, func(t *testing.T) {
 			err := ValidateAssociationFilename(filename, AssocLevelDomain, "test.assoc.json")
-			assert.NoError(t, err, "filename '%s' should be valid", filename)
+			require.NoError(t, err, "filename '%s' should be valid", filename)
 		})
 	}
 }
@@ -340,7 +340,7 @@ func (suite *KeyValidateSuite) TestValidModelAssociationFilenames() {
 	for _, filename := range validFilenames {
 		t.Run(filename, func(t *testing.T) {
 			err := ValidateAssociationFilename(filename, AssocLevelModel, "test.assoc.json")
-			assert.NoError(t, err, "filename '%s' should be valid", filename)
+			require.NoError(t, err, "filename '%s' should be valid", filename)
 		})
 	}
 }

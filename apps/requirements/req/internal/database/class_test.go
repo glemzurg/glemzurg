@@ -11,7 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -311,10 +311,10 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey ident
 		ActorKey:   nil, // No actor.
 		UmlComment: "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, class, err = LoadClass(dbOrTx, modelKey, classKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return class
 }

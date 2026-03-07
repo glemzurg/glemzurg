@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,10 +33,10 @@ func (suite *AssociationSuite) TestParseAssociationFiles() {
 			var expected inputClassAssociation
 
 			actual, err := parseAssociation([]byte(testData.InputJSON), testData.Filename)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.NoError(t, err, testName)
+			require.NoError(t, err, testName)
 
 			assert.Equal(t, expected.Name, actual.Name, testName+" name")
 			assert.Equal(t, expected.Details, actual.Details, testName+" details")

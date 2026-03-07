@@ -7,6 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEvalTypedTupleLiteral(t *testing.T) {
@@ -21,7 +22,7 @@ func TestEvalTypedTupleLiteral(t *testing.T) {
 	tc := typechecker.NewTypeChecker()
 	typed, err := tc.Check(node)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, typed)
 	assert.Len(t, typed.Children, 3)
 

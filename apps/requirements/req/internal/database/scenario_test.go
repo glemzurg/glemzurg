@@ -11,7 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -193,10 +193,10 @@ func t_AddScenario(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ide
 		Name:    scenarioKey.String(),
 		Details: "",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, scenario, err = LoadScenario(dbOrTx, modelKey, scenarioKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return scenario
 }

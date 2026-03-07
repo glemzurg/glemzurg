@@ -9,6 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -125,7 +126,7 @@ func (suite *ClassSuite) TestValidate() {
 		suite.T().Run(tt.testName, func(t *testing.T) {
 			err := tt.class.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 			}
@@ -584,7 +585,7 @@ func (suite *ClassSuite) TestValidateReferences() {
 		suite.T().Run(tt.testName, func(t *testing.T) {
 			err := tt.class.ValidateReferences(tt.actors, tt.generalizations)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 			}

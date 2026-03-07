@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -173,7 +174,7 @@ func (suite *FractionExprSuite) TestValidate() {
 		_ = suite.T().Run(tt.testName, func(t *testing.T) {
 			err := tt.f.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
 				assert.ErrorContains(t, err, tt.errstr)
 			}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,11 +60,11 @@ func (suite *UseCaseSuite) TestMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			var result inputUseCase
 			err = json.Unmarshal(data, &result)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Scenarios are json:"-", won't round-trip via JSON
 			assert.Equal(t, tc.input.Name, result.Name)
@@ -93,11 +94,11 @@ func (suite *UseCaseSuite) TestUseCaseActorMarshalUnmarshal() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			data, err := json.Marshal(tc.input)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			var result inputUseCaseActor
 			err = json.Unmarshal(data, &result)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.input, result)
 		})

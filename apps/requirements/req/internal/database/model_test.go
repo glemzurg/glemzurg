@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -155,10 +155,10 @@ func t_AddModel(t *testing.T, dbOrTx DbOrTx) (model core.Model) {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	model, err = LoadModel(dbOrTx, "model_key")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return model
 }

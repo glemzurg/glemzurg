@@ -10,7 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -305,10 +305,10 @@ func t_AddLogic(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.
 		Description: logicKey.String(),
 		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	logic, err = LoadLogic(dbOrTx, modelKey, logicKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return logic
 }

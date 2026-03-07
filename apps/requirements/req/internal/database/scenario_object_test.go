@@ -12,7 +12,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -254,10 +254,10 @@ func t_AddObject(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ident
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, object, err = LoadObject(dbOrTx, modelKey, objectKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return object
 }

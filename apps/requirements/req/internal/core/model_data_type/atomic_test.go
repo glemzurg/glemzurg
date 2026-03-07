@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseAtomic(t *testing.T) {
@@ -515,7 +516,7 @@ func TestParseAtomic(t *testing.T) {
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("AtomicDataType"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
 				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)

@@ -10,7 +10,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -328,10 +328,10 @@ func t_AddUseCase(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey ide
 		ReadOnly:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, useCase, err = LoadUseCase(dbOrTx, modelKey, useCaseKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return useCase
 }

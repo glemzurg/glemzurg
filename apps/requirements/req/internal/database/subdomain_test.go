@@ -9,7 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -198,10 +198,10 @@ func t_AddSubdomain(t *testing.T, dbOrTx DbOrTx, modelKey string, domainKey iden
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, subdomain, err = LoadSubdomain(dbOrTx, modelKey, subdomainKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return subdomain
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -172,16 +172,16 @@ func (suite *EventParameterSuite) TestQuery() {
 
 func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	param, err = LoadEventParameter(dbOrTx, modelKey, eventKey, paramKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return param
 }

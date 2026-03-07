@@ -9,7 +9,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -325,10 +325,10 @@ func t_AddDataType(t *testing.T, dbOrTx DbOrTx, modelKey, dataTypeKey string) (d
 		Key:            dataTypeKey,
 		CollectionType: "atomic",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	dataType, err = LoadDataType(dbOrTx, modelKey, dataTypeKey)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return dataType
 }
