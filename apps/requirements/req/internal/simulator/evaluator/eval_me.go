@@ -977,7 +977,7 @@ func evalMEGlobalCall(n *me.GlobalCall, bindings *Bindings) *EvalResult {
 	return NewEvalError("unknown global function: %s", funcName)
 }
 
-func evalMEActionCall(n *me.ActionCall, bindings *Bindings) *EvalResult {
+func evalMEActionCall(n *me.ActionCall, _ *Bindings) *EvalResult {
 	// Action calls represent cross-class action/query invocations.
 	// These are resolved at the simulator level, not the expression evaluator level.
 	return NewEvalError("action calls not yet supported in expression evaluator: %s", n.ActionKey.String())

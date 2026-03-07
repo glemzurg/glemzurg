@@ -62,7 +62,7 @@ func (p *RegistryPipeline) RegisterGlobalFunction(
 func (p *RegistryPipeline) RebuildDefinitions(changedKeys []registry.DefinitionKey) error {
 	invalidated := p.registry.InvalidateMultiple(changedKeys)
 
-	validateFn := func(def *registry.Definition, scopeCtx *registry.ScopeContext) error {
+	validateFn := func(_ *registry.Definition, _ *registry.ScopeContext) error {
 		// IR bodies are already validated during lowering; nothing to do.
 		return nil
 	}
@@ -72,7 +72,7 @@ func (p *RegistryPipeline) RebuildDefinitions(changedKeys []registry.DefinitionK
 
 // RebuildAll re-validates all definitions from scratch.
 func (p *RegistryPipeline) RebuildAll() error {
-	validateFn := func(def *registry.Definition, scopeCtx *registry.ScopeContext) error {
+	validateFn := func(_ *registry.Definition, _ *registry.ScopeContext) error {
 		// IR bodies are already validated during lowering; nothing to do.
 		return nil
 	}

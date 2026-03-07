@@ -27,11 +27,6 @@ func irInt(v int64) me.Expression {
 	return &me.IntLiteral{Value: big0(v)}
 }
 
-// irBool creates a simple IR boolean literal for testing.
-func irBool(v bool) me.Expression {
-	return &me.BoolLiteral{Value: v}
-}
-
 // =============================================================================
 // Registry Tests
 // =============================================================================
