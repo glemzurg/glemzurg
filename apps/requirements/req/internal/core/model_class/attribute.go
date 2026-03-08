@@ -1,8 +1,11 @@
 package model_class
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,10 +14,10 @@ import (
 // Attribute is a member of a class.
 type Attribute struct {
 	Key              identity.Key
-	Name             string             `validate:"required"`
+	Name             string
 	Details          string             // Markdown.
 	DataTypeRules    string             // What are the bounds of this data type.
-	DerivationPolicy *model_logic.Logic `validate:"-"` // If this is a derived attribute, the logic for how it is derived.
+	DerivationPolicy *model_logic.Logic // If this is a derived attribute, the logic for how it is derived.
 	Nullable         bool               // Is this attribute optional.
 	UmlComment       string
 	// Children
@@ -68,15 +71,29 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 func (a *Attribute) Validate() error {
 	// Validate the key.
 	if err := a.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AttrKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ATTRIBUTE {
-		return errors.Errorf("key: invalid key type '%s' for attribute", a.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.AttrKeyTypeInvalid,
+			Message: fmt.Sprintf("key: invalid key type '%s' for attribute", a.Key.KeyType),
+			Field:   "Key",
+			Got:     a.Key.KeyType,
+			Want:    identity.KEY_TYPE_ATTRIBUTE,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(a); err != nil {
-		return err
+	// Name is required.
+	if a.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AttrNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	// Validate the derivation policy logic if present.
@@ -85,7 +102,13 @@ func (a *Attribute) Validate() error {
 			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
 		}
 		if a.DerivationPolicy.Type != model_logic.LogicTypeValue {
-			return errors.Errorf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type)
+			return &coreerr.ValidationError{
+				Code:    coreerr.AttrDerivationTypeInvalid,
+				Message: fmt.Sprintf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type),
+				Field:   "DerivationPolicy",
+				Got:     a.DerivationPolicy.Type,
+				Want:    string(model_logic.LogicTypeValue),
+			}
 		}
 	}
 
@@ -96,11 +119,22 @@ func (a *Attribute) Validate() error {
 			return errors.Wrapf(err, "attribute invariant %d", i)
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+			return &coreerr.ValidationError{
+				Code:    coreerr.AttrInvariantTypeInvalid,
+				Message: fmt.Sprintf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
+				Field:   "Invariants",
+				Got:     inv.Type,
+				Want:    fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet),
+			}
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if attrInvLetTargets[inv.Target] {
-				return errors.Errorf("attribute invariant %d: duplicate let target %q", i, inv.Target)
+				return &coreerr.ValidationError{
+					Code:    coreerr.AttrInvariantDuplicateLet,
+					Message: fmt.Sprintf("attribute invariant %d: duplicate let target %q", i, inv.Target),
+					Field:   "Invariants",
+					Got:     inv.Target,
+				}
 			}
 			attrInvLetTargets[inv.Target] = true
 		}

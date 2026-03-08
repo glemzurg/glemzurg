@@ -1,10 +1,5 @@
 package model_expression
 
-import "github.com/go-playground/validator/v10"
-
-// _validate is the shared validator instance for this package.
-var _validate = validator.New()
-
 // Expression is the interface implemented by all model expression nodes.
 // Model expressions are notation-independent representations of formal logic.
 type Expression interface {

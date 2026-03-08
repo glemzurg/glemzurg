@@ -46,7 +46,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -76,7 +76,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: identity.Key{},
 				ToClassKey:   toClassKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong from class key type",
@@ -96,7 +96,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   identity.Key{},
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong to class key type",

@@ -1,8 +1,12 @@
 package model_use_case
 
+import (
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
+)
+
 // UseCaseShared is how a mud-level use case related to a sea-level use case.
 type UseCaseShared struct {
-	ShareType  string `validate:"required,oneof=include extend"`
+	ShareType  string
 	UmlComment string
 }
 
@@ -21,8 +25,14 @@ func NewUseCaseShared(shareType, umlComment string) (useCaseShared UseCaseShared
 
 // Validate validates the UseCaseShared struct.
 func (u *UseCaseShared) Validate() error {
-	if err := _validate.Struct(u); err != nil {
-		return err
+	if u.ShareType != "include" && u.ShareType != "extend" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.UshareSharetypeInvalid,
+			Message: "ShareType must be one of: include, extend",
+			Field:   "ShareType",
+			Got:     u.ShareType,
+			Want:    "one of: include, extend",
+		}
 	}
 	return nil
 }

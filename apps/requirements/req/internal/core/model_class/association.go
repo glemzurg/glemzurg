@@ -1,15 +1,18 @@
 package model_class
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Association is how two classes relate to each other.
 type Association struct {
 	Key                 identity.Key
-	Name                string        `validate:"required"`
+	Name                string
 	Details             string        // Markdown.
 	FromClassKey        identity.Key  // The class on one end of the association.
 	FromMultiplicity    Multiplicity  // The multiplicity from one end of the association.
@@ -49,53 +52,123 @@ func NewAssociation(key identity.Key, name, details string, from, to Association
 func (a *Association) Validate() error {
 	// Validate the key.
 	if err := a.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_CLASS_ASSOCIATION {
-		return errors.Errorf("key: invalid key type '%s' for association", a.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocKeyTypeInvalid,
+			Message: fmt.Sprintf("key: invalid key type '%s' for association", a.Key.KeyType),
+			Field:   "Key",
+			Got:     a.Key.KeyType,
+			Want:    identity.KEY_TYPE_CLASS_ASSOCIATION,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(a); err != nil {
-		return err
+	// Name is required.
+	if a.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	// Validate the FromClassKey.
 	if err := a.FromClassKey.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocFromkeyInvalid,
+			Message: fmt.Sprintf("FromClassKey: %s", err.Error()),
+			Field:   "FromClassKey",
+		}
 	}
 	if a.FromClassKey.KeyType != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("fromClassKey: invalid key type '%s' for from class", a.FromClassKey.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocFromkeyTypeInvalid,
+			Message: fmt.Sprintf("fromClassKey: invalid key type '%s' for from class", a.FromClassKey.KeyType),
+			Field:   "FromClassKey",
+			Got:     a.FromClassKey.KeyType,
+			Want:    identity.KEY_TYPE_CLASS,
+		}
 	}
 
 	// Validate the ToClassKey.
 	if err := a.ToClassKey.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocTokeyInvalid,
+			Message: fmt.Sprintf("ToClassKey: %s", err.Error()),
+			Field:   "ToClassKey",
+		}
 	}
 	if a.ToClassKey.KeyType != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("toClassKey: invalid key type '%s' for to class", a.ToClassKey.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocTokeyTypeInvalid,
+			Message: fmt.Sprintf("toClassKey: invalid key type '%s' for to class", a.ToClassKey.KeyType),
+			Field:   "ToClassKey",
+			Got:     a.ToClassKey.KeyType,
+			Want:    identity.KEY_TYPE_CLASS,
+		}
 	}
 
 	// Validate multiplicities as properties.
 	if err := a.FromMultiplicity.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocFromMultInvalid,
+			Message: fmt.Sprintf("FromMultiplicity: %s", err.Error()),
+			Field:   "FromMultiplicity",
+		}
 	}
 	if err := a.ToMultiplicity.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocToMultInvalid,
+			Message: fmt.Sprintf("ToMultiplicity: %s", err.Error()),
+			Field:   "ToMultiplicity",
+		}
 	}
 	// Validate AssociationClassKey FK key type and constraints.
 	if a.AssociationClassKey != nil {
-		if err := a.AssociationClassKey.Validate(); err != nil {
-			return errors.Wrap(err, "AssociationClassKey")
+		if err := a.validateAssociationClassKey(); err != nil {
+			return err
 		}
-		if a.AssociationClassKey.KeyType != identity.KEY_TYPE_CLASS {
-			return errors.Errorf("AssociationClassKey: invalid key type '%s' for class", a.AssociationClassKey.KeyType)
+	}
+	return nil
+}
+
+// validateAssociationClassKey validates the AssociationClassKey field.
+func (a *Association) validateAssociationClassKey() error {
+	if err := a.AssociationClassKey.Validate(); err != nil {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocAssocclassInvalid,
+			Message: fmt.Sprintf("AssociationClassKey: %s", err.Error()),
+			Field:   "AssociationClassKey",
 		}
-		if *a.AssociationClassKey == a.FromClassKey {
-			return errors.New("AssociationClassKey cannot be the same as FromClassKey")
+	}
+	if a.AssociationClassKey.KeyType != identity.KEY_TYPE_CLASS {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocAssocclassType,
+			Message: fmt.Sprintf("AssociationClassKey: invalid key type '%s' for class", a.AssociationClassKey.KeyType),
+			Field:   "AssociationClassKey",
+			Got:     a.AssociationClassKey.KeyType,
+			Want:    identity.KEY_TYPE_CLASS,
 		}
-		if *a.AssociationClassKey == a.ToClassKey {
-			return errors.New("AssociationClassKey cannot be the same as ToClassKey")
+	}
+	if *a.AssociationClassKey == a.FromClassKey {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocAssocclassSameFrom,
+			Message: "AssociationClassKey cannot be the same as FromClassKey",
+			Field:   "AssociationClassKey",
+			Got:     a.AssociationClassKey.String(),
+		}
+	}
+	if *a.AssociationClassKey == a.ToClassKey {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocAssocclassSameTo,
+			Message: "AssociationClassKey cannot be the same as ToClassKey",
+			Field:   "AssociationClassKey",
+			Got:     a.AssociationClassKey.String(),
 		}
 	}
 	return nil
@@ -142,14 +215,29 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 // - AssociationClassKey (if set) must exist in the classes map.
 func (a *Association) ValidateReferences(classes map[identity.Key]bool) error {
 	if !classes[a.FromClassKey] {
-		return errors.Errorf("association '%s' references non-existent from class '%s'", a.Key.String(), a.FromClassKey.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocFromNotfound,
+			Message: fmt.Sprintf("association '%s' references non-existent from class '%s'", a.Key.String(), a.FromClassKey.String()),
+			Field:   "FromClassKey",
+			Got:     a.FromClassKey.String(),
+		}
 	}
 	if !classes[a.ToClassKey] {
-		return errors.Errorf("association '%s' references non-existent to class '%s'", a.Key.String(), a.ToClassKey.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.AssocToNotfound,
+			Message: fmt.Sprintf("association '%s' references non-existent to class '%s'", a.Key.String(), a.ToClassKey.String()),
+			Field:   "ToClassKey",
+			Got:     a.ToClassKey.String(),
+		}
 	}
 	if a.AssociationClassKey != nil {
 		if !classes[*a.AssociationClassKey] {
-			return errors.Errorf("association '%s' references non-existent association class '%s'", a.Key.String(), a.AssociationClassKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.AssocAssocclassNotfound,
+				Message: fmt.Sprintf("association '%s' references non-existent association class '%s'", a.Key.String(), a.AssociationClassKey.String()),
+				Field:   "AssociationClassKey",
+				Got:     a.AssociationClassKey.String(),
+			}
 		}
 	}
 	return nil

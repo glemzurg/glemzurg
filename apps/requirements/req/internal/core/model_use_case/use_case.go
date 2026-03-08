@@ -1,9 +1,11 @@
 package model_use_case
 
 import (
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -15,9 +17,9 @@ const (
 // UseCase is a user story for the system.
 type UseCase struct {
 	Key             identity.Key
-	Name            string        `validate:"required"`
+	Name            string
 	Details         string        // Markdown.
-	Level           string        `validate:"required,oneof=sky sea mud"` // How high cocept or tightly focused the user case is.
+	Level           string        // How high cocept or tightly focused the user case is.
 	ReadOnly        bool          // This is a user story that does not change the state of the system.
 	SuperclassOfKey *identity.Key // If this use case is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this use case is part of a generalization as a subclass.
@@ -56,36 +58,92 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, ge
 func (uc *UseCase) Validate() error {
 	// Validate the key.
 	if err := uc.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.UcKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if uc.Key.KeyType != identity.KEY_TYPE_USE_CASE {
-		return errors.New("invalid key type for use_case")
+		return &coreerr.ValidationError{
+			Code:    coreerr.UcKeyTypeInvalid,
+			Message: "invalid key type for use_case",
+			Field:   "Key",
+			Got:     uc.Key.KeyType,
+			Want:    identity.KEY_TYPE_USE_CASE,
+		}
 	}
-	// Validate struct tags (Name required, Level required+oneof).
-	if err := _validate.Struct(uc); err != nil {
-		return err
+	// Validate Name required.
+	if uc.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.UcNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
+	}
+	// Validate Level required.
+	if uc.Level == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.UcLevelRequired,
+			Message: "Level is required",
+			Field:   "Level",
+		}
+	}
+	// Validate Level is one of valid values.
+	if uc.Level != _USE_CASE_LEVEL_SKY && uc.Level != _USE_CASE_LEVEL_SEA && uc.Level != _USE_CASE_LEVEL_MUD {
+		return &coreerr.ValidationError{
+			Code:    coreerr.UcLevelInvalid,
+			Message: "Level must be one of: sky, sea, mud",
+			Field:   "Level",
+			Got:     uc.Level,
+			Want:    "one of: sky, sea, mud",
+		}
 	}
 	// Validate FK key types.
 	if uc.SuperclassOfKey != nil {
 		if err := uc.SuperclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SuperclassOfKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcSuperkeyInvalid,
+				Message: fmt.Sprintf("SuperclassOfKey: %s", err.Error()),
+				Field:   "SuperclassOfKey",
+			}
 		}
 		if uc.SuperclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
-			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for use case generalization", uc.SuperclassOfKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcSuperkeyTypeInvalid,
+				Message: fmt.Sprintf("SuperclassOfKey: invalid key type '%s' for use case generalization", uc.SuperclassOfKey.KeyType),
+				Field:   "SuperclassOfKey",
+				Got:     uc.SuperclassOfKey.KeyType,
+				Want:    identity.KEY_TYPE_USE_CASE_GENERALIZATION,
+			}
 		}
 	}
 	if uc.SubclassOfKey != nil {
 		if err := uc.SubclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SubclassOfKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcSubkeyInvalid,
+				Message: fmt.Sprintf("SubclassOfKey: %s", err.Error()),
+				Field:   "SubclassOfKey",
+			}
 		}
 		if uc.SubclassOfKey.KeyType != identity.KEY_TYPE_USE_CASE_GENERALIZATION {
-			return errors.Errorf("SubclassOfKey: invalid key type '%s' for use case generalization", uc.SubclassOfKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcSubkeyTypeInvalid,
+				Message: fmt.Sprintf("SubclassOfKey: invalid key type '%s' for use case generalization", uc.SubclassOfKey.KeyType),
+				Field:   "SubclassOfKey",
+				Got:     uc.SubclassOfKey.KeyType,
+				Want:    identity.KEY_TYPE_USE_CASE_GENERALIZATION,
+			}
 		}
 	}
 
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if uc.SuperclassOfKey != nil && uc.SubclassOfKey != nil && *uc.SuperclassOfKey == *uc.SubclassOfKey {
-		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+		return &coreerr.ValidationError{
+			Code:    coreerr.UcSuperSubSame,
+			Message: "SuperclassOfKey and SubclassOfKey cannot be the same",
+			Field:   "SuperclassOfKey",
+		}
 	}
 	return nil
 }
@@ -124,7 +182,12 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 			return err
 		}
 		if !actorClasses[actorClassKey] {
-			return errors.Errorf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcActorNotActorClass,
+				Message: fmt.Sprintf("use case '%s' actor references class '%s' which is not an actor class (no ActorKey defined)", uc.Key.String(), actorClassKey.String()),
+				Field:   "Actors",
+				Got:     actorClassKey.String(),
+			}
 		}
 	}
 	for _, scenario := range uc.Scenarios {
@@ -141,12 +204,22 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 func (uc *UseCase) ValidateReferences(generalizations map[identity.Key]bool) error {
 	if uc.SuperclassOfKey != nil {
 		if !generalizations[*uc.SuperclassOfKey] {
-			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SuperclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcSupergenNotfound,
+				Message: fmt.Sprintf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SuperclassOfKey.String()),
+				Field:   "SuperclassOfKey",
+				Got:     uc.SuperclassOfKey.String(),
+			}
 		}
 	}
 	if uc.SubclassOfKey != nil {
 		if !generalizations[*uc.SubclassOfKey] {
-			return errors.Errorf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SubclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.UcSubgenNotfound,
+				Message: fmt.Sprintf("use case '%s' references non-existent generalization '%s'", uc.Key.String(), uc.SubclassOfKey.String()),
+				Field:   "SubclassOfKey",
+				Got:     uc.SubclassOfKey.String(),
+			}
 		}
 	}
 	return nil

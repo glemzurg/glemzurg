@@ -71,7 +71,7 @@ func (suite *UseCaseSuite) TestValidate() {
 				Name:  "Name",
 				Level: _USE_CASE_LEVEL_SEA,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",

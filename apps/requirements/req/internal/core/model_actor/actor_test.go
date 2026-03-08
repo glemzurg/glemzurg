@@ -60,7 +60,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: _USER_TYPE_PERSON,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "ACTOR_KEY_INVALID",
 		},
 		{
 			testName: "error wrong key type",
@@ -69,7 +69,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: _USER_TYPE_PERSON,
 			},
-			errstr: "key: invalid key type 'domain' for actor",
+			errstr: "invalid key type 'domain' for actor",
 		},
 		{
 			testName: "error blank name",
@@ -78,7 +78,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "",
 				Type: _USER_TYPE_PERSON,
 			},
-			errstr: "Name",
+			errstr: "Name is required",
 		},
 		{
 			testName: "error blank type",
@@ -87,7 +87,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: "",
 			},
-			errstr: "Type",
+			errstr: "Type is required",
 		},
 		{
 			testName: "error invalid type",
@@ -96,7 +96,7 @@ func (suite *ActorSuite) TestValidate() {
 				Name: "Name",
 				Type: "unknown",
 			},
-			errstr: "Type",
+			errstr: "Type must be one of",
 		},
 		{
 			testName: "error superclass and subclass same key",
@@ -180,7 +180,7 @@ func (suite *ActorSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name is required")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -194,7 +194,7 @@ func (suite *ActorSuite) TestValidateWithParent() {
 		Type: _USER_TYPE_PERSON,
 	}
 	err := actor.ValidateWithParent(nil)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name is required", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actors should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

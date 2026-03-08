@@ -1,10 +1,12 @@
 package model_domain
 
 import (
+	"fmt"
 	"maps"
 
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -12,7 +14,7 @@ import (
 // Domain is a root category of the mode.
 type Domain struct {
 	Key        identity.Key
-	Name       string `validate:"required"`
+	Name       string
 	Details    string // Markdown.
 	Realized   bool   // If this domain has no semantic model because it is existing already, so only design in this domain.
 	UmlComment string
@@ -41,14 +43,28 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 func (d *Domain) Validate() error {
 	// Validate the key.
 	if err := d.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.DomainKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if d.Key.KeyType != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("Key: invalid key type '%s' for domain", d.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.DomainKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for domain", d.Key.KeyType),
+			Field:   "Key",
+			Got:     d.Key.KeyType,
+			Want:    identity.KEY_TYPE_DOMAIN,
+		}
 	}
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(d); err != nil {
-		return err
+	// Validate Name required.
+	if d.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DomainNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 	return nil
 }
@@ -85,14 +101,25 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 		// Single subdomain must have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() != "default" {
-				return errors.Errorf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey())
+				return &coreerr.ValidationError{
+					Code:    coreerr.DomainSubdomainSingleKey,
+					Message: fmt.Sprintf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey()),
+					Field:   "Subdomains",
+					Got:     subdomainKey.GetSubKey(),
+					Want:    "default",
+				}
 			}
 		}
 	} else if len(d.Subdomains) > 1 {
 		// Multiple subdomains cannot have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() == "default" {
-				return errors.Errorf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String())
+				return &coreerr.ValidationError{
+					Code:    coreerr.DomainSubdomainMultiDefault,
+					Message: fmt.Sprintf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String()),
+					Field:   "Subdomains",
+					Got:     "default",
+				}
 			}
 		}
 	}

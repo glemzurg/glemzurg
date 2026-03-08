@@ -55,7 +55,7 @@ func (suite *KeySuite) TestNewKey() {
 			parentKey: "something",
 			keyType:   "", // Trigger validation error.
 			subKey:    "somethingelse",
-			errstr:    "'KeyType' failed on the 'required' tag",
+			errstr:    "key type is required",
 		},
 	}
 	for _, tt := range tests {
@@ -181,12 +181,12 @@ func (suite *KeySuite) TestParseKey() {
 		{
 			testName: "error empty keyType",
 			input:    "domain/domain1/subdomain/subdomain1//thing1", // empty keyType
-			errstr:   "'KeyType' failed on the 'required' tag",
+			errstr:   "key type is required",
 		},
 		{
 			testName: "error unknown keyType",
 			input:    "domain/domain1/subdomain/subdomain1/unknown/thing1", // unknown keyType
-			errstr:   "'KeyType' failed on the 'oneof' tag",
+			errstr:   "is not valid",
 		},
 	}
 	for _, tt := range tests {
@@ -413,17 +413,17 @@ func (suite *KeySuite) TestValidate() {
 		{
 			testName: "error no subKey",
 			key:      Key{ParentKey: "domain/domain1", KeyType: "subdomain", SubKey: ""},
-			errstr:   "'SubKey' failed on the 'required' tag",
+			errstr:   "sub key is required",
 		},
 		{
 			testName: "error no keyType",
 			key:      Key{ParentKey: "domain/domain1", KeyType: "", SubKey: "subdomain1"},
-			errstr:   "'KeyType' failed on the 'required' tag",
+			errstr:   "key type is required",
 		},
 		{
 			testName: "error invalid keyType",
 			key:      Key{ParentKey: "domain/domain1", KeyType: "unknown", SubKey: "something1"},
-			errstr:   "'KeyType' failed on the 'oneof' tag",
+			errstr:   "is not valid",
 		},
 
 		// Error cases: specific key types.
@@ -1679,7 +1679,7 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 		{
 			testName: "unknown key type",
 			jsonStr:  `"unknown/something"`,
-			errstr:   "'KeyType' failed on the 'oneof' tag",
+			errstr:   "is not valid",
 		},
 	}
 	for _, tt := range tests {
@@ -1787,7 +1787,7 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 		{
 			testName: "unknown key type",
 			text:     "unknown/something",
-			errstr:   "'KeyType' failed on the 'oneof' tag",
+			errstr:   "is not valid",
 		},
 	}
 	for _, tt := range tests {
@@ -1922,7 +1922,7 @@ func (suite *KeySuite) TestYAMLUnmarshalInvalid() {
 		{
 			testName: "unknown key type",
 			yamlStr:  "unknown/something",
-			errstr:   "'KeyType' failed on the 'oneof' tag",
+			errstr:   "is not valid",
 		},
 	}
 	for _, tt := range tests {

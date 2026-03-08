@@ -2,16 +2,18 @@ package identity
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/pkg/errors"
 )
 
 // Key uniquely identifies an entity in the model.
 type Key struct {
-	ParentKey string `validate:"-"`                                                                                                                                                                                                                                                                                                                    // The parent entity's key.
-	KeyType   string `validate:"required,oneof=actor ageneralization domain dassociation gfunc invariant nset subdomain usecase ucgeneralization class attribute aderive ainvariant state event guard action cinvariant arequire aguarantee asafety query qrequire qguarantee transition cgeneralization scenario sobject sstep cassociation saction"` // The type of the key, e.g., "class", "association".
-	SubKey    string `validate:"required"`                                                                                                                                                                                                                                                                                                             // The unique key of the child entity within its parent and type.
+	ParentKey string `validate:"-"` // The parent entity's key.
+	KeyType   string // The type of the key, e.g., "class", "association".
+	SubKey    string // The unique key of the child entity within its parent and type.
 	SubKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
 	SubKey3   string // Optional tertiary key (e.g., for association names). Empty string means not set.
 }
@@ -51,10 +53,45 @@ func newRootKey(keyType, rootKey string) (key Key, err error) {
 	return newKey("", keyType, rootKey)
 }
 
+// validKeyTypes is the set of all valid KeyType values.
+var validKeyTypes = map[string]bool{
+	KEY_TYPE_ACTOR: true, KEY_TYPE_ACTOR_GENERALIZATION: true,
+	KEY_TYPE_DOMAIN: true, KEY_TYPE_DOMAIN_ASSOCIATION: true,
+	KEY_TYPE_GLOBAL_FUNCTION: true, KEY_TYPE_INVARIANT: true, KEY_TYPE_NAMED_SET: true,
+	KEY_TYPE_SUBDOMAIN: true,
+	KEY_TYPE_USE_CASE:  true, KEY_TYPE_USE_CASE_GENERALIZATION: true,
+	KEY_TYPE_CLASS: true, KEY_TYPE_CLASS_GENERALIZATION: true,
+	KEY_TYPE_CLASS_ASSOCIATION: true,
+	KEY_TYPE_ATTRIBUTE:         true, KEY_TYPE_ATTRIBUTE_DERIVATION: true, KEY_TYPE_ATTRIBUTE_INVARIANT: true,
+	KEY_TYPE_STATE: true, KEY_TYPE_EVENT: true, KEY_TYPE_GUARD: true,
+	KEY_TYPE_ACTION: true, KEY_TYPE_QUERY: true, KEY_TYPE_TRANSITION: true,
+	KEY_TYPE_CLASS_INVARIANT: true, KEY_TYPE_STATE_ACTION: true,
+	KEY_TYPE_ACTION_REQUIRE: true, KEY_TYPE_ACTION_GUARANTEE: true, KEY_TYPE_ACTION_SAFETY: true,
+	KEY_TYPE_QUERY_REQUIRE: true, KEY_TYPE_QUERY_GUARANTEE: true,
+	KEY_TYPE_SCENARIO: true, KEY_TYPE_SCENARIO_OBJECT: true, KEY_TYPE_SCENARIO_STEP: true,
+}
+
+// keyErr creates a coreerr.ValidationError for key validation failures.
+func keyErr(code coreerr.Code, field, got, want, message string) *coreerr.ValidationError {
+	return &coreerr.ValidationError{
+		Code:    code,
+		Message: message,
+		Field:   field,
+		Got:     got,
+		Want:    want,
+	}
+}
+
 // Validate validates the Key struct.
 func (k *Key) Validate() error {
-	if err := _validate.Struct(k); err != nil {
-		return err
+	if k.KeyType == "" {
+		return keyErr(coreerr.KeyTypeInvalid, "KeyType", "", "non-empty key type", "key type is required")
+	}
+	if !validKeyTypes[k.KeyType] {
+		return keyErr(coreerr.KeyTypeInvalid, "KeyType", k.KeyType, "one of the valid key types", fmt.Sprintf("key type '%s' is not valid", k.KeyType))
+	}
+	if k.SubKey == "" {
+		return keyErr(coreerr.KeySubkeyRequired, "SubKey", "", "non-empty sub key", "sub key is required")
 	}
 
 	// Custom ParentKey validation (context-dependent on KeyType).
@@ -62,14 +99,16 @@ func (k *Key) Validate() error {
 	case KEY_TYPE_DOMAIN, KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
 		// These key types must have blank parentKey.
 		if k.ParentKey != "" {
-			return errors.Errorf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey)
+			return keyErr(coreerr.KeyParentkeyMustBeBlank, "ParentKey", k.ParentKey, "blank",
+				fmt.Sprintf("parentKey must be blank for '%s' keys, cannot be '%s'", k.KeyType, k.ParentKey))
 		}
 	case KEY_TYPE_CLASS_ASSOCIATION:
 		// Class associations can have blank parentKey (model-level) or non-blank (domain/subdomain level).
 		// No validation needed - both are valid.
 	default:
 		if k.ParentKey == "" {
-			return errors.Errorf("parentKey must be non-blank for '%s' keys", k.KeyType)
+			return keyErr(coreerr.KeyParentkeyRequired, "ParentKey", "", "non-blank parent key",
+				fmt.Sprintf("parentKey must be non-blank for '%s' keys", k.KeyType))
 		}
 	}
 	return nil
@@ -133,164 +172,96 @@ func (k *Key) ValidateParent(parent *Key) error {
 
 	switch k.KeyType {
 	case KEY_TYPE_ACTOR, KEY_TYPE_ACTOR_GENERALIZATION, KEY_TYPE_DOMAIN, KEY_TYPE_DOMAIN_ASSOCIATION, KEY_TYPE_GLOBAL_FUNCTION, KEY_TYPE_INVARIANT, KEY_TYPE_NAMED_SET:
-		// These are root keys - parent must be nil.
-		if parent != nil {
-			return errors.Errorf("key type '%s' should not have a parent, but got parent of type '%s'", k.KeyType, parent.KeyType)
-		}
-		if k.ParentKey != "" {
-			return errors.Errorf("key type '%s' should have empty parentKey, but got '%s'", k.KeyType, k.ParentKey)
-		}
+		return k.validateRootParent(parent)
 
 	case KEY_TYPE_SUBDOMAIN:
-		// Parent must be a domain.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_DOMAIN)
-		}
-		if parent.KeyType != KEY_TYPE_DOMAIN {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_DOMAIN, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_DOMAIN)
 
 	case KEY_TYPE_USE_CASE, KEY_TYPE_USE_CASE_GENERALIZATION, KEY_TYPE_CLASS, KEY_TYPE_CLASS_GENERALIZATION:
-		// Parent must be a subdomain.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_SUBDOMAIN)
-		}
-		if parent.KeyType != KEY_TYPE_SUBDOMAIN {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_SUBDOMAIN, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_SUBDOMAIN)
 
 	case KEY_TYPE_SCENARIO:
-		// Parent must be a use case.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_USE_CASE)
-		}
-		if parent.KeyType != KEY_TYPE_USE_CASE {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_USE_CASE, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_USE_CASE)
 
 	case KEY_TYPE_SCENARIO_OBJECT, KEY_TYPE_SCENARIO_STEP:
-		// Parent must be a scenario.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_SCENARIO)
-		}
-		if parent.KeyType != KEY_TYPE_SCENARIO {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_SCENARIO, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_SCENARIO)
 
 	case KEY_TYPE_STATE, KEY_TYPE_EVENT, KEY_TYPE_GUARD, KEY_TYPE_ACTION, KEY_TYPE_QUERY, KEY_TYPE_TRANSITION, KEY_TYPE_ATTRIBUTE, KEY_TYPE_CLASS_INVARIANT:
-		// Parent must be a class.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_CLASS)
-		}
-		if parent.KeyType != KEY_TYPE_CLASS {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_CLASS, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_CLASS)
 
 	case KEY_TYPE_STATE_ACTION:
-		// Parent must be a state.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_STATE)
-		}
-		if parent.KeyType != KEY_TYPE_STATE {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_STATE, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_STATE)
 
 	case KEY_TYPE_ACTION_REQUIRE, KEY_TYPE_ACTION_GUARANTEE, KEY_TYPE_ACTION_SAFETY:
-		// Parent must be an action.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_ACTION)
-		}
-		if parent.KeyType != KEY_TYPE_ACTION {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_ACTION, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_ACTION)
 
 	case KEY_TYPE_QUERY_REQUIRE, KEY_TYPE_QUERY_GUARANTEE:
-		// Parent must be a query.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_QUERY)
-		}
-		if parent.KeyType != KEY_TYPE_QUERY {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_QUERY, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_QUERY)
 
 	case KEY_TYPE_ATTRIBUTE_DERIVATION, KEY_TYPE_ATTRIBUTE_INVARIANT:
-		// Parent must be an attribute.
-		if parent == nil {
-			return errors.Errorf("key type '%s' requires a parent of type '%s'", k.KeyType, KEY_TYPE_ATTRIBUTE)
-		}
-		if parent.KeyType != KEY_TYPE_ATTRIBUTE {
-			return errors.Errorf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, KEY_TYPE_ATTRIBUTE, parent.KeyType)
-		}
-		if k.ParentKey != parent.String() {
-			return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-		}
+		return k.validateRequiredParent(parent, KEY_TYPE_ATTRIBUTE)
 
 	case KEY_TYPE_CLASS_ASSOCIATION:
-		// Class associations are special - the parent can be subdomain, domain, or model (empty).
-		// We need to determine the expected parent type by parsing the key structure.
-		expectedParentType, err := k.determineClassAssociationParentType()
-		if err != nil {
-			return err
-		}
-
-		switch expectedParentType {
-		case "": // Model level - no parent
-			if parent != nil {
-				return errors.Errorf("model-level class association should not have a parent, but got parent of type '%s'", parent.KeyType)
-			}
-			if k.ParentKey != "" {
-				return errors.Errorf("model-level class association should have empty parentKey, but got '%s'", k.ParentKey)
-			}
-		case KEY_TYPE_DOMAIN:
-			if parent == nil {
-				return errors.Errorf("domain-level class association requires a parent of type '%s'", KEY_TYPE_DOMAIN)
-			}
-			if parent.KeyType != KEY_TYPE_DOMAIN {
-				return errors.Errorf("domain-level class association requires parent of type '%s', but got '%s'", KEY_TYPE_DOMAIN, parent.KeyType)
-			}
-			if k.ParentKey != parent.String() {
-				return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-			}
-		case KEY_TYPE_SUBDOMAIN:
-			if parent == nil {
-				return errors.Errorf("subdomain-level class association requires a parent of type '%s'", KEY_TYPE_SUBDOMAIN)
-			}
-			if parent.KeyType != KEY_TYPE_SUBDOMAIN {
-				return errors.Errorf("subdomain-level class association requires parent of type '%s', but got '%s'", KEY_TYPE_SUBDOMAIN, parent.KeyType)
-			}
-			if k.ParentKey != parent.String() {
-				return errors.Errorf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String())
-			}
-		}
+		return k.validateClassAssociationParent(parent)
 
 	default:
-		return errors.Errorf("unknown key type '%s'", k.KeyType)
+		return keyErr(coreerr.KeyTypeUnknown, "KeyType", k.KeyType, "a valid key type",
+			fmt.Sprintf("unknown key type '%s'", k.KeyType))
+	}
+}
+
+// validateRootParent validates that a root-level key has no parent.
+func (k *Key) validateRootParent(parent *Key) error {
+	if parent != nil {
+		return keyErr(coreerr.KeyRootHasParent, "Parent", parent.KeyType, "nil",
+			fmt.Sprintf("key type '%s' should not have a parent, but got parent of type '%s'", k.KeyType, parent.KeyType))
+	}
+	if k.ParentKey != "" {
+		return keyErr(coreerr.KeyRootHasParentkey, "ParentKey", k.ParentKey, "blank",
+			fmt.Sprintf("key type '%s' should have empty parentKey, but got '%s'", k.KeyType, k.ParentKey))
+	}
+	return nil
+}
+
+// validateRequiredParent validates that a key has a parent of the expected type with matching key value.
+func (k *Key) validateRequiredParent(parent *Key, expectedType string) error {
+	if parent == nil {
+		return keyErr(coreerr.KeyNoParent, "Parent", "", expectedType,
+			fmt.Sprintf("key type '%s' requires a parent of type '%s'", k.KeyType, expectedType))
+	}
+	if parent.KeyType != expectedType {
+		return keyErr(coreerr.KeyWrongParentType, "Parent", parent.KeyType, expectedType,
+			fmt.Sprintf("key type '%s' requires parent of type '%s', but got '%s'", k.KeyType, expectedType, parent.KeyType))
+	}
+	if k.ParentKey != parent.String() {
+		return keyErr(coreerr.KeyParentkeyMismatch, "ParentKey", k.ParentKey, parent.String(),
+			fmt.Sprintf("key parentKey '%s' does not match expected parent '%s'", k.ParentKey, parent.String()))
+	}
+	return nil
+}
+
+// validateClassAssociationParent validates the parent for class association keys.
+func (k *Key) validateClassAssociationParent(parent *Key) error {
+	expectedParentType, err := k.determineClassAssociationParentType()
+	if err != nil {
+		return err
 	}
 
+	switch expectedParentType {
+	case "": // Model level - no parent.
+		if parent != nil {
+			return keyErr(coreerr.KeyCassocModelHasParent, "Parent", parent.KeyType, "nil",
+				fmt.Sprintf("model-level class association should not have a parent, but got parent of type '%s'", parent.KeyType))
+		}
+		if k.ParentKey != "" {
+			return keyErr(coreerr.KeyRootHasParentkey, "ParentKey", k.ParentKey, "blank",
+				fmt.Sprintf("model-level class association should have empty parentKey, but got '%s'", k.ParentKey))
+		}
+	case KEY_TYPE_DOMAIN:
+		return k.validateRequiredParent(parent, KEY_TYPE_DOMAIN)
+	case KEY_TYPE_SUBDOMAIN:
+		return k.validateRequiredParent(parent, KEY_TYPE_SUBDOMAIN)
+	}
 	return nil
 }
 
@@ -299,11 +270,13 @@ func (k *Key) ValidateParent(parent *Key) error {
 // Returns "" for model-level, KEY_TYPE_DOMAIN for domain-level, or KEY_TYPE_SUBDOMAIN for subdomain-level.
 func (k *Key) determineClassAssociationParentType() (string, error) {
 	if k.KeyType != KEY_TYPE_CLASS_ASSOCIATION {
-		return "", errors.Errorf("determineClassAssociationParentType called on non-class-association key of type '%s'", k.KeyType)
+		return "", keyErr(coreerr.KeyCassocParentUnknown, "KeyType", k.KeyType, KEY_TYPE_CLASS_ASSOCIATION,
+			fmt.Sprintf("determineClassAssociationParentType called on non-class-association key of type '%s'", k.KeyType))
 	}
 
 	if k.SubKey2 == "" {
-		return "", errors.New("class association key missing subKey2")
+		return "", keyErr(coreerr.KeySubkeyRequired, "SubKey2", "", "non-empty",
+			"class association key missing subKey2")
 	}
 
 	// Parse the subKey to understand the structure.
@@ -313,22 +286,24 @@ func (k *Key) determineClassAssociationParentType() (string, error) {
 	subKeyParts := strings.Split(k.SubKey, "/")
 
 	if len(subKeyParts) < 2 {
-		return "", errors.Errorf("invalid class association subKey structure: '%s'", k.SubKey)
+		return "", keyErr(coreerr.KeyCassocParentUnknown, "SubKey", k.SubKey, "a structured class path",
+			fmt.Sprintf("invalid class association subKey structure: '%s'", k.SubKey))
 	}
 
 	// Check the first part to determine the level.
 	switch subKeyParts[0] {
 	case KEY_TYPE_DOMAIN:
-		// Model level - subKey starts with "domain/"
+		// Model level - subKey starts with "domain/".
 		return "", nil
 	case KEY_TYPE_SUBDOMAIN:
-		// Domain level - subKey starts with "subdomain/"
+		// Domain level - subKey starts with "subdomain/".
 		return KEY_TYPE_DOMAIN, nil
 	case KEY_TYPE_CLASS:
-		// Subdomain level - subKey starts with "class/"
+		// Subdomain level - subKey starts with "class/".
 		return KEY_TYPE_SUBDOMAIN, nil
 	default:
-		return "", errors.Errorf("cannot determine class association parent type from subKey '%s'", k.SubKey)
+		return "", keyErr(coreerr.KeyCassocParentUnknown, "SubKey", k.SubKey, "subKey starting with domain/, subdomain/, or class/",
+			fmt.Sprintf("cannot determine class association parent type from subKey '%s'", k.SubKey))
 	}
 }
 

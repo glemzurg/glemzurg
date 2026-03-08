@@ -1,8 +1,11 @@
 package model_state
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -10,7 +13,7 @@ import (
 // Guard is a constraint on an event in a state machine.
 type Guard struct {
 	Key   identity.Key
-	Name  string            `validate:"required"` // A simple unique name for a guard, for internal use.
+	Name  string            // A simple unique name for a guard, for internal use.
 	Logic model_logic.Logic // The formal logic specification for this guard condition.
 }
 
@@ -32,22 +35,45 @@ func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Gua
 func (g *Guard) Validate() error {
 	// Validate the key.
 	if err := g.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.GuardKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_GUARD {
-		return errors.Errorf("Key: invalid key type '%s' for guard", g.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.GuardKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for guard", g.Key.KeyType),
+			Field:   "Key",
+			Got:     g.Key.KeyType,
+			Want:    identity.KEY_TYPE_GUARD,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(g); err != nil {
-		return err
+	if g.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.GuardNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	if err := g.Logic.Validate(); err != nil {
-		return errors.Wrap(err, "logic")
+		return &coreerr.ValidationError{
+			Code:    coreerr.GuardLogicInvalid,
+			Message: fmt.Sprintf("logic: %s", err.Error()),
+			Field:   "Logic",
+		}
 	}
 	if g.Logic.Type != model_logic.LogicTypeAssessment {
-		return errors.Errorf("logic kind must be '%s', got '%s'", model_logic.LogicTypeAssessment, g.Logic.Type)
+		return &coreerr.ValidationError{
+			Code:    coreerr.GuardLogicTypeInvalid,
+			Message: fmt.Sprintf("logic kind must be '%s', got '%s'", model_logic.LogicTypeAssessment, g.Logic.Type),
+			Field:   "Logic.Type",
+			Got:     g.Logic.Type,
+			Want:    model_logic.LogicTypeAssessment,
+		}
 	}
 
 	return nil
@@ -66,7 +92,13 @@ func (g *Guard) ValidateWithParent(parent *identity.Key) error {
 	}
 	// Guard's logic must use the guard's exact key.
 	if g.Logic.Key != g.Key {
-		return errors.Errorf("logic key '%s' does not match guard key '%s'", g.Logic.Key.String(), g.Key.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.GuardLogicKeyMismatch,
+			Message: fmt.Sprintf("logic key '%s' does not match guard key '%s'", g.Logic.Key.String(), g.Key.String()),
+			Field:   "Logic.Key",
+			Got:     g.Logic.Key.String(),
+			Want:    g.Key.String(),
+		}
 	}
 	// Validate the logic's key parent relationship.
 	if err := g.Logic.ValidateWithParent(parent); err != nil {

@@ -1,17 +1,17 @@
 package model_state
 
 import (
+	"fmt"
 	"sort"
 
-	"github.com/pkg/errors"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // State is a particular set of values in a state, distinct from all other states in the state.
 type State struct {
 	Key        identity.Key
-	Name       string `validate:"required"`
+	Name       string
 	Details    string // Markdown.
 	UmlComment string
 	// Children
@@ -37,15 +37,28 @@ func NewState(key identity.Key, name, details, umlComment string) (state State, 
 func (s *State) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_STATE {
-		return errors.Errorf("Key: invalid key type '%s' for state", s.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for state", s.Key.KeyType),
+			Field:   "Key",
+			Got:     s.Key.KeyType,
+			Want:    identity.KEY_TYPE_STATE,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(s); err != nil {
-		return err
+	if s.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	return nil

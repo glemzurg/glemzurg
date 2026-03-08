@@ -1,8 +1,11 @@
 package model_class
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -11,7 +14,7 @@ import (
 // Class is a thing in the system.
 type Class struct {
 	Key             identity.Key
-	Name            string        `validate:"required"`
+	Name            string
 	Details         string        // Markdown.
 	ActorKey        *identity.Key // If this class is an Actor this is the key of that actor.
 	SuperclassOfKey *identity.Key // If this class is part of a generalization as the superclass.
@@ -50,46 +53,94 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 func (c *Class) Validate() error {
 	// Validate the key.
 	if err := c.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.ClassKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if c.Key.KeyType != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("key: invalid key type '%s' for class", c.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.ClassKeyTypeInvalid,
+			Message: fmt.Sprintf("key: invalid key type '%s' for class", c.Key.KeyType),
+			Field:   "Key",
+			Got:     c.Key.KeyType,
+			Want:    identity.KEY_TYPE_CLASS,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(c); err != nil {
-		return err
+	// Name is required.
+	if c.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ClassNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	// Validate FK key types.
 	if c.ActorKey != nil {
 		if err := c.ActorKey.Validate(); err != nil {
-			return errors.Wrap(err, "ActorKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassActorkeyInvalid,
+				Message: fmt.Sprintf("ActorKey: %s", err.Error()),
+				Field:   "ActorKey",
+			}
 		}
 		if c.ActorKey.KeyType != identity.KEY_TYPE_ACTOR {
-			return errors.Errorf("ActorKey: invalid key type '%s' for actor", c.ActorKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassActorkeyTypeInvalid,
+				Message: fmt.Sprintf("ActorKey: invalid key type '%s' for actor", c.ActorKey.KeyType),
+				Field:   "ActorKey",
+				Got:     c.ActorKey.KeyType,
+				Want:    identity.KEY_TYPE_ACTOR,
+			}
 		}
 	}
 	if c.SuperclassOfKey != nil {
 		if err := c.SuperclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SuperclassOfKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSuperkeyInvalid,
+				Message: fmt.Sprintf("SuperclassOfKey: %s", err.Error()),
+				Field:   "SuperclassOfKey",
+			}
 		}
 		if c.SuperclassOfKey.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
-			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for class generalization", c.SuperclassOfKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSuperkeyTypeInvalid,
+				Message: fmt.Sprintf("SuperclassOfKey: invalid key type '%s' for class generalization", c.SuperclassOfKey.KeyType),
+				Field:   "SuperclassOfKey",
+				Got:     c.SuperclassOfKey.KeyType,
+				Want:    identity.KEY_TYPE_CLASS_GENERALIZATION,
+			}
 		}
 	}
 	if c.SubclassOfKey != nil {
 		if err := c.SubclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SubclassOfKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSubkeyInvalid,
+				Message: fmt.Sprintf("SubclassOfKey: %s", err.Error()),
+				Field:   "SubclassOfKey",
+			}
 		}
 		if c.SubclassOfKey.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
-			return errors.Errorf("SubclassOfKey: invalid key type '%s' for class generalization", c.SubclassOfKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSubkeyTypeInvalid,
+				Message: fmt.Sprintf("SubclassOfKey: invalid key type '%s' for class generalization", c.SubclassOfKey.KeyType),
+				Field:   "SubclassOfKey",
+				Got:     c.SubclassOfKey.KeyType,
+				Want:    identity.KEY_TYPE_CLASS_GENERALIZATION,
+			}
 		}
 	}
 
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if c.SuperclassOfKey != nil && c.SubclassOfKey != nil && *c.SuperclassOfKey == *c.SubclassOfKey {
-		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+		return &coreerr.ValidationError{
+			Code:    coreerr.ClassSuperSubSame,
+			Message: "SuperclassOfKey and SubclassOfKey cannot be the same",
+			Field:   "SuperclassOfKey",
+		}
 	}
 	return nil
 }
@@ -102,7 +153,12 @@ func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations
 	// Validate ActorKey references a real actor.
 	if c.ActorKey != nil {
 		if !actors[*c.ActorKey] {
-			return errors.Errorf("class '%s' references non-existent actor '%s'", c.Key.String(), c.ActorKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassActorNotfound,
+				Message: fmt.Sprintf("class '%s' references non-existent actor '%s'", c.Key.String(), c.ActorKey.String()),
+				Field:   "ActorKey",
+				Got:     c.ActorKey.String(),
+			}
 		}
 	}
 
@@ -112,24 +168,44 @@ func (c *Class) ValidateReferences(actors map[identity.Key]bool, generalizations
 	// Validate SuperclassOfKey references a real generalization in the same subdomain.
 	if c.SuperclassOfKey != nil {
 		if !generalizations[*c.SuperclassOfKey] {
-			return errors.Errorf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SuperclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSupergenNotfound,
+				Message: fmt.Sprintf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SuperclassOfKey.String()),
+				Field:   "SuperclassOfKey",
+				Got:     c.SuperclassOfKey.String(),
+			}
 		}
 		// Check same subdomain.
 		generalizationSubdomainKey := c.SuperclassOfKey.ParentKey
 		if classSubdomainKey != generalizationSubdomainKey {
-			return errors.Errorf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SuperclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSupergenWrongSubdomain,
+				Message: fmt.Sprintf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SuperclassOfKey.String()),
+				Field:   "SuperclassOfKey",
+				Got:     c.SuperclassOfKey.String(),
+			}
 		}
 	}
 
 	// Validate SubclassOfKey references a real generalization in the same subdomain.
 	if c.SubclassOfKey != nil {
 		if !generalizations[*c.SubclassOfKey] {
-			return errors.Errorf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SubclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSubgenNotfound,
+				Message: fmt.Sprintf("class '%s' references non-existent generalization '%s'", c.Key.String(), c.SubclassOfKey.String()),
+				Field:   "SubclassOfKey",
+				Got:     c.SubclassOfKey.String(),
+			}
 		}
 		// Check same subdomain.
 		generalizationSubdomainKey := c.SubclassOfKey.ParentKey
 		if classSubdomainKey != generalizationSubdomainKey {
-			return errors.Errorf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SubclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassSubgenWrongSubdomain,
+				Message: fmt.Sprintf("class '%s' generalization '%s' must be in the same subdomain", c.Key.String(), c.SubclassOfKey.String()),
+				Field:   "SubclassOfKey",
+				Got:     c.SubclassOfKey.String(),
+			}
 		}
 	}
 
@@ -199,11 +275,22 @@ func (c *Class) validateClassInvariants() error {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+			return &coreerr.ValidationError{
+				Code:    coreerr.ClassInvariantTypeInvalid,
+				Message: fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
+				Field:   "Invariants",
+				Got:     inv.Type,
+				Want:    fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet),
+			}
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if letTargets[inv.Target] {
-				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
+				return &coreerr.ValidationError{
+					Code:    coreerr.ClassInvariantDuplicateLet,
+					Message: fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target),
+					Field:   "Invariants",
+					Got:     inv.Target,
+				}
 			}
 			letTargets[inv.Target] = true
 		}
@@ -258,7 +345,12 @@ func (c *Class) validateActionGuarantees() error {
 				continue
 			}
 			if guar.Target != "" && !attrSubKeys[guar.Target] {
-				return errors.Errorf("action %q guarantee %d: target %q is not a valid attribute on class %q", action.Key.String(), i, guar.Target, c.Key.String())
+				return &coreerr.ValidationError{
+					Code:    coreerr.ClassGuaranteeInvalidTarget,
+					Message: fmt.Sprintf("action %q guarantee %d: target %q is not a valid attribute on class %q", action.Key.String(), i, guar.Target, c.Key.String()),
+					Field:   "Guarantees",
+					Got:     guar.Target,
+				}
 			}
 		}
 	}

@@ -1,7 +1,14 @@
 
 update ai parser to be an ai desitned cli:
   - move error codes to req_model
-  https://grok.com/c/e1be5ee4-1771-499f-9d52-4cb80e9c3b46?rid=36cf9e90-0129-47a9-9437-aab9eb24c280
+  - small outputs with ways to get schemas to people
+
+
+https://grok.com/share/c2hhcmQtMw_d87e1d40-d147-49e4-a204-39e0de4afe15
+
+change constants styles
+
+private data members
 
 ----------------------------
 

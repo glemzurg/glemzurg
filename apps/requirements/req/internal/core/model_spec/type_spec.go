@@ -1,8 +1,9 @@
 package model_spec
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
 )
 
@@ -17,7 +18,7 @@ type TypeParseFunc func(specification string) (model_expression_type.ExpressionT
 //  2. Unparsed: Specification is set, ExpressionType is nil (parse not attempted or failed).
 //  3. Fully parsed: Specification is set, ExpressionType is non-nil. ParseOk() returns true.
 type TypeSpec struct {
-	Notation       string                               `validate:"required,oneof=tla_plus"` // Notation system (currently only TLA+).
+	Notation       string                               // Notation system (currently only TLA+).
 	Specification  string                               // Optional specification body text.
 	ExpressionType model_expression_type.ExpressionType // Optional parsed expression type tree (nil = not yet parsed).
 }
@@ -54,12 +55,30 @@ func (s *TypeSpec) ParseOk() bool {
 
 // Validate validates the TypeSpec.
 func (s *TypeSpec) Validate() error {
-	if err := _validate.Struct(s); err != nil {
-		return err
+	if s.Notation == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.TypespecNotationRequired,
+			Message: "Notation is required",
+			Field:   "Notation",
+			Want:    "one of: tla_plus",
+		}
+	}
+	if s.Notation != "tla_plus" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.TypespecNotationInvalid,
+			Message: fmt.Sprintf("Notation '%s' is not valid", s.Notation),
+			Field:   "Notation",
+			Got:     s.Notation,
+			Want:    "one of: tla_plus",
+		}
 	}
 	if s.ExpressionType != nil {
 		if err := s.ExpressionType.Validate(); err != nil {
-			return errors.Wrap(err, "TypeSpec.ExpressionType")
+			return &coreerr.ValidationError{
+				Code:    coreerr.TypespecExprtypeInvalid,
+				Message: fmt.Sprintf("TypeSpec.ExpressionType: %s", err.Error()),
+				Field:   "ExpressionType",
+			}
 		}
 	}
 	return nil

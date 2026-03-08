@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
 
 const (
@@ -14,9 +16,17 @@ const (
 	CONSTRAINT_TYPE_OBJECT        = "object"        // An object of a class.
 )
 
+var _validConstraintTypes = map[string]bool{
+	CONSTRAINT_TYPE_UNCONSTRAINED: true,
+	CONSTRAINT_TYPE_SPAN:          true,
+	CONSTRAINT_TYPE_ENUMERATION:   true,
+	CONSTRAINT_TYPE_REFERENCE:     true,
+	CONSTRAINT_TYPE_OBJECT:        true,
+}
+
 // Atomic represents the atomic data type (as opposed to a collection).
 type Atomic struct {
-	ConstraintType string `validate:"required,oneof=unconstrained span enumeration reference object"`
+	ConstraintType string
 	Span           *AtomicSpan
 	Reference      *string
 	EnumOrdered    *bool // If defined and true, the enumeration values can be compared greater-lesser-than.
@@ -26,9 +36,25 @@ type Atomic struct {
 
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
-	if err := _validate.Struct(a); err != nil {
-		return err
+	// ConstraintType: required and must be a valid value.
+	if a.ConstraintType == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeAtomicConstrainttypeRequired,
+			Message: "ConstraintType is required",
+			Field:   "ConstraintType",
+			Want:    "one of: unconstrained, span, enumeration, reference, object",
+		}
 	}
+	if !_validConstraintTypes[a.ConstraintType] {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeAtomicConstrainttypeInvalid,
+			Message: "ConstraintType is not a valid value",
+			Field:   "ConstraintType",
+			Got:     a.ConstraintType,
+			Want:    "one of: unconstrained, span, enumeration, reference, object",
+		}
+	}
+
 	if err := a.validateReference(); err != nil {
 		return err
 	}

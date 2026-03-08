@@ -66,7 +66,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  classKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -106,7 +106,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  identity.Key{},
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong class key type",
@@ -126,7 +126,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: "bogus",
 				ClassKey:  classKey,
 			},
-			errstr: "'NameStyle' failed on the 'oneof' tag",
+			errstr: "NameStyle must be one of: name, id, unnamed",
 		},
 	}
 	for _, tt := range tests {

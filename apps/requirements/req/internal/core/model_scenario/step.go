@@ -2,9 +2,10 @@ package model_scenario
 
 import (
 	"encoding/json"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -44,15 +45,29 @@ type Step struct { //nolint:recvcheck
 func (s *Step) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.SstepKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO_STEP {
-		return errors.Errorf("key: invalid key type '%s' for scenario step", s.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.SstepKeyTypeInvalid,
+			Message: fmt.Sprintf("key: invalid key type '%s' for scenario step", s.Key.KeyType),
+			Field:   "Key",
+			Got:     s.Key.KeyType,
+			Want:    identity.KEY_TYPE_SCENARIO_STEP,
+		}
 	}
 	switch s.StepType {
 	case STEP_TYPE_SEQUENCE:
 		if len(s.Statements) == 0 {
-			return errors.New("sequence must have at least one statement")
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepSequenceMinStatements,
+				Message: "sequence must have at least one statement",
+				Field:   "Statements",
+			}
 		}
 		for _, stmt := range s.Statements {
 			if err := stmt.Validate(); err != nil {
@@ -61,11 +76,21 @@ func (s *Step) Validate() error {
 		}
 	case STEP_TYPE_SWITCH:
 		if len(s.Statements) == 0 {
-			return errors.New("switch must have at least one case")
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepSwitchMinCases,
+				Message: "switch must have at least one case",
+				Field:   "Statements",
+			}
 		}
 		for _, stmt := range s.Statements {
 			if stmt.StepType != STEP_TYPE_CASE {
-				return errors.New("switch children must all be case steps")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepSwitchCaseType,
+					Message: "switch children must all be case steps",
+					Field:   "Statements",
+					Got:     stmt.StepType,
+					Want:    STEP_TYPE_CASE,
+				}
 			}
 			if err := stmt.Validate(); err != nil {
 				return err
@@ -73,7 +98,11 @@ func (s *Step) Validate() error {
 		}
 	case STEP_TYPE_CASE:
 		if s.Condition == "" {
-			return errors.New("case must have a condition")
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepCaseConditionRequired,
+				Message: "case must have a condition",
+				Field:   "Condition",
+			}
 		}
 		for _, stmt := range s.Statements {
 			if err := stmt.Validate(); err != nil {
@@ -82,10 +111,18 @@ func (s *Step) Validate() error {
 		}
 	case STEP_TYPE_LOOP:
 		if s.Condition == "" {
-			return errors.New("loop must have a condition")
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepLoopConditionRequired,
+				Message: "loop must have a condition",
+				Field:   "Condition",
+			}
 		}
 		if len(s.Statements) == 0 {
-			return errors.New("loop must have at least one statement")
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepLoopMinStatements,
+				Message: "loop must have at least one statement",
+				Field:   "Statements",
+			}
 		}
 		for _, stmt := range s.Statements {
 			if err := stmt.Validate(); err != nil {
@@ -94,104 +131,230 @@ func (s *Step) Validate() error {
 		}
 	case STEP_TYPE_LEAF:
 		if s.LeafType == nil {
-			return errors.New("leaf must have a leaf_type")
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepLeafTypeRequired,
+				Message: "leaf must have a leaf_type",
+				Field:   "LeafType",
+			}
 		}
 		switch *s.LeafType {
 		case LEAF_TYPE_DELETE:
 			if s.FromObjectKey == nil {
-				return errors.New("delete leaf must have a from_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepDeleteFromRequired,
+					Message: "delete leaf must have a from_object_key",
+					Field:   "FromObjectKey",
+				}
 			}
 			if s.ToObjectKey != nil {
-				return errors.New("delete leaf cannot have a to_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepDeleteToForbidden,
+					Message: "delete leaf cannot have a to_object_key",
+					Field:   "ToObjectKey",
+				}
 			}
 			if s.EventKey != nil || s.ScenarioKey != nil || s.QueryKey != nil {
-				return errors.New("delete leaf cannot have event_key, scenario_key, or query_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepDeleteKeysForbidden,
+					Message: "delete leaf cannot have event_key, scenario_key, or query_key",
+					Field:   "EventKey/ScenarioKey/QueryKey",
+				}
 			}
 		case LEAF_TYPE_EVENT:
 			if s.FromObjectKey == nil {
-				return errors.New("event leaf must have a from_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepEventFromRequired,
+					Message: "event leaf must have a from_object_key",
+					Field:   "FromObjectKey",
+				}
 			}
 			if s.ToObjectKey == nil {
-				return errors.New("event leaf must have a to_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepEventToRequired,
+					Message: "event leaf must have a to_object_key",
+					Field:   "ToObjectKey",
+				}
 			}
 			if s.EventKey == nil {
-				return errors.New("event leaf must have an event_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepEventKeyRequired,
+					Message: "event leaf must have an event_key",
+					Field:   "EventKey",
+				}
 			}
 			if s.ScenarioKey != nil || s.QueryKey != nil {
-				return errors.New("event leaf cannot have scenario_key or query_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepEventQueryForbidden,
+					Message: "event leaf cannot have scenario_key or query_key",
+					Field:   "ScenarioKey/QueryKey",
+				}
 			}
 		case LEAF_TYPE_QUERY:
 			if s.FromObjectKey == nil {
-				return errors.New("query leaf must have a from_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepQueryFromRequired,
+					Message: "query leaf must have a from_object_key",
+					Field:   "FromObjectKey",
+				}
 			}
 			if s.ToObjectKey == nil {
-				return errors.New("query leaf must have a to_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepQueryToRequired,
+					Message: "query leaf must have a to_object_key",
+					Field:   "ToObjectKey",
+				}
 			}
 			if s.QueryKey == nil {
-				return errors.New("query leaf must have a query_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepQueryKeyRequired,
+					Message: "query leaf must have a query_key",
+					Field:   "QueryKey",
+				}
 			}
 			if s.EventKey != nil || s.ScenarioKey != nil {
-				return errors.New("query leaf cannot have event_key or scenario_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepQueryEventForbidden,
+					Message: "query leaf cannot have event_key or scenario_key",
+					Field:   "EventKey/ScenarioKey",
+				}
 			}
 		case LEAF_TYPE_SCENARIO:
 			if s.FromObjectKey == nil {
-				return errors.New("scenario leaf must have a from_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepScenarioFromRequired,
+					Message: "scenario leaf must have a from_object_key",
+					Field:   "FromObjectKey",
+				}
 			}
 			if s.ToObjectKey == nil {
-				return errors.New("scenario leaf must have a to_object_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepScenarioToRequired,
+					Message: "scenario leaf must have a to_object_key",
+					Field:   "ToObjectKey",
+				}
 			}
 			if s.ScenarioKey == nil {
-				return errors.New("scenario leaf must have a scenario_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepScenarioKeyRequired,
+					Message: "scenario leaf must have a scenario_key",
+					Field:   "ScenarioKey",
+				}
 			}
 			if s.EventKey != nil || s.QueryKey != nil {
-				return errors.New("scenario leaf cannot have event_key or query_key")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepScenarioEventForbidden,
+					Message: "scenario leaf cannot have event_key or query_key",
+					Field:   "EventKey/QueryKey",
+				}
 			}
 		default:
-			return errors.Errorf("unknown leaf type '%s'", *s.LeafType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.SstepLeafTypeUnknown,
+				Message: fmt.Sprintf("unknown leaf type '%s'", *s.LeafType),
+				Field:   "LeafType",
+				Got:     *s.LeafType,
+				Want:    "one of: event, query, scenario, delete",
+			}
 		}
 		// Validate key types of all non-nil reference keys.
 		if s.FromObjectKey != nil {
 			if err := s.FromObjectKey.Validate(); err != nil {
-				return errors.Wrap(err, "FromObjectKey")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepFromkeyInvalid,
+					Message: fmt.Sprintf("FromObjectKey: %s", err.Error()),
+					Field:   "FromObjectKey",
+				}
 			}
 			if s.FromObjectKey.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
-				return errors.Errorf("FromObjectKey: invalid key type '%s' for scenario object", s.FromObjectKey.KeyType)
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepFromkeyTypeInvalid,
+					Message: fmt.Sprintf("FromObjectKey: invalid key type '%s' for scenario object", s.FromObjectKey.KeyType),
+					Field:   "FromObjectKey",
+					Got:     s.FromObjectKey.KeyType,
+					Want:    identity.KEY_TYPE_SCENARIO_OBJECT,
+				}
 			}
 		}
 		if s.ToObjectKey != nil {
 			if err := s.ToObjectKey.Validate(); err != nil {
-				return errors.Wrap(err, "ToObjectKey")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepTokeyInvalid,
+					Message: fmt.Sprintf("ToObjectKey: %s", err.Error()),
+					Field:   "ToObjectKey",
+				}
 			}
 			if s.ToObjectKey.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
-				return errors.Errorf("ToObjectKey: invalid key type '%s' for scenario object", s.ToObjectKey.KeyType)
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepTokeyTypeInvalid,
+					Message: fmt.Sprintf("ToObjectKey: invalid key type '%s' for scenario object", s.ToObjectKey.KeyType),
+					Field:   "ToObjectKey",
+					Got:     s.ToObjectKey.KeyType,
+					Want:    identity.KEY_TYPE_SCENARIO_OBJECT,
+				}
 			}
 		}
 		if s.EventKey != nil {
 			if err := s.EventKey.Validate(); err != nil {
-				return errors.Wrap(err, "EventKey")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepEventkeyInvalid,
+					Message: fmt.Sprintf("EventKey: %s", err.Error()),
+					Field:   "EventKey",
+				}
 			}
 			if s.EventKey.KeyType != identity.KEY_TYPE_EVENT {
-				return errors.Errorf("EventKey: invalid key type '%s' for event", s.EventKey.KeyType)
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepEventkeyTypeInvalid,
+					Message: fmt.Sprintf("EventKey: invalid key type '%s' for event", s.EventKey.KeyType),
+					Field:   "EventKey",
+					Got:     s.EventKey.KeyType,
+					Want:    identity.KEY_TYPE_EVENT,
+				}
 			}
 		}
 		if s.QueryKey != nil {
 			if err := s.QueryKey.Validate(); err != nil {
-				return errors.Wrap(err, "QueryKey")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepQuerykeyInvalid,
+					Message: fmt.Sprintf("QueryKey: %s", err.Error()),
+					Field:   "QueryKey",
+				}
 			}
 			if s.QueryKey.KeyType != identity.KEY_TYPE_QUERY {
-				return errors.Errorf("QueryKey: invalid key type '%s' for query", s.QueryKey.KeyType)
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepQuerykeyTypeInvalid,
+					Message: fmt.Sprintf("QueryKey: invalid key type '%s' for query", s.QueryKey.KeyType),
+					Field:   "QueryKey",
+					Got:     s.QueryKey.KeyType,
+					Want:    identity.KEY_TYPE_QUERY,
+				}
 			}
 		}
 		if s.ScenarioKey != nil {
 			if err := s.ScenarioKey.Validate(); err != nil {
-				return errors.Wrap(err, "ScenarioKey")
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepScenariokeyInvalid,
+					Message: fmt.Sprintf("ScenarioKey: %s", err.Error()),
+					Field:   "ScenarioKey",
+				}
 			}
 			if s.ScenarioKey.KeyType != identity.KEY_TYPE_SCENARIO {
-				return errors.Errorf("ScenarioKey: invalid key type '%s' for scenario", s.ScenarioKey.KeyType)
+				return &coreerr.ValidationError{
+					Code:    coreerr.SstepScenariokeyTypeInvalid,
+					Message: fmt.Sprintf("ScenarioKey: invalid key type '%s' for scenario", s.ScenarioKey.KeyType),
+					Field:   "ScenarioKey",
+					Got:     s.ScenarioKey.KeyType,
+					Want:    identity.KEY_TYPE_SCENARIO,
+				}
 			}
 		}
 	default:
-		return errors.Errorf("unknown step type '%s'", s.StepType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.SstepTypeUnknown,
+			Message: fmt.Sprintf("unknown step type '%s'", s.StepType),
+			Field:   "StepType",
+			Got:     s.StepType,
+			Want:    "one of: leaf, sequence, switch, case, loop",
+		}
 	}
 	return nil
 }
@@ -206,7 +369,12 @@ func (s *Step) ValidateWithParent(parent *identity.Key) error {
 	}
 	// A scenario leaf cannot reference the scenario that contains it.
 	if s.ScenarioKey != nil && parent != nil && *s.ScenarioKey == *parent {
-		return errors.New("scenario leaf cannot reference its own scenario")
+		return &coreerr.ValidationError{
+			Code:    coreerr.SstepScenarioSelfRef,
+			Message: "scenario leaf cannot reference its own scenario",
+			Field:   "ScenarioKey",
+			Got:     s.ScenarioKey.String(),
+		}
 	}
 	// Validate children with the same parent (all steps are flat under the scenario).
 	for i := range s.Statements {

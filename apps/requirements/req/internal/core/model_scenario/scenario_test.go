@@ -41,7 +41,7 @@ func (suite *ScenarioSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",

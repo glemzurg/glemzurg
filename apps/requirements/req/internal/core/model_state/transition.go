@@ -1,8 +1,9 @@
 package model_state
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -36,60 +37,126 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 }
 
 // Validate validates the Transition struct.
+//
+//complexity:cyclo:warn=20,fail=20 Sequential field validation.
 func (t *Transition) Validate() error {
 	// Validate the key.
 	if err := t.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.TransitionKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if t.Key.KeyType != identity.KEY_TYPE_TRANSITION {
-		return errors.Errorf("Key: invalid key type '%s' for transition", t.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.TransitionKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for transition", t.Key.KeyType),
+			Field:   "Key",
+			Got:     t.Key.KeyType,
+			Want:    identity.KEY_TYPE_TRANSITION,
+		}
 	}
 
 	// Validate the event key (required).
 	if err := t.EventKey.Validate(); err != nil {
-		return errors.Wrap(err, "EventKey")
+		return &coreerr.ValidationError{
+			Code:    coreerr.TransitionEventkeyInvalid,
+			Message: fmt.Sprintf("EventKey: %s", err.Error()),
+			Field:   "EventKey",
+		}
 	}
 	if t.EventKey.KeyType != identity.KEY_TYPE_EVENT {
-		return errors.Errorf("EventKey: invalid key type '%s' for event", t.EventKey.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.TransitionEventkeyType,
+			Message: fmt.Sprintf("EventKey: invalid key type '%s' for event", t.EventKey.KeyType),
+			Field:   "EventKey",
+			Got:     t.EventKey.KeyType,
+			Want:    identity.KEY_TYPE_EVENT,
+		}
 	}
 
 	// Validate optional key fields.
 	if t.FromStateKey != nil {
 		if err := t.FromStateKey.Validate(); err != nil {
-			return errors.Wrap(err, "FromStateKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionFromstatekeyInvalid,
+				Message: fmt.Sprintf("FromStateKey: %s", err.Error()),
+				Field:   "FromStateKey",
+			}
 		}
 		if t.FromStateKey.KeyType != identity.KEY_TYPE_STATE {
-			return errors.Errorf("FromStateKey: invalid key type '%s' for from state", t.FromStateKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionFromstatekeyType,
+				Message: fmt.Sprintf("FromStateKey: invalid key type '%s' for from state", t.FromStateKey.KeyType),
+				Field:   "FromStateKey",
+				Got:     t.FromStateKey.KeyType,
+				Want:    identity.KEY_TYPE_STATE,
+			}
 		}
 	}
 	if t.ToStateKey != nil {
 		if err := t.ToStateKey.Validate(); err != nil {
-			return errors.Wrap(err, "ToStateKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionTostatekeyInvalid,
+				Message: fmt.Sprintf("ToStateKey: %s", err.Error()),
+				Field:   "ToStateKey",
+			}
 		}
 		if t.ToStateKey.KeyType != identity.KEY_TYPE_STATE {
-			return errors.Errorf("ToStateKey: invalid key type '%s' for to state", t.ToStateKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionTostatekeyType,
+				Message: fmt.Sprintf("ToStateKey: invalid key type '%s' for to state", t.ToStateKey.KeyType),
+				Field:   "ToStateKey",
+				Got:     t.ToStateKey.KeyType,
+				Want:    identity.KEY_TYPE_STATE,
+			}
 		}
 	}
 	if t.GuardKey != nil {
 		if err := t.GuardKey.Validate(); err != nil {
-			return errors.Wrap(err, "GuardKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionGuardkeyInvalid,
+				Message: fmt.Sprintf("GuardKey: %s", err.Error()),
+				Field:   "GuardKey",
+			}
 		}
 		if t.GuardKey.KeyType != identity.KEY_TYPE_GUARD {
-			return errors.Errorf("GuardKey: invalid key type '%s' for guard", t.GuardKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionGuardkeyType,
+				Message: fmt.Sprintf("GuardKey: invalid key type '%s' for guard", t.GuardKey.KeyType),
+				Field:   "GuardKey",
+				Got:     t.GuardKey.KeyType,
+				Want:    identity.KEY_TYPE_GUARD,
+			}
 		}
 	}
 	if t.ActionKey != nil {
 		if err := t.ActionKey.Validate(); err != nil {
-			return errors.Wrap(err, "ActionKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionActionkeyInvalid,
+				Message: fmt.Sprintf("ActionKey: %s", err.Error()),
+				Field:   "ActionKey",
+			}
 		}
 		if t.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
-			return errors.Errorf("ActionKey: invalid key type '%s' for action", t.ActionKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionActionkeyType,
+				Message: fmt.Sprintf("ActionKey: invalid key type '%s' for action", t.ActionKey.KeyType),
+				Field:   "ActionKey",
+				Got:     t.ActionKey.KeyType,
+				Want:    identity.KEY_TYPE_ACTION,
+			}
 		}
 	}
 
 	// We must have either from or to state or both.
 	if t.FromStateKey == nil && t.ToStateKey == nil {
-		return errors.Errorf(`FromStateKey, ToStateKey: cannot both be blank`)
+		return &coreerr.ValidationError{
+			Code:    coreerr.TransitionNoState,
+			Message: "FromStateKey, ToStateKey: cannot both be blank",
+			Field:   "FromStateKey,ToStateKey",
+		}
 	}
 
 	return nil
@@ -119,25 +186,50 @@ func (t *Transition) ValidateWithParent(parent *identity.Key) error {
 func (t *Transition) ValidateReferences(states, events, guards, actions map[identity.Key]bool) error {
 	if t.FromStateKey != nil {
 		if !states[*t.FromStateKey] {
-			return errors.Errorf("transition '%s' references non-existent from state '%s'", t.Key.String(), t.FromStateKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionFromstateNotfound,
+				Message: fmt.Sprintf("transition '%s' references non-existent from state '%s'", t.Key.String(), t.FromStateKey.String()),
+				Field:   "FromStateKey",
+				Got:     t.FromStateKey.String(),
+			}
 		}
 	}
 	if t.ToStateKey != nil {
 		if !states[*t.ToStateKey] {
-			return errors.Errorf("transition '%s' references non-existent to state '%s'", t.Key.String(), t.ToStateKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionTostateNotfound,
+				Message: fmt.Sprintf("transition '%s' references non-existent to state '%s'", t.Key.String(), t.ToStateKey.String()),
+				Field:   "ToStateKey",
+				Got:     t.ToStateKey.String(),
+			}
 		}
 	}
 	if !events[t.EventKey] {
-		return errors.Errorf("transition '%s' references non-existent event '%s'", t.Key.String(), t.EventKey.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.TransitionEventNotfound,
+			Message: fmt.Sprintf("transition '%s' references non-existent event '%s'", t.Key.String(), t.EventKey.String()),
+			Field:   "EventKey",
+			Got:     t.EventKey.String(),
+		}
 	}
 	if t.GuardKey != nil {
 		if !guards[*t.GuardKey] {
-			return errors.Errorf("transition '%s' references non-existent guard '%s'", t.Key.String(), t.GuardKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionGuardNotfound,
+				Message: fmt.Sprintf("transition '%s' references non-existent guard '%s'", t.Key.String(), t.GuardKey.String()),
+				Field:   "GuardKey",
+				Got:     t.GuardKey.String(),
+			}
 		}
 	}
 	if t.ActionKey != nil {
 		if !actions[*t.ActionKey] {
-			return errors.Errorf("transition '%s' references non-existent action '%s'", t.Key.String(), t.ActionKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.TransitionActionNotfound,
+				Message: fmt.Sprintf("transition '%s' references non-existent action '%s'", t.Key.String(), t.ActionKey.String()),
+				Field:   "ActionKey",
+				Got:     t.ActionKey.String(),
+			}
 		}
 	}
 	return nil

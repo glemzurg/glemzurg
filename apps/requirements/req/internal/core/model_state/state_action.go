@@ -3,8 +3,7 @@ package model_state
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
-
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -24,7 +23,7 @@ var _whenSortValue = map[string]int{
 type StateAction struct {
 	Key       identity.Key
 	ActionKey identity.Key
-	When      string `validate:"required,oneof=entry exit do"`
+	When      string
 }
 
 func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {
@@ -45,23 +44,56 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 func (sa *StateAction) Validate() error {
 	// Validate the key.
 	if err := sa.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if sa.Key.KeyType != identity.KEY_TYPE_STATE_ACTION {
-		return errors.Errorf("Key: invalid key type '%s' for state action", sa.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for state action", sa.Key.KeyType),
+			Field:   "Key",
+			Got:     sa.Key.KeyType,
+			Want:    identity.KEY_TYPE_STATE_ACTION,
+		}
 	}
 
 	// Validate the action key.
 	if err := sa.ActionKey.Validate(); err != nil {
-		return fmt.Errorf("ActionKey: %w", err)
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionActionkeyInvalid,
+			Message: fmt.Sprintf("ActionKey: %s", err.Error()),
+			Field:   "ActionKey",
+		}
 	}
 	if sa.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
-		return errors.Errorf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionActionkeyType,
+			Message: fmt.Sprintf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType),
+			Field:   "ActionKey",
+			Got:     sa.ActionKey.KeyType,
+			Want:    identity.KEY_TYPE_ACTION,
+		}
 	}
 
-	// Validate struct tags (When required + oneof).
-	if err := _validate.Struct(sa); err != nil {
-		return err
+	// Validate When field.
+	if sa.When == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionWhenRequired,
+			Message: "When is required",
+			Field:   "When",
+		}
+	}
+	if sa.When != _WHEN_ENTRY && sa.When != _WHEN_EXIT && sa.When != _WHEN_DO {
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionWhenInvalid,
+			Message: fmt.Sprintf("When '%s' is not valid", sa.When),
+			Field:   "When",
+			Got:     sa.When,
+			Want:    "one of: entry, exit, do",
+		}
 	}
 
 	return nil
@@ -85,7 +117,12 @@ func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
 // ValidateReferences validates that the state action's ActionKey references a real action in the class.
 func (sa *StateAction) ValidateReferences(actions map[identity.Key]bool) error {
 	if !actions[sa.ActionKey] {
-		return errors.Errorf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.StateactionActionNotfound,
+			Message: fmt.Sprintf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String()),
+			Field:   "ActionKey",
+			Got:     sa.ActionKey.String(),
+		}
 	}
 	return nil
 }

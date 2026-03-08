@@ -1,12 +1,13 @@
 package model_logic
 
 import (
-	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/pkg/errors"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/go-playground/validator/v10"
-	pkgerrors "github.com/pkg/errors"
 )
 
 // GlobalFunction represents a global definition that can be referenced
@@ -21,9 +22,9 @@ import (
 // from class-scoped actions.
 type GlobalFunction struct {
 	Key        identity.Key
-	Name       string   `validate:"required,startswith=_"` // The definition name (e.g., _Max, _SetOfValues). Must start with underscore.
+	Name       string   // The definition name (e.g., _Max, _SetOfValues). Must start with underscore.
 	Parameters []string // The parameter names (e.g., ["x", "y"] for _Max(x, y)).
-	Logic      Logic    `validate:"required"`
+	Logic      Logic    // The logic specification for this global function.
 }
 
 // NewGlobalFunction creates a new GlobalFunction and validates it.
@@ -49,7 +50,13 @@ func (gf *GlobalFunction) Validate() error {
 		return err
 	}
 	if gf.Key.KeyType != identity.KEY_TYPE_GLOBAL_FUNCTION {
-		return pkgerrors.Errorf("Key: invalid key type '%s' for global function", gf.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.GfuncKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for global function", gf.Key.KeyType),
+			Field:   "Key.KeyType",
+			Got:     gf.Key.KeyType,
+			Want:    identity.KEY_TYPE_GLOBAL_FUNCTION,
+		}
 	}
 
 	// Validate the specification logic.
@@ -59,26 +66,46 @@ func (gf *GlobalFunction) Validate() error {
 
 	// Logic must use the global function's exact key.
 	if gf.Logic.Key != gf.Key {
-		return pkgerrors.Errorf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.GfuncLogicKeyMismatch,
+			Message: fmt.Sprintf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String()),
+			Field:   "Logic.Key",
+			Got:     gf.Logic.Key.String(),
+			Want:    gf.Key.String(),
+		}
 	}
 
 	// Global function logic must be of kind "value".
 	if gf.Logic.Type != LogicTypeValue {
-		return pkgerrors.Errorf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type)
+		return &coreerr.ValidationError{
+			Code:    coreerr.GfuncLogicTypeInvalid,
+			Message: fmt.Sprintf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type),
+			Field:   "Logic.Type",
+			Got:     gf.Logic.Type,
+			Want:    LogicTypeValue,
+		}
 	}
 
-	if err := _validate.Struct(gf); err != nil {
-		// Wrap startswith error with a clearer message for the underscore rule.
-		var ve validator.ValidationErrors
-		if errors.As(err, &ve) {
-			for _, fe := range ve {
-				if fe.Field() == "Name" && fe.Tag() == "startswith" {
-					return fmt.Errorf("global function name '%s' must start with underscore", gf.Name)
-				}
-			}
+	// Name is required.
+	if gf.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.GfuncNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
 		}
-		return err
 	}
+
+	// Name must start with underscore.
+	if !strings.HasPrefix(gf.Name, "_") {
+		return &coreerr.ValidationError{
+			Code:    coreerr.GfuncNameNoUnderscore,
+			Message: fmt.Sprintf("global function name '%s' must start with underscore", gf.Name),
+			Field:   "Name",
+			Got:     gf.Name,
+			Want:    "name starting with '_'",
+		}
+	}
+
 	return nil
 }
 
@@ -94,7 +121,7 @@ func (gf *GlobalFunction) ValidateWithParent() error {
 	// Validate the logic's key parent relationship.
 	// The spec shares the global function's exact key (root-level, nil parent).
 	if err := gf.Logic.ValidateWithParent(nil); err != nil {
-		return pkgerrors.Wrap(err, "specification")
+		return errors.Wrap(err, "specification")
 	}
 	return nil
 }

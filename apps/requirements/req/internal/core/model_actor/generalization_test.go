@@ -38,7 +38,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  identity.Key{},
 				Name: "Name",
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "AGEN_KEY_INVALID",
 		},
 		{
 			testName: "error wrong key type",
@@ -46,7 +46,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  helper.Must(identity.NewDomainKey("domain1")),
 				Name: "Name",
 			},
-			errstr: "key: invalid key type 'domain' for actor generalization",
+			errstr: "invalid key type 'domain' for actor generalization",
 		},
 		{
 			testName: "error blank name",
@@ -54,7 +54,7 @@ func (suite *GeneralizationSuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 			},
-			errstr: "Name",
+			errstr: "Name is required",
 		},
 	}
 	for _, tt := range tests {
@@ -87,7 +87,7 @@ func (suite *GeneralizationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
+	suite.Require().ErrorContains(err, "Name is required")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -100,7 +100,7 @@ func (suite *GeneralizationSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := gen.ValidateWithParent(nil)
-	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name is required", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - actor generalizations should have nil parent.
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))

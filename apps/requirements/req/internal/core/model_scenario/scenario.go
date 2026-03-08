@@ -1,15 +1,16 @@
 package model_scenario
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Scenario is a documented scenario for a use case, such as a sequence diagram.
 type Scenario struct {
 	Key     identity.Key
-	Name    string `validate:"required"`
+	Name    string
 	Details string // Markdown.
 	// Children
 	Steps   *Step // The "abstract syntax tree" of the scenario.
@@ -34,14 +35,28 @@ func NewScenario(key identity.Key, name, details string) (scenario Scenario, err
 func (s *Scenario) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.ScenarioKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO {
-		return errors.Errorf("key: invalid key type '%s' for scenario", s.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.ScenarioKeyTypeInvalid,
+			Message: fmt.Sprintf("key: invalid key type '%s' for scenario", s.Key.KeyType),
+			Field:   "Key",
+			Got:     s.Key.KeyType,
+			Want:    identity.KEY_TYPE_SCENARIO,
+		}
 	}
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(s); err != nil {
-		return err
+	// Validate Name required.
+	if s.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ScenarioNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 	return nil
 }

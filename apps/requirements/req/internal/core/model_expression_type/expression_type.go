@@ -1,10 +1,5 @@
 package model_expression_type
 
-import "github.com/go-playground/validator/v10"
-
-// _validate is the shared validator instance for this package.
-var _validate = validator.New()
-
 // ExpressionType is the interface implemented by all precise structural types.
 // ExpressionTypes describe the shape and kind of values an expression can produce.
 type ExpressionType interface {

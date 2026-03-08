@@ -9,6 +9,7 @@ import (
 
 	pkgerrors "github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 )
 
@@ -21,10 +22,19 @@ const (
 	COLLECTION_TYPE_UNORDERED = "unordered" // An unordered collection.
 )
 
+var _validCollectionTypes = map[string]bool{
+	COLLECTION_TYPE_ATOMIC:    true,
+	COLLECTION_TYPE_ORDERED:   true,
+	COLLECTION_TYPE_QUEUE:     true,
+	COLLECTION_TYPE_RECORD:    true,
+	COLLECTION_TYPE_STACK:     true,
+	COLLECTION_TYPE_UNORDERED: true,
+}
+
 // DataType represents the main data type structure.
 type DataType struct {
-	Key              string `validate:"required"`
-	CollectionType   string `validate:"required,oneof=atomic ordered queue record stack unordered"`
+	Key              string
+	CollectionType   string
 	CollectionUnique *bool
 	CollectionMin    *int
 	CollectionMax    *int
@@ -86,8 +96,31 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 
 // Validate validates the DataType struct.
 func (d DataType) Validate() error {
-	if err := _validate.Struct(d); err != nil {
-		return err
+	// Key: required.
+	if d.Key == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeKeyRequired,
+			Message: "Key is required",
+			Field:   "Key",
+		}
+	}
+	// CollectionType: required and must be valid.
+	if d.CollectionType == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeCollectiontypeRequired,
+			Message: "CollectionType is required",
+			Field:   "CollectionType",
+			Want:    "one of: atomic, ordered, queue, record, stack, unordered",
+		}
+	}
+	if !_validCollectionTypes[d.CollectionType] {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeCollectiontypeInvalid,
+			Message: "CollectionType is not a valid value",
+			Field:   "CollectionType",
+			Got:     d.CollectionType,
+			Want:    "one of: atomic, ordered, queue, record, stack, unordered",
+		}
 	}
 	if err := d.validateAtomic(); err != nil {
 		return err

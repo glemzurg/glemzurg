@@ -1,13 +1,11 @@
 package model_actor
 
 import (
-	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
-
-var _validate = validator.New()
 
 const (
 	_USER_TYPE_PERSON = "person"
@@ -17,9 +15,9 @@ const (
 // An actor is an external user of this system, either a person or another system.
 type Actor struct {
 	Key             identity.Key
-	Name            string        `validate:"required"`
+	Name            string
 	Details         string        // Markdown.
-	Type            string        `validate:"required,oneof=person system"` // "person" or "system"
+	Type            string        // "person" or "system"
 	SuperclassOfKey *identity.Key // If this actor is part of a generalization as the superclass.
 	SubclassOfKey   *identity.Key // If this actor is part of a generalization as a subclass.
 	UmlComment      string
@@ -47,38 +45,92 @@ func NewActor(key identity.Key, name, details, userType string, superclassOfKey,
 func (a *Actor) Validate() error {
 	// Validate the key.
 	if err := a.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.ActorKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ACTOR {
-		return errors.Errorf("key: invalid key type '%s' for actor", a.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.ActorKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for actor", a.Key.KeyType),
+			Field:   "Key",
+			Got:     a.Key.KeyType,
+			Want:    identity.KEY_TYPE_ACTOR,
+		}
 	}
 
-	// Validate struct tags (Name required, Type required+oneof).
-	if err := _validate.Struct(a); err != nil {
-		return err
+	if a.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ActorNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
+	}
+
+	if a.Type == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ActorTypeRequired,
+			Message: "Type is required",
+			Field:   "Type",
+		}
+	}
+	if a.Type != _USER_TYPE_PERSON && a.Type != _USER_TYPE_SYSTEM {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ActorTypeInvalid,
+			Message: "Type must be one of: person, system",
+			Field:   "Type",
+			Got:     a.Type,
+			Want:    "one of: person, system",
+		}
 	}
 
 	// Validate FK key types.
 	if a.SuperclassOfKey != nil {
 		if err := a.SuperclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SuperclassOfKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.ActorSuperkeyInvalid,
+				Message: fmt.Sprintf("SuperclassOfKey: %s", err.Error()),
+				Field:   "SuperclassOfKey",
+			}
 		}
 		if a.SuperclassOfKey.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
-			return errors.Errorf("SuperclassOfKey: invalid key type '%s' for actor generalization", a.SuperclassOfKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.ActorSuperkeyTypeInvalid,
+				Message: fmt.Sprintf("SuperclassOfKey: invalid key type '%s' for actor generalization", a.SuperclassOfKey.KeyType),
+				Field:   "SuperclassOfKey",
+				Got:     a.SuperclassOfKey.KeyType,
+				Want:    identity.KEY_TYPE_ACTOR_GENERALIZATION,
+			}
 		}
 	}
 	if a.SubclassOfKey != nil {
 		if err := a.SubclassOfKey.Validate(); err != nil {
-			return errors.Wrap(err, "SubclassOfKey")
+			return &coreerr.ValidationError{
+				Code:    coreerr.ActorSubkeyInvalid,
+				Message: fmt.Sprintf("SubclassOfKey: %s", err.Error()),
+				Field:   "SubclassOfKey",
+			}
 		}
 		if a.SubclassOfKey.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
-			return errors.Errorf("SubclassOfKey: invalid key type '%s' for actor generalization", a.SubclassOfKey.KeyType)
+			return &coreerr.ValidationError{
+				Code:    coreerr.ActorSubkeyTypeInvalid,
+				Message: fmt.Sprintf("SubclassOfKey: invalid key type '%s' for actor generalization", a.SubclassOfKey.KeyType),
+				Field:   "SubclassOfKey",
+				Got:     a.SubclassOfKey.KeyType,
+				Want:    identity.KEY_TYPE_ACTOR_GENERALIZATION,
+			}
 		}
 	}
 
 	// SuperclassOfKey and SubclassOfKey cannot be the same generalization.
 	if a.SuperclassOfKey != nil && a.SubclassOfKey != nil && *a.SuperclassOfKey == *a.SubclassOfKey {
-		return errors.New("SuperclassOfKey and SubclassOfKey cannot be the same")
+		return &coreerr.ValidationError{
+			Code:    coreerr.ActorSuperSubSame,
+			Message: "SuperclassOfKey and SubclassOfKey cannot be the same",
+			Field:   "SuperclassOfKey",
+		}
 	}
 	return nil
 }
@@ -104,12 +156,22 @@ func (a *Actor) ValidateWithParent(parent *identity.Key) error {
 func (a *Actor) ValidateReferences(generalizations map[identity.Key]bool) error {
 	if a.SuperclassOfKey != nil {
 		if !generalizations[*a.SuperclassOfKey] {
-			return errors.Errorf("actor '%s' references non-existent generalization '%s'", a.Key.String(), a.SuperclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ActorSupergenNotfound,
+				Message: fmt.Sprintf("actor '%s' references non-existent generalization '%s'", a.Key.String(), a.SuperclassOfKey.String()),
+				Field:   "SuperclassOfKey",
+				Got:     a.SuperclassOfKey.String(),
+			}
 		}
 	}
 	if a.SubclassOfKey != nil {
 		if !generalizations[*a.SubclassOfKey] {
-			return errors.Errorf("actor '%s' references non-existent generalization '%s'", a.Key.String(), a.SubclassOfKey.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.ActorSubgenNotfound,
+				Message: fmt.Sprintf("actor '%s' references non-existent generalization '%s'", a.Key.String(), a.SubclassOfKey.String()),
+				Field:   "SubclassOfKey",
+				Got:     a.SubclassOfKey.String(),
+			}
 		}
 	}
 	return nil

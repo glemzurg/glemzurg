@@ -1,11 +1,13 @@
 package core
 
 import (
+	"fmt"
 	"maps"
 	"strings"
 
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
@@ -16,8 +18,8 @@ import (
 
 // Model is the documentation summary of a set of requirements.
 type Model struct {
-	Key        string              `validate:"required"` // Models do not have keys like other entitites. They just need to be unique to other models in the system.
-	Name       string              `validate:"required"`
+	Key        string // Models do not have keys like other entitites. They just need to be unique to other models in the system.
+	Name       string
 	Details    string              // Markdown.
 	Invariants []model_logic.Logic // Invariants that must be true for this model.
 	// Global functions that can be referenced from other expressions.
@@ -52,8 +54,15 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 // Validate validates the Model struct and all its children.
 // This is the entry point for validating the entire model tree.
 func (m *Model) Validate() error {
-	if err := _validate.Struct(m); err != nil {
-		return err
+	if m.Key == "" {
+		return &coreerr.ValidationError{
+			Code: coreerr.ModelKeyRequired, Message: "Key is required", Field: "Key", Want: "non-empty string",
+		}
+	}
+	if m.Name == "" {
+		return &coreerr.ValidationError{
+			Code: coreerr.ModelNameRequired, Message: "Name is required", Field: "Name", Want: "non-empty string",
+		}
 	}
 	if err := m.validateInvariants(); err != nil {
 		return err
@@ -86,11 +95,19 @@ func (m *Model) validateInvariants() error {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return errors.Errorf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type)
+			return &coreerr.ValidationError{
+				Code: coreerr.ModelInvariantTypeInvalid, Field: "Invariants",
+				Message: fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
+				Got:     inv.Type, Want: fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet),
+			}
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if letTargets[inv.Target] {
-				return errors.Errorf("invariant %d: duplicate let target %q", i, inv.Target)
+				return &coreerr.ValidationError{
+					Code: coreerr.ModelInvariantDuplicateLet, Field: "Invariants",
+					Message: fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target),
+					Got:     inv.Target,
+				}
 			}
 			letTargets[inv.Target] = true
 		}
@@ -104,7 +121,11 @@ func (m *Model) validateGlobalFunctions() error {
 			return errors.Wrapf(err, "global function '%s'", gfKey.String())
 		}
 		if gfKey != gf.Key {
-			return errors.Errorf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String())
+			return &coreerr.ValidationError{
+				Code: coreerr.ModelGfuncKeyMismatch, Field: "GlobalFunctions",
+				Message: fmt.Sprintf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String()),
+				Got:     gfKey.String(), Want: gf.Key.String(),
+			}
 		}
 	}
 	return nil
@@ -116,7 +137,11 @@ func (m *Model) validateNamedSets() error {
 			return errors.Wrapf(err, "named set '%s'", nsKey.String())
 		}
 		if nsKey != ns.Key {
-			return errors.Errorf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String())
+			return &coreerr.ValidationError{
+				Code: coreerr.ModelNsetKeyMismatch, Field: "NamedSets",
+				Message: fmt.Sprintf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String()),
+				Got:     nsKey.String(), Want: ns.Key.String(),
+			}
 		}
 	}
 	return nil
@@ -160,10 +185,18 @@ func (m *Model) validateGeneralizationUsage(ag model_actor.Generalization) error
 		}
 	}
 	if superCount != 1 {
-		return errors.Errorf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount)
+		return &coreerr.ValidationError{
+			Code: coreerr.ModelAgenSuperclassCount, Field: "ActorGeneralizations",
+			Message: fmt.Sprintf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount),
+			Got:     fmt.Sprintf("%d", superCount), Want: "1",
+		}
 	}
 	if subCount < 1 {
-		return errors.Errorf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount)
+		return &coreerr.ValidationError{
+			Code: coreerr.ModelAgenSubclassCount, Field: "ActorGeneralizations",
+			Message: fmt.Sprintf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount),
+			Got:     fmt.Sprintf("%d", subCount), Want: "at least 1",
+		}
 	}
 	return nil
 }

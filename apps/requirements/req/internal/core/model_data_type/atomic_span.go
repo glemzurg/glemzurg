@@ -3,6 +3,8 @@ package model_data_type
 import (
 	"fmt"
 	"math"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 )
 
 const (
@@ -11,19 +13,25 @@ const (
 	_BOUND_TYPE_LIMIT_UNCONSTRAINED = "unconstrained" // Undefined what this end of the span is, at least not in requirements.
 )
 
+var _validBoundTypes = map[string]bool{
+	_BOUND_TYPE_LIMIT_CLOSED:        true,
+	_BOUND_TYPE_LIMIT_OPEN:          true,
+	_BOUND_TYPE_LIMIT_UNCONSTRAINED: true,
+}
+
 type AtomicSpan struct {
 	// Lower bound.
-	LowerType        string `validate:"required,oneof=closed open unconstrained"`
+	LowerType        string
 	LowerValue       *int
 	LowerDenominator *int // If a fraction.
 	// Higher bound.
-	HigherType        string `validate:"required,oneof=closed open unconstrained"`
+	HigherType        string
 	HigherValue       *int
 	HigherDenominator *int // If a fraction.
 	// What are these values?
-	Units string `validate:"required"`
+	Units string
 	// What precision should we support of these values?
-	Precision float64 `validate:"required"`
+	Precision float64
 }
 
 func validateDenominator(ptr *int, required bool) error {
@@ -53,9 +61,60 @@ func precisionValidator(v float64) error {
 }
 
 func (a *AtomicSpan) Validate() error {
-	// Validate struct tags (LowerType, HigherType, Units, Precision required + oneof).
-	if err := _validate.Struct(a); err != nil {
-		return err
+	// LowerType: required and must be one of closed, open, unconstrained.
+	if a.LowerType == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeSpanLowertypeRequired,
+			Message: "LowerType is required",
+			Field:   "LowerType",
+			Want:    "one of: closed, open, unconstrained",
+		}
+	}
+	if !_validBoundTypes[a.LowerType] {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeSpanLowertypeInvalid,
+			Message: "LowerType is not a valid value",
+			Field:   "LowerType",
+			Got:     a.LowerType,
+			Want:    "one of: closed, open, unconstrained",
+		}
+	}
+
+	// HigherType: required and must be one of closed, open, unconstrained.
+	if a.HigherType == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeSpanHighertypeRequired,
+			Message: "HigherType is required",
+			Field:   "HigherType",
+			Want:    "one of: closed, open, unconstrained",
+		}
+	}
+	if !_validBoundTypes[a.HigherType] {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeSpanHighertypeInvalid,
+			Message: "HigherType is not a valid value",
+			Field:   "HigherType",
+			Got:     a.HigherType,
+			Want:    "one of: closed, open, unconstrained",
+		}
+	}
+
+	// Units: required.
+	if a.Units == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeSpanUnitsRequired,
+			Message: "Units is required",
+			Field:   "Units",
+		}
+	}
+
+	// Precision: required (non-zero).
+	if a.Precision == 0 {
+		return &coreerr.ValidationError{
+			Code:    coreerr.DtypeSpanPrecisionRequired,
+			Message: "Precision is required",
+			Field:   "Precision",
+		}
 	}
 
 	// LowerValue: required when LowerType != unconstrained.

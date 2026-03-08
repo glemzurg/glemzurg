@@ -1,14 +1,11 @@
 package model_spec
 
 import (
-	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 )
-
-// _validate is the shared validator instance for this package.
-var _validate = validator.New()
 
 // ExpressionParseFunc parses a specification string and returns the parsed expression
 // and a normalized specification string. Returns (nil, "") if parsing fails — this is
@@ -21,7 +18,7 @@ type ExpressionParseFunc func(specification string) (model_expression.Expression
 //  2. Unparsed: Specification is set, Expression is nil (parse not attempted or failed).
 //  3. Fully parsed: Specification is set, Expression is non-nil. ParseOk() returns true.
 type ExpressionSpec struct {
-	Notation      string                      `validate:"required,oneof=tla_plus"` // Notation system (currently only TLA+).
+	Notation      string                      // Notation system (currently only TLA+).
 	Specification string                      // Optional specification body text.
 	Expression    model_expression.Expression // Optional parsed expression tree (nil = not yet parsed).
 }
@@ -58,12 +55,30 @@ func (s *ExpressionSpec) ParseOk() bool {
 
 // Validate validates the ExpressionSpec.
 func (s *ExpressionSpec) Validate() error {
-	if err := _validate.Struct(s); err != nil {
-		return err
+	if s.Notation == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ExprspecNotationRequired,
+			Message: "Notation is required",
+			Field:   "Notation",
+			Want:    "one of: tla_plus",
+		}
+	}
+	if s.Notation != "tla_plus" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ExprspecNotationInvalid,
+			Message: fmt.Sprintf("Notation '%s' is not valid", s.Notation),
+			Field:   "Notation",
+			Got:     s.Notation,
+			Want:    "one of: tla_plus",
+		}
 	}
 	if s.Expression != nil {
 		if err := s.Expression.Validate(); err != nil {
-			return errors.Wrap(err, "ExpressionSpec.Expression")
+			return &coreerr.ValidationError{
+				Code:    coreerr.ExprspecExpressionInvalid,
+				Message: fmt.Sprintf("ExpressionSpec.Expression: %s", err.Error()),
+				Field:   "Expression",
+			}
 		}
 	}
 	return nil

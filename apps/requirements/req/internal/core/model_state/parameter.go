@@ -3,13 +3,14 @@ package model_state
 import (
 	"errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 )
 
 // Parameter is a typed parameter for actions and queries.
 type Parameter struct {
-	Name          string                    `validate:"required"`
-	DataTypeRules string                    `validate:"required"` // What are the bounds of this data type.
+	Name          string
+	DataTypeRules string                    // What are the bounds of this data type.
 	DataType      *model_data_type.DataType // If the DataTypeRules can be parsed, this is the resulting data type.
 }
 
@@ -48,8 +49,19 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 
 // Validate validates the Parameter struct.
 func (p *Parameter) Validate() error {
-	if err := _validate.Struct(p); err != nil {
-		return err
+	if p.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ParamNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
+	}
+	if p.DataTypeRules == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.ParamDatatypesRequired,
+			Message: "DataTypeRules is required",
+			Field:   "DataTypeRules",
+		}
 	}
 	return nil
 }

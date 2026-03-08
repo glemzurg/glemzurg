@@ -1,8 +1,10 @@
 package model_domain
 
 import (
+	"fmt"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/pkg/errors"
 )
 
 // When a domain enforces requirements on another domain.
@@ -32,28 +34,62 @@ func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlCo
 func (a *Association) Validate() error {
 	// Validate the key.
 	if err := a.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_DOMAIN_ASSOCIATION {
-		return errors.Errorf("Key: invalid key type '%s' for domain association", a.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for domain association", a.Key.KeyType),
+			Field:   "Key",
+			Got:     a.Key.KeyType,
+			Want:    identity.KEY_TYPE_DOMAIN_ASSOCIATION,
+		}
 	}
 	// Validate ProblemDomainKey.
 	if err := a.ProblemDomainKey.Validate(); err != nil {
-		return errors.Wrap(err, "ProblemDomainKey")
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocProblemkeyInvalid,
+			Message: fmt.Sprintf("ProblemDomainKey: %s", err.Error()),
+			Field:   "ProblemDomainKey",
+		}
 	}
 	if a.ProblemDomainKey.KeyType != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("ProblemDomainKey: invalid key type '%s' for domain", a.ProblemDomainKey.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocProblemkeyType,
+			Message: fmt.Sprintf("ProblemDomainKey: invalid key type '%s' for domain", a.ProblemDomainKey.KeyType),
+			Field:   "ProblemDomainKey",
+			Got:     a.ProblemDomainKey.KeyType,
+			Want:    identity.KEY_TYPE_DOMAIN,
+		}
 	}
 	// Validate SolutionDomainKey.
 	if err := a.SolutionDomainKey.Validate(); err != nil {
-		return errors.Wrap(err, "SolutionDomainKey")
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocSolutionkeyInvalid,
+			Message: fmt.Sprintf("SolutionDomainKey: %s", err.Error()),
+			Field:   "SolutionDomainKey",
+		}
 	}
 	if a.SolutionDomainKey.KeyType != identity.KEY_TYPE_DOMAIN {
-		return errors.Errorf("SolutionDomainKey: invalid key type '%s' for domain", a.SolutionDomainKey.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocSolutionkeyType,
+			Message: fmt.Sprintf("SolutionDomainKey: invalid key type '%s' for domain", a.SolutionDomainKey.KeyType),
+			Field:   "SolutionDomainKey",
+			Got:     a.SolutionDomainKey.KeyType,
+			Want:    identity.KEY_TYPE_DOMAIN,
+		}
 	}
 	// ProblemDomainKey and SolutionDomainKey cannot be the same.
 	if a.ProblemDomainKey == a.SolutionDomainKey {
-		return errors.New("ProblemDomainKey and SolutionDomainKey cannot be the same")
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocSameDomains,
+			Message: "ProblemDomainKey and SolutionDomainKey cannot be the same",
+			Field:   "ProblemDomainKey",
+		}
 	}
 	return nil
 }
@@ -78,10 +114,20 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 // - SolutionDomainKey must exist in the domains map.
 func (a *Association) ValidateReferences(domains map[identity.Key]bool) error {
 	if !domains[a.ProblemDomainKey] {
-		return errors.Errorf("domain association '%s' references non-existent problem domain '%s'", a.Key.String(), a.ProblemDomainKey.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocProblemNotfound,
+			Message: fmt.Sprintf("domain association '%s' references non-existent problem domain '%s'", a.Key.String(), a.ProblemDomainKey.String()),
+			Field:   "ProblemDomainKey",
+			Got:     a.ProblemDomainKey.String(),
+		}
 	}
 	if !domains[a.SolutionDomainKey] {
-		return errors.Errorf("domain association '%s' references non-existent solution domain '%s'", a.Key.String(), a.SolutionDomainKey.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.DassocSolutionNotfound,
+			Message: fmt.Sprintf("domain association '%s' references non-existent solution domain '%s'", a.Key.String(), a.SolutionDomainKey.String()),
+			Field:   "SolutionDomainKey",
+			Got:     a.SolutionDomainKey.String(),
+		}
 	}
 	return nil
 }

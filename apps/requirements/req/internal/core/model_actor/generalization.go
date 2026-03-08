@@ -1,15 +1,16 @@
 package model_actor
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Generalization is how two or more things in the system build on each other (like a super type and sub type).
 type Generalization struct {
 	Key        identity.Key
-	Name       string `validate:"required"`
+	Name       string
 	Details    string // Markdown.
 	IsComplete bool   // Are the specializations complete, or can an instantiation of this generalization exist without a specialization.
 	IsStatic   bool   // Are the specializations static and unchanging or can they change during runtime.
@@ -37,15 +38,28 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 func (g *Generalization) Validate() error {
 	// Validate the key.
 	if err := g.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.AgenKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
-		return errors.Errorf("key: invalid key type '%s' for actor generalization", g.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.AgenKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for actor generalization", g.Key.KeyType),
+			Field:   "Key",
+			Got:     g.Key.KeyType,
+			Want:    identity.KEY_TYPE_ACTOR_GENERALIZATION,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(g); err != nil {
-		return err
+	if g.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.AgenNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import "github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 // RecordFieldType is a name-type pair within a RecordType.
 type RecordFieldType struct {
-	Name string         `validate:"required"`
+	Name string
 	Type ExpressionType // Required — validated manually since interface fields can't use struct tags.
 }
 
@@ -38,7 +38,7 @@ func (t *StringType) TypeName() string { return TypeString }
 
 // EnumType represents a finite enumeration of string values.
 type EnumType struct {
-	Values []string `validate:"required,min=1"`
+	Values []string
 }
 
 func (t *EnumType) expressionType()  {}
@@ -75,7 +75,7 @@ func (t *BagType) TypeName() string { return TypeBag }
 
 // TupleType represents a fixed-length tuple of typed elements.
 type TupleType struct {
-	ElementTypes []ExpressionType `validate:"required,min=1"`
+	ElementTypes []ExpressionType
 }
 
 func (t *TupleType) expressionType()  {}
@@ -83,7 +83,7 @@ func (t *TupleType) TypeName() string { return TypeTuple }
 
 // RecordType represents a record with named, typed fields.
 type RecordType struct {
-	Fields []RecordFieldType `validate:"required,min=1"`
+	Fields []RecordFieldType
 }
 
 func (t *RecordType) expressionType()  {}

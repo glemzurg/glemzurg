@@ -53,7 +53,7 @@ func (suite *GuardSuite) TestValidate() {
 				Name:  "Name",
 				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",

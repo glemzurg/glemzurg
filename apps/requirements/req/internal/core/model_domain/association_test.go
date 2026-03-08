@@ -47,7 +47,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: suite.solutionDomainKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong key type",
@@ -65,7 +65,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  identity.Key{},
 				SolutionDomainKey: suite.solutionDomainKey,
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong problem key type",
@@ -83,7 +83,7 @@ func (suite *AssociationSuite) TestValidate() {
 				ProblemDomainKey:  suite.problemDomainKey,
 				SolutionDomainKey: identity.Key{},
 			},
-			errstr: "'KeyType' failed on the 'required' tag",
+			errstr: "key type is required",
 		},
 		{
 			testName: "error wrong solution key type",
@@ -132,7 +132,7 @@ func (suite *AssociationSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.Require().ErrorContains(err, "'KeyType' failed on the 'required' tag")
+	suite.Require().ErrorContains(err, "key type is required")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -147,7 +147,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		SolutionDomainKey: suite.solutionDomainKey,
 	}
 	err := assoc.ValidateWithParent(nil)
-	suite.Require().ErrorContains(err, "'KeyType' failed on the 'required' tag", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "key type is required", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - domain association is a root key, so it should not have a parent.
 	assoc = Association{

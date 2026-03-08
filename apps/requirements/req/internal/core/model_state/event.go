@@ -1,15 +1,16 @@
 package model_state
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Event is what triggers a transition between states.
 type Event struct {
 	Key     identity.Key
-	Name    string `validate:"required"`
+	Name    string
 	Details string
 	// Children
 	Parameters []Parameter
@@ -34,15 +35,28 @@ func NewEvent(key identity.Key, name, details string, parameters []Parameter) (e
 func (e *Event) Validate() error {
 	// Validate the key.
 	if err := e.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.EventKeyInvalid,
+			Message: fmt.Sprintf("Key: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if e.Key.KeyType != identity.KEY_TYPE_EVENT {
-		return errors.Errorf("Key: invalid key type '%s' for event", e.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.EventKeyTypeInvalid,
+			Message: fmt.Sprintf("Key: invalid key type '%s' for event", e.Key.KeyType),
+			Field:   "Key",
+			Got:     e.Key.KeyType,
+			Want:    identity.KEY_TYPE_EVENT,
+		}
 	}
 
-	// Validate struct tags (Name required).
-	if err := _validate.Struct(e); err != nil {
-		return err
+	if e.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.EventNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	return nil

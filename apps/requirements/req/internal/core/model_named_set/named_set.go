@@ -1,22 +1,21 @@
 package model_named_set
 
 import (
-	"github.com/go-playground/validator/v10"
+	"fmt"
+
 	"github.com/pkg/errors"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
-
-// _validate is the shared validator instance for this package.
-var _validate = validator.New()
 
 // NamedSet represents a reusable set definition at the model level.
 // Named sets define well-known collections that can be referenced
 // from behavioral logic (requires, guarantees, etc.) via NamedSetRef expressions.
 type NamedSet struct {
 	Key         identity.Key              // Unique key of type "nset".
-	Name        string                    `validate:"required"`
+	Name        string                    // Required: display name.
 	Description string                    // Optional description.
 	Spec        model_spec.ExpressionSpec // Notation + Specification + Expression for the set definition.
 	TypeSpec    *model_spec.TypeSpec      // Optional precise type specification.
@@ -43,26 +42,48 @@ func NewNamedSet(key identity.Key, name, description string, spec model_spec.Exp
 func (ns *NamedSet) Validate() error {
 	// Validate the key.
 	if err := ns.Key.Validate(); err != nil {
-		return err
+		return &coreerr.ValidationError{
+			Code:    coreerr.NsetKeyInvalid,
+			Message: fmt.Sprintf("NamedSet key failed validation: %s", err.Error()),
+			Field:   "Key",
+		}
 	}
 	if ns.Key.KeyType != identity.KEY_TYPE_NAMED_SET {
-		return errors.Errorf("Key: invalid key type '%s' for named set", ns.Key.KeyType)
+		return &coreerr.ValidationError{
+			Code:    coreerr.NsetKeyTypeInvalid,
+			Message: fmt.Sprintf("invalid key type '%s' for named set", ns.Key.KeyType),
+			Field:   "Key",
+			Got:     ns.Key.KeyType,
+			Want:    identity.KEY_TYPE_NAMED_SET,
+		}
 	}
 
-	// Validate struct tags.
-	if err := _validate.Struct(ns); err != nil {
-		return err
+	// Validate Name is not empty.
+	if ns.Name == "" {
+		return &coreerr.ValidationError{
+			Code:    coreerr.NsetNameRequired,
+			Message: "Name is required",
+			Field:   "Name",
+		}
 	}
 
 	// Validate the ExpressionSpec.
 	if err := ns.Spec.Validate(); err != nil {
-		return errors.Wrapf(err, "named set '%s' spec", ns.Key.String())
+		return &coreerr.ValidationError{
+			Code:    coreerr.NsetSpecInvalid,
+			Message: fmt.Sprintf("named set '%s' Spec failed validation: %s", ns.Key.String(), err.Error()),
+			Field:   "Spec",
+		}
 	}
 
 	// Validate TypeSpec if present.
 	if ns.TypeSpec != nil {
 		if err := ns.TypeSpec.Validate(); err != nil {
-			return errors.Wrapf(err, "named set '%s' type spec", ns.Key.String())
+			return &coreerr.ValidationError{
+				Code:    coreerr.NsetTypespecInvalid,
+				Message: fmt.Sprintf("named set '%s' TypeSpec failed validation: %s", ns.Key.String(), err.Error()),
+				Field:   "TypeSpec",
+			}
 		}
 	}
 
@@ -76,7 +97,7 @@ func (ns *NamedSet) ValidateWithParent() error {
 		return err
 	}
 	if err := ns.Key.ValidateParent(nil); err != nil {
-		return err
+		return errors.Wrapf(err, "named set '%s' parent", ns.Key.String())
 	}
 	return nil
 }
