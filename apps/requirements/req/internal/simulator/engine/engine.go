@@ -182,35 +182,43 @@ func setupCheckers(model *core.Model) (*simulationCheckers, error) {
 // setupExecutors creates step executor, action selector, and liveness checker.
 func setupExecutors(
 	model *core.Model,
-	simState *state.SimulationState,
+	_ *state.SimulationState,
 	bindingsBuilder *state.BindingsBuilder,
 	checkers *simulationCheckers,
 	rng *rand.Rand,
 ) (*StepExecutor, *ActionSelector, *LivenessChecker, error) {
-	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
-	actionExecutor := actions.NewActionExecutor(
-		bindingsBuilder, checkers.invariantChecker, checkers.dataTypeChecker,
-		checkers.indexChecker, guardEvaluator, rng,
-	)
-
-	paramBinder := actions.NewParameterBinder()
+	actionExecutor := buildActionExecutor(bindingsBuilder, checkers, rng)
 
 	catalog := NewClassCatalog(model)
 	if len(catalog.AllSimulatableClasses()) == 0 {
 		return nil, nil, nil, fmt.Errorf("no simulatable classes found in model (classes must have states)")
 	}
 
+	stepExecutor, selector, livenessChecker := buildStepExecutor(actionExecutor, catalog, rng)
+	return stepExecutor, selector, livenessChecker, nil
+}
+
+// buildActionExecutor creates the action executor with its dependencies.
+func buildActionExecutor(bindingsBuilder *state.BindingsBuilder, checkers *simulationCheckers, rng *rand.Rand) *actions.ActionExecutor {
+	guardEvaluator := actions.NewGuardEvaluator(bindingsBuilder)
+	return actions.NewActionExecutor(
+		bindingsBuilder, checkers.invariantChecker, checkers.dataTypeChecker,
+		checkers.indexChecker, guardEvaluator, rng,
+	)
+}
+
+// buildStepExecutor creates the step executor, action selector, and liveness checker.
+func buildStepExecutor(actionExecutor *actions.ActionExecutor, catalog *ClassCatalog, rng *rand.Rand) (*StepExecutor, *ActionSelector, *LivenessChecker) {
+	paramBinder := actions.NewParameterBinder()
 	stateActionExec := NewStateActionExecutor(actionExecutor)
 	chainHandler := NewCreationChainHandler(catalog, actionExecutor, stateActionExec, paramBinder, rng)
 	multChecker := NewMultiplicityChecker(catalog)
-	selector := NewActionSelector(catalog, rng)
-	livenessChecker := NewLivenessChecker(catalog)
 
 	stepExecutor := NewStepExecutor(
 		actionExecutor, stateActionExec, chainHandler, multChecker, paramBinder, catalog, rng,
 	)
 
-	return stepExecutor, selector, livenessChecker, nil
+	return stepExecutor, NewActionSelector(catalog, rng), NewLivenessChecker(catalog)
 }
 
 // Run executes the simulation loop and returns the result.

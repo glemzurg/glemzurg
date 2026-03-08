@@ -38,68 +38,18 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 			return err
 		}
 
-		// Collect and insert all logic rows.
-		if err = writeLogics(tx, modelKey, model); err != nil {
+		// Write model-level data (logics, invariants, global functions, named sets, actors).
+		if err = writeModelLevelData(tx, modelKey, model); err != nil {
 			return err
 		}
 
-		// Add invariant join rows.
-		if err = writeInvariants(tx, modelKey, model); err != nil {
+		// Write structural data (domains, subdomains, use cases, classes, attributes, associations).
+		if err = writeStructuralData(tx, modelKey, model); err != nil {
 			return err
 		}
 
-		// Add global function rows.
-		if err = writeGlobalFunctions(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Add named set rows.
-		if err = writeNamedSets(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Add actor generalizations and actors.
-		if err = writeActors(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Add domains and domain associations.
-		if err = writeDomains(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Collect and insert subdomains, generalizations, classes, attributes.
-		if err = writeSubdomainHierarchy(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Insert use cases (after use_case_generalization due to FK).
-		if err = writeUseCases(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Insert classes and class invariants.
-		if err = writeClassesAndInvariants(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Collect and insert data types, attributes, attribute invariants, class indexes.
-		if err = writeAttributeData(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Insert class associations.
-		if err = writeClassAssociations(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Insert states, guards, actions, events, queries and their sub-items.
-		if err = writeStateItems(tx, modelKey, model); err != nil {
-			return err
-		}
-
-		// Insert use case actors, shared entries, scenarios, objects, and steps.
-		if err = writeUseCaseDetails(tx, modelKey, model); err != nil {
+		// Write behavioral data (state items, use case details).
+		if err = writeBehavioralData(tx, modelKey, model); err != nil {
 			return err
 		}
 
@@ -110,6 +60,51 @@ func WriteModel(db *sql.DB, model core.Model) (err error) {
 	}
 
 	return nil
+}
+
+// writeModelLevelData writes logics, invariants, global functions, named sets, and actors.
+func writeModelLevelData(tx *sql.Tx, modelKey string, model core.Model) error {
+	if err := writeLogics(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeInvariants(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeGlobalFunctions(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeNamedSets(tx, modelKey, model); err != nil {
+		return err
+	}
+	return writeActors(tx, modelKey, model)
+}
+
+// writeStructuralData writes domains, subdomains, use cases, classes, attributes, and associations.
+func writeStructuralData(tx *sql.Tx, modelKey string, model core.Model) error {
+	if err := writeDomains(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeSubdomainHierarchy(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeUseCases(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeClassesAndInvariants(tx, modelKey, model); err != nil {
+		return err
+	}
+	if err := writeAttributeData(tx, modelKey, model); err != nil {
+		return err
+	}
+	return writeClassAssociations(tx, modelKey, model)
+}
+
+// writeBehavioralData writes state items and use case details.
+func writeBehavioralData(tx *sql.Tx, modelKey string, model core.Model) error {
+	if err := writeStateItems(tx, modelKey, model); err != nil {
+		return err
+	}
+	return writeUseCaseDetails(tx, modelKey, model)
 }
 
 // writeLogics collects all logic rows from the model and inserts them.
@@ -473,6 +468,31 @@ func writeClassAssociations(tx *sql.Tx, modelKey string, model core.Model) error
 func writeStateItems(tx *sql.Tx, modelKey string, model core.Model) error {
 	statesMap, guardsMap, actionsMap, eventsMap, queriesMap := collectStateItemMaps(model)
 
+	// Write core state item rows.
+	if err := writeStateItemCoreRows(tx, modelKey, statesMap, guardsMap, actionsMap, eventsMap, queriesMap); err != nil {
+		return err
+	}
+
+	// Write sub-items (parameters, requires, guarantees, etc.).
+	if err := writeStateItemSubRows(tx, modelKey, actionsMap, eventsMap, queriesMap); err != nil {
+		return err
+	}
+
+	// Write state-action links and transitions.
+	if err := writeStateActions(tx, modelKey, model); err != nil {
+		return err
+	}
+	return writeTransitions(tx, modelKey, model)
+}
+
+// writeStateItemCoreRows writes the primary rows for states, guards, actions, events, and queries.
+func writeStateItemCoreRows(tx *sql.Tx, modelKey string,
+	statesMap map[identity.Key][]model_state.State,
+	guardsMap map[identity.Key][]model_state.Guard,
+	actionsMap map[identity.Key][]model_state.Action,
+	eventsMap map[identity.Key][]model_state.Event,
+	queriesMap map[identity.Key][]model_state.Query,
+) error {
 	if err := AddStates(tx, modelKey, statesMap); err != nil {
 		return err
 	}
@@ -482,25 +502,25 @@ func writeStateItems(tx *sql.Tx, modelKey string, model core.Model) error {
 	if err := AddActions(tx, modelKey, actionsMap); err != nil {
 		return err
 	}
-	if err := writeActionSubItems(tx, modelKey, actionsMap); err != nil {
-		return err
-	}
 	if err := AddEvents(tx, modelKey, eventsMap); err != nil {
 		return err
 	}
-	if err := AddQueries(tx, modelKey, queriesMap); err != nil {
+	return AddQueries(tx, modelKey, queriesMap)
+}
+
+// writeStateItemSubRows writes sub-items for actions, events, and queries.
+func writeStateItemSubRows(tx *sql.Tx, modelKey string,
+	actionsMap map[identity.Key][]model_state.Action,
+	eventsMap map[identity.Key][]model_state.Event,
+	queriesMap map[identity.Key][]model_state.Query,
+) error {
+	if err := writeActionSubItems(tx, modelKey, actionsMap); err != nil {
 		return err
 	}
 	if err := writeQuerySubItems(tx, modelKey, queriesMap); err != nil {
 		return err
 	}
-	if err := writeEventParameters(tx, modelKey, eventsMap); err != nil {
-		return err
-	}
-	if err := writeStateActions(tx, modelKey, model); err != nil {
-		return err
-	}
-	return writeTransitions(tx, modelKey, model)
+	return writeEventParameters(tx, modelKey, eventsMap)
 }
 
 // collectStateItemMaps collects states, guards, actions, events, and queries from all classes.
@@ -902,109 +922,145 @@ func readAndAssembleDomains(tx *sql.Tx, modelKey string, model *core.Model, logi
 // queryAllDomainData runs all the domain-level queries and returns the results.
 func queryAllDomainData(tx *sql.Tx, modelKey string) (*readDomainStructure, error) {
 	ds := &readDomainStructure{}
+
+	if err := queryDomainStructure(tx, modelKey, ds); err != nil {
+		return nil, err
+	}
+
+	if err := queryUseCaseData(tx, modelKey, ds); err != nil {
+		return nil, err
+	}
+
+	if err := queryClassStructure(tx, modelKey, ds); err != nil {
+		return nil, err
+	}
+
+	if err := queryStateBehavior(tx, modelKey, ds); err != nil {
+		return nil, err
+	}
+
 	var err error
-
-	ds.domainsSlice, err = QueryDomains(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.subdomainsMap, err = QuerySubdomains(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.domainAssociationsSlice, err = QueryDomainAssociations(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.generalizationsMap, err = QueryGeneralizations(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.useCaseGeneralizationsMap, err = QueryUseCaseGeneralizations(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.useCaseSubdomainKeys, ds.useCasesSlice, err = QueryUseCases(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.useCaseActorsMap, err = QueryUseCaseActors(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.useCaseSharedsMap, err = QueryUseCaseShareds(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = queryScenarioData(tx, modelKey, ds); err != nil {
-		return nil, err
-	}
-
-	ds.classesMap, err = QueryClasses(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.classInvariantsMap, err = QueryClassInvariants(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.attrInvariantsMap, err = QueryAttributeInvariants(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.attributesMap, err = QueryAttributes(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	ds.guardsMap, err = QueryGuards(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = queryActionData(tx, modelKey, ds); err != nil {
-		return nil, err
-	}
-
-	ds.statesMap, err = QueryStates(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = queryStateActionData(tx, modelKey, ds); err != nil {
-		return nil, err
-	}
-
-	ds.transitionsMap, err = QueryTransitions(tx, modelKey)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = queryEventData(tx, modelKey, ds); err != nil {
-		return nil, err
-	}
-
-	if err = queryQueryData(tx, modelKey, ds); err != nil {
-		return nil, err
-	}
-
 	ds.dataTypes, err = LoadTopLevelDataTypes(tx, modelKey)
 	if err != nil {
 		return nil, err
 	}
 
 	return ds, nil
+}
+
+// queryDomainStructure queries domains, subdomains, associations, and generalizations.
+func queryDomainStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
+	var err error
+
+	ds.domainsSlice, err = QueryDomains(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.subdomainsMap, err = QuerySubdomains(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.domainAssociationsSlice, err = QueryDomainAssociations(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.generalizationsMap, err = QueryGeneralizations(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.useCaseGeneralizationsMap, err = QueryUseCaseGeneralizations(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// queryUseCaseData queries use cases, actors, shares, and scenario data.
+func queryUseCaseData(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
+	var err error
+
+	ds.useCaseSubdomainKeys, ds.useCasesSlice, err = QueryUseCases(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.useCaseActorsMap, err = QueryUseCaseActors(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.useCaseSharedsMap, err = QueryUseCaseShareds(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	return queryScenarioData(tx, modelKey, ds)
+}
+
+// queryClassStructure queries classes, invariants, and attributes.
+func queryClassStructure(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
+	var err error
+
+	ds.classesMap, err = QueryClasses(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.classInvariantsMap, err = QueryClassInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.attrInvariantsMap, err = QueryAttributeInvariants(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	ds.attributesMap, err = QueryAttributes(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// queryStateBehavior queries guards, actions, states, transitions, events, and queries.
+func queryStateBehavior(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
+	var err error
+
+	ds.guardsMap, err = QueryGuards(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	if err = queryActionData(tx, modelKey, ds); err != nil {
+		return err
+	}
+
+	ds.statesMap, err = QueryStates(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	if err = queryStateActionData(tx, modelKey, ds); err != nil {
+		return err
+	}
+
+	ds.transitionsMap, err = QueryTransitions(tx, modelKey)
+	if err != nil {
+		return err
+	}
+
+	if err = queryEventData(tx, modelKey, ds); err != nil {
+		return err
+	}
+
+	return queryQueryData(tx, modelKey, ds)
 }
 
 // queryScenarioData queries scenarios, objects, and steps and stitches them together.
@@ -1153,7 +1209,7 @@ func queryEventData(tx *sql.Tx, modelKey string, ds *readDomainStructure) error 
 	return nil
 }
 
-// queryQueryData queries queries and their parameters, requires, and guarantees.
+// queryQueryData loads queries and their parameters, requires, and guarantees.
 func queryQueryData(tx *sql.Tx, modelKey string, ds *readDomainStructure) error {
 	var err error
 	ds.queriesMap, err = QueryQueries(tx, modelKey)
@@ -1280,44 +1336,37 @@ func stitchAttributeData(ds *readDomainStructure, logicsByKey map[identity.Key]m
 func stitchParamDataTypes(ds *readDomainStructure) {
 	// Stitch data types onto query parameters.
 	for classKey, queries := range ds.queriesMap {
-		for i, query := range queries {
-			for j, param := range query.Parameters {
-				if param.DataType != nil {
-					if dt, ok := ds.dataTypes[param.DataType.Key]; ok {
-						queries[i].Parameters[j].DataType = &dt
-					}
-				}
-			}
+		for i := range queries {
+			stitchParameterDataTypes(queries[i].Parameters, ds.dataTypes)
 		}
 		ds.queriesMap[classKey] = queries
 	}
 
 	// Stitch data types onto event parameters.
 	for classKey, events := range ds.eventsMap {
-		for i, event := range events {
-			for j, param := range event.Parameters {
-				if param.DataType != nil {
-					if dt, ok := ds.dataTypes[param.DataType.Key]; ok {
-						events[i].Parameters[j].DataType = &dt
-					}
-				}
-			}
+		for i := range events {
+			stitchParameterDataTypes(events[i].Parameters, ds.dataTypes)
 		}
 		ds.eventsMap[classKey] = events
 	}
 
 	// Stitch data types onto action parameters.
 	for classKey, actions := range ds.actionsMap {
-		for i, action := range actions {
-			for j, param := range action.Parameters {
-				if param.DataType != nil {
-					if dt, ok := ds.dataTypes[param.DataType.Key]; ok {
-						actions[i].Parameters[j].DataType = &dt
-					}
-				}
-			}
+		for i := range actions {
+			stitchParameterDataTypes(actions[i].Parameters, ds.dataTypes)
 		}
 		ds.actionsMap[classKey] = actions
+	}
+}
+
+// stitchParameterDataTypes resolves data type references in a parameter slice.
+func stitchParameterDataTypes(params []model_state.Parameter, dataTypes map[string]model_data_type.DataType) {
+	for j, param := range params {
+		if param.DataType != nil {
+			if dt, ok := dataTypes[param.DataType.Key]; ok {
+				params[j].DataType = &dt
+			}
+		}
 	}
 }
 
@@ -1422,23 +1471,34 @@ func assembleSubdomainUseCaseShares(subdomain *model_domain.Subdomain, ds *readD
 func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKey map[identity.Key]model_logic.Logic) {
 	classKey := class.Key
 
-	// Attach class invariants to class.
-	if invKeys, ok := ds.classInvariantsMap[classKey]; ok {
-		class.Invariants = make([]model_logic.Logic, len(invKeys))
-		for j, key := range invKeys {
-			class.Invariants[j] = logicsByKey[key]
-		}
-	}
+	assembleClassInvariants(class, ds.classInvariantsMap[classKey], logicsByKey)
+	assembleClassStructure(class, classKey, ds)
+	assembleClassBehavior(class, classKey, ds)
+}
 
-	// Attach attributes to class.
+// assembleClassInvariants attaches invariants to a class by resolving logic keys.
+func assembleClassInvariants(class *model_class.Class, invKeys []identity.Key, logicsByKey map[identity.Key]model_logic.Logic) {
+	if len(invKeys) == 0 {
+		return
+	}
+	class.Invariants = make([]model_logic.Logic, len(invKeys))
+	for j, key := range invKeys {
+		class.Invariants[j] = logicsByKey[key]
+	}
+}
+
+// assembleClassStructure attaches attributes to a class.
+func assembleClassStructure(class *model_class.Class, classKey identity.Key, ds *readDomainStructure) {
 	if attributes, ok := ds.attributesMap[classKey]; ok {
 		class.Attributes = make(map[identity.Key]model_class.Attribute)
 		for _, attr := range attributes {
 			class.Attributes[attr.Key] = attr
 		}
 	}
+}
 
-	// Attach guards to class.
+// assembleClassBehavior attaches guards, actions, states, events, queries, and transitions to a class.
+func assembleClassBehavior(class *model_class.Class, classKey identity.Key, ds *readDomainStructure) {
 	if guards, ok := ds.guardsMap[classKey]; ok {
 		class.Guards = make(map[identity.Key]model_state.Guard)
 		for _, guard := range guards {
@@ -1446,7 +1506,6 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 		}
 	}
 
-	// Attach actions to class.
 	if actions, ok := ds.actionsMap[classKey]; ok {
 		class.Actions = make(map[identity.Key]model_state.Action)
 		for _, action := range actions {
@@ -1454,7 +1513,6 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 		}
 	}
 
-	// Attach states to class.
 	if states, ok := ds.statesMap[classKey]; ok {
 		class.States = make(map[identity.Key]model_state.State)
 		for _, state := range states {
@@ -1462,7 +1520,6 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 		}
 	}
 
-	// Attach events to class.
 	if events, ok := ds.eventsMap[classKey]; ok {
 		class.Events = make(map[identity.Key]model_state.Event)
 		for _, event := range events {
@@ -1470,7 +1527,6 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 		}
 	}
 
-	// Attach queries to class.
 	if queries, ok := ds.queriesMap[classKey]; ok {
 		class.Queries = make(map[identity.Key]model_state.Query)
 		for _, query := range queries {
@@ -1478,7 +1534,6 @@ func assembleClass(class *model_class.Class, ds *readDomainStructure, logicsByKe
 		}
 	}
 
-	// Attach transitions to class.
 	if transitions, ok := ds.transitionsMap[classKey]; ok {
 		class.Transitions = make(map[identity.Key]model_state.Transition)
 		for _, transition := range transitions {

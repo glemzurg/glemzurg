@@ -36,7 +36,8 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
-	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, "amount", "", "", nil, false, "", nil))
+	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, "amount", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
 	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
 	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
 
@@ -69,7 +70,8 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
-	attrName := helper.Must(model_class.NewAttribute(attrNameKey, "name", "", "", nil, false, "", nil))
+	attrName := helper.Must(model_class.NewAttribute(attrNameKey, "name", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
 	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
 	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
 
@@ -251,7 +253,8 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", orderSpec("self.amount * 2"), nil))
 
-	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false, "", nil))
+	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false,
+		model_class.AttributeAnnotations{}))
 	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
 	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
 
@@ -338,7 +341,10 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "",
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
+		nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -372,7 +378,10 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "",
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
+		nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

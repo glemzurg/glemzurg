@@ -20,35 +20,9 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		return core.Model{}, err
 	}
 
-	// Parse the YAML data section for invariants, global functions, and named sets.
-	var invariants []model_logic.Logic
-	var globalFunctions map[identity.Key]model_logic.GlobalFunction
-	var namedSets map[identity.Key]model_named_set.NamedSet
-
-	if parsedFile.Data != "" {
-		yamlData := map[string]any{}
-		if err := yaml.Unmarshal([]byte(parsedFile.Data), &yamlData); err != nil {
-			return core.Model{}, errors.WithStack(err)
-		}
-
-		invariantKeyFunc := func(_ identity.Key, subKey string) (identity.Key, error) {
-			return identity.NewInvariantKey(subKey)
-		}
-		invariants, err = logicListFromYamlData(yamlData, "invariants",
-			model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc)
-		if err != nil {
-			return core.Model{}, errors.Wrap(err, "model invariants")
-		}
-
-		globalFunctions, err = parseGlobalFunctions(yamlData)
-		if err != nil {
-			return core.Model{}, err
-		}
-
-		namedSets, err = parseNamedSets(yamlData)
-		if err != nil {
-			return core.Model{}, err
-		}
+	invariants, globalFunctions, namedSets, err := parseModelYamlData(parsedFile.Data)
+	if err != nil {
+		return core.Model{}, err
 	}
 
 	// There is no uml comment for a "model" entity (it is not displayed).
@@ -73,11 +47,44 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 	return model, nil
 }
 
+// parseModelYamlData parses invariants, global functions, and named sets from the YAML data section.
+func parseModelYamlData(data string) ([]model_logic.Logic, map[identity.Key]model_logic.GlobalFunction, map[identity.Key]model_named_set.NamedSet, error) {
+	if data == "" {
+		return nil, nil, nil, nil
+	}
+
+	yamlData := map[string]any{}
+	if err := yaml.Unmarshal([]byte(data), &yamlData); err != nil {
+		return nil, nil, nil, errors.WithStack(err)
+	}
+
+	invariantKeyFunc := func(_ identity.Key, subKey string) (identity.Key, error) {
+		return identity.NewInvariantKey(subKey)
+	}
+	invariants, err := logicListFromYamlData(yamlData, "invariants",
+		model_logic.LogicTypeAssessment, identity.Key{}, invariantKeyFunc)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "model invariants")
+	}
+
+	globalFunctions, err := parseGlobalFunctions(yamlData)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	namedSets, err := parseNamedSets(yamlData)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return invariants, globalFunctions, namedSets, nil
+}
+
 // parseGlobalFunctions parses the global_functions list from YAML data.
 func parseGlobalFunctions(yamlData map[string]any) (map[identity.Key]model_logic.GlobalFunction, error) {
 	gfsAny, found := yamlData["global_functions"]
 	if !found {
-		return nil, nil
+		return nil, nil //nolint:nilnil // optional section, absence is not an error
 	}
 	gfsList, ok := gfsAny.([]any)
 	if !ok {
@@ -151,7 +158,7 @@ func parseOneGlobalFunction(gfMap map[string]any) (model_logic.GlobalFunction, e
 func parseNamedSets(yamlData map[string]any) (map[identity.Key]model_named_set.NamedSet, error) {
 	nsAny, found := yamlData["named_sets"]
 	if !found {
-		return nil, nil
+		return nil, nil //nolint:nilnil // optional section, absence is not an error
 	}
 	nsList, ok := nsAny.([]any)
 	if !ok {

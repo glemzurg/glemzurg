@@ -168,7 +168,7 @@ func (suite *UseCaseSuite) TestNew() {
 	genKeyB := helper.Must(identity.NewUseCaseGeneralizationKey(subdomainKey, "gen_b"))
 
 	// Test parameters are mapped correctly.
-	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, &genKeyA, &genKeyB, "UmlComment")
+	useCase, err := NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{SuperclassOfKey: &genKeyA, SubclassOfKey: &genKeyB}, "UmlComment")
 	suite.Require().NoError(err)
 	suite.Equal(UseCase{
 		Key:             key,
@@ -182,7 +182,7 @@ func (suite *UseCaseSuite) TestNew() {
 	}, useCase)
 
 	// Test with nil superclass/subclass.
-	useCase, err = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, nil, nil, "UmlComment")
+	useCase, err = NewUseCase(key, "Name", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{}, "UmlComment")
 	suite.Require().NoError(err)
 	suite.Equal(UseCase{
 		Key:        key,
@@ -194,7 +194,7 @@ func (suite *UseCaseSuite) TestNew() {
 	}, useCase)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, nil, nil, "UmlComment")
+	_, err = NewUseCase(key, "", "Details", _USE_CASE_LEVEL_SEA, true, GeneralizationRefs{}, "UmlComment")
 	suite.Require().ErrorContains(err, "Name")
 }
 

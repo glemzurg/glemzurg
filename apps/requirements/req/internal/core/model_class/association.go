@@ -19,15 +19,21 @@ type Association struct {
 	UmlComment          string
 }
 
-func NewAssociation(key identity.Key, name, details string, fromClassKey identity.Key, fromMultiplicity Multiplicity, toClassKey identity.Key, toMultiplicity Multiplicity, associationClassKey *identity.Key, umlComment string) (association Association, err error) {
+// AssociationEnd describes one end of an association: which class and its multiplicity.
+type AssociationEnd struct {
+	ClassKey     identity.Key
+	Multiplicity Multiplicity
+}
+
+func NewAssociation(key identity.Key, name, details string, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) (association Association, err error) {
 	association = Association{
 		Key:                 key,
 		Name:                name,
 		Details:             details,
-		FromClassKey:        fromClassKey,
-		FromMultiplicity:    fromMultiplicity,
-		ToClassKey:          toClassKey,
-		ToMultiplicity:      toMultiplicity,
+		FromClassKey:        from.ClassKey,
+		FromMultiplicity:    from.Multiplicity,
+		ToClassKey:          to.ClassKey,
+		ToMultiplicity:      to.Multiplicity,
 		AssociationClassKey: associationClassKey,
 		UmlComment:          umlComment,
 	}

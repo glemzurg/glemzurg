@@ -208,7 +208,8 @@ func (suite *AttributeSuite) TestNew() {
 	derivationPolicy := &derivationPolicyVal
 
 	// Test parameters are mapped correctly.
-	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", []uint{1, 2})
+	attr, err := NewAttribute(key, "Name", "Details", "DataTypeRules", derivationPolicy, true,
+		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
 	suite.Equal(Attribute{
 		Key:              key,
@@ -222,7 +223,8 @@ func (suite *AttributeSuite) TestNew() {
 	}, attr)
 
 	// Test with nil DerivationPolicy (non-derived attribute).
-	attrNoDeriv, err := NewAttribute(key, "Name", "Details", "DataTypeRules", nil, true, "UmlComment", []uint{1, 2})
+	attrNoDeriv, err := NewAttribute(key, "Name", "Details", "DataTypeRules", nil, true,
+		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
 	suite.Nil(attrNoDeriv.DerivationPolicy)
 
@@ -231,7 +233,8 @@ func (suite *AttributeSuite) TestNew() {
 	derivParsedKey := helper.Must(identity.NewAttributeDerivationKey(attrParsedKey, "deriv_parsed"))
 	derivParsedPolicyVal := helper.Must(model_logic.NewLogic(derivParsedKey, model_logic.LogicTypeValue, "Computed from other fields.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
 	derivParsedPolicy := &derivParsedPolicyVal
-	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true, "UmlComment", []uint{1, 2})
+	attrParsed, err := NewAttribute(attrParsedKey, "NameParsed", "Details", "unconstrained", derivParsedPolicy, true,
+		AttributeAnnotations{UmlComment: "UmlComment", IndexNums: []uint{1, 2}})
 	suite.Require().NoError(err)
 	suite.Equal(Attribute{
 		Key:              attrParsedKey,
@@ -252,7 +255,8 @@ func (suite *AttributeSuite) TestNew() {
 	}, attrParsed)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAttribute(key, "", "Details", "DataTypeRules", derivationPolicy, true, "UmlComment", nil)
+	_, err = NewAttribute(key, "", "Details", "DataTypeRules", derivationPolicy, true,
+		AttributeAnnotations{UmlComment: "UmlComment"})
 	suite.Require().ErrorContains(err, "Name")
 }
 

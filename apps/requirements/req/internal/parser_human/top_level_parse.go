@@ -104,7 +104,23 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 		allClassAssociations: map[identity.Key]model_class.Association{},
 	}
 
-	// Now, parse each file according to its type.
+	// Parse each file according to its type.
+	model, err = parseAllFiles(modelKey, filesToParse, ctx)
+	if err != nil {
+		return core.Model{}, err
+	}
+
+	// Post-processing: finalize the model.
+	if err := finalizeModel(&model, ctx); err != nil {
+		return core.Model{}, err
+	}
+
+	return model, nil
+}
+
+// parseAllFiles reads and parses each file in order, dispatching by file type.
+func parseAllFiles(modelKey string, filesToParse []fileToParse, ctx *parseContext) (core.Model, error) {
+	var model core.Model
 	for _, toParseFile := range filesToParse {
 		contentBytes, err := os.ReadFile(toParseFile.PathAbs)
 		if err != nil {
@@ -134,24 +150,24 @@ func parseForDatabase(modelKey string, filesToParse []fileToParse) (model core.M
 			return core.Model{}, err
 		}
 	}
+	return model, nil
+}
 
-	// Remove empty default subdomains that have no content.
-	removeEmptyDefaultSubdomains(&model)
+// finalizeModel performs post-processing on the parsed model.
+func finalizeModel(model *core.Model, ctx *parseContext) error {
+	removeEmptyDefaultSubdomains(model)
 
-	// Distribute class associations to the correct level (model, domain, subdomain).
 	if len(ctx.allClassAssociations) > 0 {
 		if err := model.SetClassAssociations(ctx.allClassAssociations); err != nil {
-			return core.Model{}, errors.Wrap(err, "failed to set class associations")
+			return errors.Wrap(err, "failed to set class associations")
 		}
 	}
 
-	// Phase 2: Re-create all ExpressionSpecs with full lowering context so that
-	// Expression trees are populated via constructors.
-	if err := convert.LowerAllExpressions(&model); err != nil {
-		return core.Model{}, errors.Wrap(err, "failed to lower expressions")
+	if err := convert.LowerAllExpressions(model); err != nil {
+		return errors.Wrap(err, "failed to lower expressions")
 	}
 
-	return model, nil
+	return nil
 }
 
 // parseModelFile handles parsing a .model file and initializing model maps.

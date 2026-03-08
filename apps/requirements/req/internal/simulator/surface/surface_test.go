@@ -163,7 +163,7 @@ func buildTwoDomainModel() *core.Model {
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderClassKey, helper.Must(model_class.NewMultiplicity("1")), itemClassKey, helper.Must(model_class.NewMultiplicity("1..many")), nil, "")),
+		assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, "")),
 	}
 
 	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
@@ -705,7 +705,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderClassKey, helper.Must(model_class.NewMultiplicity("any")), itemClassKey, helper.Must(model_class.NewMultiplicity("any")), nil, "")),
+			assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}

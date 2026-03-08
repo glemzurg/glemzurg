@@ -231,16 +231,8 @@ func GetStrictTestModel() core.Model {
 					}
 
 					// Create dummy attribute.
-					dummyAttr, err := model_class.NewAttribute(
-						dummyAttrKey,
-						"Dummy ID",
-						"Dummy attribute to satisfy strict requirements.",
-						"unconstrained",
-						nil,
-						false,
-						"",
-						nil,
-					)
+					dummyAttr, err := model_class.NewAttribute(dummyAttrKey, "Dummy ID", "Dummy attribute to satisfy strict requirements.", "unconstrained", nil, false,
+						model_class.AttributeAnnotations{})
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy attribute: %v", err))
 					}
@@ -326,10 +318,8 @@ func GetStrictTestModel() core.Model {
 					dummyAssocKey,
 					"Dummy Association",
 					"Dummy association to satisfy strict requirements.",
-					classKeys[0],
-					mult1,
-					classKeys[1],
-					multMany,
+					model_class.AssociationEnd{ClassKey: classKeys[0], Multiplicity: mult1},
+					model_class.AssociationEnd{ClassKey: classKeys[1], Multiplicity: multMany},
 					nil,
 					"",
 				)
@@ -1732,35 +1722,27 @@ func buildAttributes(k testKeys, l testLogic) (testAttrs, error) {
 	var a testAttrs
 	var err error
 
-	a.orderDate, err = model_class.NewAttribute(
-		k.attrOrderDate, "Order Date", "When the order was placed.",
-		"3+ ordered of unconstrained", nil, false, "the date", nil,
-	)
+	a.orderDate, err = model_class.NewAttribute(k.attrOrderDate, "Order Date", "When the order was placed.", "3+ ordered of unconstrained", nil, false,
+		model_class.AttributeAnnotations{UmlComment: "the date"})
 	if err != nil {
 		return a, err
 	}
 
 	// Derived attribute with derivation policy.
-	a.total, err = model_class.NewAttribute(
-		k.attrTotal, "Total", "Total amount for the order.",
-		"(0 .. 1000000] at 0.01 dollar", &l.derivation, true, "", []uint{1, 2},
-	)
+	a.total, err = model_class.NewAttribute(k.attrTotal, "Total", "Total amount for the order.", "(0 .. 1000000] at 0.01 dollar", &l.derivation, true,
+		model_class.AttributeAnnotations{IndexNums: []uint{1, 2}})
 	if err != nil {
 		return a, err
 	}
 
-	a.status, err = model_class.NewAttribute(
-		k.attrStatus, "Status", "Current order status.",
-		"enum of new, processing, complete", nil, false, "", nil,
-	)
+	a.status, err = model_class.NewAttribute(k.attrStatus, "Status", "Current order status.", "enum of new, processing, complete", nil, false,
+		model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
 	}
 
-	a.productName, err = model_class.NewAttribute(
-		k.attrProductName, "Product Name", "Name of the product.",
-		"unconstrained", nil, false, "", nil,
-	)
+	a.productName, err = model_class.NewAttribute(k.attrProductName, "Product Name", "Name of the product.", "unconstrained", nil, false,
+		model_class.AttributeAnnotations{})
 	if err != nil {
 		return a, err
 	}
@@ -1967,7 +1949,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 	// Subdomain-level (3).
 	a1, err := model_class.NewAssociation(
 		k.subdomainAssoc1, "order contains products", "Order-Product association.",
-		k.classOrder, mult1, k.classProduct, multMany, &k.classLineItem, "with line item",
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, &k.classLineItem, "with line item",
 	)
 	if err != nil {
 		return ta, err
@@ -1977,7 +1959,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	a2, err := model_class.NewAssociation(
 		k.subdomainAssoc2, "order belongs to customer", "Order-Customer association.",
-		k.classOrder, multMany, k.classCustomer, mult1, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: mult1}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -1987,7 +1969,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	a3, err := model_class.NewAssociation(
 		k.subdomainAssoc3, "product has line items", "Product-LineItem association.",
-		k.classProduct, mult1, k.classLineItem, multMany, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classLineItem, Multiplicity: multMany}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -1998,7 +1980,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 	// Domain-level (3).
 	d1, err := model_class.NewAssociation(
 		k.domainClassAssoc1, "order ships from warehouse", "Order-Warehouse relationship.",
-		k.classOrder, multAny, k.classWarehouse, multOpt, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multOpt}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -2008,7 +1990,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	d2, err := model_class.NewAssociation(
 		k.domainClassAssoc2, "product stored on shelf", "Product-Shelf relationship.",
-		k.classProduct, multMany, k.classShelf, mult1, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classShelf, Multiplicity: mult1}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -2018,7 +2000,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	d3, err := model_class.NewAssociation(
 		k.domainClassAssoc3, "customer visits aisle", "Customer-Aisle relationship.",
-		k.classCustomer, multAny, k.classAisle, multAny, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classCustomer, Multiplicity: multAny}, model_class.AssociationEnd{ClassKey: k.classAisle, Multiplicity: multAny}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -2029,7 +2011,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 	// Model-level (3).
 	m1, err := model_class.NewAssociation(
 		k.modelClassAssoc1, "product from supplier", "Product-Supplier relationship.",
-		k.classProduct, multMany, k.classSupplier, mult1, nil, "cross-domain",
+		model_class.AssociationEnd{ClassKey: k.classProduct, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classSupplier, Multiplicity: mult1}, nil, "cross-domain",
 	)
 	if err != nil {
 		return ta, err
@@ -2039,7 +2021,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	m2, err := model_class.NewAssociation(
 		k.modelClassAssoc2, "order has shipment", "Order-Shipment relationship.",
-		k.classOrder, mult1, k.classShipment, multOpt, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classOrder, Multiplicity: mult1}, model_class.AssociationEnd{ClassKey: k.classShipment, Multiplicity: multOpt}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -2049,7 +2031,7 @@ func buildAssociations(k testKeys) (testAssociations, error) {
 
 	m3, err := model_class.NewAssociation(
 		k.modelClassAssoc3, "warehouse on route", "Warehouse-Route relationship.",
-		k.classWarehouse, multMany, k.classRoute, multMany, nil, "",
+		model_class.AssociationEnd{ClassKey: k.classWarehouse, Multiplicity: multMany}, model_class.AssociationEnd{ClassKey: k.classRoute, Multiplicity: multMany}, nil, "",
 	)
 	if err != nil {
 		return ta, err
@@ -2243,7 +2225,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
 	ucPlaceOrder, err := model_use_case.NewUseCase(
 		k.ucPlaceOrder, "Place Order", "Customer places an order.",
-		"sea", false, nil, &k.ucGen1, "place order",
+		"sea", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, "place order",
 	)
 	if err != nil {
 		return u, err
@@ -2258,7 +2240,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// View Order: mud level, read-only, has 1 scenario.
 	ucViewOrder, err := model_use_case.NewUseCase(
 		k.ucViewOrder, "View Order", "View order details.",
-		"mud", true, nil, &k.ucGen2, "",
+		"mud", true, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, "",
 	)
 	if err != nil {
 		return u, err
@@ -2268,7 +2250,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// Manage Order: sky level, superclass.
 	ucManageOrder, err := model_use_case.NewUseCase(
 		k.ucManageOrder, "Manage Order", "Manage orders.",
-		"sky", false, &k.ucGen1, nil, "",
+		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, "",
 	)
 	if err != nil {
 		return u, err
@@ -2277,7 +2259,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
 	ucCancelOrder, err := model_use_case.NewUseCase(
 		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
-		"mud", false, nil, &k.ucGen3, "",
+		"mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, "",
 	)
 	if err != nil {
 		return u, err
@@ -2286,7 +2268,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// View Orders: sky level, superclass for ucGen2.
 	uc5, err := model_use_case.NewUseCase(
 		k.uc5, "View Orders", "View multiple orders.",
-		"sky", true, &k.ucGen2, nil, "",
+		"sky", true, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, "",
 	)
 	if err != nil {
 		return u, err
@@ -2295,7 +2277,7 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	// Cancel Orders: sky level, superclass for ucGen3.
 	uc6, err := model_use_case.NewUseCase(
 		k.uc6, "Cancel Orders", "Cancel multiple orders.",
-		"sky", false, &k.ucGen3, nil, "",
+		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, "",
 	)
 	if err != nil {
 		return u, err

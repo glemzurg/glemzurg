@@ -27,15 +27,21 @@ type UseCase struct {
 	Scenarios map[identity.Key]model_scenario.Scenario
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (useCase UseCase, err error) {
+// GeneralizationRefs holds the optional generalization references for a use case.
+type GeneralizationRefs struct {
+	SuperclassOfKey *identity.Key
+	SubclassOfKey   *identity.Key
+}
+
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) (useCase UseCase, err error) {
 	useCase = UseCase{
 		Key:             key,
 		Name:            name,
 		Details:         details,
 		Level:           level,
 		ReadOnly:        readOnly,
-		SuperclassOfKey: superclassOfKey,
-		SubclassOfKey:   subclassOfKey,
+		SuperclassOfKey: genRefs.SuperclassOfKey,
+		SubclassOfKey:   genRefs.SubclassOfKey,
 		UmlComment:      umlComment,
 	}
 

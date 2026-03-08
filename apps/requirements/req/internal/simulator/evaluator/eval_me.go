@@ -329,29 +329,6 @@ func evalBinaryNumericOperands(left, right me.Expression, bindings *Bindings) (*
 	return leftNum, rightNum, nil
 }
 
-// evalBinaryBooleanOperands evaluates left and right expressions and type-checks
-// them as *object.Boolean, returning both or an error.
-func evalBinaryBooleanOperands(left, right me.Expression, bindings *Bindings) (*object.Boolean, *object.Boolean, *EvalResult) {
-	leftResult := Eval(left, bindings)
-	if leftResult.IsError() {
-		return nil, nil, leftResult
-	}
-	rightResult := Eval(right, bindings)
-	if rightResult.IsError() {
-		return nil, nil, rightResult
-	}
-
-	leftBool, ok := leftResult.Value.(*object.Boolean)
-	if !ok {
-		return nil, nil, NewEvalError("left operand must be Boolean, got %s", leftResult.Value.Type())
-	}
-	rightBool, ok := rightResult.Value.(*object.Boolean)
-	if !ok {
-		return nil, nil, NewEvalError("right operand must be Boolean, got %s", rightResult.Value.Type())
-	}
-	return leftBool, rightBool, nil
-}
-
 // evalBinarySetOperands evaluates left and right expressions and type-checks
 // them as *object.Set, returning both or an error.
 func evalBinarySetOperands(left, right me.Expression, bindings *Bindings) (*object.Set, *object.Set, *EvalResult) {
@@ -408,35 +385,42 @@ func evalMEBinaryArith(n *me.BinaryArith, bindings *Bindings) *EvalResult {
 		return errResult
 	}
 
-	var result *object.Number
-	switch n.Op {
-	case me.ArithAdd:
-		result = leftNum.Add(rightNum)
-	case me.ArithSub:
-		result = leftNum.Sub(rightNum)
-	case me.ArithMul:
-		result = leftNum.Mul(rightNum)
-	case me.ArithDiv:
-		if rightNum.IsZero() {
-			return NewEvalError("division by zero")
-		}
-		result = leftNum.Div(rightNum)
-	case me.ArithMod:
-		mod, err := leftNum.Mod(rightNum)
-		if err != nil {
-			return NewEvalError("modulo error: %v", err)
-		}
-		result = mod
-	case me.ArithPow:
-		pow, err := leftNum.Pow(rightNum)
-		if err != nil {
-			return NewEvalError("power error: %v", err)
-		}
-		result = pow
-	default:
-		return NewEvalError("unknown arithmetic operator: %s", n.Op)
+	result, evalErr := applyArithOp(n.Op, leftNum, rightNum)
+	if evalErr != nil {
+		return evalErr
 	}
 	return NewEvalResult(result)
+}
+
+// applyArithOp applies an arithmetic operator to two numbers.
+func applyArithOp(op me.ArithOp, left, right *object.Number) (*object.Number, *EvalResult) {
+	switch op {
+	case me.ArithAdd:
+		return left.Add(right), nil
+	case me.ArithSub:
+		return left.Sub(right), nil
+	case me.ArithMul:
+		return left.Mul(right), nil
+	case me.ArithDiv:
+		if right.IsZero() {
+			return nil, NewEvalError("division by zero")
+		}
+		return left.Div(right), nil
+	case me.ArithMod:
+		mod, err := left.Mod(right)
+		if err != nil {
+			return nil, NewEvalError("modulo error: %v", err)
+		}
+		return mod, nil
+	case me.ArithPow:
+		pow, err := left.Pow(right)
+		if err != nil {
+			return nil, NewEvalError("power error: %v", err)
+		}
+		return pow, nil
+	default:
+		return nil, NewEvalError("unknown arithmetic operator: %s", op)
+	}
 }
 
 func evalMEBinaryLogic(n *me.BinaryLogic, bindings *Bindings) *EvalResult {

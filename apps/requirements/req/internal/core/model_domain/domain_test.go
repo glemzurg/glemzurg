@@ -143,15 +143,15 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	// Create associations:
 	// 1. Domain-level association (bridges subdomains).
 	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2, "domain association"))
-	domainAssoc := helper.Must(model_class.NewAssociation(domainAssocKey, "Domain Association", "", class1InSub1, helper.Must(model_class.NewMultiplicity("1")), class1InSub2, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	domainAssoc := helper.Must(model_class.NewAssociation(domainAssocKey, "Domain Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 
 	// 2. Subdomain1-level association.
 	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1, "subdomain1 association"))
-	sub1Assoc := helper.Must(model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", class1InSub1, helper.Must(model_class.NewMultiplicity("1")), class2InSub1, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	sub1Assoc := helper.Must(model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 
 	// 3. Subdomain2-level association.
 	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2, "subdomain2 association"))
-	sub2Assoc := helper.Must(model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", class1InSub2, helper.Must(model_class.NewMultiplicity("1")), class2InSub2, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	sub2Assoc := helper.Must(model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 
 	// Test: associations are routed correctly.
 	err := domain.SetClassAssociations(map[identity.Key]model_class.Association{
@@ -178,7 +178,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	otherSubdomainKey := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain1"))
 	crossDomainClassKey := helper.Must(identity.NewClassKey(otherSubdomainKey, "class1"))
 	modelLevelAssocKey := helper.Must(identity.NewClassAssociationKey(identity.Key{}, class1InSub1, crossDomainClassKey, "model level association"))
-	modelLevelAssoc := helper.Must(model_class.NewAssociation(modelLevelAssocKey, "Model Level Association", "", class1InSub1, helper.Must(model_class.NewMultiplicity("1")), crossDomainClassKey, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	modelLevelAssoc := helper.Must(model_class.NewAssociation(modelLevelAssocKey, "Model Level Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 	err = domain.SetClassAssociations(map[identity.Key]model_class.Association{
 		modelLevelAssocKey: modelLevelAssoc,
 	})
@@ -189,7 +189,7 @@ func (suite *DomainSuite) TestSetClassAssociations() {
 	otherSubdomain2Key := helper.Must(identity.NewSubdomainKey(otherDomainKey, "subdomain2"))
 	crossDomainClassKey2 := helper.Must(identity.NewClassKey(otherSubdomain2Key, "class2"))
 	wrongDomainAssocKey := helper.Must(identity.NewClassAssociationKey(otherDomainKey, crossDomainClassKey, crossDomainClassKey2, "wrong domain association"))
-	wrongDomainAssoc := helper.Must(model_class.NewAssociation(wrongDomainAssocKey, "Wrong Domain Association", "", crossDomainClassKey, helper.Must(model_class.NewMultiplicity("1")), crossDomainClassKey2, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	wrongDomainAssoc := helper.Must(model_class.NewAssociation(wrongDomainAssocKey, "Wrong Domain Association", "", model_class.AssociationEnd{ClassKey: crossDomainClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: crossDomainClassKey2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 	err = domain.SetClassAssociations(map[identity.Key]model_class.Association{
 		wrongDomainAssocKey: wrongDomainAssoc,
 	})
@@ -208,13 +208,13 @@ func (suite *DomainSuite) TestGetClassAssociations() {
 
 	// Create associations at different levels.
 	domainAssocKey := helper.Must(identity.NewClassAssociationKey(domainKey, class1InSub1, class1InSub2, "domain association"))
-	domainAssoc := helper.Must(model_class.NewAssociation(domainAssocKey, "Domain Association", "", class1InSub1, helper.Must(model_class.NewMultiplicity("1")), class1InSub2, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	domainAssoc := helper.Must(model_class.NewAssociation(domainAssocKey, "Domain Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 
 	sub1AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain1Key, class1InSub1, class2InSub1, "subdomain1 association"))
-	sub1Assoc := helper.Must(model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", class1InSub1, helper.Must(model_class.NewMultiplicity("1")), class2InSub1, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	sub1Assoc := helper.Must(model_class.NewAssociation(sub1AssocKey, "Subdomain1 Association", "", model_class.AssociationEnd{ClassKey: class1InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub1, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 
 	sub2AssocKey := helper.Must(identity.NewClassAssociationKey(subdomain2Key, class1InSub2, class2InSub2, "subdomain2 association"))
-	sub2Assoc := helper.Must(model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", class1InSub2, helper.Must(model_class.NewMultiplicity("1")), class2InSub2, helper.Must(model_class.NewMultiplicity("any")), nil, ""))
+	sub2Assoc := helper.Must(model_class.NewAssociation(sub2AssocKey, "Subdomain2 Association", "", model_class.AssociationEnd{ClassKey: class1InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: class2InSub2, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""))
 
 	// Create domain with associations at all levels.
 	domain := Domain{

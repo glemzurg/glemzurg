@@ -686,7 +686,7 @@ func (e *ActionExecutor) evaluateGuards(
 // handleCreation creates a new instance for a creation transition.
 func (e *ActionExecutor) handleCreation(
 	class model_class.Class,
-	instance *state.ClassInstance,
+	_ *state.ClassInstance,
 	sourceAssocKey *identity.Key,
 	sourceID *state.InstanceID,
 ) (*state.ClassInstance, error) {
@@ -703,7 +703,7 @@ func (e *ActionExecutor) handleCreation(
 		}
 	}
 
-	instance = simState.CreateInstance(class.Key, newAttrs)
+	instance := simState.CreateInstance(class.Key, newAttrs)
 
 	// Link to parent over the association
 	if sourceAssocKey != nil && sourceID != nil {
@@ -721,7 +721,7 @@ func (e *ActionExecutor) executeTransitionAction(
 	eventParams map[string]object.Object,
 ) (*ActionResult, error) {
 	if chosen.ActionKey == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil // no action to execute is a valid case
 	}
 	action, ok := class.Actions[*chosen.ActionKey]
 	if !ok {

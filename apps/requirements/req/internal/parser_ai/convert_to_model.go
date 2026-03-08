@@ -100,7 +100,7 @@ func convertGlobalFunctionsMap(input map[string]*inputGlobalFunction) (map[ident
 // convertNamedSetsMap converts the named sets map.
 func convertNamedSetsMap(input map[string]*inputNamedSet) (map[identity.Key]model_named_set.NamedSet, error) {
 	if len(input) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // empty input is valid, not an error
 	}
 	namedSets := make(map[identity.Key]model_named_set.NamedSet)
 	for key, ns := range input {
@@ -377,10 +377,10 @@ func convertDomainToModel(keyStr string, domain *inputDomain) (model_domain.Doma
 
 // subdomainConvContext holds the context needed for subdomain-level conversions.
 type subdomainConvContext struct {
-	subdomainKey   identity.Key
-	domainKeyStr   string
+	subdomainKey    identity.Key
+	domainKeyStr    string
 	subdomainKeyStr string
-	subdomainFile  string
+	subdomainFile   string
 }
 
 // convertSubdomainToModel converts an inputSubdomain to a model_domain.Subdomain.

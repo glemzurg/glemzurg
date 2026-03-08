@@ -66,11 +66,11 @@ func parseClass(subdomainKey identity.Key, classSubKey, filename, contents strin
 func parseClassActorKey(yamlData map[string]any) (*identity.Key, error) {
 	actorAny, found := yamlData["actor_key"]
 	if !found {
-		return nil, nil
+		return nil, nil //nolint:nilnil // optional field, absence is not an error
 	}
 	actorKeyStr := actorAny.(string)
 	if actorKeyStr == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // empty value treated as absent
 	}
 	key, err := identity.NewActorKey(actorKeyStr)
 	if err != nil {
@@ -83,11 +83,11 @@ func parseClassActorKey(yamlData map[string]any) (*identity.Key, error) {
 func parseGeneralizationRefKey(subdomainKey identity.Key, yamlData map[string]any, field string) (*identity.Key, error) {
 	valAny, found := yamlData[field]
 	if !found {
-		return nil, nil
+		return nil, nil //nolint:nilnil // optional field, absence is not an error
 	}
 	valStr := valAny.(string)
 	if valStr == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // empty value treated as absent
 	}
 	var key identity.Key
 	var err error
@@ -123,33 +123,43 @@ func parseClassComponents(class *model_class.Class, subdomainKey, classKey ident
 		return nil, err
 	}
 
+	// Parse state machine components (actions, states, events, guards, queries, transitions).
+	if err := parseClassStateMachine(class, classKey, yamlData); err != nil {
+		return nil, err
+	}
+
+	return associations, nil
+}
+
+// parseClassStateMachine parses the state machine components of a class.
+func parseClassStateMachine(class *model_class.Class, classKey identity.Key, yamlData map[string]any) error {
 	// Parse actions.
 	actionKeyLookup, err := parseClassActions(class, classKey, yamlData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Parse states (needs action key lookup).
 	stateKeyLookup, err := parseClassStates(class, actionKeyLookup, classKey, yamlData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Parse events.
 	eventKeyLookup, err := parseClassEvents(class, classKey, yamlData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Parse guards.
 	guardKeyLookup, err := parseClassGuards(class, classKey, yamlData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Parse queries.
 	if err := parseClassQueries(class, classKey, yamlData); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Parse transitions (needs all key lookups).
@@ -160,10 +170,10 @@ func parseClassComponents(class *model_class.Class, subdomainKey, classKey ident
 		actions: actionKeyLookup,
 	}
 	if err := parseClassTransitions(class, transLookups, classKey, yamlData); err != nil {
-		return nil, err
+		return err
 	}
 
-	return associations, nil
+	return nil
 }
 
 // parseClassAttributes parses the attributes section from YAML data and sets them on the class.
@@ -432,15 +442,8 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 			return model_class.Attribute{}, errors.WithStack(err)
 		}
 
-		attribute, err = model_class.NewAttribute(
-			attrKey,
-			name,
-			details,
-			dataTypeRules,
-			derivationPolicy,
-			nullable,
-			umlComment,
-			indexNums)
+		attribute, err = model_class.NewAttribute(attrKey, name, details, dataTypeRules, derivationPolicy, nullable,
+			model_class.AttributeAnnotations{UmlComment: umlComment, IndexNums: indexNums})
 		if err != nil {
 			return model_class.Attribute{}, err
 		}
@@ -549,10 +552,8 @@ func associationFromYamlData(subdomainKey, fromClassKey identity.Key, index int,
 			assocKey,
 			name,
 			details,
-			fromClassKey,
-			fromMultiplicity,
-			toClassKey,
-			toMultiplicity,
+			model_class.AssociationEnd{ClassKey: fromClassKey, Multiplicity: fromMultiplicity},
+			model_class.AssociationEnd{ClassKey: toClassKey, Multiplicity: toMultiplicity},
 			associationClassKey,
 			umlComment)
 		if err != nil {
@@ -1065,7 +1066,7 @@ func yamlStringField(data map[string]any, field string) string {
 // lookupOptionalKey looks up a name in the key lookup map, returning nil if name is empty.
 func lookupOptionalKey(lookup map[string]identity.Key, name, kind string) (*identity.Key, error) {
 	if name == "" {
-		return nil, nil
+		return nil, nil //nolint:nilnil // empty name means no key, not an error
 	}
 	key, found := lookup[name]
 	if !found {
@@ -1089,31 +1090,33 @@ func lookupRequiredKey(lookup map[string]identity.Key, name, kind string) (ident
 func generateClassContent(class model_class.Class, associations []model_class.Association) string {
 	builder := NewYamlBuilder()
 
-	// Add top-level fields.
+	// Add top-level fields, invariants, attributes, and associations.
+	generateClassStructuralYaml(builder, class, associations)
+
+	// Add state machine sections (states, events, guards, actions, queries, transitions).
+	generateClassBehavioralYaml(builder, class)
+
+	yamlStr, _ := builder.Build()
+	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UmlComment, yamlStr)
+}
+
+// generateClassStructuralYaml generates structural sections: top-level fields, invariants, attributes, associations.
+func generateClassStructuralYaml(builder *YamlBuilder, class model_class.Class, associations []model_class.Association) {
 	generateClassTopLevelFields(builder, class)
-
-	// Add invariants section.
 	generateLogicSequence(builder, "invariants", class.Invariants)
-
-	// Add attributes section.
 	generateClassAttributesYaml(builder, class)
-
-	// Add associations section.
 	generateClassAssociationsYaml(builder, class, associations)
+}
 
-	// Create lookups for names used by states and transitions.
+// generateClassBehavioralYaml generates state machine sections: states, events, guards, actions, queries, transitions.
+func generateClassBehavioralYaml(builder *YamlBuilder, class model_class.Class) {
 	lookups := buildClassLookups(class)
-
-	// Add states, events, guards, actions, queries, transitions sections.
 	generateClassStatesYaml(builder, class, lookups.actionByKey)
 	generateClassEventsYaml(builder, class)
 	generateClassGuardsYaml(builder, class)
 	generateClassActionsYaml(builder, class)
 	generateClassQueriesYaml(builder, class)
 	generateClassTransitionsYaml(builder, class, lookups)
-
-	yamlStr, _ := builder.Build()
-	return generateFileContent(prependMarkdownTitle(class.Name, class.Details), class.UmlComment, yamlStr)
 }
 
 // classLookups holds reverse lookups from key string to model objects for generation.

@@ -128,6 +128,14 @@ func walkIdentifiersOperator(expr me.Expression, result map[string]bool) bool {
 
 // walkIdentifiersCompound handles compound expressions (collections, control flow, calls).
 func walkIdentifiersCompound(expr me.Expression, result map[string]bool) {
+	if walkIdentifiersCollection(expr, result) {
+		return
+	}
+	walkIdentifiersControlFlow(expr, result)
+}
+
+// walkIdentifiersCollection handles collection-related compound nodes. Returns true if handled.
+func walkIdentifiersCollection(expr me.Expression, result map[string]bool) bool {
 	switch e := expr.(type) {
 	case *me.SetLiteral:
 		walkSliceIR(e.Elements, result)
@@ -152,6 +160,15 @@ func walkIdentifiersCompound(expr me.Expression, result map[string]bool) {
 		walkSliceIR(e.Operands, result)
 	case *me.TupleConcat:
 		walkSliceIR(e.Operands, result)
+	default:
+		return false
+	}
+	return true
+}
+
+// walkIdentifiersControlFlow handles control flow, quantifiers, and call nodes.
+func walkIdentifiersControlFlow(expr me.Expression, result map[string]bool) {
+	switch e := expr.(type) {
 	case *me.Quantifier:
 		walkBinaryIR(e.Domain, e.Predicate, result)
 	case *me.SetFilter:

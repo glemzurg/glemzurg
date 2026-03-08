@@ -84,7 +84,8 @@ func (s *ModelLoaderSuite) TestRoundTripWithDataTypeRules() {
 	model := buildTestModel(domainKey, subdomainKey, classKey, stateKey, eventKey, transKey)
 
 	// Add an attribute with a parseable DataTypeRules (enum format).
-	attr, err := model_class.NewAttribute(attrKey, "amount", "", "enum of small, medium, large", nil, false, "", nil)
+	attr, err := model_class.NewAttribute(attrKey, "amount", "", "enum of small, medium, large", nil, false,
+		model_class.AttributeAnnotations{})
 	s.Require().NoError(err)
 	s.Require().NotNil(attr.DataType, "enum DataTypeRules should parse successfully")
 

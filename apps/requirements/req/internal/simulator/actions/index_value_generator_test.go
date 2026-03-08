@@ -18,7 +18,8 @@ import (
 
 func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
 	dataTypeRules := fmt.Sprintf("[%d, %d]", lower, upper)
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false, "", []uint{1}))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false,
+		model_class.AttributeAnnotations{IndexNums: []uint{1}}))
 	attr.DataType = &model_data_type.DataType{
 		Key:            attr.Key.String(),
 		CollectionType: "atomic",
@@ -37,7 +38,8 @@ func spanAttrDef(name string, lower, upper int) *model_class.Attribute {
 
 func enumAttrDef(name string, values []string) *model_class.Attribute {
 	dataTypeRules := "{" + strings.Join(values, ", ") + "}"
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false, "", []uint{1}))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/"+name), name, "", dataTypeRules, nil, false,
+		model_class.AttributeAnnotations{IndexNums: []uint{1}}))
 	enums := make([]model_data_type.AtomicEnum, len(values))
 	for i, v := range values {
 		enums[i] = model_data_type.AtomicEnum{Value: v, SortOrder: i}

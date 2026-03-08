@@ -122,8 +122,10 @@ func (suite *ConvertSuite) TestConvertFromModelWithClass() {
 	statusAttrKey := helper.Must(identity.NewAttributeKey(classKey, "status"))
 
 	// Build attributes
-	idAttr := helper.Must(model_class.NewAttribute(idAttrKey, "ID", "The order ID", "int", nil, false, "", []uint{0}))
-	statusAttr := helper.Must(model_class.NewAttribute(statusAttrKey, "Status", "", "string", nil, false, "", nil))
+	idAttr := helper.Must(model_class.NewAttribute(idAttrKey, "ID", "The order ID", "int", nil, false,
+		model_class.AttributeAnnotations{IndexNums: []uint{0}}))
+	statusAttr := helper.Must(model_class.NewAttribute(statusAttrKey, "Status", "", "string", nil, false,
+		model_class.AttributeAnnotations{}))
 
 	// Build class
 	orderClass := helper.Must(model_class.NewClass(classKey, "Order", "Order details", &actorKey, nil, nil, ""))
@@ -684,8 +686,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithSubdomainAssociation() {
 	// Build association
 	assoc := helper.Must(model_class.NewAssociation(
 		assocKey, "Order Lines", "",
-		orderKey, helper.Must(model_class.NewMultiplicity("1")),
-		lineItemKey, helper.Must(model_class.NewMultiplicity("1..many")),
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
+		model_class.AssociationEnd{ClassKey: lineItemKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))},
 		nil, "",
 	))
 
@@ -1031,8 +1033,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithDomainAssociation() {
 	// Build association
 	assoc := helper.Must(model_class.NewAssociation(
 		assocKey, "Order Shipments", "",
-		orderKey, helper.Must(model_class.NewMultiplicity("1")),
-		shipmentKey, helper.Must(model_class.NewMultiplicity("any")),
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
+		model_class.AssociationEnd{ClassKey: shipmentKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
 		nil, "",
 	))
 
@@ -1165,8 +1167,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithModelAssociation() {
 	// Build association
 	assoc := helper.Must(model_class.NewAssociation(
 		assocKey, "Order Products", "",
-		orderKey, helper.Must(model_class.NewMultiplicity("1")),
-		productKey, helper.Must(model_class.NewMultiplicity("any")),
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))},
+		model_class.AssociationEnd{ClassKey: productKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))},
 		nil, "",
 	))
 

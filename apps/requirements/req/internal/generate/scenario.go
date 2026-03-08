@@ -20,13 +20,7 @@ type stepContext struct {
 }
 
 func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_scenario.Scenario) (contents string, err error) {
-	classLookup, _ := reqs.ClassLookup()
-	ctx := stepContext{
-		eventLookup:    reqs.EventLookup(),
-		scenarioLookup: reqs.ScenarioLookup(),
-		objectLookup:   reqs.ObjectLookup(),
-		classLookup:    classLookup,
-	}
+	ctx := newStepContext(reqs)
 
 	s := svgsequence.NewSequence()
 
@@ -51,6 +45,17 @@ func generateScenarioSvgContents(reqs *req_flat.Requirements, scenario model_sce
 	contents, err = s.Generate()
 
 	return contents, err
+}
+
+// newStepContext builds a stepContext from flattened requirements lookups.
+func newStepContext(reqs *req_flat.Requirements) stepContext {
+	classLookup, _ := reqs.ClassLookup()
+	return stepContext{
+		eventLookup:    reqs.EventLookup(),
+		scenarioLookup: reqs.ScenarioLookup(),
+		objectLookup:   reqs.ObjectLookup(),
+		classLookup:    classLookup,
+	}
 }
 
 // buildActorList constructs the ordered list of actor display names for a scenario.

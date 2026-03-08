@@ -110,13 +110,16 @@ func createTestModel() *core.Model {
 	}
 
 	// Create attributes
-	statusAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"), "status", "", "{pending, active, completed}", nil, false, "", nil))
+	statusAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"), "status", "", "{pending, active, completed}", nil, false,
+		model_class.AttributeAnnotations{}))
 	statusAttr.DataType = statusDataType
 
-	amountAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"), "amount", "", "[0, 1000000] cents", nil, false, "", nil))
+	amountAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"), "amount", "", "[0, 1000000] cents", nil, false,
+		model_class.AttributeAnnotations{}))
 	amountAttr.DataType = amountDataType
 
-	nameAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"), "name", "", "string", nil, true, "", nil))
+	nameAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"), "name", "", "string", nil, true,
+		model_class.AttributeAnnotations{}))
 	nameAttr.DataType = nameDataType
 
 	// Create an action with a post-condition guarantee
@@ -171,7 +174,8 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
 	// Create an attribute without a parsed DataType
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/bad"), "bad", "", "invalid data type rules", nil, false, "", nil))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/bad"), "bad", "", "invalid data type rules", nil, false,
+		model_class.AttributeAnnotations{}))
 	attr.DataType = nil // Not parsed!
 
 	class := helper.Must(model_class.NewClass(classKey, "BadClass", "", nil, nil, nil, ""))
@@ -521,7 +525,8 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 		},
 	}
 
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/value"), "value", "", "(0, 100) items", nil, false, "", nil))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/value"), "value", "", "(0, 100) items", nil, false,
+		model_class.AttributeAnnotations{}))
 	attr.DataType = dataType
 
 	class := helper.Must(model_class.NewClass(classKey, "Test", "", nil, nil, nil, ""))

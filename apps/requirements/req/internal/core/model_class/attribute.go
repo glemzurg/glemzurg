@@ -23,7 +23,13 @@ type Attribute struct {
 	Invariants []model_logic.Logic       // Invariants that must hold for this attribute's value.
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
+// AttributeAnnotations holds optional annotation data for an attribute.
+type AttributeAnnotations struct {
+	UmlComment string
+	IndexNums  []uint
+}
+
+func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, annotations AttributeAnnotations) (attribute Attribute, err error) {
 	attribute = Attribute{
 		Key:              key,
 		Name:             name,
@@ -31,8 +37,8 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 		DataTypeRules:    dataTypeRules,
 		DerivationPolicy: derivationPolicy,
 		Nullable:         nullable,
-		UmlComment:       umlComment,
-		IndexNums:        indexNums,
+		UmlComment:       annotations.UmlComment,
+		IndexNums:        annotations.IndexNums,
 	}
 
 	// Parse the data type rules into a DataType object if possible.

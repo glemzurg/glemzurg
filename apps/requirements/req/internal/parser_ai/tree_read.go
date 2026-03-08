@@ -58,7 +58,25 @@ func readModelTree(modelDir string) (*inputModel, error) {
 		return nil, err
 	}
 
-	// Initialize child maps and slices
+	initModelMaps(model)
+
+	if err := readModelChildren(modelDir, model); err != nil {
+		return nil, err
+	}
+
+	if err := validateModelCompleteness(model); err != nil {
+		return nil, err
+	}
+
+	if err := validateModelTree(model); err != nil {
+		return nil, err
+	}
+
+	return model, nil
+}
+
+// initModelMaps initializes all child maps on a freshly parsed model.
+func initModelMaps(model *inputModel) {
 	model.Actors = make(map[string]*inputActor)
 	model.ActorGeneralizations = make(map[string]*inputActorGeneralization)
 	model.GlobalFunctions = make(map[string]*inputGlobalFunction)
@@ -66,43 +84,32 @@ func readModelTree(modelDir string) (*inputModel, error) {
 	model.Domains = make(map[string]*inputDomain)
 	model.DomainAssociations = make(map[string]*inputDomainAssociation)
 	model.ClassAssociations = make(map[string]*inputClassAssociation)
+}
 
+// readModelChildren reads all child entities from the filesystem.
+func readModelChildren(modelDir string, model *inputModel) error {
 	if err := readModelInvariants(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
 	if err := readModelActors(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
 	if err := readModelActorGeneralizations(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
 	if err := readModelGlobalFunctions(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
 	if err := readModelNamedSets(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
 	if err := readModelClassAssociations(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
 	if err := readModelDomainAssociations(modelDir, model); err != nil {
-		return nil, err
+		return err
 	}
-	if err := readModelDomains(modelDir, model); err != nil {
-		return nil, err
-	}
-
-	// Validate model completeness
-	if err := validateModelCompleteness(model); err != nil {
-		return nil, err
-	}
-
-	// Validate cross-references in the tree
-	if err := validateModelTree(model); err != nil {
-		return nil, err
-	}
-
-	return model, nil
+	return readModelDomains(modelDir, model)
 }
 
 // readModelInvariants reads model-level invariants from the filesystem.
