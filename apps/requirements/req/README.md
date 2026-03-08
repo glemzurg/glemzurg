@@ -3,20 +3,6 @@
 
 ----------------------------
 
-
-
-todo:
-
-
-cleanup: 
-  clean up linter:
-    grep -R "notation/tla_plus/ast" ./apps/requirements/req
-    re-enable linter staticcheck
-    grep -R "notation/tla_plus" ./apps/requirements/req
-  add complexity linter to req
-  replace all fmt.Errorf() with errors.Errorf()
-
-
 update ai parser to be an ai desitned cli:
   - move error codes to req_model
   https://grok.com/c/e1be5ee4-1771-499f-9d52-4cb80e9c3b46?rid=36cf9e90-0129-47a9-9437-aab9eb24c280
@@ -42,6 +28,7 @@ april (in parallel)
 cleanup:
   - remove the json markup in req_model tree, and any json handling code
     - move to the parser_ai package
+  - replace all fmt.Errorf() with errors.Errorf()
 
 
 - use case shared display in graphviz and capturing the meaning
