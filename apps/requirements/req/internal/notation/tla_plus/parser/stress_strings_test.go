@@ -33,7 +33,7 @@ func (s *StressStringTestSuite) TestBasicStrings() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			_, ok := expr.(*ast.StringLiteral)
 			s.True(ok, "expected StringLiteral, got %T for %q", expr, tt.input)
@@ -81,7 +81,7 @@ func (s *StressStringTestSuite) TestUnterminatedStrings() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.Error(err, "unterminated string should fail: %q", tt.input)
+			s.Require().Error(err, "unterminated string should fail: %q", tt.input)
 		})
 	}
 }
@@ -103,7 +103,7 @@ func (s *StressStringTestSuite) TestStringsInExpressions() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }

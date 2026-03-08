@@ -4,15 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,7 +38,6 @@ type QueryRequireSuite struct {
 }
 
 func (suite *QueryRequireSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +57,12 @@ func (suite *QueryRequireSuite) SetupTest() {
 }
 
 func (suite *QueryRequireSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no query_require join row yet.
 	_, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the query_require join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO query_require
 			(model_key, query_key, logic_key)
 		VALUES
@@ -75,61 +72,43 @@ func (suite *QueryRequireSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key/qrequire/req_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryRequireSuite) TestAdd() {
-
 	err := AddQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryRequireSuite) TestRemove() {
-
 	err := AddQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Query require should be gone.
 	_, err = LoadQueryRequire(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *QueryRequireSuite) TestQuery() {
-
 	err := AddQueryRequires(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	requires, err := QueryQueryRequires(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)
-}
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddQueryRequire(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddQueryRequire(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadQueryRequire(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
 }

@@ -4,16 +4,17 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
 
-// Input format constants
+// Input format constants.
 const (
 	InputFormatDataYAML = "data/yaml"
 	InputFormatAIJSON   = "ai/json"
@@ -113,11 +114,8 @@ func (sw *SourceWatcher) handleFileChange(path string) {
 		extensions = SourceExtensionsYAML
 	}
 
-	for _, ext := range extensions {
-		if suffix == ext {
-			sw.debounceUpdate()
-			break
-		}
+	if slices.Contains(extensions, suffix) {
+		sw.debounceUpdate()
 	}
 }
 

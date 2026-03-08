@@ -1,10 +1,12 @@
 package model_domain
 
 import (
+	"maps"
+
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Domain is a root category of the mode.
@@ -20,7 +22,6 @@ type Domain struct {
 }
 
 func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
-
 	domain = Domain{
 		Key:        key,
 		Name:       name,
@@ -178,14 +179,10 @@ func (d *Domain) SetClassAssociations(associations map[identity.Key]model_class.
 func (d *Domain) GetClassAssociations() map[identity.Key]model_class.Association {
 	result := make(map[identity.Key]model_class.Association)
 	// Add domain-level associations.
-	for k, v := range d.ClassAssociations {
-		result[k] = v
-	}
+	maps.Copy(result, d.ClassAssociations)
 	// Add associations from all subdomains.
 	for _, subdomain := range d.Subdomains {
-		for k, v := range subdomain.GetClassAssociations() {
-			result[k] = v
-		}
+		maps.Copy(result, subdomain.GetClassAssociations())
 	}
 	return result
 }

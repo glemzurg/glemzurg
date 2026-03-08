@@ -15,18 +15,18 @@ type ExpressionType interface {
 
 // Type name constants.
 const (
-	TypeBoolean     = "boolean"
-	TypeInteger     = "integer"
-	TypeRational    = "rational"
-	TypeString      = "string"
-	TypeEnum        = "enum"
-	TypeSet         = "set"
-	TypeSequence    = "sequence"
-	TypeBag         = "bag"
-	TypeTuple       = "tuple"
-	TypeRecord      = "record"
-	TypeFunction    = "function"
-	TypeObject = "object"
+	TypeBoolean  = "boolean"
+	TypeInteger  = "integer"
+	TypeRational = "rational"
+	TypeString   = "string"
+	TypeEnum     = "enum"
+	TypeSet      = "set"
+	TypeSequence = "sequence"
+	TypeBag      = "bag"
+	TypeTuple    = "tuple"
+	TypeRecord   = "record"
+	TypeFunction = "function"
+	TypeObject   = "object"
 )
 
 // ValidateExpressionType validates an ExpressionType if it is non-nil.

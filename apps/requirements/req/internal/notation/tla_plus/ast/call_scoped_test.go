@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -100,7 +99,7 @@ func (suite *CallExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			c := &CallExpression{
 				ModelScope:   tt.modelScope,
 				Domain:       tt.domain,
@@ -109,12 +108,12 @@ func (suite *CallExpressionSuite) TestString() {
 				FunctionName: tt.functionName,
 				Parameter:    tt.parameter,
 			}
-			assert.Equal(t, tt.expected, c.String())
+			suite.Equal(tt.expected, c.String())
 		})
 	}
 }
 
-func (suite *CallExpressionSuite) TestAscii() {
+func (suite *CallExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName     string
 		modelScope   bool
@@ -173,7 +172,7 @@ func (suite *CallExpressionSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			c := &CallExpression{
 				ModelScope:   tt.modelScope,
 				Domain:       tt.domain,
@@ -182,7 +181,7 @@ func (suite *CallExpressionSuite) TestAscii() {
 				FunctionName: tt.functionName,
 				Parameter:    tt.parameter,
 			}
-			assert.Equal(t, tt.expected, c.Ascii())
+			suite.Equal(tt.expected, c.ASCII())
 		})
 	}
 }
@@ -301,7 +300,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Domain`,
+			errstr: `domain`,
 		},
 		{
 			testName: `error model scope with subdomain`,
@@ -315,7 +314,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Subdomain`,
+			errstr: `subdomain`,
 		},
 		{
 			testName: `error model scope with class`,
@@ -329,7 +328,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Class`,
+			errstr: `class`,
 		},
 		{
 			testName: `error domain without subdomain`,
@@ -342,7 +341,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Subdomain`,
+			errstr: `subdomain`,
 		},
 		{
 			testName: `error domain without class`,
@@ -356,7 +355,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Class`,
+			errstr: `class`,
 		},
 		{
 			testName: `error subdomain without class`,
@@ -369,7 +368,7 @@ func (suite *CallExpressionSuite) TestValidate() {
 					},
 				},
 			},
-			errstr: `Class`,
+			errstr: `class`,
 		},
 		{
 			testName: `error empty domain`,
@@ -400,12 +399,12 @@ func (suite *CallExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.c.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

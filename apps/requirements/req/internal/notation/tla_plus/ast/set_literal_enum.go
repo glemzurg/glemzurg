@@ -6,7 +6,7 @@ import (
 )
 
 // SetLiteralEnum is a set of string values (enumeration).
-// Pattern: {"value1", "value2", "value3"}
+// Pattern: {"value1", "value2", "value3"}.
 type SetLiteralEnum struct {
 	Values []string `validate:"required,min=1"` // The enumeration values
 }
@@ -25,7 +25,7 @@ func (s *SetLiteralEnum) String() (value string) {
 	return out.String()
 }
 
-func (s *SetLiteralEnum) Ascii() (value string) {
+func (s *SetLiteralEnum) ASCII() (value string) {
 	return s.String()
 }
 

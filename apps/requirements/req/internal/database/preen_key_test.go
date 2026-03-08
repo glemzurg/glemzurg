@@ -3,7 +3,6 @@ package database
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,14 +51,14 @@ func (suite *PreenSuite) TestPreen() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			preened, err := preenKey(tt.key)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.preened, preened)
+				suite.Require().NoError(err)
+				suite.Equal(tt.preened, preened)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, preened)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Empty(preened)
 			}
 		})
 		if !pass {

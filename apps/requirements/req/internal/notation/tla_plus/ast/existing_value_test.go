@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,18 +16,18 @@ type ExistingValueSuite struct {
 
 func (suite *ExistingValueSuite) TestString() {
 	e := &ExistingValue{}
-	assert.Equal(suite.T(), `@`, e.String())
+	suite.Equal(`@`, e.String())
 }
 
-func (suite *ExistingValueSuite) TestAscii() {
+func (suite *ExistingValueSuite) TestASCII() {
 	e := &ExistingValue{}
-	assert.Equal(suite.T(), `@`, e.Ascii())
+	suite.Equal(`@`, e.ASCII())
 }
 
 func (suite *ExistingValueSuite) TestValidate() {
 	e := &ExistingValue{}
 	err := e.Validate()
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *ExistingValueSuite) TestExpressionNode() {

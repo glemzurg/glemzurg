@@ -2,13 +2,13 @@ package ast
 
 import "bytes"
 
-// Membership operators
+// Membership operators.
 const (
 	MembershipOperatorIn    = "∈"
 	MembershipOperatorNotIn = "∉"
 )
 
-var membershipAscii = map[string]string{
+var membershipASCII = map[string]string{
 	MembershipOperatorIn:    `\in`,
 	MembershipOperatorNotIn: `\notin`,
 }
@@ -30,11 +30,11 @@ func (m *Membership) String() (value string) {
 	return out.String()
 }
 
-func (m *Membership) Ascii() (value string) {
+func (m *Membership) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(m.Left.Ascii())
-	out.WriteString(" " + membershipAscii[m.Operator] + " ")
-	out.WriteString(m.Right.Ascii())
+	out.WriteString(m.Left.ASCII())
+	out.WriteString(" " + membershipASCII[m.Operator] + " ")
+	out.WriteString(m.Right.ASCII())
 	return out.String()
 }
 
@@ -52,5 +52,6 @@ func (m *Membership) Validate() error {
 }
 
 // LogicMembership is an alias for backwards compatibility.
+//
 // Deprecated: Use Membership instead.
 type LogicMembership = Membership

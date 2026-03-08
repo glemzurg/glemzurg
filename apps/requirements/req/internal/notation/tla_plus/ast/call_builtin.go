@@ -7,7 +7,7 @@ import (
 
 // BuiltinCall represents a call to a builtin function.
 // Pattern: _Module!Function(args...)
-// Examples: _Seq!Head(tuple), _Bags!CopiesIn(elem, bag)
+// Examples: _Seq!Head(tuple), _Bags!CopiesIn(elem, bag).
 type BuiltinCall struct {
 	Name string       `validate:"required"` // e.g., "_Seq!Head"
 	Args []Expression `validate:"required"` // Arguments (can be empty slice)
@@ -29,7 +29,7 @@ func (b *BuiltinCall) String() string {
 	return out.String()
 }
 
-func (b *BuiltinCall) Ascii() string {
+func (b *BuiltinCall) ASCII() string {
 	var out bytes.Buffer
 	out.WriteString(b.Name)
 	out.WriteString("(")
@@ -37,7 +37,7 @@ func (b *BuiltinCall) Ascii() string {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(arg.Ascii())
+		out.WriteString(arg.ASCII())
 	}
 	out.WriteString(")")
 	return out.String()
@@ -49,10 +49,10 @@ func (b *BuiltinCall) Validate() error {
 	}
 	for i, arg := range b.Args {
 		if arg == nil {
-			return fmt.Errorf("Args[%d]: is nil", i)
+			return fmt.Errorf("args[%d]: is nil", i)
 		}
 		if err := arg.Validate(); err != nil {
-			return fmt.Errorf("Args[%d]: %w", i, err)
+			return fmt.Errorf("args[%d]: %w", i, err)
 		}
 	}
 	return nil

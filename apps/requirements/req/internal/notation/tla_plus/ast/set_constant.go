@@ -14,5 +14,5 @@ type SetConstant struct {
 
 func (s *SetConstant) expressionNode()        {}
 func (s *SetConstant) String() (value string) { return s.Value }
-func (s *SetConstant) Ascii() (value string)  { return s.String() }
+func (s *SetConstant) ASCII() (value string)  { return s.String() }
 func (s *SetConstant) Validate() error        { return _validate.Struct(s) }

@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -48,9 +49,8 @@ func scanStateAction(scanner Scanner, stateKeyPtr *identity.Key, stateAction *mo
 	return nil
 }
 
-// LoadStateAction loads a stateAction from the database
+// LoadStateAction loads a stateAction from the database.
 func LoadStateAction(dbOrTx DbOrTx, modelKey string, stateActionKey identity.Key) (stateKey identity.Key, stateAction model_state.StateAction, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -89,9 +89,8 @@ func AddStateAction(dbOrTx DbOrTx, modelKey string, stateKey identity.Key, state
 
 // UpdateStateAction updates a stateAction in the database.
 func UpdateStateAction(dbOrTx DbOrTx, modelKey string, stateKey identity.Key, stateAction model_state.StateAction) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			state_action
 		SET
@@ -117,9 +116,8 @@ func UpdateStateAction(dbOrTx DbOrTx, modelKey string, stateKey identity.Key, st
 
 // RemoveStateAction deletes a stateAction from the database.
 func RemoveStateAction(dbOrTx DbOrTx, modelKey string, stateKey identity.Key, stateActionKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			state_action
 		WHERE
@@ -138,9 +136,8 @@ func RemoveStateAction(dbOrTx DbOrTx, modelKey string, stateKey identity.Key, st
 	return nil
 }
 
-// QueryStateActions loads all stateAction from the database
+// QueryStateActions loads all stateAction from the database.
 func QueryStateActions(dbOrTx DbOrTx, modelKey string) (stateActions map[identity.Key][]model_state.StateAction, err error) {
-
 	stateActions = make(map[identity.Key][]model_state.StateAction)
 
 	// Query the database.
@@ -185,22 +182,23 @@ func AddStateActions(dbOrTx DbOrTx, modelKey string, stateActions map[identity.K
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO state_action (model_key, state_key, state_action_key, action_key, action_when) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO state_action (model_key, state_key, state_action_key, action_key, action_when) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for stateKey, saList := range stateActions {
 		for _, sa := range saList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
 			args = append(args, modelKey, stateKey.String(), sa.Key.String(), sa.ActionKey.String(), sa.When)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

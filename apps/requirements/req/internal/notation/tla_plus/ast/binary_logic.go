@@ -9,7 +9,7 @@ const (
 	LogicOperatorEquiv   = "≡"
 )
 
-var binaryLogicAscii = map[string]string{
+var binaryLogicASCII = map[string]string{
 	LogicOperatorAnd:     `/\`,
 	LogicOperatorOr:      `\/`,
 	LogicOperatorImplies: `=>`,
@@ -19,8 +19,8 @@ var binaryLogicAscii = map[string]string{
 // BinaryLogic is a binary logic expression (∧, ∨, ⇒, ≡).
 type BinaryLogic struct {
 	Operator string     `validate:"required,oneof=∧ ∨ ⇒ ≡"` // The logic operator: ∧, ∨, ⇒, ≡
-	Left     Expression `validate:"required"`                 // Must be Boolean
-	Right    Expression `validate:"required"`                 // Must be Boolean
+	Left     Expression `validate:"required"`               // Must be Boolean
+	Right    Expression `validate:"required"`               // Must be Boolean
 }
 
 func (b *BinaryLogic) expressionNode() {}
@@ -33,11 +33,11 @@ func (b *BinaryLogic) String() (value string) {
 	return out.String()
 }
 
-func (b *BinaryLogic) Ascii() (value string) {
+func (b *BinaryLogic) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(b.Left.Ascii())
-	out.WriteString(" " + binaryLogicAscii[b.Operator] + " ")
-	out.WriteString(b.Right.Ascii())
+	out.WriteString(b.Left.ASCII())
+	out.WriteString(" " + binaryLogicASCII[b.Operator] + " ")
+	out.WriteString(b.Right.ASCII())
 	return out.String()
 }
 
@@ -55,5 +55,6 @@ func (b *BinaryLogic) Validate() error {
 }
 
 // LogicInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryLogic instead.
 type LogicInfixExpression = BinaryLogic

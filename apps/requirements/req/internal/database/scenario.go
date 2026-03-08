@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -40,9 +41,8 @@ func scanScenario(scanner Scanner, useCaseKeyPtr *identity.Key, scenario *model_
 	return nil
 }
 
-// LoadScenario loads a scenario from the database
+// LoadScenario loads a scenario from the database.
 func LoadScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (useCaseKey identity.Key, scenario model_scenario.Scenario, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -81,9 +81,8 @@ func AddScenario(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, scenar
 
 // UpdateScenario updates a scenario in the database.
 func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scenario) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			scenario
 		SET
@@ -106,9 +105,8 @@ func UpdateScenario(dbOrTx DbOrTx, modelKey string, scenario model_scenario.Scen
 
 // RemoveScenario deletes a scenario from the database.
 func RemoveScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			scenario
 		WHERE
@@ -126,7 +124,6 @@ func RemoveScenario(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key) (e
 
 // QueryScenarios queries all scenarios for a model.
 func QueryScenarios(dbOrTx DbOrTx, modelKey string) (scenarios map[identity.Key][]model_scenario.Scenario, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -173,22 +170,23 @@ func AddScenarios(dbOrTx DbOrTx, modelKey string, scenarios map[identity.Key][]m
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO scenario (model_key, scenario_key, name, use_case_key, details) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for useCaseKey, scenList := range scenarios {
 		for _, scenario := range scenList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
 			args = append(args, modelKey, scenario.Key.String(), scenario.Name, useCaseKey.String(), scenario.Details)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

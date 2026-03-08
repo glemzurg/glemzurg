@@ -24,8 +24,8 @@ func NewLivenessChecker(catalog *ClassCatalog) *LivenessChecker {
 }
 
 // Check performs all liveness checks against a completed simulation result.
-func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationList {
-	var violations invariants.ViolationList
+func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationErrors {
+	var violations invariants.ViolationErrors
 	violations = append(violations, lc.checkClassInstantiation(result)...)
 	violations = append(violations, lc.checkAttributeWriteCoverage(result)...)
 	violations = append(violations, lc.checkAssociationCoverage(result)...)
@@ -34,11 +34,11 @@ func (lc *LivenessChecker) Check(result *SimulationResult) invariants.ViolationL
 
 // checkClassInstantiation verifies every simulatable class had at least
 // one instance created during the simulation.
-func (lc *LivenessChecker) checkClassInstantiation(result *SimulationResult) invariants.ViolationList {
+func (lc *LivenessChecker) checkClassInstantiation(result *SimulationResult) invariants.ViolationErrors {
 	instantiated := make(map[identity.Key]bool)
 	collectInstantiatedClasses(result.Steps, instantiated)
 
-	var violations invariants.ViolationList
+	var violations invariants.ViolationErrors
 	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
 		if !instantiated[classInfo.ClassKey] {
 			violations = append(violations, invariants.NewLivenessClassNotInstantiatedViolation(
@@ -65,11 +65,11 @@ func collectInstantiatedClasses(steps []*SimulationStep, out map[identity.Key]bo
 
 // checkAttributeWriteCoverage verifies every non-derived attribute of each
 // in-scope class was written at least once during the simulation.
-func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult) invariants.ViolationList {
+func (lc *LivenessChecker) checkAttributeWriteCoverage(result *SimulationResult) invariants.ViolationErrors {
 	written := make(map[identity.Key]map[string]bool)
 	collectWrittenAttributes(result.Steps, written)
 
-	var violations invariants.ViolationList
+	var violations invariants.ViolationErrors
 	for _, classInfo := range lc.catalog.AllSimulatableClasses() {
 		classWritten := written[classInfo.ClassKey]
 
@@ -129,7 +129,7 @@ func recordPrimedWrites(classKey identity.Key, assignments map[state.InstanceID]
 
 // checkAssociationCoverage verifies every in-scope association had at
 // least one link created during the simulation.
-func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) invariants.ViolationList {
+func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) invariants.ViolationErrors {
 	if result.FinalState == nil {
 		return nil
 	}
@@ -137,7 +137,7 @@ func (lc *LivenessChecker) checkAssociationCoverage(result *SimulationResult) in
 	// Get all association keys that have at least one link in the final state.
 	linkedAssocs := result.FinalState.Links().AllAssociationKeys()
 
-	var violations invariants.ViolationList
+	var violations invariants.ViolationErrors
 	for _, assocInfo := range lc.catalog.AllAssociations() {
 		assocKeyStr := evaluator.AssociationKey(assocInfo.Association.Key.String())
 		if !linkedAssocs[assocKeyStr] {

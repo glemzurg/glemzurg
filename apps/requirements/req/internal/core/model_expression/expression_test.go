@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -77,13 +76,13 @@ func (s *ExpressionTestSuite) TestValidateLiterals() {
 		{testName: "error set constant invalid", expr: &SetConstant{Kind: "invalid"}, errstr: "Kind"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -106,13 +105,13 @@ func (s *ExpressionTestSuite) TestValidateReferences() {
 		{testName: "error next state nil", expr: &NextState{}, errstr: "Expr: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -147,13 +146,13 @@ func (s *ExpressionTestSuite) TestValidateBinaryOps() {
 		{testName: "error membership nil set", expr: &Membership{Element: left}, errstr: "Set: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -171,13 +170,13 @@ func (s *ExpressionTestSuite) TestValidateUnaryOps() {
 		{testName: "error not nil", expr: &Not{}, errstr: "Expr: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -205,13 +204,13 @@ func (s *ExpressionTestSuite) TestValidateCollections() {
 		{testName: "valid tuple concat", expr: &TupleConcat{Operands: []Expression{&TupleLiteral{Elements: []Expression{idx}}, &TupleLiteral{Elements: []Expression{idx}}}}},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -237,13 +236,13 @@ func (s *ExpressionTestSuite) TestValidateControlFlow() {
 		{testName: "error case nil result", expr: &Case{Branches: []CaseBranch{{Condition: cond}}}, errstr: "Result: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -274,13 +273,13 @@ func (s *ExpressionTestSuite) TestValidateQuantifiers() {
 		{testName: "error set range nil end", expr: &SetRange{Start: start}, errstr: "End: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -307,13 +306,13 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 		{testName: "error named set ref empty key", expr: &NamedSetRef{}, errstr: "SetKey"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.expr.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -321,9 +320,9 @@ func (s *ExpressionTestSuite) TestValidateCalls() {
 
 func (s *ExpressionTestSuite) TestValidateExpression() {
 	// Test the ValidateExpression helper function.
-	s.NoError(ValidateExpression(nil))
-	s.NoError(ValidateExpression(&BoolLiteral{Value: true}))
-	s.Error(ValidateExpression(&RationalLiteral{}))
+	s.Require().NoError(ValidateExpression(nil))
+	s.Require().NoError(ValidateExpression(&BoolLiteral{Value: true}))
+	s.Require().Error(ValidateExpression(&RationalLiteral{}))
 }
 
 func (s *ExpressionTestSuite) TestNodeType() {
@@ -352,6 +351,6 @@ func (s *ExpressionTestSuite) TestRecursiveValidation() {
 		},
 	}
 	err := tree.Validate()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "RationalLiteral.Value: is required")
 }

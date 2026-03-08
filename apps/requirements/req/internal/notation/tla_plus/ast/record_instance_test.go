@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -107,16 +106,16 @@ func (suite *RecordInstanceSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			r := &RecordInstance{
 				Bindings: tt.bindings,
 			}
-			assert.Equal(t, tt.expected, r.String())
+			suite.Equal(tt.expected, r.String())
 		})
 	}
 }
 
-func (suite *RecordInstanceSuite) TestAscii() {
+func (suite *RecordInstanceSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		bindings []*FieldBinding
@@ -166,11 +165,11 @@ func (suite *RecordInstanceSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			r := &RecordInstance{
 				Bindings: tt.bindings,
 			}
-			assert.Equal(t, tt.expected, r.Ascii())
+			suite.Equal(tt.expected, r.ASCII())
 		})
 	}
 }
@@ -231,7 +230,7 @@ func (suite *RecordInstanceSuite) TestValidate() {
 			r: &RecordInstance{
 				Bindings: []*FieldBinding{nil},
 			},
-			errstr: `Bindings[0]`,
+			errstr: `bindings[0]`,
 		},
 		{
 			testName: `error nil field in binding`,
@@ -271,12 +270,12 @@ func (suite *RecordInstanceSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.r.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -295,4 +294,3 @@ func (suite *RecordInstanceSuite) TestExpressionNode() {
 	// This should compile and not panic.
 	r.expressionNode()
 }
-

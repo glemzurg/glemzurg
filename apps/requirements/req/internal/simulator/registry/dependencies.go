@@ -1,5 +1,7 @@
 package registry
 
+import "slices"
+
 // AddDependency records that 'from' depends on 'to'.
 // This is called during type checking when a call expression is resolved.
 func (r *Registry) AddDependency(from, to DefinitionKey) {
@@ -162,7 +164,7 @@ func (r *Registry) InvalidateDefinition(key DefinitionKey) *InvalidationSet {
 	}
 
 	// Clear typed body and increment version
-	def.TypedBody = nil
+	def.Validated = false
 	def.ReturnType = nil
 	def.Version++
 	r.version++
@@ -191,7 +193,7 @@ func (r *Registry) InvalidateDefinition(key DefinitionKey) *InvalidationSet {
 	// Invalidate all dependents
 	for _, depKey := range dependents {
 		if depDef, ok := r.definitions[depKey]; ok {
-			depDef.TypedBody = nil
+			depDef.Validated = false
 			depDef.ReturnType = nil
 			depDef.Version++
 			result.versions[depKey] = depDef.Version
@@ -215,12 +217,7 @@ func (r *Registry) InvalidateMultiple(keys []DefinitionKey) *InvalidationSet {
 // Helper functions
 
 func containsKey(slice []DefinitionKey, key DefinitionKey) bool {
-	for _, k := range slice {
-		if k == key {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, key)
 }
 
 func removeKey(slice []DefinitionKey, key DefinitionKey) []DefinitionKey {

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 )
@@ -60,14 +59,14 @@ func (suite *KeySuite) TestNewKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := newKey(tt.parentKey, tt.keyType, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -191,14 +190,14 @@ func (suite *KeySuite) TestParseKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := ParseKey(tt.input)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -272,8 +271,8 @@ func (suite *KeySuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.key.String())
+		pass := suite.Run(tt.testName, func() {
+			suite.Equal(tt.expected, tt.key.String())
 		})
 		if !pass {
 			break
@@ -574,12 +573,12 @@ func (suite *KeySuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.key.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -1333,12 +1332,12 @@ func (suite *KeySuite) TestValidateParent() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			err := tt.key.ValidateParent(tt.parent)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 		if !pass {
@@ -1390,9 +1389,9 @@ func (suite *KeySuite) TestHasNoParent() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			result := tt.key.HasNoParent()
-			assert.Equal(t, tt.expected, result)
+			suite.Equal(tt.expected, result)
 		})
 		if !pass {
 			break
@@ -1488,9 +1487,9 @@ func (suite *KeySuite) TestIsParent() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			result := tt.key.IsParent(tt.parentKey)
-			assert.Equal(t, tt.expected, result)
+			suite.Equal(tt.expected, result)
 		})
 		if !pass {
 			break
@@ -1556,24 +1555,24 @@ func (suite *KeySuite) TestParseKeyRoundTrip() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			// Create the key.
 			originalKey, err := tt.createKey()
-			assert.NoError(t, err, "Failed to create key for: %s", tt.description)
+			suite.Require().NoError(err, "Failed to create key for: %s", tt.description)
 
 			// Convert to string.
 			keyStr := originalKey.String()
-			assert.NotEmpty(t, keyStr, "Key string should not be empty for: %s", tt.description)
+			suite.NotEmpty(keyStr, "Key string should not be empty for: %s", tt.description)
 
 			// Parse the string back.
 			parsedKey, err := ParseKey(keyStr)
-			assert.NoError(t, err, "Failed to parse key string '%s' for: %s", keyStr, tt.description)
+			suite.Require().NoError(err, "Failed to parse key string '%s' for: %s", keyStr, tt.description)
 
 			// Verify the parsed key matches the original.
-			assert.Equal(t, originalKey.ParentKey, parsedKey.ParentKey, "ParentKey mismatch for: %s", tt.description)
-			assert.Equal(t, originalKey.KeyType, parsedKey.KeyType, "KeyType mismatch for: %s", tt.description)
-			assert.Equal(t, originalKey.SubKey, parsedKey.SubKey, "SubKey mismatch for: %s", tt.description)
-			assert.Equal(t, originalKey.String(), parsedKey.String(), "String() mismatch for: %s", tt.description)
+			suite.Equal(originalKey.ParentKey, parsedKey.ParentKey, "ParentKey mismatch for: %s", tt.description)
+			suite.Equal(originalKey.KeyType, parsedKey.KeyType, "KeyType mismatch for: %s", tt.description)
+			suite.Equal(originalKey.SubKey, parsedKey.SubKey, "SubKey mismatch for: %s", tt.description)
+			suite.Equal(originalKey.String(), parsedKey.String(), "String() mismatch for: %s", tt.description)
 		})
 		if !pass {
 			break
@@ -1627,24 +1626,24 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 		{testName: "class invariant key", key: classInvariantKey},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			// Marshal to JSON.
 			jsonBytes, err := json.Marshal(tt.key)
-			assert.NoError(t, err, "Failed to marshal key to JSON")
+			suite.Require().NoError(err, "Failed to marshal key to JSON")
 
 			// Verify the JSON is a string (quoted).
 			jsonStr := string(jsonBytes)
-			assert.True(t, len(jsonStr) >= 2 && jsonStr[0] == '"' && jsonStr[len(jsonStr)-1] == '"',
+			suite.True(len(jsonStr) >= 2 && jsonStr[0] == '"' && jsonStr[len(jsonStr)-1] == '"',
 				"JSON should be a quoted string, got: %s", jsonStr)
 
 			// Unmarshal back.
 			var parsedKey Key
 			err = json.Unmarshal(jsonBytes, &parsedKey)
-			assert.NoError(t, err, "Failed to unmarshal key from JSON")
+			suite.Require().NoError(err, "Failed to unmarshal key from JSON")
 
 			// Verify the parsed key matches the original.
-			assert.Equal(t, tt.key, parsedKey, "Round-trip key mismatch")
-			assert.Equal(t, tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
+			suite.Equal(tt.key, parsedKey, "Round-trip key mismatch")
+			suite.Equal(tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
 		})
 		if !pass {
 			break
@@ -1656,8 +1655,8 @@ func (suite *KeySuite) TestJSONRoundTrip() {
 func (suite *KeySuite) TestJSONUnmarshalEmpty() {
 	var key Key
 	err := json.Unmarshal([]byte(`""`), &key)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Key{}, key)
+	suite.Require().NoError(err)
+	suite.Equal(Key{}, key)
 }
 
 // TestJSONUnmarshalInvalid tests that unmarshalling invalid JSON or key strings returns errors.
@@ -1684,10 +1683,10 @@ func (suite *KeySuite) TestJSONUnmarshalInvalid() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			var key Key
 			err := json.Unmarshal([]byte(tt.jsonStr), &key)
-			assert.ErrorContains(t, err, tt.errstr)
+			suite.Require().ErrorContains(err, tt.errstr)
 		})
 		if !pass {
 			break
@@ -1742,22 +1741,22 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 		{testName: "class invariant key", key: classInvariantKey},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			// Marshal to text.
 			textBytes, err := tt.key.MarshalText()
-			assert.NoError(t, err, "Failed to marshal key to text")
+			suite.Require().NoError(err, "Failed to marshal key to text")
 
 			// Verify the text matches the String() output.
-			assert.Equal(t, tt.key.String(), string(textBytes), "MarshalText should return String()")
+			suite.Equal(tt.key.String(), string(textBytes), "MarshalText should return String()")
 
 			// Unmarshal back.
 			var parsedKey Key
 			err = parsedKey.UnmarshalText(textBytes)
-			assert.NoError(t, err, "Failed to unmarshal key from text")
+			suite.Require().NoError(err, "Failed to unmarshal key from text")
 
 			// Verify the parsed key matches the original.
-			assert.Equal(t, tt.key, parsedKey, "Round-trip key mismatch")
-			assert.Equal(t, tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
+			suite.Equal(tt.key, parsedKey, "Round-trip key mismatch")
+			suite.Equal(tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
 		})
 		if !pass {
 			break
@@ -1769,8 +1768,8 @@ func (suite *KeySuite) TestTextMarshalRoundTrip() {
 func (suite *KeySuite) TestTextUnmarshalEmpty() {
 	var key Key
 	err := key.UnmarshalText([]byte(""))
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Key{}, key)
+	suite.Require().NoError(err)
+	suite.Equal(Key{}, key)
 }
 
 // TestTextUnmarshalInvalid tests that unmarshalling invalid key strings returns errors.
@@ -1792,10 +1791,10 @@ func (suite *KeySuite) TestTextUnmarshalInvalid() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			var key Key
 			err := key.UnmarshalText([]byte(tt.text))
-			assert.ErrorContains(t, err, tt.errstr)
+			suite.Require().ErrorContains(err, tt.errstr)
 		})
 		if !pass {
 			break
@@ -1822,19 +1821,19 @@ func (suite *KeySuite) TestJSONMapKeyRoundTrip() {
 
 	// Marshal the map to JSON.
 	jsonBytes, err := json.Marshal(originalMap)
-	assert.NoError(suite.T(), err, "Failed to marshal map to JSON")
+	suite.Require().NoError(err, "Failed to marshal map to JSON")
 
 	// Unmarshal back.
 	var parsedMap map[Key]string
 	err = json.Unmarshal(jsonBytes, &parsedMap)
-	assert.NoError(suite.T(), err, "Failed to unmarshal map from JSON")
+	suite.Require().NoError(err, "Failed to unmarshal map from JSON")
 
 	// Verify the parsed map matches the original.
-	assert.Equal(suite.T(), len(originalMap), len(parsedMap), "Map length mismatch")
+	suite.Len(parsedMap, len(originalMap), "Map length mismatch")
 	for key, value := range originalMap {
 		parsedValue, ok := parsedMap[key]
-		assert.True(suite.T(), ok, "Key not found in parsed map: %s", key.String())
-		assert.Equal(suite.T(), value, parsedValue, "Value mismatch for key: %s", key.String())
+		suite.True(ok, "Key not found in parsed map: %s", key.String())
+		suite.Equal(value, parsedValue, "Value mismatch for key: %s", key.String())
 	}
 }
 
@@ -1880,19 +1879,19 @@ func (suite *KeySuite) TestYAMLRoundTrip() {
 		{testName: "class association key", key: classAssocKey},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			// Marshal to YAML.
 			yamlBytes, err := yaml.Marshal(tt.key)
-			assert.NoError(t, err, "Failed to marshal key to YAML")
+			suite.Require().NoError(err, "Failed to marshal key to YAML")
 
 			// Unmarshal back.
 			var parsedKey Key
 			err = yaml.Unmarshal(yamlBytes, &parsedKey)
-			assert.NoError(t, err, "Failed to unmarshal key from YAML")
+			suite.Require().NoError(err, "Failed to unmarshal key from YAML")
 
 			// Verify the parsed key matches the original.
-			assert.Equal(t, tt.key, parsedKey, "Round-trip key mismatch")
-			assert.Equal(t, tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
+			suite.Equal(tt.key, parsedKey, "Round-trip key mismatch")
+			suite.Equal(tt.key.String(), parsedKey.String(), "String() mismatch after round-trip")
 		})
 		if !pass {
 			break
@@ -1904,8 +1903,8 @@ func (suite *KeySuite) TestYAMLRoundTrip() {
 func (suite *KeySuite) TestYAMLUnmarshalEmpty() {
 	var key Key
 	err := yaml.Unmarshal([]byte(`""`), &key)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Key{}, key)
+	suite.Require().NoError(err)
+	suite.Equal(Key{}, key)
 }
 
 // TestYAMLUnmarshalInvalid tests that unmarshalling invalid YAML key strings returns errors.
@@ -1927,10 +1926,10 @@ func (suite *KeySuite) TestYAMLUnmarshalInvalid() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			var key Key
 			err := yaml.Unmarshal([]byte(tt.yamlStr), &key)
-			assert.ErrorContains(t, err, tt.errstr)
+			suite.Require().ErrorContains(err, tt.errstr)
 		})
 		if !pass {
 			break

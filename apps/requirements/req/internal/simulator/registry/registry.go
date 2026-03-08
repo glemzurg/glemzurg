@@ -14,8 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/typechecker"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 )
 
@@ -131,20 +130,15 @@ type Parameter struct {
 type Definition struct {
 	Key        DefinitionKey
 	Kind       DefinitionKind
-	Scope      ScopePath              // Full path (empty for global)
-	LocalName  string                 // Just "Func"
-	Body       ast.Expression         // Untyped AST
-	Parameters []Parameter            // Ordered list of typed parameters (can be empty)
-	ReturnType types.Type             // Inferred return type (nil until type-checked)
-	TypedBody  *typechecker.TypedNode // Cached typed AST (nil = needs recheck)
-	Version    uint64                 // Incremented on modification
-	DependsOn  []DefinitionKey        // Definitions this depends on
-	DependedBy []DefinitionKey        // Definitions that depend on this
-}
-
-// NeedsTypeCheck returns true if the definition needs type checking.
-func (d *Definition) NeedsTypeCheck() bool {
-	return d.TypedBody == nil
+	Scope      ScopePath       // Full path (empty for global)
+	LocalName  string          // Just "Func"
+	Body       me.Expression   // IR expression body
+	Parameters []Parameter     // Ordered list of typed parameters (can be empty)
+	ReturnType types.Type      // Inferred return type (nil until validated)
+	Validated  bool            // True if definition has been validated
+	Version    uint64          // Incremented on modification
+	DependsOn  []DefinitionKey // Definitions this depends on
+	DependedBy []DefinitionKey // Definitions that depend on this
 }
 
 // Registry manages all custom TLA+ definitions with scoped resolution.
@@ -167,7 +161,7 @@ func NewRegistry() *Registry {
 // The key will be Domain!Subdomain!Class!name.
 func (r *Registry) RegisterClassFunction(
 	domain, subdomain, class, name string,
-	body ast.Expression,
+	body me.Expression,
 	params []Parameter,
 ) (*Definition, error) {
 	scope, err := ParseScopePath(domain, subdomain, class)
@@ -208,7 +202,7 @@ func (r *Registry) RegisterClassFunction(
 // The key will be _name.
 func (r *Registry) RegisterGlobalFunction(
 	name string,
-	body ast.Expression,
+	body me.Expression,
 	params []Parameter,
 ) (*Definition, error) {
 	if name == "" {
@@ -262,7 +256,7 @@ func (r *Registry) GetGlobal(localName string) (*Definition, bool) {
 
 // Update updates an existing definition's body and parameters.
 // This clears the typed body and increments the version, requiring re-type-checking.
-func (r *Registry) Update(key DefinitionKey, body ast.Expression, params []Parameter) error {
+func (r *Registry) Update(key DefinitionKey, body me.Expression, params []Parameter) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -273,7 +267,7 @@ func (r *Registry) Update(key DefinitionKey, body ast.Expression, params []Param
 
 	def.Body = body
 	def.Parameters = params
-	def.TypedBody = nil
+	def.Validated = false
 	def.ReturnType = nil
 	def.Version++
 	r.version++

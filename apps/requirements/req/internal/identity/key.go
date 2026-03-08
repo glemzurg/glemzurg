@@ -9,9 +9,9 @@ import (
 
 // Key uniquely identifies an entity in the model.
 type Key struct {
-	ParentKey string `validate:"-"`                                                                                                                                                                                                                                                                                                    // The parent entity's key.
+	ParentKey string `validate:"-"`                                                                                                                                                                                                                                                                                                                    // The parent entity's key.
 	KeyType   string `validate:"required,oneof=actor ageneralization domain dassociation gfunc invariant nset subdomain usecase ucgeneralization class attribute aderive ainvariant state event guard action cinvariant arequire aguarantee asafety query qrequire qguarantee transition cgeneralization scenario sobject sstep cassociation saction"` // The type of the key, e.g., "class", "association".
-	SubKey    string `validate:"required"`                                                                                                                                                                                                                                                                                             // The unique key of the child entity within its parent and type.
+	SubKey    string `validate:"required"`                                                                                                                                                                                                                                                                                                             // The unique key of the child entity within its parent and type.
 	SubKey2   string // Optional secondary key (e.g., for associations between two domains). Empty string means not set.
 	SubKey3   string // Optional tertiary key (e.g., for association names). Empty string means not set.
 }
@@ -123,6 +123,8 @@ func (k *Key) GetParentKey() string {
 // ValidateParent validates that this key is correctly constructed based on the expected parent.
 // The parent may be nil if this key type should have no parent (e.g., actor, domain).
 // For class associations, the parent is determined by parsing the key structure.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func (k *Key) ValidateParent(parent *Key) error {
 	// First validate the key itself.
 	if err := k.Validate(); err != nil {
@@ -342,104 +344,115 @@ func (k *Key) HasNoParent() bool {
 	return k.ParentKey == ""
 }
 
+// ParseKey parses a string representation back into a Key.
 func ParseKey(s string) (key Key, err error) {
+	parts, err := splitKeyParts(s)
+	if err != nil {
+		return Key{}, err
+	}
+
+	// Check if this is a domain association key (root-level with subKey2).
+	// Format: dassociation/problemSubKey/solutionSubKey
+	if len(parts) == 3 && parts[0] == KEY_TYPE_DOMAIN_ASSOCIATION {
+		return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, parts[1], parts[2])
+	}
+
+	// Try parsing as a class association key.
+	if k, ok, err := parseClassAssociationKey(parts); ok || err != nil {
+		return k, err
+	}
+
+	// Try parsing as a multi-part key type (state action or transition).
+	if k, ok, err := parseMultiPartKey(parts); ok || err != nil {
+		return k, err
+	}
+
+	// Default: simple two-part key at the end.
+	keyType := parts[len(parts)-2]
+	subKey := parts[len(parts)-1]
+	parentParts := parts[:len(parts)-2]
+	parentKey := strings.Join(parentParts, "/")
+
+	return newKey(parentKey, keyType, subKey)
+}
+
+// splitKeyParts splits a key string into trimmed parts and validates it has at least 2 parts.
+func splitKeyParts(s string) ([]string, error) {
 	if s == "" {
-		return Key{}, errors.New("invalid key format")
+		return nil, errors.New("invalid key format")
 	}
 	parts := strings.Split(s, "/")
 	for i := range parts {
 		parts[i] = strings.TrimSpace(parts[i])
 	}
 	if len(parts) < 2 {
-		return Key{}, errors.New("invalid key format")
+		return nil, errors.New("invalid key format")
 	}
+	return parts, nil
+}
 
-	// Check if this is a domain association key (root-level with subKey2).
-	// Format: dassociation/problemSubKey/solutionSubKey
-	// For domain association: dassociation/problem1/solution1
-	keyType := parts[len(parts)-2]
-
-	// If this looks like a domain association with subKey2, handle specially
-	if len(parts) == 3 && parts[0] == KEY_TYPE_DOMAIN_ASSOCIATION {
-		subKey := parts[1]
-		subKey2Val := parts[2]
-		return newKeyWithSubKey2("", KEY_TYPE_DOMAIN_ASSOCIATION, subKey, subKey2Val)
-	}
-
-	// Check if this is a class association with subKey2 and subKey3.
-	// Format: parentKey/cassociation/subKey/subKey2/subKey3
-	// where subKey and subKey2 are class paths that end with "class/name", and subKey3 is the distilled name.
-	// For subdomain parent: parent/cassociation/class/class_a/class/class_b/name
-	// For domain parent: parent/cassociation/subdomain/s_a/class/c_a/subdomain/s_b/class/c_b/name
-	// For model parent: cassociation/domain/d_a/subdomain/s_a/class/c_a/domain/d_b/subdomain/s_b/class/c_b/name
-	// We need to find where "cassociation" is in the parts, find the second "class" to split, and the last part is the name.
+// parseClassAssociationKey attempts to parse a class association key from parts.
+// Returns (key, true, nil) on success, (Key{}, false, nil) if not a class association,
+// or (Key{}, false, err) on parse error.
+func parseClassAssociationKey(parts []string) (Key, bool, error) {
 	for i, part := range parts {
-		if part == KEY_TYPE_CLASS_ASSOCIATION {
-			// Found cassociation. The subKey, subKey2, and subKey3 are the remaining parts.
-			remainingParts := parts[i+1:]
-			if len(remainingParts) >= 5 { // At least: class/name/class/name/distilled_name
-				// Find all occurrences of "class" in remainingParts
-				classIndices := []int{}
-				for j, p := range remainingParts {
-					if p == KEY_TYPE_CLASS {
-						classIndices = append(classIndices, j)
-					}
-				}
-				// We need at least 2 "class" occurrences (one for each endpoint)
-				if len(classIndices) >= 2 {
-					// The first class path ends after the first "class/name" pair.
-					// The split point is the element AFTER the first class key (i.e., classIndices[0] + 2)
-					splitIdx := classIndices[0] + 2
-					// The second class path ends after the second "class/name" pair.
-					// subKey3 is the last element.
-					secondClassEndIdx := classIndices[1] + 2
-					if splitIdx < len(remainingParts) && secondClassEndIdx < len(remainingParts) {
-						subKey := strings.Join(remainingParts[:splitIdx], "/")
-						subKey2Val := strings.Join(remainingParts[splitIdx:secondClassEndIdx], "/")
-						subKey3Val := strings.Join(remainingParts[secondClassEndIdx:], "/")
-						parentParts := parts[:i]
-						parentKey := strings.Join(parentParts, "/")
-						return newKeyWithSubKey3(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2Val, subKey3Val)
-					}
-				}
-			}
+		if part != KEY_TYPE_CLASS_ASSOCIATION {
+			continue
+		}
+		remainingParts := parts[i+1:]
+		if len(remainingParts) < 5 {
 			break
 		}
+		classIndices := findClassIndices(remainingParts)
+		if len(classIndices) < 2 {
+			break
+		}
+		splitIdx := classIndices[0] + 2
+		secondClassEndIdx := classIndices[1] + 2
+		if splitIdx >= len(remainingParts) || secondClassEndIdx >= len(remainingParts) {
+			break
+		}
+		subKey := strings.Join(remainingParts[:splitIdx], "/")
+		subKey2Val := strings.Join(remainingParts[splitIdx:secondClassEndIdx], "/")
+		subKey3Val := strings.Join(remainingParts[secondClassEndIdx:], "/")
+		parentKey := strings.Join(parts[:i], "/")
+		k, err := newKeyWithSubKey3(parentKey, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2Val, subKey3Val)
+		return k, true, err
 	}
+	return Key{}, false, nil
+}
 
-	// Handle state action key type with format: parentKey/saction/when/subKey
-	for i, part := range parts {
-		if part == KEY_TYPE_STATE_ACTION && i+2 < len(parts) {
-			// Found saction. The subKey is when/subKey (the remaining parts).
-			remainingParts := parts[i+1:]
-			if len(remainingParts) >= 2 {
-				subKey := strings.Join(remainingParts, "/")
-				parentParts := parts[:i]
-				parentKey := strings.Join(parentParts, "/")
-				return newKey(parentKey, KEY_TYPE_STATE_ACTION, subKey)
-			}
+// findClassIndices returns the indices within parts where the value equals KEY_TYPE_CLASS.
+func findClassIndices(parts []string) []int {
+	var indices []int
+	for j, p := range parts {
+		if p == KEY_TYPE_CLASS {
+			indices = append(indices, j)
 		}
 	}
+	return indices
+}
 
-	// Handle transition key type with format: parentKey/transition/from/event/guard/action/to
+// parseMultiPartKey attempts to parse state action or transition keys whose subKey
+// spans multiple slash-separated segments.
+// Returns (key, true, nil) on success, (Key{}, false, nil) if not matched.
+func parseMultiPartKey(parts []string) (Key, bool, error) {
 	for i, part := range parts {
-		if part == KEY_TYPE_TRANSITION && i+5 < len(parts) {
-			// Found transition. The subKey is from/event/guard/action/to (the remaining parts).
-			remainingParts := parts[i+1:]
-			if len(remainingParts) >= 5 {
-				subKey := strings.Join(remainingParts, "/")
-				parentParts := parts[:i]
-				parentKey := strings.Join(parentParts, "/")
-				return newKey(parentKey, KEY_TYPE_TRANSITION, subKey)
-			}
+		remaining := parts[i+1:]
+		switch {
+		case part == KEY_TYPE_STATE_ACTION && len(remaining) >= 2:
+			subKey := strings.Join(remaining, "/")
+			parentKey := strings.Join(parts[:i], "/")
+			k, err := newKey(parentKey, KEY_TYPE_STATE_ACTION, subKey)
+			return k, true, err
+		case part == KEY_TYPE_TRANSITION && len(remaining) >= 5:
+			subKey := strings.Join(remaining, "/")
+			parentKey := strings.Join(parts[:i], "/")
+			k, err := newKey(parentKey, KEY_TYPE_TRANSITION, subKey)
+			return k, true, err
 		}
 	}
-
-	subKey := parts[len(parts)-1]
-	parentParts := parts[:len(parts)-2]
-	parentKey := strings.Join(parentParts, "/")
-
-	return newKey(parentKey, keyType, subKey)
+	return Key{}, false, nil
 }
 
 // MarshalJSON implements json.Marshaler for Key.
@@ -500,7 +513,7 @@ func (k *Key) UnmarshalText(data []byte) error {
 // UnmarshalYAML implements yaml.Unmarshaler for Key.
 // Only accepts fully formed key strings. Partial keys must be expanded
 // before being unmarshaled (e.g., by parser.scopeObjectKeys).
-func (k *Key) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (k *Key) UnmarshalYAML(unmarshal func(any) error) error {
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err

@@ -3,7 +3,7 @@ package ast
 import "bytes"
 
 // Assignment represents a single state assignment.
-// Pattern: identifier' = expression
+// Pattern: identifier' = expression.
 type Assignment struct {
 	Target *Identifier `validate:"required"`
 	Value  Expression  `validate:"required"`
@@ -19,11 +19,11 @@ func (a *Assignment) String() (value string) {
 	return out.String()
 }
 
-func (a *Assignment) Ascii() (value string) {
+func (a *Assignment) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(a.Target.Ascii())
+	out.WriteString(a.Target.ASCII())
 	out.WriteString("' = ")
-	out.WriteString(a.Value.Ascii())
+	out.WriteString(a.Value.ASCII())
 	return out.String()
 }
 

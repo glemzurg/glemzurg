@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -124,7 +125,6 @@ func scanStep(scanner Scanner) (row stepRow, err error) {
 
 // LoadStep loads a single step from the database.
 func LoadStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (scenarioKey identity.Key, parentStepKey *identity.Key, sortOrder int, step model_scenario.Step, err error) {
-
 	// Query the database.
 	var row stepRow
 	err = dbQueryRow(
@@ -171,7 +171,6 @@ func AddStep(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, parentSte
 
 // UpdateStep updates a step in the database.
 func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenario.Step) (err error) {
-
 	// Handle optional key pointers.
 	var leafTypePtr *string
 	if step.LeafType != nil {
@@ -212,7 +211,7 @@ func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenar
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			scenario_step
 		SET
@@ -251,9 +250,8 @@ func UpdateStep(dbOrTx DbOrTx, modelKey string, sortOrder int, step model_scenar
 
 // RemoveStep deletes a step from the database. CASCADE will delete children.
 func RemoveStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			scenario_step
 		WHERE
@@ -271,7 +269,6 @@ func RemoveStep(dbOrTx DbOrTx, modelKey string, stepKey identity.Key) (err error
 
 // QuerySteps loads all steps for a model and reconstructs them into trees keyed by scenario key.
 func QuerySteps(dbOrTx DbOrTx, modelKey string) (steps map[identity.Key]*model_scenario.Step, err error) {
-
 	// Collect all flat rows.
 	var rows []stepRow
 
@@ -310,7 +307,7 @@ func QuerySteps(dbOrTx DbOrTx, modelKey string) (steps map[identity.Key]*model_s
 	}
 
 	if len(rows) == 0 {
-		return nil, nil
+		return make(map[identity.Key]*model_scenario.Step), nil
 	}
 
 	// Build the trees from flat rows.
@@ -415,17 +412,18 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario_step (model_key, scenario_step_key, scenario_key, parent_step_key, sort_order, step_type, leaf_type, condition, description, from_object_key, to_object_key, event_key, query_key, scenario_ref_key) VALUES `
-	args := make([]interface{}, 0, len(rows)*14)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO scenario_step (model_key, scenario_step_key, scenario_key, parent_step_key, sort_order, step_type, leaf_type, condition, description, from_object_key, to_object_key, event_key, query_key, scenario_ref_key) VALUES `)
+	args := make([]any, 0, len(rows)*14)
 
 	for i, row := range rows {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 14
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
 			base+1, base+2, base+3, base+4, base+5, base+6, base+7,
-			base+8, base+9, base+10, base+11, base+12, base+13, base+14)
+			base+8, base+9, base+10, base+11, base+12, base+13, base+14))
 
 		// Handle optional key pointers.
 		var parentStepKeyPtr *string
@@ -489,7 +487,7 @@ func AddSteps(dbOrTx DbOrTx, modelKey string, rows []stepRow) (err error) {
 		)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

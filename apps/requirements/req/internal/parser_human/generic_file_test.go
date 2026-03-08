@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,32 +22,30 @@ type FileSuite struct {
 }
 
 func (suite *FileSuite) TestParseFiles() {
-
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERIC_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		var expected, actual File
 
 		actual, err := parseFile(testData.Filename, testData.Contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
-		assert.Equal(suite.T(), expected, actual, testName)
+		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
 		generated := generateFileContent(actual.Markdown, actual.UmlComment, actual.Data)
-		assert.Equal(suite.T(), testData.Contents, generated, testName)
+		suite.Equal(testData.Contents, generated, testName)
 	}
 }
 
 func (suite *FileSuite) TestParseFilesErr() {
-
 	testDataFiles, err := t_ContentsForAllMdFiles(t_GENERIC_PATH_ERR)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
@@ -57,8 +54,8 @@ func (suite *FileSuite) TestParseFilesErr() {
 		errstr := testData.Json
 
 		actual, err := parseFile(testData.Filename, testData.Contents)
-		assert.ErrorContains(suite.T(), err, errstr, testName)
-		assert.Empty(suite.T(), actual, testName)
+		suite.Require().ErrorContains(err, errstr, testName)
+		suite.Empty(actual, testName)
 	}
 }
 
@@ -103,6 +100,6 @@ func (suite *FileSuite) TestNew() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		title := extractMarkdownTitle(test.markdown)
-		assert.Equal(suite.T(), test.title, title, testName)
+		suite.Equal(test.title, title, testName)
 	}
 }

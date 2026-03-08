@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -10,7 +11,6 @@ import (
 
 // LoadClassInvariant loads a class invariant logic key from the database.
 func LoadClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
@@ -56,8 +56,7 @@ func AddClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key, lo
 
 // RemoveClassInvariant deletes a class invariant join row from the database.
 func RemoveClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			class_invariant
 		WHERE
@@ -79,7 +78,6 @@ func RemoveClassInvariant(dbOrTx DbOrTx, modelKey string, classKey identity.Key,
 // QueryClassInvariants loads all class invariant logic keys from the database,
 // grouped by class key. Within each class, results are ordered by logic sort_order.
 func QueryClassInvariants(dbOrTx DbOrTx, modelKey string) (result map[identity.Key][]identity.Key, err error) {
-
 	result = make(map[identity.Key][]identity.Key)
 
 	err = dbQuery(
@@ -130,23 +128,24 @@ func AddClassInvariants(dbOrTx DbOrTx, modelKey string, classInvariants map[iden
 		return nil
 	}
 
-	query := `INSERT INTO class_invariant (model_key, class_key, logic_key) VALUES `
-	args := make([]interface{}, 0, totalRows*3)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO class_invariant (model_key, class_key, logic_key) VALUES `)
+	args := make([]any, 0, totalRows*3)
 	first := true
 	argIdx := 0
 	for classKey, logicKeys := range classInvariants {
 		for _, logicKey := range logicKeys {
 			if !first {
-				query += ", "
+				qb.WriteString(", ")
 			}
 			first = false
-			query += fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3)
+			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3))
 			args = append(args, modelKey, classKey.String(), logicKey.String())
 			argIdx += 3
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

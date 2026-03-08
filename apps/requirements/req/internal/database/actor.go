@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -54,9 +55,8 @@ func scanActor(scanner Scanner, actor *model_actor.Actor) (err error) {
 	return nil
 }
 
-// LoadActor loads a actor from the database
+// LoadActor loads a actor from the database.
 func LoadActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor model_actor.Actor, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -96,7 +96,6 @@ func AddActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err erro
 
 // UpdateActor updates a actor in the database.
 func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err error) {
-
 	// We may or may not have optional key pointers.
 	var superclassOfKeyPtr *string
 	if actor.SuperclassOfKey != nil {
@@ -110,7 +109,7 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			actor
 		SET
@@ -141,9 +140,8 @@ func UpdateActor(dbOrTx DbOrTx, modelKey string, actor model_actor.Actor) (err e
 
 // RemoveActor deletes a actor from the database.
 func RemoveActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				actor
 			WHERE
@@ -159,9 +157,8 @@ func RemoveActor(dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (err err
 	return nil
 }
 
-// QueryActors loads all actors from the database
+// QueryActors loads all actors from the database.
 func QueryActors(dbOrTx DbOrTx, modelKey string) (actors []model_actor.Actor, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -201,14 +198,15 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO actor (model_key, actor_key, name, details, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(actors)*8)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO actor (model_key, actor_key, name, details, actor_type, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(actors)*8)
 	for i, actor := range actors {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 8
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -224,7 +222,7 @@ func AddActors(dbOrTx DbOrTx, modelKey string, actors []model_actor.Actor) (err 
 		args = append(args, modelKey, actor.Key.String(), actor.Name, actor.Details, actor.Type, superclassOfKeyPtr, subclassOfKeyPtr, actor.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

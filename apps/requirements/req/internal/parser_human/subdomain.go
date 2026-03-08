@@ -1,14 +1,13 @@
 package parser_human
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
 
 func parseSubdomain(domainKey identity.Key, subdomainSubKey, filename, contents string) (subdomain model_domain.Subdomain, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_domain.Subdomain{}, err

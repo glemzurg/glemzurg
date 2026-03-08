@@ -1,11 +1,11 @@
 package req_flat
 
 import (
+	"maps"
 	"sort"
 
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -14,6 +14,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Requirements provides flat lookups by key for all business logic objects in the model.
@@ -87,29 +88,19 @@ func (r *Requirements) flattenModel() {
 	r.Objects = make(map[identity.Key]model_scenario.Object)
 
 	// Actors from model.
-	for key, actor := range r.Model.Actors {
-		r.Actors[key] = actor
-	}
+	maps.Copy(r.Actors, r.Model.Actors)
 
 	// Actor generalizations from model.
-	for key, ag := range r.Model.ActorGeneralizations {
-		r.ActorGeneralizations[key] = ag
-	}
+	maps.Copy(r.ActorGeneralizations, r.Model.ActorGeneralizations)
 
 	// Global functions from model.
-	for key, gf := range r.Model.GlobalFunctions {
-		r.GlobalFunctions[key] = gf
-	}
+	maps.Copy(r.GlobalFunctions, r.Model.GlobalFunctions)
 
 	// Domain associations from model.
-	for key, assoc := range r.Model.DomainAssociations {
-		r.DomainAssociations[key] = assoc
-	}
+	maps.Copy(r.DomainAssociations, r.Model.DomainAssociations)
 
 	// Model-level class associations.
-	for key, assoc := range r.Model.ClassAssociations {
-		r.ClassAssociations[key] = assoc
-	}
+	maps.Copy(r.ClassAssociations, r.Model.ClassAssociations)
 
 	// Model-level invariants (slice, not map).
 	for _, inv := range r.Model.Invariants {
@@ -121,37 +112,27 @@ func (r *Requirements) flattenModel() {
 		r.Domains[domainKey] = domain
 
 		// Domain-level class associations.
-		for key, assoc := range domain.ClassAssociations {
-			r.ClassAssociations[key] = assoc
-		}
+		maps.Copy(r.ClassAssociations, domain.ClassAssociations)
 
 		// Walk subdomains.
 		for subdomainKey, subdomain := range domain.Subdomains {
 			r.Subdomains[subdomainKey] = subdomain
 
 			// Generalizations.
-			for key, gen := range subdomain.Generalizations {
-				r.Generalizations[key] = gen
-			}
+			maps.Copy(r.Generalizations, subdomain.Generalizations)
 
 			// Use case generalizations.
-			for key, ucGen := range subdomain.UseCaseGeneralizations {
-				r.UseCaseGeneralizations[key] = ucGen
-			}
+			maps.Copy(r.UseCaseGeneralizations, subdomain.UseCaseGeneralizations)
 
 			// Subdomain-level class associations.
-			for key, assoc := range subdomain.ClassAssociations {
-				r.ClassAssociations[key] = assoc
-			}
+			maps.Copy(r.ClassAssociations, subdomain.ClassAssociations)
 
 			// Walk classes.
 			for classKey, class := range subdomain.Classes {
 				r.Classes[classKey] = class
 
 				// Attributes.
-				for key, attr := range class.Attributes {
-					r.Attributes[key] = attr
-				}
+				maps.Copy(r.Attributes, class.Attributes)
 
 				// Class invariants (slice, not map).
 				for _, inv := range class.Invariants {
@@ -169,29 +150,19 @@ func (r *Requirements) flattenModel() {
 				}
 
 				// Events.
-				for key, event := range class.Events {
-					r.Events[key] = event
-				}
+				maps.Copy(r.Events, class.Events)
 
 				// Guards.
-				for key, guard := range class.Guards {
-					r.Guards[key] = guard
-				}
+				maps.Copy(r.Guards, class.Guards)
 
 				// Actions.
-				for key, action := range class.Actions {
-					r.Actions[key] = action
-				}
+				maps.Copy(r.Actions, class.Actions)
 
 				// Queries.
-				for key, query := range class.Queries {
-					r.Queries[key] = query
-				}
+				maps.Copy(r.Queries, class.Queries)
 
 				// Transitions.
-				for key, transition := range class.Transitions {
-					r.Transitions[key] = transition
-				}
+				maps.Copy(r.Transitions, class.Transitions)
 			}
 
 			// Walk use cases.
@@ -203,9 +174,7 @@ func (r *Requirements) flattenModel() {
 					r.Scenarios[scenarioKey] = scenario
 
 					// Walk objects.
-					for objectKey, object := range scenario.Objects {
-						r.Objects[objectKey] = object
-					}
+					maps.Copy(r.Objects, scenario.Objects)
 				}
 			}
 		}
@@ -779,7 +748,7 @@ func (r *Requirements) RegardingClasses(inClasses []model_class.Class) (generali
 	// Create an association lookup.
 	relevantAssociationsLookup := classAssociationsAsLookup(relevantClassLookup, allAssociations)
 
-	// Find relevant associations to the the classes.
+	// Find relevant associations to the classes.
 	classesFromAssocaitionsLookup := classesFromAssociations(allClassLookup, relevantAssociationsLookup)
 	relevantClassLookup = mergeClassLookups(relevantClassLookup, classesFromAssocaitionsLookup)
 

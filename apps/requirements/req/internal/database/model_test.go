@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,19 +22,17 @@ type ModelSuite struct {
 }
 
 func (suite *ModelSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 }
 
 func (suite *ModelSuite) TestLoad() {
-
 	// Nothing in database yet.
 	model, err := LoadModel(suite.db, "Key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), model)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(model)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO model
 			(
 				model_key,
@@ -48,11 +46,11 @@ func (suite *ModelSuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err = LoadModel(suite.db, "Key") // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), core.Model{
+	suite.Require().NoError(err)
+	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
@@ -60,17 +58,16 @@ func (suite *ModelSuite) TestLoad() {
 }
 
 func (suite *ModelSuite) TestAdd() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), core.Model{
+	suite.Require().NoError(err)
+	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
@@ -78,24 +75,23 @@ func (suite *ModelSuite) TestAdd() {
 }
 
 func (suite *ModelSuite) TestUpdate() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateModel(suite.db, core.Model{
 		Key:     "kEy", // Test case-insensitive.
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), core.Model{
+	suite.Require().NoError(err)
+	suite.Equal(core.Model{
 		Key:     "key", // Test case-insensitive.
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -103,41 +99,39 @@ func (suite *ModelSuite) TestUpdate() {
 }
 
 func (suite *ModelSuite) TestRemove() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "KeY", // Test case-insensitive.
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveModel(suite.db, "kEy") // Test case-insensitive.
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	model, err := LoadModel(suite.db, "key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), model)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(model)
 }
 
 func (suite *ModelSuite) TestQuery() {
-
 	err := AddModel(suite.db, core.Model{
 		Key:     "keyx",
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = AddModel(suite.db, core.Model{
 		Key:     "key",
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	models, err := QueryModels(suite.db)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []core.Model{
+	suite.Require().NoError(err)
+	suite.Equal([]core.Model{
 		{
 			Key:     "key",
 			Name:    "Name",
@@ -161,10 +155,10 @@ func t_AddModel(t *testing.T, dbOrTx DbOrTx) (model core.Model) {
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	model, err = LoadModel(dbOrTx, "model_key")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return model
 }

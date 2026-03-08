@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
@@ -14,6 +13,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 type LowerModelTestSuite struct {
@@ -228,7 +228,7 @@ func (s *LowerModelTestSuite) TestLowerModelSuccess() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Verify model invariant was lowered.
 	s.NotNil(model.Invariants[0].Spec.Expression)
@@ -292,14 +292,14 @@ func (s *LowerModelTestSuite) TestLowerModelSkipsAlreadyLowered() {
 
 	// Lower once.
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Capture the expression pointer.
 	expr := model.Invariants[0].Spec.Expression
 
 	// Lower again — should skip already-lowered specs.
 	err = LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The expression should be the same pointer (not re-lowered).
 	s.Equal(expr, model.Invariants[0].Spec.Expression)
@@ -312,7 +312,7 @@ func (s *LowerModelTestSuite) TestLowerModelSkipsEmptySpec() {
 	model.Invariants[0].Spec.Specification = ""
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Expression should remain nil.
 	s.Nil(model.Invariants[0].Spec.Expression)
@@ -322,7 +322,7 @@ func (s *LowerModelTestSuite) TestLowerModelActionParameterScope() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The action require "amount > 0" should resolve 'amount' as a LocalVar.
 	for _, action := range getClassFromModel(model).Actions {
@@ -339,7 +339,7 @@ func (s *LowerModelTestSuite) TestLowerModelAttributeResolves() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// The class invariant "balance ≥ 0" should resolve 'balance' as an AttributeRef.
 	class := getClassFromModel(model)
@@ -354,72 +354,72 @@ func (s *LowerModelTestSuite) TestLowerModelAllExpressionsValidate() {
 	model := buildTestModel()
 
 	err := LowerModel(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Validate every lowered expression.
 	for _, inv := range model.Invariants {
 		if inv.Spec.Expression != nil {
-			s.NoError(inv.Spec.Expression.Validate())
+			s.Require().NoError(inv.Spec.Expression.Validate())
 		}
 	}
 	for _, gf := range model.GlobalFunctions {
 		if gf.Logic.Spec.Expression != nil {
-			s.NoError(gf.Logic.Spec.Expression.Validate())
+			s.Require().NoError(gf.Logic.Spec.Expression.Validate())
 		}
 	}
 	for _, ns := range model.NamedSets {
 		if ns.Spec.Expression != nil {
-			s.NoError(ns.Spec.Expression.Validate())
+			s.Require().NoError(ns.Spec.Expression.Validate())
 		}
 	}
 
 	class := getClassFromModel(model)
 	for _, inv := range class.Invariants {
 		if inv.Spec.Expression != nil {
-			s.NoError(inv.Spec.Expression.Validate())
+			s.Require().NoError(inv.Spec.Expression.Validate())
 		}
 	}
 	for _, attr := range class.Attributes {
 		if attr.DerivationPolicy != nil && attr.DerivationPolicy.Spec.Expression != nil {
-			s.NoError(attr.DerivationPolicy.Spec.Expression.Validate())
+			s.Require().NoError(attr.DerivationPolicy.Spec.Expression.Validate())
 		}
 		for _, inv := range attr.Invariants {
 			if inv.Spec.Expression != nil {
-				s.NoError(inv.Spec.Expression.Validate())
+				s.Require().NoError(inv.Spec.Expression.Validate())
 			}
 		}
 	}
 	for _, guard := range class.Guards {
 		if guard.Logic.Spec.Expression != nil {
-			s.NoError(guard.Logic.Spec.Expression.Validate())
+			s.Require().NoError(guard.Logic.Spec.Expression.Validate())
 		}
 	}
 	for _, action := range class.Actions {
 		for _, r := range action.Requires {
 			if r.Spec.Expression != nil {
-				s.NoError(r.Spec.Expression.Validate())
+				s.Require().NoError(r.Spec.Expression.Validate())
 			}
 		}
 		for _, g := range action.Guarantees {
 			if g.Spec.Expression != nil {
-				s.NoError(g.Spec.Expression.Validate())
+				s.Require().NoError(g.Spec.Expression.Validate())
 			}
 		}
 		for _, sr := range action.SafetyRules {
 			if sr.Spec.Expression != nil {
-				s.NoError(sr.Spec.Expression.Validate())
+				s.Require().NoError(sr.Spec.Expression.Validate())
 			}
 		}
 	}
 	for _, query := range class.Queries {
 		for _, r := range query.Requires {
 			if r.Spec.Expression != nil {
-				s.NoError(r.Spec.Expression.Validate())
+				s.Require().NoError(r.Spec.Expression.Validate())
 			}
 		}
 		for _, g := range query.Guarantees {
 			if g.Spec.Expression != nil {
-				s.NoError(g.Spec.Expression.Validate())
+				s.Require().NoError(g.Spec.Expression.Validate())
 			}
 		}
 	}

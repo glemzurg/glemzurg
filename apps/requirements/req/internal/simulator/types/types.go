@@ -7,7 +7,7 @@
 // - Concrete types: Boolean, Number, String, Set, Tuple, Record, Bag, Function
 // - Type variables: For polymorphic inference
 // - Type schemes: For let-polymorphism (∀a. Type)
-package types
+package types //nolint:revive // package name is intentional
 
 import (
 	"bytes"
@@ -68,27 +68,27 @@ func (s Substitution) Compose(other Substitution) Substitution {
 // Boolean represents the TLA+ BOOLEAN type.
 type Boolean struct{}
 
-func (Boolean) String() string                     { return "Boolean" }
-func (Boolean) Equals(t Type) bool                 { _, ok := t.(Boolean); return ok }
-func (Boolean) FreeTypeVars() map[int]struct{}     { return nil }
-func (b Boolean) substitute(_ Substitution) Type   { return b }
+func (Boolean) String() string                   { return "Boolean" }
+func (Boolean) Equals(t Type) bool               { _, ok := t.(Boolean); return ok }
+func (Boolean) FreeTypeVars() map[int]struct{}   { return nil }
+func (b Boolean) substitute(_ Substitution) Type { return b }
 
 // Number represents TLA+ numeric types (Natural, Integer, Real).
 // TLA+ treats all numbers uniformly for most operations.
 type Number struct{}
 
-func (Number) String() string                     { return "Number" }
-func (Number) Equals(t Type) bool                 { _, ok := t.(Number); return ok }
-func (Number) FreeTypeVars() map[int]struct{}     { return nil }
-func (n Number) substitute(_ Substitution) Type   { return n }
+func (Number) String() string                   { return "Number" }
+func (Number) Equals(t Type) bool               { _, ok := t.(Number); return ok }
+func (Number) FreeTypeVars() map[int]struct{}   { return nil }
+func (n Number) substitute(_ Substitution) Type { return n }
 
 // String represents the TLA+ STRING type.
 type String struct{}
 
-func (String) String() string                     { return "String" }
-func (String) Equals(t Type) bool                 { _, ok := t.(String); return ok }
-func (String) FreeTypeVars() map[int]struct{}     { return nil }
-func (s String) substitute(_ Substitution) Type   { return s }
+func (String) String() string                   { return "String" }
+func (String) Equals(t Type) bool               { _, ok := t.(String); return ok }
+func (String) FreeTypeVars() map[int]struct{}   { return nil }
+func (s String) substitute(_ Substitution) Type { return s }
 
 // Set represents a TLA+ set type with a specific element type.
 type Set struct {

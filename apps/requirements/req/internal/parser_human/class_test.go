@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/stretchr/testify/assert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,42 +24,38 @@ type ClassFileSuite struct {
 }
 
 func (suite *ClassFileSuite) TestParseClassFiles() {
-
 	// Create a parent subdomain key for testing.
-	domainKey, err := identity.NewDomainKey("test_domain")
-	assert.Nil(suite.T(), err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, "test_subdomain")
-	assert.Nil(suite.T(), err)
+	domainKey := helper.Must(identity.NewDomainKey("test_domain"))
+	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "test_subdomain"))
 
 	classSubKey := "class_key"
 
-	testDataFiles, err := t_ContentsForAllMdFiles(t_CLASS_PATH_OK)
-	assert.Nil(suite.T(), err)
+	testDataFiles := helper.Must(t_ContentsForAllMdFiles(t_CLASS_PATH_OK))
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
 			var expected, actual model_class.Class
 
 			actual, associations, err := parseClass(subdomainKey, classSubKey, testData.Filename, testData.Contents)
-			assert.Nil(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.Json), &expected)
-			assert.Nil(t, err, testName)
+			suite.Require().NoError(err, testName)
 
-			assert.Equal(t, expected, actual, testName)
+			suite.Equal(expected, actual, testName)
 
 			// Test associations if expected data exists (via _children.json file).
 			if testData.JsonChildren != "" {
 				var expectedAssociations []model_class.Association
 				err = json.Unmarshal([]byte(testData.JsonChildren), &expectedAssociations)
-				assert.Nil(t, err, testName+" associations json")
-				assert.Equal(t, expectedAssociations, associations, testName+" associations")
+				suite.Require().NoError(err, testName+" associations json")
+				suite.Equal(expectedAssociations, associations, testName+" associations")
 			}
 
 			// Test round-trip: generate content from parsed object and compare to original.
 			generated := generateClassContent(actual, associations)
-			assert.Equal(t, testData.Contents, generated, testName)
+			suite.Equal(testData.Contents, generated, testName)
 		})
 		if !pass {
 			// The earlier test set the basics for later tests, stop as soon as we have an error.

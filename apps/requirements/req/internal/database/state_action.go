@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -41,9 +42,8 @@ func scanAction(scanner Scanner, classKeyPtr *identity.Key, action *model_state.
 	return nil
 }
 
-// LoadAction loads a action from the database
+// LoadAction loads a action from the database.
 func LoadAction(dbOrTx DbOrTx, modelKey string, actionKey identity.Key) (classKey identity.Key, action model_state.Action, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -82,9 +82,8 @@ func AddAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action mod
 
 // UpdateAction updates a action in the database.
 func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action model_state.Action) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			action
 		SET
@@ -110,9 +109,8 @@ func UpdateAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, action 
 
 // RemoveAction deletes a action from the database.
 func RemoveAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			action
 		WHERE
@@ -131,9 +129,8 @@ func RemoveAction(dbOrTx DbOrTx, modelKey string, classKey identity.Key, actionK
 	return nil
 }
 
-// QueryActions loads all action from the database
+// QueryActions loads all action from the database.
 func QueryActions(dbOrTx DbOrTx, modelKey string) (actions map[identity.Key][]model_state.Action, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -181,22 +178,24 @@ func AddActions(dbOrTx DbOrTx, modelKey string, actions map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO action (model_key, class_key, action_key, name, details) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO action (model_key, class_key, action_key, name, details) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for classKey, actionList := range actions {
 		for _, action := range actionList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
+
 			args = append(args, modelKey, classKey.String(), action.Key.String(), action.Name, action.Details)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

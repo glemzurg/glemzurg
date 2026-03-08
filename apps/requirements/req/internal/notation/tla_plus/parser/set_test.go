@@ -21,16 +21,16 @@ type SetSuite struct {
 
 func (s *SetSuite) TestSetLiteral_Empty() {
 	expr, err := ParseExpression("{}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
-	s.Len(set.Elements, 0)
+	s.Empty(set.Elements)
 }
 
 func (s *SetSuite) TestSetLiteral_SingleElement() {
 	expr, err := ParseExpression("{1}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
@@ -39,7 +39,7 @@ func (s *SetSuite) TestSetLiteral_SingleElement() {
 
 func (s *SetSuite) TestSetLiteral_MultipleElements() {
 	expr, err := ParseExpression("{1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
@@ -48,7 +48,7 @@ func (s *SetSuite) TestSetLiteral_MultipleElements() {
 
 func (s *SetSuite) TestSetLiteral_WithExpressions() {
 	expr, err := ParseExpression("{x, y + 1, z * 2}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
@@ -65,7 +65,7 @@ func (s *SetSuite) TestSetLiteral_WithExpressions() {
 
 func (s *SetSuite) TestSetLiteral_Nested() {
 	expr, err := ParseExpression("{{1, 2}, {3, 4}}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	set, ok := expr.(*ast.SetLiteral)
 	s.True(ok, "expected *ast.SetLiteral, got %T", expr)
@@ -78,7 +78,7 @@ func (s *SetSuite) TestSetLiteral_Nested() {
 
 func (s *SetSuite) TestSetLiteral_String() {
 	expr, err := ParseExpression("{1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("{1, 2, 3}", expr.String())
 }
 
@@ -88,7 +88,7 @@ func (s *SetSuite) TestSetLiteral_String() {
 
 func (s *SetSuite) TestSetRange_Simple() {
 	expr, err := ParseExpression("1..10")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rng, ok := expr.(*ast.SetRangeExpr)
 	s.True(ok, "expected *ast.SetRangeExpr, got %T", expr)
@@ -104,7 +104,7 @@ func (s *SetSuite) TestSetRange_Simple() {
 
 func (s *SetSuite) TestSetRange_WithVariables() {
 	expr, err := ParseExpression("x..y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rng, ok := expr.(*ast.SetRangeExpr)
 	s.True(ok, "expected *ast.SetRangeExpr, got %T", expr)
@@ -118,7 +118,7 @@ func (s *SetSuite) TestSetRange_WithVariables() {
 
 func (s *SetSuite) TestSetRange_WithExpressions() {
 	expr, err := ParseExpression("(n-1)..(n+1)")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	_, ok := expr.(*ast.SetRangeExpr)
 	s.True(ok, "expected *ast.SetRangeExpr, got %T", expr)
@@ -126,7 +126,7 @@ func (s *SetSuite) TestSetRange_WithExpressions() {
 
 func (s *SetSuite) TestSetRange_String() {
 	expr, err := ParseExpression("1..10")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("1 .. 10", expr.String())
 }
 
@@ -136,7 +136,7 @@ func (s *SetSuite) TestSetRange_String() {
 
 func (s *SetSuite) TestSetMembership_In_Unicode() {
 	expr, err := ParseExpression("x ∈ S")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	mem, ok := expr.(*ast.Membership)
 	s.True(ok, "expected *ast.Membership, got %T", expr)
@@ -145,7 +145,7 @@ func (s *SetSuite) TestSetMembership_In_Unicode() {
 
 func (s *SetSuite) TestSetMembership_In_ASCII() {
 	expr, err := ParseExpression("x \\in S")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	mem, ok := expr.(*ast.Membership)
 	s.True(ok, "expected *ast.Membership, got %T", expr)
@@ -154,7 +154,7 @@ func (s *SetSuite) TestSetMembership_In_ASCII() {
 
 func (s *SetSuite) TestSetMembership_NotIn_Unicode() {
 	expr, err := ParseExpression("x ∉ S")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	mem, ok := expr.(*ast.Membership)
 	s.True(ok, "expected *ast.Membership, got %T", expr)
@@ -163,7 +163,7 @@ func (s *SetSuite) TestSetMembership_NotIn_Unicode() {
 
 func (s *SetSuite) TestSetMembership_NotIn_ASCII() {
 	expr, err := ParseExpression("x \\notin S")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	mem, ok := expr.(*ast.Membership)
 	s.True(ok, "expected *ast.Membership, got %T", expr)
@@ -172,7 +172,7 @@ func (s *SetSuite) TestSetMembership_NotIn_ASCII() {
 
 func (s *SetSuite) TestSetMembership_WithLiterals() {
 	expr, err := ParseExpression("1 ∈ {1, 2, 3}")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	mem, ok := expr.(*ast.Membership)
 	s.True(ok, "expected *ast.Membership, got %T", expr)
@@ -188,7 +188,7 @@ func (s *SetSuite) TestSetMembership_WithLiterals() {
 
 func (s *SetSuite) TestSetUnion_Unicode() {
 	expr, err := ParseExpression("A ∪ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -197,7 +197,7 @@ func (s *SetSuite) TestSetUnion_Unicode() {
 
 func (s *SetSuite) TestSetUnion_ASCII_union() {
 	expr, err := ParseExpression("A \\union B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -206,7 +206,7 @@ func (s *SetSuite) TestSetUnion_ASCII_union() {
 
 func (s *SetSuite) TestSetUnion_ASCII_cup() {
 	expr, err := ParseExpression("A \\cup B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -215,7 +215,7 @@ func (s *SetSuite) TestSetUnion_ASCII_cup() {
 
 func (s *SetSuite) TestSetIntersection_Unicode() {
 	expr, err := ParseExpression("A ∩ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -224,7 +224,7 @@ func (s *SetSuite) TestSetIntersection_Unicode() {
 
 func (s *SetSuite) TestSetIntersection_ASCII_intersect() {
 	expr, err := ParseExpression("A \\intersect B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -233,7 +233,7 @@ func (s *SetSuite) TestSetIntersection_ASCII_intersect() {
 
 func (s *SetSuite) TestSetIntersection_ASCII_cap() {
 	expr, err := ParseExpression("A \\cap B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -242,7 +242,7 @@ func (s *SetSuite) TestSetIntersection_ASCII_cap() {
 
 func (s *SetSuite) TestSetDifference() {
 	expr, err := ParseExpression("A \\ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -252,7 +252,7 @@ func (s *SetSuite) TestSetDifference() {
 func (s *SetSuite) TestSetOperations_Chained() {
 	// A ∪ B ∪ C should parse as (A ∪ B) ∪ C
 	expr, err := ParseExpression("A ∪ B ∪ C")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outer, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected outer *ast.BinarySetOperation, got %T", expr)
@@ -269,7 +269,7 @@ func (s *SetSuite) TestSetOperations_Chained() {
 
 func (s *SetSuite) TestSetComparison_SubsetEq_Unicode() {
 	expr, err := ParseExpression("A ⊆ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -278,7 +278,7 @@ func (s *SetSuite) TestSetComparison_SubsetEq_Unicode() {
 
 func (s *SetSuite) TestSetComparison_SubsetEq_ASCII() {
 	expr, err := ParseExpression("A \\subseteq B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -287,7 +287,7 @@ func (s *SetSuite) TestSetComparison_SubsetEq_ASCII() {
 
 func (s *SetSuite) TestSetComparison_SupersetEq_Unicode() {
 	expr, err := ParseExpression("A ⊇ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -296,7 +296,7 @@ func (s *SetSuite) TestSetComparison_SupersetEq_Unicode() {
 
 func (s *SetSuite) TestSetComparison_SupersetEq_ASCII() {
 	expr, err := ParseExpression("A \\supseteq B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -305,7 +305,7 @@ func (s *SetSuite) TestSetComparison_SupersetEq_ASCII() {
 
 func (s *SetSuite) TestSetComparison_Subset_Unicode() {
 	expr, err := ParseExpression("A ⊂ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -314,7 +314,7 @@ func (s *SetSuite) TestSetComparison_Subset_Unicode() {
 
 func (s *SetSuite) TestSetComparison_Subset_ASCII() {
 	expr, err := ParseExpression("A \\subset B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -323,7 +323,7 @@ func (s *SetSuite) TestSetComparison_Subset_ASCII() {
 
 func (s *SetSuite) TestSetComparison_Superset_Unicode() {
 	expr, err := ParseExpression("A ⊃ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -332,7 +332,7 @@ func (s *SetSuite) TestSetComparison_Superset_Unicode() {
 
 func (s *SetSuite) TestSetComparison_Superset_ASCII() {
 	expr, err := ParseExpression("A \\supset B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -346,7 +346,7 @@ func (s *SetSuite) TestSetComparison_Superset_ASCII() {
 func (s *SetSuite) TestPrecedence_RangeHigherThanUnion() {
 	// 1..5 ∪ 6..10 should parse as (1..5) ∪ (6..10)
 	expr, err := ParseExpression("1..5 ∪ 6..10")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	op, ok := expr.(*ast.BinarySetOperation)
 	s.True(ok, "expected *ast.BinarySetOperation, got %T", expr)
@@ -362,7 +362,7 @@ func (s *SetSuite) TestPrecedence_RangeHigherThanUnion() {
 func (s *SetSuite) TestPrecedence_UnionLowerThanMembership() {
 	// x ∈ A ∪ B should parse as x ∈ (A ∪ B)
 	expr, err := ParseExpression("x ∈ A ∪ B")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	mem, ok := expr.(*ast.Membership)
 	s.True(ok, "expected *ast.Membership, got %T", expr)
@@ -375,7 +375,7 @@ func (s *SetSuite) TestPrecedence_SetComparisonLowerThanMembership() {
 	// x ∈ A ⊆ B should parse as (x ∈ A) ⊆ B - but this is actually weird
 	// Let's test A ⊆ B ∪ C which should be A ⊆ (B ∪ C)
 	expr, err := ParseExpression("A ⊆ B ∪ C")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	cmp, ok := expr.(*ast.BinarySetComparison)
 	s.True(ok, "expected *ast.BinarySetComparison, got %T", expr)
@@ -387,7 +387,7 @@ func (s *SetSuite) TestPrecedence_SetComparisonLowerThanMembership() {
 func (s *SetSuite) TestPrecedence_ArithmeticHigherThanRange() {
 	// 1+2..3+4 should parse as (1+2)..(3+4)
 	expr, err := ParseExpression("1+2..3+4")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	rng, ok := expr.(*ast.SetRangeExpr)
 	s.True(ok, "expected *ast.SetRangeExpr, got %T", expr)

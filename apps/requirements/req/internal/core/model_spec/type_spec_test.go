@@ -3,7 +3,6 @@ package model_spec
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
@@ -75,13 +74,13 @@ func (s *TypeSpecTestSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.spec.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -90,7 +89,7 @@ func (s *TypeSpecTestSuite) TestValidate() {
 func (s *TypeSpecTestSuite) TestNew() {
 	// Valid construction with nil parseFunc.
 	spec, err := NewTypeSpec("tla_plus", "Nat", nil)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("tla_plus", spec.Notation)
 	s.Equal("Nat", spec.Specification)
 	s.Nil(spec.ExpressionType)
@@ -101,7 +100,7 @@ func (s *TypeSpecTestSuite) TestNew() {
 		return &model_expression_type.IntegerType{}, "Int"
 	}
 	spec, err = NewTypeSpec("tla_plus", "Nat", parseFunc)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(spec.ExpressionType)
 	s.True(spec.ParseOk())
 	s.Equal("Int", spec.Specification) // Normalized.
@@ -111,14 +110,14 @@ func (s *TypeSpecTestSuite) TestNew() {
 		return nil, ""
 	}
 	spec, err = NewTypeSpec("tla_plus", "Nat", failFunc)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Nil(spec.ExpressionType)
 	s.False(spec.ParseOk())
 	s.Equal("Nat", spec.Specification) // Unchanged.
 
 	// Invalid notation.
 	_, err = NewTypeSpec("", "Nat", nil)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "Notation")
 
 	// Empty specification skips parseFunc.
@@ -128,7 +127,7 @@ func (s *TypeSpecTestSuite) TestNew() {
 		return nil, ""
 	}
 	spec, err = NewTypeSpec("tla_plus", "", trackFunc)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(called)
 	s.False(spec.ParseOk())
 }

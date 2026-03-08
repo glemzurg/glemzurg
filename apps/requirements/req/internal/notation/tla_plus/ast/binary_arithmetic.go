@@ -5,18 +5,18 @@ import (
 	"fmt"
 )
 
-// Arithmetic operators
+// Arithmetic operators.
 const (
-	ArithmeticOperatorAdd      = "+"  // Addition
-	ArithmeticOperatorSubtract = "-"  // Subtraction
-	ArithmeticOperatorMultiply = "*"  // Multiplication
-	ArithmeticOperatorPower    = "^"  // Exponentiation
-	ArithmeticOperatorDivide   = "÷"  // Division (Unicode)
-	ArithmeticOperatorModulo   = "%"  // Modulo
+	ArithmeticOperatorAdd      = "+" // Addition
+	ArithmeticOperatorSubtract = "-" // Subtraction
+	ArithmeticOperatorMultiply = "*" // Multiplication
+	ArithmeticOperatorPower    = "^" // Exponentiation
+	ArithmeticOperatorDivide   = "÷" // Division (Unicode)
+	ArithmeticOperatorModulo   = "%" // Modulo
 )
 
-// arithmeticOperatorAscii maps Unicode operators to ASCII equivalents.
-var arithmeticOperatorAscii = map[string]string{
+// arithmeticOperatorASCII maps Unicode operators to ASCII equivalents.
+var arithmeticOperatorASCII = map[string]string{
 	ArithmeticOperatorAdd:      "+",
 	ArithmeticOperatorSubtract: "-",
 	ArithmeticOperatorMultiply: "*",
@@ -44,17 +44,17 @@ func (b *BinaryArithmetic) String() (value string) {
 	return out.String()
 }
 
-func (b *BinaryArithmetic) Ascii() (value string) {
+func (b *BinaryArithmetic) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(b.Left.Ascii())
+	out.WriteString(b.Left.ASCII())
 	out.WriteString(" ")
-	if ascii, ok := arithmeticOperatorAscii[b.Operator]; ok {
+	if ascii, ok := arithmeticOperatorASCII[b.Operator]; ok {
 		out.WriteString(ascii)
 	} else {
 		out.WriteString(b.Operator)
 	}
 	out.WriteString(" ")
-	out.WriteString(b.Right.Ascii())
+	out.WriteString(b.Right.ASCII())
 	return out.String()
 }
 
@@ -63,19 +63,21 @@ func (b *BinaryArithmetic) Validate() error {
 		return err
 	}
 	if err := b.Left.Validate(); err != nil {
-		return fmt.Errorf("Left: %w", err)
+		return fmt.Errorf("left: %w", err)
 	}
 	if err := b.Right.Validate(); err != nil {
-		return fmt.Errorf("Right: %w", err)
+		return fmt.Errorf("right: %w", err)
 	}
 	return nil
 }
 
 // RealInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryArithmetic instead.
 type RealInfixExpression = BinaryArithmetic
 
-// Backwards compatibility constants
+// Backwards compatibility constants.
+//
 // Deprecated: Use ArithmeticOperator* constants instead.
 const (
 	RealOperatorAdd      = ArithmeticOperatorAdd

@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,16 +40,16 @@ func (suite *PrimedSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			p := &Primed{Base: tt.base}
-			assert.Equal(t, tt.expected, p.String())
+			suite.Equal(tt.expected, p.String())
 		})
 	}
 }
 
-func (suite *PrimedSuite) TestAscii() {
+func (suite *PrimedSuite) TestASCII() {
 	p := &Primed{Base: &Identifier{Value: "x"}}
-	assert.Equal(suite.T(), "x'", p.Ascii())
+	suite.Equal("x'", p.ASCII())
 }
 
 func (suite *PrimedSuite) TestValidate() {
@@ -87,12 +86,12 @@ func (suite *PrimedSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.p.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

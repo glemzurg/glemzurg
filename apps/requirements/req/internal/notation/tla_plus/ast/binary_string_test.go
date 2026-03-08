@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -69,17 +68,17 @@ func (suite *StringInfixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			s := &StringInfixExpression{
 				Operator: tt.operator,
 				Operands: tt.operands,
 			}
-			assert.Equal(t, tt.expected, s.String())
+			suite.Equal(tt.expected, s.String())
 		})
 	}
 }
 
-func (suite *StringInfixExpressionSuite) TestAscii() {
+func (suite *StringInfixExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operands []Expression
@@ -122,12 +121,12 @@ func (suite *StringInfixExpressionSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			s := &StringInfixExpression{
 				Operator: tt.operator,
 				Operands: tt.operands,
 			}
-			assert.Equal(t, tt.expected, s.Ascii())
+			suite.Equal(tt.expected, s.ASCII())
 		})
 	}
 }
@@ -225,16 +224,16 @@ func (suite *StringInfixExpressionSuite) TestValidate() {
 					nil,
 				},
 			},
-			errstr: `Operands[1]`,
+			errstr: `operands[1]`,
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.s.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

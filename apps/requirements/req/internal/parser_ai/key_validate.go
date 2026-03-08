@@ -166,11 +166,11 @@ func suggestKeyFix(key, keyType string) string {
 type AssociationLevel int
 
 const (
-	// AssocLevelSubdomain is for associations within a subdomain (class--class--name)
+	// AssocLevelSubdomain is for associations within a subdomain (class--class--name).
 	AssocLevelSubdomain AssociationLevel = iota
-	// AssocLevelDomain is for associations across subdomains (subdomain.class--subdomain.class--name)
+	// AssocLevelDomain is for associations across subdomains (subdomain.class--subdomain.class--name).
 	AssocLevelDomain
-	// AssocLevelModel is for associations across domains (domain.subdomain.class--domain.subdomain.class--name)
+	// AssocLevelModel is for associations across domains (domain.subdomain.class--domain.subdomain.class--name).
 	AssocLevelModel
 )
 

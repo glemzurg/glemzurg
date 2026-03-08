@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -50,7 +49,7 @@ func (suite *ScenarioSuite) TestValidate() {
 				Key:  domainKey,
 				Name: "Name",
 			},
-			errstr: "Key: invalid key type 'domain' for scenario.",
+			errstr: "key: invalid key type 'domain' for scenario",
 		},
 		{
 			testName: "error blank name",
@@ -62,12 +61,12 @@ func (suite *ScenarioSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.scenario.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -82,8 +81,8 @@ func (suite *ScenarioSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	scenario, err := NewScenario(key, "Name", "Details")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Scenario{
+	suite.Require().NoError(err)
+	suite.Equal(Scenario{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
@@ -91,7 +90,7 @@ func (suite *ScenarioSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewScenario(key, "", "Details")
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -108,7 +107,7 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := scenario.ValidateWithParent(&useCaseKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - scenario key has usecase1 as parent, but we pass other_usecase.
 	scenario = Scenario{
@@ -116,11 +115,11 @@ func (suite *ScenarioSuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = scenario.ValidateWithParent(&otherUseCaseKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = scenario.ValidateWithParent(&useCaseKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateWithParentAndClasses tests that ValidateWithParentAndClasses validates child Objects.
@@ -146,7 +145,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err := scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Test invalid child Object (blank name with name style) propagates error.
 	scenario = Scenario{
@@ -157,7 +156,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err = scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
-	assert.ErrorContains(suite.T(), err, "Name", "Should validate child Objects")
+	suite.Require().ErrorContains(err, "Name", "Should validate child Objects")
 
 	// Test Object references non-existent class.
 	scenario = Scenario{
@@ -168,7 +167,7 @@ func (suite *ScenarioSuite) TestValidateWithParentAndClasses() {
 		},
 	}
 	err = scenario.ValidateWithParentAndClasses(&useCaseKey, classes)
-	assert.ErrorContains(suite.T(), err, "references non-existent class", "Should validate Object class references")
+	suite.Require().ErrorContains(err, "references non-existent class", "Should validate Object class references")
 }
 
 // TestSetObjects tests that SetObjects correctly sets objects.
@@ -185,5 +184,5 @@ func (suite *ScenarioSuite) TestSetObjects() {
 		objectKey: {Key: objectKey, ObjectNumber: 1, Name: "Obj", NameStyle: "name", ClassKey: classKey},
 	}
 	scenario.SetObjects(objects)
-	assert.Equal(suite.T(), objects, scenario.Objects)
+	suite.Equal(objects, scenario.Objects)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLogicEquality_String(t *testing.T) {
@@ -39,7 +40,7 @@ func TestLogicEquality_String(t *testing.T) {
 	}
 }
 
-func TestLogicEquality_Ascii(t *testing.T) {
+func TestLogicEquality_ASCII(t *testing.T) {
 	tests := []struct {
 		name     string
 		expr     *LogicEquality
@@ -67,7 +68,7 @@ func TestLogicEquality_Ascii(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.expr.Ascii())
+			assert.Equal(t, tt.expected, tt.expr.ASCII())
 		})
 	}
 }
@@ -127,9 +128,9 @@ func TestLogicEquality_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.expr.Validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

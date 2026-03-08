@@ -5,13 +5,13 @@ import (
 	"fmt"
 )
 
-// String operators
+// String operators.
 const (
 	StringOperatorConcat = "∘" // Concatenation (U+2218 RING OPERATOR)
 )
 
-// stringOperatorAscii maps Unicode operators to ASCII equivalents.
-var stringOperatorAscii = map[string]string{
+// stringOperatorASCII maps Unicode operators to ASCII equivalents.
+var stringOperatorASCII = map[string]string{
 	StringOperatorConcat: `\o`,
 }
 
@@ -36,10 +36,10 @@ func (s *StringConcat) String() (value string) {
 	return out.String()
 }
 
-func (s *StringConcat) Ascii() (value string) {
+func (s *StringConcat) ASCII() (value string) {
 	var out bytes.Buffer
 	ascii := s.Operator
-	if a, ok := stringOperatorAscii[s.Operator]; ok {
+	if a, ok := stringOperatorASCII[s.Operator]; ok {
 		ascii = a
 	}
 	for i, operand := range s.Operands {
@@ -48,7 +48,7 @@ func (s *StringConcat) Ascii() (value string) {
 			out.WriteString(ascii)
 			out.WriteString(" ")
 		}
-		out.WriteString(operand.Ascii())
+		out.WriteString(operand.ASCII())
 	}
 	return out.String()
 }
@@ -59,15 +59,16 @@ func (s *StringConcat) Validate() error {
 	}
 	for i, operand := range s.Operands {
 		if operand == nil {
-			return fmt.Errorf("Operands[%d]: is nil", i)
+			return fmt.Errorf("operands[%d]: is nil", i)
 		}
 		if err := operand.Validate(); err != nil {
-			return fmt.Errorf("Operands[%d]: %w", i, err)
+			return fmt.Errorf("operands[%d]: %w", i, err)
 		}
 	}
 	return nil
 }
 
 // StringInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use StringConcat instead.
 type StringInfixExpression = StringConcat

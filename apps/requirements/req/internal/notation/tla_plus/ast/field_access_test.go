@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,17 +53,17 @@ func (suite *FieldIdentifierSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			f := &FieldIdentifier{
 				Identifier: tt.identifier,
 				Member:     tt.member,
 			}
-			assert.Equal(t, tt.expected, f.String())
+			suite.Equal(tt.expected, f.String())
 		})
 	}
 }
 
-func (suite *FieldIdentifierSuite) TestAscii() {
+func (suite *FieldIdentifierSuite) TestASCII() {
 	tests := []struct {
 		testName   string
 		identifier *Identifier
@@ -85,12 +84,12 @@ func (suite *FieldIdentifierSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			f := &FieldIdentifier{
 				Identifier: tt.identifier,
 				Member:     tt.member,
 			}
-			assert.Equal(t, tt.expected, f.Ascii())
+			suite.Equal(tt.expected, f.ASCII())
 		})
 	}
 }
@@ -142,12 +141,12 @@ func (suite *FieldIdentifierSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.f.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

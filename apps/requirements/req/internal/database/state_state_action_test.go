@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,7 +36,6 @@ type StateActionSuite struct {
 }
 
 func (suite *StateActionSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -56,14 +54,13 @@ func (suite *StateActionSuite) SetupTest() {
 }
 
 func (suite *StateActionSuite) TestLoad() {
-
 	// Nothing in database yet.
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), stateKey)
-	assert.Empty(suite.T(), stateAction)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(stateKey)
+	suite.Empty(stateAction)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO state_action
 			(
 				model_key,
@@ -81,12 +78,12 @@ func (suite *StateActionSuite) TestLoad() {
 				'entry'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err = LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.state.Key, stateKey)
-	assert.Equal(suite.T(), model_state.StateAction{
+	suite.Require().NoError(err)
+	suite.Equal(suite.state.Key, stateKey)
+	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "entry",
@@ -94,18 +91,17 @@ func (suite *StateActionSuite) TestLoad() {
 }
 
 func (suite *StateActionSuite) TestAdd() {
-
 	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "entry",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.state.Key, stateKey)
-	assert.Equal(suite.T(), model_state.StateAction{
+	suite.Require().NoError(err)
+	suite.Equal(suite.state.Key, stateKey)
+	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "entry",
@@ -113,25 +109,24 @@ func (suite *StateActionSuite) TestAdd() {
 }
 
 func (suite *StateActionSuite) TestUpdate() {
-
 	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "do",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.actionB.Key,
 		When:      "exit",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.state.Key, stateKey)
-	assert.Equal(suite.T(), model_state.StateAction{
+	suite.Require().NoError(err)
+	suite.Equal(suite.state.Key, stateKey)
+	suite.Equal(model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.actionB.Key,
 		When:      "exit",
@@ -139,25 +134,23 @@ func (suite *StateActionSuite) TestUpdate() {
 }
 
 func (suite *StateActionSuite) TestRemove() {
-
 	err := AddStateAction(suite.db, suite.model.Key, suite.state.Key, model_state.StateAction{
 		Key:       suite.stateActionKey,
 		ActionKey: suite.action.Key,
 		When:      "entry",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveStateAction(suite.db, suite.model.Key, suite.state.Key, suite.stateActionKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateKey, stateAction, err := LoadStateAction(suite.db, suite.model.Key, suite.stateActionKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), stateKey)
-	assert.Empty(suite.T(), stateAction)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(stateKey)
+	suite.Empty(stateAction)
 }
 
 func (suite *StateActionSuite) TestQuery() {
-
 	err := AddStateActions(suite.db, suite.model.Key, map[identity.Key][]model_state.StateAction{
 		suite.state.Key: {
 			{
@@ -172,11 +165,11 @@ func (suite *StateActionSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	stateActions, err := QueryStateActions(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.StateAction{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.StateAction{
 		suite.state.Key: {
 			{
 				Key:       suite.stateActionKey,
@@ -190,23 +183,4 @@ func (suite *StateActionSuite) TestQuery() {
 			},
 		},
 	}, stateActions)
-}
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddStateAction(t *testing.T, dbOrTx DbOrTx, modelKey string, stateKey identity.Key, stateActionKey identity.Key, actionKey identity.Key, when string) (stateAction model_state.StateAction) {
-
-	err := AddStateAction(dbOrTx, modelKey, stateKey, model_state.StateAction{
-		Key:       stateActionKey,
-		ActionKey: actionKey,
-		When:      when,
-	})
-	assert.Nil(t, err)
-
-	_, stateAction, err = LoadStateAction(dbOrTx, modelKey, stateActionKey)
-	assert.Nil(t, err)
-
-	return stateAction
 }

@@ -17,9 +17,9 @@ type TypeParseFunc func(specification string) (model_expression_type.ExpressionT
 //  2. Unparsed: Specification is set, ExpressionType is nil (parse not attempted or failed).
 //  3. Fully parsed: Specification is set, ExpressionType is non-nil. ParseOk() returns true.
 type TypeSpec struct {
-	Notation       string                                   `validate:"required,oneof=tla_plus"` // Notation system (currently only TLA+).
-	Specification  string                                   // Optional specification body text.
-	ExpressionType model_expression_type.ExpressionType     // Optional parsed expression type tree (nil = not yet parsed).
+	Notation       string                               `validate:"required,oneof=tla_plus"` // Notation system (currently only TLA+).
+	Specification  string                               // Optional specification body text.
+	ExpressionType model_expression_type.ExpressionType // Optional parsed expression type tree (nil = not yet parsed).
 }
 
 // NewTypeSpec creates a new TypeSpec and validates it.

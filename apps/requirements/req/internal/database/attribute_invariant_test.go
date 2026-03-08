@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,7 +36,6 @@ type AttributeInvariantSuite struct {
 }
 
 func (suite *AttributeInvariantSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -61,13 +59,12 @@ func (suite *AttributeInvariantSuite) SetupTest() {
 }
 
 func (suite *AttributeInvariantSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no attribute_invariant join row yet.
 	_, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the attribute_invariant join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO attribute_invariant
 			(model_key, attribute_key, logic_key)
 		VALUES
@@ -77,61 +74,45 @@ func (suite *AttributeInvariantSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attr_key/ainvariant/0'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *AttributeInvariantSuite) TestAdd() {
-
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *AttributeInvariantSuite) TestRemove() {
-
 	err := AddAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Attribute invariant should be gone.
 	_, err = LoadAttributeInvariant(suite.db, suite.model.Key, suite.attributeKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *AttributeInvariantSuite) TestQuery() {
-
 	err := AddAttributeInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	invariants, err := QueryAttributeInvariants(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.attributeKey: {suite.logicKey, suite.logicKeyB},
 	}, invariants)
 }
 
 //==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddAttributeInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, attributeKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddAttributeInvariant(dbOrTx, modelKey, attributeKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadAttributeInvariant(dbOrTx, modelKey, attributeKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

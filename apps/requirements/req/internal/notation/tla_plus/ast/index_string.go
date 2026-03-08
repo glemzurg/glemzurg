@@ -5,7 +5,7 @@ import (
 )
 
 // StringIndex represents string indexing.
-// Pattern: string[index]
+// Pattern: string[index].
 type StringIndex struct {
 	Str   Expression `validate:"required"` // Must be String
 	Index Expression `validate:"required"` // Must be Natural
@@ -22,11 +22,11 @@ func (s *StringIndex) String() (value string) {
 	return out.String()
 }
 
-func (s *StringIndex) Ascii() (value string) {
+func (s *StringIndex) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(s.Str.Ascii())
+	out.WriteString(s.Str.ASCII())
 	out.WriteString("[")
-	out.WriteString(s.Index.Ascii())
+	out.WriteString(s.Index.ASCII())
 	out.WriteString("]")
 	return out.String()
 }

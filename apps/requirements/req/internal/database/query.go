@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -41,9 +42,8 @@ func scanQuery(scanner Scanner, classKeyPtr *identity.Key, query *model_state.Qu
 	return nil
 }
 
-// LoadQuery loads a query from the database
+// LoadQuery loads a query from the database.
 func LoadQuery(dbOrTx DbOrTx, modelKey string, queryKey identity.Key) (classKey identity.Key, query model_state.Query, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -82,9 +82,8 @@ func AddQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, query model
 
 // UpdateQuery updates a query in the database.
 func UpdateQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, query model_state.Query) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			query
 		SET
@@ -110,9 +109,8 @@ func UpdateQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, query mo
 
 // RemoveQuery deletes a query from the database.
 func RemoveQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, queryKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			query
 		WHERE
@@ -131,9 +129,8 @@ func RemoveQuery(dbOrTx DbOrTx, modelKey string, classKey identity.Key, queryKey
 	return nil
 }
 
-// QueryQueries loads all query from the database
+// QueryQueries loads all query from the database.
 func QueryQueries(dbOrTx DbOrTx, modelKey string) (queries map[identity.Key][]model_state.Query, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -181,22 +178,23 @@ func AddQueries(dbOrTx DbOrTx, modelKey string, queries map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	sqlQuery := `INSERT INTO query (model_key, class_key, query_key, name, details) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO query (model_key, class_key, query_key, name, details) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for classKey, queryList := range queries {
 		for _, query := range queryList {
 			if i > 0 {
-				sqlQuery += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
 			args = append(args, modelKey, classKey.String(), query.Key.String(), query.Name, query.Details)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, sqlQuery, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

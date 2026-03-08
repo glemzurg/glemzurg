@@ -72,8 +72,8 @@ func (n *NumberLiteral) String() string {
 	return sb.String()
 }
 
-// Ascii returns the ASCII representation (same as String for numbers).
-func (n *NumberLiteral) Ascii() string {
+// ASCII returns the ASCII representation (same as String for numbers).
+func (n *NumberLiteral) ASCII() string {
 	return n.String()
 }
 

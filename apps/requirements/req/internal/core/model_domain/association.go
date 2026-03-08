@@ -14,7 +14,6 @@ type Association struct {
 }
 
 func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlComment string) (association Association, err error) {
-
 	association = Association{
 		Key:               key,
 		ProblemDomainKey:  problemDomainKey,
@@ -76,7 +75,7 @@ func (a *Association) ValidateWithParent(parent *identity.Key) error {
 
 // ValidateReferences validates that the association's domain keys reference real domains.
 // - ProblemDomainKey must exist in the domains map
-// - SolutionDomainKey must exist in the domains map
+// - SolutionDomainKey must exist in the domains map.
 func (a *Association) ValidateReferences(domains map[identity.Key]bool) error {
 	if !domains[a.ProblemDomainKey] {
 		return errors.Errorf("domain association '%s' references non-existent problem domain '%s'", a.Key.String(), a.ProblemDomainKey.String())

@@ -3,9 +3,9 @@ package engine
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -26,7 +26,7 @@ func (s *MultiplicityCheckerSuite) TestValidMultiplicities() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..3"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -54,7 +54,7 @@ func (s *MultiplicityCheckerSuite) TestLowerBoundViolation() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("2..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -83,7 +83,7 @@ func (s *MultiplicityCheckerSuite) TestUpperBoundViolation() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("0..1"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -113,7 +113,7 @@ func (s *MultiplicityCheckerSuite) TestOptionalAssociationNeverViolated() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

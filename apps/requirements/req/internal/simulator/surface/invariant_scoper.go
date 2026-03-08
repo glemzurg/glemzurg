@@ -1,9 +1,8 @@
 package surface
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
 // ScopeInvariants filters model invariants to those relevant to the given
@@ -12,32 +11,32 @@ import (
 //
 // classNames is the set of in-scope class names.
 // allClassNames is the set of ALL class names in the model.
-func ScopeInvariants(invariants []model_logic.Logic, classNames map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
+func ScopeInvariants(invariants []model_logic.Logic, _ map[string]bool) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	// Without knowing all class names, we can't detect out-of-scope references.
 	// Include everything by default. Use ScopeInvariantsWithAllClasses for full filtering.
-	for _, inv := range invariants {
-		included = append(included, inv)
-	}
+	included = append(included, invariants...)
 	return included, excluded
 }
 
 // ScopeInvariantsWithAllClasses filters invariants using both in-scope and
 // all class names. An invariant is excluded if it references a class name
 // that exists in the model but is NOT in the in-scope set.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func ScopeInvariantsWithAllClasses(
 	invariants []model_logic.Logic,
 	inScopeClassNames map[string]bool,
 	allClassNames map[string]bool,
 ) (included []model_logic.Logic, excluded []model_logic.Logic) {
 	for _, inv := range invariants {
-		expr, err := parser.ParseExpression(inv.Spec.Specification)
-		if err != nil {
-			// If we can't parse it, include it — better safe than sorry.
+		expr := inv.Spec.Expression
+		if expr == nil {
+			// If IR is not available, include it — better safe than sorry.
 			included = append(included, inv)
 			continue
 		}
 
-		identifiers := collectIdentifiers(expr)
+		identifiers := collectIdentifiersFromIR(expr)
 
 		// Check if any identifier matches a class name NOT in scope.
 		shouldExclude := false
@@ -57,171 +56,152 @@ func ScopeInvariantsWithAllClasses(
 	return included, excluded
 }
 
-// collectIdentifiers recursively walks an AST expression and collects
-// all Identifier values found.
-func collectIdentifiers(expr ast.Expression) map[string]bool {
+// collectIdentifiersFromIR recursively walks an IR expression and collects
+// all identifier-like names found (LocalVar names, field names, etc.).
+func collectIdentifiersFromIR(expr me.Expression) map[string]bool {
 	result := make(map[string]bool)
-	walkIdentifiers(expr, result)
+	walkIdentifiersIR(expr, result)
 	return result
 }
 
-// walkIdentifiers recursively walks an AST and adds identifier values to the set.
-func walkIdentifiers(expr ast.Expression, result map[string]bool) {
+// walkIdentifiersIR recursively walks an IR expression and adds identifier-like
+// names to the set. It dispatches to category-specific walkers.
+func walkIdentifiersIR(expr me.Expression, result map[string]bool) {
 	if expr == nil {
 		return
 	}
+	if walkIdentifiersLeaf(expr, result) {
+		return
+	}
+	if walkIdentifiersOperator(expr, result) {
+		return
+	}
+	walkIdentifiersCompound(expr, result)
+}
 
+// walkIdentifiersLeaf handles leaf nodes and references. Returns true if handled.
+func walkIdentifiersLeaf(expr me.Expression, result map[string]bool) bool {
 	switch e := expr.(type) {
-	case *ast.Identifier:
-		result[e.Value] = true
-
-	// Leaf nodes with no children containing identifiers.
-	case *ast.NumberLiteral, *ast.StringLiteral,
-		*ast.BooleanLiteral, *ast.SetConstant, *ast.ExistingValue,
-		*ast.SetLiteralEnum, *ast.SetLiteralInt, *ast.SetRange:
+	case *me.LocalVar:
+		result[e.Name] = true
+	case *me.AttributeRef, *me.SelfRef, *me.PriorFieldValue:
+		// No identifier names to collect.
+	case *me.BoolLiteral, *me.IntLiteral, *me.RationalLiteral,
+		*me.StringLiteral, *me.SetConstant, *me.NamedSetRef:
 		// No expression children.
+	default:
+		return false
+	}
+	return true
+}
 
-	// Set literals with expression elements.
-	case *ast.SetLiteral:
-		for _, elem := range e.Elements {
-			walkIdentifiers(elem, result)
+// walkIdentifiersOperator handles unary/binary operators and comparisons. Returns true if handled.
+func walkIdentifiersOperator(expr me.Expression, result map[string]bool) bool {
+	switch e := expr.(type) {
+	case *me.BinaryArith:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.BinaryLogic:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.Compare:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.SetOp:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.SetCompare:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.BagOp:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.BagCompare:
+		walkBinaryIR(e.Left, e.Right, result)
+	case *me.Membership:
+		walkBinaryIR(e.Element, e.Set, result)
+	case *me.Negate:
+		walkIdentifiersIR(e.Expr, result)
+	case *me.Not:
+		walkIdentifiersIR(e.Expr, result)
+	case *me.NextState:
+		walkIdentifiersIR(e.Expr, result)
+	default:
+		return false
+	}
+	return true
+}
+
+// walkIdentifiersCompound handles compound expressions (collections, control flow, calls).
+func walkIdentifiersCompound(expr me.Expression, result map[string]bool) {
+	if walkIdentifiersCollection(expr, result) {
+		return
+	}
+	walkIdentifiersControlFlow(expr, result)
+}
+
+// walkIdentifiersCollection handles collection-related compound nodes. Returns true if handled.
+func walkIdentifiersCollection(expr me.Expression, result map[string]bool) bool {
+	switch e := expr.(type) {
+	case *me.SetLiteral:
+		walkSliceIR(e.Elements, result)
+	case *me.TupleLiteral:
+		walkSliceIR(e.Elements, result)
+	case *me.RecordLiteral:
+		for _, f := range e.Fields {
+			walkIdentifiersIR(f.Value, result)
 		}
-
-	// Dynamic range expressions.
-	case *ast.SetRangeExpr:
-		walkIdentifiers(e.Start, result)
-		walkIdentifiers(e.End, result)
-
-	// Binary operators.
-	case *ast.BinaryArithmetic:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinaryLogic:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinaryComparison:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinaryEquality:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinarySetComparison:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinarySetOperation:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinaryBagComparison:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.BinaryBagOperation:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.Membership:
-		walkIdentifiers(e.Left, result)
-		walkIdentifiers(e.Right, result)
-	case *ast.Fraction:
-		walkIdentifiers(e.Numerator, result)
-		walkIdentifiers(e.Denominator, result)
-
-	// Unary operators.
-	case *ast.UnaryLogic:
-		walkIdentifiers(e.Right, result)
-	case *ast.UnaryNegation:
-		walkIdentifiers(e.Right, result)
-	case *ast.Parenthesized:
-		walkIdentifiers(e.Inner, result)
-	case *ast.Primed:
-		walkIdentifiers(e.Base, result)
-
-	// Access and indexing.
-	case *ast.FieldAccess:
-		walkIdentifiers(e.Base, result)
-	case *ast.TupleIndex:
-		walkIdentifiers(e.Tuple, result)
-		walkIdentifiers(e.Index, result)
-	case *ast.StringIndex:
-		walkIdentifiers(e.Str, result)
-		walkIdentifiers(e.Index, result)
-
-	// String concatenation.
-	case *ast.StringConcat:
-		for _, op := range e.Operands {
-			walkIdentifiers(op, result)
-		}
-
-	// Tuple concatenation.
-	case *ast.TupleConcat:
-		for _, op := range e.Operands {
-			walkIdentifiers(op, result)
-		}
-
-	// Quantifier (covers both ∀ and ∃).
-	case *ast.Quantifier:
-		walkIdentifiers(e.Membership, result)
-		walkIdentifiers(e.Predicate, result)
-
-	// Set filter (set comprehension).
-	case *ast.SetFilter:
-		walkIdentifiers(e.Membership, result)
-		walkIdentifiers(e.Predicate, result)
-
-	// Conditional.
-	case *ast.IfThenElse:
-		walkIdentifiers(e.Condition, result)
-		walkIdentifiers(e.Then, result)
-		walkIdentifiers(e.Else, result)
-
-	// Function calls.
-	case *ast.FunctionCall:
-		for _, seg := range e.ScopePath {
-			walkIdentifiers(seg, result)
-		}
-		walkIdentifiers(e.Name, result)
-		for _, arg := range e.Args {
-			walkIdentifiers(arg, result)
-		}
-
-	// Scoped calls.
-	case *ast.ScopedCall:
-		walkIdentifiers(e.Domain, result)
-		walkIdentifiers(e.Subdomain, result)
-		walkIdentifiers(e.Class, result)
-		walkIdentifiers(e.FunctionName, result)
-		walkIdentifiers(e.Parameter, result)
-
-	// Builtin calls.
-	case *ast.BuiltinCall:
-		for _, arg := range e.Args {
-			walkIdentifiers(arg, result)
-		}
-
-	// Tuple literal.
-	case *ast.TupleLiteral:
-		for _, elem := range e.Elements {
-			walkIdentifiers(elem, result)
-		}
-
-	// Record instance.
-	case *ast.RecordInstance:
-		for _, binding := range e.Bindings {
-			walkIdentifiers(binding.Expression, result)
-		}
-
-	// Record altered (EXCEPT).
-	case *ast.RecordAltered:
-		walkIdentifiers(e.Base, result)
+	case *me.FieldAccess:
+		walkIdentifiersIR(e.Base, result)
+	case *me.TupleIndex:
+		walkBinaryIR(e.Tuple, e.Index, result)
+	case *me.StringIndex:
+		walkBinaryIR(e.Str, e.Index, result)
+	case *me.RecordUpdate:
+		walkIdentifiersIR(e.Base, result)
 		for _, alt := range e.Alterations {
-			walkIdentifiers(alt.Expression, result)
+			walkIdentifiersIR(alt.Value, result)
 		}
+	case *me.StringConcat:
+		walkSliceIR(e.Operands, result)
+	case *me.TupleConcat:
+		walkSliceIR(e.Operands, result)
+	default:
+		return false
+	}
+	return true
+}
 
-	// Case expression.
-	case *ast.CaseExpr:
+// walkIdentifiersControlFlow handles control flow, quantifiers, and call nodes.
+func walkIdentifiersControlFlow(expr me.Expression, result map[string]bool) {
+	switch e := expr.(type) {
+	case *me.Quantifier:
+		walkBinaryIR(e.Domain, e.Predicate, result)
+	case *me.SetFilter:
+		walkBinaryIR(e.Set, e.Predicate, result)
+	case *me.SetRange:
+		walkBinaryIR(e.Start, e.End, result)
+	case *me.IfThenElse:
+		walkIdentifiersIR(e.Condition, result)
+		walkIdentifiersIR(e.Then, result)
+		walkIdentifiersIR(e.Else, result)
+	case *me.Case:
 		for _, branch := range e.Branches {
-			walkIdentifiers(branch.Condition, result)
-			walkIdentifiers(branch.Result, result)
+			walkBinaryIR(branch.Condition, branch.Result, result)
 		}
-		walkIdentifiers(e.Other, result)
+		walkIdentifiersIR(e.Otherwise, result)
+	case *me.ActionCall:
+		walkSliceIR(e.Args, result)
+	case *me.GlobalCall:
+		walkSliceIR(e.Args, result)
+	case *me.BuiltinCall:
+		walkSliceIR(e.Args, result)
+	}
+}
 
+// walkBinaryIR walks two child expressions.
+func walkBinaryIR(left, right me.Expression, result map[string]bool) {
+	walkIdentifiersIR(left, result)
+	walkIdentifiersIR(right, result)
+}
+
+// walkSliceIR walks a slice of child expressions.
+func walkSliceIR(exprs []me.Expression, result map[string]bool) {
+	for _, expr := range exprs {
+		walkIdentifiersIR(expr, result)
 	}
 }

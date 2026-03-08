@@ -17,18 +17,18 @@ func TestBooleanSuite(t *testing.T) {
 
 func (s *BooleanTestSuite) TestParseTrue() {
 	expr, err := ParseExpression("TRUE")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BooleanLiteral{Value: true}, expr)
 }
 
 func (s *BooleanTestSuite) TestParseFalse() {
 	expr, err := ParseExpression("FALSE")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BooleanLiteral{Value: false}, expr)
 }
 
 func (s *BooleanTestSuite) TestParseWithWhitespace() {
 	expr, err := ParseExpression("  TRUE  ")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(&ast.BooleanLiteral{Value: true}, expr)
 }

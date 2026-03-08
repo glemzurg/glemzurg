@@ -8,7 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,7 +29,6 @@ type DataTypeFieldSuite struct {
 }
 
 func (suite *DataTypeFieldSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -43,13 +41,12 @@ func (suite *DataTypeFieldSuite) SetupTest() {
 }
 
 func (suite *DataTypeFieldSuite) TestLoad() {
-
 	// Nothing in database yet.
 	fields, err := LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_type_key")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), fields)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(fields)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO data_type_field
 			(
 				model_key,
@@ -71,11 +68,11 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 				'field_data_type_key'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fields, err = LoadDataTypeFields(suite.db, strings.ToUpper(suite.model.Key), "data_TYPE_Key") // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Require().NoError(err)
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -90,16 +87,15 @@ func (suite *DataTypeFieldSuite) TestLoad() {
 }
 
 func (suite *DataTypeFieldSuite) TestAdd() {
-
 	err := AddField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_DATA_type_key"}, // Test case-insensitive..
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Require().NoError(err)
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -110,22 +106,21 @@ func (suite *DataTypeFieldSuite) TestAdd() {
 }
 
 func (suite *DataTypeFieldSuite) TestUpdate() {
-
 	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_TYPE_key_b"}, // Test case-insensitive..
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Require().NoError(err)
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -136,39 +131,37 @@ func (suite *DataTypeFieldSuite) TestUpdate() {
 }
 
 func (suite *DataTypeFieldSuite) TestRemove() {
-
 	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveField(suite.db, strings.ToUpper(suite.model.Key), strings.ToUpper(suite.dataType.Key), "NameA")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fields, err := LoadDataTypeFields(suite.db, suite.model.Key, suite.dataType.Key)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), fields)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(fields)
 }
 
 func (suite *DataTypeFieldSuite) TestQuery() {
-
 	err := AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameB",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key_b"},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Add another data type and field
 	err = AddField(suite.db, suite.model.Key, suite.dataType.Key, model_data_type.Field{
 		Name:          "NameA",
 		FieldDataType: &model_data_type.DataType{Key: "field_data_type_key"},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fields, err := QueryFields(suite.db, strings.ToUpper(suite.model.Key)) // Test case-insensitive.
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Require().NoError(err)
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",
@@ -201,11 +194,11 @@ func (suite *DataTypeFieldSuite) TestBulkInsertFields() {
 			},
 		},
 	})
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fields, err := QueryFields(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[string][]model_data_type.Field{
+	suite.Require().NoError(err)
+	suite.Equal(map[string][]model_data_type.Field{
 		"data_type_key": {
 			{
 				Name:          "NameA",

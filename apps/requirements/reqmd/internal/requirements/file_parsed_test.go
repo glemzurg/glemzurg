@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -73,14 +72,14 @@ Some text.
 
 func (suite *FileParsedSuite) TestNew() {
 
-	assert.Equal(suite.T(), fileParsed{
+	suite.Equal(fileParsed{
 		filename:         "filename",
 		header:           "",
 		refs:             nil,
 		originalContents: "",
 	}, T_Must(newFileParsed("filename", "", "", nil)))
 
-	assert.Equal(suite.T(), fileParsed{
+	suite.Equal(fileParsed{
 		filename:         "filename",
 		header:           "header",
 		refs:             []uint{2, 3},
@@ -89,8 +88,8 @@ func (suite *FileParsedSuite) TestNew() {
 
 	// Errors.
 	file, err := newFileParsed("", "contents", "header", []uint{2, 3})
-	assert.ErrorContains(suite.T(), err, "cannot be blank")
-	assert.Empty(suite.T(), file)
+	suite.Require().ErrorContains(err, "cannot be blank")
+	suite.Empty(file)
 }
 
 func (suite *FileParsedSuite) TestParseFileContents() {
@@ -216,10 +215,10 @@ Some text.`)),
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		newLastRef, file, fileReqs, err := parseFileContents(test.lastRef, `filename`, test.contents)
-		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.newLastRef, newLastRef, testName)
-		assert.Equal(suite.T(), test.file, file, testName)
-		assert.Equal(suite.T(), test.fileReqs, fileReqs, testName)
+		suite.Require().NoError(err, testName)
+		suite.Equal(test.newLastRef, newLastRef, testName)
+		suite.Equal(test.file, file, testName)
+		suite.Equal(test.fileReqs, fileReqs, testName)
 	}
 }
 
@@ -320,12 +319,12 @@ Some text.`,
 
 		// Parse contents.
 		_, file, fileReqs, err := parseFileContents(0, `filename`, test.contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
 		// Generate contents.
 		generated, err := file.Generate(Config{}, fileReqs)
-		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.generated, generated, testName)
+		suite.Require().NoError(err, testName)
+		suite.Equal(test.generated, generated, testName)
 	}
 }
 
@@ -430,7 +429,7 @@ Some text.`,
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		header, reqTexts := splitFileOnReqs(test.contents)
-		assert.Equal(suite.T(), test.header, header, testName)
-		assert.Equal(suite.T(), test.reqTexts, reqTexts, testName)
+		suite.Equal(test.header, header, testName)
+		suite.Equal(test.reqTexts, reqTexts, testName)
 	}
 }

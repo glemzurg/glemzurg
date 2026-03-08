@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +33,6 @@ type UseCaseActorSuite struct {
 }
 
 func (suite *UseCaseActorSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -48,13 +46,12 @@ func (suite *UseCaseActorSuite) SetupTest() {
 }
 
 func (suite *UseCaseActorSuite) TestLoad() {
-
 	// Nothing in database yet.
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), actor)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(actor)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO use_case_actor
 			(
 				model_key,
@@ -70,65 +67,61 @@ func (suite *UseCaseActorSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err = LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_use_case.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_use_case.Actor{
 		UmlComment: "UmlComment",
 	}, actor)
 }
 
 func (suite *UseCaseActorSuite) TestAdd() {
-
 	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_use_case.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_use_case.Actor{
 		UmlComment: "UmlComment",
 	}, actor)
 }
 
 func (suite *UseCaseActorSuite) TestUpdate() {
-
 	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_use_case.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_use_case.Actor{
 		UmlComment: "UmlCommentX",
 	}, actor)
 }
 
 func (suite *UseCaseActorSuite) TestRemove() {
-
 	err := AddUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key, model_use_case.Actor{
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadUseCaseActor(suite.db, suite.model.Key, suite.useCase.Key, suite.class.Key)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), actor)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(actor)
 }
 
 func (suite *UseCaseActorSuite) TestQuery() {
-
 	err := AddUseCaseActors(suite.db, suite.model.Key, map[identity.Key]map[identity.Key]model_use_case.Actor{
 		suite.useCase.Key: {
 			suite.class.Key: {
@@ -139,11 +132,11 @@ func (suite *UseCaseActorSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actors, err := QueryUseCaseActors(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key]map[identity.Key]model_use_case.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key]map[identity.Key]model_use_case.Actor{
 		suite.useCase.Key: {
 			suite.class.Key: {
 				UmlComment: "UmlComment",
@@ -153,21 +146,4 @@ func (suite *UseCaseActorSuite) TestQuery() {
 			},
 		},
 	}, actors)
-}
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddUseCaseActor(t *testing.T, dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key, classKey identity.Key) (actor model_use_case.Actor) {
-
-	err := AddUseCaseActor(dbOrTx, modelKey, useCaseKey, classKey, model_use_case.Actor{
-		UmlComment: "UmlComment",
-	})
-	assert.Nil(t, err)
-
-	actor, err = LoadUseCaseActor(dbOrTx, modelKey, useCaseKey, classKey)
-	assert.Nil(t, err)
-
-	return actor
 }

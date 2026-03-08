@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,17 +47,17 @@ func (suite *StringIndexSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &StringIndex{
 				Str:   tt.str,
 				Index: tt.index,
 			}
-			assert.Equal(t, tt.expected, expr.String())
+			suite.Equal(tt.expected, expr.String())
 		})
 	}
 }
 
-func (suite *StringIndexSuite) TestAscii() {
+func (suite *StringIndexSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		str      Expression
@@ -85,12 +84,12 @@ func (suite *StringIndexSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &StringIndex{
 				Str:   tt.str,
 				Index: tt.index,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			suite.Equal(tt.expected, expr.ASCII())
 		})
 	}
 }
@@ -127,12 +126,12 @@ func (suite *StringIndexSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.s.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -145,4 +144,3 @@ func (suite *StringIndexSuite) TestExpressionNode() {
 	}
 	s.expressionNode()
 }
-

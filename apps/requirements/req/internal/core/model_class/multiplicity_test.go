@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,12 +51,12 @@ func (suite *MultiplicitySuite) TestValidate() {
 		},
 	}
 	for _, test := range tests {
-		suite.T().Run(test.name, func(t *testing.T) {
+		suite.Run(test.name, func() {
 			err := test.obj.Validate()
 			if test.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, test.errstr)
+				suite.Require().ErrorContains(err, test.errstr)
 			}
 		})
 	}
@@ -67,16 +66,15 @@ func (suite *MultiplicitySuite) TestValidate() {
 func (suite *MultiplicitySuite) TestNew() {
 	// Test struct population.
 	obj, err := NewMultiplicity("2..3")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Multiplicity{LowerBound: 2, HigherBound: 3}, obj, "struct should be populated")
+	suite.Require().NoError(err)
+	suite.Equal(Multiplicity{LowerBound: 2, HigherBound: 3}, obj, "struct should be populated")
 
 	// Test that Validate is called (parsing error).
 	_, err = NewMultiplicity("unknown")
-	assert.ErrorContains(suite.T(), err, "invalid multiplicity", "NewMultiplicity should fail on invalid input")
+	suite.Require().ErrorContains(err, "invalid multiplicity", "NewMultiplicity should fail on invalid input")
 }
 
 func (suite *MultiplicitySuite) TestParseMultiplicity() {
-
 	tests := []struct {
 		multiplicity string
 		lowerBound   uint
@@ -185,13 +183,13 @@ func (suite *MultiplicitySuite) TestParseMultiplicity() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		lowerBound, higherBound, err := parseMultiplicity(test.multiplicity)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
-			assert.Equal(suite.T(), test.lowerBound, lowerBound, testName)
-			assert.Equal(suite.T(), test.higherBound, higherBound, testName)
+			suite.Require().NoError(err, testName)
+			suite.Equal(test.lowerBound, lowerBound, testName)
+			suite.Equal(test.higherBound, higherBound, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), lowerBound, testName)
-			assert.Empty(suite.T(), higherBound, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
+			suite.Empty(lowerBound, testName)
+			suite.Empty(higherBound, testName)
 		}
 	}
 }
@@ -225,14 +223,13 @@ func (suite *MultiplicitySuite) TestParsedString() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.multiplicity.ParsedString())
+		suite.Run(tt.name, func() {
+			suite.Equal(tt.expected, tt.multiplicity.ParsedString())
 		})
 	}
 }
 
 func (suite *MultiplicitySuite) TestString() {
-
 	tests := []struct {
 		multiplicity Multiplicity
 		value        string
@@ -286,6 +283,6 @@ func (suite *MultiplicitySuite) TestString() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		value := test.multiplicity.String()
-		assert.Equal(suite.T(), test.value, value, testName)
+		suite.Equal(test.value, value, testName)
 	}
 }

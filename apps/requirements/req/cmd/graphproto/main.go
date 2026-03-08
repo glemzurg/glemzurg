@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/goccy/go-graphviz"
 )
@@ -224,7 +224,6 @@ AssocClass -> dummy [style=dashed];}
 // `
 
 func main() {
-
 	// Example call: go run main.go > graph.svg
 
 	ctx := context.Background()
@@ -241,12 +240,12 @@ func main() {
 		if err := graph.Close(); err != nil {
 			panic(err)
 		}
-		g.Close()
+		_ = g.Close()
 	}()
 
 	var buf bytes.Buffer
 	if err := g.Render(ctx, graph, graphviz.SVG, &buf); err != nil {
-		log.Fatal(err)
+		log.Fatal(err) //nolint:gocritic // server blocks until error, defer runs on normal exit
 	}
-	fmt.Println(buf.String())
+	os.Stdout.WriteString(buf.String() + "\n")
 }

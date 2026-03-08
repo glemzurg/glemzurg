@@ -75,7 +75,7 @@ func (s *Server) eventsHandler(w http.ResponseWriter, r *http.Request) {
 		if !open {
 			break
 		}
-		fmt.Fprintf(w, "data: %s\n\n", msg)
+		_, _ = fmt.Fprintf(w, "data: %s\n\n", msg)
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
 		}
@@ -104,13 +104,14 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(parts) == 2 {
 		file := parts[1]
-		if strings.HasSuffix(file, ".md") {
+		switch {
+		case strings.HasSuffix(file, ".md"):
 			s.renderMD(model, file, w)
 			return
-		} else if strings.HasSuffix(file, ".svg") {
+		case strings.HasSuffix(file, ".svg"):
 			s.serveSVG(model, file, w, r)
 			return
-		} else if strings.HasSuffix(file, ".css") {
+		case strings.HasSuffix(file, ".css"):
 			s.serveCSS(model, w, r)
 			return
 		}
@@ -120,7 +121,7 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // homeHandler displays a list of available models.
-func (s *Server) homeHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) homeHandler(w http.ResponseWriter, _ *http.Request) {
 	models := s.store.ListModels()
 
 	var list strings.Builder

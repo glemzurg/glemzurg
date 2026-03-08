@@ -12,13 +12,14 @@ import (
 // For backwards compatibility:
 // - If Identifier is set (non-nil), it is used as the base
 // - If Base is set (non-nil), it is used as the base
-// - If both are nil, "!" (existing value) is the base
+// - If both are nil, "!" (existing value) is the base.
 type FieldAccess struct {
 	// Base is the expression being accessed (can be any expression for chaining).
 	// Takes precedence over Identifier if both are set.
 	Base Expression
 
 	// Identifier is for backwards compatibility with the old structure.
+	//
 	// Deprecated: Use Base instead.
 	Identifier *Identifier
 
@@ -29,11 +30,12 @@ func (f *FieldAccess) expressionNode() {}
 
 func (f *FieldAccess) String() (value string) {
 	var out bytes.Buffer
-	if f.Base != nil {
+	switch {
+	case f.Base != nil:
 		out.WriteString(f.Base.String())
-	} else if f.Identifier != nil {
+	case f.Identifier != nil:
 		out.WriteString(f.Identifier.String())
-	} else {
+	default:
 		out.WriteString("!")
 	}
 	out.WriteString(".")
@@ -41,7 +43,7 @@ func (f *FieldAccess) String() (value string) {
 	return out.String()
 }
 
-func (f *FieldAccess) Ascii() (value string) { return f.String() }
+func (f *FieldAccess) ASCII() (value string) { return f.String() }
 
 func (f *FieldAccess) Validate() error {
 	if err := _validate.Struct(f); err != nil {
@@ -51,7 +53,7 @@ func (f *FieldAccess) Validate() error {
 	if f.Base != nil {
 		if validator, ok := f.Base.(interface{ Validate() error }); ok {
 			if err := validator.Validate(); err != nil {
-				return fmt.Errorf("Base: %w", err)
+				return fmt.Errorf("base: %w", err)
 			}
 		}
 	} else if f.Identifier != nil {
@@ -76,5 +78,6 @@ func (f *FieldAccess) GetBase() Expression {
 }
 
 // FieldIdentifier is an alias for backwards compatibility.
+//
 // Deprecated: Use FieldAccess instead.
 type FieldIdentifier = FieldAccess

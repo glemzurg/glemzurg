@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +34,6 @@ type EventParameterSuite struct {
 }
 
 func (suite *EventParameterSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,13 +49,12 @@ func (suite *EventParameterSuite) SetupTest() {
 }
 
 func (suite *EventParameterSuite) TestLoad() {
-
 	// Nothing in database yet.
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO event_parameter
 			(
 				model_key,
@@ -76,72 +74,68 @@ func (suite *EventParameterSuite) TestLoad() {
 				'Nat'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err = LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
 }
 
 func (suite *EventParameterSuite) TestAdd() {
-
 	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
 }
 
 func (suite *EventParameterSuite) TestUpdate() {
-
 	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateEventParameter(suite.db, suite.model.Key, suite.eventKey, 2, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
 }
 
 func (suite *EventParameterSuite) TestRemove() {
-
 	err := AddEventParameter(suite.db, suite.model.Key, suite.eventKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadEventParameter(suite.db, suite.model.Key, suite.eventKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 }
 
 func (suite *EventParameterSuite) TestQuery() {
-
 	err := AddEventParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.eventKey: {
 			{
@@ -154,11 +148,11 @@ func (suite *EventParameterSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	params, err := QueryEventParameters(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.eventKey: {
 			{
 				Name:          "Alpha",
@@ -176,27 +170,25 @@ func (suite *EventParameterSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey identity.Key, name string, sortOrder int) (param model_state.Parameter) {
-
+func t_AddEventParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, eventKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	err = AddEventParameter(dbOrTx, modelKey, eventKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	param, err = LoadEventParameter(dbOrTx, modelKey, eventKey, paramKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return param
 }
 
 func (suite *EventParameterSuite) TestVerifyTestObjects() {
-
-	param := t_AddEventParameter(suite.T(), suite.db, suite.model.Key, suite.eventKey, "Amount", 0)
-	assert.Equal(suite.T(), model_state.Parameter{
+	param := t_AddEventParameter(suite.T(), suite.db, suite.model.Key, suite.eventKey, "Amount")
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

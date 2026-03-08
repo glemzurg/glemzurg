@@ -1,12 +1,13 @@
 package model_data_type
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
+	pkgerrors "github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 )
@@ -34,19 +35,15 @@ type DataType struct {
 
 // New creates a new DataType by parsing the input text.
 func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, err error) {
-
 	// If this is blank then it is an unconstrained data type.
 	if strings.TrimSpace(text) == "" {
-
 		dataType = &DataType{
 			CollectionType: COLLECTION_TYPE_ATOMIC,
 			Atomic: &Atomic{
 				ConstraintType: CONSTRAINT_TYPE_UNCONSTRAINED,
 			},
 		}
-
 	} else {
-
 		// Simplify the text to have easier to parse whitespace.
 		// All data types are a single line anyway.
 		text = strings.TrimSpace(normalizeWhitespace(text))
@@ -54,12 +51,12 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 		// Parse the data type.
 		dataTypeAny, err := Parse("", []byte(text))
 		if err != nil {
-
 			// Is this the parser error?
-			if el, ok := err.(errList); ok {
+			var el errList
+			if errors.As(err, &el) {
 				// Overwrite the err with a error calling code can use.
 				err = &CannotParseError{
-					err:   errors.WithStack(el),
+					err:   pkgerrors.WithStack(el),
 					input: text,
 				}
 			}
@@ -71,7 +68,7 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 		var ok bool
 		dataType, ok = dataTypeAny.(*DataType)
 		if !ok {
-			return nil, errors.Errorf("parsed data type is not of type *DataType")
+			return nil, pkgerrors.Errorf("parsed data type is not of type *DataType")
 		}
 	}
 
@@ -89,86 +86,80 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 
 // Validate validates the DataType struct.
 func (d DataType) Validate() error {
-	// Validate struct tags (Key required, CollectionType required + oneof).
 	if err := _validate.Struct(d); err != nil {
 		return err
 	}
-
-	// Atomic: required when atomic; validate if present.
-	if d.CollectionType == COLLECTION_TYPE_ATOMIC {
-		if d.Atomic == nil {
-			return fmt.Errorf("Atomic: cannot be blank.")
-		}
-		if err := d.Atomic.Validate(); err != nil {
-			return fmt.Errorf("Atomic: (%s).", err.Error())
-		}
-	} else if d.Atomic != nil {
-		if err := d.Atomic.Validate(); err != nil {
-			return fmt.Errorf("Atomic: (%s).", err.Error())
+	if err := d.validateAtomic(); err != nil {
+		return err
+	}
+	if err := d.validateRecordFields(); err != nil {
+		return err
+	}
+	if err := d.validateCollectionFields(); err != nil {
+		return err
+	}
+	if d.TypeSpec != nil {
+		if err := d.TypeSpec.Validate(); err != nil {
+			return fmt.Errorf("typeSpec: %w", err)
 		}
 	}
+	return nil
+}
 
-	// RecordFields: required when record; each field validated.
-	if d.CollectionType == COLLECTION_TYPE_RECORD {
-		if len(d.RecordFields) == 0 {
-			return fmt.Errorf("RecordFields: cannot be blank.")
-		}
-		for _, f := range d.RecordFields {
-			if err := f.Validate(); err != nil {
-				return fmt.Errorf("RecordFields: (%s).", err.Error())
-			}
-		}
-	} else {
-		for _, f := range d.RecordFields {
-			if err := f.Validate(); err != nil {
-				return fmt.Errorf("RecordFields: (%s).", err.Error())
-			}
+func (d DataType) validateAtomic() error {
+	if d.CollectionType == COLLECTION_TYPE_ATOMIC && d.Atomic == nil {
+		return fmt.Errorf("atomic: cannot be blank")
+	}
+	if d.Atomic != nil {
+		if err := d.Atomic.Validate(); err != nil {
+			return fmt.Errorf("atomic: (%s)", err.Error())
 		}
 	}
+	return nil
+}
 
-	// Collection field rules.
+func (d DataType) validateRecordFields() error {
+	if d.CollectionType == COLLECTION_TYPE_RECORD && len(d.RecordFields) == 0 {
+		return fmt.Errorf("recordFields: cannot be blank")
+	}
+	for _, f := range d.RecordFields {
+		if err := f.Validate(); err != nil {
+			return fmt.Errorf("recordFields: (%s)", err.Error())
+		}
+	}
+	return nil
+}
+
+func (d DataType) validateCollectionFields() error {
 	isCollection := d.CollectionType == COLLECTION_TYPE_STACK ||
 		d.CollectionType == COLLECTION_TYPE_UNORDERED ||
 		d.CollectionType == COLLECTION_TYPE_ORDERED ||
 		d.CollectionType == COLLECTION_TYPE_QUEUE
 
 	if isCollection {
-		// CollectionUnique is required for collections.
 		if d.CollectionUnique == nil {
-			return fmt.Errorf("CollectionUnique: cannot be blank.")
+			return fmt.Errorf("collectionUnique: cannot be blank")
 		}
-		// CollectionMin if set must be >= 1.
 		if d.CollectionMin != nil && *d.CollectionMin < 1 {
-			return fmt.Errorf("CollectionMin: must be no less than 1.")
+			return fmt.Errorf("collectionMin: must be no less than 1")
 		}
-		// CollectionMax if set must be >= 1.
 		if d.CollectionMax != nil && *d.CollectionMax < 1 {
-			return fmt.Errorf("CollectionMax: must be no less than 1.")
+			return fmt.Errorf("collectionMax: must be no less than 1")
 		}
-		// If both defined, max >= min.
 		if d.CollectionMin != nil && d.CollectionMax != nil && *d.CollectionMax < *d.CollectionMin {
-			return fmt.Errorf("CollectionMax: must be no less than CollectionMin.")
+			return fmt.Errorf("collectionMax: must be no less than collectionMin")
 		}
-	} else {
-		// Non-collections must not have collection fields.
-		if d.CollectionUnique != nil {
-			return fmt.Errorf("CollectionUnique: must be blank.")
-		}
-		if d.CollectionMin != nil {
-			return fmt.Errorf("CollectionMin: must be blank.")
-		}
-		if d.CollectionMax != nil {
-			return fmt.Errorf("CollectionMax: must be blank.")
-		}
+		return nil
 	}
-
-	// Validate TypeSpec if present.
-	if d.TypeSpec != nil {
-		if err := d.TypeSpec.Validate(); err != nil {
-			return fmt.Errorf("TypeSpec: %w", err)
-		}
+	if d.CollectionUnique != nil {
+		return fmt.Errorf("collectionUnique: must be blank")
 	}
-
+	if d.CollectionMin != nil {
+		return fmt.Errorf("collectionMin: must be blank")
+	}
+	if d.CollectionMax != nil {
+		return fmt.Errorf("collectionMax: must be blank")
+	}
 	return nil
 }
 
@@ -176,12 +167,14 @@ func (d DataType) Validate() error {
 func (d DataType) String() string {
 	switch d.CollectionType {
 	case COLLECTION_TYPE_RECORD:
-		result := "{\n"
+		var b strings.Builder
+		b.WriteString("{\n")
 		for _, field := range d.RecordFields {
-			result += field.String() + "\n"
+			b.WriteString(field.String())
+			b.WriteString("\n")
 		}
-		result += "}"
-		return result
+		b.WriteString("}")
+		return b.String()
 	case COLLECTION_TYPE_ATOMIC:
 		if d.Atomic == nil {
 			panic("atomic is nil")
@@ -208,7 +201,7 @@ func (d DataType) String() string {
 
 		collectionType := d.CollectionType
 		if collectionType == COLLECTION_TYPE_UNORDERED || collectionType == COLLECTION_TYPE_ORDERED {
-			collectionType = collectionType + " collection"
+			collectionType += " collection"
 		}
 
 		name += collectionType + " of "
@@ -244,10 +237,9 @@ func (d DataType) UnpackNested() []DataType {
 // SortDataTypesByKeyLengthDesc sorts a slice of DataType by key length in descending order (longest keys first).
 func SortDataTypesByKeyLengthDesc(dataTypes []DataType) {
 	sort.Slice(dataTypes, func(i, j int) bool {
-
 		// Sort by key length descending first.
 		// Children data types have longer keys than their parents.
-		// So we can insert them first to sensure there are no foreign key violations.
+		// So we can insert them first to ensure there are no foreign key violations.
 		if len(dataTypes[i].Key) != len(dataTypes[j].Key) {
 			return len(dataTypes[i].Key) > len(dataTypes[j].Key)
 		}
@@ -266,7 +258,6 @@ func ExtractDatabaseObjects(dataTypes []DataType) (map[string][]Field, map[strin
 	fieldMap := make(map[string][]Field)
 
 	for _, d := range dataTypes {
-
 		// Collect fields for records.
 		if len(d.RecordFields) > 0 {
 			fieldMap[d.Key] = d.RecordFields

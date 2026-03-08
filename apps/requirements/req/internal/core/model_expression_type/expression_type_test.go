@@ -3,7 +3,6 @@ package model_expression_type
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -39,13 +38,13 @@ func (s *ExpressionTypeTestSuite) TestValidateScalars() {
 		{testName: "error enum empty", et: &EnumType{}, errstr: "Values"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -66,13 +65,13 @@ func (s *ExpressionTypeTestSuite) TestValidateCollections() {
 		{testName: "error bag nil element", et: &BagType{}, errstr: "BagType.ElementType: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -97,13 +96,13 @@ func (s *ExpressionTypeTestSuite) TestValidateCompound() {
 		{testName: "error function nil param", et: &FunctionType{Params: []ExpressionType{nil}, Return: &IntegerType{}}, errstr: "FunctionType.Params[0]: is required"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -119,13 +118,13 @@ func (s *ExpressionTypeTestSuite) TestValidateReferences() {
 		{testName: "error object empty key", et: &ObjectType{}, errstr: "ObjectType.ClassKey"},
 	}
 	for _, tt := range tests {
-		s.T().Run(tt.testName, func(t *testing.T) {
+		s.Run(tt.testName, func() {
 			err := tt.et.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				s.Require().NoError(err)
 			} else {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errstr)
+				s.Require().Error(err)
+				s.Contains(err.Error(), tt.errstr)
 			}
 		})
 	}
@@ -143,7 +142,7 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 			},
 		},
 	}
-	s.NoError(et.Validate())
+	s.Require().NoError(et.Validate())
 
 	// Nested with error deep inside.
 	etBad := &SetType{
@@ -156,7 +155,7 @@ func (s *ExpressionTypeTestSuite) TestValidateNested() {
 		},
 	}
 	err := etBad.Validate()
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "ElementTypes")
 }
 
@@ -177,10 +176,10 @@ func (s *ExpressionTypeTestSuite) TestTypeName() {
 
 func (s *ExpressionTypeTestSuite) TestValidateExpressionTypeHelper() {
 	// Nil is valid.
-	s.NoError(ValidateExpressionType(nil))
+	s.Require().NoError(ValidateExpressionType(nil))
 	// Valid type.
-	s.NoError(ValidateExpressionType(&BooleanType{}))
+	s.Require().NoError(ValidateExpressionType(&BooleanType{}))
 	// Invalid type.
 	err := ValidateExpressionType(&SetType{})
-	s.Error(err)
+	s.Require().Error(err)
 }

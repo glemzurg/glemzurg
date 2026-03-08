@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,7 +36,6 @@ type ClassInvariantSuite struct {
 }
 
 func (suite *ClassInvariantSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -56,13 +54,12 @@ func (suite *ClassInvariantSuite) SetupTest() {
 }
 
 func (suite *ClassInvariantSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no class_invariant join row yet.
 	_, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the class_invariant join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class_invariant
 			(model_key, class_key, logic_key)
 		VALUES
@@ -72,61 +69,45 @@ func (suite *ClassInvariantSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/cinvariant/0'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ClassInvariantSuite) TestAdd() {
-
 	err := AddClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ClassInvariantSuite) TestRemove() {
-
 	err := AddClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Class invariant should be gone.
 	_, err = LoadClassInvariant(suite.db, suite.model.Key, suite.classKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ClassInvariantSuite) TestQuery() {
-
 	err := AddClassInvariants(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.classKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	invariants, err := QueryClassInvariants(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.classKey: {suite.logicKey, suite.logicKeyB},
 	}, invariants)
 }
 
 //==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddClassInvariant(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddClassInvariant(dbOrTx, modelKey, classKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadClassInvariant(dbOrTx, modelKey, classKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
-}

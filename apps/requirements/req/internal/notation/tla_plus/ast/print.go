@@ -19,6 +19,9 @@ func Print(expr Expression) string {
 type printer struct{}
 
 // print returns the TLA+ string for an expression.
+//
+//complexity:cyclo:warn=60,fail=60 Mostly simple routing switch.
+//complexity:fanout:warn=60,fail=60 Mostly simple routing switch.
 func (p *printer) print(expr Expression) string {
 	switch e := expr.(type) {
 	// --- Literals ---
@@ -298,12 +301,12 @@ func (p *printer) wrap(child Expression, parentPrec int, parentAssoc associativi
 }
 
 // printDelimited prints a list of expressions with delimiters.
-func (p *printer) printDelimited(open string, elems []Expression, close string) string {
+func (p *printer) printDelimited(open string, elems []Expression, closeStr string) string {
 	parts := make([]string, len(elems))
 	for i, e := range elems {
 		parts[i] = p.print(e)
 	}
-	return open + strings.Join(parts, ", ") + close
+	return open + strings.Join(parts, ", ") + closeStr
 }
 
 // printNaryOp prints n-ary operators (concat, etc.) with correct wrapping.

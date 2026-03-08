@@ -3,8 +3,8 @@ package convert
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
 
 // RaiseType converts a model ExpressionType into a TLA+ string representation.
@@ -59,7 +59,7 @@ func raiseTypeToAST(et met.ExpressionType, ctx *RaiseContext) (ast.Expression, e
 		return nil, fmt.Errorf("FunctionType cannot be represented as a TLA+ type expression")
 
 	case *met.ObjectType:
-		return raiseObjectType(t, ctx)
+		return raiseObjectType(t)
 
 	default:
 		return nil, fmt.Errorf("unsupported ExpressionType: %T", et)
@@ -137,7 +137,7 @@ func raiseRecordType(t *met.RecordType, ctx *RaiseContext) (ast.Expression, erro
 	return &ast.RecordTypeExpr{Fields: fields}, nil
 }
 
-func raiseObjectType(t *met.ObjectType, ctx *RaiseContext) (ast.Expression, error) {
+func raiseObjectType(t *met.ObjectType) (ast.Expression, error) {
 	// ObjectType references a class by key. Use the key's SubKey (class name).
 	return &ast.Identifier{Value: t.ClassKey.SubKey}, nil
 }

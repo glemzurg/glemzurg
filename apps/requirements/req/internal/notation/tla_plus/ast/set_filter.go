@@ -21,12 +21,12 @@ func (sc *SetFilter) String() (value string) {
 	return out.String()
 }
 
-func (sc *SetFilter) Ascii() (value string) {
+func (sc *SetFilter) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("{")
-	out.WriteString(sc.Membership.Ascii())
+	out.WriteString(sc.Membership.ASCII())
 	out.WriteString(" : ")
-	out.WriteString(sc.Predicate.Ascii())
+	out.WriteString(sc.Predicate.ASCII())
 	out.WriteString("}")
 	return out.String()
 }
@@ -45,5 +45,6 @@ func (sc *SetFilter) Validate() error {
 }
 
 // SetConditional is an alias for backwards compatibility.
+//
 // Deprecated: Use SetFilter instead.
 type SetConditional = SetFilter

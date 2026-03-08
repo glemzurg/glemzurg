@@ -3,15 +3,14 @@ package parser_human
 import (
 	"strconv"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
 func parseActorGeneralization(generalizationSubKey, filename, contents string) (generalization model_actor.Generalization, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_actor.Generalization{}, err
@@ -50,10 +49,10 @@ func parseActorGeneralization(generalizationSubKey, filename, contents string) (
 
 func generateActorGeneralizationContent(generalization model_actor.Generalization) string {
 	yamlStr := ""
-	if generalization.IsComplete != true {
+	if !generalization.IsComplete {
 		yamlStr += "is_complete: " + strconv.FormatBool(generalization.IsComplete) + "\n"
 	}
-	if generalization.IsStatic != true {
+	if !generalization.IsStatic {
 		yamlStr += "is_static: " + strconv.FormatBool(generalization.IsStatic) + "\n"
 	}
 	return generateFileContent(prependMarkdownSubtitle(generalization.Name, generalization.Details), generalization.UmlComment, yamlStr)

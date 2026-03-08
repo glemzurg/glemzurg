@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,7 +37,6 @@ type ClassSuite struct {
 }
 
 func (suite *ClassSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -56,14 +55,13 @@ func (suite *ClassSuite) SetupTest() {
 }
 
 func (suite *ClassSuite) TestLoad() {
-
 	// Nothing in database yet.
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), class)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(subdomainKey)
+	suite.Empty(class)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class
 			(
 				model_key,
@@ -89,12 +87,12 @@ func (suite *ClassSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err = LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Require().NoError(err)
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -106,7 +104,6 @@ func (suite *ClassSuite) TestLoad() {
 }
 
 func (suite *ClassSuite) TestAdd() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -116,12 +113,12 @@ func (suite *ClassSuite) TestAdd() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Require().NoError(err)
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -133,7 +130,6 @@ func (suite *ClassSuite) TestAdd() {
 }
 
 func (suite *ClassSuite) TestAddNulls() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -143,12 +139,12 @@ func (suite *ClassSuite) TestAddNulls() {
 		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Require().NoError(err)
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -160,7 +156,6 @@ func (suite *ClassSuite) TestAddNulls() {
 }
 
 func (suite *ClassSuite) TestUpdate() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -170,7 +165,7 @@ func (suite *ClassSuite) TestUpdate() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateClass(suite.db, suite.model.Key, model_class.Class{
 		Key:             suite.classKey,
@@ -181,12 +176,12 @@ func (suite *ClassSuite) TestUpdate() {
 		SubclassOfKey:   &suite.generalization.Key,
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Require().NoError(err)
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -198,7 +193,6 @@ func (suite *ClassSuite) TestUpdate() {
 }
 
 func (suite *ClassSuite) TestUpdateNulls() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:             suite.classKey,
 		Name:            "Name",
@@ -208,7 +202,7 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		SubclassOfKey:   &suite.generalizationB.Key,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateClass(suite.db, suite.model.Key, model_class.Class{
 		Key:             suite.classKey,
@@ -219,12 +213,12 @@ func (suite *ClassSuite) TestUpdateNulls() {
 		SubclassOfKey:   nil, // No foreign key.
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.subdomain.Key, subdomainKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Require().NoError(err)
+	suite.Equal(suite.subdomain.Key, subdomainKey)
+	suite.Equal(model_class.Class{
 		Key:             suite.classKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -236,7 +230,6 @@ func (suite *ClassSuite) TestUpdateNulls() {
 }
 
 func (suite *ClassSuite) TestRemove() {
-
 	err := AddClass(suite.db, suite.model.Key, suite.subdomain.Key, model_class.Class{
 		Key:        suite.classKey,
 		Name:       "Name",
@@ -244,19 +237,18 @@ func (suite *ClassSuite) TestRemove() {
 		ActorKey:   &suite.actor.Key,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveClass(suite.db, suite.model.Key, suite.classKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, class, err := LoadClass(suite.db, suite.model.Key, suite.classKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), subdomainKey)
-	assert.Empty(suite.T(), class)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(subdomainKey)
+	suite.Empty(class)
 }
 
 func (suite *ClassSuite) TestQuery() {
-
 	err := AddClasses(suite.db, suite.model.Key, map[identity.Key][]model_class.Class{
 		suite.subdomain.Key: {
 			{
@@ -279,11 +271,11 @@ func (suite *ClassSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classes, err := QueryClasses(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_class.Class{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_class.Class{
 		suite.subdomain.Key: {
 			{
 				Key:             suite.classKey,
@@ -312,7 +304,6 @@ func (suite *ClassSuite) TestQuery() {
 //==================================================
 
 func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, classKey identity.Key) (class model_class.Class) {
-
 	err := AddClass(dbOrTx, modelKey, subdomainKey, model_class.Class{
 		Key:        classKey,
 		Name:       classKey.String(),
@@ -320,18 +311,17 @@ func t_AddClass(t *testing.T, dbOrTx DbOrTx, modelKey string, subdomainKey ident
 		ActorKey:   nil, // No actor.
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	_, class, err = LoadClass(dbOrTx, modelKey, classKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return class
 }
 
 func (suite *ClassSuite) TestVerifyTestObjects() {
-
 	class := t_AddClass(suite.T(), suite.db, suite.model.Key, suite.subdomain.Key, suite.classKey)
-	assert.Equal(suite.T(), model_class.Class{
+	suite.Equal(model_class.Class{
 		Key:        suite.classKey,
 		Name:       suite.classKey.String(),
 		Details:    "Details",

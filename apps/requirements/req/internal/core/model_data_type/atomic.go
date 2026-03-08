@@ -26,136 +26,138 @@ type Atomic struct {
 
 // Validate validates the Atomic struct.
 func (a Atomic) Validate() error {
-	// Validate struct tags (ConstraintType required + oneof).
 	if err := _validate.Struct(a); err != nil {
 		return err
 	}
+	if err := a.validateReference(); err != nil {
+		return err
+	}
+	if err := a.validateObjectClassKey(); err != nil {
+		return err
+	}
+	if err := a.validateEnums(); err != nil {
+		return err
+	}
+	if err := a.validateSpan(); err != nil {
+		return err
+	}
+	return nil
+}
 
-	// Reference: must be non-nil and non-empty for reference types; nil for others.
+func (a Atomic) validateReference() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_REFERENCE {
 		if a.Reference == nil || *a.Reference == "" {
-			return fmt.Errorf("Reference: Reference must not be nil or empty for reference types.")
+			return fmt.Errorf("reference: reference must not be nil or empty for reference types")
 		}
-	} else {
-		if a.Reference != nil {
-			return fmt.Errorf("Reference: Reference must be nil for non-reference types.")
-		}
+	} else if a.Reference != nil {
+		return fmt.Errorf("reference: reference must be nil for non-reference types")
 	}
+	return nil
+}
 
-	// ObjectClassKey: must be non-nil and non-empty for object types; nil for others.
+func (a Atomic) validateObjectClassKey() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_OBJECT {
 		if a.ObjectClassKey == nil || *a.ObjectClassKey == "" {
-			return fmt.Errorf("ObjectClassKey: ObjectClassKey must not be nil or empty for object types.")
+			return fmt.Errorf("objectClassKey: objectClassKey must not be nil or empty for object types")
 		}
-	} else {
-		if a.ObjectClassKey != nil {
-			return fmt.Errorf("ObjectClassKey: ObjectClassKey must be nil for non-object types.")
-		}
+	} else if a.ObjectClassKey != nil {
+		return fmt.Errorf("objectClassKey: objectClassKey must be nil for non-object types")
 	}
+	return nil
+}
 
-	// Enums: required when enumeration; must be empty when not enumeration; each must validate.
+func (a Atomic) validateEnums() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if len(a.Enums) == 0 {
-			return fmt.Errorf("Enums: cannot be blank.")
+			return fmt.Errorf("enums: cannot be blank")
 		}
 		for _, enum := range a.Enums {
 			if err := enum.Validate(); err != nil {
-				return fmt.Errorf("Enums: (%s).", err.Error())
+				return fmt.Errorf("enums: (%s)", err.Error())
 			}
+		}
+		if a.EnumOrdered == nil {
+			return fmt.Errorf("enumOrdered: enumOrdered must not be nil for enumeration types")
 		}
 	} else {
 		if len(a.Enums) > 0 {
-			return fmt.Errorf("Enums: must be blank.")
+			return fmt.Errorf("enums: must be blank")
 		}
-	}
-
-	// EnumOrdered: must be non-nil for enumeration; nil for others.
-	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
-		if a.EnumOrdered == nil {
-			return fmt.Errorf("EnumOrdered: EnumOrdered must not be nil for enumeration types.")
-		}
-	} else {
 		if a.EnumOrdered != nil {
-			return fmt.Errorf("EnumOrdered: EnumOrdered must be nil for non-enumeration types.")
+			return fmt.Errorf("enumOrdered: enumOrdered must be nil for non-enumeration types")
 		}
 	}
+	return nil
+}
 
-	// Span: must be non-nil for span types (and validate); nil for others.
+func (a Atomic) validateSpan() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_SPAN {
 		if a.Span == nil {
-			return fmt.Errorf("Span: Span must not be nil for span types.")
+			return fmt.Errorf("span: span must not be nil for span types")
 		}
 		if err := a.Span.Validate(); err != nil {
-			return fmt.Errorf("Span: (%s).", err.Error())
+			return fmt.Errorf("span: (%s)", err.Error())
 		}
-	} else {
-		if a.Span != nil {
-			return fmt.Errorf("Span: Span must be nil for non-span types.")
-		}
+	} else if a.Span != nil {
+		return fmt.Errorf("span: span must be nil for non-span types")
 	}
-
 	return nil
 }
 
 // String returns a string representation of the Atomic type.
 func (a Atomic) String() string {
-
 	switch a.ConstraintType {
-
 	case CONSTRAINT_TYPE_UNCONSTRAINED:
-		return "unconstrained"
-
+		return CONSTRAINT_TYPE_UNCONSTRAINED
 	case CONSTRAINT_TYPE_SPAN:
-		if a.Span == nil {
-			return "span: <nil>"
-
-		}
-
-		lowerBracket := "("
-		if a.Span.LowerType == "closed" {
-			lowerBracket = "["
-		}
-
-		lowerStr := "unconstrained"
-		if a.Span.LowerValue != nil {
-			lowerStr = strconv.Itoa(*a.Span.LowerValue)
-			if a.Span.LowerDenominator != nil && *a.Span.LowerDenominator > 1 {
-				lowerStr += "/" + strconv.Itoa(*a.Span.LowerDenominator)
-			}
-		}
-
-		higherStr := "unconstrained"
-		if a.Span.HigherValue != nil {
-			higherStr = strconv.Itoa(*a.Span.HigherValue)
-			if a.Span.HigherDenominator != nil && *a.Span.HigherDenominator > 1 {
-				higherStr += "/" + strconv.Itoa(*a.Span.HigherDenominator)
-			}
-		}
-
-		higherBracket := ")"
-		if a.Span.HigherType == "closed" {
-			higherBracket = "]"
-		}
-
-		return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64) + " " + a.Span.Units
-
+		return a.spanString()
 	case CONSTRAINT_TYPE_REFERENCE:
 		return "ref from " + *a.Reference
-
 	case CONSTRAINT_TYPE_OBJECT:
 		return "obj of " + *a.ObjectClassKey
-
 	case CONSTRAINT_TYPE_ENUMERATION:
-		var values []string
-		for _, enum := range a.Enums {
-			values = append(values, enum.Value)
-		}
-		prefix := "enum of"
-		if a.EnumOrdered != nil && *a.EnumOrdered {
-			prefix = "ord enum of"
-		}
-		return prefix + " " + strings.Join(values, ", ")
+		return a.enumString()
 	default:
 		panic("invalid constraint type: '" + a.ConstraintType + "'")
 	}
+}
+
+func (a Atomic) spanString() string {
+	if a.Span == nil {
+		return "span: <nil>"
+	}
+	lowerBracket := "("
+	if a.Span.LowerType == _BOUND_TYPE_LIMIT_CLOSED {
+		lowerBracket = "["
+	}
+	lowerStr := formatBound(a.Span.LowerValue, a.Span.LowerDenominator)
+	higherStr := formatBound(a.Span.HigherValue, a.Span.HigherDenominator)
+	higherBracket := ")"
+	if a.Span.HigherType == _BOUND_TYPE_LIMIT_CLOSED {
+		higherBracket = "]"
+	}
+	return lowerBracket + lowerStr + " .. " + higherStr + higherBracket + " at " + strconv.FormatFloat(a.Span.Precision, 'g', -1, 64) + " " + a.Span.Units
+}
+
+func formatBound(value *int, denominator *int) string {
+	if value == nil {
+		return CONSTRAINT_TYPE_UNCONSTRAINED
+	}
+	s := strconv.Itoa(*value)
+	if denominator != nil && *denominator > 1 {
+		s += "/" + strconv.Itoa(*denominator)
+	}
+	return s
+}
+
+func (a Atomic) enumString() string {
+	var values []string
+	for _, enum := range a.Enums {
+		values = append(values, enum.Value)
+	}
+	prefix := "enum of"
+	if a.EnumOrdered != nil && *a.EnumOrdered {
+		prefix = "ord enum of"
+	}
+	return prefix + " " + strings.Join(values, ", ")
 }

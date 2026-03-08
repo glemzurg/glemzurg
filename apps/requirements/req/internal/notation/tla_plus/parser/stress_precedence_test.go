@@ -21,13 +21,13 @@ func TestStressPrecedenceSuite(t *testing.T) {
 // === Power right-associativity (level 14) ===
 
 // TestPowerRightAssociativity verifies that ^ is right-associative:
-// 2 ^ 3 ^ 4 = 2 ^ (3 ^ 4), NOT (2 ^ 3) ^ 4
+// 2 ^ 3 ^ 4 = 2 ^ (3 ^ 4), NOT (2 ^ 3) ^ 4.
 func (s *StressPrecedenceTestSuite) TestPowerRightAssociativity() {
 	expr, err := ParseExpression("2 ^ 3 ^ 4")
 	s.Require().NoError(err)
 
 	// Should be: BinaryArith(2, ^, BinaryArith(3, ^, 4))
-	top, ok := expr.(*ast.RealInfixExpression)
+	top, ok := expr.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "expected RealInfixExpression, got %T", expr)
 	s.Equal("^", top.Operator)
 
@@ -37,7 +37,7 @@ func (s *StressPrecedenceTestSuite) TestPowerRightAssociativity() {
 	s.Equal("2", left.String())
 
 	// Right should be another power expression: 3 ^ 4
-	right, ok := top.Right.(*ast.RealInfixExpression)
+	right, ok := top.Right.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "right should be RealInfixExpression (3 ^ 4), got %T", top.Right)
 	s.Equal("^", right.Operator)
 }
@@ -47,7 +47,7 @@ func (s *StressPrecedenceTestSuite) TestPowerTripleChain() {
 	s.Require().NoError(err)
 
 	// Should be: a ^ (b ^ (c ^ d)) — right-associative
-	top, ok := expr.(*ast.RealInfixExpression)
+	top, ok := expr.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "expected RealInfixExpression")
 	s.Equal("^", top.Operator)
 
@@ -56,12 +56,12 @@ func (s *StressPrecedenceTestSuite) TestPowerTripleChain() {
 	s.True(ok, "left should be identifier 'a'")
 
 	// Right should be b ^ (c ^ d)
-	mid, ok := top.Right.(*ast.RealInfixExpression)
+	mid, ok := top.Right.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "right should be nested power")
 	s.Equal("^", mid.Operator)
 
 	// mid.Right should be c ^ d
-	inner, ok := mid.Right.(*ast.RealInfixExpression)
+	inner, ok := mid.Right.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "innermost should be nested power")
 	s.Equal("^", inner.Operator)
 }
@@ -81,7 +81,7 @@ func (s *StressPrecedenceTestSuite) TestPowerVsMultiplication() {
 			s.Require().NoError(err, "should parse: %s", tt.input)
 
 			// Both should have * at top level
-			top, ok := expr.(*ast.RealInfixExpression)
+			top, ok := expr.(*ast.BinaryArithmetic)
 			s.Require().True(ok, "top should be RealInfixExpression for %s", tt.input)
 			s.Equal("*", top.Operator, "top operator should be * for %s", tt.input)
 		})
@@ -109,7 +109,7 @@ func (s *StressPrecedenceTestSuite) TestNegationBinding() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %s", tt.input)
+			s.Require().NoError(err, "should parse: %s", tt.input)
 		})
 	}
 }
@@ -124,7 +124,7 @@ func (s *StressPrecedenceTestSuite) TestNegationVsPower() {
 	neg, ok := expr.(*ast.UnaryNegation)
 	s.Require().True(ok, "expected UnaryNegation at top level, got %T", expr)
 
-	inner, ok := neg.Right.(*ast.RealInfixExpression)
+	inner, ok := neg.Right.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "inner should be power expression, got %T", neg.Right)
 	s.Equal("^", inner.Operator)
 }
@@ -140,7 +140,7 @@ func (s *StressPrecedenceTestSuite) TestExplicitParenthesizedNegation() {
 	paren, ok := neg.Right.(*ast.Parenthesized)
 	s.Require().True(ok, "inner should be Parenthesized, got %T", neg.Right)
 
-	power, ok := paren.Inner.(*ast.RealInfixExpression)
+	power, ok := paren.Inner.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "inner of paren should be power, got %T", paren.Inner)
 	s.Equal("^", power.Operator)
 }
@@ -157,7 +157,7 @@ func (s *StressPrecedenceTestSuite) TestMultiplicationWithNegatedOperand() {
 	if err != nil {
 		// If it fails, parentheses should fix it:
 		_, err2 := ParseExpression("x * (-y)")
-		s.NoError(err2, "parenthesized negation should always work")
+		s.Require().NoError(err2, "parenthesized negation should always work")
 	}
 }
 
@@ -167,7 +167,7 @@ func (s *StressPrecedenceTestSuite) TestBothOperandsNegated() {
 	// If it fails, test the parenthesized form:
 	if err != nil {
 		_, err2 := ParseExpression("(-1) * (-2)")
-		s.NoError(err2)
+		s.Require().NoError(err2)
 	}
 }
 
@@ -192,7 +192,7 @@ func (s *StressPrecedenceTestSuite) TestFractionVsMultiplication() {
 	expr, err := ParseExpression("2 * 3/4")
 	s.Require().NoError(err)
 
-	top, ok := expr.(*ast.RealInfixExpression)
+	top, ok := expr.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "top should be multiplication")
 	s.Equal("*", top.Operator)
 }
@@ -202,7 +202,7 @@ func (s *StressPrecedenceTestSuite) TestFractionReverseOrder() {
 	expr, err := ParseExpression("3/4 * 2")
 	s.Require().NoError(err)
 
-	top, ok := expr.(*ast.RealInfixExpression)
+	top, ok := expr.(*ast.BinaryArithmetic)
 	s.Require().True(ok, "top should be multiplication")
 	s.Equal("*", top.Operator)
 }
@@ -230,7 +230,7 @@ func (s *StressPrecedenceTestSuite) TestImpliesRightAssociativity() {
 	s.Require().NoError(err)
 
 	// Should be: a => (b => c) — right-associative
-	top, ok := expr.(*ast.LogicInfixExpression)
+	top, ok := expr.(*ast.BinaryLogic)
 	s.Require().True(ok, "should be LogicInfixExpression")
 	s.Equal("⇒", top.Operator)
 
@@ -239,7 +239,7 @@ func (s *StressPrecedenceTestSuite) TestImpliesRightAssociativity() {
 	s.True(ok, "left should be identifier")
 
 	// Right should be another implies: b => c
-	right, ok := top.Right.(*ast.LogicInfixExpression)
+	right, ok := top.Right.(*ast.BinaryLogic)
 	s.Require().True(ok, "right should be nested implies")
 	s.Equal("⇒", right.Operator)
 }
@@ -252,12 +252,12 @@ func (s *StressPrecedenceTestSuite) TestImpliesVsEquivalence() {
 	expr, err := ParseExpression("a => b <=> c")
 	s.Require().NoError(err)
 
-	top, ok := expr.(*ast.LogicInfixExpression)
+	top, ok := expr.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("⇒", top.Operator, "top should be implies")
 
 	// Right should be equivalence
-	right, ok := top.Right.(*ast.LogicInfixExpression)
+	right, ok := top.Right.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("≡", right.Operator, "right should be equivalence")
 }
@@ -270,12 +270,12 @@ func (s *StressPrecedenceTestSuite) TestEquivalenceVsImplies() {
 	expr, err := ParseExpression("a <=> b => c")
 	s.Require().NoError(err)
 
-	top, ok := expr.(*ast.LogicInfixExpression)
+	top, ok := expr.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("⇒", top.Operator, "top should be implies")
 
 	// Left should be equivalence
-	left, ok := top.Left.(*ast.LogicInfixExpression)
+	left, ok := top.Left.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("≡", left.Operator, "left should be equivalence")
 }
@@ -298,7 +298,7 @@ func (s *StressPrecedenceTestSuite) TestLogicVsComparison() {
 			expr, err := ParseExpression(tt.input)
 			s.Require().NoError(err, "should parse: %s", tt.input)
 
-			top, ok := expr.(*ast.LogicInfixExpression)
+			top, ok := expr.(*ast.BinaryLogic)
 			s.Require().True(ok, "top should be LogicInfixExpression for %s, got %T", tt.input, expr)
 			s.Equal(tt.topOperator, top.Operator)
 		})
@@ -311,11 +311,11 @@ func (s *StressPrecedenceTestSuite) TestAndVsOr() {
 	expr, err := ParseExpression("a /\\ b \\/ c")
 	s.Require().NoError(err)
 
-	top, ok := expr.(*ast.LogicInfixExpression)
+	top, ok := expr.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("∨", top.Operator, "top should be OR")
 
-	left, ok := top.Left.(*ast.LogicInfixExpression)
+	left, ok := top.Left.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("∧", left.Operator, "left should be AND")
 }
@@ -325,11 +325,11 @@ func (s *StressPrecedenceTestSuite) TestOrVsAnd() {
 	expr, err := ParseExpression("a \\/ b /\\ c")
 	s.Require().NoError(err)
 
-	top, ok := expr.(*ast.LogicInfixExpression)
+	top, ok := expr.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("∨", top.Operator, "top should be OR")
 
-	right, ok := top.Right.(*ast.LogicInfixExpression)
+	right, ok := top.Right.(*ast.BinaryLogic)
 	s.Require().True(ok)
 	s.Equal("∧", right.Operator, "right should be AND")
 }
@@ -356,7 +356,7 @@ func (s *StressPrecedenceTestSuite) TestNotVsComparison() {
 			_, ok = comp.Left.(*ast.UnaryLogic)
 			s.True(ok, "left of comparison should be NOT")
 		} else {
-			s.Fail("unexpected expression type: %T", expr)
+			s.Fail("unexpected expression type", "%T", expr)
 		}
 	}
 }
@@ -395,7 +395,7 @@ func (s *StressPrecedenceTestSuite) TestPrimeThenFieldAccess() {
 	_, err := ParseExpression("record'.field")
 	// This should fail because after record' is parsed, .field is trailing content.
 	// RootExpression requires !. (end of input).
-	s.Error(err, "record'.field should be a parse error (trailing .field after prime)")
+	s.Require().Error(err, "record'.field should be a parse error (trailing .field after prime)")
 }
 
 // === Set operation precedence ===
@@ -416,7 +416,7 @@ func (s *StressPrecedenceTestSuite) TestSetOperationPrecedence() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %s", tt.input)
+			s.Require().NoError(err, "should parse: %s", tt.input)
 		})
 	}
 }

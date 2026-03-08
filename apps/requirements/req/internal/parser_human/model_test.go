@@ -6,7 +6,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,26 +23,25 @@ type ModelFileSuite struct {
 }
 
 func (suite *ModelFileSuite) TestParseModelFiles() {
-
 	key := "model_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_MODEL_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		var expected, actual core.Model
 
 		actual, err := parseModel(key, testData.Filename, testData.Contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
-		assert.Equal(suite.T(), expected, actual, testName)
+		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
 		generated := generateModelContent(actual)
-		assert.Equal(suite.T(), testData.Contents, generated, testName)
+		suite.Equal(testData.Contents, generated, testName)
 	}
 }

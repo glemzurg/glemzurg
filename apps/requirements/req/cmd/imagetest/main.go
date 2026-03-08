@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create graphviz: %v", err)
 	}
-	defer gv.Close()
+	defer func() { _ = gv.Close() }()
 
 	// Define the DOT as a literal string.
 	dot := `digraph G {
@@ -43,9 +43,9 @@ func main() {
 	// Parse the DOT into a graph (as per the provided logic).
 	parsedGraph, err := graphviz.ParseBytes([]byte(dot))
 	if err != nil {
-		log.Fatalf("failed to parse DOT: %v", errors.WithStack(err))
+		log.Fatalf("failed to parse DOT: %v", errors.WithStack(err)) //nolint:gocritic // defer cleanup is for normal exit path
 	}
-	defer parsedGraph.Close()
+	defer func() { _ = parsedGraph.Close() }()
 
 	// Render the SVG as a string using the provided logic.
 	var buf bytes.Buffer

@@ -36,7 +36,7 @@ func (s *StressBackslashTestSuite) TestSetDifferenceBasic() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			// Verify it's a BinarySetOperation with \ operator
 			setOp, ok := expr.(*ast.BinarySetOperation)
@@ -49,7 +49,7 @@ func (s *StressBackslashTestSuite) TestSetDifferenceBasic() {
 // TestSetDifferenceChaining tests left-associative chaining of set difference.
 func (s *StressBackslashTestSuite) TestSetDifferenceChaining() {
 	expr, err := ParseExpression(`A \ B \ C`)
-	s.NoError(err, "should parse chained set difference")
+	s.Require().NoError(err, "should parse chained set difference")
 
 	// Should be ((A \ B) \ C) — left-associative
 	outer, ok := expr.(*ast.BinarySetOperation)
@@ -104,7 +104,7 @@ func (s *StressBackslashTestSuite) TestBackslashOperatorsNotSetDifference() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 
 			// Verify it's NOT a set difference
 			if setOp, ok := expr.(*ast.BinarySetOperation); ok {
@@ -135,7 +135,7 @@ func (s *StressBackslashTestSuite) TestSetDifferenceWithOtherOperators() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -157,9 +157,9 @@ func (s *StressBackslashTestSuite) TestSetDifferenceRequiresWhitespace() {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
 			if tt.shouldParse {
-				s.NoError(err, "should parse: %q", tt.input)
+				s.Require().NoError(err, "should parse: %q", tt.input)
 			} else {
-				s.Error(err, "set difference without whitespace must fail: %q", tt.input)
+				s.Require().Error(err, "set difference without whitespace must fail: %q", tt.input)
 			}
 		})
 	}

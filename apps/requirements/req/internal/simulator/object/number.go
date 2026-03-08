@@ -47,6 +47,7 @@ func NewRational(num, denom int64) *Number {
 }
 
 // NewReal creates a Number from a numerator and denominator (a rational number).
+//
 // Deprecated: Use NewRational for exact rationals. This is kept for backwards compatibility.
 func NewReal(num, denom int64) *Number {
 	return NewRational(num, denom)

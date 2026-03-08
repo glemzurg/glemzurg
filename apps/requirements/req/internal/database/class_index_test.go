@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,7 +32,6 @@ type ClassIndexSuite struct {
 }
 
 func (suite *ClassIndexSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -47,13 +45,12 @@ func (suite *ClassIndexSuite) SetupTest() {
 }
 
 func (suite *ClassIndexSuite) TestLoad() {
-
 	// Nothing in database yet.
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
-	assert.Empty(suite.T(), indexes)
+	suite.Require().NoError(err)
+	suite.Empty(indexes)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO class_index
 			(
 				model_key,
@@ -75,38 +72,36 @@ func (suite *ClassIndexSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/attribute/attribute_key'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	indexes, err = LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []uint{1, 2}, indexes)
+	suite.Require().NoError(err)
+	suite.Equal([]uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestAdd() {
-
 	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 2)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []uint{1, 2}, indexes)
+	suite.Require().NoError(err)
+	suite.Equal([]uint{1, 2}, indexes)
 }
 
 func (suite *ClassIndexSuite) TestRemove() {
-
 	err := AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = AddClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 2)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveClassIndex(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key, 1)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	indexes, err := LoadClassAttributeIndexes(suite.db, suite.model.Key, suite.class.Key, suite.attribute.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []uint{2}, indexes)
+	suite.Require().NoError(err)
+	suite.Equal([]uint{2}, indexes)
 }

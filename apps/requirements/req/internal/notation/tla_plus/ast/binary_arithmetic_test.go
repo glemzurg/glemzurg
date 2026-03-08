@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -92,18 +91,18 @@ func (suite *RealInfixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			r := &RealInfixExpression{
 				Left:     tt.left,
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, r.String())
+			suite.Equal(tt.expected, r.String())
 		})
 	}
 }
 
-func (suite *RealInfixExpressionSuite) TestAscii() {
+func (suite *RealInfixExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		left     Expression
@@ -138,13 +137,13 @@ func (suite *RealInfixExpressionSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			r := &RealInfixExpression{
 				Left:     tt.left,
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, r.Ascii())
+			suite.Equal(tt.expected, r.ASCII())
 		})
 	}
 }
@@ -266,12 +265,12 @@ func (suite *RealInfixExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.r.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

@@ -2,9 +2,9 @@ package parser_ai
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,20 +23,20 @@ type SubdomainSuite struct {
 
 func (suite *SubdomainSuite) TestParseSubdomainFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_SUBDOMAIN_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
 			var expected inputSubdomain
 
 			actual, err := parseSubdomain([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			suite.Require().NoError(err, testName)
 
-			assert.Equal(t, expected, *actual, testName)
+			suite.Equal(expected, *actual, testName)
 		})
 		if !pass {
 			// The earlier test set the basics for later tests, stop as soon as we have an error.
@@ -58,48 +58,49 @@ func (suite *SubdomainSuite) TestParseSubdomainErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
 			_, err := parseSubdomain([]byte(testData.InputJSON), testData.Filename)
-			assert.NotNil(t, err, testName+" should return an error")
+			suite.Require().Error(err, testName+" should return an error")
 
 			// Verify it's a ParseError with the expected values.
-			parseErr, ok := err.(*ParseError)
-			assert.True(t, ok, testName+" should return a ParseError")
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
+			suite.True(ok, testName+" should return a ParseError")
 			if !ok {
 				return
 			}
 
 			expected := testData.ExpectedError
-			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
+			suite.Equal(expected.Code, parseErr.Code, testName+" error code")
 
 			// Test error file name separately from message content.
-			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+			suite.Equal(expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
 
 			// Test message string explicitly.
 			// For dynamic messages (like schema validation), use MessagePrefix to match the start.
 			if expected.Message != "" {
-				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
-				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+				suite.True(len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
 					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
 			}
 
 			// Check schema content presence
 			if expected.HasSchema {
-				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+				suite.NotEmpty(parseErr.Schema, testName+" should have schema content")
 			} else {
-				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
 			// Docs are always attached to all errors
-			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
+			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
 
 			// File is always set to the input filename
-			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
-				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+				suite.Equal(expected.Field, parseErr.Field, testName+" error field")
 			}
 		})
 	}

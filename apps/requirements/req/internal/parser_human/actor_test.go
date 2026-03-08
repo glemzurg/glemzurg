@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,26 +22,25 @@ type ActorFileSuite struct {
 }
 
 func (suite *ActorFileSuite) TestParseActorFiles() {
-
 	key := "actor_key"
 
 	testDataFiles, err := t_ContentsForAllMdFiles(t_ACTOR_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
 		var expected, actual model_actor.Actor
 
 		actual, err := parseActor(key, testData.Filename, testData.Contents)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
 		err = json.Unmarshal([]byte(testData.Json), &expected)
-		assert.Nil(suite.T(), err, testName)
+		suite.Require().NoError(err, testName)
 
-		assert.Equal(suite.T(), expected, actual, testName)
+		suite.Equal(expected, actual, testName)
 
 		// Test round-trip: generate content from parsed object and compare to original.
 		generated := generateActorContent(actual)
-		assert.Equal(suite.T(), testData.Contents, generated, testName)
+		suite.Equal(testData.Contents, generated, testName)
 	}
 }

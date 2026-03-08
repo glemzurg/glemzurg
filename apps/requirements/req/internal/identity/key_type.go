@@ -80,7 +80,6 @@ func NewDomainKey(subKey string) (key Key, err error) {
 }
 
 func NewGlobalFunctionKey(subKey string) (key Key, err error) {
-
 	// The subKey is the function name that must start with an underscore, but the key type is just "gfunc" without the underscore.
 	if subKey != "" {
 		if !strings.HasPrefix(subKey, "_") {
@@ -234,7 +233,7 @@ func NewTransitionKey(classKey Key, from, event, guard, action, to string) (key 
 	if from == "" {
 		from = "initial"
 	}
-	// Default to to "final" when blank.
+	// Default to "final" when blank.
 	if to == "" {
 		to = "final"
 	}
@@ -281,88 +280,16 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string
 
 	switch parentKey.GetKeyType() {
 	case KEY_TYPE_SUBDOMAIN:
-		// Parent is a subdomain - both classes must be in this subdomain.
-		// subKey and subKey2 are "class/something" portions.
-		fromPrefix := parentKey.String() + "/"
-		toPrefix := parentKey.String() + "/"
-		fromStr := fromClassKey.String()
-		toStr := toClassKey.String()
-
-		if !strings.HasPrefix(fromStr, fromPrefix) {
-			return Key{}, errors.Errorf("from class key '%s' is not in subdomain '%s'", fromStr, parentKey.String())
-		}
-		if !strings.HasPrefix(toStr, toPrefix) {
-			return Key{}, errors.Errorf("to class key '%s' is not in subdomain '%s'", toStr, parentKey.String())
-		}
-
-		subKey = strings.TrimPrefix(fromStr, fromPrefix)
-		subKey2 = strings.TrimPrefix(toStr, toPrefix)
-
+		subKey, subKey2, err = classAssocSubdomainSubKeys(parentKey, fromClassKey, toClassKey)
 	case KEY_TYPE_DOMAIN:
-		// Parent is a domain - both classes must be in this domain but NOT in the same subdomain.
-		// subKey and subKey2 are "subdomain/where/class/something" portions.
-		fromPrefix := parentKey.String() + "/"
-		toPrefix := parentKey.String() + "/"
-		fromStr := fromClassKey.String()
-		toStr := toClassKey.String()
-
-		if !strings.HasPrefix(fromStr, fromPrefix) {
-			return Key{}, errors.Errorf("from class key '%s' is not in domain '%s'", fromStr, parentKey.String())
-		}
-		if !strings.HasPrefix(toStr, toPrefix) {
-			return Key{}, errors.Errorf("to class key '%s' is not in domain '%s'", toStr, parentKey.String())
-		}
-
-		// Extract the subdomain portions to verify they're different.
-		fromRemainder := strings.TrimPrefix(fromStr, fromPrefix)
-		toRemainder := strings.TrimPrefix(toStr, toPrefix)
-
-		// Parse to find subdomain - format is "subdomain/subdomainName/..."
-		fromParts := strings.SplitN(fromRemainder, "/", 3)
-		toParts := strings.SplitN(toRemainder, "/", 3)
-
-		if len(fromParts) < 2 || fromParts[0] != KEY_TYPE_SUBDOMAIN {
-			return Key{}, errors.Errorf("from class key '%s' does not have expected subdomain structure", fromStr)
-		}
-		if len(toParts) < 2 || toParts[0] != KEY_TYPE_SUBDOMAIN {
-			return Key{}, errors.Errorf("to class key '%s' does not have expected subdomain structure", toStr)
-		}
-
-		// Classes in the same subdomain should use subdomain as parent instead.
-		if fromParts[1] == toParts[1] {
-			return Key{}, errors.Errorf("classes are in the same subdomain '%s', use subdomain as parent instead", fromParts[1])
-		}
-
-		subKey = fromRemainder
-		subKey2 = toRemainder
-
+		subKey, subKey2, err = classAssocDomainSubKeys(parentKey, fromClassKey, toClassKey)
 	case "":
-		// Parent is model (empty key) - classes must be in different domains.
-		// subKey and subKey2 are the full class keys.
-		fromStr := fromClassKey.String()
-		toStr := toClassKey.String()
-
-		// Parse to find domain - format is "domain/domainName/..."
-		fromParts := strings.SplitN(fromStr, "/", 3)
-		toParts := strings.SplitN(toStr, "/", 3)
-
-		if len(fromParts) < 2 || fromParts[0] != KEY_TYPE_DOMAIN {
-			return Key{}, errors.Errorf("from class key '%s' does not have expected domain structure", fromStr)
-		}
-		if len(toParts) < 2 || toParts[0] != KEY_TYPE_DOMAIN {
-			return Key{}, errors.Errorf("to class key '%s' does not have expected domain structure", toStr)
-		}
-
-		// Classes in the same domain should use domain as parent instead.
-		if fromParts[1] == toParts[1] {
-			return Key{}, errors.Errorf("classes are in the same domain '%s', use domain as parent instead", fromParts[1])
-		}
-
-		subKey = fromStr
-		subKey2 = toStr
-
+		subKey, subKey2, err = classAssocModelSubKeys(fromClassKey, toClassKey)
 	default:
 		return Key{}, errors.Errorf("parent key cannot be of type '%s' for 'cassociation' key, must be subdomain, domain, or empty (model)", parentKey.GetKeyType())
+	}
+	if err != nil {
+		return Key{}, err
 	}
 
 	// For model parent (empty key), use empty string; otherwise use the key string.
@@ -372,6 +299,85 @@ func NewClassAssociationKey(parentKey, fromClassKey, toClassKey Key, name string
 	}
 
 	return newKeyWithSubKey3(parentKeyStr, KEY_TYPE_CLASS_ASSOCIATION, subKey, subKey2, subKey3)
+}
+
+// classAssocSubdomainSubKeys computes subKey and subKey2 for a subdomain-level class association.
+// Both classes must be in the given subdomain.
+func classAssocSubdomainSubKeys(parentKey, fromClassKey, toClassKey Key) (string, string, error) {
+	prefix := parentKey.String() + "/"
+	fromStr := fromClassKey.String()
+	toStr := toClassKey.String()
+
+	if !strings.HasPrefix(fromStr, prefix) {
+		return "", "", errors.Errorf("from class key '%s' is not in subdomain '%s'", fromStr, parentKey.String())
+	}
+	if !strings.HasPrefix(toStr, prefix) {
+		return "", "", errors.Errorf("to class key '%s' is not in subdomain '%s'", toStr, parentKey.String())
+	}
+
+	return strings.TrimPrefix(fromStr, prefix), strings.TrimPrefix(toStr, prefix), nil
+}
+
+// classAssocDomainSubKeys computes subKey and subKey2 for a domain-level class association.
+// Both classes must be in the given domain but in different subdomains.
+func classAssocDomainSubKeys(parentKey, fromClassKey, toClassKey Key) (string, string, error) {
+	prefix := parentKey.String() + "/"
+	fromStr := fromClassKey.String()
+	toStr := toClassKey.String()
+
+	if !strings.HasPrefix(fromStr, prefix) {
+		return "", "", errors.Errorf("from class key '%s' is not in domain '%s'", fromStr, parentKey.String())
+	}
+	if !strings.HasPrefix(toStr, prefix) {
+		return "", "", errors.Errorf("to class key '%s' is not in domain '%s'", toStr, parentKey.String())
+	}
+
+	// Extract the subdomain portions to verify they're different.
+	fromRemainder := strings.TrimPrefix(fromStr, prefix)
+	toRemainder := strings.TrimPrefix(toStr, prefix)
+
+	// Parse to find subdomain - format is "subdomain/subdomainName/..."
+	fromParts := strings.SplitN(fromRemainder, "/", 3)
+	toParts := strings.SplitN(toRemainder, "/", 3)
+
+	if len(fromParts) < 2 || fromParts[0] != KEY_TYPE_SUBDOMAIN {
+		return "", "", errors.Errorf("from class key '%s' does not have expected subdomain structure", fromStr)
+	}
+	if len(toParts) < 2 || toParts[0] != KEY_TYPE_SUBDOMAIN {
+		return "", "", errors.Errorf("to class key '%s' does not have expected subdomain structure", toStr)
+	}
+
+	// Classes in the same subdomain should use subdomain as parent instead.
+	if fromParts[1] == toParts[1] {
+		return "", "", errors.Errorf("classes are in the same subdomain '%s', use subdomain as parent instead", fromParts[1])
+	}
+
+	return fromRemainder, toRemainder, nil
+}
+
+// classAssocModelSubKeys computes subKey and subKey2 for a model-level class association.
+// Classes must be in different domains.
+func classAssocModelSubKeys(fromClassKey, toClassKey Key) (string, string, error) {
+	fromStr := fromClassKey.String()
+	toStr := toClassKey.String()
+
+	// Parse to find domain - format is "domain/domainName/..."
+	fromParts := strings.SplitN(fromStr, "/", 3)
+	toParts := strings.SplitN(toStr, "/", 3)
+
+	if len(fromParts) < 2 || fromParts[0] != KEY_TYPE_DOMAIN {
+		return "", "", errors.Errorf("from class key '%s' does not have expected domain structure", fromStr)
+	}
+	if len(toParts) < 2 || toParts[0] != KEY_TYPE_DOMAIN {
+		return "", "", errors.Errorf("to class key '%s' does not have expected domain structure", toStr)
+	}
+
+	// Classes in the same domain should use domain as parent instead.
+	if fromParts[1] == toParts[1] {
+		return "", "", errors.Errorf("classes are in the same domain '%s', use domain as parent instead", fromParts[1])
+	}
+
+	return fromStr, toStr, nil
 }
 
 // distillName converts a name to distilled format: trim, lowercase, replace internal spaces with underscores,

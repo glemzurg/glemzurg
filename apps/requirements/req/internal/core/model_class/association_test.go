@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -57,7 +56,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   toClassKey,
 			},
-			errstr: "Key: invalid key type 'domain' for association.",
+			errstr: "key: invalid key type 'domain' for association",
 		},
 		{
 			testName: "error blank name",
@@ -87,7 +86,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: domainKey,
 				ToClassKey:   toClassKey,
 			},
-			errstr: "FromClassKey: invalid key type 'domain' for from class.",
+			errstr: "fromClassKey: invalid key type 'domain' for from class",
 		},
 		{
 			testName: "error empty to class key",
@@ -107,7 +106,7 @@ func (suite *AssociationSuite) TestValidate() {
 				FromClassKey: fromClassKey,
 				ToClassKey:   domainKey,
 			},
-			errstr: "ToClassKey: invalid key type 'domain' for to class.",
+			errstr: "toClassKey: invalid key type 'domain' for to class",
 		},
 		{
 			testName: "error AssociationClassKey same as FromClassKey",
@@ -147,12 +146,12 @@ func (suite *AssociationSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.association.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -167,12 +166,15 @@ func (suite *AssociationSuite) TestNew() {
 	assocClassKey := helper.Must(identity.NewClassKey(subdomainKey, "assocclass"))
 	key := helper.Must(identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "test association"))
 	multiplicity, err := NewMultiplicity("2..3")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Test parameters are mapped correctly.
-	assoc, err := NewAssociation(key, "Name", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Association{
+	assoc, err := NewAssociation(key, "Name", "Details",
+		AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity},
+		AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity},
+		&assocClassKey, "UmlComment")
+	suite.Require().NoError(err)
+	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",
 		Details:             "Details",
@@ -185,8 +187,11 @@ func (suite *AssociationSuite) TestNew() {
 	}, assoc)
 
 	// Test that Validate is called (invalid data should fail).
-	_, err = NewAssociation(key, "", "Details", fromClassKey, multiplicity, toClassKey, multiplicity, &assocClassKey, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name")
+	_, err = NewAssociation(key, "", "Details",
+		AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity},
+		AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity},
+		&assocClassKey, "UmlComment")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -206,7 +211,7 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		ToClassKey:   toClassKey,
 	}
 	err := assoc.ValidateWithParent(&subdomainKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - association key has subdomain1 as parent, but we pass other_subdomain.
 	assoc = Association{
@@ -216,11 +221,11 @@ func (suite *AssociationSuite) TestValidateWithParent() {
 		ToClassKey:   toClassKey,
 	}
 	err = assoc.ValidateWithParent(&otherSubdomainKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = assoc.ValidateWithParent(&subdomainKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates class references correctly.
@@ -303,12 +308,12 @@ func (suite *AssociationSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.association.ValidateReferences(tt.classes)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -331,21 +336,21 @@ func (suite *AssociationSuite) TestIncludes() {
 		FromClassKey: fromClassKey,
 		ToClassKey:   toClassKey,
 	}
-	assert.True(suite.T(), assoc.Includes(fromClassKey), "Should include FromClassKey")
-	assert.True(suite.T(), assoc.Includes(toClassKey), "Should include ToClassKey")
-	assert.False(suite.T(), assoc.Includes(unknownClassKey), "Should not include unknown key")
+	suite.True(assoc.Includes(fromClassKey), "Should include FromClassKey")
+	suite.True(assoc.Includes(toClassKey), "Should include ToClassKey")
+	suite.False(assoc.Includes(unknownClassKey), "Should not include unknown key")
 
 	// With AssociationClassKey.
 	assoc.AssociationClassKey = &assocClassKey
-	assert.True(suite.T(), assoc.Includes(assocClassKey), "Should include AssociationClassKey")
-	assert.False(suite.T(), assoc.Includes(unknownClassKey), "Should not include unknown key")
+	suite.True(assoc.Includes(assocClassKey), "Should include AssociationClassKey")
+	suite.False(assoc.Includes(unknownClassKey), "Should not include unknown key")
 }
 
 func (suite *AssociationSuite) TestOther() {
 	domainKey := helper.Must(identity.NewDomainKey("domain1"))
 	subdomainKey := helper.Must(identity.NewSubdomainKey(domainKey, "subdomain1"))
 	multiplicity, err := NewMultiplicity("2..3")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	fromClassKey := helper.Must(identity.NewClassKey(subdomainKey, "from"))
 	toClassKey := helper.Must(identity.NewClassKey(subdomainKey, "to"))
@@ -400,14 +405,14 @@ func (suite *AssociationSuite) TestOther() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			otherKey, err := tt.obj.Other(tt.classKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.otherKey, otherKey)
+				suite.Require().NoError(err)
+				suite.Equal(tt.otherKey, otherKey)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Empty(t, otherKey)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Empty(otherKey)
 			}
 		})
 	}

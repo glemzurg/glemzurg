@@ -3,15 +3,14 @@ package parser_human
 import (
 	"strconv"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
 func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey, filename, contents string) (generalization model_use_case.Generalization, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_use_case.Generalization{}, err
@@ -50,10 +49,10 @@ func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey,
 
 func generateUseCaseGeneralizationContent(generalization model_use_case.Generalization) string {
 	yamlStr := ""
-	if generalization.IsComplete != true {
+	if !generalization.IsComplete {
 		yamlStr += "is_complete: " + strconv.FormatBool(generalization.IsComplete) + "\n"
 	}
-	if generalization.IsStatic != true {
+	if !generalization.IsStatic {
 		yamlStr += "is_static: " + strconv.FormatBool(generalization.IsStatic) + "\n"
 	}
 	return generateFileContent(prependMarkdownSubtitle(generalization.Name, generalization.Details), generalization.UmlComment, yamlStr)

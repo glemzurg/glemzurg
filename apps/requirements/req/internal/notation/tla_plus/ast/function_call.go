@@ -34,7 +34,7 @@ type FunctionCall struct {
 
 func (f *FunctionCall) expressionNode() {}
 
-// FullName returns the complete scoped name as a string (e.g., "Domain!Subdomain!Class!Action")
+// FullName returns the complete scoped name as a string (e.g., "Domain!Subdomain!Class!Action").
 func (f *FunctionCall) FullName() string {
 	parts := make([]string, 0, len(f.ScopePath)+1)
 	for _, seg := range f.ScopePath {
@@ -75,19 +75,19 @@ func (f *FunctionCall) String() string {
 	return out.String()
 }
 
-func (f *FunctionCall) Ascii() string {
+func (f *FunctionCall) ASCII() string {
 	var out bytes.Buffer
 	for _, seg := range f.ScopePath {
-		out.WriteString(seg.Ascii())
+		out.WriteString(seg.ASCII())
 		out.WriteString("!")
 	}
-	out.WriteString(f.Name.Ascii())
+	out.WriteString(f.Name.ASCII())
 	out.WriteString("(")
 	for i, arg := range f.Args {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(arg.Ascii())
+		out.WriteString(arg.ASCII())
 	}
 	out.WriteString(")")
 	return out.String()
@@ -106,14 +106,14 @@ func (f *FunctionCall) Validate() error {
 		}
 	}
 	if err := f.Name.Validate(); err != nil {
-		return fmt.Errorf("Name: %w", err)
+		return fmt.Errorf("name: %w", err)
 	}
 	for i, arg := range f.Args {
 		if arg == nil {
-			return fmt.Errorf("Args[%d]: is nil", i)
+			return fmt.Errorf("args[%d]: is nil", i)
 		}
 		if err := arg.Validate(); err != nil {
-			return fmt.Errorf("Args[%d]: %w", i, err)
+			return fmt.Errorf("args[%d]: %w", i, err)
 		}
 	}
 	return nil

@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +34,6 @@ type QuerySuite struct {
 }
 
 func (suite *QuerySuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,14 +49,13 @@ func (suite *QuerySuite) SetupTest() {
 }
 
 func (suite *QuerySuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), query)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(classKey)
+	suite.Empty(query)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO query
 			(
 				model_key,
@@ -75,12 +73,12 @@ func (suite *QuerySuite) TestLoad() {
 				'Details'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err = LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
@@ -88,18 +86,17 @@ func (suite *QuerySuite) TestLoad() {
 }
 
 func (suite *QuerySuite) TestAdd() {
-
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
@@ -107,25 +104,24 @@ func (suite *QuerySuite) TestAdd() {
 }
 
 func (suite *QuerySuite) TestUpdate() {
-
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "NameX",
 		Details: "DetailsX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "NameX",
 		Details: "DetailsX",
@@ -133,25 +129,23 @@ func (suite *QuerySuite) TestUpdate() {
 }
 
 func (suite *QuerySuite) TestRemove() {
-
 	err := AddQuery(suite.db, suite.model.Key, suite.class.Key, model_state.Query{
 		Key:     suite.queryKey,
 		Name:    "Name",
 		Details: "Details",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQuery(suite.db, suite.model.Key, suite.class.Key, suite.queryKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, query, err := LoadQuery(suite.db, suite.model.Key, suite.queryKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), query)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(classKey)
+	suite.Empty(query)
 }
 
 func (suite *QuerySuite) TestQuery() {
-
 	err := AddQueries(suite.db, suite.model.Key, map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{
@@ -166,11 +160,11 @@ func (suite *QuerySuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	queries, err := QueryQueries(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Query{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Query{
 		suite.class.Key: {
 			{
 				Key:     suite.queryKey,
@@ -191,24 +185,22 @@ func (suite *QuerySuite) TestQuery() {
 //==================================================
 
 func t_AddQuery(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, queryKey identity.Key) (query model_state.Query) {
-
 	err := AddQuery(dbOrTx, modelKey, classKey, model_state.Query{
 		Key:     queryKey,
 		Name:    queryKey.String(),
 		Details: "Details",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	_, query, err = LoadQuery(dbOrTx, modelKey, queryKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return query
 }
 
 func (suite *QuerySuite) TestVerifyTestObjects() {
-
 	query := t_AddQuery(suite.T(), suite.db, suite.model.Key, suite.class.Key, suite.queryKey)
-	assert.Equal(suite.T(), model_state.Query{
+	suite.Equal(model_state.Query{
 		Key:     suite.queryKey,
 		Name:    suite.queryKey.String(),
 		Details: "Details",

@@ -4,11 +4,11 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -36,7 +36,7 @@ func buildChainTestComponents(
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
@@ -63,7 +63,7 @@ func buildOrderItemModel(mandatory bool) *testChainModel {
 	}
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity(toMultStr))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	m := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	m.ClassAssociations = map[identity.Key]model_class.Association{
@@ -92,7 +92,7 @@ func (s *CreationChainSuite) TestNoMandatoryAssociationsReturnsEmpty() {
 
 	// Handle creation chain — nothing should cascade.
 	steps, violations, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Empty(steps)
 	s.Empty(violations)
 }
@@ -112,7 +112,7 @@ func (s *CreationChainSuite) TestMandatoryAssociationCreatesLinkedInstance() {
 
 	// Handle creation chain — should cascade and create an Item.
 	steps, _, err := handler.HandleCreationChain(result.InstanceID, simState, 0)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(steps, 1)
 	s.Equal("Item", steps[0].ClassName)
 	s.Equal(StepKindCreation, steps[0].Kind)
@@ -139,7 +139,7 @@ func (s *CreationChainSuite) TestCascadeDepthLimitReturnsError() {
 
 	// Simulate exceeding depth limit.
 	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, maxCascadeDepth+1)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "max depth")
 }
 
@@ -175,7 +175,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -185,7 +185,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	simState := state.NewSimulationState()
 	bb := state.NewBindingsBuilder(simState)
 	ge := actions.NewGuardEvaluator(bb)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	ae := actions.NewActionExecutor(bb, nil, nil, nil, ge, rng)
 	pb := actions.NewParameterBinder()
 	sae := NewStateActionExecutor(ae)
@@ -200,6 +200,6 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 
 	// Handle chain — should fail because Item has no creation transition.
 	_, _, err = handler.HandleCreationChain(result.InstanceID, simState, 0)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no creation transition")
 }

@@ -53,7 +53,7 @@ func NewRelationContext() *RelationContext {
 // - fromClassKey: The "from" class key as string
 // - toClassKey: The "to" class key as string
 // - fromMultiplicity: Cardinality on the "from" side
-// - toMultiplicity: Cardinality on the "to" side
+// - toMultiplicity: Cardinality on the "to" side.
 func (c *RelationContext) AddAssociation(
 	assocKey AssociationKey,
 	name string,

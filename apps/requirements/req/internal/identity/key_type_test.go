@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,14 +37,14 @@ func (suite *KeyTypeSuite) TestNewActorKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewActorKey(tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -76,14 +75,14 @@ func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewActorGeneralizationKey(tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -93,12 +92,11 @@ func (suite *KeyTypeSuite) TestNewActorGeneralizationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName     string
@@ -136,14 +134,14 @@ func (suite *KeyTypeSuite) TestNewUseCaseGeneralizationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewUseCaseGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -174,14 +172,14 @@ func (suite *KeyTypeSuite) TestNewDomainKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewDomainKey(tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -217,14 +215,14 @@ func (suite *KeyTypeSuite) TestNewInvariantKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewInvariantKey(tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -260,14 +258,14 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewGlobalFunctionKey(tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -277,12 +275,11 @@ func (suite *KeyTypeSuite) TestNewGlobalFunctionKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
-
 	problemDomainKey, err := NewDomainKey("problem1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	solutionDomainKey, err := NewDomainKey("solution1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName          string
@@ -331,14 +328,14 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewDomainAssociationKey(tt.problemDomainKey, tt.solutionDomainKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -348,9 +345,8 @@ func (suite *KeyTypeSuite) TestNewDomainAssociationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewSubdomainKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName  string
@@ -388,14 +384,14 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewSubdomainKey(tt.domainKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -405,18 +401,17 @@ func (suite *KeyTypeSuite) TestNewSubdomainKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	attributeKey, err := NewAttributeKey(classKey, "attribute1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName     string
@@ -454,14 +449,14 @@ func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewAttributeDerivationKey(tt.attributeKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -471,18 +466,17 @@ func (suite *KeyTypeSuite) TestNewAttributeDerivationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionRequireKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actionKey, err := NewActionKey(classKey, "action1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName  string
@@ -520,14 +514,14 @@ func (suite *KeyTypeSuite) TestNewActionRequireKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewActionRequireKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -537,18 +531,17 @@ func (suite *KeyTypeSuite) TestNewActionRequireKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actionKey, err := NewActionKey(classKey, "action1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName  string
@@ -586,14 +579,14 @@ func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewActionGuaranteeKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -603,18 +596,17 @@ func (suite *KeyTypeSuite) TestNewActionGuaranteeKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actionKey, err := NewActionKey(classKey, "action1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName  string
@@ -652,14 +644,14 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewActionSafetyKey(tt.actionKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -669,18 +661,17 @@ func (suite *KeyTypeSuite) TestNewActionSafetyKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	queryKey, err := NewQueryKey(classKey, "query1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -718,14 +709,14 @@ func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewQueryRequireKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -735,18 +726,17 @@ func (suite *KeyTypeSuite) TestNewQueryRequireKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	queryKey, err := NewQueryKey(classKey, "query1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -784,14 +774,14 @@ func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewQueryGuaranteeKey(tt.queryKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -801,12 +791,11 @@ func (suite *KeyTypeSuite) TestNewQueryGuaranteeKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewUseCaseKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName     string
@@ -844,26 +833,25 @@ func (suite *KeyTypeSuite) TestNewUseCaseKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			key, err := NewUseCaseKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 	}
 }
 
 func (suite *KeyTypeSuite) TestNewClassKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName     string
@@ -901,14 +889,14 @@ func (suite *KeyTypeSuite) TestNewClassKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewClassKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -918,12 +906,11 @@ func (suite *KeyTypeSuite) TestNewClassKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName     string
@@ -961,14 +948,14 @@ func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewGeneralizationKey(tt.subdomainKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -978,15 +965,14 @@ func (suite *KeyTypeSuite) TestNewGeneralizationKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewScenarioKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName   string
@@ -1024,14 +1010,14 @@ func (suite *KeyTypeSuite) TestNewScenarioKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewScenarioKey(tt.useCaseKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1041,18 +1027,17 @@ func (suite *KeyTypeSuite) TestNewScenarioKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, err := NewScenarioKey(useCaseKey, "scenario1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName    string
@@ -1090,14 +1075,14 @@ func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewScenarioObjectKey(tt.scenarioKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1107,18 +1092,17 @@ func (suite *KeyTypeSuite) TestNewScenarioObjectKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	useCaseKey, err := NewUseCaseKey(subdomainKey, "usecase1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, err := NewScenarioKey(useCaseKey, "scenario1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName    string
@@ -1156,14 +1140,14 @@ func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewScenarioStepKey(tt.scenarioKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1173,15 +1157,14 @@ func (suite *KeyTypeSuite) TestNewScenarioStepKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewStateKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1219,14 +1202,14 @@ func (suite *KeyTypeSuite) TestNewStateKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewStateKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1236,15 +1219,14 @@ func (suite *KeyTypeSuite) TestNewStateKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewEventKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1282,14 +1264,14 @@ func (suite *KeyTypeSuite) TestNewEventKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewEventKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1299,15 +1281,14 @@ func (suite *KeyTypeSuite) TestNewEventKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewGuardKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1345,14 +1326,14 @@ func (suite *KeyTypeSuite) TestNewGuardKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewGuardKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1362,15 +1343,14 @@ func (suite *KeyTypeSuite) TestNewGuardKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewActionKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1408,14 +1388,14 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewActionKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1425,15 +1405,14 @@ func (suite *KeyTypeSuite) TestNewActionKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewQueryKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1471,14 +1450,14 @@ func (suite *KeyTypeSuite) TestNewQueryKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewQueryKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1488,15 +1467,14 @@ func (suite *KeyTypeSuite) TestNewQueryKey() {
 }
 
 func (suite *KeyTypeSuite) TestClassInvariant() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1540,14 +1518,14 @@ func (suite *KeyTypeSuite) TestClassInvariant() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewClassInvariantKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1557,15 +1535,14 @@ func (suite *KeyTypeSuite) TestClassInvariant() {
 }
 
 func (suite *KeyTypeSuite) TestNewAttributeKey() {
-
 	domainKey, err := NewDomainKey("domain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	subdomainKey, err := NewSubdomainKey(domainKey, "subdomain1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, err := NewClassKey(subdomainKey, "class1")
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	tests := []struct {
 		testName string
@@ -1603,14 +1580,14 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 		},
 	}
 	for _, tt := range tests {
-		pass := suite.T().Run(tt.testName, func(t *testing.T) {
+		pass := suite.Run(tt.testName, func() {
 			key, err := NewAttributeKey(tt.classKey, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 		if !pass {
@@ -1620,7 +1597,6 @@ func (suite *KeyTypeSuite) TestNewAttributeKey() {
 }
 
 func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
-
 	// Create keys for testing.
 	domain1Key := helper.Must(NewDomainKey("domain1"))
 	domain2Key := helper.Must(NewDomainKey("domain2"))
@@ -1849,21 +1825,20 @@ func (suite *KeyTypeSuite) TestNewClassAssociationKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			key, err := NewClassAssociationKey(tt.parentKey, tt.fromClassKey, tt.toClassKey, tt.name)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 	}
 }
 
 func (suite *KeyTypeSuite) TestNewStateActionKey() {
-
 	domainKey := helper.Must(NewDomainKey("domain1"))
 	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
@@ -1924,21 +1899,20 @@ func (suite *KeyTypeSuite) TestNewStateActionKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			key, err := NewStateActionKey(tt.stateKey, tt.when, tt.subKey)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 	}
 }
 
 func (suite *KeyTypeSuite) TestNewTransitionKey() {
-
 	domainKey := helper.Must(NewDomainKey("domain1"))
 	subdomainKey := helper.Must(NewSubdomainKey(domainKey, "subdomain1"))
 	classKey := helper.Must(NewClassKey(subdomainKey, "class1"))
@@ -2039,14 +2013,14 @@ func (suite *KeyTypeSuite) TestNewTransitionKey() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			key, err := NewTransitionKey(tt.classKey, tt.from, tt.event, tt.guard, tt.action, tt.to)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, key)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, key)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
-				assert.Equal(t, Key{}, key)
+				suite.Require().ErrorContains(err, tt.errstr)
+				suite.Equal(Key{}, key)
 			}
 		})
 	}

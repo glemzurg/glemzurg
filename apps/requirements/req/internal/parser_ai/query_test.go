@@ -2,9 +2,9 @@ package parser_ai
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,23 +23,23 @@ type QuerySuite struct {
 
 func (suite *QuerySuite) TestParseQueryFiles() {
 	testDataFiles, err := t_ContentsForAllJSONFiles(t_QUERY_PATH_OK)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		pass := suite.T().Run(testName, func(t *testing.T) {
+		pass := suite.Run(testName, func() {
 			var expected inputQuery
 
 			actual, err := parseQuery([]byte(testData.InputJSON), testData.Filename)
-			assert.Nil(t, err, testName)
+			suite.Require().NoError(err, testName)
 
 			err = json.Unmarshal([]byte(testData.ExpectedJSON), &expected)
-			assert.Nil(t, err, testName)
+			suite.Require().NoError(err, testName)
 
-			assert.Equal(t, expected.Name, actual.Name, testName+" name")
-			assert.Equal(t, expected.Details, actual.Details, testName+" details")
-			assert.Equal(t, expected.Requires, actual.Requires, testName+" requires")
-			assert.Equal(t, expected.Guarantees, actual.Guarantees, testName+" guarantees")
+			suite.Equal(expected.Name, actual.Name, testName+" name")
+			suite.Equal(expected.Details, actual.Details, testName+" details")
+			suite.Equal(expected.Requires, actual.Requires, testName+" requires")
+			suite.Equal(expected.Guarantees, actual.Guarantees, testName+" guarantees")
 		})
 		if !pass {
 			break
@@ -59,39 +59,40 @@ func (suite *QuerySuite) TestParseQueryErrors() {
 
 	for _, testData := range testDataFiles {
 		testName := testData.Filename
-		suite.T().Run(testName, func(t *testing.T) {
+		suite.Run(testName, func() {
 			_, err := parseQuery([]byte(testData.InputJSON), testData.Filename)
-			assert.NotNil(t, err, testName+" should return an error")
+			suite.Require().Error(err, testName+" should return an error")
 
-			parseErr, ok := err.(*ParseError)
-			assert.True(t, ok, testName+" should return a ParseError")
+			var parseErr *ParseError
+			ok := errors.As(err, &parseErr)
+			suite.True(ok, testName+" should return a ParseError")
 			if !ok {
 				return
 			}
 
 			expected := testData.ExpectedError
-			assert.Equal(t, expected.Code, parseErr.Code, testName+" error code")
-			assert.Equal(t, expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
+			suite.Equal(expected.Code, parseErr.Code, testName+" error code")
+			suite.Equal(expected.ErrorFile, parseErr.ErrorFile, testName+" error file")
 
 			if expected.Message != "" {
-				assert.Equal(t, expected.Message, parseErr.Message, testName+" error message")
+				suite.Equal(expected.Message, parseErr.Message, testName+" error message")
 			} else if expected.MessagePrefix != "" {
-				assert.True(t, len(parseErr.Message) >= len(expected.MessagePrefix) &&
+				suite.True(len(parseErr.Message) >= len(expected.MessagePrefix) &&
 					parseErr.Message[:len(expected.MessagePrefix)] == expected.MessagePrefix,
 					testName+" error message should start with '"+expected.MessagePrefix+"', got '"+parseErr.Message+"'")
 			}
 
 			if expected.HasSchema {
-				assert.NotEmpty(t, parseErr.Schema, testName+" should have schema content")
+				suite.NotEmpty(parseErr.Schema, testName+" should have schema content")
 			} else {
-				assert.Empty(t, parseErr.Schema, testName+" should not have schema content")
+				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
-			assert.NotEmpty(t, parseErr.Docs, testName+" should have docs content")
-			assert.Equal(t, testData.Filename, parseErr.File, testName+" error file path")
+			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
+			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {
-				assert.Equal(t, expected.Field, parseErr.Field, testName+" error field")
+				suite.Equal(expected.Field, parseErr.Field, testName+" error field")
 			}
 		})
 	}

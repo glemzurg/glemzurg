@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -62,18 +61,18 @@ func (suite *LogicBoundQuantifierSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			q := &LogicBoundQuantifier{
 				Quantifier: tt.quantifier,
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, q.String())
+			suite.Equal(tt.expected, q.String())
 		})
 	}
 }
 
-func (suite *LogicBoundQuantifierSuite) TestAscii() {
+func (suite *LogicBoundQuantifierSuite) TestASCII() {
 	tests := []struct {
 		testName   string
 		quantifier string
@@ -120,13 +119,13 @@ func (suite *LogicBoundQuantifierSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			q := &LogicBoundQuantifier{
 				Quantifier: tt.quantifier,
 				Membership: tt.membership,
 				Predicate:  tt.predicate,
 			}
-			assert.Equal(t, tt.expected, q.Ascii())
+			suite.Equal(tt.expected, q.ASCII())
 		})
 	}
 }
@@ -257,12 +256,12 @@ func (suite *LogicBoundQuantifierSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.q.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

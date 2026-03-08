@@ -2,10 +2,11 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -63,7 +64,6 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 
 // LoadNamedSet loads a named set from the database.
 func LoadNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (ns model_named_set.NamedSet, err error) {
-
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -102,8 +102,7 @@ func AddNamedSet(dbOrTx DbOrTx, modelKey string, ns model_named_set.NamedSet) (e
 
 // RemoveNamedSet deletes a named set row from the database.
 func RemoveNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			named_set
 		WHERE
@@ -121,7 +120,6 @@ func RemoveNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (err er
 
 // QueryNamedSets loads all named sets from the database for a given model.
 func QueryNamedSets(dbOrTx DbOrTx, modelKey string) (nss []model_named_set.NamedSet, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -159,14 +157,15 @@ func AddNamedSets(dbOrTx DbOrTx, modelKey string, nss []model_named_set.NamedSet
 		return nil
 	}
 
-	query := `INSERT INTO named_set (model_key, set_key, name, description, notation, specification, type_spec_notation, type_spec_specification) VALUES `
-	args := make([]interface{}, 0, len(nss)*8)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO named_set (model_key, set_key, name, description, notation, specification, type_spec_notation, type_spec_specification) VALUES `)
+	args := make([]any, 0, len(nss)*8)
 	for i, ns := range nss {
 		if i > 0 {
-			query += ", "
+			qb.WriteString(", ")
 		}
 		base := i * 8
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+		qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
 
 		var tsNotation *string
 		var tsSpecification *string
@@ -186,7 +185,7 @@ func AddNamedSets(dbOrTx DbOrTx, modelKey string, nss []model_named_set.NamedSet
 			tsSpecification)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

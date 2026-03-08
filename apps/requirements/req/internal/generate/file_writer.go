@@ -1,7 +1,7 @@
 package generate
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -36,13 +36,13 @@ func (fw *FileWriter) WriteCSS(content []byte) error {
 // writeFile writes content to a file in the output path.
 func (fw *FileWriter) writeFile(filename string, content []byte) error {
 	fullPath := filepath.Join(fw.outputPath, filename)
-	fmt.Println("WRITING:", fullPath)
+	log.Println("WRITING:", fullPath)
 
 	file, err := os.Create(fullPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	_, err = file.Write(content)
 	if err != nil {

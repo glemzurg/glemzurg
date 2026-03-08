@@ -6,7 +6,7 @@ import (
 )
 
 // TupleLiteral represents a tuple with zero or more elements.
-// Pattern: <<3, 7, 3>> or <<>> for empty tuple
+// Pattern: <<3, 7, 3>> or <<>> for empty tuple.
 type TupleLiteral struct {
 	Elements []Expression // Can be empty
 }
@@ -26,14 +26,14 @@ func (t *TupleLiteral) String() (value string) {
 	return out.String()
 }
 
-func (t *TupleLiteral) Ascii() (value string) {
+func (t *TupleLiteral) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("<<")
 	for i, el := range t.Elements {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(el.Ascii())
+		out.WriteString(el.ASCII())
 	}
 	out.WriteString(">>")
 	return out.String()
@@ -45,10 +45,10 @@ func (t *TupleLiteral) Validate() error {
 	}
 	for i, el := range t.Elements {
 		if el == nil {
-			return fmt.Errorf("Elements[%d]: is nil", i)
+			return fmt.Errorf("elements[%d]: is nil", i)
 		}
 		if err := el.Validate(); err != nil {
-			return fmt.Errorf("Elements[%d]: %w", i, err)
+			return fmt.Errorf("elements[%d]: %w", i, err)
 		}
 	}
 	return nil

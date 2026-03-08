@@ -61,6 +61,8 @@ const (
 )
 
 // String returns a human-readable name for the violation type.
+//
+//complexity:cyclo:warn=30,fail=30 Simple switch.
 func (v ViolationType) String() string {
 	switch v {
 	case ViolationTypeModelInvariant:
@@ -98,8 +100,8 @@ func (v ViolationType) String() string {
 	}
 }
 
-// Violation represents a detected invariant violation during simulation.
-type Violation struct {
+// ViolationError represents a detected invariant violation during simulation.
+type ViolationError struct {
 	// Type indicates what kind of invariant was violated.
 	Type ViolationType
 
@@ -139,13 +141,13 @@ type Violation struct {
 }
 
 // Error implements the error interface.
-func (v *Violation) Error() string {
+func (v *ViolationError) Error() string {
 	return v.Message
 }
 
 // NewModelInvariantViolation creates a violation for a failed model invariant.
-func NewModelInvariantViolation(index int, expression string, message string) *Violation {
-	return &Violation{
+func NewModelInvariantViolation(index int, expression string, message string) *ViolationError {
+	return &ViolationError{
 		Type:           ViolationTypeModelInvariant,
 		Message:        fmt.Sprintf("model invariant %d failed: %s - %s", index, expression, message),
 		Expression:     expression,
@@ -161,8 +163,8 @@ func NewActionGuaranteeViolation(
 	expression string,
 	instanceID state.InstanceID,
 	message string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:              ViolationTypeActionGuarantee,
 		Message:           fmt.Sprintf("action %s guarantee %d failed: %s - %s", actionName, guaranteeIndex, expression, message),
 		InstanceID:        instanceID,
@@ -181,8 +183,8 @@ func NewQueryGuaranteeViolation(
 	expression string,
 	instanceID state.InstanceID,
 	message string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:              ViolationTypeQueryGuarantee,
 		Message:           fmt.Sprintf("query %s guarantee %d failed: %s - %s", queryName, guaranteeIndex, expression, message),
 		InstanceID:        instanceID,
@@ -198,8 +200,8 @@ func NewRequiredAttributeViolation(
 	instanceID state.InstanceID,
 	classKey identity.Key,
 	attributeName string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:          ViolationTypeRequiredAttribute,
 		Message:       fmt.Sprintf("required attribute %s is nil on instance %d of class %s", attributeName, instanceID, classKey.String()),
 		InstanceID:    instanceID,
@@ -215,8 +217,8 @@ func NewSpanConstraintViolation(
 	attributeName string,
 	actualValue string,
 	expectedRange string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:          ViolationTypeSpanConstraint,
 		Message:       fmt.Sprintf("attribute %s value %s is outside range %s on instance %d of class %s", attributeName, actualValue, expectedRange, instanceID, classKey.String()),
 		InstanceID:    instanceID,
@@ -234,8 +236,8 @@ func NewEnumConstraintViolation(
 	attributeName string,
 	actualValue string,
 	allowedValues []string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:          ViolationTypeEnumConstraint,
 		Message:       fmt.Sprintf("attribute %s value %s is not in allowed values [%s] on instance %d of class %s", attributeName, actualValue, strings.Join(allowedValues, ", "), instanceID, classKey.String()),
 		InstanceID:    instanceID,
@@ -254,19 +256,20 @@ func NewCollectionSizeViolation(
 	actualSize int,
 	minSize *int,
 	maxSize *int,
-) *Violation {
+) *ViolationError {
 	var rangeStr string
-	if minSize != nil && maxSize != nil {
+	switch {
+	case minSize != nil && maxSize != nil:
 		rangeStr = fmt.Sprintf("[%d, %d]", *minSize, *maxSize)
-	} else if minSize != nil {
+	case minSize != nil:
 		rangeStr = fmt.Sprintf("[%d, ∞)", *minSize)
-	} else if maxSize != nil {
+	case maxSize != nil:
 		rangeStr = fmt.Sprintf("[0, %d]", *maxSize)
-	} else {
+	default:
 		rangeStr = "[0, ∞)"
 	}
 
-	return &Violation{
+	return &ViolationError{
 		Type:          ViolationTypeCollectionSize,
 		Message:       fmt.Sprintf("attribute %s collection size %d is outside range %s on instance %d of class %s", attributeName, actualSize, rangeStr, instanceID, classKey.String()),
 		InstanceID:    instanceID,
@@ -278,8 +281,8 @@ func NewCollectionSizeViolation(
 }
 
 // NewUnparsedDataTypeViolation creates a violation for an attribute without a parsed DataType.
-func NewUnparsedDataTypeViolation(classKey identity.Key, attributeName string, dataTypeRules string) *Violation {
-	return &Violation{
+func NewUnparsedDataTypeViolation(classKey identity.Key, attributeName string, dataTypeRules string) *ViolationError {
+	return &ViolationError{
 		Type:          ViolationTypeUnparsedDataType,
 		Message:       fmt.Sprintf("attribute %s on class %s has unparsed data type: %s", attributeName, classKey.String(), dataTypeRules),
 		ClassKey:      classKey,
@@ -296,8 +299,8 @@ func NewIndexUniquenessViolation(
 	indexNum uint,
 	attrNames []string,
 	tupleValues []string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:       ViolationTypeIndexUniqueness,
 		Message:    fmt.Sprintf("index %d uniqueness violated: attributes [%s] = [%s] duplicated on instances %d and %d of class %s", indexNum, strings.Join(attrNames, ", "), strings.Join(tupleValues, ", "), instanceID, conflictingInstanceID, classKey.String()),
 		InstanceID: instanceID,
@@ -313,8 +316,8 @@ func NewSafetyRuleViolation(
 	expression string,
 	instanceID state.InstanceID,
 	message string,
-) *Violation {
-	return &Violation{
+) *ViolationError {
+	return &ViolationError{
 		Type:              ViolationTypeSafetyRule,
 		Message:           fmt.Sprintf("action %s safety rule %d failed: %s - %s", actionName, ruleIndex, expression, message),
 		InstanceID:        instanceID,
@@ -325,28 +328,31 @@ func NewSafetyRuleViolation(
 	}
 }
 
+// MultiplicityViolationParams holds the parameters for creating a multiplicity violation.
+type MultiplicityViolationParams struct {
+	InstanceID      state.InstanceID
+	ClassKey        identity.Key
+	AssociationName string
+	Direction       string
+	ActualCount     int
+	RequiredMin     uint
+	RequiredMax     uint
+	Message         string
+}
+
 // NewMultiplicityViolation creates a violation for an association multiplicity constraint failure.
-func NewMultiplicityViolation(
-	instanceID state.InstanceID,
-	classKey identity.Key,
-	associationName string,
-	direction string,
-	actualCount int,
-	requiredMin uint,
-	requiredMax uint,
-	message string,
-) *Violation {
-	return &Violation{
+func NewMultiplicityViolation(params MultiplicityViolationParams) *ViolationError {
+	return &ViolationError{
 		Type:       ViolationTypeMultiplicity,
-		Message:    fmt.Sprintf("multiplicity violation on instance %d of class %s: association %s (%s) %s", instanceID, classKey.String(), associationName, direction, message),
-		InstanceID: instanceID,
-		ClassKey:   classKey,
+		Message:    fmt.Sprintf("multiplicity violation on instance %d of class %s: association %s (%s) %s", params.InstanceID, params.ClassKey.String(), params.AssociationName, params.Direction, params.Message),
+		InstanceID: params.InstanceID,
+		ClassKey:   params.ClassKey,
 	}
 }
 
 // NewLivenessClassNotInstantiatedViolation creates a violation for a class that was never instantiated.
-func NewLivenessClassNotInstantiatedViolation(classKey identity.Key, className string) *Violation {
-	return &Violation{
+func NewLivenessClassNotInstantiatedViolation(classKey identity.Key, className string) *ViolationError {
+	return &ViolationError{
 		Type:     ViolationTypeLivenessClassNotInstantiated,
 		Message:  fmt.Sprintf("liveness: class %s was never instantiated during simulation", className),
 		ClassKey: classKey,
@@ -354,8 +360,8 @@ func NewLivenessClassNotInstantiatedViolation(classKey identity.Key, className s
 }
 
 // NewLivenessAttributeNotWrittenViolation creates a violation for an attribute that was never written.
-func NewLivenessAttributeNotWrittenViolation(classKey identity.Key, className, attributeName string) *Violation {
-	return &Violation{
+func NewLivenessAttributeNotWrittenViolation(classKey identity.Key, className, attributeName string) *ViolationError {
+	return &ViolationError{
 		Type:          ViolationTypeLivenessAttributeNotWritten,
 		Message:       fmt.Sprintf("liveness: attribute %s on class %s was never written during simulation", attributeName, className),
 		ClassKey:      classKey,
@@ -364,24 +370,24 @@ func NewLivenessAttributeNotWrittenViolation(classKey identity.Key, className, a
 }
 
 // NewLivenessAssociationNotLinkedViolation creates a violation for an association that was never linked.
-func NewLivenessAssociationNotLinkedViolation(associationKey identity.Key, associationName string, fromClassKey, toClassKey identity.Key) *Violation {
-	return &Violation{
+func NewLivenessAssociationNotLinkedViolation(_ identity.Key, associationName string, fromClassKey, toClassKey identity.Key) *ViolationError {
+	return &ViolationError{
 		Type:    ViolationTypeLivenessAssociationNotLinked,
 		Message: fmt.Sprintf("liveness: association %s (between %s and %s) never had a link created during simulation", associationName, fromClassKey.String(), toClassKey.String()),
 	}
 }
 
-// ViolationList is a collection of violations.
-type ViolationList []*Violation
+// ViolationErrors is a collection of violations.
+type ViolationErrors []*ViolationError
 
 // HasViolations returns true if there are any violations.
-func (v ViolationList) HasViolations() bool {
+func (v ViolationErrors) HasViolations() bool {
 	return len(v) > 0
 }
 
 // ByType filters violations by type.
-func (v ViolationList) ByType(t ViolationType) ViolationList {
-	var result ViolationList
+func (v ViolationErrors) ByType(t ViolationType) ViolationErrors {
+	var result ViolationErrors
 	for _, violation := range v {
 		if violation.Type == t {
 			result = append(result, violation)
@@ -391,46 +397,55 @@ func (v ViolationList) ByType(t ViolationType) ViolationList {
 }
 
 // TLAViolations returns all TLA+ related violations (model invariants and guarantees).
-func (v ViolationList) TLAViolations() ViolationList {
-	var result ViolationList
+func (v ViolationErrors) TLAViolations() ViolationErrors {
+	var result ViolationErrors
 	for _, violation := range v {
+		//nolint:exhaustive // Only TLA+ violation types are relevant here.
 		switch violation.Type {
 		case ViolationTypeModelInvariant, ViolationTypeActionGuarantee, ViolationTypeQueryGuarantee:
 			result = append(result, violation)
+		default:
+			// Not a TLA+ violation; skip.
 		}
 	}
 	return result
 }
 
 // DataTypeViolations returns all data type constraint violations.
-func (v ViolationList) DataTypeViolations() ViolationList {
-	var result ViolationList
+func (v ViolationErrors) DataTypeViolations() ViolationErrors {
+	var result ViolationErrors
 	for _, violation := range v {
+		//nolint:exhaustive // Only data type violation types are relevant here.
 		switch violation.Type {
 		case ViolationTypeRequiredAttribute, ViolationTypeSpanConstraint, ViolationTypeEnumConstraint, ViolationTypeCollectionSize, ViolationTypeIndexUniqueness:
 			result = append(result, violation)
+		default:
+			// Not a data type violation; skip.
 		}
 	}
 	return result
 }
 
 // LivenessViolations returns all liveness check violations.
-func (v ViolationList) LivenessViolations() ViolationList {
-	var result ViolationList
+func (v ViolationErrors) LivenessViolations() ViolationErrors {
+	var result ViolationErrors
 	for _, violation := range v {
+		//nolint:exhaustive // Only liveness violation types are relevant here.
 		switch violation.Type {
 		case ViolationTypeLivenessClassNotInstantiated,
 			ViolationTypeLivenessAttributeNotWritten,
 			ViolationTypeLivenessAssociationNotLinked,
 			ViolationTypeLivenessAttributeNotRead:
 			result = append(result, violation)
+		default:
+			// Not a liveness violation; skip.
 		}
 	}
 	return result
 }
 
 // Error returns a combined error message for all violations.
-func (v ViolationList) Error() string {
+func (v ViolationErrors) Error() string {
 	if len(v) == 0 {
 		return ""
 	}

@@ -2,13 +2,13 @@ package ast
 
 import "bytes"
 
-// Bag operation operators
+// Bag operation operators.
 const (
 	BagOperatorUnion       = `⊕` // Bag union (U+2295 CIRCLED PLUS)
 	BagOperatorSubtraction = `⊖` // Bag subtraction (U+2296 CIRCLED MINUS)
 )
 
-var bagOperationAscii = map[string]string{
+var bagOperationASCII = map[string]string{
 	BagOperatorUnion:       `(+)`,
 	BagOperatorSubtraction: `(-)`,
 }
@@ -30,11 +30,11 @@ func (bi *BinaryBagOperation) String() (value string) {
 	return out.String()
 }
 
-func (bi *BinaryBagOperation) Ascii() (value string) {
+func (bi *BinaryBagOperation) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(bi.Left.Ascii())
-	out.WriteString(" " + bagOperationAscii[bi.Operator] + " ")
-	out.WriteString(bi.Right.Ascii())
+	out.WriteString(bi.Left.ASCII())
+	out.WriteString(" " + bagOperationASCII[bi.Operator] + " ")
+	out.WriteString(bi.Right.ASCII())
 	return out.String()
 }
 
@@ -52,5 +52,6 @@ func (bi *BinaryBagOperation) Validate() error {
 }
 
 // BagInfix is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryBagOperation instead.
 type BagInfix = BinaryBagOperation

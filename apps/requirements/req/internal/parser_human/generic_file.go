@@ -8,7 +8,6 @@ import (
 )
 
 func init() {
-
 	// Regex syntax used by golang: https://github.com/google/re2/wiki/Syntax
 
 	// A title in the generic file structure.
@@ -40,7 +39,6 @@ type File struct {
 }
 
 func newFile(filename, title, markdown, umlComment, data string) (file File, err error) {
-
 	// No title, then use the filename.
 	if title == "" {
 		title = filename
@@ -50,7 +48,6 @@ func newFile(filename, title, markdown, umlComment, data string) (file File, err
 }
 
 func parseFile(filename, contents string) (file File, err error) {
-
 	// There can only be one of each marker, but they aren't required.
 	umlMarkerCount := strings.Count(contents, _UML_MARKER)
 	if umlMarkerCount > 1 {
@@ -86,14 +83,13 @@ func parseFile(filename, contents string) (file File, err error) {
 	umlComment = strings.TrimSpace(umlComment)
 	data = strings.TrimSpace(data)
 
-	// Get the title from the markdown if ther is one.
+	// Get the title from the markdown if there is one.
 	title = extractMarkdownTitle(markdown)
 
 	return newFile(filename, title, markdown, umlComment, data)
 }
 
 func extractMarkdownTitle(markdown string) (title string) {
-
 	// Ensure there is no white space leading.
 	markdown = strings.TrimSpace(markdown)
 

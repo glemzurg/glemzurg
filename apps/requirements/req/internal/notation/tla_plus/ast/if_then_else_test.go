@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -49,7 +48,7 @@ func (suite *ExpressionIfElseSuite) TestString() {
 			expected: `IF 5 > 0 THEN positive ELSE nonpositive`,
 		},
 		{
-			testName: `nested if then else`,
+			testName:  `nested if then else`,
 			condition: &BooleanLiteral{Value: true},
 			then: &ExpressionIfElse{
 				Condition: &BooleanLiteral{Value: false},
@@ -72,18 +71,18 @@ func (suite *ExpressionIfElseSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &ExpressionIfElse{
 				Condition: tt.condition,
 				Then:      tt.then,
 				Else:      tt.elseExpr,
 			}
-			assert.Equal(t, tt.expected, expr.String())
+			suite.Equal(tt.expected, expr.String())
 		})
 	}
 }
 
-func (suite *ExpressionIfElseSuite) TestAscii() {
+func (suite *ExpressionIfElseSuite) TestASCII() {
 	tests := []struct {
 		testName  string
 		condition Expression
@@ -118,13 +117,13 @@ func (suite *ExpressionIfElseSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &ExpressionIfElse{
 				Condition: tt.condition,
 				Then:      tt.then,
 				Else:      tt.elseExpr,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			suite.Equal(tt.expected, expr.ASCII())
 		})
 	}
 }
@@ -223,12 +222,12 @@ func (suite *ExpressionIfElseSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.e.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

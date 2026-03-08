@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +33,6 @@ type AssociationSuite struct {
 }
 
 func (suite *AssociationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -49,13 +47,12 @@ func (suite *AssociationSuite) SetupTest() {
 }
 
 func (suite *AssociationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), association)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(association)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO association
 			(
 				model_key,
@@ -87,11 +84,11 @@ func (suite *AssociationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err = LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_class.Association{
+	suite.Require().NoError(err)
+	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
 		Details:             "Details",
@@ -105,7 +102,6 @@ func (suite *AssociationSuite) TestLoad() {
 }
 
 func (suite *AssociationSuite) TestAdd() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -117,11 +113,11 @@ func (suite *AssociationSuite) TestAdd() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_class.Association{
+	suite.Require().NoError(err)
+	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
 		Details:             "Details",
@@ -135,7 +131,6 @@ func (suite *AssociationSuite) TestAdd() {
 }
 
 func (suite *AssociationSuite) TestAddNulls() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -147,11 +142,11 @@ func (suite *AssociationSuite) TestAddNulls() {
 		AssociationClassKey: nil, // No association class
 		UmlComment:          "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_class.Association{
+	suite.Require().NoError(err)
+	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
 		Details:             "",
@@ -165,7 +160,6 @@ func (suite *AssociationSuite) TestAddNulls() {
 }
 
 func (suite *AssociationSuite) TestUpdate() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -177,7 +171,7 @@ func (suite *AssociationSuite) TestUpdate() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey, // Same key, updating other fields
@@ -190,11 +184,11 @@ func (suite *AssociationSuite) TestUpdate() {
 		AssociationClassKey: &suite.class.Key,
 		UmlComment:          "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_class.Association{
+	suite.Require().NoError(err)
+	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "NameX",
 		Details:             "DetailsX",
@@ -208,7 +202,6 @@ func (suite *AssociationSuite) TestUpdate() {
 }
 
 func (suite *AssociationSuite) TestUpdateNulls() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -220,7 +213,7 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
@@ -233,11 +226,11 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 		AssociationClassKey: nil, // No association class
 		UmlComment:          "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_class.Association{
+	suite.Require().NoError(err)
+	suite.Equal(model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "NameX",
 		Details:             "",
@@ -251,7 +244,6 @@ func (suite *AssociationSuite) TestUpdateNulls() {
 }
 
 func (suite *AssociationSuite) TestRemove() {
-
 	err := AddAssociation(suite.db, suite.model.Key, model_class.Association{
 		Key:                 suite.associationKey,
 		Name:                "Name",
@@ -263,18 +255,17 @@ func (suite *AssociationSuite) TestRemove() {
 		AssociationClassKey: &suite.classC.Key,
 		UmlComment:          "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	association, err := LoadAssociation(suite.db, suite.model.Key, suite.associationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), association)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(association)
 }
 
 func (suite *AssociationSuite) TestQuery() {
-
 	// Create a second association key
 	associationKeyX := helper.Must(identity.NewClassAssociationKey(suite.subdomain.Key, suite.classB.Key, suite.classC.Key, "test association x"))
 
@@ -302,11 +293,11 @@ func (suite *AssociationSuite) TestQuery() {
 			UmlComment:          "UmlComment",
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	associations, err := QueryAssociations(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_class.Association{
+	suite.Require().NoError(err)
+	suite.Equal([]model_class.Association{
 		{
 			Key:                 suite.associationKey, // class/class_key comes before class/class_key_b
 			Name:                "Name",

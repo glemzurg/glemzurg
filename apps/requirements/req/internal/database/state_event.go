@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -41,9 +42,8 @@ func scanEvent(scanner Scanner, classKeyPtr *identity.Key, event *model_state.Ev
 	return nil
 }
 
-// LoadEvent loads a event from the database
+// LoadEvent loads a event from the database.
 func LoadEvent(dbOrTx DbOrTx, modelKey string, eventKey identity.Key) (classKey identity.Key, event model_state.Event, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -82,9 +82,8 @@ func AddEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model
 
 // UpdateEvent updates a event in the database.
 func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event model_state.Event) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			event
 		SET
@@ -110,9 +109,8 @@ func UpdateEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, event mo
 
 // RemoveEvent deletes a event from the database.
 func RemoveEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			event
 		WHERE
@@ -131,9 +129,8 @@ func RemoveEvent(dbOrTx DbOrTx, modelKey string, classKey identity.Key, eventKey
 	return nil
 }
 
-// QueryEvents loads all event from the database
+// QueryEvents loads all event from the database.
 func QueryEvents(dbOrTx DbOrTx, modelKey string) (events map[identity.Key][]model_state.Event, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -181,22 +178,24 @@ func AddEvents(dbOrTx DbOrTx, modelKey string, events map[identity.Key][]model_s
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO event (model_key, class_key, event_key, name, details) VALUES `
-	args := make([]interface{}, 0, count*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO event (model_key, class_key, event_key, name, details) VALUES `)
+	args := make([]any, 0, count*5)
 	i := 0
 	for classKey, eventList := range events {
 		for _, event := range eventList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 5
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
+
 			args = append(args, modelKey, classKey.String(), event.Key.String(), event.Name, event.Details)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

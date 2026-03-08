@@ -3,15 +3,18 @@ package invariants
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/model_bridge"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// _EXPRESSION_RETURNED_NIL is the error message used when an expression evaluates to nil.
+const _EXPRESSION_RETURNED_NIL = "expression returned nil"
 
 // InvariantChecker evaluates invariants against simulation state.
 // It checks:
@@ -44,12 +47,11 @@ type parsedInvariantItem struct {
 	spec          string        // Original specification string for error messages.
 }
 
-// parsedGuarantee holds a lowered guarantee expression with its metadata
+// parsedGuarantee holds a lowered guarantee expression with its metadata.
 type parsedGuarantee struct {
 	expression me.Expression
 	spec       string // original specification string for error messages
 	index      int    // Index in the original guarantees array
-	isPrimed   bool   // True if this is a primed assignment, false if post-condition
 }
 
 // NewInvariantChecker creates a new invariant checker from a model.
@@ -100,10 +102,10 @@ func NewInvariantChecker(model *core.Model) (*InvariantChecker, error) {
 // CheckModelInvariants evaluates all model-level invariants against the current state.
 // Returns violations for any invariant that evaluates to FALSE.
 func (c *InvariantChecker) CheckModelInvariants(
-	simState *state.SimulationState,
+	_ *state.SimulationState,
 	bindingsBuilder *state.BindingsBuilder,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	bindings := bindingsBuilder.BuildWithClassInstances(c.classNameMap)
 
@@ -144,7 +146,7 @@ func (c *InvariantChecker) CheckModelInvariants(
 		if !isTrueBoolean(result.Value) {
 			var message string
 			if result.Value == nil {
-				message = "expression returned nil"
+				message = _EXPRESSION_RETURNED_NIL
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -168,13 +170,13 @@ func (c *InvariantChecker) CheckActionPostConditions(
 	instance *state.ClassInstance,
 	bindingsBuilder *state.BindingsBuilder,
 	additionalBindings map[string]object.Object,
-) ViolationList {
+) ViolationErrors {
 	guarantees, ok := c.actionPostConditions[actionKey]
 	if !ok {
 		return nil // No post-conditions for this action
 	}
 
-	var violations ViolationList
+	var violations ViolationErrors
 
 	// Build bindings with self and any additional variables
 	var bindings *evaluator.Bindings
@@ -203,7 +205,7 @@ func (c *InvariantChecker) CheckActionPostConditions(
 		if !isTrueBoolean(result.Value) {
 			var message string
 			if result.Value == nil {
-				message = "expression returned nil"
+				message = _EXPRESSION_RETURNED_NIL
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -230,13 +232,13 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 	instance *state.ClassInstance,
 	bindingsBuilder *state.BindingsBuilder,
 	additionalBindings map[string]object.Object,
-) ViolationList {
+) ViolationErrors {
 	guarantees, ok := c.queryPostConditions[queryKey]
 	if !ok {
 		return nil // No post-conditions for this query
 	}
 
-	var violations ViolationList
+	var violations ViolationErrors
 
 	// Build bindings with self and any additional variables
 	var bindings *evaluator.Bindings
@@ -265,7 +267,7 @@ func (c *InvariantChecker) CheckQueryPostConditions(
 		if !isTrueBoolean(result.Value) {
 			var message string
 			if result.Value == nil {
-				message = "expression returned nil"
+				message = _EXPRESSION_RETURNED_NIL
 			} else {
 				message = fmt.Sprintf("expression returned %s", result.Value.Inspect())
 			}
@@ -293,8 +295,8 @@ func (c *InvariantChecker) CheckAllInvariants(
 	bindingsBuilder *state.BindingsBuilder,
 	dataTypeChecker *DataTypeChecker,
 	indexChecker *IndexUniquenessChecker,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	// Check model invariants
 	modelViolations := c.CheckModelInvariants(simState, bindingsBuilder)

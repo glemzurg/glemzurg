@@ -4,13 +4,19 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
+
+// _BOUND_TYPE_UNCONSTRAINED is the span bound type indicating no constraint.
+const _BOUND_TYPE_UNCONSTRAINED = "unconstrained"
+
+// _BOUND_TYPE_CLOSED is the span bound type indicating an inclusive boundary.
+const _BOUND_TYPE_CLOSED = "closed"
 
 // DataTypeChecker validates attribute values against their data type constraints.
 // It checks:
@@ -25,12 +31,12 @@ type DataTypeChecker struct {
 
 // NewDataTypeChecker creates a new data type checker from a model.
 // Returns an error if any class attribute has an unparsed DataType.
-func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationList) {
+func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationErrors) {
 	checker := &DataTypeChecker{
 		classAttributes: make(map[identity.Key]map[string]*model_class.Attribute),
 	}
 
-	var violations ViolationList
+	var violations ViolationErrors
 
 	// Iterate through all domains, subdomains, and classes to collect attributes
 	for _, domain := range model.Domains {
@@ -61,8 +67,8 @@ func NewDataTypeChecker(model *core.Model) (*DataTypeChecker, ViolationList) {
 }
 
 // CheckInstance validates all attribute values on an instance against their data type constraints.
-func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) ViolationList {
-	var violations ViolationList
+func (c *DataTypeChecker) CheckInstance(instance *state.ClassInstance) ViolationErrors {
+	var violations ViolationErrors
 
 	attrs, ok := c.classAttributes[instance.ClassKey]
 	if !ok {
@@ -111,8 +117,8 @@ func (c *DataTypeChecker) checkDataTypeConstraints(
 	attrName string,
 	value object.Object,
 	dataType *model_data_type.DataType,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	// Check collection size constraints
 	if sizeViolation := c.checkCollectionSize(instanceID, classKey, attrName, value, dataType); sizeViolation != nil {
@@ -141,7 +147,7 @@ func (c *DataTypeChecker) checkCollectionSize(
 	attrName string,
 	value object.Object,
 	dataType *model_data_type.DataType,
-) *Violation {
+) *ViolationError {
 	// Skip if no collection constraints
 	if dataType.CollectionMin == nil && dataType.CollectionMax == nil {
 		return nil
@@ -209,8 +215,8 @@ func (c *DataTypeChecker) checkAtomicConstraints(
 	attrName string,
 	value object.Object,
 	atomic *model_data_type.Atomic,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	switch atomic.ConstraintType {
 	case model_data_type.CONSTRAINT_TYPE_UNCONSTRAINED:
@@ -246,7 +252,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 	attrName string,
 	value object.Object,
 	span *model_data_type.AtomicSpan,
-) *Violation {
+) *ViolationError {
 	// Get numeric value
 	num, ok := value.(*object.Number)
 	if !ok {
@@ -261,11 +267,12 @@ func (c *DataTypeChecker) checkSpanConstraint(
 	rangeStr := formatSpanRange(span)
 
 	// Check lower bound
-	if span.LowerType != "unconstrained" && span.LowerValue != nil {
+	if span.LowerType != _BOUND_TYPE_UNCONSTRAINED && span.LowerValue != nil {
 		lowerRat := spanValueToRat(span.LowerValue, span.LowerDenominator)
 
 		cmp := valueRat.Cmp(lowerRat)
-		if span.LowerType == "closed" {
+		switch span.LowerType {
+		case _BOUND_TYPE_CLOSED:
 			// Closed: value >= lower
 			if cmp < 0 {
 				return NewSpanConstraintViolation(
@@ -276,7 +283,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		} else if span.LowerType == "open" {
+		case "open":
 			// Open: value > lower
 			if cmp <= 0 {
 				return NewSpanConstraintViolation(
@@ -291,11 +298,12 @@ func (c *DataTypeChecker) checkSpanConstraint(
 	}
 
 	// Check upper bound
-	if span.HigherType != "unconstrained" && span.HigherValue != nil {
+	if span.HigherType != _BOUND_TYPE_UNCONSTRAINED && span.HigherValue != nil {
 		higherRat := spanValueToRat(span.HigherValue, span.HigherDenominator)
 
 		cmp := valueRat.Cmp(higherRat)
-		if span.HigherType == "closed" {
+		switch span.HigherType {
+		case _BOUND_TYPE_CLOSED:
 			// Closed: value <= higher
 			if cmp > 0 {
 				return NewSpanConstraintViolation(
@@ -306,7 +314,7 @@ func (c *DataTypeChecker) checkSpanConstraint(
 					rangeStr,
 				)
 			}
-		} else if span.HigherType == "open" {
+		case "open":
 			// Open: value < higher
 			if cmp >= 0 {
 				return NewSpanConstraintViolation(
@@ -341,12 +349,12 @@ func formatSpanRange(span *model_data_type.AtomicSpan) string {
 	var lowerBracket, higherBracket string
 
 	// Lower bound
-	if span.LowerType == "unconstrained" {
+	if span.LowerType == _BOUND_TYPE_UNCONSTRAINED {
 		lower = "-∞"
 		lowerBracket = "("
 	} else {
 		lower = formatSpanValue(span.LowerValue, span.LowerDenominator)
-		if span.LowerType == "closed" {
+		if span.LowerType == _BOUND_TYPE_CLOSED {
 			lowerBracket = "["
 		} else {
 			lowerBracket = "("
@@ -354,12 +362,12 @@ func formatSpanRange(span *model_data_type.AtomicSpan) string {
 	}
 
 	// Higher bound
-	if span.HigherType == "unconstrained" {
+	if span.HigherType == _BOUND_TYPE_UNCONSTRAINED {
 		higher = "+∞"
 		higherBracket = ")"
 	} else {
 		higher = formatSpanValue(span.HigherValue, span.HigherDenominator)
-		if span.HigherType == "closed" {
+		if span.HigherType == _BOUND_TYPE_CLOSED {
 			higherBracket = "]"
 		} else {
 			higherBracket = ")"
@@ -387,7 +395,7 @@ func (c *DataTypeChecker) checkEnumConstraint(
 	attrName string,
 	value object.Object,
 	enums []model_data_type.AtomicEnum,
-) *Violation {
+) *ViolationError {
 	// Get string value
 	str, ok := value.(*object.String)
 	if !ok {
@@ -417,8 +425,8 @@ func (c *DataTypeChecker) checkEnumConstraint(
 }
 
 // CheckState validates all instances in a simulation state.
-func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationList {
-	var violations ViolationList
+func (c *DataTypeChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+	var violations ViolationErrors
 
 	for _, instance := range simState.AllInstances() {
 		instanceViolations := c.CheckInstance(instance)

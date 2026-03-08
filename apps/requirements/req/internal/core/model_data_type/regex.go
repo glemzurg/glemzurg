@@ -3,7 +3,6 @@ package model_data_type
 import "regexp"
 
 func init() {
-
 	// Regex syntax used by golang: https://github.com/google/re2/wiki/Syntax
 
 	// One or more spaces.

@@ -5,7 +5,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -157,12 +156,12 @@ func (suite *TransitionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.transition.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -182,8 +181,8 @@ func (suite *TransitionSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	transition, err := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Transition{
+	suite.Require().NoError(err)
+	suite.Equal(Transition{
 		Key:          key,
 		FromStateKey: &fromStateKey,
 		EventKey:     eventKey,
@@ -195,7 +194,7 @@ func (suite *TransitionSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewTransition(key, nil, eventKey, nil, nil, nil, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "FromStateKey, ToStateKey: cannot both be blank")
+	suite.Require().ErrorContains(err, "FromStateKey, ToStateKey: cannot both be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -217,7 +216,7 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 		ToStateKey:   nil, // Invalid - both nil
 	}
 	err := transition.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "FromStateKey, ToStateKey: cannot both be blank", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "FromStateKey, ToStateKey: cannot both be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - transition key has class1 as parent, but we pass other_class.
 	transition = Transition{
@@ -227,11 +226,11 @@ func (suite *TransitionSuite) TestValidateWithParent() {
 		ToStateKey:   &toStateKey,
 	}
 	err = transition.ValidateWithParent(&otherClassKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = transition.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates all reference keys correctly.
@@ -380,12 +379,12 @@ func (suite *TransitionSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.transition.ValidateReferences(tt.states, tt.events, tt.guards, tt.actions)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

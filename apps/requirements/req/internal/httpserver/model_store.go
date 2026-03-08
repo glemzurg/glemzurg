@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 )
 
 // ModelStore manages in-memory models and their generated markdown content.
 type ModelStore struct {
 	mu       sync.RWMutex
-	models   map[string]*core.Model  // Keyed by model name
+	models   map[string]*core.Model       // Keyed by model name
 	markdown map[string]map[string][]byte // model -> file -> content
 	css      map[string][]byte            // model -> CSS content
 	svg      map[string]map[string][]byte // model -> file -> SVG content
@@ -35,7 +35,7 @@ func (s *ModelStore) SetModel(name string, model *core.Model) error {
 	s.models[name] = model
 
 	// Generate markdown content in memory
-	mdContent, svgContent, cssContent, err := s.generateContent(name, model)
+	mdContent, svgContent, cssContent, err := s.generateContent(model)
 	if err != nil {
 		return err
 	}
@@ -99,23 +99,20 @@ func (s *ModelStore) ListModels() []string {
 }
 
 // generateContent generates markdown, SVG, and CSS content for a model.
-func (s *ModelStore) generateContent(name string, model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
-	mdContent := make(map[string][]byte)
-	svgContent := make(map[string][]byte)
-
+func (s *ModelStore) generateContent(model *core.Model) (map[string][]byte, map[string][]byte, []byte, error) {
 	// Use the generate package to create content in memory
 	collector := &ContentCollector{
 		Markdown: make(map[string][]byte),
 		SVG:      make(map[string][]byte),
 	}
 
-	err := generate.GenerateMdToWriter(false, *model, collector)
+	err := generate.GenerateMdToWriter(*model, collector)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	mdContent = collector.Markdown
-	svgContent = collector.SVG
+	mdContent := collector.Markdown
+	svgContent := collector.SVG
 
 	// Generate CSS
 	var cssBuffer bytes.Buffer

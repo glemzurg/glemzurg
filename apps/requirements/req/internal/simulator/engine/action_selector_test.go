@@ -4,11 +4,11 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -27,13 +27,13 @@ func (s *ActionSelectorSuite) TestCreationEligibleWhenNoInstancesExist() {
 	model := testModel(classEntry(orderClass, orderKey))
 
 	catalog := NewClassCatalog(model)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, rng)
 
 	simState := state.NewSimulationState()
 
 	action, err := selector.SelectAction(simState)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(action)
 	s.True(action.IsCreation)
 	s.Nil(action.Instance)
@@ -44,7 +44,7 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 	model := testModel(classEntry(orderClass, orderKey))
 
 	catalog := NewClassCatalog(model)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, rng)
 
 	simState := state.NewSimulationState()
@@ -57,9 +57,9 @@ func (s *ActionSelectorSuite) TestNormalEventsEligibleForExistingInstances() {
 	// Run multiple selections to verify both types exist.
 	foundCreation := false
 	foundNormal := false
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		action, err := selector.SelectAction(simState)
-		s.NoError(err)
+		s.Require().NoError(err)
 		if action.IsCreation {
 			foundCreation = true
 		} else if !action.IsDo {
@@ -103,13 +103,13 @@ func (s *ActionSelectorSuite) TestDeadlockWhenNoActionsEligible() {
 
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, rng)
 
 	// No creation transitions and no instances → deadlock.
 	simState := state.NewSimulationState()
 	_, err := selector.SelectAction(simState)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "deadlock")
 }
 
@@ -124,7 +124,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"), nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
@@ -153,7 +153,7 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 
 	model := testModel(classEntry(class, classKey))
 	catalog := NewClassCatalog(model)
-	rng := rand.New(rand.NewSource(42))
+	rng := rand.New(rand.NewSource(42)) //nolint:gosec // deterministic seed for reproducible tests
 	selector := NewActionSelector(catalog, rng)
 
 	simState := state.NewSimulationState()
@@ -164,9 +164,9 @@ func (s *ActionSelectorSuite) TestDoActionsEligibleAsEvents() {
 
 	// Should find "do" actions as eligible.
 	foundDo := false
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		action, err := selector.SelectAction(simState)
-		s.NoError(err)
+		s.Require().NoError(err)
 		if action.IsDo {
 			foundDo = true
 			s.Equal("DoCount", action.DoAction.Name)

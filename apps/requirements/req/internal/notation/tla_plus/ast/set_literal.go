@@ -26,12 +26,12 @@ func (s *SetLiteral) String() (value string) {
 	return out.String()
 }
 
-func (s *SetLiteral) Ascii() (value string) {
+func (s *SetLiteral) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("{")
 	strs := make([]string, len(s.Elements))
 	for i, elem := range s.Elements {
-		strs[i] = elem.Ascii()
+		strs[i] = elem.ASCII()
 	}
 	out.WriteString(strings.Join(strs, ", "))
 	out.WriteString("}")

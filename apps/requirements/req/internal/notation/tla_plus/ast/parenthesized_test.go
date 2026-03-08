@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,16 +46,16 @@ func (suite *ParenExprSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.p.String())
+		_ = suite.Run(tt.testName, func() {
+			suite.Equal(tt.expected, tt.p.String())
 		})
 	}
 }
 
-func (suite *ParenExprSuite) TestAscii() {
-	// Ascii should be same as String for ParenExpr
+func (suite *ParenExprSuite) TestASCII() {
+	// ASCII should be same as String for ParenExpr
 	p := &ParenExpr{Inner: &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}}
-	assert.Equal(suite.T(), p.String(), p.Ascii())
+	suite.Equal(p.String(), p.ASCII())
 }
 
 func (suite *ParenExprSuite) TestValidate() {
@@ -82,12 +81,12 @@ func (suite *ParenExprSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.p.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -96,7 +95,7 @@ func (suite *ParenExprSuite) TestValidate() {
 func (suite *ParenExprSuite) TestNewParenExpr() {
 	inner := &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}
 	p := NewParenExpr(inner)
-	assert.Equal(suite.T(), inner, p.Inner)
+	suite.Equal(inner, p.Inner)
 }
 
 func (suite *ParenExprSuite) TestExpressionNode() {

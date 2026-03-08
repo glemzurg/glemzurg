@@ -4,15 +4,15 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,7 +38,6 @@ type ObjectSuite struct {
 }
 
 func (suite *ObjectSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -57,14 +56,13 @@ func (suite *ObjectSuite) SetupTest() {
 }
 
 func (suite *ObjectSuite) TestLoad() {
-
 	// Nothing in database yet.
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), scenarioKey)
-	assert.Empty(suite.T(), object)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(scenarioKey)
+	suite.Empty(object)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO scenario_object
 			(
 				model_key,
@@ -90,12 +88,12 @@ func (suite *ObjectSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err = LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Equal(suite.T(), model_scenario.Object{
+	suite.Require().NoError(err)
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -107,7 +105,6 @@ func (suite *ObjectSuite) TestLoad() {
 }
 
 func (suite *ObjectSuite) TestAdd() {
-
 	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
@@ -117,12 +114,12 @@ func (suite *ObjectSuite) TestAdd() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Equal(suite.T(), model_scenario.Object{
+	suite.Require().NoError(err)
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -134,7 +131,6 @@ func (suite *ObjectSuite) TestAdd() {
 }
 
 func (suite *ObjectSuite) TestUpdate() {
-
 	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
@@ -144,7 +140,7 @@ func (suite *ObjectSuite) TestUpdate() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateObject(suite.db, suite.model.Key, model_scenario.Object{
 		Key:          suite.objectKey,
@@ -155,12 +151,12 @@ func (suite *ObjectSuite) TestUpdate() {
 		Multi:        false,
 		UmlComment:   "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.scenario.Key, scenarioKey)
-	assert.Equal(suite.T(), model_scenario.Object{
+	suite.Require().NoError(err)
+	suite.Equal(suite.scenario.Key, scenarioKey)
+	suite.Equal(model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 2,
 		Name:         "NameX",
@@ -172,7 +168,6 @@ func (suite *ObjectSuite) TestUpdate() {
 }
 
 func (suite *ObjectSuite) TestRemove() {
-
 	err := AddObject(suite.db, suite.model.Key, suite.scenario.Key, model_scenario.Object{
 		Key:          suite.objectKey,
 		ObjectNumber: 1,
@@ -182,19 +177,18 @@ func (suite *ObjectSuite) TestRemove() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	scenarioKey, object, err := LoadObject(suite.db, suite.model.Key, suite.objectKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), scenarioKey)
-	assert.Empty(suite.T(), object)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(scenarioKey)
+	suite.Empty(object)
 }
 
 func (suite *ObjectSuite) TestQuery() {
-
 	err := AddObjects(suite.db, suite.model.Key, map[identity.Key][]model_scenario.Object{
 		suite.scenario.Key: {
 			{
@@ -217,10 +211,10 @@ func (suite *ObjectSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	objects, err := QueryObjects(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 	expected := map[identity.Key][]model_scenario.Object{
 		suite.scenario.Key: {
 			{
@@ -243,7 +237,7 @@ func (suite *ObjectSuite) TestQuery() {
 			},
 		},
 	}
-	assert.Equal(suite.T(), expected, objects)
+	suite.Equal(expected, objects)
 }
 
 //==================================================
@@ -251,7 +245,6 @@ func (suite *ObjectSuite) TestQuery() {
 //==================================================
 
 func t_AddObject(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, objectKey identity.Key, objectNumber uint, classKey identity.Key) (object model_scenario.Object) {
-
 	err := AddObject(dbOrTx, modelKey, scenarioKey, model_scenario.Object{
 		Key:          objectKey,
 		ObjectNumber: objectNumber,
@@ -261,10 +254,10 @@ func t_AddObject(t *testing.T, dbOrTx DbOrTx, modelKey string, scenarioKey ident
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	_, object, err = LoadObject(dbOrTx, modelKey, objectKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return object
 }

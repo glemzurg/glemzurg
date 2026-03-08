@@ -112,10 +112,10 @@ func (c *MultiplicityChecker) CheckState(
 // checkBounds checks if a count satisfies lower/upper bounds.
 // Returns empty string if satisfied, otherwise a violation message.
 func checkBounds(count int, lowerBound, upperBound uint) string {
-	if lowerBound > 0 && uint(count) < lowerBound {
+	if lowerBound > 0 && uint(count) < lowerBound { //nolint:gosec // count is a link count from a small in-memory graph, no overflow risk
 		return fmt.Sprintf("expected at least %d links, got %d", lowerBound, count)
 	}
-	if upperBound > 0 && uint(count) > upperBound {
+	if upperBound > 0 && uint(count) > upperBound { //nolint:gosec // count is a link count from a small in-memory graph, no overflow risk
 		return fmt.Sprintf("expected at most %d links, got %d", upperBound, count)
 	}
 	return ""

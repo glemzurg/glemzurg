@@ -52,8 +52,7 @@ type fileToParse struct {
 }
 
 func newFileToParse(modelPath, pathRel, pathAbs string) (toParse fileToParse, err error) {
-
-	// Get the extention, that is the file type.
+	// Get the extension, that is the file type.
 	fileType := filepath.Ext(pathRel)
 
 	// If this is a generalization, then the filename is the details of the generalization.
@@ -163,8 +162,7 @@ func (f *fileToParse) String() string {
 
 // isUnderUseCases returns true if the relative path contains a "use_cases" directory segment.
 func isUnderUseCases(pathRel string) bool {
-	parts := strings.Split(pathRel, string(filepath.Separator))
-	for _, part := range parts {
+	for part := range strings.SplitSeq(pathRel, string(filepath.Separator)) {
 		if part == _PATH_USE_CASES {
 			return true
 		}
@@ -179,7 +177,6 @@ func sortFilesToParse(filesToParse []fileToParse) {
 }
 
 func lessThanFilesToParse(fileA, fileB fileToParse) (less bool) {
-
 	// Sort first by file type.
 	sortValueA := _extSortValue[fileA.FileType]
 	sortValueB := _extSortValue[fileB.FileType]

@@ -4,15 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,7 +38,6 @@ type QueryGuaranteeSuite struct {
 }
 
 func (suite *QueryGuaranteeSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +57,12 @@ func (suite *QueryGuaranteeSuite) SetupTest() {
 }
 
 func (suite *QueryGuaranteeSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no query_guarantee join row yet.
 	_, err := LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the query_guarantee join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO query_guarantee
 			(model_key, query_key, logic_key)
 		VALUES
@@ -75,61 +72,43 @@ func (suite *QueryGuaranteeSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/query/query_key/qguarantee/guar_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryGuaranteeSuite) TestAdd() {
-
 	err := AddQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *QueryGuaranteeSuite) TestRemove() {
-
 	err := AddQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Query guarantee should be gone.
 	_, err = LoadQueryGuarantee(suite.db, suite.model.Key, suite.queryKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *QueryGuaranteeSuite) TestQuery() {
-
 	err := AddQueryGuarantees(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	guarantees, err := QueryQueryGuarantees(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.queryKey: {suite.logicKey, suite.logicKeyB},
 	}, guarantees)
-}
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddQueryGuarantee(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddQueryGuarantee(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadQueryGuarantee(dbOrTx, modelKey, queryKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
 }

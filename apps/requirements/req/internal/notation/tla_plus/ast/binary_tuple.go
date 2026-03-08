@@ -5,13 +5,13 @@ import (
 	"fmt"
 )
 
-// Tuple operators
+// Tuple operators.
 const (
 	TupleOperatorConcat = "∘" // Concatenation (U+2218 RING OPERATOR)
 )
 
-// tupleOperatorAscii maps Unicode operators to ASCII equivalents.
-var tupleOperatorAscii = map[string]string{
+// tupleOperatorASCII maps Unicode operators to ASCII equivalents.
+var tupleOperatorASCII = map[string]string{
 	TupleOperatorConcat: `\o`,
 }
 
@@ -36,10 +36,10 @@ func (t *TupleConcat) String() (value string) {
 	return out.String()
 }
 
-func (t *TupleConcat) Ascii() (value string) {
+func (t *TupleConcat) ASCII() (value string) {
 	var out bytes.Buffer
 	ascii := t.Operator
-	if a, ok := tupleOperatorAscii[t.Operator]; ok {
+	if a, ok := tupleOperatorASCII[t.Operator]; ok {
 		ascii = a
 	}
 	for i, operand := range t.Operands {
@@ -48,7 +48,7 @@ func (t *TupleConcat) Ascii() (value string) {
 			out.WriteString(ascii)
 			out.WriteString(" ")
 		}
-		out.WriteString(operand.Ascii())
+		out.WriteString(operand.ASCII())
 	}
 	return out.String()
 }
@@ -59,15 +59,16 @@ func (t *TupleConcat) Validate() error {
 	}
 	for i, operand := range t.Operands {
 		if operand == nil {
-			return fmt.Errorf("Operands[%d]: is nil", i)
+			return fmt.Errorf("operands[%d]: is nil", i)
 		}
 		if err := operand.Validate(); err != nil {
-			return fmt.Errorf("Operands[%d]: %w", i, err)
+			return fmt.Errorf("operands[%d]: %w", i, err)
 		}
 	}
 	return nil
 }
 
 // TupleInfixExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use TupleConcat instead.
 type TupleInfixExpression = TupleConcat

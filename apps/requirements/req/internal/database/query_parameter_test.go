@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +34,6 @@ type QueryParameterSuite struct {
 }
 
 func (suite *QueryParameterSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,13 +49,12 @@ func (suite *QueryParameterSuite) SetupTest() {
 }
 
 func (suite *QueryParameterSuite) TestLoad() {
-
 	// Nothing in database yet.
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO query_parameter
 			(
 				model_key,
@@ -76,72 +74,68 @@ func (suite *QueryParameterSuite) TestLoad() {
 				'Nat'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err = LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
 }
 
 func (suite *QueryParameterSuite) TestAdd() {
-
 	err := AddQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
 }
 
 func (suite *QueryParameterSuite) TestUpdate() {
-
 	err := AddQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateQueryParameter(suite.db, suite.model.Key, suite.queryKey, 2, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
 }
 
 func (suite *QueryParameterSuite) TestRemove() {
-
 	err := AddQueryParameter(suite.db, suite.model.Key, suite.queryKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadQueryParameter(suite.db, suite.model.Key, suite.queryKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 }
 
 func (suite *QueryParameterSuite) TestQuery() {
-
 	err := AddQueryParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.queryKey: {
 			{
@@ -154,11 +148,11 @@ func (suite *QueryParameterSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	params, err := QueryQueryParameters(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.queryKey: {
 			{
 				Name:          "Alpha",
@@ -176,27 +170,25 @@ func (suite *QueryParameterSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddQueryParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, name string, sortOrder int) (param model_state.Parameter) {
-
+func t_AddQueryParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, queryKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	err = AddQueryParameter(dbOrTx, modelKey, queryKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	param, err = LoadQueryParameter(dbOrTx, modelKey, queryKey, paramKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return param
 }
 
 func (suite *QueryParameterSuite) TestVerifyTestObjects() {
-
-	param := t_AddQueryParameter(suite.T(), suite.db, suite.model.Key, suite.queryKey, "Amount", 0)
-	assert.Equal(suite.T(), model_state.Parameter{
+	param := t_AddQueryParameter(suite.T(), suite.db, suite.model.Key, suite.queryKey, "Amount")
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

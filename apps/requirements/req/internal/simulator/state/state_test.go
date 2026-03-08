@@ -92,7 +92,7 @@ func (s *StateTestSuite) TestUpdateInstance() {
 		"status": object.NewString("shipped"),
 	})
 	err := state.UpdateInstance(instance.ID, newAttrs)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	updated := state.GetInstance(instance.ID)
 	s.Equal("shipped", updated.GetAttribute("status").(*object.String).Value())
@@ -111,7 +111,7 @@ func (s *StateTestSuite) TestUpdateInstanceField() {
 
 	// Update a single field
 	err := state.UpdateInstanceField(instance.ID, "status", object.NewString("shipped"))
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	updated := state.GetInstance(instance.ID)
 	s.Equal("shipped", updated.GetAttribute("status").(*object.String).Value())
@@ -130,7 +130,7 @@ func (s *StateTestSuite) TestDeleteInstance() {
 	s.Equal(1, state.InstanceCount())
 
 	err := state.DeleteInstance(instance.ID)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, state.InstanceCount())
 
 	// Instance should no longer exist
@@ -164,7 +164,7 @@ func (s *StateTestSuite) TestAddLink() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -179,7 +179,7 @@ func (s *StateTestSuite) TestRemoveLink() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -201,7 +201,7 @@ func (s *StateTestSuite) TestGetLinkedForward() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line1 := state.CreateInstance(lineKey, object.NewRecord())
@@ -221,7 +221,7 @@ func (s *StateTestSuite) TestGetLinkedReverse() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -238,7 +238,7 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	order := state.CreateInstance(orderKey, object.NewRecord())
 	line := state.CreateInstance(lineKey, object.NewRecord())
@@ -248,7 +248,7 @@ func (s *StateTestSuite) TestDeleteInstanceRemovesLinks() {
 
 	// Delete order - should remove links
 	err := state.DeleteInstance(order.ID)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, state.LinkCount())
 }
 
@@ -265,7 +265,7 @@ func (s *StateTestSuite) TestSetStateMachineState() {
 	instance := state.CreateInstance(classKey, object.NewRecord())
 
 	err := state.SetStateMachineState(instance.ID, stateKey)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	retrieved, ok := state.GetStateMachineState(instance.ID)
 	s.True(ok)
@@ -280,7 +280,8 @@ func (s *StateTestSuite) TestClearStateMachineState() {
 
 	instance := state.CreateInstance(classKey, object.NewRecord())
 
-	state.SetStateMachineState(instance.ID, stateKey)
+	err := state.SetStateMachineState(instance.ID, stateKey)
+	s.Require().NoError(err)
 	state.ClearStateMachineState(instance.ID)
 
 	_, ok := state.GetStateMachineState(instance.ID)
@@ -296,7 +297,7 @@ func (s *StateTestSuite) TestClone() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 	stateKey := s.createStateKey("orders", "management", "order", "pending")
 
 	order := state.CreateInstance(orderKey, object.NewRecordFromFields(map[string]object.Object{
@@ -304,7 +305,8 @@ func (s *StateTestSuite) TestClone() {
 	}))
 	line := state.CreateInstance(lineKey, object.NewRecord())
 	state.AddLink(assocKey, order.ID, line.ID)
-	state.SetStateMachineState(order.ID, stateKey)
+	err := state.SetStateMachineState(order.ID, stateKey)
+	s.Require().NoError(err)
 
 	// Clone the state
 	cloned := state.Clone()
@@ -322,7 +324,8 @@ func (s *StateTestSuite) TestClone() {
 	s.Equal(stateKey, clonedState)
 
 	// Verify independence - modify original
-	state.UpdateInstanceField(order.ID, "status", object.NewString("shipped"))
+	err = state.UpdateInstanceField(order.ID, "status", object.NewString("shipped"))
+	s.Require().NoError(err)
 	s.Equal("pending", clonedOrder.GetAttribute("status").(*object.String).Value())
 }
 
@@ -414,7 +417,7 @@ func (s *StateTestSuite) TestBindingsBuilder_AddAssociation() {
 
 	orderKey := s.createClassKey("orders", "management", "order")
 	lineKey := s.createClassKey("orders", "management", "line")
-	assocKey := s.createAssociationKey("orders", "management", "order", "line", "lines")
+	assocKey := s.createAssociationKey()
 
 	builder := NewBindingsBuilder(state)
 	builder.AddAssociation(
@@ -501,16 +504,16 @@ func (s *StateTestSuite) createStateKey(domain, subdomain, class, stateName stri
 	return stateKey
 }
 
-func (s *StateTestSuite) createAssociationKey(domain, subdomain, fromClass, toClass, name string) identity.Key {
-	domainKey, err := identity.NewDomainKey(domain)
+func (s *StateTestSuite) createAssociationKey() identity.Key {
+	domainKey, err := identity.NewDomainKey("orders")
 	s.Require().NoError(err)
-	subdomainKey, err := identity.NewSubdomainKey(domainKey, subdomain)
+	subdomainKey, err := identity.NewSubdomainKey(domainKey, "management")
 	s.Require().NoError(err)
-	fromClassKey, err := identity.NewClassKey(subdomainKey, fromClass)
+	fromClassKey, err := identity.NewClassKey(subdomainKey, "order")
 	s.Require().NoError(err)
-	toClassKey, err := identity.NewClassKey(subdomainKey, toClass)
+	toClassKey, err := identity.NewClassKey(subdomainKey, "line")
 	s.Require().NoError(err)
-	assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, name)
+	assocKey, err := identity.NewClassAssociationKey(subdomainKey, fromClassKey, toClassKey, "lines")
 	s.Require().NoError(err)
 	return assocKey
 }

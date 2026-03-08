@@ -12,8 +12,8 @@ cd $SCRIPT_PATH
 
 # Uncomment to get tools.
 
-  # # Get all the libraries we need.
-  # echo -e "\nGET\n"
+# Get all the libraries we need.
+echo -e "\nGET\n"
 
   # # Testing libraries.
   # go get github.com/smartystreets/goconvey
@@ -25,9 +25,9 @@ cd $SCRIPT_PATH
   # go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   # [ $? -ne 0 ] && exit 1
 
-  # # SQL library.
-  # # go get -d "github.com/go-sql-driver/mysql"
-  # # [ $? -ne 0 ] && exit 1
+# Complexity linter.
+go install github.com/glemzurg/go-complexity-lint/cmd/go-complexity-lint@latest
+[ $? -ne 0 ] && exit 1
 
   # # Any imported libraries.
   # go get -d "glemzurg..."
@@ -79,6 +79,10 @@ echo -e "\nLINTING\n"
 golangci-lint run ./...
 [ $? -ne 0 ] && exit 1
 
+# Complexity linter.
+echo -e "\nCOMPLEXITY\n"
+go-complexity-lint -exclude="*.generated.go" ./...
+[ $? -ne 0 ] && exit 1
 
 # Everything is fine.
 exit 0

@@ -25,7 +25,6 @@ func (fc *t_FileContents) verify(fileLocation string) (err error) {
 }
 
 func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error) {
-
 	// Keep track of the file and expected test results.
 	fileLookup := map[string]t_FileContents{}
 
@@ -36,7 +35,6 @@ func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error)
 
 	for _, file := range files {
 		if !file.IsDir() {
-
 			filename := filepath.Join(path, strings.ToLower(file.Name()))
 			content, err := os.ReadFile(filename)
 			if err != nil {
@@ -55,9 +53,8 @@ func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error)
 			case ".json":
 				// Check if this is a children file (ends with _children.json).
 				nameNoExtension := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-				if strings.HasSuffix(nameNoExtension, "_children") {
+				if baseName, found := strings.CutSuffix(nameNoExtension, "_children"); found {
 					// This is a children file - link to the base test file.
-					baseName := strings.TrimSuffix(nameNoExtension, "_children")
 					fileContents := fileLookup[baseName]
 					fileContents.JsonChildren = strings.TrimSpace(string(content))
 					fileLookup[baseName] = fileContents
@@ -70,14 +67,12 @@ func t_ContentsForAllMdFiles(path string) (allFiles []t_FileContents, err error)
 
 			default:
 				return nil, errors.WithStack(errors.Errorf(`Non-test file found in test folder: '%s'`, filename))
-
 			}
 		}
 	}
 
 	// Everything in a simple format.
 	for baseFilename, fileContents := range fileLookup {
-
 		// Any parts missing is failure.
 		if err := fileContents.verify(path + "/" + baseFilename); err != nil {
 			return nil, errors.WithStack(err)

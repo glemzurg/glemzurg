@@ -148,7 +148,7 @@ func (l *Loader) MustLoadFromModel(model *core.Model) *LoadResult {
 func (l *Loader) LoadFromModelStrict(model *core.Model) (*LoadResult, error) {
 	result := l.LoadFromModel(model)
 	if result.HasErrors() {
-		return result, fmt.Errorf("failed to load %d expressions: %v", result.ErrorCount(), result.Errors[0])
+		return result, fmt.Errorf("failed to load %d expressions: %w", result.ErrorCount(), result.Errors[0])
 	}
 	return result, nil
 }

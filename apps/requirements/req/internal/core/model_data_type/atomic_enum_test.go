@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAtomicEnumValidate(t *testing.T) {
@@ -42,10 +43,10 @@ func TestAtomicEnumValidate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.atomicEnum.Validate()
 			if tt.errorMessage != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

@@ -79,7 +79,7 @@ func (s *BagSuite) TestSetValue() {
 	b2.Add(NewInteger(20), 3)
 
 	err := b1.SetValue(b2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(5, b1.Size())
 	s.Equal(2, b1.CopiesIn(NewInteger(10)))
 }
@@ -162,4 +162,3 @@ func (s *BagSuite) TestEquals() {
 	s.True(b1.Equals(b2))
 	s.False(b1.Equals(b3))
 }
-

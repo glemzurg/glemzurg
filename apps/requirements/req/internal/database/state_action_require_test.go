@@ -4,15 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,7 +38,6 @@ type ActionRequireSuite struct {
 }
 
 func (suite *ActionRequireSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -59,13 +57,12 @@ func (suite *ActionRequireSuite) SetupTest() {
 }
 
 func (suite *ActionRequireSuite) TestLoad() {
-
 	// Logic row exists from SetupTest, but no action_require join row yet.
 	_, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 
 	// Insert the action_require join row.
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action_require
 			(model_key, action_key, logic_key)
 		VALUES
@@ -75,61 +72,43 @@ func (suite *ActionRequireSuite) TestLoad() {
 				'domain/domain_key/subdomain/subdomain_key/class/class_key/action/action_key/arequire/req_a'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionRequireSuite) TestAdd() {
-
 	err := AddActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	key, err := LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.logicKey, key)
+	suite.Require().NoError(err)
+	suite.Equal(suite.logicKey, key)
 }
 
 func (suite *ActionRequireSuite) TestRemove() {
-
 	err := AddActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Action require should be gone.
 	_, err = LoadActionRequire(suite.db, suite.model.Key, suite.actionKey, suite.logicKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
+	suite.Require().ErrorIs(err, ErrNotFound)
 }
 
 func (suite *ActionRequireSuite) TestQuery() {
-
 	err := AddActionRequires(suite.db, suite.model.Key, map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKeyB, suite.logicKey},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	requires, err := QueryActionRequires(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]identity.Key{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]identity.Key{
 		suite.actionKey: {suite.logicKey, suite.logicKeyB},
 	}, requires)
-}
-
-//==================================================
-// Test objects for other tests.
-//==================================================
-
-func t_AddActionRequire(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, logicKey identity.Key) identity.Key {
-
-	err := AddActionRequire(dbOrTx, modelKey, actionKey, logicKey)
-	assert.Nil(t, err)
-
-	key, err := LoadActionRequire(dbOrTx, modelKey, actionKey, logicKey)
-	assert.Nil(t, err)
-
-	return key
 }

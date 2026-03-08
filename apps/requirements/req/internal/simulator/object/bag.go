@@ -31,7 +31,7 @@ func (b *Bag) Inspect() string {
 	var out bytes.Buffer
 	elements := make([]string, 0, b.Size())
 	for _, entry := range b.elements {
-		for i := 0; i < entry.Count; i++ {
+		for range entry.Count {
 			elements = append(elements, entry.Value.Inspect())
 		}
 	}
@@ -223,4 +223,3 @@ func (b *Bag) Equals(other *Bag) bool {
 	}
 	return true
 }
-

@@ -3,13 +3,13 @@ package engine
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -55,8 +55,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 
 	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/10"), model_logic.LogicTypeValue, "Double the price.", "", productSpec("self.price * 2"), nil))
 
-	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false, "", nil))
-	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false, "", nil))
+	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
+	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false,
+		model_class.AttributeAnnotations{}))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
@@ -75,7 +77,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(dae)
 
 	// Create an instance with price=10.
@@ -84,7 +86,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEvaluation() {
 	instance := simState.CreateInstance(classKey, attrs)
 
 	derived, err := dae.ResolveDerived(instance)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(derived)
 
 	doublePriceVal, ok := derived["doublePrice"]
@@ -101,7 +103,8 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 
 	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeValue, "A derived field.", "", helper.Must(model_spec.NewExpressionSpec("tla_plus", "", nil)), nil))
 
-	attrDerived := helper.Must(model_class.NewAttribute(attrKey, "derivedField", "", "", &derivationLogic, false, "", nil))
+	attrDerived := helper.Must(model_class.NewAttribute(attrKey, "derivedField", "", "", &derivationLogic, false,
+		model_class.AttributeAnnotations{}))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
@@ -119,7 +122,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(dae)
 	// Empty specification is silently skipped — no derived attributes.
 	s.False(dae.HasDerivedAttributes())
@@ -134,8 +137,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 
 	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/12"), model_logic.LogicTypeValue, "A derived field.", "", productSpec("self.price'"), nil))
 
-	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false, "", nil))
-	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "derivedField", "", "", &derivationLogic, false, "", nil))
+	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
+	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "derivedField", "", "", &derivationLogic, false,
+		model_class.AttributeAnnotations{}))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
@@ -154,7 +159,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeRejectsPrimedVars() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Nil(dae)
 	s.Contains(err.Error(), "must not contain primed variables")
 }
@@ -169,8 +174,10 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 
 	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/13"), model_logic.LogicTypeValue, "Double the price.", "", productSpec("self.price * 2"), nil))
 
-	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false, "", nil))
-	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false, "", nil))
+	attrPrice := helper.Must(model_class.NewAttribute(attrPriceKey, "price", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
+	attrDoublePrice := helper.Must(model_class.NewAttribute(attrDoublePriceKey, "doublePrice", "", "", &derivationLogic, false,
+		model_class.AttributeAnnotations{}))
 
 	class := helper.Must(model_class.NewClass(classKey, "Product", "", nil, nil, nil, ""))
 	class.SetAttributes(map[identity.Key]model_class.Attribute{
@@ -189,7 +196,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeInBindings() {
 	model := testModel(classEntry(class, classKey))
 
 	dae, err := NewDerivedAttributeEvaluator(model, simState, relationCtx)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Create an instance with price=5.
 	attrs := object.NewRecord()

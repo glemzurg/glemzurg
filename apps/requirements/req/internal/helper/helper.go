@@ -9,6 +9,6 @@ func Must[T any](obj T, err error) T {
 	return obj
 }
 
-func JsonPretty(value interface{}) (pretty string) {
+func JSONPretty(value any) (pretty string) {
 	return string(Must(json.MarshalIndent(value, "", "   ")))
 }

@@ -17,7 +17,6 @@ type Scenario struct {
 }
 
 func NewScenario(key identity.Key, name, details string) (scenario Scenario, err error) {
-
 	scenario = Scenario{
 		Key:     key,
 		Name:    name,
@@ -38,7 +37,7 @@ func (s *Scenario) Validate() error {
 		return err
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO {
-		return errors.Errorf("Key: invalid key type '%s' for scenario.", s.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for scenario", s.Key.KeyType)
 	}
 	// Validate struct tags (Name required).
 	if err := _validate.Struct(s); err != nil {
@@ -47,8 +46,8 @@ func (s *Scenario) Validate() error {
 	return nil
 }
 
-func (sc *Scenario) SetObjects(objects map[identity.Key]Object) {
-	sc.Objects = objects
+func (s *Scenario) SetObjects(objects map[identity.Key]Object) {
+	s.Objects = objects
 }
 
 // ValidateWithParent validates the Scenario, its key's parent relationship, and all children.

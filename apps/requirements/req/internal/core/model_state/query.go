@@ -3,8 +3,8 @@ package model_state
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Query is a business logic query of a class that does not change the state of a class.
@@ -20,7 +20,6 @@ type Query struct {
 }
 
 func NewQuery(key identity.Key, name, details string, requires, guarantees []model_logic.Logic, parameters []Parameter) (query Query, err error) {
-
 	query = Query{
 		Key:        key,
 		Name:       name,

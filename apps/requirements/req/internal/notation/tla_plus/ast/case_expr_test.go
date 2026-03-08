@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -109,17 +108,17 @@ func (suite *ExpressionCaseSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &ExpressionCase{
 				Branches: tt.branches,
 				Other:    tt.other,
 			}
-			assert.Equal(t, tt.expected, expr.String())
+			suite.Equal(tt.expected, expr.String())
 		})
 	}
 }
 
-func (suite *ExpressionCaseSuite) TestAscii() {
+func (suite *ExpressionCaseSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		branches []*CaseBranch
@@ -171,12 +170,12 @@ func (suite *ExpressionCaseSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &ExpressionCase{
 				Branches: tt.branches,
 				Other:    tt.other,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			suite.Equal(tt.expected, expr.ASCII())
 		})
 	}
 }
@@ -245,7 +244,7 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 			e: &ExpressionCase{
 				Branches: []*CaseBranch{nil},
 			},
-			errstr: `Branches[0]`,
+			errstr: `branches[0]`,
 		},
 		{
 			testName: `error invalid condition`,
@@ -290,12 +289,12 @@ func (suite *ExpressionCaseSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.e.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

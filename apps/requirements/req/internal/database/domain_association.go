@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -44,9 +45,8 @@ func scanDomainAssociation(scanner Scanner, association *model_domain.Associatio
 	return nil
 }
 
-// LoadDomainAssociation loads a association from the database
+// LoadDomainAssociation loads a association from the database.
 func LoadDomainAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (association model_domain.Association, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -84,9 +84,8 @@ func AddDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_doma
 
 // UpdateDomainAssociation updates a association in the database.
 func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_domain.Association) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			domain_association
 		SET
@@ -111,9 +110,8 @@ func UpdateDomainAssociation(dbOrTx DbOrTx, modelKey string, association model_d
 
 // RemoveDomainAssociation deletes a association from the database.
 func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey string, associationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			domain_association
 		WHERE
@@ -129,9 +127,8 @@ func RemoveDomainAssociation(dbOrTx DbOrTx, modelKey string, associationKey iden
 	return nil
 }
 
-// QueryDomainAssociations loads all association from the database
+// QueryDomainAssociations loads all association from the database.
 func QueryDomainAssociations(dbOrTx DbOrTx, modelKey string) (associations []model_domain.Association, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -168,18 +165,19 @@ func AddDomainAssociations(dbOrTx DbOrTx, modelKey string, associations []model_
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO domain_association (model_key, association_key, problem_domain_key, solution_domain_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(associations)*5)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO domain_association (model_key, association_key, problem_domain_key, solution_domain_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(associations)*5)
 	for i, assoc := range associations {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 5
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5))
 		args = append(args, modelKey, assoc.Key.String(), assoc.ProblemDomainKey.String(), assoc.SolutionDomainKey.String(), assoc.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -3,9 +3,6 @@ package invariants
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -13,6 +10,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 	"github.com/stretchr/testify/suite"
@@ -26,7 +26,7 @@ func TestInvariantsSuite(t *testing.T) {
 	suite.Run(t, new(InvariantsSuite))
 }
 
-// Helper to create an identity.Key from a string
+// Helper to create an identity.Key from a string.
 func mustKey(s string) identity.Key {
 	k, err := identity.ParseKey(s)
 	if err != nil {
@@ -59,7 +59,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 	return spec
 }
 
-// Helper to create a basic model with a class
+// Helper to create a basic model with a class.
 func createTestModel() *core.Model {
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
 
@@ -110,13 +110,16 @@ func createTestModel() *core.Model {
 	}
 
 	// Create attributes
-	statusAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"), "status", "", "{pending, active, completed}", nil, false, "", nil))
+	statusAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/status"), "status", "", "{pending, active, completed}", nil, false,
+		model_class.AttributeAnnotations{}))
 	statusAttr.DataType = statusDataType
 
-	amountAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"), "amount", "", "[0, 1000000] cents", nil, false, "", nil))
+	amountAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/amount"), "amount", "", "[0, 1000000] cents", nil, false,
+		model_class.AttributeAnnotations{}))
 	amountAttr.DataType = amountDataType
 
-	nameAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"), "name", "", "string", nil, true, "", nil))
+	nameAttr := helper.Must(model_class.NewAttribute(mustKey("domain/test_domain/subdomain/test_subdomain/class/order/attribute/name"), "name", "", "string", nil, true,
+		model_class.AttributeAnnotations{}))
 	nameAttr.DataType = nameDataType
 
 	// Create an action with a post-condition guarantee
@@ -125,7 +128,7 @@ func createTestModel() *core.Model {
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionRequireKey(actionKey, "0")), model_logic.LogicTypeAssessment, "Precondition.", "", orderSpec("self.status = \"active\""), nil)),
 	}
 	guarantees := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"completed\""), nil)), // This is a primed assignment, not a post-condition
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")), model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"completed\""), nil)),  // This is a primed assignment, not a post-condition
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewActionGuaranteeKey(actionKey, "1")), model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 1"), nil)), // A second guarantee on a different attribute
 	}
 	completeAction := helper.Must(model_state.NewAction(actionKey, "complete", "", requires, guarantees, nil, nil))
@@ -166,12 +169,13 @@ func createTestModel() *core.Model {
 	return &model
 }
 
-// Test: DataTypeChecker detects unparsed data types
+// Test: DataTypeChecker detects unparsed data types.
 func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
 	// Create an attribute without a parsed DataType
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/bad"), "bad", "", "invalid data type rules", nil, false, "", nil))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/bad"), "bad", "", "invalid data type rules", nil, false,
+		model_class.AttributeAnnotations{}))
 	attr.DataType = nil // Not parsed!
 
 	class := helper.Must(model_class.NewClass(classKey, "BadClass", "", nil, nil, nil, ""))
@@ -198,7 +202,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerDetectsUnparsedDataType() {
 	s.Equal("bad", violations[0].AttributeName)
 }
 
-// Test: DataTypeChecker validates required attributes
+// Test: DataTypeChecker validates required attributes.
 func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -229,7 +233,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerRequiredAttribute() {
 	s.True(foundRequiredViolation, "Should detect missing required attribute 'status'")
 }
 
-// Test: DataTypeChecker validates span constraints
+// Test: DataTypeChecker validates span constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -259,7 +263,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanConstraint() {
 	s.True(foundSpanViolation, "Should detect amount exceeding span constraint")
 }
 
-// Test: DataTypeChecker validates enumeration constraints
+// Test: DataTypeChecker validates enumeration constraints.
 func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -289,7 +293,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerEnumConstraint() {
 	s.True(foundEnumViolation, "Should detect status not in enumeration")
 }
 
-// Test: DataTypeChecker passes for valid instance
+// Test: DataTypeChecker passes for valid instance.
 func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -312,7 +316,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerValidInstance() {
 	s.False(instanceViolations.HasViolations())
 }
 
-// Test: DataTypeChecker handles nullable attributes correctly
+// Test: DataTypeChecker handles nullable attributes correctly.
 func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	model := createTestModel()
 	checker, violations := NewDataTypeChecker(model)
@@ -335,7 +339,7 @@ func (s *InvariantsSuite) TestDataTypeCheckerNullableAttribute() {
 	s.False(instanceViolations.HasViolations())
 }
 
-// Test: Violation types and messages
+// Test: Violation types and messages.
 func (s *InvariantsSuite) TestViolationTypes() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
@@ -378,11 +382,11 @@ func (s *InvariantsSuite) TestViolationTypes() {
 	s.Contains(v6.Message, "unparsed")
 }
 
-// Test: ViolationList filtering
-func (s *InvariantsSuite) TestViolationListFiltering() {
+// Test: ViolationErrors filtering.
+func (s *InvariantsSuite) TestViolationErrorsFiltering() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
-	violations := ViolationList{
+	violations := ViolationErrors{
 		NewRequiredAttributeViolation(1, classKey, "a"),
 		NewSpanConstraintViolation(1, classKey, "b", "1", "[0,0]"),
 		NewModelInvariantViolation(0, "TRUE", "failed"),
@@ -404,20 +408,20 @@ func (s *InvariantsSuite) TestViolationListFiltering() {
 	s.Len(dataType, 3)
 }
 
-// Test: InvariantChecker creation
+// Test: InvariantChecker creation.
 func (s *InvariantsSuite) TestInvariantCheckerCreation() {
 	model := createTestModel()
 	checker, err := NewInvariantChecker(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(checker)
 	s.Equal(1, checker.GetModelInvariantCount())
 }
 
-// Test: InvariantChecker model invariant that passes
+// Test: InvariantChecker model invariant that passes.
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	model := createTestModel()
 	checker, err := NewInvariantChecker(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
@@ -426,7 +430,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantPasses() {
 	s.False(violations.HasViolations())
 }
 
-// Test: InvariantChecker model invariant that fails
+// Test: InvariantChecker model invariant that fails.
 func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	invariants := []model_logic.Logic{
 		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Always false.", "", parsedSpec("FALSE"), nil)),
@@ -435,7 +439,7 @@ func (s *InvariantsSuite) TestInvariantCheckerModelInvariantFails() {
 	model.Domains = map[identity.Key]model_domain.Domain{}
 
 	checker, err := NewInvariantChecker(&model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	simState := state.NewSimulationState()
 	bindingsBuilder := state.NewBindingsBuilder(simState)
@@ -460,17 +464,17 @@ func (s *InvariantsSuite) TestInvariantCheckerInvalidExpression() {
 
 	// The checker should handle nil Expression (skip unparsed invariants).
 	checker, err := NewInvariantChecker(&model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal(0, checker.GetModelInvariantCount()) // Unparsed invariants are not counted.
 }
 
-// Test: CheckAllInvariants combines data type and TLA+ checks
+// Test: CheckAllInvariants combines data type and TLA+ checks.
 func (s *InvariantsSuite) TestCheckAllInvariants() {
 	model := createTestModel()
 
 	// Update model invariant to check something real (already parsed via parsedSpec in createTestModel).
 	invChecker, err := NewInvariantChecker(model)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	dtChecker, dtViolations := NewDataTypeChecker(model)
 	s.False(dtViolations.HasViolations())
@@ -495,7 +499,7 @@ func (s *InvariantsSuite) TestCheckAllInvariants() {
 	s.True(dtv.HasViolations())
 }
 
-// Test: Span with open bounds
+// Test: Span with open bounds.
 func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 
@@ -521,7 +525,8 @@ func (s *InvariantsSuite) TestDataTypeCheckerSpanOpenBounds() {
 		},
 	}
 
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/value"), "value", "", "(0, 100) items", nil, false, "", nil))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/c/attribute/value"), "value", "", "(0, 100) items", nil, false,
+		model_class.AttributeAnnotations{}))
 	attr.DataType = dataType
 
 	class := helper.Must(model_class.NewClass(classKey, "Test", "", nil, nil, nil, ""))

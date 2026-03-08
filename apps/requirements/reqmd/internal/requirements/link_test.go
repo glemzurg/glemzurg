@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -106,12 +105,12 @@ func (suite *LinkSuite) TestNew() {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		link, err := newLink(test.match)
 		if test.errstr == "" {
-			assert.Nil(suite.T(), err, testName)
+			suite.Require().NoError(err, testName)
 			test.link.Match = test.match // Set the match since it should be identical.
-			assert.Equal(suite.T(), test.link, link, testName)
+			suite.Equal(test.link, link, testName)
 		} else {
-			assert.ErrorContains(suite.T(), err, test.errstr, testName)
-			assert.Empty(suite.T(), link, testName)
+			suite.Require().ErrorContains(err, test.errstr, testName)
+			suite.Empty(link, testName)
 		}
 	}
 }
@@ -185,7 +184,7 @@ func (suite *LinkSuite) TestFindLinks() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		links, err := findLinks(test.text)
-		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.links, links, testName)
+		suite.Require().NoError(err, testName)
+		suite.Equal(test.links, links, testName)
 	}
 }

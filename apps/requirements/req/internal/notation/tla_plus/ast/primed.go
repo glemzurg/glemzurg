@@ -21,7 +21,7 @@ func (p *Primed) String() (value string) {
 	return out.String()
 }
 
-func (p *Primed) Ascii() (value string) { return p.String() }
+func (p *Primed) ASCII() (value string) { return p.String() }
 
 func (p *Primed) Validate() error {
 	if err := _validate.Struct(p); err != nil {
@@ -29,7 +29,7 @@ func (p *Primed) Validate() error {
 	}
 	if validator, ok := p.Base.(interface{ Validate() error }); ok {
 		if err := validator.Validate(); err != nil {
-			return fmt.Errorf("Base: %w", err)
+			return fmt.Errorf("base: %w", err)
 		}
 	}
 	return nil

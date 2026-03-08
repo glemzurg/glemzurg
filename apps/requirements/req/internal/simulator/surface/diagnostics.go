@@ -3,9 +3,10 @@ package surface
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Diagnostic represents a non-fatal issue found during surface analysis.
@@ -37,7 +38,26 @@ func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerDa
 
 	allAssocs := model.GetClassAssociations()
 
-	// 1. Broken creation chain: mandatory outbound association to excluded class.
+	diagnostics = append(diagnostics, diagnoseBrokenCreationChains(resolved, allAssocs)...)
+	diagnostics = append(diagnostics, diagnoseIsolatedClasses(resolved, model)...)
+	diagnostics = append(diagnostics, diagnoseHalfAssociations(resolved, allAssocs)...)
+
+	// 4. Excluded invariants (already reported as warnings in resolved.Warnings).
+	// We don't duplicate those here.
+
+	// 5. Realized domain included (already reported in resolver warnings).
+
+	// Diagnostics 6 and 7 require CallerData.
+	if callerData != nil {
+		diagnostics = append(diagnostics, diagnoseCallerData(resolved, model, callerData)...)
+	}
+
+	return diagnostics
+}
+
+// diagnoseBrokenCreationChains finds mandatory outbound associations to excluded classes.
+func diagnoseBrokenCreationChains(resolved *ResolvedSurface, allAssocs map[identity.Key]model_class.Association) []Diagnostic {
+	var diagnostics []Diagnostic
 	for classKey := range resolved.Classes {
 		for _, assoc := range allAssocs {
 			if assoc.FromClassKey == classKey && assoc.ToMultiplicity.LowerBound >= 1 {
@@ -55,35 +75,20 @@ func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerDa
 			}
 		}
 	}
+	return diagnostics
+}
 
-	// 2. Isolated class: class in scope with no creation events.
-	// Only warn if the class DID have creation events in the full model
-	// (meaning the surface didn't cause the isolation).
+// diagnoseIsolatedClasses finds classes in scope with no creation events,
+// but only when they had creation events in the full model.
+func diagnoseIsolatedClasses(resolved *ResolvedSurface, model *core.Model) []Diagnostic {
+	var diagnostics []Diagnostic
 	for classKey, class := range resolved.Classes {
-		hasCreation := false
-		for _, t := range class.Transitions {
-			if t.FromStateKey == nil {
-				hasCreation = true
-				break
-			}
+		if classHasCreationEvent(class.Transitions) {
+			continue
 		}
-		if hasCreation {
-			continue // Has creation events — not isolated.
-		}
-		// This class has no creation events. Check if it had them in the full model.
 		fullClass, found := findClassInModel(classKey, model)
-		if !found {
-			continue // Can't find class in full model — skip.
-		}
-		fullHasCreation := false
-		for _, t := range fullClass.Transitions {
-			if t.FromStateKey == nil {
-				fullHasCreation = true
-				break
-			}
-		}
-		if !fullHasCreation {
-			continue // Also isolated in full model — not caused by surface.
+		if !found || !classHasCreationEvent(fullClass.Transitions) {
+			continue
 		}
 		ck := classKey
 		diagnostics = append(diagnostics, Diagnostic{
@@ -92,8 +97,22 @@ func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerDa
 			ClassKey: &ck,
 		})
 	}
+	return diagnostics
+}
 
-	// 3. Half-association: one endpoint in scope, other excluded.
+// classHasCreationEvent checks if any transition has a nil FromStateKey.
+func classHasCreationEvent(transitions map[identity.Key]model_state.Transition) bool {
+	for _, t := range transitions {
+		if t.FromStateKey == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// diagnoseHalfAssociations finds associations where one endpoint is in scope and the other is not.
+func diagnoseHalfAssociations(resolved *ResolvedSurface, allAssocs map[identity.Key]model_class.Association) []Diagnostic {
+	var diagnostics []Diagnostic
 	for _, assoc := range allAssocs {
 		_, fromIn := resolved.Classes[assoc.FromClassKey]
 		_, toIn := resolved.Classes[assoc.ToClassKey]
@@ -107,17 +126,6 @@ func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerDa
 			})
 		}
 	}
-
-	// 4. Excluded invariants (already reported as warnings in resolved.Warnings).
-	// We don't duplicate those here.
-
-	// 5. Realized domain included (already reported in resolver warnings).
-
-	// Diagnostics 6 and 7 require CallerData.
-	if callerData != nil {
-		diagnostics = append(diagnostics, diagnoseCallerData(resolved, model, callerData)...)
-	}
-
 	return diagnostics
 }
 
@@ -125,26 +133,22 @@ func Diagnose(resolved *ResolvedSurface, model *core.Model, callerData *CallerDa
 func diagnoseCallerData(resolved *ResolvedSurface, model *core.Model, cd *CallerData) []Diagnostic {
 	var diagnostics []Diagnostic
 
-	// 6. All events internal: class where ALL events have SentBy pointing to in-scope classes.
+	diagnostics = append(diagnostics, diagnoseAllEventsInternal(resolved, cd)...)
+	diagnostics = append(diagnostics, diagnoseUnknownClassRefs(model, cd)...)
+
+	return diagnostics
+}
+
+// diagnoseAllEventsInternal finds classes where ALL events have SentBy pointing to in-scope classes.
+func diagnoseAllEventsInternal(resolved *ResolvedSurface, cd *CallerData) []Diagnostic {
+	var diagnostics []Diagnostic
 	for classKey, class := range resolved.Classes {
 		if len(class.Events) == 0 {
 			continue
 		}
 		allInternal := true
 		for _, event := range class.Events {
-			senders := cd.EventSentBy[event.Key]
-			if len(senders) == 0 {
-				allInternal = false
-				break
-			}
-			hasInScopeSender := false
-			for _, senderKey := range senders {
-				if _, inScope := resolved.Classes[senderKey]; inScope {
-					hasInScopeSender = true
-					break
-				}
-			}
-			if !hasInScopeSender {
+			if !eventHasInScopeSender(event.Key, resolved, cd) {
 				allInternal = false
 				break
 			}
@@ -158,8 +162,27 @@ func diagnoseCallerData(resolved *ResolvedSurface, model *core.Model, cd *Caller
 			})
 		}
 	}
+	return diagnostics
+}
 
-	// 7. SentBy/CalledBy referencing unknown class.
+// eventHasInScopeSender checks if an event has at least one sender that is in scope.
+func eventHasInScopeSender(eventKey identity.Key, resolved *ResolvedSurface, cd *CallerData) bool {
+	senders := cd.EventSentBy[eventKey]
+	if len(senders) == 0 {
+		return false
+	}
+	for _, senderKey := range senders {
+		if _, inScope := resolved.Classes[senderKey]; inScope {
+			return true
+		}
+	}
+	return false
+}
+
+// diagnoseUnknownClassRefs finds SentBy/CalledBy entries referencing classes not in the model.
+func diagnoseUnknownClassRefs(model *core.Model, cd *CallerData) []Diagnostic {
+	var diagnostics []Diagnostic
+
 	for eventKey, senders := range cd.EventSentBy {
 		for _, senderKey := range senders {
 			if _, found := findClassInModel(senderKey, model); !found {

@@ -3,11 +3,11 @@ package engine
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -98,7 +98,7 @@ func (s *ClassCatalogSuite) TestMandatoryAssociationsDetected() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -125,7 +125,7 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"), nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
@@ -182,7 +182,7 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -276,7 +276,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"), nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
@@ -319,7 +319,7 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"), nil))
+	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
 	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
 
 	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))

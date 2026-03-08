@@ -16,7 +16,7 @@ type inputDomain struct {
 	UMLComment string `json:"uml_comment,omitempty"`
 
 	// Children (not from JSON, populated during directory traversal)
-	Subdomains   map[string]*inputSubdomain   `json:"-"`
+	Subdomains        map[string]*inputSubdomain        `json:"-"`
 	ClassAssociations map[string]*inputClassAssociation `json:"-"`
 }
 

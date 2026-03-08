@@ -3,11 +3,11 @@ package engine
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
@@ -36,7 +36,8 @@ func livenessOrderClass() (model_class.Class, identity.Key) {
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
-	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, "amount", "", "", nil, false, "", nil))
+	attrAmount := helper.Must(model_class.NewAttribute(attrAmountKey, "amount", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
 	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
 	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
 
@@ -69,7 +70,8 @@ func livenessItemClass() (model_class.Class, identity.Key) {
 
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 
-	attrName := helper.Must(model_class.NewAttribute(attrNameKey, "name", "", "", nil, false, "", nil))
+	attrName := helper.Must(model_class.NewAttribute(attrNameKey, "name", "", "", nil, false,
+		model_class.AttributeAnnotations{}))
 	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
 	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
 
@@ -155,7 +157,7 @@ func (s *LivenessCheckerSuite) TestAllClassesInstantiated_NoViolations() {
 
 	violations := checker.Check(result)
 	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
-	s.Len(classViolations, 0)
+	s.Empty(classViolations)
 }
 
 func (s *LivenessCheckerSuite) TestClassNotInstantiated_Violation() {
@@ -201,7 +203,7 @@ func (s *LivenessCheckerSuite) TestCascadedCreationStepsCounted() {
 
 	violations := checker.Check(result)
 	classViolations := violations.ByType(invariants.ViolationTypeLivenessClassNotInstantiated)
-	s.Len(classViolations, 0)
+	s.Empty(classViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
@@ -219,7 +221,7 @@ func (s *LivenessCheckerSuite) TestAllAttributesWritten_NoViolations() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAttributeNotWritten_Violation() {
@@ -251,7 +253,8 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
 	derivationLogic := helper.Must(model_logic.NewLogic(mustKey("invariant/20"), model_logic.LogicTypeValue, "Sum of items.", "", orderSpec("self.amount * 2"), nil))
 
-	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false, "", nil))
+	attrDerived := helper.Must(model_class.NewAttribute(attrDerivedKey, "total", "", "", &derivationLogic, false,
+		model_class.AttributeAnnotations{}))
 	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
 	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
 
@@ -284,7 +287,7 @@ func (s *LivenessCheckerSuite) TestDerivedAttributesExcluded() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
@@ -303,7 +306,7 @@ func (s *LivenessCheckerSuite) TestDoActionWritesCounted() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
@@ -328,7 +331,7 @@ func (s *LivenessCheckerSuite) TestCascadedStepWritesCounted() {
 
 	violations := checker.Check(result)
 	attrViolations := violations.ByType(invariants.ViolationTypeLivenessAttributeNotWritten)
-	s.Len(attrViolations, 0)
+	s.Empty(attrViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
@@ -338,7 +341,10 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "",
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
+		nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -362,7 +368,7 @@ func (s *LivenessCheckerSuite) TestAllAssociationsLinked_NoViolations() {
 
 	violations := checker.Check(result)
 	assocViolations := violations.ByType(invariants.ViolationTypeLivenessAssociationNotLinked)
-	s.Len(assocViolations, 0)
+	s.Empty(assocViolations)
 }
 
 func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
@@ -372,7 +378,10 @@ func (s *LivenessCheckerSuite) TestAssociationNotLinked_Violation() {
 	assocKey := testAssocKey(orderKey, itemKey, "order_items")
 	fromMult := helper.Must(model_class.NewMultiplicity("any"))
 	toMult := helper.Must(model_class.NewMultiplicity("any"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderKey, fromMult, itemKey, toMult, nil, ""))
+	assoc := helper.Must(model_class.NewAssociation(assocKey, "order_items", "",
+		model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult},
+		model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult},
+		nil, ""))
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -418,7 +427,7 @@ func (s *LivenessCheckerSuite) TestNoSimulatableClasses_NoViolations() {
 	}
 
 	violations := checker.Check(result)
-	s.Len(violations, 0)
+	s.Empty(violations)
 }
 
 func (s *LivenessCheckerSuite) TestMultipleViolationsCombined() {

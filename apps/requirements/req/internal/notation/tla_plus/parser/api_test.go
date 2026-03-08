@@ -22,15 +22,15 @@ func TestAPISuite(t *testing.T) {
 func (s *APITestSuite) TestParseExpressionList() {
 	inputs := []string{"TRUE", "42", `"hello"`, "-3/4"}
 	exprs, err := ParseExpressionList(inputs)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(exprs, 4)
 
 	s.Equal(&ast.BooleanLiteral{Value: true}, exprs[0])
 	s.Equal(&ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "42"}, exprs[1])
 	s.Equal(&ast.StringLiteral{Value: "hello"}, exprs[2])
-	s.Equal(&ast.NumericPrefixExpression{
+	s.Equal(&ast.UnaryNegation{
 		Operator: "-",
-		Right: &ast.FractionExpr{
+		Right: &ast.Fraction{
 			Numerator:   &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "3"},
 			Denominator: &ast.NumberLiteral{Base: ast.BaseDecimal, IntegerPart: "4"},
 		},
@@ -40,7 +40,7 @@ func (s *APITestSuite) TestParseExpressionList() {
 func (s *APITestSuite) TestParseExpressionListError() {
 	inputs := []string{"TRUE", "invalid@#$", "42"}
 	_, err := ParseExpressionList(inputs)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "expression 1")
 }
 

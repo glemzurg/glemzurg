@@ -7,5 +7,5 @@ type Identifier struct {
 
 func (i *Identifier) expressionNode()        {}
 func (i *Identifier) String() (value string) { return i.Value }
-func (i *Identifier) Ascii() (value string)  { return i.String() }
+func (i *Identifier) ASCII() (value string)  { return i.String() }
 func (i *Identifier) Validate() error        { return _validate.Struct(i) }

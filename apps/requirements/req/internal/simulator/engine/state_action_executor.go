@@ -3,8 +3,8 @@ package engine
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -27,7 +27,7 @@ func (e *StateActionExecutor) ExecuteExitActions(
 	class model_class.Class,
 	fromStateKey identity.Key,
 	instance *state.ClassInstance,
-) (invariants.ViolationList, error) {
+) (invariants.ViolationErrors, error) {
 	return e.executeStateActions(class, fromStateKey, instance, "exit")
 }
 
@@ -36,7 +36,7 @@ func (e *StateActionExecutor) ExecuteEntryActions(
 	class model_class.Class,
 	toStateKey identity.Key,
 	instance *state.ClassInstance,
-) (invariants.ViolationList, error) {
+) (invariants.ViolationErrors, error) {
 	return e.executeStateActions(class, toStateKey, instance, "entry")
 }
 
@@ -45,13 +45,13 @@ func (e *StateActionExecutor) executeStateActions(
 	stateKey identity.Key,
 	instance *state.ClassInstance,
 	when string,
-) (invariants.ViolationList, error) {
+) (invariants.ViolationErrors, error) {
 	s, ok := class.States[stateKey]
 	if !ok {
 		return nil, fmt.Errorf("state %s not found in class %s", stateKey.String(), class.Name)
 	}
 
-	var allViolations invariants.ViolationList
+	var allViolations invariants.ViolationErrors
 
 	for _, sa := range s.Actions {
 		if sa.When != when {

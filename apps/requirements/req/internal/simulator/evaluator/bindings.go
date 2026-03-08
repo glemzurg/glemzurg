@@ -27,7 +27,7 @@ type BindingEntry struct {
 // - "self" record for model_class scope
 // - Tracking which variables have been primed
 // - Namespace categorization (global vs return)
-// - Relation context for association traversal
+// - Relation context for association traversal.
 type Bindings struct {
 	store map[string]*BindingEntry // Variable name to entry
 	outer *Bindings                // Parent scope (nil for root)
@@ -147,7 +147,7 @@ func (b *Bindings) Set(name string, value object.Object, ns Namespace) {
 // This marks the entry as "altered" for tracking state changes.
 // The primed value is stored separately from the current value, so:
 // - x returns the current (unprimed) value
-// - x' returns the primed (next-state) value
+// - x' returns the primed (next-state) value.
 func (b *Bindings) SetPrimed(name string, value object.Object) {
 	// Look for existing entry
 	if entry, ok := b.store[name]; ok {

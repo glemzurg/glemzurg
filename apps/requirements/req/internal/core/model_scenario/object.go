@@ -3,8 +3,8 @@ package model_scenario
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 const (
@@ -25,7 +25,6 @@ type Object struct {
 }
 
 func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) (object Object, err error) {
-
 	object = Object{
 		Key:          key,
 		ObjectNumber: objectNumber,
@@ -50,7 +49,7 @@ func (o *Object) Validate() error {
 		return err
 	}
 	if o.Key.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
-		return errors.Errorf("Key: invalid key type '%s' for scenario object.", o.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for scenario object", o.Key.KeyType)
 	}
 	// Validate Name conditionally based on NameStyle.
 	if o.NameStyle == _NAME_STYLE_UNNAMED {
@@ -71,7 +70,7 @@ func (o *Object) Validate() error {
 		return errors.Wrap(err, "ClassKey")
 	}
 	if o.ClassKey.KeyType != identity.KEY_TYPE_CLASS {
-		return errors.Errorf("ClassKey: invalid key type '%s' for class.", o.ClassKey.KeyType)
+		return errors.Errorf("classKey: invalid key type '%s' for class", o.ClassKey.KeyType)
 	}
 	return nil
 }
@@ -100,18 +99,18 @@ func (o *Object) ValidateReferences(classes map[identity.Key]bool) error {
 	return nil
 }
 
-func (so *Object) GetName(class model_class.Class) (name string) {
-	switch so.NameStyle {
+func (o *Object) GetName(class model_class.Class) (name string) {
+	switch o.NameStyle {
 	case _NAME_STYLE_NAME:
-		name = so.Name + ":" + class.Name
+		name = o.Name + ":" + class.Name
 	case _NAME_STYLE_ID:
-		name = class.Name + " " + so.Name
+		name = class.Name + " " + o.Name
 	case _NAME_STYLE_UNNAMED:
 		name = ":" + class.Name
 	default:
-		panic("unknown name style: " + so.NameStyle)
+		panic("unknown name style: " + o.NameStyle)
 	}
-	if so.Multi {
+	if o.Multi {
 		name = "*" + name
 	}
 	return name

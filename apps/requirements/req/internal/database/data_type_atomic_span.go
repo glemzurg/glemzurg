@@ -31,9 +31,8 @@ func scanAtomicSpan(scanner Scanner, dataTypeKeyPtr *string, atomicSpan *model_d
 	return nil
 }
 
-// LoadAtomicSpan loads an atomic span from the database
+// LoadAtomicSpan loads an atomic span from the database.
 func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataTypePtr string, atomicSpan model_data_type.AtomicSpan, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -78,9 +77,8 @@ func LoadAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (parentDataType
 	return parentDataTypePtr, atomicSpan, nil
 }
 
-// AddAtomicSpan adds an atomic span to the database
+// AddAtomicSpan adds an atomic span to the database.
 func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan model_data_type.AtomicSpan) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -92,7 +90,7 @@ func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan model
 	}
 
 	// Add to the database.
-	_, err = dbExec(
+	err = dbExec(
 		dbOrTx,
 		`INSERT INTO data_type_atomic_span
 			(
@@ -133,9 +131,8 @@ func AddAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan model
 	return err
 }
 
-// UpdateAtomicSpan updates an atomic span in the database
+// UpdateAtomicSpan updates an atomic span in the database.
 func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan model_data_type.AtomicSpan) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -147,7 +144,7 @@ func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan mo
 	}
 
 	// Update the database.
-	_, err = dbExec(
+	err = dbExec(
 		dbOrTx,
 		`UPDATE data_type_atomic_span SET
 			lower_type = $3,
@@ -175,9 +172,8 @@ func UpdateAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string, atomicSpan mo
 	return err
 }
 
-// RemoveAtomicSpan removes an atomic span from the database
+// RemoveAtomicSpan removes an atomic span from the database.
 func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -189,7 +185,7 @@ func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 	}
 
 	// Remove from the database.
-	_, err = dbExec(
+	err = dbExec(
 		dbOrTx,
 		`DELETE FROM data_type_atomic_span
 		WHERE
@@ -201,9 +197,8 @@ func RemoveAtomicSpan(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 	return err
 }
 
-// QueryAtomicSpans loads all atomic spans for a model from the database
+// QueryAtomicSpans loads all atomic spans for a model from the database.
 func QueryAtomicSpans(dbOrTx DbOrTx, modelKey string) (atomicSpans map[string]model_data_type.AtomicSpan, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -260,7 +255,7 @@ func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[strin
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, len(atomicSpans)*10)
+	args := make([]any, 0, len(atomicSpans)*10)
 	valueStrings := make([]string, 0, len(atomicSpans))
 	i := 0
 	for dataTypeKey, span := range atomicSpans {
@@ -291,6 +286,6 @@ func BulkInsertAtomicSpans(dbOrTx DbOrTx, modelKey string, atomicSpans map[strin
 		VALUES %s`, strings.Join(valueStrings, ", "))
 
 	// Execute
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	return errors.WithStack(err)
 }

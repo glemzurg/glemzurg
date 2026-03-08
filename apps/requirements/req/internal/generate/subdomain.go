@@ -3,17 +3,16 @@ package generate
 import (
 	"sort"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 
 	"github.com/pkg/errors"
 )
 
 func generateSubdomainMdContents(reqs *req_flat.Requirements, model core.Model, domain model_domain.Domain, subdomain model_domain.Subdomain) (contents string, err error) {
-
 	// Gather classes for sorting.
 	var allClasses []model_class.Class
 	for _, class := range subdomain.Classes {

@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,18 +38,18 @@ func (suite *LogicMembershipSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			m := &LogicMembership{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, m.String())
+			suite.Equal(tt.expected, m.String())
 		})
 	}
 }
 
-func (suite *LogicMembershipSuite) TestAscii() {
+func (suite *LogicMembershipSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -74,13 +73,13 @@ func (suite *LogicMembershipSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			m := &LogicMembership{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, m.Ascii())
+			suite.Equal(tt.expected, m.ASCII())
 		})
 	}
 }
@@ -163,12 +162,12 @@ func (suite *LogicMembershipSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.m.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "Usage: simulate [flags] <model-path>\n\nFlags:\n")
+		log.Printf("Usage: simulate [flags] <model-path>\n\nFlags:")
 		flag.PrintDefaults()
 		os.Exit(2)
 	}
@@ -38,7 +38,7 @@ func main() {
 	// Load model.
 	model, err := loader.LoadModel(modelPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading model: %v\n", err)
+		log.Printf("Error loading model: %v", err)
 		os.Exit(1)
 	}
 
@@ -51,13 +51,13 @@ func main() {
 
 	eng, err := engine.NewSimulationEngine(model, config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating simulation engine: %v\n", err)
+		log.Printf("Error creating simulation engine: %v", err)
 		os.Exit(1)
 	}
 
 	result, err := eng.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Simulation error: %v\n", err)
+		log.Printf("Simulation error: %v", err)
 		os.Exit(1)
 	}
 
@@ -81,23 +81,23 @@ func main() {
 
 func outputText(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool, seed int64) {
 	if !quiet {
-		fmt.Printf("Simulation completed: %d steps, terminated: %s (seed: %d)\n\n",
+		log.Printf("Simulation completed: %d steps, terminated: %s (seed: %d)\n",
 			simTrace.StepsTaken, simTrace.TerminationReason, seed)
 	}
 
 	if showTrace && !quiet {
-		fmt.Print(simTrace.FormatText())
-		fmt.Println()
+		log.Print(simTrace.FormatText())
+		log.Println()
 	}
 
-	fmt.Print(violationReport.FormatText())
+	log.Print(violationReport.FormatText())
 }
 
 func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.ViolationReport, showTrace, quiet bool) {
-	output := make(map[string]interface{})
+	output := make(map[string]any)
 
 	if !quiet {
-		output["summary"] = map[string]interface{}{
+		output["summary"] = map[string]any{
 			"steps_taken":        simTrace.StepsTaken,
 			"termination_reason": simTrace.TerminationReason,
 		}
@@ -111,8 +111,9 @@ func outputJSON(simTrace *trace.SimulationTrace, violationReport *report.Violati
 
 	data, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error marshaling output: %v\n", err)
+		log.Printf("Error marshaling output: %v", err)
 		os.Exit(1)
 	}
-	fmt.Println(string(data))
+	os.Stdout.Write(data)
+	os.Stdout.Write([]byte("\n"))
 }

@@ -35,16 +35,16 @@ func (r *RecordTypeExpr) String() (value string) {
 	return out.String()
 }
 
-func (r *RecordTypeExpr) Ascii() (value string) {
+func (r *RecordTypeExpr) ASCII() (value string) {
 	var out bytes.Buffer
 	out.WriteString("[")
 	for i, field := range r.Fields {
 		if i > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString(field.Name.Ascii())
+		out.WriteString(field.Name.ASCII())
 		out.WriteString(": ")
-		out.WriteString(field.Type.Ascii())
+		out.WriteString(field.Type.ASCII())
 	}
 	out.WriteString("]")
 	return out.String()
@@ -56,7 +56,7 @@ func (r *RecordTypeExpr) Validate() error {
 	}
 	for i, field := range r.Fields {
 		if field == nil {
-			return fmt.Errorf("Fields[%d]: is nil", i)
+			return fmt.Errorf("fields[%d]: is nil", i)
 		}
 		if field.Name == nil {
 			return fmt.Errorf("Fields[%d].Name: is required", i)

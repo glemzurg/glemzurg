@@ -76,5 +76,5 @@ type SimulationStep struct {
 	CascadedSteps []*SimulationStep
 
 	// Violations contains any invariant violations detected during this step.
-	Violations invariants.ViolationList
+	Violations invariants.ViolationErrors
 }

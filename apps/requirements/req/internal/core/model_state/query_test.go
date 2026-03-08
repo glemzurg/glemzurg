@@ -3,11 +3,10 @@ package model_state
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
-	"github.com/stretchr/testify/assert"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -216,12 +215,12 @@ func (suite *QuerySuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.query.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -250,8 +249,8 @@ func (suite *QuerySuite) TestNew() {
 	}
 	query, err := NewQuery(key, "Name", "Details",
 		requires, guarantees, params)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Query{
+	suite.Require().NoError(err)
+	suite.Equal(Query{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
@@ -266,8 +265,8 @@ func (suite *QuerySuite) TestNew() {
 	// Test with nil optional fields (all Logic slice fields are optional).
 	query, err = NewQuery(key, "Name", "Details",
 		nil, nil, nil)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Query{
+	suite.Require().NoError(err)
+	suite.Equal(Query{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
@@ -275,7 +274,7 @@ func (suite *QuerySuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewQuery(key, "", "Details", nil, nil, nil)
-	assert.ErrorContains(suite.T(), err, "Name")
+	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -294,7 +293,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Name: "", // Invalid
 	}
 	err := query.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - query key has class1 as parent, but we pass other_class.
 	query = Query{
@@ -302,11 +301,11 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Name: "Name",
 	}
 	err = query.ValidateWithParent(&otherClassKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = query.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Test valid with logic children.
 	query = Query{
@@ -320,7 +319,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		},
 	}
 	err = query.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Test logic key validation - require with wrong parent should fail.
 	otherQueryKey := helper.Must(identity.NewQueryKey(classKey, "other_query"))
@@ -333,7 +332,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		},
 	}
 	err = query.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "requires 0", "ValidateWithParent should validate logic key parent")
+	suite.Require().ErrorContains(err, "requires 0", "ValidateWithParent should validate logic key parent")
 
 	// Test child Parameter validation propagates error.
 	query = Query{
@@ -344,7 +343,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		},
 	}
 	err = query.ValidateWithParent(&classKey)
-	assert.ErrorContains(suite.T(), err, "Name", "ValidateWithParent should validate child Parameters")
+	suite.Require().ErrorContains(err, "Name", "ValidateWithParent should validate child Parameters")
 
 	// Test valid with child Parameters.
 	query = Query{
@@ -355,5 +354,5 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		},
 	}
 	err = query.ValidateWithParent(&classKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }

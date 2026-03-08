@@ -33,7 +33,7 @@ func (s *BooleanSuite) TestSetValue() {
 	source := NewBoolean(true)
 
 	err := b.SetValue(source)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.True(b.Value())
 }
 
@@ -42,7 +42,7 @@ func (s *BooleanSuite) TestSetValueIncompatible() {
 	source := NewInteger(42)
 
 	err := b.SetValue(source)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *BooleanSuite) TestClone() {
@@ -55,4 +55,3 @@ func (s *BooleanSuite) TestClone() {
 	clone.value = false
 	s.True(original.Value())
 }
-

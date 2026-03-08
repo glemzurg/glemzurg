@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -10,7 +11,6 @@ import (
 
 // LoadAttributeInvariant loads an attribute invariant logic key from the database.
 func LoadAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
@@ -56,8 +56,7 @@ func AddAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey identity
 
 // RemoveAttributeInvariant deletes an attribute invariant join row from the database.
 func RemoveAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			attribute_invariant
 		WHERE
@@ -79,7 +78,6 @@ func RemoveAttributeInvariant(dbOrTx DbOrTx, modelKey string, attributeKey ident
 // QueryAttributeInvariants loads all attribute invariant logic keys from the database,
 // grouped by attribute key. Within each attribute, results are ordered by logic sort_order.
 func QueryAttributeInvariants(dbOrTx DbOrTx, modelKey string) (result map[identity.Key][]identity.Key, err error) {
-
 	result = make(map[identity.Key][]identity.Key)
 
 	err = dbQuery(
@@ -130,23 +128,25 @@ func AddAttributeInvariants(dbOrTx DbOrTx, modelKey string, attrInvariants map[i
 		return nil
 	}
 
-	query := `INSERT INTO attribute_invariant (model_key, attribute_key, logic_key) VALUES `
-	args := make([]interface{}, 0, totalRows*3)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO attribute_invariant (model_key, attribute_key, logic_key) VALUES `)
+	args := make([]any, 0, totalRows*3)
 	first := true
 	argIdx := 0
 	for attrKey, logicKeys := range attrInvariants {
 		for _, logicKey := range logicKeys {
 			if !first {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			first = false
-			query += fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", argIdx+1, argIdx+2, argIdx+3))
+
 			args = append(args, modelKey, attrKey.String(), logicKey.String())
 			argIdx += 3
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

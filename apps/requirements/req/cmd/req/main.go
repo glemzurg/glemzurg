@@ -9,22 +9,23 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/database"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/httpserver"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_human"
 )
 
-// Supported input formats
+// Supported input formats.
 const (
 	InputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	InputFormatAIJSON   = "ai/json"   // AI format (JSON files)
 )
 
-// Supported output formats
+// Supported output formats.
 const (
 	OutputFormatDataYAML = "data/yaml" // Parser format (YAML files)
 	OutputFormatMD       = "md"        // Markdown documentation
@@ -32,7 +33,6 @@ const (
 )
 
 func main() {
-
 	// Example calls:
 	// Default: data/yaml to md
 	//   $GOBIN/req -rootsource example/models -rootoutput example/output/models -model model_a
@@ -68,14 +68,14 @@ func main() {
 	// Validate input format
 	inputFormat = strings.ToLower(inputFormat)
 	if inputFormat != InputFormatDataYAML && inputFormat != InputFormatAIJSON {
-		fmt.Printf("Error: invalid input format '%s'. Valid options: data/yaml, ai/json\n", inputFormat)
+		log.Printf("Error: invalid input format '%s'. Valid options: data/yaml, ai/json", inputFormat)
 		os.Exit(1)
 	}
 
 	// Validate output format
 	outputFormat = strings.ToLower(outputFormat)
 	if outputFormat != OutputFormatDataYAML && outputFormat != OutputFormatMD && outputFormat != OutputFormatAIJSON {
-		fmt.Printf("Error: invalid output format '%s'. Valid options: data/yaml, md, ai/json\n", outputFormat)
+		log.Printf("Error: invalid output format '%s'. Valid options: data/yaml, md, ai/json", outputFormat)
 		os.Exit(1)
 	}
 
@@ -88,18 +88,18 @@ func main() {
 	// HTTP server mode
 	if httpMode {
 		if rootSourcePath == "" || model == "" {
-			fmt.Println("Error: rootsource and model are required for HTTP server mode")
+			log.Println("Error: rootsource and model are required for HTTP server mode")
 			flag.Usage()
 			os.Exit(1)
 		}
 
 		// Show configuration
-		fmt.Printf("\nConfiguration:\n")
-		fmt.Printf("  root source path: %s\n", rootSourcePath)
-		fmt.Printf("  model: %s\n", model)
-		fmt.Printf("  input format: %s\n", inputFormat)
-		fmt.Printf("  port: %s\n", port)
-		fmt.Println()
+		log.Printf("Configuration:")
+		log.Printf("  root source path: %s", rootSourcePath)
+		log.Printf("  model: %s", model)
+		log.Printf("  input format: %s", inputFormat)
+		log.Printf("  port: %s", port)
+		log.Println()
 
 		runHTTPServer(rootSourcePath, model, port, inputFormat)
 		return
@@ -107,24 +107,24 @@ func main() {
 
 	// Validate required arguments for conversion mode
 	if rootSourcePath == "" || rootOutputPath == "" || model == "" {
-		fmt.Println("Error: rootsource, rootoutput, and model are required")
+		log.Println("Error: rootsource, rootoutput, and model are required")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	// Show configuration
-	fmt.Printf("\nConfiguration:\n")
-	fmt.Printf("  root source path: %s\n", rootSourcePath)
-	fmt.Printf("  root output path: %s\n", rootOutputPath)
-	fmt.Printf("  model: %s\n", model)
-	fmt.Printf("  input format: %s\n", inputFormat)
-	fmt.Printf("  output format: %s\n", outputFormat)
-	fmt.Println()
+	log.Printf("Configuration:")
+	log.Printf("  root source path: %s", rootSourcePath)
+	log.Printf("  root output path: %s", rootOutputPath)
+	log.Printf("  model: %s", model)
+	log.Printf("  input format: %s", inputFormat)
+	log.Printf("  output format: %s", outputFormat)
+	log.Println()
 
 	// Process the conversion
 	err := processConversion(debug, skipDB, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat)
 	if err != nil {
-		fmt.Printf("Error: %+v\n\n", err)
+		log.Printf("Error: %+v", err)
 		os.Exit(1)
 	}
 
@@ -132,9 +132,8 @@ func main() {
 	os.Exit(0)
 }
 
-// processConversion handles the input/output conversion based on formats
-func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
-
+// processConversion handles the input/output conversion based on formats.
+func processConversion(_, skipDB bool, rootSourcePath, rootOutputPath, model, inputFormat, outputFormat string) error {
 	sourcePath := filepath.Join(rootSourcePath, model)
 	outputPath := filepath.Join(rootOutputPath, model)
 
@@ -143,7 +142,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 
 	switch inputFormat {
 	case InputFormatDataYAML:
-		fmt.Println("Reading model from data/yaml format...")
+		log.Println("Reading model from data/yaml format...")
 		m, err := parser_human.Parse(sourcePath)
 		if err != nil {
 			return fmt.Errorf("failed to parse data/yaml model: %w", err)
@@ -151,7 +150,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 		parsedModel = &m
 
 	case InputFormatAIJSON:
-		fmt.Println("Reading model from ai/json format...")
+		log.Println("Reading model from ai/json format...")
 		m, err := parser_ai.ReadModel(sourcePath)
 		if err != nil {
 			return fmt.Errorf("failed to read ai/json model: %w", err)
@@ -165,7 +164,7 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 		if err != nil {
 			return fmt.Errorf("failed to create database: %w", err)
 		}
-		fmt.Println("Exercising data model through database...")
+		log.Println("Exercising data model through database...")
 		err = database.WriteModel(db, *parsedModel)
 		if err != nil {
 			return fmt.Errorf("failed to write model to database: %w", err)
@@ -180,39 +179,39 @@ func processConversion(debug, skipDB bool, rootSourcePath, rootOutputPath, model
 	// Step 3: Write the output in the desired format
 	switch outputFormat {
 	case OutputFormatMD:
-		fmt.Println("Generating markdown output...")
+		log.Println("Generating markdown output...")
 		// Use the already-parsed model to generate markdown
-		err := generate.GenerateMdFromModel(debug, outputPath, *parsedModel)
+		err := generate.GenerateMdFromModel(outputPath, *parsedModel)
 		if err != nil {
 			return fmt.Errorf("failed to generate markdown: %w", err)
 		}
 
 	case OutputFormatAIJSON:
-		fmt.Println("Converting to ai/json format...")
+		log.Println("Converting to ai/json format...")
 		if err := os.MkdirAll(outputPath, 0755); err != nil {
 			return fmt.Errorf("failed to create output directory: %w", err)
 		}
 		if err := parser_ai.WriteModel(*parsedModel, outputPath); err != nil {
 			return fmt.Errorf("failed to write ai/json model: %w", err)
 		}
-		fmt.Printf("Model written to: %s\n", outputPath)
+		log.Printf("Model written to: %s", outputPath)
 
 	case OutputFormatDataYAML:
-		fmt.Println("Converting to data/yaml format...")
+		log.Println("Converting to data/yaml format...")
 		if err := parser_human.Write(*parsedModel, outputPath); err != nil {
 			return fmt.Errorf("failed to write data/yaml model: %w", err)
 		}
-		fmt.Printf("Model written to: %s\n", outputPath)
+		log.Printf("Model written to: %s", outputPath)
 	}
 
-	fmt.Println("\nDone!")
+	log.Println("Done!")
 	return nil
 }
 
 // runHTTPServer starts the HTTP server in watch mode, serving in-memory generated content for a single model.
 func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 	modelPath := filepath.Join(rootSourcePath, model)
-	fmt.Printf("Starting HTTP server on port :%s for model %s (format: %s)\n", port, model, inputFormat)
+	log.Printf("Starting HTTP server on port :%s for model %s (format: %s)", port, model, inputFormat)
 
 	// Create the model store and server
 	store := httpserver.NewModelStore()
@@ -225,7 +224,7 @@ func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 	}
 
 	// Load the model
-	fmt.Printf("Loading model %s...\n", model)
+	log.Printf("Loading model %s...", model)
 	if err := watcher.LoadModel(); err != nil {
 		log.Fatalf("Failed to load model: %v", err)
 	}
@@ -234,9 +233,16 @@ func runHTTPServer(rootSourcePath, model, port, inputFormat string) {
 	if err := watcher.Start(); err != nil {
 		log.Fatalf("Failed to start source watcher: %v", err)
 	}
-	defer watcher.Close()
+	defer func() { _ = watcher.Close() }()
 
 	// Start the HTTP server
-	fmt.Printf("Server ready at http://localhost:%s/%s/model.md\n", port, model)
-	log.Fatal(http.ListenAndServe(":"+port, server.Handler()))
+	log.Printf("Server ready at http://localhost:%s/%s/model.md", port, model)
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      server.Handler(),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe()) //nolint:gocritic // server blocks until error, defer runs on normal exit
 }

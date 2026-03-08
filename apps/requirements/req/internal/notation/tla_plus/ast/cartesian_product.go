@@ -26,13 +26,13 @@ func (cp *CartesianProduct) String() (value string) {
 	return out.String()
 }
 
-func (cp *CartesianProduct) Ascii() (value string) {
+func (cp *CartesianProduct) ASCII() (value string) {
 	var out bytes.Buffer
 	for i, op := range cp.Operands {
 		if i > 0 {
 			out.WriteString(" \\X ")
 		}
-		out.WriteString(op.Ascii())
+		out.WriteString(op.ASCII())
 	}
 	return out.String()
 }
@@ -43,10 +43,10 @@ func (cp *CartesianProduct) Validate() error {
 	}
 	for i, op := range cp.Operands {
 		if op == nil {
-			return fmt.Errorf("Operands[%d]: is nil", i)
+			return fmt.Errorf("operands[%d]: is nil", i)
 		}
 		if err := op.Validate(); err != nil {
-			return fmt.Errorf("Operands[%d]: %w", i, err)
+			return fmt.Errorf("operands[%d]: %w", i, err)
 		}
 	}
 	return nil

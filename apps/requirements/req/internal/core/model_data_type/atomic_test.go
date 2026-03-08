@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseAtomic(t *testing.T) {
-
 	trueValue := true
 	falseValue := false
 
@@ -513,19 +513,17 @@ func TestParseAtomic(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("AtomicDataType"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
-				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -631,7 +629,7 @@ func TestAtomicString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panicMessage != "" {
-				assert.PanicsWithValue(t, tt.panicMessage, func() { tt.atomic.String() })
+				assert.PanicsWithValue(t, tt.panicMessage, func() { _ = tt.atomic.String() })
 			} else {
 				result := tt.atomic.String()
 				assert.Equal(t, tt.expected, result)

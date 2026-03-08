@@ -29,9 +29,8 @@ func scanField(scanner Scanner, dataTypeKeyPtr *string, field *model_data_type.F
 	return nil
 }
 
-// LoadDataTypeFields loads all fields for a data type from the database
+// LoadDataTypeFields loads all fields for a data type from the database.
 func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map[string][]model_data_type.Field, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -82,9 +81,8 @@ func LoadDataTypeFields(dbOrTx DbOrTx, modelKey, dataTypeKey string) (fields map
 	return fields, nil
 }
 
-// AddField adds a data type field to the database
+// AddField adds a data type field to the database.
 func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -103,7 +101,7 @@ func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type
 	}
 
 	// Add to the database.
-	_, err = dbExec(
+	err = dbExec(
 		dbOrTx,
 		`INSERT INTO data_type_field
 			(
@@ -126,9 +124,8 @@ func AddField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type
 	return err
 }
 
-// UpdateField updates a data type field in the database
+// UpdateField updates a data type field in the database.
 func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_type.Field) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -147,7 +144,7 @@ func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_t
 	}
 
 	// Update the database.
-	_, err = dbExec(
+	err = dbExec(
 		dbOrTx,
 		`UPDATE data_type_field SET
 			field_data_type_key = $4
@@ -164,9 +161,8 @@ func UpdateField(dbOrTx DbOrTx, modelKey, dataTypeKey string, field model_data_t
 	return err
 }
 
-// RemoveField removes a data type field from the database
+// RemoveField removes a data type field from the database.
 func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -178,7 +174,7 @@ func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) 
 	}
 
 	// Remove from the database.
-	_, err = dbExec(
+	err = dbExec(
 		dbOrTx,
 		`DELETE FROM data_type_field
 		WHERE
@@ -193,9 +189,8 @@ func RemoveField(dbOrTx DbOrTx, modelKey, dataTypeKey, name string) (err error) 
 	return err
 }
 
-// QueryFields loads all data type fields for a model from the database
+// QueryFields loads all data type fields for a model from the database.
 func QueryFields(dbOrTx DbOrTx, modelKey string) (fields map[string][]model_data_type.Field, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -251,7 +246,7 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]mode
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, totalFields*4)
+	args := make([]any, 0, totalFields*4)
 	valueStrings := make([]string, 0, totalFields)
 	i := 0
 	for dataTypeKey, fields := range fieldMap {
@@ -285,6 +280,6 @@ func BulkInsertFields(dbOrTx DbOrTx, modelKey string, fieldMap map[string][]mode
 		VALUES %s`, strings.Join(valueStrings, ", "))
 
 	// Execute
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	return errors.WithStack(err)
 }

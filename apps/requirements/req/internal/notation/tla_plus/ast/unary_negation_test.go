@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,16 +51,16 @@ func (suite *NumericPrefixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.n.String())
+		_ = suite.Run(tt.testName, func() {
+			suite.Equal(tt.expected, tt.n.String())
 		})
 	}
 }
 
-func (suite *NumericPrefixExpressionSuite) TestAscii() {
-	// Ascii should be same as String for NumericPrefixExpression
+func (suite *NumericPrefixExpressionSuite) TestASCII() {
+	// ASCII should be same as String for NumericPrefixExpression
 	n := &NumericPrefixExpression{Operator: "-", Right: &NumberLiteral{Base: BaseDecimal, IntegerPart: "1"}}
-	assert.Equal(suite.T(), n.String(), n.Ascii())
+	suite.Equal(n.String(), n.ASCII())
 }
 
 func (suite *NumericPrefixExpressionSuite) TestValidate() {
@@ -88,12 +87,12 @@ func (suite *NumericPrefixExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.n.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -102,8 +101,8 @@ func (suite *NumericPrefixExpressionSuite) TestValidate() {
 func (suite *NumericPrefixExpressionSuite) TestNewNegation() {
 	inner := &NumberLiteral{Base: BaseDecimal, IntegerPart: "42"}
 	n := NewNegation(inner)
-	assert.Equal(suite.T(), "-", n.Operator)
-	assert.Equal(suite.T(), inner, n.Right)
+	suite.Equal("-", n.Operator)
+	suite.Equal(inner, n.Right)
 }
 
 func (suite *NumericPrefixExpressionSuite) TestExpressionNode() {

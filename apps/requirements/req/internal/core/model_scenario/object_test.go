@@ -3,10 +3,9 @@ package model_scenario
 import (
 	"testing"
 
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -77,7 +76,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  classKey,
 			},
-			errstr: "Key: invalid key type 'domain' for scenario object.",
+			errstr: "key: invalid key type 'domain' for scenario object",
 		},
 		{
 			testName: "error blank name for name style",
@@ -117,7 +116,7 @@ func (suite *ObjectSuite) TestValidate() {
 				NameStyle: _NAME_STYLE_NAME,
 				ClassKey:  domainKey,
 			},
-			errstr: "ClassKey: invalid key type 'domain' for class.",
+			errstr: "classKey: invalid key type 'domain' for class",
 		},
 		{
 			testName: "error invalid name style",
@@ -131,12 +130,12 @@ func (suite *ObjectSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.object.Validate()
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -153,8 +152,8 @@ func (suite *ObjectSuite) TestNew() {
 
 	// Test parameters are mapped correctly.
 	obj, err := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), Object{
+	suite.Require().NoError(err)
+	suite.Equal(Object{
 		Key:          key,
 		ObjectNumber: 1,
 		Name:         "Name",
@@ -166,7 +165,7 @@ func (suite *ObjectSuite) TestNew() {
 
 	// Test that Validate is called (invalid data should fail).
 	_, err = NewObject(key, 1, "", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	assert.ErrorContains(suite.T(), err, "Name: Name cannot be blank")
+	suite.Require().ErrorContains(err, "Name: Name cannot be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -187,7 +186,7 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 		ClassKey:  classKey,
 	}
 	err := obj.ValidateWithParent(&scenarioKey)
-	assert.ErrorContains(suite.T(), err, "Name: Name cannot be blank", "ValidateWithParent should call Validate()")
+	suite.Require().ErrorContains(err, "Name: Name cannot be blank", "ValidateWithParent should call Validate()")
 
 	// Test that ValidateParent is called - object key has scenario1 as parent, but we pass other_scenario.
 	obj = Object{
@@ -197,11 +196,11 @@ func (suite *ObjectSuite) TestValidateWithParent() {
 		ClassKey:  classKey,
 	}
 	err = obj.ValidateWithParent(&otherScenarioKey)
-	assert.ErrorContains(suite.T(), err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
+	suite.Require().ErrorContains(err, "does not match expected parent", "ValidateWithParent should call ValidateParent()")
 
 	// Test valid case.
 	err = obj.ValidateWithParent(&scenarioKey)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateReferences tests that ValidateReferences validates class references correctly.
@@ -248,12 +247,12 @@ func (suite *ObjectSuite) TestValidateReferences() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.object.ValidateReferences(tt.classes)
 			if tt.errstr == "" {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -307,9 +306,9 @@ func (suite *ObjectSuite) TestGetName() {
 		},
 	}
 	for _, tt := range tests {
-		suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			result := tt.object.GetName(class)
-			assert.Equal(t, tt.expected, result)
+			suite.Equal(tt.expected, result)
 		})
 	}
 }

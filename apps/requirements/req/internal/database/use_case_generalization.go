@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -46,7 +47,6 @@ func scanUseCaseGeneralization(scanner Scanner, subdomainKeyPtr *identity.Key, g
 
 // LoadUseCaseGeneralization loads a use case generalization from the database.
 func LoadUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (subdomainKey identity.Key, generalization model_use_case.Generalization, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -88,9 +88,8 @@ func AddUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, subdomainKey ident
 
 // UpdateUseCaseGeneralization updates a use case generalization in the database.
 func UpdateUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_use_case.Generalization) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			use_case_generalization
 		SET
@@ -119,9 +118,8 @@ func UpdateUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalization 
 
 // RemoveUseCaseGeneralization deletes a use case generalization from the database.
 func RemoveUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				use_case_generalization
 			WHERE
@@ -139,7 +137,6 @@ func RemoveUseCaseGeneralization(dbOrTx DbOrTx, modelKey string, generalizationK
 
 // QueryUseCaseGeneralizations loads all use case generalizations from the database grouped by subdomain key.
 func QueryUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations map[identity.Key][]model_use_case.Generalization, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -188,22 +185,24 @@ func AddUseCaseGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations m
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO use_case_generalization (model_key, subdomain_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*8)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO use_case_generalization (model_key, subdomain_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `)
+	args := make([]any, 0, count*8)
 	i := 0
 	for subdomainKey, gens := range generalizations {
 		for _, gen := range gens {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 8
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8))
+
 			args = append(args, modelKey, subdomainKey.String(), gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

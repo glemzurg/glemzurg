@@ -3,8 +3,6 @@ package req_flat
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -14,6 +12,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -92,7 +92,8 @@ func buildTestModel() core.Model {
 	// Class.
 	class := helper.Must(model_class.NewClass(tClassKey, "Order", "", nil, nil, nil, ""))
 	class.Attributes = map[identity.Key]model_class.Attribute{
-		tAttributeKey: helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false, "", nil)),
+		tAttributeKey: helper.Must(model_class.NewAttribute(tAttributeKey, "amount", "", "", nil, false,
+			model_class.AttributeAnnotations{})),
 	}
 	stateOpen := helper.Must(model_state.NewState(tStateOpenKey, "Open", "", ""))
 	stateOpen.SetActions([]model_state.StateAction{
@@ -138,7 +139,7 @@ func buildTestModel() core.Model {
 	gen := helper.Must(model_class.NewGeneralization(tGenKey, "Vehicle", "", false, false, ""))
 
 	// Use case.
-	useCase := helper.Must(model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "sea", false, nil, nil, ""))
+	useCase := helper.Must(model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "sea", false, model_use_case.GeneralizationRefs{}, ""))
 	scenario := helper.Must(model_scenario.NewScenario(tScenarioKey, "HappyPath", ""))
 	obj := helper.Must(model_scenario.NewObject(tObjectKey, 1, "order1", "name", tClassKey, false, ""))
 	scenario.Objects = map[identity.Key]model_scenario.Object{
@@ -168,7 +169,7 @@ func buildTestModel() core.Model {
 		tUseCaseKey: useCase,
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		tAssocKey: helper.Must(model_class.NewAssociation(tAssocKey, "order_items", "", tClassKey, helper.Must(model_class.NewMultiplicity("1")), tClass2Key, helper.Must(model_class.NewMultiplicity("any")), nil, "")),
+		tAssocKey: helper.Must(model_class.NewAssociation(tAssocKey, "order_items", "", model_class.AssociationEnd{ClassKey: tClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: tClass2Key, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")),
 	}
 
 	// Domain.
@@ -654,7 +655,7 @@ func (s *RequirementsSuite) TestUseCaseGeneralizationSuperclassLookup() {
 	model := buildTestModel()
 
 	genKey := tUseCaseGenKey
-	superUC := helper.Must(model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "sea", false, &genKey, nil, ""))
+	superUC := helper.Must(model_use_case.NewUseCase(tUseCaseKey, "PlaceOrder", "", "sea", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &genKey}, ""))
 	superUC.Actors = map[identity.Key]model_use_case.Actor{}
 	superUC.Scenarios = map[identity.Key]model_scenario.Scenario{
 		tScenarioKey: helper.Must(model_scenario.NewScenario(tScenarioKey, "HappyPath", "")),
@@ -676,10 +677,10 @@ func (s *RequirementsSuite) TestUseCaseGeneralizationSubclassesLookup() {
 	model := buildTestModel()
 
 	genKey := tUseCaseGenKey
-	subUC1 := helper.Must(model_use_case.NewUseCase(tUseCase2Key, "Login", "", "mud", false, nil, &genKey, ""))
+	subUC1 := helper.Must(model_use_case.NewUseCase(tUseCase2Key, "Login", "", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &genKey}, ""))
 	subUC1.Actors = map[identity.Key]model_use_case.Actor{}
 	subUC1.Scenarios = map[identity.Key]model_scenario.Scenario{}
-	subUC2 := helper.Must(model_use_case.NewUseCase(tUseCase3Key, "Checkout", "", "mud", false, nil, &genKey, ""))
+	subUC2 := helper.Must(model_use_case.NewUseCase(tUseCase3Key, "Checkout", "", "mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &genKey}, ""))
 	subUC2.Actors = map[identity.Key]model_use_case.Actor{}
 	subUC2.Scenarios = map[identity.Key]model_scenario.Scenario{}
 

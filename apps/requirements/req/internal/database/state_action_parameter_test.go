@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +34,6 @@ type ActionParameterSuite struct {
 }
 
 func (suite *ActionParameterSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,13 +49,12 @@ func (suite *ActionParameterSuite) SetupTest() {
 }
 
 func (suite *ActionParameterSuite) TestLoad() {
-
 	// Nothing in database yet.
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO action_parameter
 			(
 				model_key,
@@ -76,72 +74,68 @@ func (suite *ActionParameterSuite) TestLoad() {
 				'Nat'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err = LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
 }
 
 func (suite *ActionParameterSuite) TestAdd() {
-
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)
 }
 
 func (suite *ActionParameterSuite) TestUpdate() {
-
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateActionParameter(suite.db, suite.model.Key, suite.actionKey, 2, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Int",
 	}, param)
 }
 
 func (suite *ActionParameterSuite) TestRemove() {
-
 	err := AddActionParameter(suite.db, suite.model.Key, suite.actionKey, model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	param, err := LoadActionParameter(suite.db, suite.model.Key, suite.actionKey, "amount")
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), param)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(param)
 }
 
 func (suite *ActionParameterSuite) TestQuery() {
-
 	err := AddActionParameters(suite.db, suite.model.Key, map[identity.Key][]model_state.Parameter{
 		suite.actionKey: {
 			{
@@ -154,11 +148,11 @@ func (suite *ActionParameterSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	params, err := QueryActionParameters(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Parameter{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Parameter{
 		suite.actionKey: {
 			{
 				Name:          "Alpha",
@@ -176,27 +170,25 @@ func (suite *ActionParameterSuite) TestQuery() {
 // Test objects for other tests.
 //==================================================
 
-func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string, sortOrder int) (param model_state.Parameter) {
-
+func t_AddActionParameter(t *testing.T, dbOrTx DbOrTx, modelKey string, actionKey identity.Key, name string) (param model_state.Parameter) {
 	paramKey, err := preenKey(name)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	err = AddActionParameter(dbOrTx, modelKey, actionKey, model_state.Parameter{
 		Name:          name,
 		DataTypeRules: "Nat",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	param, err = LoadActionParameter(dbOrTx, modelKey, actionKey, paramKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return param
 }
 
 func (suite *ActionParameterSuite) TestVerifyTestObjects() {
-
-	param := t_AddActionParameter(suite.T(), suite.db, suite.model.Key, suite.actionKey, "Amount", 0)
-	assert.Equal(suite.T(), model_state.Parameter{
+	param := t_AddActionParameter(suite.T(), suite.db, suite.model.Key, suite.actionKey, "Amount")
+	suite.Equal(model_state.Parameter{
 		Name:          "Amount",
 		DataTypeRules: "Nat",
 	}, param)

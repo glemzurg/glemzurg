@@ -3,11 +3,11 @@ package invariants
 import (
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -40,18 +40,21 @@ func indexTestModel(attrs map[identity.Key]model_class.Attribute) (*core.Model, 
 }
 
 func spanAttr(name string, indexNums []uint) model_class.Attribute {
-	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", "[0, 10000]", nil, false, "", indexNums))
+	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", "[0, 10000]", nil, false,
+		model_class.AttributeAnnotations{IndexNums: indexNums}))
 }
 
 func enumAttr(name string, values []string, indexNums []uint) model_class.Attribute {
 	dataTypeRules := "{" + strings.Join(values, ", ") + "}"
-	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", dataTypeRules, nil, false, "", indexNums))
+	return helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/"+name), name, "", dataTypeRules, nil, false,
+		model_class.AttributeAnnotations{IndexNums: indexNums}))
 }
 
 // --- Tests ---
 
 func (s *InvariantsSuite) TestIndexCheckerNoIndexes() {
-	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), "name", "", "string", nil, false, "", nil))
+	attr := helper.Must(model_class.NewAttribute(mustKey("domain/d/subdomain/s/class/plane/attribute/name"), "name", "", "string", nil, false,
+		model_class.AttributeAnnotations{}))
 	model, _ := indexTestModel(map[identity.Key]model_class.Attribute{
 		attr.Key: attr,
 	})

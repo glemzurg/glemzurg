@@ -38,7 +38,7 @@ func (s *IdentifierSuite) TestIdentifier_Simple() {
 	for _, tt := range tests {
 		s.Run(tt.input, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err)
+			s.Require().NoError(err)
 
 			ident, ok := expr.(*ast.Identifier)
 			s.True(ok, "expected *ast.Identifier, got %T", expr)
@@ -49,7 +49,7 @@ func (s *IdentifierSuite) TestIdentifier_Simple() {
 
 func (s *IdentifierSuite) TestIdentifier_WithWhitespace() {
 	expr, err := ParseExpression("  myVar  ")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	ident, ok := expr.(*ast.Identifier)
 	s.True(ok, "expected *ast.Identifier, got %T", expr)
@@ -93,7 +93,7 @@ func (s *IdentifierSuite) TestIdentifier_KeywordPrefixOK() {
 	for _, tt := range tests {
 		s.Run(tt.input, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err)
+			s.Require().NoError(err)
 
 			ident, ok := expr.(*ast.Identifier)
 			s.True(ok, "expected *ast.Identifier, got %T", expr)
@@ -108,7 +108,7 @@ func (s *IdentifierSuite) TestIdentifier_KeywordPrefixOK() {
 
 func (s *IdentifierSuite) TestExistingValue_Simple() {
 	expr, err := ParseExpression("@")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	_, ok := expr.(*ast.ExistingValue)
 	s.True(ok, "expected *ast.ExistingValue, got %T", expr)
@@ -116,7 +116,7 @@ func (s *IdentifierSuite) TestExistingValue_Simple() {
 
 func (s *IdentifierSuite) TestExistingValue_WithWhitespace() {
 	expr, err := ParseExpression("  @  ")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	_, ok := expr.(*ast.ExistingValue)
 	s.True(ok, "expected *ast.ExistingValue, got %T", expr)
@@ -128,7 +128,7 @@ func (s *IdentifierSuite) TestExistingValue_WithWhitespace() {
 
 func (s *IdentifierSuite) TestFieldAccess_Simple() {
 	expr, err := ParseExpression("record.field")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	fa, ok := expr.(*ast.FieldAccess)
 	s.True(ok, "expected *ast.FieldAccess, got %T", expr)
@@ -156,7 +156,7 @@ func (s *IdentifierSuite) TestFieldAccess_VariousNames() {
 	for _, tt := range tests {
 		s.Run(tt.input, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err)
+			s.Require().NoError(err)
 
 			fa, ok := expr.(*ast.FieldAccess)
 			s.True(ok, "expected *ast.FieldAccess, got %T", expr)
@@ -172,7 +172,7 @@ func (s *IdentifierSuite) TestFieldAccess_VariousNames() {
 func (s *IdentifierSuite) TestFieldAccess_ExistingValue() {
 	// @.field - field access on existing value
 	expr, err := ParseExpression("@.status")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	fa, ok := expr.(*ast.FieldAccess)
 	s.True(ok, "expected *ast.FieldAccess, got %T", expr)
@@ -187,7 +187,7 @@ func (s *IdentifierSuite) TestFieldAccess_WithWhitespace() {
 	// Note: TLA+ typically doesn't allow whitespace around the dot
 	// but our parser should handle input with surrounding whitespace
 	expr, err := ParseExpression("  record.field  ")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	fa, ok := expr.(*ast.FieldAccess)
 	s.True(ok, "expected *ast.FieldAccess, got %T", expr)
@@ -205,7 +205,7 @@ func (s *IdentifierSuite) TestFieldAccess_WithWhitespace() {
 func (s *IdentifierSuite) TestFieldAccess_Chained() {
 	// a.b.c should parse as ((a).b).c
 	expr, err := ParseExpression("a.b.c")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Outermost should be FieldAccess with member "c"
 	outer, ok := expr.(*ast.FieldAccess)
@@ -226,7 +226,7 @@ func (s *IdentifierSuite) TestFieldAccess_Chained() {
 func (s *IdentifierSuite) TestFieldAccess_ChainedLong() {
 	// person.address.city.name
 	expr, err := ParseExpression("person.address.city.name")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Build up from inside out: person -> .address -> .city -> .name
 	fa1, ok := expr.(*ast.FieldAccess)
@@ -249,7 +249,7 @@ func (s *IdentifierSuite) TestFieldAccess_ChainedLong() {
 func (s *IdentifierSuite) TestFieldAccess_ChainedWithExistingValue() {
 	// @.a.b - chained access starting from existing value
 	expr, err := ParseExpression("@.a.b")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outer, ok := expr.(*ast.FieldAccess)
 	s.True(ok, "expected *ast.FieldAccess, got %T", expr)
@@ -265,7 +265,7 @@ func (s *IdentifierSuite) TestFieldAccess_ChainedWithExistingValue() {
 
 func (s *IdentifierSuite) TestFieldAccess_ChainedString() {
 	expr, err := ParseExpression("a.b.c")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("a.b.c", expr.String())
 }
 
@@ -275,7 +275,7 @@ func (s *IdentifierSuite) TestFieldAccess_ChainedString() {
 
 func (s *IdentifierSuite) TestPrimed_SimpleIdentifier() {
 	expr, err := ParseExpression("x'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	primed, ok := expr.(*ast.Primed)
 	s.True(ok, "expected *ast.Primed, got %T", expr)
@@ -287,7 +287,7 @@ func (s *IdentifierSuite) TestPrimed_SimpleIdentifier() {
 
 func (s *IdentifierSuite) TestPrimed_LongerIdentifier() {
 	expr, err := ParseExpression("counter'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	primed, ok := expr.(*ast.Primed)
 	s.True(ok, "expected *ast.Primed, got %T", expr)
@@ -300,7 +300,7 @@ func (s *IdentifierSuite) TestPrimed_LongerIdentifier() {
 func (s *IdentifierSuite) TestPrimed_FieldAccess() {
 	// record.field' - prime applies to the whole field access
 	expr, err := ParseExpression("record.field'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	primed, ok := expr.(*ast.Primed)
 	s.True(ok, "expected *ast.Primed, got %T", expr)
@@ -317,7 +317,7 @@ func (s *IdentifierSuite) TestPrimed_FieldAccess() {
 func (s *IdentifierSuite) TestPrimed_ChainedFieldAccess() {
 	// a.b.c' - prime applies to the whole chain
 	expr, err := ParseExpression("a.b.c'")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	primed, ok := expr.(*ast.Primed)
 	s.True(ok, "expected *ast.Primed, got %T", expr)
@@ -334,7 +334,7 @@ func (s *IdentifierSuite) TestPrimed_ChainedFieldAccess() {
 func (s *IdentifierSuite) TestPrimed_InExpression() {
 	// x' + 1
 	expr, err := ParseExpression("x' + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	arith, ok := expr.(*ast.BinaryArithmetic)
 	s.True(ok, "expected *ast.BinaryArithmetic, got %T", expr)
@@ -350,7 +350,7 @@ func (s *IdentifierSuite) TestPrimed_InExpression() {
 func (s *IdentifierSuite) TestPrimed_InComparison() {
 	// x' = y
 	expr, err := ParseExpression("x' = y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	eq, ok := expr.(*ast.BinaryEquality)
 	s.True(ok, "expected *ast.BinaryEquality, got %T", expr)
@@ -365,13 +365,13 @@ func (s *IdentifierSuite) TestPrimed_InComparison() {
 
 func (s *IdentifierSuite) TestPrimed_String() {
 	expr, err := ParseExpression("counter'")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("counter'", expr.String())
 }
 
 func (s *IdentifierSuite) TestPrimed_FieldAccessString() {
 	expr, err := ParseExpression("record.field'")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("record.field'", expr.String())
 }
 
@@ -381,7 +381,7 @@ func (s *IdentifierSuite) TestPrimed_FieldAccessString() {
 
 func (s *IdentifierSuite) TestIdentifier_InArithmetic() {
 	expr, err := ParseExpression("x + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	arith, ok := expr.(*ast.BinaryArithmetic)
 	s.True(ok, "expected *ast.BinaryArithmetic, got %T", expr)
@@ -393,7 +393,7 @@ func (s *IdentifierSuite) TestIdentifier_InArithmetic() {
 
 func (s *IdentifierSuite) TestIdentifier_InComparison() {
 	expr, err := ParseExpression("x > 5")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	comp, ok := expr.(*ast.BinaryComparison)
 	s.True(ok, "expected *ast.BinaryComparison, got %T", expr)
@@ -405,7 +405,7 @@ func (s *IdentifierSuite) TestIdentifier_InComparison() {
 
 func (s *IdentifierSuite) TestIdentifier_InLogic() {
 	expr, err := ParseExpression("a /\\ b")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	logic, ok := expr.(*ast.BinaryLogic)
 	s.True(ok, "expected *ast.BinaryLogic, got %T", expr)
@@ -421,7 +421,7 @@ func (s *IdentifierSuite) TestIdentifier_InLogic() {
 
 func (s *IdentifierSuite) TestFieldAccess_InComparison() {
 	expr, err := ParseExpression("person.age > 18")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	comp, ok := expr.(*ast.BinaryComparison)
 	s.True(ok, "expected *ast.BinaryComparison, got %T", expr)
@@ -437,7 +437,7 @@ func (s *IdentifierSuite) TestFieldAccess_InComparison() {
 
 func (s *IdentifierSuite) TestExistingValue_InArithmetic() {
 	expr, err := ParseExpression("@ + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	arith, ok := expr.(*ast.BinaryArithmetic)
 	s.True(ok, "expected *ast.BinaryArithmetic, got %T", expr)
@@ -449,7 +449,7 @@ func (s *IdentifierSuite) TestExistingValue_InArithmetic() {
 func (s *IdentifierSuite) TestFieldAccess_ExistingValueInExpression() {
 	// @.count + 1
 	expr, err := ParseExpression("@.count + 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	arith, ok := expr.(*ast.BinaryArithmetic)
 	s.True(ok, "expected *ast.BinaryArithmetic, got %T", expr)
@@ -468,24 +468,24 @@ func (s *IdentifierSuite) TestFieldAccess_ExistingValueInExpression() {
 
 func (s *IdentifierSuite) TestIdentifier_String() {
 	expr, err := ParseExpression("myVariable")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("myVariable", expr.String())
 }
 
 func (s *IdentifierSuite) TestExistingValue_String() {
 	expr, err := ParseExpression("@")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("@", expr.String())
 }
 
 func (s *IdentifierSuite) TestFieldAccess_String() {
 	expr, err := ParseExpression("record.field")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("record.field", expr.String())
 }
 
 func (s *IdentifierSuite) TestFieldAccess_ExistingValue_String() {
 	expr, err := ParseExpression("@.field")
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("@.field", expr.String()) // Base is ExistingValue which renders as @
 }

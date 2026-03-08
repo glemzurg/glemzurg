@@ -3,15 +3,15 @@ package surface
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,9 +27,23 @@ func mustKey(s string) identity.Key {
 	return k
 }
 
+// emptySpec creates a TLA+ ExpressionSpec with no specification body (nil Expression).
+func emptySpec() model_spec.ExpressionSpec {
+	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", "", nil))
+	return spec
+}
+
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
-func parsedSpec(tla string) model_spec.ExpressionSpec {
-	pf := convert.NewExpressionParseFunc(nil)
+// Any unresolved identifiers in the expression should be passed as extra parameters.
+func parsedSpec(tla string, params ...string) model_spec.ExpressionSpec {
+	ctx := &convert.LowerContext{}
+	if len(params) > 0 {
+		ctx.Parameters = make(map[string]bool, len(params))
+		for _, p := range params {
+			ctx.Parameters[p] = true
+		}
+	}
+	pf := convert.NewExpressionParseFunc(ctx)
 	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
@@ -149,7 +163,7 @@ func buildTwoDomainModel() *core.Model {
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderClassKey, helper.Must(model_class.NewMultiplicity("1")), itemClassKey, helper.Must(model_class.NewMultiplicity("1..many")), nil, "")),
+		assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, "")),
 	}
 
 	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
@@ -248,7 +262,7 @@ func (s *SurfaceSuite) TestValidate_ValidSpec() {
 		IncludeClasses:    []identity.Key{orderClassKey},
 		ExcludeClasses:    []identity.Key{itemClassKey},
 	}
-	s.NoError(spec.Validate(model))
+	s.Require().NoError(spec.Validate(model))
 }
 
 func (s *SurfaceSuite) TestValidate_UnknownDomain() {
@@ -257,7 +271,7 @@ func (s *SurfaceSuite) TestValidate_UnknownDomain() {
 		IncludeDomains: []identity.Key{mustKey("domain/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown domain")
 }
 
@@ -267,7 +281,7 @@ func (s *SurfaceSuite) TestValidate_UnknownSubdomain() {
 		IncludeSubdomains: []identity.Key{mustKey("domain/d/subdomain/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown subdomain")
 }
 
@@ -277,7 +291,7 @@ func (s *SurfaceSuite) TestValidate_UnknownIncludeClass() {
 		IncludeClasses: []identity.Key{mustKey("domain/d/subdomain/s/class/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown class")
 }
 
@@ -287,7 +301,7 @@ func (s *SurfaceSuite) TestValidate_UnknownExcludeClass() {
 		ExcludeClasses: []identity.Key{mustKey("domain/d/subdomain/s/class/nonexistent")},
 	}
 	err := spec.Validate(model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "unknown class")
 }
 
@@ -306,7 +320,7 @@ type ResolverSuite struct {
 func (s *ResolverSuite) TestResolve_NilSpec_IncludesAll() {
 	model := buildTwoDomainModel()
 	resolved, err := Resolve(nil, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Should include all 3 classes (Order, Item, Payment).
 	s.Len(resolved.Classes, 3)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -318,7 +332,7 @@ func (s *ResolverSuite) TestResolve_EmptySpec_IncludesAll() {
 	model := buildTwoDomainModel()
 	spec := &SurfaceSpecification{}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(resolved.Classes, 3)
 }
 
@@ -328,7 +342,7 @@ func (s *ResolverSuite) TestResolve_IncludeDomain() {
 		IncludeDomains: []identity.Key{domainKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Only Order and Item from domain D.
 	s.Len(resolved.Classes, 2)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -342,7 +356,7 @@ func (s *ResolverSuite) TestResolve_IncludeSubdomain() {
 		IncludeSubdomains: []identity.Key{subdomain2Key},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Only Payment from subdomain s2.
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, paymentClassKey)
@@ -354,7 +368,7 @@ func (s *ResolverSuite) TestResolve_IncludeClass() {
 		IncludeClasses: []identity.Key{orderClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
 }
@@ -366,7 +380,7 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 		ExcludeClasses: []identity.Key{itemClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Domain D has Order + Item, exclude Item.
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -393,7 +407,7 @@ func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
 	}
 
 	resolved, err := Resolve(nil, &model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Stateless class should be filtered out.
 	s.Len(resolved.Classes, 1)
 	s.Contains(resolved.Classes, orderClassKey)
@@ -407,7 +421,7 @@ func (s *ResolverSuite) TestResolve_AssociationsBothEndpointsInScope() {
 		IncludeDomains: []identity.Key{domainKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Len(resolved.Associations, 1)
 	for _, assoc := range resolved.Associations {
 		s.Equal("order_items", assoc.Name)
@@ -421,10 +435,10 @@ func (s *ResolverSuite) TestResolve_AssociationOneEndpointExcluded() {
 		IncludeClasses: []identity.Key{orderClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
-	s.Len(resolved.Associations, 0)
+	s.Require().NoError(err)
+	s.Empty(resolved.Associations)
 	// Should produce a warning about the dropped association.
-	s.True(len(resolved.Warnings) > 0)
+	s.NotEmpty(resolved.Warnings)
 	foundWarning := false
 	for _, w := range resolved.Warnings {
 		if contains(w, "dropped") {
@@ -447,7 +461,7 @@ func (s *ResolverSuite) TestResolve_RealizedDomainExcluded() {
 		IncludeDomains: []identity.Key{domainKey, domain2Key},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Payment should not be included (realized domain).
 	s.NotContains(resolved.Classes, paymentClassKey)
 	// Should produce a warning about realized domain.
@@ -480,7 +494,7 @@ func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 	}
 
 	_, err := Resolve(nil, &model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "no simulatable classes")
 }
 
@@ -490,7 +504,7 @@ func (s *ResolverSuite) TestResolve_InvalidSpec_Error() {
 		IncludeDomains: []identity.Key{mustKey("domain/nonexistent")},
 	}
 	_, err := Resolve(spec, model)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "validation")
 }
 
@@ -498,14 +512,14 @@ func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 	// Build a model with two domains so Payment is a known class.
 	model2 := buildTwoDomainModel()
 	model2.Invariants = []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", parsedSpec("Payment.count > 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", parsedSpec("Payment.count > 0", "Payment"), nil)),
 	}
 	spec2 := &SurfaceSpecification{
 		IncludeDomains: []identity.Key{domainKey},
 	}
 	resolved2, err := Resolve(spec2, model2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// Only "Order.count > 0" should be included.
 	s.Len(resolved2.ModelInvariants, 1)
 	s.Equal("Order.count > 0", resolved2.ModelInvariants[0].Spec.Specification)
@@ -519,7 +533,7 @@ func (s *ResolverSuite) TestResolve_MultipleIncludes() {
 		IncludeClasses:    []identity.Key{paymentClassKey},
 	}
 	resolved, err := Resolve(spec, model)
-	s.NoError(err)
+	s.Require().NoError(err)
 	// All 3 classes should be included.
 	s.Len(resolved.Classes, 3)
 }
@@ -538,19 +552,19 @@ type InvariantScopingSuite struct {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0", "Item"), nil)),
 	}
 	inScope := map[string]bool{"Order": true, "Item": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
 	s.Len(included, 2)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -558,13 +572,13 @@ func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 	// It only filters if the identifier matches a class name that's NOT in scope.
 	// Without the allClassNames context, it can't tell.
 	s.Len(included, 2)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -572,48 +586,48 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfSc
 	s.Len(included, 1)
 	s.Equal("Order.count > 0", included[0].Spec.Specification)
 	s.Len(excluded, 1)
-	s.Equal("Payment.count >= 0", excluded[0].Spec.Specification)
+	s.Equal("Payment.count ≥ 0", excluded[0].Spec.Specification)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_KeepsNonClassIdentifiers() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("x + y > 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("x + y > 0", "x", "y"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
 	// "x" and "y" are not known class names, so this invariant stays.
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_EmptyInvariants() {
 	included, excluded := ScopeInvariantsWithAllClasses(nil, map[string]bool{}, map[string]bool{})
-	s.Len(included, 0)
-	s.Len(excluded, 0)
+	s.Empty(included)
+	s.Empty(excluded)
 }
 
-func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_UnparseableInvariant() {
+func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_NilExpressionInvariant() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("!!@@## invalid TLA+"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", emptySpec(), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
-	// Unparseable invariants should be kept (fail-open).
+	// Invariants with nil IR should be kept (fail-open).
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
 	s.Len(included, 1)
-	s.Len(excluded, 0)
+	s.Empty(excluded)
 }
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassReferences() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0 /\\ Payment.count > 0"), nil)),
+		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0 /\\ Payment.count > 0", "Order", "Payment"), nil)),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
 	// References Payment which is out of scope.
 	included, excluded := ScopeInvariantsWithAllClasses(invariants, inScope, allClasses)
-	s.Len(included, 0)
+	s.Empty(included)
 	s.Len(excluded, 1)
 }
 
@@ -637,11 +651,11 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations:    map[identity.Key]model_class.Association{},
-		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0"), nil))},
+		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil))},
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotNil(filtered)
 
 	// Count total classes in filtered model.
@@ -670,7 +684,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_ExcludesFilteredClasses() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Count total classes — should be 1.
 	totalClasses := 0
@@ -691,13 +705,13 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", orderClassKey, helper.Must(model_class.NewMultiplicity("any")), itemClassKey, helper.Must(model_class.NewMultiplicity("any")), nil, "")),
+			assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Count associations at all levels.
 	totalAssocs := len(filtered.ClassAssociations)
@@ -724,7 +738,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_PreservesModelMetadata() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("original_key", filtered.Key)
 	s.Equal("Original Name", filtered.Name)
 }
@@ -741,7 +755,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_EmptyDomainsOmitted() {
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	// Domain D should have no classes in its subdomain.
 	// Check that domain2 has Payment.
@@ -952,7 +966,7 @@ func (s *DiagnosticsSuite) TestDiagnose_NoDiagnosticsForHealthySurface() {
 	}
 
 	diagnostics := Diagnose(resolved, model, nil)
-	s.Len(diagnostics, 0, "expected no diagnostics for a healthy surface, got: %v", diagnostics)
+	s.Empty(diagnostics, "expected no diagnostics for a healthy surface, got: %v", diagnostics)
 }
 
 // ============================================================

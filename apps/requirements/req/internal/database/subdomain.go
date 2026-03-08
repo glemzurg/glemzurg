@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -42,9 +43,8 @@ func scanSubdomain(scanner Scanner, domainKeyPtr *identity.Key, subdomain *model
 	return nil
 }
 
-// LoadSubdomain loads a subdomain from the database
+// LoadSubdomain loads a subdomain from the database.
 func LoadSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (domainKey identity.Key, subdomain model_domain.Subdomain, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -84,9 +84,8 @@ func AddSubdomain(dbOrTx DbOrTx, modelKey string, domainKey identity.Key, subdom
 
 // UpdateSubdomain updates a subdomain in the database.
 func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subdomain) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			subdomain
 		SET
@@ -111,9 +110,8 @@ func UpdateSubdomain(dbOrTx DbOrTx, modelKey string, subdomain model_domain.Subd
 
 // RemoveSubdomain deletes a subdomain from the database.
 func RemoveSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				subdomain
 			WHERE
@@ -129,9 +127,8 @@ func RemoveSubdomain(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key) 
 	return nil
 }
 
-// QuerySubdomains loads all subdomains from the database
+// QuerySubdomains loads all subdomains from the database.
 func QuerySubdomains(dbOrTx DbOrTx, modelKey string) (subdomains map[identity.Key][]model_domain.Subdomain, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -180,22 +177,24 @@ func AddSubdomains(dbOrTx DbOrTx, modelKey string, subdomains map[identity.Key][
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*6)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO subdomain (model_key, domain_key, subdomain_key, name, details, uml_comment) VALUES `)
+	args := make([]any, 0, count*6)
 	i := 0
 	for domainKey, subs := range subdomains {
 		for _, subdomain := range subs {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 6
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
+
 			args = append(args, modelKey, domainKey.String(), subdomain.Key.String(), subdomain.Name, subdomain.Details, subdomain.UmlComment)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,7 +34,6 @@ type GuardSuite struct {
 }
 
 func (suite *GuardSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -54,14 +53,13 @@ func (suite *GuardSuite) SetupTest() {
 }
 
 func (suite *GuardSuite) TestLoad() {
-
 	// Nothing in database yet.
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), guard)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(classKey)
+	suite.Empty(guard)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO guard
 			(
 				model_key,
@@ -77,76 +75,72 @@ func (suite *GuardSuite) TestLoad() {
 				'Name'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err = LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Guard{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
 	}, guard)
 }
 
 func (suite *GuardSuite) TestAdd() {
-
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Guard{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
 	}, guard)
 }
 
 func (suite *GuardSuite) TestUpdate() {
-
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "NameX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), suite.class.Key, classKey)
-	assert.Equal(suite.T(), model_state.Guard{
+	suite.Require().NoError(err)
+	suite.Equal(suite.class.Key, classKey)
+	suite.Equal(model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "NameX",
 	}, guard)
 }
 
 func (suite *GuardSuite) TestRemove() {
-
 	err := AddGuard(suite.db, suite.model.Key, suite.class.Key, model_state.Guard{
 		Key:  suite.guardKey,
 		Name: "Name",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveGuard(suite.db, suite.model.Key, suite.class.Key, suite.guardKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	classKey, guard, err := LoadGuard(suite.db, suite.model.Key, suite.guardKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), classKey)
-	assert.Empty(suite.T(), guard)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(classKey)
+	suite.Empty(guard)
 }
 
 func (suite *GuardSuite) TestQuery() {
-
 	err := AddGuards(suite.db, suite.model.Key, map[identity.Key][]model_state.Guard{
 		suite.class.Key: {
 			{
@@ -159,11 +153,11 @@ func (suite *GuardSuite) TestQuery() {
 			},
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	guards, err := QueryGuards(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), map[identity.Key][]model_state.Guard{
+	suite.Require().NoError(err)
+	suite.Equal(map[identity.Key][]model_state.Guard{
 		suite.class.Key: {
 			{
 				Key:  suite.guardKey,
@@ -182,7 +176,6 @@ func (suite *GuardSuite) TestQuery() {
 //==================================================
 
 func t_AddGuard(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey identity.Key) (guard model_state.Guard) {
-
 	// Logic row must exist before guard (FK constraint).
 	t_AddLogic(t, dbOrTx, modelKey, guardKey)
 
@@ -190,10 +183,10 @@ func t_AddGuard(t *testing.T, dbOrTx DbOrTx, modelKey string, classKey identity.
 		Key:  guardKey,
 		Name: guardKey.String(),
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	_, guard, err = LoadGuard(dbOrTx, modelKey, guardKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return guard
 }

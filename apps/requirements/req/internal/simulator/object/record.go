@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 )
@@ -89,9 +90,7 @@ func (r *Record) FieldNames() []string {
 // Fields returns a copy of the fields map.
 func (r *Record) Fields() map[string]Object {
 	result := make(map[string]Object)
-	for name, val := range r.fields {
-		result[name] = val
-	}
+	maps.Copy(result, r.fields)
 	return result
 }
 

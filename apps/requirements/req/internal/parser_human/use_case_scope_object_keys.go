@@ -18,92 +18,100 @@ func scopeObjectKeys(scenarioKey identity.Key, subdomainKey identity.Key, data m
 }
 
 func scopeObjectKeysRecursive(scenarioKey identity.Key, subdomainKey identity.Key, data map[string]any) error {
-	// Handle from_object_key
-	if fromKey, ok := data["from_object_key"]; ok {
-		if fromKeyStr, ok := fromKey.(string); ok {
-			fullKey, err := identity.NewScenarioObjectKey(scenarioKey, fromKeyStr)
-			if err != nil {
+	// Scope object keys (from_object_key, to_object_key).
+	if err := scopeObjectKeyField(data, "from_object_key", scenarioKey); err != nil {
+		return err
+	}
+	if err := scopeObjectKeyField(data, "to_object_key", scenarioKey); err != nil {
+		return err
+	}
+
+	// Scope domain-relative keys (attribute_key, event_key, query_key, scenario_key).
+	if err := scopeExpandableKeyField(data, "attribute_key", func(s string) (identity.Key, error) {
+		return expandAttributeKey(subdomainKey, s)
+	}); err != nil {
+		return err
+	}
+	if err := scopeExpandableKeyField(data, "event_key", func(s string) (identity.Key, error) {
+		return expandEventKey(subdomainKey, s)
+	}); err != nil {
+		return err
+	}
+	if err := scopeExpandableKeyField(data, "query_key", func(s string) (identity.Key, error) {
+		return expandQueryKey(subdomainKey, s)
+	}); err != nil {
+		return err
+	}
+	if err := scopeExpandableKeyField(data, "scenario_key", func(s string) (identity.Key, error) {
+		return expandScenarioKey(subdomainKey, scenarioKey, s)
+	}); err != nil {
+		return err
+	}
+
+	// Recursively process statements.
+	return scopeStatements(scenarioKey, subdomainKey, data)
+}
+
+// scopeObjectKeyField expands a short object key field to a fully qualified scenario object key.
+func scopeObjectKeyField(data map[string]any, field string, scenarioKey identity.Key) error {
+	val, ok := data[field]
+	if !ok {
+		return nil
+	}
+	valStr, ok := val.(string)
+	if !ok {
+		return nil
+	}
+	fullKey, err := identity.NewScenarioObjectKey(scenarioKey, valStr)
+	if err != nil {
+		return err
+	}
+	data[field] = fullKey.String()
+	return nil
+}
+
+// scopeExpandableKeyField expands a short key field using the provided expand function.
+func scopeExpandableKeyField(data map[string]any, field string, expand func(string) (identity.Key, error)) error {
+	val, ok := data[field]
+	if !ok {
+		return nil
+	}
+	valStr, ok := val.(string)
+	if !ok {
+		return nil
+	}
+	fullKey, err := expand(valStr)
+	if err != nil {
+		return err
+	}
+	data[field] = fullKey.String()
+	return nil
+}
+
+// scopeStatements recursively processes the statements field.
+func scopeStatements(scenarioKey, subdomainKey identity.Key, data map[string]any) error {
+	statements, ok := data["statements"]
+	if !ok {
+		return nil
+	}
+	stmtSlice, ok := statements.([]any)
+	if !ok {
+		return nil
+	}
+	for _, stmt := range stmtSlice {
+		if stmtMap, ok := stmt.(map[string]any); ok {
+			if err := scopeObjectKeysRecursive(scenarioKey, subdomainKey, stmtMap); err != nil {
 				return err
 			}
-			data["from_object_key"] = fullKey.String()
 		}
 	}
-
-	// Handle to_object_key
-	if toKey, ok := data["to_object_key"]; ok {
-		if toKeyStr, ok := toKey.(string); ok {
-			fullKey, err := identity.NewScenarioObjectKey(scenarioKey, toKeyStr)
-			if err != nil {
-				return err
-			}
-			data["to_object_key"] = fullKey.String()
-		}
-	}
-
-	// Handle attribute_key (format: "subdomain/class/attribute" or "class/attribute")
-	if attrKey, ok := data["attribute_key"]; ok {
-		if attrKeyStr, ok := attrKey.(string); ok {
-			fullKey, err := expandAttributeKey(subdomainKey, attrKeyStr)
-			if err != nil {
-				return err
-			}
-			data["attribute_key"] = fullKey.String()
-		}
-	}
-
-	// Handle event_key (format: "subdomain/class/event/eventname" or "class/event/eventname")
-	if eventKey, ok := data["event_key"]; ok {
-		if eventKeyStr, ok := eventKey.(string); ok {
-			fullKey, err := expandEventKey(subdomainKey, eventKeyStr)
-			if err != nil {
-				return err
-			}
-			data["event_key"] = fullKey.String()
-		}
-	}
-
-	// Handle query_key (format: "class/query/queryname" or "domainFolder/class/query/queryname")
-	if queryKey, ok := data["query_key"]; ok {
-		if queryKeyStr, ok := queryKey.(string); ok {
-			fullKey, err := expandQueryKey(subdomainKey, queryKeyStr)
-			if err != nil {
-				return err
-			}
-			data["query_key"] = fullKey.String()
-		}
-	}
-
-	// Handle scenario_key (format: "scenarioName" for same use case, or "useCase/scenario/scenarioName")
-	if scenarioKeyVal, ok := data["scenario_key"]; ok {
-		if scenarioKeyStr, ok := scenarioKeyVal.(string); ok {
-			fullKey, err := expandScenarioKey(subdomainKey, scenarioKey, scenarioKeyStr)
-			if err != nil {
-				return err
-			}
-			data["scenario_key"] = fullKey.String()
-		}
-	}
-
-	// Recursively process statements
-	if statements, ok := data["statements"]; ok {
-		if stmtSlice, ok := statements.([]any); ok {
-			for _, stmt := range stmtSlice {
-				if stmtMap, ok := stmt.(map[string]any); ok {
-					if err := scopeObjectKeysRecursive(scenarioKey, subdomainKey, stmtMap); err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
 // expandAttributeKey converts a short attribute key format to a full identity key.
 // Supported formats:
 // - "class/attribute" - uses the provided subdomain
-// - "domainFolder/class/attribute" - the domainFolder is ignored, uses the current subdomain
+// - "domainFolder/class/attribute" - the domainFolder is ignored, uses the current subdomain.
 func expandAttributeKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -143,7 +151,7 @@ func expandAttributeKey(subdomainKey identity.Key, shortKey string) (identity.Ke
 // when only a bare scenario name is given).
 // Supported formats:
 // - "scenarioName" - same use case as the current scenario (preferred)
-// - "useCase/scenario/scenarioName" - explicit form
+// - "useCase/scenario/scenarioName" - explicit form.
 func expandScenarioKey(subdomainKey identity.Key, scenarioKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -176,7 +184,7 @@ func expandScenarioKey(subdomainKey identity.Key, scenarioKey identity.Key, shor
 // expandEventKey converts a short event key format to a full identity key.
 // Supported formats:
 // - "class/eventname" - compact form (preferred)
-// - "class/event/eventname" - explicit form
+// - "class/event/eventname" - explicit form.
 func expandEventKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 
@@ -212,7 +220,7 @@ func expandEventKey(subdomainKey identity.Key, shortKey string) (identity.Key, e
 // expandQueryKey converts a short query key format to a full identity key.
 // Supported formats:
 // - "class/queryname" - compact form (preferred)
-// - "class/query/queryname" - explicit form
+// - "class/query/queryname" - explicit form.
 func expandQueryKey(subdomainKey identity.Key, shortKey string) (identity.Key, error) {
 	parts := strings.Split(shortKey, "/")
 

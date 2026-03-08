@@ -1,12 +1,13 @@
 package invariants
 
 import (
+	"slices"
 	"sort"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
 )
@@ -62,7 +63,7 @@ func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 				for num := range indexGroups {
 					indexNums = append(indexNums, num)
 				}
-				sort.Slice(indexNums, func(i, j int) bool { return indexNums[i] < indexNums[j] })
+				slices.Sort(indexNums)
 
 				for _, indexNum := range indexNums {
 					attrs := indexGroups[indexNum]
@@ -90,8 +91,8 @@ func NewIndexUniquenessChecker(model *core.Model) *IndexUniquenessChecker {
 }
 
 // CheckState validates all instances in a simulation state for index uniqueness.
-func (c *IndexUniquenessChecker) CheckState(simState *state.SimulationState) ViolationList {
-	var violations ViolationList
+func (c *IndexUniquenessChecker) CheckState(simState *state.SimulationState) ViolationErrors {
+	var violations ViolationErrors
 
 	for classKey, indexInfo := range c.classIndexes {
 		instances := simState.InstancesByClass(classKey)
@@ -109,8 +110,8 @@ func (c *IndexUniquenessChecker) CheckClassInstances(
 	classKey identity.Key,
 	instances []*state.ClassInstance,
 	indexInfo *ClassIndexInfo,
-) ViolationList {
-	var violations ViolationList
+) ViolationErrors {
+	var violations ViolationErrors
 
 	for _, indexDef := range indexInfo.Indexes {
 		seen := make(map[string]state.InstanceID)

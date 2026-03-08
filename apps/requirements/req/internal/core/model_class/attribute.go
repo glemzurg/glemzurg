@@ -3,9 +3,9 @@ package model_class
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Attribute is a member of a class.
@@ -23,8 +23,13 @@ type Attribute struct {
 	Invariants []model_logic.Logic       // Invariants that must hold for this attribute's value.
 }
 
-func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, umlComment string, indexNums []uint) (attribute Attribute, err error) {
+// AttributeAnnotations holds optional annotation data for an attribute.
+type AttributeAnnotations struct {
+	UmlComment string
+	IndexNums  []uint
+}
 
+func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivationPolicy *model_logic.Logic, nullable bool, annotations AttributeAnnotations) (attribute Attribute, err error) {
 	attribute = Attribute{
 		Key:              key,
 		Name:             name,
@@ -32,13 +37,12 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 		DataTypeRules:    dataTypeRules,
 		DerivationPolicy: derivationPolicy,
 		Nullable:         nullable,
-		UmlComment:       umlComment,
-		IndexNums:        indexNums,
+		UmlComment:       annotations.UmlComment,
+		IndexNums:        annotations.IndexNums,
 	}
 
 	// Parse the data type rules into a DataType object if possible.
 	if attribute.DataTypeRules != "" {
-
 		// Use the attribute key as the key of this data type.
 		dataTypeKey := attribute.Key.String()
 		parsedDataType, err := model_data_type.New(dataTypeKey, attribute.DataTypeRules, nil)
@@ -67,7 +71,7 @@ func (a *Attribute) Validate() error {
 		return err
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ATTRIBUTE {
-		return errors.Errorf("Key: invalid key type '%s' for attribute.", a.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for attribute", a.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required).

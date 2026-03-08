@@ -65,7 +65,7 @@ func (s *RoundTripTestSuite) TestRoundTrip() {
 
 	for _, input := range tests {
 		expr, err := ParseExpression(input)
-		s.NoError(err, "parsing %q", input)
+		s.Require().NoError(err, "parsing %q", input)
 		s.Equal(input, expr.String(), "round-trip failed for %q", input)
 	}
 }
@@ -92,7 +92,7 @@ func (s *RoundTripTestSuite) TestArithmeticStringOutput() {
 
 	for _, tt := range tests {
 		expr, err := ParseExpression(tt.input)
-		s.NoError(err, "parsing %q", tt.input)
+		s.Require().NoError(err, "parsing %q", tt.input)
 		s.Equal(tt.expected, expr.String(), "string output failed for %q", tt.input)
 	}
 }

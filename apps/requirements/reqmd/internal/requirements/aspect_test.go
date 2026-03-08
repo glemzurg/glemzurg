@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,8 +23,8 @@ type AspectSuite struct {
 func (suite *AspectSuite) TestNew() {
 
 	aspect, err := newAspect("name", "value")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), Aspect{
+	suite.Require().NoError(err)
+	suite.Equal(Aspect{
 		name:  "name",
 		value: "value",
 	}, aspect)
@@ -38,30 +37,30 @@ func (suite *AspectSuite) TestNew() {
 func (suite *AspectSuite) TestValuePadWidth() {
 
 	aspect, err := newAspect("name", "#value")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), uint(0), aspect.valuePadWidth())
+	suite.Require().NoError(err)
+	suite.Equal(uint(0), aspect.valuePadWidth())
 
 	aspect, err = newAspect("name", "&*1value")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), uint(1), aspect.valuePadWidth())
+	suite.Require().NoError(err)
+	suite.Equal(uint(1), aspect.valuePadWidth())
 
 	aspect, err = newAspect("name", "23value")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), uint(2), aspect.valuePadWidth())
+	suite.Require().NoError(err)
+	suite.Equal(uint(2), aspect.valuePadWidth())
 
 	aspect, err = newAspect("name", "456value")
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), uint(3), aspect.valuePadWidth())
+	suite.Require().NoError(err)
+	suite.Equal(uint(3), aspect.valuePadWidth())
 }
 
 func (suite *AspectSuite) TestSetSortValue() {
 
 	aspect, err := newAspect("name", "1value")
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	aspect.SetSortValue(3)
 
-	assert.Equal(suite.T(), Aspect{
+	suite.Equal(Aspect{
 		name:      "name",
 		value:     "1value",
 		sortValue: "001value",
@@ -252,7 +251,7 @@ func (suite *AspectSuite) TestCreateSortValue() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		sortValue := createSortValue(test.padWidth, test.value)
-		assert.Equal(suite.T(), test.sortValue, sortValue, testName)
+		suite.Equal(test.sortValue, sortValue, testName)
 	}
 }
 
@@ -302,7 +301,7 @@ func (suite *AspectSuite) TestIsAspectHeader() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		isHeader := isAspectHeader(test.textline)
-		assert.Equal(suite.T(), test.isHeader, isHeader, testName)
+		suite.Equal(test.isHeader, isHeader, testName)
 	}
 }
 
@@ -356,7 +355,7 @@ func (suite *AspectSuite) TestIsAspectHeaderLine() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		isHeaderLine := isAspectHeaderLine(test.textline)
-		assert.Equal(suite.T(), test.isHeaderLine, isHeaderLine, testName)
+		suite.Equal(test.isHeaderLine, isHeaderLine, testName)
 	}
 }
 
@@ -428,9 +427,9 @@ func (suite *AspectSuite) TestIsAspectValue() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		aspect, value, isValue := parseAspectValue(test.textline)
-		assert.Equal(suite.T(), test.aspect, aspect, testName)
-		assert.Equal(suite.T(), test.value, value, testName)
-		assert.Equal(suite.T(), test.isValue, isValue, testName)
+		suite.Equal(test.aspect, aspect, testName)
+		suite.Equal(test.value, value, testName)
+		suite.Equal(test.isValue, isValue, testName)
 	}
 }
 
@@ -576,9 +575,9 @@ more stuff`,
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		updated, aspects, err := extractAspects(test.body)
-		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.updated, updated, testName)
-		assert.Equal(suite.T(), test.aspects, aspects, testName)
+		suite.Require().NoError(err, testName)
+		suite.Equal(test.updated, updated, testName)
+		suite.Equal(test.aspects, aspects, testName)
 	}
 }
 
@@ -666,7 +665,7 @@ func (suite *FileParsedSuite) TestGenerateAspectBlock() {
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
 		block, err := generateAspectBlock(test.order, test.aspects)
-		assert.Nil(suite.T(), err, testName)
-		assert.Equal(suite.T(), test.block, block, testName)
+		suite.Require().NoError(err, testName)
+		suite.Equal(test.block, block, testName)
 	}
 }

@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -35,7 +36,6 @@ func scanQueryRequire(scanner Scanner, queryKeyPtr *identity.Key, logicKeyPtr *i
 
 // LoadQueryRequire loads a query require join row from the database.
 func LoadQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (key identity.Key, err error) {
-
 	var loadedQueryKey identity.Key
 
 	err = dbQueryRow(
@@ -77,8 +77,7 @@ func AddQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logi
 
 // RemoveQueryRequire deletes a query require join row from the database.
 func RemoveQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			query_require
 		WHERE
@@ -99,7 +98,6 @@ func RemoveQueryRequire(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, l
 
 // QueryQueryRequires loads all query require logic keys from the database, grouped by query key.
 func QueryQueryRequires(dbOrTx DbOrTx, modelKey string) (requires map[identity.Key][]identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -144,22 +142,23 @@ func AddQueryRequires(dbOrTx DbOrTx, modelKey string, requires map[identity.Key]
 		return nil
 	}
 
-	query := `INSERT INTO query_require (model_key, query_key, logic_key) VALUES `
-	args := make([]interface{}, 0, count*3)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO query_require (model_key, query_key, logic_key) VALUES `)
+	args := make([]any, 0, count*3)
 	i := 0
 	for queryKey, logicKeys := range requires {
 		for _, logicKey := range logicKeys {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 3
-			query += fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d)", base+1, base+2, base+3))
 			args = append(args, modelKey, queryKey.String(), logicKey.String())
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -21,7 +21,6 @@ type Multiplicity struct {
 }
 
 func NewMultiplicity(value string) (multiplicity Multiplicity, err error) {
-
 	lowerBound, higherBound, err := parseMultiplicity(value)
 	if err != nil {
 		return Multiplicity{}, err
@@ -51,7 +50,6 @@ func (m *Multiplicity) Validate() error {
 }
 
 func (m *Multiplicity) String() string {
-
 	// No bounds?
 	if m.LowerBound == 0 && m.HigherBound == 0 {
 		return "*"
@@ -59,16 +57,16 @@ func (m *Multiplicity) String() string {
 
 	// No upper bound?
 	if m.HigherBound == 0 {
-		return strconv.Itoa(int(m.LowerBound)) + "..*" // format of "2..*"
+		return strconv.FormatUint(uint64(m.LowerBound), 10) + "..*" // format of "2..*"
 	}
 
 	// Same number?
 	if m.LowerBound == m.HigherBound {
-		return strconv.Itoa(int(m.LowerBound)) // format of "2"
+		return strconv.FormatUint(uint64(m.LowerBound), 10) // format of "2"
 	}
 
 	// Two numbers.
-	return strconv.Itoa(int(m.LowerBound)) + ".." + strconv.Itoa(int(m.HigherBound)) // format of "2..3"
+	return strconv.FormatUint(uint64(m.LowerBound), 10) + ".." + strconv.FormatUint(uint64(m.HigherBound), 10) // format of "2..3"
 }
 
 // The string that came from the parsed files, a bit different than what shows up in diagrams.
@@ -81,7 +79,6 @@ func (m *Multiplicity) ParsedString() (value string) {
 }
 
 func parseMultiplicity(multiplicity string) (lowerBound, higherBound uint, err error) {
-
 	// If any then there are no bounds.
 	if multiplicity == MULTIPLICITY_ANY {
 		return 0, 0, nil // Zeros are "any".

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// We only want to run the database tests occassionally because they're slower.
+// We only want to run the database tests occasionally because they're slower.
 var _runDatabaseTests = flag.Bool("dbtests", false, "Run database tests only if this flag is set")
 
 const (
@@ -21,7 +21,6 @@ const (
 // t_ResetDatabase reset the database between unit tests. If not called the test will use the normal database.
 // Return a database that is guaranteed to be a test database.
 func t_ResetDatabase(t *testing.T) (db *sql.DB) {
-
 	// Point to test database for any reset.
 	// This also sets up the test to work just with the test database.
 
@@ -52,14 +51,14 @@ func t_ResetDatabase(t *testing.T) (db *sql.DB) {
 	dropSchemaSql := string(dropContent)
 
 	// Drop the schema.
-	if _, err = dbExec(db, dropSchemaSql); err != nil {
+	if err = dbExec(db, dropSchemaSql); err != nil {
 		// Don't stop. This may be the first time and there is no schema.
 		// In addition this method, when custom types change will report a missing type.
 		fmt.Println("reset database:", err)
 	}
 
 	// Add the schema.
-	if _, err = dbExec(db, schemaSql); err != nil {
+	if err = dbExec(db, schemaSql); err != nil {
 		t.Fatal(err)
 	}
 

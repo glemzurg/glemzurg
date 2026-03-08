@@ -14,7 +14,7 @@ const (
 	_USER_TYPE_SYSTEM = "system"
 )
 
-// An actor is a external user of this sytem, either a person or another system.
+// An actor is an external user of this system, either a person or another system.
 type Actor struct {
 	Key             identity.Key
 	Name            string        `validate:"required"`
@@ -26,7 +26,6 @@ type Actor struct {
 }
 
 func NewActor(key identity.Key, name, details, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (actor Actor, err error) {
-
 	actor = Actor{
 		Key:             key,
 		Name:            name,
@@ -51,7 +50,7 @@ func (a *Actor) Validate() error {
 		return err
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ACTOR {
-		return errors.Errorf("Key: invalid key type '%s' for actor.", a.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for actor", a.Key.KeyType)
 	}
 
 	// Validate struct tags (Name required, Type required+oneof).
@@ -101,7 +100,7 @@ func (a *Actor) ValidateWithParent(parent *identity.Key) error {
 
 // ValidateReferences validates that the actor's reference keys point to valid entities.
 // - SuperclassOfKey must exist in the generalizations map
-// - SubclassOfKey must exist in the generalizations map
+// - SubclassOfKey must exist in the generalizations map.
 func (a *Actor) ValidateReferences(generalizations map[identity.Key]bool) error {
 	if a.SuperclassOfKey != nil {
 		if !generalizations[*a.SuperclassOfKey] {

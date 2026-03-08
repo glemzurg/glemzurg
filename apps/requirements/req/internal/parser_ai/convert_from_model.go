@@ -3,7 +3,6 @@ package parser_ai
 import (
 	"fmt"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
@@ -13,11 +12,12 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // ConvertFromModel converts a core.Model to an inputModel.
 // It first validates the source model, then performs the conversion.
-func ConvertFromModel(model *core.Model) (*inputModel, error) {
+func ConvertFromModel(model *core.Model) (*inputModel, error) { //nolint:revive // intentionally returns internal type
 	// Validate the source model
 	if err := model.Validate(); err != nil {
 		return nil, convErr(
@@ -40,56 +40,51 @@ func ConvertFromModel(model *core.Model) (*inputModel, error) {
 		ClassAssociations:    make(map[string]*inputClassAssociation),
 	}
 
-	// Convert actors
+	convertActorsFromModelToInput(model, result)
+	convertTopLevelCollectionsFromModel(model, result)
+	convertDomainsAndAssociationsFromModel(model, result)
+
+	return result, nil
+}
+
+// convertActorsFromModelToInput converts actors and actor generalizations from model to input.
+func convertActorsFromModelToInput(model *core.Model, result *inputModel) {
 	for key, actor := range model.Actors {
 		converted := convertActorFromModel(&actor)
 		result.Actors[key.SubKey] = converted
 	}
-
-	// Convert actor generalizations
 	for key, gen := range model.ActorGeneralizations {
 		converted := convertActorGeneralizationFromModel(&gen, model.Actors)
 		result.ActorGeneralizations[key.SubKey] = converted
 	}
+}
 
-	// Convert global functions (SubKey has underscore stripped, add it back)
+// convertTopLevelCollectionsFromModel converts global functions and named sets from model to input.
+func convertTopLevelCollectionsFromModel(model *core.Model, result *inputModel) {
 	for key, gf := range model.GlobalFunctions {
 		converted := convertGlobalFunctionFromModel(&gf)
 		result.GlobalFunctions["_"+key.SubKey] = converted
 	}
-
-	// Convert named sets
 	for key, ns := range model.NamedSets {
 		converted := convertNamedSetFromModel(&ns)
 		result.NamedSets[key.SubKey] = converted
 	}
+}
 
-	// Convert domains
+// convertDomainsAndAssociationsFromModel converts domains, domain associations, and class associations from model to input.
+func convertDomainsAndAssociationsFromModel(model *core.Model, result *inputModel) {
 	for key, domain := range model.Domains {
-		converted, err := convertDomainFromModel(&domain)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to convert domain '%s': %s", key.SubKey, err.Error()),
-				fmt.Sprintf("domains/%s/domain.json", key.SubKey),
-			)
-		}
+		converted := convertDomainFromModel(&domain)
 		result.Domains[key.SubKey] = converted
 	}
-
-	// Convert domain associations
 	for key, assoc := range model.DomainAssociations {
 		converted := convertDomainAssocFromModel(&assoc)
 		result.DomainAssociations[key.SubKey+"."+key.SubKey2] = converted
 	}
-
-	// Convert model-level class associations
 	for key, assoc := range model.ClassAssociations {
 		converted := convertAssociationFromModel(&assoc, "")
 		result.ClassAssociations[key.SubKey3] = converted
 	}
-
-	return result, nil
 }
 
 // convertActorFromModel converts a model_actor.Actor to an inputActor.
@@ -146,7 +141,7 @@ func convertDomainAssocFromModel(assoc *model_domain.Association) *inputDomainAs
 }
 
 // convertDomainFromModel converts a model_domain.Domain to an inputDomain.
-func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
+func convertDomainFromModel(domain *model_domain.Domain) *inputDomain {
 	result := &inputDomain{
 		Name:              domain.Name,
 		Details:           domain.Details,
@@ -158,14 +153,7 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 
 	// Convert subdomains
 	for key, subdomain := range domain.Subdomains {
-		converted, err := convertSubdomainFromModel(&subdomain, domain.Key)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to convert subdomain '%s': %s", key.SubKey, err.Error()),
-				fmt.Sprintf("domains/%s/subdomains/%s/subdomain.json", domain.Key.SubKey, key.SubKey),
-			)
-		}
+		converted := convertSubdomainFromModel(&subdomain)
 		result.Subdomains[key.SubKey] = converted
 	}
 
@@ -175,11 +163,11 @@ func convertDomainFromModel(domain *model_domain.Domain) (*inputDomain, error) {
 		result.ClassAssociations[key.SubKey3] = converted
 	}
 
-	return result, nil
+	return result
 }
 
 // convertSubdomainFromModel converts a model_domain.Subdomain to an inputSubdomain.
-func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey identity.Key) (*inputSubdomain, error) {
+func convertSubdomainFromModel(subdomain *model_domain.Subdomain) *inputSubdomain {
 	result := &inputSubdomain{
 		Name:                   subdomain.Name,
 		Details:                subdomain.Details,
@@ -194,14 +182,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 
 	// Convert classes
 	for key, class := range subdomain.Classes {
-		converted, err := convertClassFromModel(&class)
-		if err != nil {
-			return nil, convErr(
-				ErrConvKeyConstruction,
-				fmt.Sprintf("failed to convert class '%s': %s", key.SubKey, err.Error()),
-				fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey.SubKey, subdomain.Key.SubKey, key.SubKey),
-			)
-		}
+		converted := convertClassFromModel(&class)
 		result.Classes[key.SubKey] = converted
 	}
 
@@ -241,7 +222,7 @@ func convertSubdomainFromModel(subdomain *model_domain.Subdomain, domainKey iden
 		result.ClassAssociations[key.SubKey3] = converted
 	}
 
-	return result, nil
+	return result
 }
 
 // convertUseCaseFromModel converts a model_use_case.UseCase to an inputUseCase.
@@ -368,7 +349,7 @@ func convertUseCaseGeneralizationFromModel(gen *model_use_case.Generalization, u
 }
 
 // convertClassFromModel converts a model_class.Class to an inputClass.
-func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
+func convertClassFromModel(class *model_class.Class) *inputClass {
 	result := &inputClass{
 		Name:       class.Name,
 		Details:    class.Details,
@@ -398,7 +379,7 @@ func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
 		}
 	}
 	// Convert map to slice
-	for i := uint(0); i < uint(len(indexMap)); i++ {
+	for i := range uint(len(indexMap)) {
 		if attrs, ok := indexMap[i]; ok {
 			result.Indexes = append(result.Indexes, attrs)
 		}
@@ -424,7 +405,7 @@ func convertClassFromModel(class *model_class.Class) (*inputClass, error) {
 		result.Queries[key.SubKey] = converted
 	}
 
-	return result, nil
+	return result
 }
 
 // convertAttributeFromModel converts a model_class.Attribute to an inputAttribute.
@@ -727,7 +708,7 @@ func extractDomainScopedKey(classKey identity.Key) string {
 	// Parse to find subdomain and class
 	parts := splitKeyPath(keyStr)
 	var subdomainName, className string
-	for i := 0; i < len(parts)-1; i++ {
+	for i := range len(parts) - 1 {
 		if parts[i] == identity.KEY_TYPE_SUBDOMAIN && i+1 < len(parts) {
 			subdomainName = parts[i+1]
 		}
@@ -745,7 +726,7 @@ func extractModelScopedKey(classKey identity.Key) string {
 	keyStr := classKey.String()
 	parts := splitKeyPath(keyStr)
 	var domainName, subdomainName, className string
-	for i := 0; i < len(parts)-1; i++ {
+	for i := range len(parts) - 1 {
 		if parts[i] == identity.KEY_TYPE_DOMAIN && i+1 < len(parts) {
 			domainName = parts[i+1]
 		}

@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -42,9 +43,8 @@ func scanState(scanner Scanner, classKeyPtr *identity.Key, state *model_state.St
 	return nil
 }
 
-// LoadState loads a state from the database
+// LoadState loads a state from the database.
 func LoadState(dbOrTx DbOrTx, modelKey string, stateKey identity.Key) (classKey identity.Key, state model_state.State, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -84,9 +84,8 @@ func AddState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model
 
 // UpdateState updates a state in the database.
 func UpdateState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state model_state.State) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			state
 		SET
@@ -114,9 +113,8 @@ func UpdateState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, state mo
 
 // RemoveState deletes a state from the database.
 func RemoveState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			state
 		WHERE
@@ -135,9 +133,8 @@ func RemoveState(dbOrTx DbOrTx, modelKey string, classKey identity.Key, stateKey
 	return nil
 }
 
-// QueryStates loads all state from the database
+// QueryStates loads all state from the database.
 func QueryStates(dbOrTx DbOrTx, modelKey string) (states map[identity.Key][]model_state.State, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -186,22 +183,23 @@ func AddStates(dbOrTx DbOrTx, modelKey string, states map[identity.Key][]model_s
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO state (model_key, class_key, state_key, name, details, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*6)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO state (model_key, class_key, state_key, name, details, uml_comment) VALUES `)
+	args := make([]any, 0, count*6)
 	i := 0
 	for classKey, stateList := range states {
 		for _, state := range stateList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 6
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6))
 			args = append(args, modelKey, classKey.String(), state.Key.String(), state.Name, state.Details, state.UmlComment)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

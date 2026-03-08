@@ -7,12 +7,11 @@ import (
 	"io/fs"
 	"log"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
@@ -21,6 +20,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -34,11 +35,24 @@ type UseCaseShare struct {
 //go:embed templates/*
 var _templateFS embed.FS
 
-func init() {
+// _templateRegistry maps template filenames to pointers where the parsed templates should be stored.
+var _templateRegistry = map[string]**template.Template{
+	"model.md.template":        &_modelMdTemplate,
+	"actor.md.template":        &_actorMdTemplate,
+	"domain.md.template":       &_domainMdTemplate,
+	"domains.dot.template":     &_domainsDotTemplate,
+	"use_cases.dot.template":   &_useCasesDotTemplate,
+	"classes.dot.template":     &_classesDotTemplate,
+	"class.md.template":        &_classMdTemplate,
+	"class-state.dot.template": &_classStateDotTemplate,
+	"use_case.md.template":     &_useCaseMdTemplate,
+	"subdomain.md.template":    &_subdomainMdTemplate,
+	"subdomains.dot.template":  &_subdomainsDotTemplate,
+}
 
+func init() {
 	// Walk through the embedded file system to find and parse all .template files.
 	err := fs.WalkDir(_templateFS, "templates", func(path string, d fs.DirEntry, err error) error {
-
 		// Report any error walking into this path.
 		if err != nil {
 			return errors.WithStack(err)
@@ -54,55 +68,38 @@ func init() {
 			return nil
 		}
 
-		// Read from the embedded file system.
-		content, err := _templateFS.ReadFile(path)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		// Parse the template and add it to the set.
-		tmplName := filepath.Base(path)
-		tmpl, err := template.New(tmplName).Funcs(_funcMap).Parse(string(content))
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		log.Printf("Parsed template: %s", tmplName)
-
-		// Put the template into specific vars based on their use.
-		// So this must be exact.
-		switch tmplName {
-		case "model.md.template":
-			_modelMdTemplate = tmpl
-		case "actor.md.template":
-			_actorMdTemplate = tmpl
-		case "domain.md.template":
-			_domainMdTemplate = tmpl
-		case "domains.dot.template":
-			_domainsDotTemplate = tmpl
-		case "use_cases.dot.template":
-			_useCasesDotTemplate = tmpl
-		case "classes.dot.template":
-			_classesDotTemplate = tmpl
-		case "class.md.template":
-			_classMdTemplate = tmpl
-		case "class-state.dot.template":
-			_classStateDotTemplate = tmpl
-		case "use_case.md.template":
-			_useCaseMdTemplate = tmpl
-		case "subdomain.md.template":
-			_subdomainMdTemplate = tmpl
-		case "subdomains.dot.template":
-			_subdomainsDotTemplate = tmpl
-		default:
-			return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
-		}
-
-		return nil
+		return parseAndRegisterTemplate(path)
 	})
 	if err != nil {
 		log.Fatalf("Failed to parse templates: %+v", err)
 	}
+}
+
+// parseAndRegisterTemplate reads, parses, and registers a single template file.
+func parseAndRegisterTemplate(path string) error {
+	// Read from the embedded file system.
+	content, err := _templateFS.ReadFile(path)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	// Parse the template and add it to the set.
+	tmplName := filepath.Base(path)
+	tmpl, err := template.New(tmplName).Funcs(_funcMap).Parse(string(content))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	log.Printf("Parsed template: %s", tmplName)
+
+	// Register the template using the registry.
+	target, found := _templateRegistry[tmplName]
+	if !found {
+		return errors.WithStack(errors.Errorf(`unknown template filename: '%s'`, tmplName))
+	}
+	*target = tmpl
+
+	return nil
 }
 
 // The templates in the system.
@@ -146,9 +143,7 @@ var _funcMap = template.FuncMap{
 		}
 		return "__" + dataType.String() + "__"
 	},
-	"first_md_paragraph": func(md string) (paragraph string) {
-		return firstMdParagraph(md)
-	},
+	"first_md_paragraph": firstMdParagraph,
 	"first_md_sentence": func(md string) (paragraph string) {
 		return firstSentence(firstMdParagraph(md))
 	},
@@ -426,7 +421,7 @@ var _funcMap = template.FuncMap{
 		for num := range indexMap {
 			nums = append(nums, num)
 		}
-		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] })
+		slices.Sort(nums)
 		// Build sorted result.
 		for _, num := range nums {
 			names := indexMap[num]
@@ -439,7 +434,6 @@ var _funcMap = template.FuncMap{
 
 // Split multi-line bullets into sub bullets.
 func splitBulletTextIntoMainAndSubBullets(bulletText string) (mainBullet string, subBullets []string) {
-
 	// If the text we want to put in a bullet is multiple lines,
 	// every line after the first is a subbullet.
 
@@ -472,7 +466,6 @@ func convertKeyToFilename(objType, key, suffix, ext string) (filename string) {
 }
 
 func generateFromTemplate(template *template.Template, data any) (contents string, err error) {
-
 	// Create a buffer to hold the output.
 	var buf bytes.Buffer
 

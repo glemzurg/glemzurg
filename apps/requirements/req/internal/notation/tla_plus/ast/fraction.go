@@ -27,7 +27,7 @@ func (f *Fraction) String() string {
 	return out.String()
 }
 
-func (f *Fraction) Ascii() string {
+func (f *Fraction) ASCII() string {
 	return f.String()
 }
 
@@ -36,10 +36,10 @@ func (f *Fraction) Validate() error {
 		return err
 	}
 	if err := f.Numerator.Validate(); err != nil {
-		return fmt.Errorf("Numerator: %w", err)
+		return fmt.Errorf("numerator: %w", err)
 	}
 	if err := f.Denominator.Validate(); err != nil {
-		return fmt.Errorf("Denominator: %w", err)
+		return fmt.Errorf("denominator: %w", err)
 	}
 	return nil
 }
@@ -53,9 +53,11 @@ func NewFraction(numerator, denominator Expression) *Fraction {
 }
 
 // FractionExpr is an alias for backwards compatibility.
+//
 // Deprecated: Use Fraction instead.
 type FractionExpr = Fraction
 
 // NewFractionExpr is an alias for backwards compatibility.
+//
 // Deprecated: Use NewFraction instead.
 var NewFractionExpr = NewFraction

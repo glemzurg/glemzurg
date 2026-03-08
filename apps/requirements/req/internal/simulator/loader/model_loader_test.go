@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -84,7 +84,8 @@ func (s *ModelLoaderSuite) TestRoundTripWithDataTypeRules() {
 	model := buildTestModel(domainKey, subdomainKey, classKey, stateKey, eventKey, transKey)
 
 	// Add an attribute with a parseable DataTypeRules (enum format).
-	attr, err := model_class.NewAttribute(attrKey, "amount", "", "enum of small, medium, large", nil, false, "", nil)
+	attr, err := model_class.NewAttribute(attrKey, "amount", "", "enum of small, medium, large", nil, false,
+		model_class.AttributeAnnotations{})
 	s.Require().NoError(err)
 	s.Require().NotNil(attr.DataType, "enum DataTypeRules should parse successfully")
 
@@ -119,28 +120,28 @@ func (s *ModelLoaderSuite) TestRoundTripWithDataTypeRules() {
 
 func (s *ModelLoaderSuite) TestNonExistentFile() {
 	_, err := LoadModel("/nonexistent/path/model.json")
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "reading model file")
 }
 
 func (s *ModelLoaderSuite) TestInvalidJSON() {
 	path := filepath.Join(s.tempDir, "bad.json")
-	err := os.WriteFile(path, []byte("not json"), 0644)
+	err := os.WriteFile(path, []byte("not json"), 0600)
 	s.Require().NoError(err)
 
 	_, err = LoadModel(path)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "parsing model JSON")
 }
 
 func (s *ModelLoaderSuite) TestInvalidModel() {
 	// A model with no Key should fail validation.
 	path := filepath.Join(s.tempDir, "invalid.json")
-	err := os.WriteFile(path, []byte(`{"Name": "Test"}`), 0644)
+	err := os.WriteFile(path, []byte(`{"Name": "Test"}`), 0600)
 	s.Require().NoError(err)
 
 	_, err = LoadModel(path)
-	s.Error(err)
+	s.Require().Error(err)
 	s.Contains(err.Error(), "validating model")
 }
 

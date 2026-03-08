@@ -3,8 +3,8 @@ package model_state
 import (
 	"github.com/pkg/errors"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
 // Action is what happens in a transition between states.
@@ -20,7 +20,6 @@ type Action struct {
 }
 
 func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) (action Action, err error) {
-
 	action = Action{
 		Key:         key,
 		Name:        name,

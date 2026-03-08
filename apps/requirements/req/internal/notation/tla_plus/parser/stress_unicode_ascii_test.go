@@ -58,7 +58,7 @@ func (s *StressUnicodeAsciiTestSuite) TestMixedOperatorsInSingleExpression() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			_, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
+			s.Require().NoError(err, "should parse: %q (%s)", tt.input, tt.desc)
 		})
 	}
 }
@@ -113,7 +113,7 @@ func (s *StressUnicodeAsciiTestSuite) TestRoundTripASCIItoUnicode() {
 	for _, tt := range tests {
 		s.Run(tt.desc, func() {
 			expr, err := ParseExpression(tt.input)
-			s.NoError(err, "should parse: %q", tt.input)
+			s.Require().NoError(err, "should parse: %q", tt.input)
 			s.Equal(tt.expected, expr.String(), "String() should produce Unicode for %q", tt.input)
 		})
 	}
@@ -147,10 +147,10 @@ func (s *StressUnicodeAsciiTestSuite) TestUnicodeInputParsesIdentically() {
 	for _, tt := range pairs {
 		s.Run(tt.desc, func() {
 			asciiExpr, err := ParseExpression(tt.ascii)
-			s.NoError(err, "ASCII should parse: %q", tt.ascii)
+			s.Require().NoError(err, "ASCII should parse: %q", tt.ascii)
 
 			unicodeExpr, err := ParseExpression(tt.unicode)
-			s.NoError(err, "Unicode should parse: %q", tt.unicode)
+			s.Require().NoError(err, "Unicode should parse: %q", tt.unicode)
 
 			s.Equal(asciiExpr.String(), unicodeExpr.String(),
 				"ASCII %q and Unicode %q should produce identical String() output",

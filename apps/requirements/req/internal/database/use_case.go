@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -61,9 +62,8 @@ func scanUseCase(scanner Scanner, subdomainKeyPtr *identity.Key, useCase *model_
 	return nil
 }
 
-// LoadUseCase loads a use case from the database
+// LoadUseCase loads a use case from the database.
 func LoadUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (subdomainKey identity.Key, useCase model_use_case.UseCase, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -107,7 +107,6 @@ func AddUseCase(dbOrTx DbOrTx, modelKey string, subdomainKey identity.Key, useCa
 
 // UpdateUseCase updates a use case in the database.
 func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCase) (err error) {
-
 	// We may or may not have optional key pointers.
 	var superclassOfKeyPtr *string
 	if useCase.SuperclassOfKey != nil {
@@ -121,7 +120,7 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			use_case
 		SET
@@ -154,9 +153,8 @@ func UpdateUseCase(dbOrTx DbOrTx, modelKey string, useCase model_use_case.UseCas
 
 // RemoveUseCase deletes a use case from the database.
 func RemoveUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			use_case
 		WHERE
@@ -174,7 +172,6 @@ func RemoveUseCase(dbOrTx DbOrTx, modelKey string, useCaseKey identity.Key) (err
 
 // QueryUseCases loads all use cases from the database.
 func QueryUseCases(dbOrTx DbOrTx, modelKey string) (subdomainKeys map[identity.Key]identity.Key, useCases []model_use_case.UseCase, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -222,14 +219,15 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(useCases)*10)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO use_case (model_key, subdomain_key, use_case_key, name, details, level, read_only, superclass_of_key, subclass_of_key, uml_comment) VALUES `)
+	args := make([]any, 0, len(useCases)*10)
 	for i, uc := range useCases {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 10
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9, base+10))
 
 		// Handle optional key pointers.
 		var superclassOfKeyPtr, subclassOfKeyPtr *string
@@ -246,7 +244,7 @@ func AddUseCases(dbOrTx DbOrTx, modelKey string, subdomainKeys map[identity.Key]
 		args = append(args, modelKey, subdomainKey.String(), uc.Key.String(), uc.Name, uc.Details, uc.Level, uc.ReadOnly, superclassOfKeyPtr, subclassOfKeyPtr, uc.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

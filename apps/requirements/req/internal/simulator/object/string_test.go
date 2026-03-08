@@ -31,7 +31,7 @@ func (s *StringSuite) TestSetValue() {
 	source := NewString("hello")
 
 	err := str.SetValue(source)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.Equal("hello", str.Value())
 }
 
@@ -40,7 +40,7 @@ func (s *StringSuite) TestSetValueIncompatible() {
 	source := NewInteger(42)
 
 	err := str.SetValue(source)
-	s.Error(err)
+	s.Require().Error(err)
 }
 
 func (s *StringSuite) TestClone() {
@@ -53,4 +53,3 @@ func (s *StringSuite) TestClone() {
 	clone.value = "world"
 	s.Equal("hello", original.Value())
 }
-

@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,7 +31,6 @@ type ActorSuite struct {
 }
 
 func (suite *ActorSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -50,13 +49,12 @@ func (suite *ActorSuite) SetupTest() {
 }
 
 func (suite *ActorSuite) TestLoad() {
-
 	// Nothing in database yet.
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), actor)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(actor)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO actor
 			(
 				model_key,
@@ -80,11 +78,11 @@ func (suite *ActorSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err = LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -96,7 +94,6 @@ func (suite *ActorSuite) TestLoad() {
 }
 
 func (suite *ActorSuite) TestAdd() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -106,11 +103,11 @@ func (suite *ActorSuite) TestAdd() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -122,7 +119,6 @@ func (suite *ActorSuite) TestAdd() {
 }
 
 func (suite *ActorSuite) TestAddNulls() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -132,11 +128,11 @@ func (suite *ActorSuite) TestAddNulls() {
 		SubclassOfKey:   nil,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
 		Details:         "Details",
@@ -148,7 +144,6 @@ func (suite *ActorSuite) TestAddNulls() {
 }
 
 func (suite *ActorSuite) TestUpdate() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -158,7 +153,7 @@ func (suite *ActorSuite) TestUpdate() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
@@ -169,11 +164,11 @@ func (suite *ActorSuite) TestUpdate() {
 		SubclassOfKey:   &suite.actorGeneralizationKey,
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -185,7 +180,6 @@ func (suite *ActorSuite) TestUpdate() {
 }
 
 func (suite *ActorSuite) TestUpdateNulls() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -195,7 +189,7 @@ func (suite *ActorSuite) TestUpdateNulls() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
@@ -206,11 +200,11 @@ func (suite *ActorSuite) TestUpdateNulls() {
 		SubclassOfKey:   nil,
 		UmlComment:      "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Actor{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "NameX",
 		Details:         "DetailsX",
@@ -222,7 +216,6 @@ func (suite *ActorSuite) TestUpdateNulls() {
 }
 
 func (suite *ActorSuite) TestRemove() {
-
 	err := AddActor(suite.db, suite.model.Key, model_actor.Actor{
 		Key:             suite.actorKey,
 		Name:            "Name",
@@ -232,18 +225,17 @@ func (suite *ActorSuite) TestRemove() {
 		SubclassOfKey:   &suite.actorGeneralizationKeyB,
 		UmlComment:      "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actor, err := LoadActor(suite.db, suite.model.Key, suite.actorKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), actor)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(actor)
 }
 
 func (suite *ActorSuite) TestQuery() {
-
 	err := AddActors(suite.db, suite.model.Key, []model_actor.Actor{
 		{
 			Key:             suite.actorKeyB,
@@ -264,11 +256,11 @@ func (suite *ActorSuite) TestQuery() {
 			UmlComment:      "UmlComment",
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	actors, err := QueryActors(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_actor.Actor{
+	suite.Require().NoError(err)
+	suite.Equal([]model_actor.Actor{
 		{
 			Key:             suite.actorKey,
 			Name:            "Name",
@@ -295,7 +287,6 @@ func (suite *ActorSuite) TestQuery() {
 //==================================================
 
 func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey string, actorKey identity.Key) (actor model_actor.Actor) {
-
 	err := AddActor(dbOrTx, modelKey, model_actor.Actor{
 		Key:        actorKey,
 		Name:       actorKey.String(),
@@ -303,18 +294,17 @@ func t_AddActor(t *testing.T, dbOrTx DbOrTx, modelKey string, actorKey identity.
 		Type:       "person",
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	actor, err = LoadActor(dbOrTx, modelKey, actorKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return actor
 }
 
 func (suite *ActorSuite) TestVerifyTestObjects() {
-
 	actor := t_AddActor(suite.T(), suite.db, suite.model.Key, suite.actorKey)
-	assert.Equal(suite.T(), model_actor.Actor{
+	suite.Equal(model_actor.Actor{
 		Key:        suite.actorKey,
 		Name:       suite.actorKey.String(),
 		Details:    "Details",

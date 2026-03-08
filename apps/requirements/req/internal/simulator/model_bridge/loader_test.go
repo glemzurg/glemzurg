@@ -3,13 +3,14 @@ package model_bridge
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/registry"
 	"github.com/stretchr/testify/suite"
 )
@@ -66,14 +67,15 @@ func (s *LoaderTestSuite) TestLoadModelInvariants_Empty() {
 	s.Equal(0, result.Registry.Count())
 }
 
-func (s *LoaderTestSuite) TestLoadModelInvariants_ParseError() {
+func (s *LoaderTestSuite) TestLoadModelInvariants_NilExpression() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
 	invKey1, err := identity.NewInvariantKey("1")
 	s.Require().NoError(err)
 
 	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Always true.", "", parsedSpec("TRUE"), nil))
-	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "Invalid expression.", "", parsedSpec("THIS IS NOT VALID TLA+"), nil))
+	// Create a logic with no specification (will have nil Expression).
+	inv1 := helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil))
 
 	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0, inv1}, nil, nil))
 
@@ -93,7 +95,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions() {
 	gfuncKey, err := identity.NewGlobalFunctionKey("_Max")
 	s.Require().NoError(err)
 
-	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Max of two values.", "", parsedSpec("IF x > y THEN x ELSE y"), nil))
+	gfuncLogic := helper.Must(model_logic.NewLogic(gfuncKey, model_logic.LogicTypeValue, "Max of two values.", "", parsedSpec("IF x > y THEN x ELSE y", "x", "y"), nil))
 	gfunc := helper.Must(model_logic.NewGlobalFunction(gfuncKey, "_Max", []string{"x", "y"}, gfuncLogic))
 
 	globalFunctions := map[identity.Key]model_logic.GlobalFunction{
@@ -139,7 +141,7 @@ func (s *LoaderTestSuite) TestLoadGlobalFunctions_NoParams() {
 	def, ok := result.Registry.GetGlobal("_StatusSet")
 	s.True(ok)
 	s.NotNil(def)
-	s.Len(def.Parameters, 0)
+	s.Empty(def.Parameters)
 }
 
 // =============================================================================
@@ -391,17 +393,20 @@ func (s *LoaderTestSuite) TestLoadCombined() {
 // =============================================================================
 
 func (s *LoaderTestSuite) TestLoadFromExpressions() {
+	trueExpr := &me.BoolLiteral{Value: true}
+	falseExpr := &me.BoolLiteral{Value: false}
+
 	expressions := []ExtractedExpression{
 		{
 			Source:     SourceModelInvariant,
-			Expression: "TRUE",
+			Expression: trueExpr,
 			ScopeKey:   nil,
 			Name:       "",
 			Index:      0,
 		},
 		{
 			Source:     SourceModelInvariant,
-			Expression: "FALSE",
+			Expression: falseExpr,
 			ScopeKey:   nil,
 			Name:       "",
 			Index:      1,
@@ -423,14 +428,14 @@ func (s *LoaderTestSuite) TestLoadFromExpressions() {
 func (s *LoaderTestSuite) TestLoadIntoRegistry() {
 	// Create registry with existing definition
 	reg := registry.NewRegistry()
-	_, err := reg.RegisterGlobalFunction("Existing", nil, nil)
+	_, err := reg.RegisterGlobalFunction("Existing", &me.BoolLiteral{Value: true}, nil)
 	s.Require().NoError(err)
 	s.Equal(1, reg.Count())
 
 	expressions := []ExtractedExpression{
 		{
 			Source:     SourceModelInvariant,
-			Expression: "TRUE",
+			Expression: &me.BoolLiteral{Value: true},
 			ScopeKey:   nil,
 			Name:       "",
 			Index:      0,
@@ -460,22 +465,22 @@ func (s *LoaderTestSuite) TestLoadFromModelStrict_Success() {
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
 
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.False(result.HasErrors())
 	s.Equal(1, result.SuccessCount())
 }
 
-func (s *LoaderTestSuite) TestLoadFromModelStrict_Error() {
+func (s *LoaderTestSuite) TestLoadFromModelStrict_NilExpression() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Invalid syntax.", "", parsedSpec("INVALID SYNTAX HERE"), nil))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil))
 
 	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil))
 
 	loader := NewLoader()
 	result, err := loader.LoadFromModelStrict(&model)
 
-	s.Error(err)
+	s.Require().Error(err)
 	s.True(result.HasErrors())
 }
 
@@ -501,7 +506,7 @@ func (s *LoaderTestSuite) TestMustLoadFromModel_Success() {
 func (s *LoaderTestSuite) TestMustLoadFromModel_Panics() {
 	invKey0, err := identity.NewInvariantKey("0")
 	s.Require().NoError(err)
-	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "Invalid syntax.", "", parsedSpec("INVALID SYNTAX HERE"), nil))
+	inv0 := helper.Must(model_logic.NewLogic(invKey0, model_logic.LogicTypeAssessment, "No spec.", "", emptySpec(), nil))
 
 	model := helper.Must(core.NewModel("test_model", "Test Model", "", []model_logic.Logic{inv0}, nil, nil))
 
@@ -522,7 +527,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult() {
 
 	expr := ExtractedExpression{
 		Source:     SourceModelInvariant,
-		Expression: "TRUE",
+		Expression: &me.BoolLiteral{Value: true},
 		ScopeKey:   nil,
 		Name:       "",
 		Index:      0,
@@ -531,18 +536,18 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult() {
 	result := builder.Build(expr, reg)
 
 	s.True(result.IsSuccess())
-	s.Nil(result.Error)
+	s.Require().NoError(result.Error)
 	s.NotNil(result.Definition)
 	s.Equal(expr, result.Source)
 }
 
-func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult_Error() {
+func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult_NilExpression() {
 	builder := NewDefinitionBuilder()
 	reg := registry.NewRegistry()
 
 	expr := ExtractedExpression{
 		Source:     SourceModelInvariant,
-		Expression: "INVALID SYNTAX",
+		Expression: nil,
 		ScopeKey:   nil,
 		Name:       "",
 		Index:      0,
@@ -551,7 +556,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_BuildResult_Error() {
 	result := builder.Build(expr, reg)
 
 	s.False(result.IsSuccess())
-	s.NotNil(result.Error)
+	s.Require().Error(result.Error)
 	s.Nil(result.Definition)
 }
 
@@ -561,7 +566,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_UnsupportedSource() {
 
 	expr := ExtractedExpression{
 		Source:     ExpressionSource(99), // Invalid source
-		Expression: "TRUE",
+		Expression: &me.BoolLiteral{Value: true},
 		ScopeKey:   nil,
 		Name:       "",
 		Index:      0,
@@ -570,7 +575,7 @@ func (s *LoaderTestSuite) TestDefinitionBuilder_UnsupportedSource() {
 	result := builder.Build(expr, reg)
 
 	s.False(result.IsSuccess())
-	s.NotNil(result.Error)
+	s.Require().Error(result.Error)
 	s.Contains(result.Error.Error(), "unsupported expression source")
 }
 
@@ -593,11 +598,20 @@ func (s *LoaderTestSuite) TestGuaranteeClassification_PrimedAssignment() {
 
 	// Test primed assignment: self.status' = "shipped"
 	expr := ExtractedExpression{
-		Source:     SourceActionGuarantees,
-		Expression: `self.status' = "shipped"`,
-		ScopeKey:   &actionKey,
-		Name:       "UpdateStatus",
-		Index:      0,
+		Source: SourceActionGuarantees,
+		Expression: &me.Compare{
+			Left: &me.NextState{
+				Expr: &me.FieldAccess{
+					Base:  &me.SelfRef{},
+					Field: "status",
+				},
+			},
+			Op:    me.CompareEq,
+			Right: &me.StringLiteral{Value: "shipped"},
+		},
+		ScopeKey: &actionKey,
+		Name:     "UpdateStatus",
+		Index:    0,
 	}
 
 	result := builder.Build(expr, reg)
@@ -619,13 +633,17 @@ func (s *LoaderTestSuite) TestGuaranteeClassification_PostCondition() {
 	builder := NewDefinitionBuilder()
 	reg := registry.NewRegistry()
 
-	// Test post-condition: count' > count (a check that must be TRUE)
+	// Test post-condition: count > 0 (no primed variables on LHS of equality)
 	expr := ExtractedExpression{
-		Source:     SourceActionGuarantees,
-		Expression: `count' > count`,
-		ScopeKey:   &actionKey,
-		Name:       "UpdateCount",
-		Index:      0,
+		Source: SourceActionGuarantees,
+		Expression: &me.Compare{
+			Left:  &me.LocalVar{Name: "count"},
+			Op:    me.CompareGt,
+			Right: &me.IntLiteral{Value: big0()},
+		},
+		ScopeKey: &actionKey,
+		Name:     "UpdateCount",
+		Index:    0,
 	}
 
 	result := builder.Build(expr, reg)
@@ -650,7 +668,7 @@ func (s *LoaderTestSuite) TestGuaranteeClassification_SimpleTRUE() {
 	// Test simple TRUE (a trivial post-condition)
 	expr := ExtractedExpression{
 		Source:     SourceActionGuarantees,
-		Expression: `TRUE`,
+		Expression: &me.BoolLiteral{Value: true},
 		ScopeKey:   &actionKey,
 		Name:       "Noop",
 		Index:      0,
@@ -677,11 +695,15 @@ func (s *LoaderTestSuite) TestGuaranteeClassification_QueryResultPrimed() {
 
 	// Test query result assignment: result' = Orders
 	expr := ExtractedExpression{
-		Source:     SourceQueryGuarantees,
-		Expression: `result' = Orders`,
-		ScopeKey:   &queryKey,
-		Name:       "FindAll",
-		Index:      0,
+		Source: SourceQueryGuarantees,
+		Expression: &me.Compare{
+			Left:  &me.NextState{Expr: &me.LocalVar{Name: "result"}},
+			Op:    me.CompareEq,
+			Right: &me.LocalVar{Name: "Orders"},
+		},
+		ScopeKey: &queryKey,
+		Name:     "FindAll",
+		Index:    0,
 	}
 
 	result := builder.Build(expr, reg)

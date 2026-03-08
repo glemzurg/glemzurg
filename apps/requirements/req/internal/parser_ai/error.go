@@ -13,7 +13,7 @@ import (
 // altering input data.
 const InternalErrorPrefix = "INTERNAL ERROR: "
 
-// formatDocs is the cached content of JSON_AI_MODEL_FORMAT.md
+// formatDocs is the cached content of JSON_AI_MODEL_FORMAT.md.
 var formatDocs string
 
 func init() {

@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -153,17 +152,17 @@ func (suite *TupleInfixExpressionSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &TupleInfixExpression{
 				Operator: tt.operator,
 				Operands: tt.operands,
 			}
-			assert.Equal(t, tt.expected, expr.String())
+			suite.Equal(tt.expected, expr.String())
 		})
 	}
 }
 
-func (suite *TupleInfixExpressionSuite) TestAscii() {
+func (suite *TupleInfixExpressionSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -236,12 +235,12 @@ func (suite *TupleInfixExpressionSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			expr := &TupleInfixExpression{
 				Operator: tt.operator,
 				Operands: tt.operands,
 			}
-			assert.Equal(t, tt.expected, expr.Ascii())
+			suite.Equal(tt.expected, expr.ASCII())
 		})
 	}
 }
@@ -395,7 +394,7 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 					nil,
 				},
 			},
-			errstr: `Operands[1]`,
+			errstr: `operands[1]`,
 		},
 		{
 			testName: `error invalid operand element`,
@@ -418,12 +417,12 @@ func (suite *TupleInfixExpressionSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.t.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -447,4 +446,3 @@ func (suite *TupleInfixExpressionSuite) TestExpressionNode() {
 	}
 	t.expressionNode()
 }
-

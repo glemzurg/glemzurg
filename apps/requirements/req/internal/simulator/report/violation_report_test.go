@@ -35,7 +35,7 @@ func (s *ViolationReportSuite) TestEmptyViolations() {
 }
 
 func (s *ViolationReportSuite) TestTLAViolationsCategorized() {
-	violations := invariants.ViolationList{
+	violations := invariants.ViolationErrors{
 		invariants.NewModelInvariantViolation(0, "x > 0", "evaluated to FALSE"),
 		invariants.NewActionGuaranteeViolation(
 			mustKey("domain/d/subdomain/s/class/c/action/a"),
@@ -54,7 +54,7 @@ func (s *ViolationReportSuite) TestTLAViolationsCategorized() {
 
 func (s *ViolationReportSuite) TestDataTypeViolationsCategorized() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationList{
+	violations := invariants.ViolationErrors{
 		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
 		invariants.NewSpanConstraintViolation(1, classKey, "amount", "150", "[0, 100]"),
 	}
@@ -72,7 +72,7 @@ func (s *ViolationReportSuite) TestDataTypeViolationsCategorized() {
 
 func (s *ViolationReportSuite) TestLivenessViolationsCategorized() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationList{
+	violations := invariants.ViolationErrors{
 		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
 		invariants.NewLivenessAttributeNotWrittenViolation(classKey, "Order", "amount"),
 	}
@@ -87,11 +87,20 @@ func (s *ViolationReportSuite) TestLivenessViolationsCategorized() {
 
 func (s *ViolationReportSuite) TestMixedViolations() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationList{
+	violations := invariants.ViolationErrors{
 		invariants.NewModelInvariantViolation(0, "TRUE", "failed"),
 		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
 		invariants.NewLivenessClassNotInstantiatedViolation(classKey, "Order"),
-		invariants.NewMultiplicityViolation(1, classKey, "items", "to", 0, 1, 10, "too few"),
+		invariants.NewMultiplicityViolation(invariants.MultiplicityViolationParams{
+			InstanceID:      1,
+			ClassKey:        classKey,
+			AssociationName: "items",
+			Direction:       "to",
+			ActualCount:     0,
+			RequiredMin:     1,
+			RequiredMax:     10,
+			Message:         "too few",
+		}),
 	}
 
 	report := FromViolations(violations)
@@ -123,7 +132,7 @@ func (s *ViolationReportSuite) TestFormatTextEmpty() {
 }
 
 func (s *ViolationReportSuite) TestFormatTextWithViolations() {
-	violations := invariants.ViolationList{
+	violations := invariants.ViolationErrors{
 		invariants.NewModelInvariantViolation(0, "x > 0", "failed"),
 	}
 
@@ -137,7 +146,7 @@ func (s *ViolationReportSuite) TestFormatTextWithViolations() {
 
 func (s *ViolationReportSuite) TestFormatJSONRoundTrip() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
-	violations := invariants.ViolationList{
+	violations := invariants.ViolationErrors{
 		invariants.NewRequiredAttributeViolation(1, classKey, "name"),
 	}
 

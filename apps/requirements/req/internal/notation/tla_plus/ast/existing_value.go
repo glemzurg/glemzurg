@@ -6,5 +6,5 @@ type ExistingValue struct{}
 
 func (e *ExistingValue) expressionNode()        {}
 func (e *ExistingValue) String() (value string) { return "@" }
-func (e *ExistingValue) Ascii() (value string)  { return e.String() }
+func (e *ExistingValue) ASCII() (value string)  { return e.String() }
 func (e *ExistingValue) Validate() error        { return nil }

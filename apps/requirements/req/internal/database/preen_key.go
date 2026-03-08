@@ -8,14 +8,13 @@ import (
 )
 
 // Regex match one or more spaces.
-var _whitespaceRegexp *regexp.Regexp = regexp.MustCompile(`[[:space:]]+`)
+var _whitespaceRegexp = regexp.MustCompile(`[[:space:]]+`)
 
 func normalizeWhitespace(value string) (normalized string) {
 	return _whitespaceRegexp.ReplaceAllString(value, "-")
 }
 
 func preenKey(key string) (preened string, err error) {
-
 	preened = key
 	preened = strings.ToLower(preened)
 	preened = strings.TrimSpace(preened)

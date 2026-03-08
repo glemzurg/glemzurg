@@ -64,33 +64,33 @@ func (c *ScopedCall) String() (value string) {
 	return out.String()
 }
 
-func (c *ScopedCall) Ascii() (value string) {
+func (c *ScopedCall) ASCII() (value string) {
 	var out bytes.Buffer
 
 	// Model scope uses leading _
 	if c.ModelScope {
 		out.WriteString("_")
-		out.WriteString(c.FunctionName.Ascii())
+		out.WriteString(c.FunctionName.ASCII())
 	} else {
 		// Build the scoped function name
 		if c.Domain != nil {
-			out.WriteString(c.Domain.Ascii())
+			out.WriteString(c.Domain.ASCII())
 			out.WriteString("!")
 		}
 		if c.Subdomain != nil {
-			out.WriteString(c.Subdomain.Ascii())
+			out.WriteString(c.Subdomain.ASCII())
 			out.WriteString("!")
 		}
 		if c.Class != nil {
-			out.WriteString(c.Class.Ascii())
+			out.WriteString(c.Class.ASCII())
 			out.WriteString("!")
 		}
-		out.WriteString(c.FunctionName.Ascii())
+		out.WriteString(c.FunctionName.ASCII())
 	}
 
 	// Build the parameter
 	out.WriteString("(")
-	out.WriteString(c.Parameter.Ascii())
+	out.WriteString(c.Parameter.ASCII())
 	out.WriteString(")")
 
 	return out.String()
@@ -105,13 +105,13 @@ func (c *ScopedCall) Validate() error {
 	// - ModelScope can only be true if Domain, Subdomain, and Class are all nil
 	if c.ModelScope {
 		if c.Domain != nil {
-			return fmt.Errorf("Domain: must be nil when ModelScope is true")
+			return fmt.Errorf("domain: must be nil when ModelScope is true")
 		}
 		if c.Subdomain != nil {
-			return fmt.Errorf("Subdomain: must be nil when ModelScope is true")
+			return fmt.Errorf("subdomain: must be nil when ModelScope is true")
 		}
 		if c.Class != nil {
-			return fmt.Errorf("Class: must be nil when ModelScope is true")
+			return fmt.Errorf("class: must be nil when ModelScope is true")
 		}
 	}
 
@@ -120,44 +120,45 @@ func (c *ScopedCall) Validate() error {
 	// - If Subdomain is set, Class must also be set
 	if c.Domain != nil {
 		if c.Subdomain == nil {
-			return fmt.Errorf("Subdomain: required when Domain is set")
+			return fmt.Errorf("subdomain: required when Domain is set")
 		}
 		if c.Class == nil {
-			return fmt.Errorf("Class: required when Domain is set")
+			return fmt.Errorf("class: required when Domain is set")
 		}
 	}
 	if c.Subdomain != nil && c.Class == nil {
-		return fmt.Errorf("Class: required when Subdomain is set")
+		return fmt.Errorf("class: required when Subdomain is set")
 	}
 
 	// Validate individual identifiers
 	if c.Domain != nil {
 		if err := c.Domain.Validate(); err != nil {
-			return fmt.Errorf("Domain: %w", err)
+			return fmt.Errorf("domain: %w", err)
 		}
 	}
 	if c.Subdomain != nil {
 		if err := c.Subdomain.Validate(); err != nil {
-			return fmt.Errorf("Subdomain: %w", err)
+			return fmt.Errorf("subdomain: %w", err)
 		}
 	}
 	if c.Class != nil {
 		if err := c.Class.Validate(); err != nil {
-			return fmt.Errorf("Class: %w", err)
+			return fmt.Errorf("class: %w", err)
 		}
 	}
 	if err := c.FunctionName.Validate(); err != nil {
-		return fmt.Errorf("FunctionName: %w", err)
+		return fmt.Errorf("functionName: %w", err)
 	}
 
 	// Validate parameter
 	if err := c.Parameter.Validate(); err != nil {
-		return fmt.Errorf("Parameter: %w", err)
+		return fmt.Errorf("parameter: %w", err)
 	}
 
 	return nil
 }
 
 // CallExpression is an alias for backwards compatibility.
+//
 // Deprecated: Use ScopedCall instead.
 type CallExpression = ScopedCall

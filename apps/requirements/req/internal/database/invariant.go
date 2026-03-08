@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -10,7 +11,6 @@ import (
 
 // LoadInvariant loads an invariant logic key from the database.
 func LoadInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (key identity.Key, err error) {
-
 	var logicKeyStr string
 	err = dbQueryRow(
 		dbOrTx,
@@ -53,8 +53,7 @@ func AddInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err er
 
 // RemoveInvariant deletes an invariant join row from the database.
 func RemoveInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			invariant
 		WHERE
@@ -72,7 +71,6 @@ func RemoveInvariant(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err
 
 // QueryInvariants loads all invariant logic keys from the database for a given model.
 func QueryInvariants(dbOrTx DbOrTx, modelKey string) (keys []identity.Key, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -111,18 +109,19 @@ func AddInvariants(dbOrTx DbOrTx, modelKey string, logicKeys []identity.Key) (er
 		return nil
 	}
 
-	query := `INSERT INTO invariant (model_key, logic_key) VALUES `
-	args := make([]interface{}, 0, len(logicKeys)*2)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO invariant (model_key, logic_key) VALUES `)
+	args := make([]any, 0, len(logicKeys)*2)
 	for i, logicKey := range logicKeys {
 		if i > 0 {
-			query += ", "
+			qb.WriteString(", ")
 		}
 		base := i * 2
-		query += fmt.Sprintf("($%d, $%d)", base+1, base+2)
+		qb.WriteString(fmt.Sprintf("($%d, $%d)", base+1, base+2))
 		args = append(args, modelKey, logicKey.String())
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

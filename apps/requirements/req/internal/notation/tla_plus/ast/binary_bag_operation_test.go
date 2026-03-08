@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -16,7 +15,7 @@ type BagInfixSuite struct {
 }
 
 // Helper to create a BuiltinCall that returns a Bag (simulating _Bags!SetToBag)
-// Uses Identifier as a placeholder argument since SetLiteralInt doesn't implement Expression
+// Uses Identifier as a placeholder argument since SetLiteralInt doesn't implement Expression.
 func makeBagCall(name string) *BuiltinCall {
 	return &BuiltinCall{
 		Name: "_Bags!SetToBag",
@@ -50,18 +49,18 @@ func (suite *BagInfixSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			bi := &BagInfix{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, bi.String())
+			suite.Equal(tt.expected, bi.String())
 		})
 	}
 }
 
-func (suite *BagInfixSuite) TestAscii() {
+func (suite *BagInfixSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		operator string
@@ -85,13 +84,13 @@ func (suite *BagInfixSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			bi := &BagInfix{
 				Operator: tt.operator,
 				Left:     tt.left,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, bi.Ascii())
+			suite.Equal(tt.expected, bi.ASCII())
 		})
 	}
 }
@@ -174,12 +173,12 @@ func (suite *BagInfixSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.bi.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -84,17 +83,17 @@ func (suite *RecordAlteredSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			r := &RecordAltered{
-				Base: &Identifier{Value: tt.identifier},
+				Base:        &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
-			assert.Equal(t, tt.expected, r.String())
+			suite.Equal(tt.expected, r.String())
 		})
 	}
 }
 
-func (suite *RecordAlteredSuite) TestAscii() {
+func (suite *RecordAlteredSuite) TestASCII() {
 	tests := []struct {
 		testName    string
 		identifier  string
@@ -129,12 +128,12 @@ func (suite *RecordAlteredSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			r := &RecordAltered{
-				Base: &Identifier{Value: tt.identifier},
+				Base:        &Identifier{Value: tt.identifier},
 				Alterations: tt.alterations,
 			}
-			assert.Equal(t, tt.expected, r.Ascii())
+			suite.Equal(tt.expected, r.ASCII())
 		})
 	}
 }
@@ -224,7 +223,7 @@ func (suite *RecordAlteredSuite) TestValidate() {
 					nil,
 				},
 			},
-			errstr: `Alterations[0]`,
+			errstr: `alterations[0]`,
 		},
 		{
 			testName: `error nil field in alteration`,
@@ -267,12 +266,12 @@ func (suite *RecordAlteredSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.r.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

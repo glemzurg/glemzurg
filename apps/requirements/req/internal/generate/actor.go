@@ -1,14 +1,13 @@
 package generate
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/generate/req_flat"
 
 	"github.com/pkg/errors"
 )
 
 func generateActorMdContents(reqs *req_flat.Requirements, actor model_actor.Actor) (contents string, err error) {
-
 	contents, err = generateFromTemplate(_actorMdTemplate, struct {
 		Reqs  *req_flat.Requirements
 		Actor model_actor.Actor

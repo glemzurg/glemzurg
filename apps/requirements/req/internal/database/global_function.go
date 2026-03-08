@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -38,7 +39,6 @@ func scanGlobalFunction(scanner Scanner, gf *model_logic.GlobalFunction) (err er
 // The returned GlobalFunction will not have Specification populated;
 // that is stitched in top_level_requirements.go.
 func LoadGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (gf model_logic.GlobalFunction, err error) {
-
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -74,8 +74,7 @@ func AddGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalFunc
 
 // UpdateGlobalFunction updates a global function row in the database.
 func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalFunction) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			global_function
 		SET
@@ -98,8 +97,7 @@ func UpdateGlobalFunction(dbOrTx DbOrTx, modelKey string, gf model_logic.GlobalF
 
 // RemoveGlobalFunction deletes a global function row from the database.
 func RemoveGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key) (err error) {
-
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			global_function
 		WHERE
@@ -119,7 +117,6 @@ func RemoveGlobalFunction(dbOrTx DbOrTx, modelKey string, logicKey identity.Key)
 // The returned GlobalFunctions will not have Specification populated;
 // that is stitched in top_level_requirements.go.
 func QueryGlobalFunctions(dbOrTx DbOrTx, modelKey string) (gfs []model_logic.GlobalFunction, err error) {
-
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -154,14 +151,15 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 		return nil
 	}
 
-	query := `INSERT INTO global_function (model_key, logic_key, name, parameters) VALUES `
-	args := make([]interface{}, 0, len(gfs)*4)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO global_function (model_key, logic_key, name, parameters) VALUES `)
+	args := make([]any, 0, len(gfs)*4)
 	for i, gf := range gfs {
 		if i > 0 {
-			query += ", "
+			queryBuilder.WriteString(", ")
 		}
 		base := i * 4
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
+		queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4))
 		args = append(args,
 			modelKey,
 			gf.Key.String(),
@@ -169,7 +167,7 @@ func AddGlobalFunctions(dbOrTx DbOrTx, modelKey string, gfs []model_logic.Global
 			pq.Array(gf.Parameters))
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

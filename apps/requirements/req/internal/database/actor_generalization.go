@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -38,7 +39,6 @@ func scanActorGeneralization(scanner Scanner, generalization *model_actor.Genera
 
 // LoadActorGeneralization loads an actor generalization from the database.
 func LoadActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_actor.Generalization, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -77,9 +77,8 @@ func AddActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization model
 
 // UpdateActorGeneralization updates an actor generalization in the database.
 func UpdateActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization model_actor.Generalization) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			actor_generalization
 		SET
@@ -108,9 +107,8 @@ func UpdateActorGeneralization(dbOrTx DbOrTx, modelKey string, generalization mo
 
 // RemoveActorGeneralization deletes an actor generalization from the database.
 func RemoveActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				actor_generalization
 			WHERE
@@ -128,7 +126,6 @@ func RemoveActorGeneralization(dbOrTx DbOrTx, modelKey string, generalizationKey
 
 // QueryActorGeneralizations loads all actor generalizations from the database.
 func QueryActorGeneralizations(dbOrTx DbOrTx, modelKey string) (generalizations []model_actor.Generalization, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -167,18 +164,19 @@ func AddActorGeneralizations(dbOrTx DbOrTx, modelKey string, generalizations []m
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO actor_generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `
-	args := make([]interface{}, 0, len(generalizations)*7)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO actor_generalization (model_key, generalization_key, name, details, is_complete, is_static, uml_comment) VALUES `)
+	args := make([]any, 0, len(generalizations)*7)
 	for i, gen := range generalizations {
 		if i > 0 {
-			query += ", "
+			qb.WriteString(", ")
 		}
 		base := i * 7
-		query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+		qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
 		args = append(args, modelKey, gen.Key.String(), gen.Name, gen.Details, gen.IsComplete, gen.IsStatic, gen.UmlComment)
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

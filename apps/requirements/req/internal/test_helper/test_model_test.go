@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetTestModel(t *testing.T) {
@@ -23,7 +24,7 @@ func TestGetTestModel(t *testing.T) {
 
 	// Verify the model validates.
 	err := model.Validate()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestGetStrictTestModel(t *testing.T) {
@@ -43,5 +44,5 @@ func TestGetStrictTestModel(t *testing.T) {
 
 	// Verify the model validates.
 	err := model.Validate()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 }

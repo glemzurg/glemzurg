@@ -24,10 +24,10 @@ const (
 )
 
 // Step represents a step in the scenario steps tree.
-type Step struct {
+type Step struct { //nolint:recvcheck
 	Key           identity.Key  `json:"key" yaml:"key"`
 	StepType      string        `json:"step_type" yaml:"step_type"`
-	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"`             // Only for leaf steps: event, query, scenario, delete.
+	LeafType      *string       `json:"leaf_type,omitempty" yaml:"leaf_type,omitempty"` // Only for leaf steps: event, query, scenario, delete.
 	Statements    []Step        `json:"statements,omitempty" yaml:"statements,omitempty"`
 	Condition     string        `json:"condition,omitempty" yaml:"condition,omitempty"`             // Used by loop and case steps.
 	Description   string        `json:"description,omitempty" yaml:"description,omitempty"`         // Leaf description.
@@ -39,13 +39,15 @@ type Step struct {
 }
 
 // Validate validates the step and its sub-steps.
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
 func (s *Step) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
 		return err
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO_STEP {
-		return errors.Errorf("Key: invalid key type '%s' for scenario step.", s.Key.KeyType)
+		return errors.Errorf("key: invalid key type '%s' for scenario step", s.Key.KeyType)
 	}
 	switch s.StepType {
 	case STEP_TYPE_SEQUENCE:
@@ -240,7 +242,7 @@ func (s Step) ToYAML() (string, error) {
 // MarshalJSON custom marshals the Step to only include non-empty fields.
 // Uses value receiver so it works with both value and pointer types.
 func (s Step) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	m["key"] = s.Key
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {
@@ -275,8 +277,8 @@ func (s Step) MarshalJSON() ([]byte, error) {
 
 // MarshalYAML custom marshals the Step to only include non-empty fields.
 // Uses value receiver so it works with both value and pointer types.
-func (s Step) MarshalYAML() (interface{}, error) {
-	m := make(map[string]interface{})
+func (s Step) MarshalYAML() (any, error) {
+	m := make(map[string]any)
 	m["key"] = s.Key.String()
 	m["step_type"] = s.StepType
 	if s.LeafType != nil {

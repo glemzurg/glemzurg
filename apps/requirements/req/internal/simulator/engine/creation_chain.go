@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/actions"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/invariants"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/state"
@@ -48,7 +48,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 	createdInstanceID state.InstanceID,
 	simState *state.SimulationState,
 	depth int,
-) ([]*SimulationStep, invariants.ViolationList, error) {
+) ([]*SimulationStep, invariants.ViolationErrors, error) {
 	if depth > maxCascadeDepth {
 		return nil, nil, fmt.Errorf("creation chain cascade exceeded max depth of %d", maxCascadeDepth)
 	}
@@ -65,7 +65,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 	}
 
 	var cascadedSteps []*SimulationStep
-	var allViolations invariants.ViolationList
+	var allViolations invariants.ViolationErrors
 
 	for _, assocInfo := range mandatory {
 		toClassInfo := h.catalog.GetClassInfo(assocInfo.ToClassKey)
@@ -82,7 +82,7 @@ func (h *CreationChainHandler) HandleCreationChain(
 		}
 
 		// Create MinTo instances of the target class.
-		for i := uint(0); i < assocInfo.MinTo; i++ {
+		for range assocInfo.MinTo {
 			params := h.paramBinder.GenerateRandomParameters(creationEvent.Parameters, h.rng)
 
 			assocKey := assocInfo.Association.Key

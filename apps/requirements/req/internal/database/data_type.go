@@ -12,11 +12,11 @@ import (
 
 // collectionMinForDB maps CollectionMin=0 to nil (SQL NULL) to satisfy CHECK (collection_min > 0).
 // A zero minimum means "no minimum" and is stored as NULL in the database.
-func collectionMinForDB(min *int) *int {
-	if min != nil && *min == 0 {
+func collectionMinForDB(minVal *int) *int {
+	if minVal != nil && *minVal == 0 {
 		return nil
 	}
-	return min
+	return minVal
 }
 
 // Populate a golang struct from a database row.
@@ -55,9 +55,8 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 	return nil
 }
 
-// LoadDataType loads a data type from the database
+// LoadDataType loads a data type from the database.
 func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_data_type.DataType, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -102,7 +101,6 @@ func LoadDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (dataType model_d
 
 // AddDataType adds a data type to the database.
 func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -122,7 +120,7 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 	}
 
 	// Add the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		INSERT INTO data_type
 			(
 				model_key              ,
@@ -162,7 +160,6 @@ func AddDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataTy
 
 // UpdateDataType updates a data type in the database.
 func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.DataType) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -182,7 +179,7 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE data_type
 		SET
 			collection_type         = $3,
@@ -212,7 +209,6 @@ func UpdateDataType(dbOrTx DbOrTx, modelKey string, dataType model_data_type.Dat
 
 // DeleteDataType deletes a data type from the database.
 func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -224,7 +220,7 @@ func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 	}
 
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM data_type
 		WHERE
 			data_type_key = $2
@@ -241,7 +237,6 @@ func DeleteDataType(dbOrTx DbOrTx, modelKey, dataTypeKey string) (err error) {
 
 // QueryDataTypes lists all data types for a model from the database.
 func QueryDataTypes(dbOrTx DbOrTx, modelKey string) (dataTypes []model_data_type.DataType, err error) {
-
 	// Keys should be preened so they collide correctly.
 	modelKey, err = preenKey(modelKey)
 	if err != nil {
@@ -294,7 +289,7 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 	}
 
 	// Prepare the args
-	args := make([]interface{}, 0, len(dataTypes)*8)
+	args := make([]any, 0, len(dataTypes)*8)
 	valueStrings := make([]string, 0, len(dataTypes))
 	for i, dt := range dataTypes {
 		dataTypeKey, err := preenKey(dt.Key)
@@ -327,6 +322,6 @@ func BulkInsertDataTypes(dbOrTx DbOrTx, modelKey string, dataTypes []model_data_
 		VALUES %s`, strings.Join(valueStrings, ", "))
 
 	// Execute
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, query, args...)
 	return errors.WithStack(err)
 }

@@ -20,9 +20,8 @@ type t_TestFile struct {
 // t_ContentsForAllJSONFiles reads all JSON test file pairs from a directory.
 // Files are expected to be named like:
 // - 01_basic.input.json (the input file)
-// - 01_basic.expected.json (the expected parsed output)
+// - 01_basic.expected.json (the expected parsed output).
 func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
-
 	// Keep track of the file and expected test results.
 	fileLookup := map[string]t_TestFile{}
 
@@ -45,8 +44,7 @@ func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
 		name := file.Name()
 
 		// Check for .input.json suffix
-		if strings.HasSuffix(name, ".input.json") {
-			baseName := strings.TrimSuffix(name, ".input.json")
+		if baseName, ok := strings.CutSuffix(name, ".input.json"); ok {
 			testFile := fileLookup[baseName]
 			testFile.Filename = filename
 			testFile.InputJSON = strings.TrimSpace(string(content))
@@ -55,8 +53,7 @@ func t_ContentsForAllJSONFiles(path string) (allFiles []t_TestFile, err error) {
 		}
 
 		// Check for .expected.json suffix
-		if strings.HasSuffix(name, ".expected.json") {
-			baseName := strings.TrimSuffix(name, ".expected.json")
+		if baseName, ok := strings.CutSuffix(name, ".expected.json"); ok {
 			testFile := fileLookup[baseName]
 			testFile.ExpectedJSON = strings.TrimSpace(string(content))
 			fileLookup[baseName] = testFile
@@ -111,7 +108,7 @@ type t_TestFileError struct {
 // t_ContentsForAllErrorJSONFiles reads all JSON error test file pairs from a directory.
 // Files are expected to be named like:
 // - 01_missing_name.err.json (the input file that should cause an error)
-// - 01_missing_name.expected.json (the expected error details)
+// - 01_missing_name.expected.json (the expected error details).
 func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, err error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
@@ -134,8 +131,7 @@ func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, er
 		name := file.Name()
 
 		// Check for .err.json suffix (input file)
-		if strings.HasSuffix(name, ".err.json") {
-			baseName := strings.TrimSuffix(name, ".err.json")
+		if baseName, found := strings.CutSuffix(name, ".err.json"); found {
 			content, err := os.ReadFile(filename)
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -148,8 +144,7 @@ func t_ContentsForAllErrorJSONFiles(path string) (allFiles []t_TestFileError, er
 		}
 
 		// Check for .expected.json suffix (expected error)
-		if strings.HasSuffix(name, ".expected.json") {
-			baseName := strings.TrimSuffix(name, ".expected.json")
+		if baseName, found := strings.CutSuffix(name, ".expected.json"); found {
 			content, err := os.ReadFile(filename)
 			if err != nil {
 				return nil, errors.WithStack(err)

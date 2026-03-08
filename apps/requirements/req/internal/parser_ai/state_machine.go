@@ -119,9 +119,24 @@ func parseStateMachine(content []byte, filename string) (*inputStateMachine, err
 // validateStateMachine validates an inputStateMachine struct.
 // The filename parameter is the path to the JSON file being parsed.
 func validateStateMachine(sm *inputStateMachine, filename string) error {
-	// Validate states
+	if err := validateSMStates(sm, filename); err != nil {
+		return err
+	}
+	if err := validateSMEvents(sm, filename); err != nil {
+		return err
+	}
+	if err := validateSMGuards(sm, filename); err != nil {
+		return err
+	}
+	if err := validateSMTransitions(sm, filename); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validateSMStates validates all states in a state machine.
+func validateSMStates(sm *inputStateMachine, filename string) error {
 	for stateKey, state := range sm.States {
-		// State name is required (schema enforces this)
 		if state.Name == "" {
 			return NewParseError(
 				ErrStateNameRequired,
@@ -129,8 +144,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("states." + stateKey + ".name")
 		}
-
-		// State name cannot be only whitespace
 		if strings.TrimSpace(state.Name) == "" {
 			return NewParseError(
 				ErrStateNameEmpty,
@@ -138,50 +151,51 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("states." + stateKey + ".name")
 		}
-
-		// Validate state actions
-		for i, action := range state.Actions {
-			// Action key is required (schema enforces this)
-			if action.ActionKey == "" {
-				return NewParseError(
-					ErrStateActionKeyRequired,
-					fmt.Sprintf("state '%s' action[%d] action_key is required", stateKey, i),
-					filename,
-				).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
-			}
-
-			// Action key cannot be only whitespace
-			if strings.TrimSpace(action.ActionKey) == "" {
-				return NewParseError(
-					ErrStateActionKeyRequired,
-					fmt.Sprintf("state '%s' action[%d] action_key cannot be whitespace only, got '%s'", stateKey, i, action.ActionKey),
-					filename,
-				).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
-			}
-
-			// When is required (schema enforces this)
-			if action.When == "" {
-				return NewParseError(
-					ErrStateActionWhenRequired,
-					fmt.Sprintf("state '%s' action[%d] when is required", stateKey, i),
-					filename,
-				).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i))
-			}
-
-			// When must be a valid value (schema enforces this via enum, but we double-check)
-			if action.When != "entry" && action.When != "exit" && action.When != "do" {
-				return NewParseError(
-					ErrStateActionWhenInvalid,
-					fmt.Sprintf("state '%s' action[%d] when must be 'entry', 'exit', or 'do', got '%s'", stateKey, i, action.When),
-					filename,
-				).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i))
-			}
+		if err := validateSMStateActions(stateKey, state, filename); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
-	// Validate events
+// validateSMStateActions validates the actions within a single state.
+func validateSMStateActions(stateKey string, state *inputState, filename string) error {
+	for i, action := range state.Actions {
+		if action.ActionKey == "" {
+			return NewParseError(
+				ErrStateActionKeyRequired,
+				fmt.Sprintf("state '%s' action[%d] action_key is required", stateKey, i),
+				filename,
+			).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
+		}
+		if strings.TrimSpace(action.ActionKey) == "" {
+			return NewParseError(
+				ErrStateActionKeyRequired,
+				fmt.Sprintf("state '%s' action[%d] action_key cannot be whitespace only, got '%s'", stateKey, i, action.ActionKey),
+				filename,
+			).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
+		}
+		if action.When == "" {
+			return NewParseError(
+				ErrStateActionWhenRequired,
+				fmt.Sprintf("state '%s' action[%d] when is required", stateKey, i),
+				filename,
+			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i))
+		}
+		if action.When != "entry" && action.When != "exit" && action.When != "do" {
+			return NewParseError(
+				ErrStateActionWhenInvalid,
+				fmt.Sprintf("state '%s' action[%d] when must be 'entry', 'exit', or 'do', got '%s'", stateKey, i, action.When),
+				filename,
+			).WithField(fmt.Sprintf("states.%s.actions[%d].when", stateKey, i))
+		}
+	}
+	return nil
+}
+
+// validateSMEvents validates all events in a state machine.
+func validateSMEvents(sm *inputStateMachine, filename string) error {
 	for eventKey, event := range sm.Events {
-		// Event name is required (schema enforces this)
 		if event.Name == "" {
 			return NewParseError(
 				ErrEventNameRequired,
@@ -189,8 +203,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("events." + eventKey + ".name")
 		}
-
-		// Event name cannot be only whitespace
 		if strings.TrimSpace(event.Name) == "" {
 			return NewParseError(
 				ErrEventNameEmpty,
@@ -198,10 +210,7 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("events." + eventKey + ".name")
 		}
-
-		// Validate event parameters
 		for i, param := range event.Parameters {
-			// Parameter name is required (schema enforces this)
 			if param.Name == "" {
 				return NewParseError(
 					ErrEventParamNameRequired,
@@ -209,8 +218,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 					filename,
 				).WithField(fmt.Sprintf("events.%s.parameters[%d].name", eventKey, i))
 			}
-
-			// Parameter name cannot be only whitespace
 			if strings.TrimSpace(param.Name) == "" {
 				return NewParseError(
 					ErrEventParamNameRequired,
@@ -220,10 +227,12 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 			}
 		}
 	}
+	return nil
+}
 
-	// Validate guards
+// validateSMGuards validates all guards in a state machine.
+func validateSMGuards(sm *inputStateMachine, filename string) error {
 	for guardKey, guard := range sm.Guards {
-		// Guard name is required (schema enforces this)
 		if guard.Name == "" {
 			return NewParseError(
 				ErrGuardNameRequired,
@@ -231,8 +240,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("guards." + guardKey + ".name")
 		}
-
-		// Guard name cannot be only whitespace
 		if strings.TrimSpace(guard.Name) == "" {
 			return NewParseError(
 				ErrGuardNameEmpty,
@@ -240,8 +247,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("guards." + guardKey + ".name")
 		}
-
-		// Guard logic description is required
 		if guard.Logic.Description == "" {
 			return NewParseError(
 				ErrGuardDetailsRequired,
@@ -249,8 +254,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField("guards." + guardKey + ".logic.description")
 		}
-
-		// Guard logic description cannot be only whitespace
 		if strings.TrimSpace(guard.Logic.Description) == "" {
 			return NewParseError(
 				ErrGuardDetailsRequired,
@@ -259,10 +262,12 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 			).WithField("guards." + guardKey + ".logic.description")
 		}
 	}
+	return nil
+}
 
-	// Validate transitions
+// validateSMTransitions validates all transitions in a state machine.
+func validateSMTransitions(sm *inputStateMachine, filename string) error {
 	for i, transition := range sm.Transitions {
-		// Event key is required (schema enforces this)
 		if transition.EventKey == "" {
 			return NewParseError(
 				ErrTransitionEventRequired,
@@ -270,8 +275,6 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 				filename,
 			).WithField(fmt.Sprintf("transitions[%d].event_key", i))
 		}
-
-		// Event key cannot be only whitespace
 		if strings.TrimSpace(transition.EventKey) == "" {
 			return NewParseError(
 				ErrTransitionEventRequired,
@@ -280,6 +283,5 @@ func validateStateMachine(sm *inputStateMachine, filename string) error {
 			).WithField(fmt.Sprintf("transitions[%d].event_key", i))
 		}
 	}
-
 	return nil
 }

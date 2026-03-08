@@ -21,7 +21,7 @@ type QuantifierSuite struct {
 
 func (s *QuantifierSuite) TestForAll_Unicode() {
 	expr, err := ParseExpression("∀ x ∈ S : x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -39,7 +39,7 @@ func (s *QuantifierSuite) TestForAll_Unicode() {
 
 func (s *QuantifierSuite) TestForAll_ASCII() {
 	expr, err := ParseExpression("\\A x \\in S : x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -48,7 +48,7 @@ func (s *QuantifierSuite) TestForAll_ASCII() {
 
 func (s *QuantifierSuite) TestForAll_WithSetLiteral() {
 	expr, err := ParseExpression("∀ n ∈ {1, 2, 3} : n > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -62,7 +62,7 @@ func (s *QuantifierSuite) TestForAll_WithSetLiteral() {
 
 func (s *QuantifierSuite) TestForAll_WithRange() {
 	expr, err := ParseExpression("∀ i ∈ 1..10 : i >= 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -80,7 +80,7 @@ func (s *QuantifierSuite) TestForAll_WithRange() {
 
 func (s *QuantifierSuite) TestExists_Unicode() {
 	expr, err := ParseExpression("∃ x ∈ S : x = target")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -89,7 +89,7 @@ func (s *QuantifierSuite) TestExists_Unicode() {
 
 func (s *QuantifierSuite) TestExists_ASCII() {
 	expr, err := ParseExpression("\\E y \\in T : y = value")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -98,7 +98,7 @@ func (s *QuantifierSuite) TestExists_ASCII() {
 
 func (s *QuantifierSuite) TestExists_WithSetLiteral() {
 	expr, err := ParseExpression("∃ x ∈ {1, 2, 3} : x = 2")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -117,24 +117,24 @@ func (s *QuantifierSuite) TestExists_WithSetLiteral() {
 func (s *QuantifierSuite) TestForAll_ComplexPredicate() {
 	// Predicate with AND
 	expr, err := ParseExpression("∀ x ∈ S : x > 0 ∧ x < 100")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
-	_, ok = q.Predicate.(*ast.LogicInfixExpression)
+	_, ok = q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 }
 
 func (s *QuantifierSuite) TestForAll_ImpliesPredicate() {
 	// Predicate with implies
 	expr, err := ParseExpression("∀ x ∈ S : x > 0 => x >= 1")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
-	logic, ok := q.Predicate.(*ast.LogicInfixExpression)
+	logic, ok := q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 	s.Equal("⇒", logic.Operator)
 }
@@ -146,7 +146,7 @@ func (s *QuantifierSuite) TestForAll_ImpliesPredicate() {
 func (s *QuantifierSuite) TestNested_ForAllExists() {
 	// ∀ x ∈ A : ∃ y ∈ B : x < y
 	expr, err := ParseExpression("∀ x ∈ A : ∃ y ∈ B : x < y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outer, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected outer *ast.Quantifier, got %T", expr)
@@ -160,7 +160,7 @@ func (s *QuantifierSuite) TestNested_ForAllExists() {
 func (s *QuantifierSuite) TestNested_ExistsForAll() {
 	// ∃ x ∈ A : ∀ y ∈ B : x >= y
 	expr, err := ParseExpression("∃ x ∈ A : ∀ y ∈ B : x >= y")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	outer, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected outer *ast.Quantifier, got %T", expr)
@@ -178,25 +178,25 @@ func (s *QuantifierSuite) TestNested_ExistsForAll() {
 func (s *QuantifierSuite) TestPrecedence_QuantifierWithLogic() {
 	// ∀ x ∈ S : P(x) /\ Q(x) should have /\ inside the predicate
 	expr, err := ParseExpression("∀ x ∈ S : P ∧ Q")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
 	// The predicate should be the entire P /\ Q expression
-	_, ok = q.Predicate.(*ast.LogicInfixExpression)
+	_, ok = q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 }
 
 func (s *QuantifierSuite) TestPrecedence_QuantifierWithImplies() {
 	// ∀ x ∈ S : a => b should have => inside the predicate
 	expr, err := ParseExpression("∀ x ∈ S : a => b")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
 
-	logic, ok := q.Predicate.(*ast.LogicInfixExpression)
+	logic, ok := q.Predicate.(*ast.BinaryLogic)
 	s.True(ok, "expected predicate to be LogicInfixExpression")
 	s.Equal("⇒", logic.Operator)
 }
@@ -207,7 +207,7 @@ func (s *QuantifierSuite) TestPrecedence_QuantifierWithImplies() {
 
 func (s *QuantifierSuite) TestMixed_ASCIIQuantifierUnicodeMembership() {
 	expr, err := ParseExpression("\\A x ∈ S : x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)
@@ -220,7 +220,7 @@ func (s *QuantifierSuite) TestMixed_ASCIIQuantifierUnicodeMembership() {
 
 func (s *QuantifierSuite) TestMixed_UnicodeQuantifierASCIIMembership() {
 	expr, err := ParseExpression("∃ x \\in S : x > 0")
-	s.NoError(err)
+	s.Require().NoError(err)
 
 	q, ok := expr.(*ast.Quantifier)
 	s.True(ok, "expected *ast.Quantifier, got %T", expr)

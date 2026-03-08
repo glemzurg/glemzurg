@@ -1,15 +1,15 @@
 package engine
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/convert"
 )
 
 // mustKey parses a key string or panics.
@@ -109,7 +109,8 @@ func parsedSpec(tla string) model_spec.ExpressionSpec {
 
 // counterSpec parses a TLA+ expression in the context of the standard Counter class
 // with attribute: count.
-func counterSpec(tla string) model_spec.ExpressionSpec {
+func counterSpec() model_spec.ExpressionSpec {
+	tla := "self.count + 1"
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
@@ -127,7 +128,7 @@ func counterSpec(tla string) model_spec.ExpressionSpec {
 func orderSpec(tla string) model_spec.ExpressionSpec {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	ctx := &convert.LowerContext{
-		ClassKey:       classKey,
+		ClassKey: classKey,
 		AttributeNames: map[string]identity.Key{
 			"amount": helper.Must(identity.NewAttributeKey(classKey, "amount")),
 			"status": helper.Must(identity.NewAttributeKey(classKey, "status")),

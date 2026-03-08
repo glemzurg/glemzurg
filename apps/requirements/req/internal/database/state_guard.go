@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -40,9 +41,8 @@ func scanGuard(scanner Scanner, classKeyPtr *identity.Key, guard *model_state.Gu
 	return nil
 }
 
-// LoadGuard loads a guard from the database
+// LoadGuard loads a guard from the database.
 func LoadGuard(dbOrTx DbOrTx, modelKey string, guardKey identity.Key) (classKey identity.Key, guard model_state.Guard, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -80,9 +80,8 @@ func AddGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard model
 
 // UpdateGuard updates a guard in the database.
 func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard model_state.Guard) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			guard
 		SET
@@ -106,9 +105,8 @@ func UpdateGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guard mo
 
 // RemoveGuard deletes a guard from the database.
 func RemoveGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			guard
 		WHERE
@@ -127,9 +125,8 @@ func RemoveGuard(dbOrTx DbOrTx, modelKey string, classKey identity.Key, guardKey
 	return nil
 }
 
-// QueryGuards loads all guard from the database
+// QueryGuards loads all guard from the database.
 func QueryGuards(dbOrTx DbOrTx, modelKey string) (guards map[identity.Key][]model_state.Guard, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -176,22 +173,24 @@ func AddGuards(dbOrTx DbOrTx, modelKey string, guards map[identity.Key][]model_s
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO guard (model_key, class_key, guard_key, name) VALUES `
-	args := make([]interface{}, 0, count*4)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO guard (model_key, class_key, guard_key, name) VALUES `)
+	args := make([]any, 0, count*4)
 	i := 0
 	for classKey, guardList := range guards {
 		for _, guard := range guardList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 4
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4))
+
 			args = append(args, modelKey, classKey.String(), guard.Key.String(), guard.Name)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

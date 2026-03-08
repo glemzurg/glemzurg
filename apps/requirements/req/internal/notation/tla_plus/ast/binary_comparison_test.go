@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -78,18 +77,18 @@ func (suite *LogicRealComparisonSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			l := &LogicRealComparison{
 				Left:     tt.left,
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, l.String())
+			suite.Equal(tt.expected, l.String())
 		})
 	}
 }
 
-func (suite *LogicRealComparisonSuite) TestAscii() {
+func (suite *LogicRealComparisonSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		left     Expression
@@ -127,13 +126,13 @@ func (suite *LogicRealComparisonSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			l := &LogicRealComparison{
 				Left:     tt.left,
 				Operator: tt.operator,
 				Right:    tt.right,
 			}
-			assert.Equal(t, tt.expected, l.Ascii())
+			suite.Equal(tt.expected, l.ASCII())
 		})
 	}
 }
@@ -239,12 +238,12 @@ func (suite *LogicRealComparisonSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		suite.Run(tt.testName, func() {
 			err := tt.l.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}

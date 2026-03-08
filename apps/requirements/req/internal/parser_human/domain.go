@@ -4,15 +4,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
 func parseDomain(domainSubKey, filename, contents string) (domain model_domain.Domain, associations []model_domain.Association, err error) {
-
 	parsedFile, err := parseFile(filename, contents)
 	if err != nil {
 		return model_domain.Domain{}, nil, err
@@ -64,7 +63,6 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 }
 
 func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, associationAny any) (association model_domain.Association, err error) {
-
 	associationData, ok := associationAny.(map[string]any)
 	if ok {
 		// Data is in the right structure.
@@ -110,16 +108,17 @@ func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, ass
 }
 
 func generateDomainContent(domain model_domain.Domain, associations []model_domain.Association) string {
-	yaml := "realized: " + strconv.FormatBool(domain.Realized)
+	var yb strings.Builder
+	yb.WriteString("realized: " + strconv.FormatBool(domain.Realized))
 
 	if len(associations) > 0 {
-		yaml += "\n\nassociations:\n"
+		yb.WriteString("\n\nassociations:\n")
 		for _, assoc := range associations {
-			yaml += "\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey + "\n"
-			yaml += formatYamlField("uml_comment", assoc.UmlComment, 6)
+			yb.WriteString("\n    - solution_domain_key: " + assoc.SolutionDomainKey.SubKey + "\n")
+			yb.WriteString(formatYamlField("uml_comment", assoc.UmlComment, 6))
 		}
 	}
 
-	yamlStr := strings.TrimSpace(yaml)
+	yamlStr := strings.TrimSpace(yb.String())
 	return generateFileContent(prependMarkdownTitle(domain.Name, domain.Details), domain.UmlComment, yamlStr)
 }

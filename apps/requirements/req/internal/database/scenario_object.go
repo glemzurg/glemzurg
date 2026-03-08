@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -52,9 +53,8 @@ func scanObject(scanner Scanner, scenarioKeyPtr *identity.Key, object *model_sce
 	return nil
 }
 
-// LoadObject loads a scenario object from the database
+// LoadObject loads a scenario object from the database.
 func LoadObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (scenarioKey identity.Key, object model_scenario.Object, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -97,9 +97,8 @@ func AddObject(dbOrTx DbOrTx, modelKey string, scenarioKey identity.Key, object 
 
 // UpdateObject updates a scenario object in the database.
 func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) (err error) {
-
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			scenario_object
 		SET
@@ -130,9 +129,8 @@ func UpdateObject(dbOrTx DbOrTx, modelKey string, object model_scenario.Object) 
 
 // RemoveObject deletes a scenario object from the database.
 func RemoveObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 			DELETE FROM
 				scenario_object
 			WHERE
@@ -148,9 +146,8 @@ func RemoveObject(dbOrTx DbOrTx, modelKey string, objectKey identity.Key) (err e
 	return nil
 }
 
-// QueryObjects loads all scenario objects from the database grouped by scenario key
+// QueryObjects loads all scenario objects from the database grouped by scenario key.
 func QueryObjects(dbOrTx DbOrTx, modelKey string) (objects map[identity.Key][]model_scenario.Object, err error) {
-
 	objects = make(map[identity.Key][]model_scenario.Object)
 
 	// Query the database.
@@ -199,22 +196,23 @@ func AddObjects(dbOrTx DbOrTx, modelKey string, objects map[identity.Key][]model
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO scenario_object (model_key, scenario_object_key, scenario_key, object_number, name, name_style, class_key, multi, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*9)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO scenario_object (model_key, scenario_object_key, scenario_key, object_number, name, name_style, class_key, multi, uml_comment) VALUES `)
+	args := make([]any, 0, count*9)
 	i := 0
 	for scenarioKey, objList := range objects {
 		for _, obj := range objList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
 			args = append(args, modelKey, obj.Key.String(), scenarioKey.String(), obj.ObjectNumber, obj.Name, obj.NameStyle, obj.ClassKey.String(), obj.Multi, obj.UmlComment)
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

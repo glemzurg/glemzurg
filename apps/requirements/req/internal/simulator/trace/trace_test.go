@@ -74,7 +74,7 @@ func (s *TraceSuite) TestCreationStep() {
 	s.Equal(classKey.String(), step.ClassKey)
 	s.Equal("create", step.EventName)
 	s.Equal(uint64(1), step.InstanceID)
-	s.Equal("", step.FromState)
+	s.Empty(step.FromState)
 	s.Equal("Open", step.ToState)
 }
 
@@ -209,7 +209,7 @@ func (s *TraceSuite) TestStepWithViolations() {
 				ClassKey:   classKey,
 				ClassName:  "Order",
 				InstanceID: 1,
-				Violations: invariants.ViolationList{
+				Violations: invariants.ViolationErrors{
 					{
 						Type:    invariants.ViolationTypeModelInvariant,
 						Message: "invariant failed: x > 0",

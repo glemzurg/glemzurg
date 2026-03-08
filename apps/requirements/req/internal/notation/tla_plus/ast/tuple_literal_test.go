@@ -3,7 +3,6 @@ package ast
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -91,16 +90,16 @@ func (suite *TupleLiteralSuite) TestString() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			tup := &TupleLiteral{
 				Elements: tt.elements,
 			}
-			assert.Equal(t, tt.expected, tup.String())
+			suite.Equal(tt.expected, tup.String())
 		})
 	}
 }
 
-func (suite *TupleLiteralSuite) TestAscii() {
+func (suite *TupleLiteralSuite) TestASCII() {
 	tests := []struct {
 		testName string
 		elements []Expression
@@ -133,11 +132,11 @@ func (suite *TupleLiteralSuite) TestAscii() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			tup := &TupleLiteral{
 				Elements: tt.elements,
 			}
-			assert.Equal(t, tt.expected, tup.Ascii())
+			suite.Equal(tt.expected, tup.ASCII())
 		})
 	}
 }
@@ -182,7 +181,7 @@ func (suite *TupleLiteralSuite) TestValidate() {
 			t: &TupleLiteral{
 				Elements: []Expression{nil},
 			},
-			errstr: `Elements[0]`,
+			errstr: `elements[0]`,
 		},
 		{
 			testName: `error nil element in middle`,
@@ -193,7 +192,7 @@ func (suite *TupleLiteralSuite) TestValidate() {
 					NewIntLiteral(3),
 				},
 			},
-			errstr: `Elements[1]`,
+			errstr: `elements[1]`,
 		},
 		{
 			testName: `error invalid element`,
@@ -206,12 +205,12 @@ func (suite *TupleLiteralSuite) TestValidate() {
 		},
 	}
 	for _, tt := range tests {
-		_ = suite.T().Run(tt.testName, func(t *testing.T) {
+		_ = suite.Run(tt.testName, func() {
 			err := tt.t.Validate()
 			if tt.errstr == `` {
-				assert.NoError(t, err)
+				suite.Require().NoError(err)
 			} else {
-				assert.ErrorContains(t, err, tt.errstr)
+				suite.Require().ErrorContains(err, tt.errstr)
 			}
 		})
 	}
@@ -227,4 +226,3 @@ func (suite *TupleLiteralSuite) TestExpressionNode() {
 	// This should compile and not panic.
 	t.expressionNode()
 }
-

@@ -2,13 +2,14 @@ package convert
 
 import (
 	"fmt"
+	"maps"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
 // LowerModel walks the entire model tree, parsing and lowering every ExpressionSpec
@@ -201,9 +202,7 @@ func ContextWithParameters(base *LowerContext, params []model_state.Parameter) *
 	child := *base
 	child.Parameters = make(map[string]bool)
 	if base.Parameters != nil {
-		for k, v := range base.Parameters {
-			child.Parameters[k] = v
-		}
+		maps.Copy(child.Parameters, base.Parameters)
 	}
 	for _, p := range params {
 		child.Parameters[p.Name] = true
@@ -304,4 +303,3 @@ func BuildQueryNameMap(class *model_class.Class) map[string]identity.Key {
 	}
 	return m
 }
-

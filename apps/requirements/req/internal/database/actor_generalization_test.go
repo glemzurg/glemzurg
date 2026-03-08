@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_actor"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,7 +29,6 @@ type ActorGeneralizationSuite struct {
 }
 
 func (suite *ActorGeneralizationSuite) SetupTest() {
-
 	// Clear the database.
 	suite.db = t_ResetDatabase(suite.T())
 
@@ -42,13 +41,12 @@ func (suite *ActorGeneralizationSuite) SetupTest() {
 }
 
 func (suite *ActorGeneralizationSuite) TestLoad() {
-
 	// Nothing in database yet.
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), generalization)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(generalization)
 
-	_, err = dbExec(suite.db, `
+	err = dbExec(suite.db, `
 		INSERT INTO actor_generalization
 			(
 				model_key,
@@ -70,11 +68,11 @@ func (suite *ActorGeneralizationSuite) TestLoad() {
 				'UmlComment'
 			)
 	`)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalization, err = LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Generalization{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -85,7 +83,6 @@ func (suite *ActorGeneralizationSuite) TestLoad() {
 }
 
 func (suite *ActorGeneralizationSuite) TestAdd() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -94,11 +91,11 @@ func (suite *ActorGeneralizationSuite) TestAdd() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Generalization{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "Details",
@@ -109,7 +106,6 @@ func (suite *ActorGeneralizationSuite) TestAdd() {
 }
 
 func (suite *ActorGeneralizationSuite) TestAddNulls() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -118,11 +114,11 @@ func (suite *ActorGeneralizationSuite) TestAddNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Generalization{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
 		Details:    "",
@@ -133,7 +129,6 @@ func (suite *ActorGeneralizationSuite) TestAddNulls() {
 }
 
 func (suite *ActorGeneralizationSuite) TestUpdate() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -142,7 +137,7 @@ func (suite *ActorGeneralizationSuite) TestUpdate() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
@@ -152,11 +147,11 @@ func (suite *ActorGeneralizationSuite) TestUpdate() {
 		IsStatic:   true,
 		UmlComment: "UmlCommentX",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Generalization{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
 		Details:    "DetailsX",
@@ -167,7 +162,6 @@ func (suite *ActorGeneralizationSuite) TestUpdate() {
 }
 
 func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -176,7 +170,7 @@ func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = UpdateActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
@@ -186,11 +180,11 @@ func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
 		IsStatic:   false,
 		UmlComment: "",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), model_actor.Generalization{
+	suite.Require().NoError(err)
+	suite.Equal(model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "NameX",
 		Details:    "",
@@ -201,7 +195,6 @@ func (suite *ActorGeneralizationSuite) TestUpdateNulls() {
 }
 
 func (suite *ActorGeneralizationSuite) TestRemove() {
-
 	err := AddActorGeneralization(suite.db, suite.model.Key, model_actor.Generalization{
 		Key:        suite.generalizationKey,
 		Name:       "Name",
@@ -210,18 +203,17 @@ func (suite *ActorGeneralizationSuite) TestRemove() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = RemoveActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalization, err := LoadActorGeneralization(suite.db, suite.model.Key, suite.generalizationKey)
-	assert.ErrorIs(suite.T(), err, ErrNotFound)
-	assert.Empty(suite.T(), generalization)
+	suite.Require().ErrorIs(err, ErrNotFound)
+	suite.Empty(generalization)
 }
 
 func (suite *ActorGeneralizationSuite) TestQuery() {
-
 	err := AddActorGeneralizations(suite.db, suite.model.Key, []model_actor.Generalization{
 		{
 			Key:        suite.generalizationKeyB,
@@ -240,11 +232,11 @@ func (suite *ActorGeneralizationSuite) TestQuery() {
 			UmlComment: "UmlComment",
 		},
 	})
-	assert.Nil(suite.T(), err)
+	suite.Require().NoError(err)
 
 	generalizations, err := QueryActorGeneralizations(suite.db, suite.model.Key)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), []model_actor.Generalization{
+	suite.Require().NoError(err)
+	suite.Equal([]model_actor.Generalization{
 		{
 			Key:        suite.generalizationKey,
 			Name:       "Name",
@@ -269,7 +261,6 @@ func (suite *ActorGeneralizationSuite) TestQuery() {
 //==================================================
 
 func t_AddActorGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, generalizationKey identity.Key) (generalization model_actor.Generalization) {
-
 	err := AddActorGeneralization(dbOrTx, modelKey, model_actor.Generalization{
 		Key:        generalizationKey,
 		Name:       generalizationKey.String(),
@@ -278,10 +269,10 @@ func t_AddActorGeneralization(t *testing.T, dbOrTx DbOrTx, modelKey string, gene
 		IsStatic:   true,
 		UmlComment: "UmlComment",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	generalization, err = LoadActorGeneralization(dbOrTx, modelKey, generalizationKey)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	return generalization
 }

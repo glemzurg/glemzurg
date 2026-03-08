@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -83,9 +84,8 @@ func scanTransition(scanner Scanner, classKeyPtr *identity.Key, transition *mode
 	return nil
 }
 
-// LoadTransition loads a transition from the database
+// LoadTransition loads a transition from the database.
 func LoadTransition(dbOrTx DbOrTx, modelKey string, transitionKey identity.Key) (classKey identity.Key, transition model_state.Transition, err error) {
-
 	// Query the database.
 	err = dbQueryRow(
 		dbOrTx,
@@ -128,7 +128,6 @@ func AddTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transi
 
 // UpdateTransition updates a transition in the database.
 func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transition model_state.Transition) (err error) {
-
 	// We may or may not have a from state.
 	var fromStateKeyPtr *string
 	if transition.FromStateKey != nil {
@@ -155,7 +154,7 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, tra
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			transition
 		SET
@@ -189,9 +188,8 @@ func UpdateTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, tra
 
 // RemoveTransition deletes a transition from the database.
 func RemoveTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, transitionKey identity.Key) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			transition
 		WHERE
@@ -210,9 +208,8 @@ func RemoveTransition(dbOrTx DbOrTx, modelKey string, classKey identity.Key, tra
 	return nil
 }
 
-// QueryTransitions loads all transition from the database
+// QueryTransitions loads all transition from the database.
 func QueryTransitions(dbOrTx DbOrTx, modelKey string) (transitions map[identity.Key][]model_state.Transition, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -264,16 +261,17 @@ func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key
 	}
 
 	// Build the bulk insert query.
-	query := `INSERT INTO transition (model_key, class_key, transition_key, from_state_key, event_key, guard_key, action_key, to_state_key, uml_comment) VALUES `
-	args := make([]interface{}, 0, count*9)
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString(`INSERT INTO transition (model_key, class_key, transition_key, from_state_key, event_key, guard_key, action_key, to_state_key, uml_comment) VALUES `)
+	args := make([]any, 0, count*9)
 	i := 0
 	for classKey, transList := range transitions {
 		for _, transition := range transList {
 			if i > 0 {
-				query += ", "
+				queryBuilder.WriteString(", ")
 			}
 			base := i * 9
-			query += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9)
+			queryBuilder.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7, base+8, base+9))
 
 			// Handle optional key pointers.
 			var fromStateKeyPtr, guardKeyPtr, actionKeyPtr, toStateKeyPtr *string
@@ -299,7 +297,7 @@ func AddTransitions(dbOrTx DbOrTx, modelKey string, transitions map[identity.Key
 		}
 	}
 
-	_, err = dbExec(dbOrTx, query, args...)
+	err = dbExec(dbOrTx, queryBuilder.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}

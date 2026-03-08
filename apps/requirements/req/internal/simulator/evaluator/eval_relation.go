@@ -40,14 +40,3 @@ func evalRelationTraversal(record *object.Record, relInfo *RelationInfo, relCtx 
 
 	return NewEvalResult(object.NewSetFromElements(elements))
 }
-
-// evalRelationTraversalOnObject evaluates a relation field access on any object.
-// If the object is a Record, it performs the relation traversal.
-// Otherwise, returns an error.
-func evalRelationTraversalOnObject(obj object.Object, relInfo *RelationInfo, relCtx *RelationContext) *EvalResult {
-	record, ok := obj.(*object.Record)
-	if !ok {
-		return NewEvalError("cannot traverse relation on non-record object: %s", obj.Type())
-	}
-	return evalRelationTraversal(record, relInfo, relCtx)
-}

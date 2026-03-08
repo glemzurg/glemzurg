@@ -1,8 +1,8 @@
 package model_use_case
 
 import (
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/pkg/errors"
 )
 
@@ -27,16 +27,21 @@ type UseCase struct {
 	Scenarios map[identity.Key]model_scenario.Scenario
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (useCase UseCase, err error) {
+// GeneralizationRefs holds the optional generalization references for a use case.
+type GeneralizationRefs struct {
+	SuperclassOfKey *identity.Key
+	SubclassOfKey   *identity.Key
+}
 
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) (useCase UseCase, err error) {
 	useCase = UseCase{
 		Key:             key,
 		Name:            name,
 		Details:         details,
 		Level:           level,
 		ReadOnly:        readOnly,
-		SuperclassOfKey: superclassOfKey,
-		SubclassOfKey:   subclassOfKey,
+		SuperclassOfKey: genRefs.SuperclassOfKey,
+		SubclassOfKey:   genRefs.SubclassOfKey,
 		UmlComment:      umlComment,
 	}
 
@@ -132,7 +137,7 @@ func (uc *UseCase) ValidateWithParentAndClasses(parent *identity.Key, classes ma
 
 // ValidateReferences validates that the use case's reference keys point to valid entities.
 // - SuperclassOfKey must exist in the generalizations map
-// - SubclassOfKey must exist in the generalizations map
+// - SubclassOfKey must exist in the generalizations map.
 func (uc *UseCase) ValidateReferences(generalizations map[identity.Key]bool) error {
 	if uc.SuperclassOfKey != nil {
 		if !generalizations[*uc.SuperclassOfKey] {

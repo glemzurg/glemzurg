@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,7 +60,7 @@ func (suite *DataTypeSuite) TestValidate() {
 			key:            "Key",
 			collectionType: "atomic",
 			atomic:         nil,
-			errstr:         `Atomic: cannot be blank.`,
+			errstr:         `atomic: cannot be blank`,
 		},
 		{
 			key:            "Key",
@@ -77,10 +78,10 @@ func (suite *DataTypeSuite) TestValidate() {
 		}
 		err := dataType.Validate()
 		if tt.errstr == "" {
-			assert.Nil(suite.T(), err, "expected no error for %+v", dataType)
+			suite.Require().NoError(err, "expected no error for %+v", dataType)
 		} else {
-			assert.NotNil(suite.T(), err, "expected error for %+v", dataType)
-			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %+v", dataType)
+			suite.Require().Error(err, "expected error for %+v", dataType)
+			suite.Require().ErrorContains(err, tt.errstr, "error message mismatch for %+v", dataType)
 		}
 	}
 
@@ -143,7 +144,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionType: "stack",
 				Atomic:         atomic,
 			},
-			errstr: "CollectionUnique: cannot be blank.",
+			errstr: "collectionUnique: cannot be blank",
 		},
 		{
 			name: "collection CollectionMin less than 1",
@@ -154,7 +155,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMin:    intPtr(0),
 				Atomic:           atomic,
 			},
-			errstr: "CollectionMin: must be no less than 1.",
+			errstr: "collectionMin: must be no less than 1",
 		},
 		{
 			name: "collection CollectionMax less than 1",
@@ -165,7 +166,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMax:    intPtr(0),
 				Atomic:           atomic,
 			},
-			errstr: "CollectionMax: must be no less than 1.",
+			errstr: "collectionMax: must be no less than 1",
 		},
 		{
 			name: "collection max less than min",
@@ -177,7 +178,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMax:    intPtr(2),
 				Atomic:           atomic,
 			},
-			errstr: "CollectionMax: must be no less than CollectionMin.",
+			errstr: "collectionMax: must be no less than collectionMin",
 		},
 
 		// Non-collections must not have collection fields.
@@ -189,7 +190,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionUnique: &falseValue,
 				Atomic:           atomic,
 			},
-			errstr: "CollectionUnique: must be blank.",
+			errstr: "collectionUnique: must be blank",
 		},
 		{
 			name: "atomic with CollectionMin",
@@ -199,7 +200,7 @@ func (suite *DataTypeSuite) TestValidate() {
 				CollectionMin:  intPtr(1),
 				Atomic:         atomic,
 			},
-			errstr: "CollectionMin: must be blank.",
+			errstr: "collectionMin: must be blank",
 		},
 		{
 			name: "record with CollectionMax",
@@ -211,17 +212,17 @@ func (suite *DataTypeSuite) TestValidate() {
 					{Name: "f", FieldDataType: &DataType{Key: "f", CollectionType: "atomic", Atomic: atomic}},
 				},
 			},
-			errstr: "CollectionMax: must be blank.",
+			errstr: "collectionMax: must be blank",
 		},
 	}
 
 	for _, tt := range collectionTests {
 		err := tt.dt.Validate()
 		if tt.errstr == "" {
-			assert.Nil(suite.T(), err, "expected no error for %s", tt.name)
+			suite.Require().NoError(err, "expected no error for %s", tt.name)
 		} else {
-			assert.NotNil(suite.T(), err, "expected error for %s", tt.name)
-			assert.ErrorContains(suite.T(), err, tt.errstr, "error message mismatch for %s", tt.name)
+			suite.Require().Error(err, "expected error for %s", tt.name)
+			suite.Require().ErrorContains(err, tt.errstr, "error message mismatch for %s", tt.name)
 		}
 	}
 }
@@ -265,10 +266,10 @@ func TestNewBlank(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := New(key, tt.input, nil)
 			if tt.errorMessage != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -314,10 +315,10 @@ func TestNew(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := New(key, tt.input, nil)
 			if tt.errorMessage != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMessage)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -498,19 +499,17 @@ func TestParseCollections(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("CollectionDataType"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
-				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -582,19 +581,17 @@ func TestParseRecordFields(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("Field"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(Field)
-				assert.Equal(t, true, ok, "cannot type cast to Field: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to Field: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -771,19 +768,17 @@ func TestParseRecords(t *testing.T) {
 
 	for _, tt := range tests {
 		pass := t.Run(tt.name, func(t *testing.T) {
-
 			// Test calling directly into the parser.
 			dataTypeAny, err := Parse("", []byte(tt.input), Entrypoint("RecordDataType"))
 			if tt.errorMessage == "" {
-				assert.NoError(t, err, tt.input)
+				require.NoError(t, err, tt.input)
 
 				dataType, ok := dataTypeAny.(*DataType)
-				assert.Equal(t, true, ok, "cannot type cast to *DataType: '%s'", tt.input)
+				assert.True(t, ok, "cannot type cast to *DataType: '%s'", tt.input)
 
 				assert.Equal(t, tt.expected, dataType, tt.input)
 			} else {
-
-				assert.ErrorContains(t, err, tt.errorMessage, tt.input)
+				require.ErrorContains(t, err, tt.errorMessage, tt.input)
 				assert.Empty(t, dataTypeAny, tt.input)
 			}
 		})
@@ -795,19 +790,18 @@ func TestParseRecords(t *testing.T) {
 }
 
 func TestNewUnparsable(t *testing.T) {
-
 	// If we cannot parse the text, no error but instead just a nil result.
 	result, err := New("key", "this cannot be parsed so it is just an unparsable blob", nil)
 	var targetType *CannotParseError
-	assert.ErrorAs(t, err, &targetType)
-	assert.ErrorContains(t, err, "failed to parse")
+	require.ErrorAs(t, err, &targetType)
+	require.ErrorContains(t, err, "failed to parse")
 	assert.Nil(t, result)
 }
 
 func TestNewInvalid(t *testing.T) {
 	// Key is required.
 	result, err := New("", "", nil)
-	assert.ErrorContains(t, err, "Key")
+	require.ErrorContains(t, err, "Key")
 	assert.Nil(t, result)
 }
 
@@ -945,7 +939,7 @@ func TestDataTypeString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.panicMessage != "" {
-				assert.PanicsWithValue(t, tt.panicMessage, func() { tt.dataType.String() })
+				assert.PanicsWithValue(t, tt.panicMessage, func() { _ = tt.dataType.String() })
 			} else {
 				assert.NotPanics(t, func() {
 					result := tt.dataType.String()
@@ -990,17 +984,17 @@ func (suite *DataTypeSuite) TestUnpackNested() {
 	result := root.UnpackNested()
 
 	// Verify the result
-	assert.Len(suite.T(), result, 3)
+	suite.Len(result, 3)
 
 	// Deepest first: grandchild, child, root
-	assert.Equal(suite.T(), "root/child/grandchild", result[0].Key)
-	assert.Equal(suite.T(), "atomic", result[0].CollectionType)
+	suite.Equal("root/child/grandchild", result[0].Key)
+	suite.Equal("atomic", result[0].CollectionType)
 
-	assert.Equal(suite.T(), "root/child", result[1].Key)
-	assert.Equal(suite.T(), "record", result[1].CollectionType)
+	suite.Equal("root/child", result[1].Key)
+	suite.Equal("record", result[1].CollectionType)
 
-	assert.Equal(suite.T(), "root", result[2].Key)
-	assert.Equal(suite.T(), "record", result[2].CollectionType)
+	suite.Equal("root", result[2].Key)
+	suite.Equal("record", result[2].CollectionType)
 }
 
 func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {
@@ -1013,10 +1007,10 @@ func (suite *DataTypeSuite) TestSortDataTypesByKeyLengthDesc() {
 
 	SortDataTypesByKeyLengthDesc(dataTypes)
 
-	assert.Equal(suite.T(), "dddd", dataTypes[0].Key)
-	assert.Equal(suite.T(), "ccc", dataTypes[1].Key)
-	assert.Equal(suite.T(), "bb", dataTypes[2].Key)
-	assert.Equal(suite.T(), "a", dataTypes[3].Key)
+	suite.Equal("dddd", dataTypes[0].Key)
+	suite.Equal("ccc", dataTypes[1].Key)
+	suite.Equal("bb", dataTypes[2].Key)
+	suite.Equal("a", dataTypes[3].Key)
 }
 
 func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
@@ -1066,7 +1060,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 
 	fieldMap, atomicMap, atomicSpanMap, atomicEnumMap := ExtractDatabaseObjects(dataTypes)
 
-	assert.Equal(suite.T(), map[string][]Field{
+	suite.Equal(map[string][]Field{
 		"record_key": {
 			{
 				Name:          "name",
@@ -1075,7 +1069,7 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 		},
 	}, fieldMap)
 
-	assert.Equal(suite.T(), map[string]Atomic{
+	suite.Equal(map[string]Atomic{
 		"atomic_key": {ConstraintType: "unconstrained"},
 		"atomic_span_key": Atomic{
 			ConstraintType: "span",
@@ -1093,11 +1087,11 @@ func (suite *DataTypeSuite) TestExtractDatabaseObjects() {
 		},
 	}, atomicMap)
 
-	assert.Equal(suite.T(), map[string]AtomicSpan{
+	suite.Equal(map[string]AtomicSpan{
 		"atomic_span_key": {LowerType: "unconstrained", HigherType: "unconstrained"},
 	}, atomicSpanMap)
 
-	assert.Equal(suite.T(), map[string][]AtomicEnum{
+	suite.Equal(map[string][]AtomicEnum{
 		"atomic_enum_key": {
 			{Value: "ValueA"},
 			{Value: "ValueB"},
@@ -1157,7 +1151,7 @@ func (suite *DataTypeSuite) TestReconstituteDataTypes() {
 	result := ReconstituteDataTypes(baseDataTypes, fieldMap, atomicMap, atomicSpanMap, atomicEnumMap)
 
 	// Verify the result is sorted by key length descending and components are attached
-	assert.Equal(suite.T(), []DataType{
+	suite.Equal([]DataType{
 		{
 			Key:            "atomic_enum_key",
 			CollectionType: "atomic",
@@ -1262,5 +1256,5 @@ func (suite *DataTypeSuite) TestFlattenAndReconstructNested() {
 	reconstructed := ReconstructNestedDataTypes(flat)
 
 	// Verify that reconstructed matches original
-	assert.Equal(suite.T(), original, reconstructed)
+	suite.Equal(original, reconstructed)
 }

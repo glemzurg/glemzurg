@@ -31,11 +31,11 @@ func (le *BinaryEquality) String() (value string) {
 	return out.String()
 }
 
-func (le *BinaryEquality) Ascii() (value string) {
+func (le *BinaryEquality) ASCII() (value string) {
 	var out bytes.Buffer
-	out.WriteString(le.Left.Ascii())
+	out.WriteString(le.Left.ASCII())
 	out.WriteString(" " + _asciiEqualityOperatorMap[le.Operator] + " ")
-	out.WriteString(le.Right.Ascii())
+	out.WriteString(le.Right.ASCII())
 	return out.String()
 }
 
@@ -53,5 +53,6 @@ func (le *BinaryEquality) Validate() error {
 }
 
 // LogicEquality is an alias for backwards compatibility.
+//
 // Deprecated: Use BinaryEquality instead.
 type LogicEquality = BinaryEquality

@@ -5,9 +5,9 @@ import (
 	"math/big"
 	"strings"
 
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 )
 
 // RaiseContext provides the inverse name-resolution mappings for raising
@@ -35,6 +35,9 @@ type RaiseContext struct {
 
 // Raise converts a model_expression.Expression tree into a TLA+ AST expression.
 // This is the inverse of Lower().
+//
+//complexity:cyclo:warn=60,fail=60 Simple routing switch.
+//complexity:fanout:warn=60,fail=60 Simple routing switch.
 func Raise(expr me.Expression, ctx *RaiseContext) (ast.Expression, error) {
 	if expr == nil {
 		return nil, fmt.Errorf("cannot raise nil expression")
@@ -375,7 +378,7 @@ func raiseNamedSetRef(e *me.NamedSetRef, ctx *RaiseContext) (ast.Expression, err
 func raiseNegate(e *me.Negate, ctx *RaiseContext) (ast.Expression, error) {
 	inner, err := Raise(e.Expr, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Negate: %w", err)
+		return nil, fmt.Errorf("negate: %w", err)
 	}
 	return ast.NewNegation(inner), nil
 }
@@ -383,7 +386,7 @@ func raiseNegate(e *me.Negate, ctx *RaiseContext) (ast.Expression, error) {
 func raiseNot(e *me.Not, ctx *RaiseContext) (ast.Expression, error) {
 	inner, err := Raise(e.Expr, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Not: %w", err)
+		return nil, fmt.Errorf("not: %w", err)
 	}
 	return &ast.UnaryLogic{Operator: "¬", Right: inner}, nil
 }

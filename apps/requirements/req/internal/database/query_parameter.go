@@ -3,10 +3,11 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
@@ -68,7 +69,6 @@ func scanQueryParameter(scanner Scanner, queryKeyPtr *identity.Key, param *model
 
 // LoadQueryParameter loads a query parameter from the database.
 func LoadQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, parameterKey string) (param model_state.Parameter, err error) {
-
 	var loadedQueryKey identity.Key
 	var sortOrder int
 
@@ -115,14 +115,13 @@ func AddQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, pa
 
 // UpdateQueryParameter updates a query parameter in the database.
 func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, sortOrder int, param model_state.Parameter) (err error) {
-
 	paramKey, err := preenKey(param.Name)
 	if err != nil {
 		return errors.Wrapf(err, "parameter name '%s'", param.Name)
 	}
 
 	// Update the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		UPDATE
 			query_parameter
 		SET
@@ -152,9 +151,8 @@ func UpdateQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 
 // RemoveQueryParameter deletes a query parameter from the database.
 func RemoveQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key, parameterKey string) (err error) {
-
 	// Delete the data.
-	_, err = dbExec(dbOrTx, `
+	err = dbExec(dbOrTx, `
 		DELETE FROM
 			query_parameter
 		WHERE
@@ -175,7 +173,6 @@ func RemoveQueryParameter(dbOrTx DbOrTx, modelKey string, queryKey identity.Key,
 
 // QueryQueryParameters loads all query parameters from the database, grouped by query key.
 func QueryQueryParameters(dbOrTx DbOrTx, modelKey string) (params map[identity.Key][]model_state.Parameter, err error) {
-
 	// Query the database.
 	err = dbQuery(
 		dbOrTx,
@@ -226,13 +223,14 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 	}
 
 	// Build the bulk insert query.
-	sqlQuery := `INSERT INTO query_parameter (model_key, query_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `
-	args := make([]interface{}, 0, count*7)
+	var qb strings.Builder
+	qb.WriteString(`INSERT INTO query_parameter (model_key, query_key, parameter_key, name, sort_order, data_type_rules, data_type_key) VALUES `)
+	args := make([]any, 0, count*7)
 	i := 0
 	for queryKey, paramList := range params {
 		for paramIdx, param := range paramList {
 			if i > 0 {
-				sqlQuery += ", "
+				qb.WriteString(", ")
 			}
 
 			paramKey, err := preenKey(param.Name)
@@ -241,13 +239,13 @@ func AddQueryParameters(dbOrTx DbOrTx, modelKey string, params map[identity.Key]
 			}
 
 			base := i * 7
-			sqlQuery += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7)
+			qb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", base+1, base+2, base+3, base+4, base+5, base+6, base+7))
 			args = append(args, modelKey, queryKey.String(), paramKey, param.Name, paramIdx, param.DataTypeRules, parameterDataTypeKey(param))
 			i++
 		}
 	}
 
-	_, err = dbExec(dbOrTx, sqlQuery, args...)
+	err = dbExec(dbOrTx, qb.String(), args...)
 	if err != nil {
 		return errors.WithStack(err)
 	}
