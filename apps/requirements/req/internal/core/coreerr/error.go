@@ -17,30 +17,78 @@ type PathSegment struct {
 
 // ValidationError is the structured error type for all core validation failures.
 type ValidationError struct {
-	Code    Code          // Unique stable identifier, e.g., "CLASS_KEY_TYPE_INVALID".
-	Message string        // Human-readable description of what went wrong.
-	Path    []PathSegment // Location in the model tree where the error occurred.
-	Field   string        // The specific field that failed validation.
-	Got     string        // The invalid value that was provided (stringified).
-	Want    string        // What valid values look like (e.g., "one of: person, system").
+	code    Code          // Unique stable identifier, e.g., "CLASS_KEY_TYPE_INVALID".
+	message string        // Human-readable description of what went wrong.
+	path    []PathSegment // Location in the model tree where the error occurred.
+	field   string        // The specific field that failed validation.
+	got     string        // The invalid value that was provided (stringified).
+	want    string        // What valid values look like (e.g., "one of: person, system").
 }
+
+// New creates a ValidationError with code, message, and field.
+func New(code Code, message, field string) *ValidationError {
+	return &ValidationError{
+		code:    code,
+		message: message,
+		field:   field,
+	}
+}
+
+// NewWithValues creates a ValidationError with code, message, field, got, and want.
+func NewWithValues(code Code, message, field, got, want string) *ValidationError {
+	return &ValidationError{
+		code:    code,
+		message: message,
+		field:   field,
+		got:     got,
+		want:    want,
+	}
+}
+
+// NewWithPath creates a ValidationError with code, message, path, and field.
+func NewWithPath(code Code, message string, path []PathSegment, field string) *ValidationError {
+	return &ValidationError{
+		code:    code,
+		message: message,
+		path:    path,
+		field:   field,
+	}
+}
+
+// Code returns the error code.
+func (e *ValidationError) Code() Code { return e.code }
+
+// Message returns the human-readable description.
+func (e *ValidationError) Message() string { return e.message }
+
+// Path returns the location in the model tree.
+func (e *ValidationError) Path() []PathSegment { return e.path }
+
+// Field returns the specific field that failed validation.
+func (e *ValidationError) Field() string { return e.field }
+
+// Got returns the invalid value that was provided.
+func (e *ValidationError) Got() string { return e.got }
+
+// Want returns what valid values look like.
+func (e *ValidationError) Want() string { return e.want }
 
 // Error implements the error interface.
 func (e *ValidationError) Error() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "[%s] %s", e.Code, e.Message)
-	if e.Field != "" {
-		fmt.Fprintf(&b, " (field: %s", e.Field)
-		if e.Got != "" {
-			fmt.Fprintf(&b, ", got: %q", e.Got)
+	fmt.Fprintf(&b, "[%s] %s", e.code, e.message)
+	if e.field != "" {
+		fmt.Fprintf(&b, " (field: %s", e.field)
+		if e.got != "" {
+			fmt.Fprintf(&b, ", got: %q", e.got)
 		}
-		if e.Want != "" {
-			fmt.Fprintf(&b, ", want: %s", e.Want)
+		if e.want != "" {
+			fmt.Fprintf(&b, ", want: %s", e.want)
 		}
 		b.WriteString(")")
 	}
-	if len(e.Path) > 0 {
-		fmt.Fprintf(&b, " at %s", FormatPath(e.Path))
+	if len(e.path) > 0 {
+		fmt.Fprintf(&b, " at %s", FormatPath(e.path))
 	}
 	return b.String()
 }
@@ -48,7 +96,7 @@ func (e *ValidationError) Error() string {
 // Is allows errors.Is matching by Code alone.
 func (e *ValidationError) Is(target error) bool {
 	if t, ok := target.(*ValidationError); ok {
-		return t.Code == e.Code
+		return t.code == e.code
 	}
 	return false
 }
@@ -92,17 +140,17 @@ func (vc *ValidationContext) Child(entity, key string) *ValidationContext {
 // Err creates a new ValidationError at the current context path.
 func (vc *ValidationContext) Err(code Code, field, got, want, message string) *ValidationError {
 	return &ValidationError{
-		Code:    code,
-		Message: message,
-		Path:    vc.path,
-		Field:   field,
-		Got:     got,
-		Want:    want,
+		code:    code,
+		message: message,
+		path:    vc.path,
+		field:   field,
+		got:     got,
+		want:    want,
 	}
 }
 
-// Path returns the current path segments.
-func (vc *ValidationContext) Path() []PathSegment {
+// ContextPath returns the current path segments.
+func (vc *ValidationContext) ContextPath() []PathSegment {
 	return vc.path
 }
 

@@ -26,13 +26,7 @@ func NewUseCaseShared(shareType, umlComment string) (useCaseShared UseCaseShared
 // Validate validates the UseCaseShared struct.
 func (u *UseCaseShared) Validate() error {
 	if u.ShareType != "include" && u.ShareType != "extend" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.UshareSharetypeInvalid,
-			Message: "ShareType must be one of: include, extend",
-			Field:   "ShareType",
-			Got:     u.ShareType,
-			Want:    "one of: include, extend",
-		}
+		return coreerr.NewWithValues(coreerr.UshareSharetypeInvalid, "ShareType must be one of: include, extend", "ShareType", u.ShareType, "one of: include, extend")
 	}
 	return nil
 }

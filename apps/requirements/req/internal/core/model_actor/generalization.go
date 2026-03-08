@@ -38,28 +38,14 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 func (g *Generalization) Validate() error {
 	// Validate the key.
 	if err := g.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.AgenKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.AgenKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_ACTOR_GENERALIZATION {
-		return &coreerr.ValidationError{
-			Code:    coreerr.AgenKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for actor generalization", g.Key.KeyType),
-			Field:   "Key",
-			Got:     g.Key.KeyType,
-			Want:    identity.KEY_TYPE_ACTOR_GENERALIZATION,
-		}
+		return coreerr.NewWithValues(coreerr.AgenKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for actor generalization", g.Key.KeyType), "Key", g.Key.KeyType, identity.KEY_TYPE_ACTOR_GENERALIZATION)
 	}
 
 	if g.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.AgenNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.AgenNameRequired, "Name is required", "Name")
 	}
 
 	return nil

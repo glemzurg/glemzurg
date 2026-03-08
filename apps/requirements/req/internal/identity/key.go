@@ -73,13 +73,7 @@ var validKeyTypes = map[string]bool{
 
 // keyErr creates a coreerr.ValidationError for key validation failures.
 func keyErr(code coreerr.Code, field, got, want, message string) *coreerr.ValidationError {
-	return &coreerr.ValidationError{
-		Code:    code,
-		Message: message,
-		Field:   field,
-		Got:     got,
-		Want:    want,
-	}
+	return coreerr.NewWithValues(code, message, field, got, want)
 }
 
 // Validate validates the Key struct.

@@ -11,11 +11,7 @@ type AtomicEnum struct {
 
 func (a *AtomicEnum) Validate() error {
 	if a.Value == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeEnumValueRequired,
-			Message: "Value is required",
-			Field:   "Value",
-		}
+		return coreerr.New(coreerr.DtypeEnumValueRequired, "Value is required", "Value")
 	}
 	return nil
 }

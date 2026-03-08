@@ -35,45 +35,21 @@ func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Gua
 func (g *Guard) Validate() error {
 	// Validate the key.
 	if err := g.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GuardKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.GuardKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_GUARD {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GuardKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for guard", g.Key.KeyType),
-			Field:   "Key",
-			Got:     g.Key.KeyType,
-			Want:    identity.KEY_TYPE_GUARD,
-		}
+		return coreerr.NewWithValues(coreerr.GuardKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for guard", g.Key.KeyType), "Key", g.Key.KeyType, identity.KEY_TYPE_GUARD)
 	}
 
 	if g.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GuardNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.GuardNameRequired, "Name is required", "Name")
 	}
 
 	if err := g.Logic.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GuardLogicInvalid,
-			Message: fmt.Sprintf("logic: %s", err.Error()),
-			Field:   "Logic",
-		}
+		return coreerr.New(coreerr.GuardLogicInvalid, fmt.Sprintf("logic: %s", err.Error()), "Logic")
 	}
 	if g.Logic.Type != model_logic.LogicTypeAssessment {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GuardLogicTypeInvalid,
-			Message: fmt.Sprintf("logic kind must be '%s', got '%s'", model_logic.LogicTypeAssessment, g.Logic.Type),
-			Field:   "Logic.Type",
-			Got:     g.Logic.Type,
-			Want:    model_logic.LogicTypeAssessment,
-		}
+		return coreerr.NewWithValues(coreerr.GuardLogicTypeInvalid, fmt.Sprintf("logic kind must be '%s', got '%s'", model_logic.LogicTypeAssessment, g.Logic.Type), "Logic.Type", g.Logic.Type, model_logic.LogicTypeAssessment)
 	}
 
 	return nil
@@ -92,13 +68,7 @@ func (g *Guard) ValidateWithParent(parent *identity.Key) error {
 	}
 	// Guard's logic must use the guard's exact key.
 	if g.Logic.Key != g.Key {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GuardLogicKeyMismatch,
-			Message: fmt.Sprintf("logic key '%s' does not match guard key '%s'", g.Logic.Key.String(), g.Key.String()),
-			Field:   "Logic.Key",
-			Got:     g.Logic.Key.String(),
-			Want:    g.Key.String(),
-		}
+		return coreerr.NewWithValues(coreerr.GuardLogicKeyMismatch, fmt.Sprintf("logic key '%s' does not match guard key '%s'", g.Logic.Key.String(), g.Key.String()), "Logic.Key", g.Logic.Key.String(), g.Key.String())
 	}
 	// Validate the logic's key parent relationship.
 	if err := g.Logic.ValidateWithParent(parent); err != nil {

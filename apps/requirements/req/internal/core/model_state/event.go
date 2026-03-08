@@ -35,28 +35,14 @@ func NewEvent(key identity.Key, name, details string, parameters []Parameter) (e
 func (e *Event) Validate() error {
 	// Validate the key.
 	if err := e.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.EventKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.EventKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if e.Key.KeyType != identity.KEY_TYPE_EVENT {
-		return &coreerr.ValidationError{
-			Code:    coreerr.EventKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for event", e.Key.KeyType),
-			Field:   "Key",
-			Got:     e.Key.KeyType,
-			Want:    identity.KEY_TYPE_EVENT,
-		}
+		return coreerr.NewWithValues(coreerr.EventKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for event", e.Key.KeyType), "Key", e.Key.KeyType, identity.KEY_TYPE_EVENT)
 	}
 
 	if e.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.EventNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.EventNameRequired, "Name is required", "Name")
 	}
 
 	return nil

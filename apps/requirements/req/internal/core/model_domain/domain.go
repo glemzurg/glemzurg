@@ -43,28 +43,14 @@ func NewDomain(key identity.Key, name, details string, realized bool, umlComment
 func (d *Domain) Validate() error {
 	// Validate the key.
 	if err := d.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DomainKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.DomainKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if d.Key.KeyType != identity.KEY_TYPE_DOMAIN {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DomainKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for domain", d.Key.KeyType),
-			Field:   "Key",
-			Got:     d.Key.KeyType,
-			Want:    identity.KEY_TYPE_DOMAIN,
-		}
+		return coreerr.NewWithValues(coreerr.DomainKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for domain", d.Key.KeyType), "Key", d.Key.KeyType, identity.KEY_TYPE_DOMAIN)
 	}
 	// Validate Name required.
 	if d.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DomainNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.DomainNameRequired, "Name is required", "Name")
 	}
 	return nil
 }
@@ -101,25 +87,14 @@ func (d *Domain) ValidateWithParentAndActorsAndClasses(parent *identity.Key, act
 		// Single subdomain must have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() != "default" {
-				return &coreerr.ValidationError{
-					Code:    coreerr.DomainSubdomainSingleKey,
-					Message: fmt.Sprintf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey()),
-					Field:   "Subdomains",
-					Got:     subdomainKey.GetSubKey(),
-					Want:    "default",
-				}
+				return coreerr.NewWithValues(coreerr.DomainSubdomainSingleKey, fmt.Sprintf("domain '%s' has a single subdomain but its key is '%s', must be 'default'", d.Key.String(), subdomainKey.GetSubKey()), "Subdomains", subdomainKey.GetSubKey(), "default")
 			}
 		}
 	} else if len(d.Subdomains) > 1 {
 		// Multiple subdomains cannot have the key "default".
 		for subdomainKey := range d.Subdomains {
 			if subdomainKey.GetSubKey() == "default" {
-				return &coreerr.ValidationError{
-					Code:    coreerr.DomainSubdomainMultiDefault,
-					Message: fmt.Sprintf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String()),
-					Field:   "Subdomains",
-					Got:     "default",
-				}
+				return coreerr.NewWithValues(coreerr.DomainSubdomainMultiDefault, fmt.Sprintf("domain '%s' has multiple subdomains but one has the key 'default', which is reserved for single-subdomain domains", d.Key.String()), "Subdomains", "default", "")
 			}
 		}
 	}

@@ -37,28 +37,14 @@ func NewState(key identity.Key, name, details, umlComment string) (state State, 
 func (s *State) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.StateKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_STATE {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for state", s.Key.KeyType),
-			Field:   "Key",
-			Got:     s.Key.KeyType,
-			Want:    identity.KEY_TYPE_STATE,
-		}
+		return coreerr.NewWithValues(coreerr.StateKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for state", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_STATE)
 	}
 
 	if s.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.StateNameRequired, "Name is required", "Name")
 	}
 
 	return nil

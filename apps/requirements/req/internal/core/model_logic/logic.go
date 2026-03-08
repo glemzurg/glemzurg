@@ -68,78 +68,39 @@ func (l *Logic) Validate() error {
 	}
 	// Type is required.
 	if l.Type == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.LogicTypeRequired,
-			Message: "Type is required",
-			Field:   "Type",
-			Want:    "one of: assessment, state_change, query, safety_rule, value, let",
-		}
+		return coreerr.NewWithValues(coreerr.LogicTypeRequired, "Type is required", "Type", "", "one of: assessment, state_change, query, safety_rule, value, let")
 	}
 	// Type must be a valid value.
 	if !validLogicTypes[l.Type] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.LogicTypeInvalid,
-			Message: fmt.Sprintf("Type '%s' is not valid", l.Type),
-			Field:   "Type",
-			Got:     l.Type,
-			Want:    "one of: assessment, state_change, query, safety_rule, value, let",
-		}
+		return coreerr.NewWithValues(coreerr.LogicTypeInvalid, fmt.Sprintf("Type '%s' is not valid", l.Type), "Type", l.Type, "one of: assessment, state_change, query, safety_rule, value, let")
 	}
 	// Description is required.
 	if l.Description == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.LogicDescRequired,
-			Message: "Description is required",
-			Field:   "Description",
-		}
+		return coreerr.New(coreerr.LogicDescRequired, "Description is required", "Description")
 	}
 	// Target validation based on logic type.
 	switch l.Type {
 	case LogicTypeStateChange, LogicTypeQuery, LogicTypeLet:
 		if l.Target == "" {
-			return &coreerr.ValidationError{
-				Code:    coreerr.LogicTargetRequired,
-				Message: fmt.Sprintf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type),
-				Field:   "Target",
-				Want:    "non-empty string",
-			}
+			return coreerr.NewWithValues(coreerr.LogicTargetRequired, fmt.Sprintf("logic %q of type %q requires a non-empty target", l.Key.String(), l.Type), "Target", "", "non-empty string")
 		}
 		// Query and let targets cannot start with "_".
 		if (l.Type == LogicTypeQuery || l.Type == LogicTypeLet) && strings.HasPrefix(l.Target, "_") {
-			return &coreerr.ValidationError{
-				Code:    coreerr.LogicTargetNoUnderscore,
-				Message: fmt.Sprintf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target),
-				Field:   "Target",
-				Got:     l.Target,
-			}
+			return coreerr.NewWithValues(coreerr.LogicTargetNoUnderscore, fmt.Sprintf("logic %q of type %q has target %q starting with '_' which is not allowed", l.Key.String(), l.Type, l.Target), "Target", l.Target, "")
 		}
 	case LogicTypeAssessment, LogicTypeSafetyRule, LogicTypeValue:
 		if l.Target != "" {
-			return &coreerr.ValidationError{
-				Code:    coreerr.LogicTargetMustBeEmpty,
-				Message: fmt.Sprintf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target),
-				Field:   "Target",
-				Got:     l.Target,
-				Want:    "empty string",
-			}
+			return coreerr.NewWithValues(coreerr.LogicTargetMustBeEmpty, fmt.Sprintf("logic %q of type %q must not have a target, got %q", l.Key.String(), l.Type, l.Target), "Target", l.Target, "empty string")
 		}
 	}
 	// Validate the ExpressionSpec.
 	if err := l.Spec.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.LogicSpecInvalid,
-			Message: fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()),
-			Field:   "Spec",
-		}
+		return coreerr.New(coreerr.LogicSpecInvalid, fmt.Sprintf("logic %q spec: %s", l.Key.String(), err.Error()), "Spec")
 	}
 	// Validate TargetTypeSpec if present.
 	if l.TargetTypeSpec != nil {
 		if err := l.TargetTypeSpec.Validate(); err != nil {
-			return &coreerr.ValidationError{
-				Code:    coreerr.LogicTargetTypespecInvalid,
-				Message: fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()),
-				Field:   "TargetTypeSpec",
-			}
+			return coreerr.New(coreerr.LogicTargetTypespecInvalid, fmt.Sprintf("logic %q target type spec: %s", l.Key.String(), err.Error()), "TargetTypeSpec")
 		}
 	}
 	return nil

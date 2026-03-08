@@ -44,56 +44,26 @@ func NewStateAction(key, actionKey identity.Key, when string) (stateAction State
 func (sa *StateAction) Validate() error {
 	// Validate the key.
 	if err := sa.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.StateactionKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if sa.Key.KeyType != identity.KEY_TYPE_STATE_ACTION {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for state action", sa.Key.KeyType),
-			Field:   "Key",
-			Got:     sa.Key.KeyType,
-			Want:    identity.KEY_TYPE_STATE_ACTION,
-		}
+		return coreerr.NewWithValues(coreerr.StateactionKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for state action", sa.Key.KeyType), "Key", sa.Key.KeyType, identity.KEY_TYPE_STATE_ACTION)
 	}
 
 	// Validate the action key.
 	if err := sa.ActionKey.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionActionkeyInvalid,
-			Message: fmt.Sprintf("ActionKey: %s", err.Error()),
-			Field:   "ActionKey",
-		}
+		return coreerr.New(coreerr.StateactionActionkeyInvalid, fmt.Sprintf("ActionKey: %s", err.Error()), "ActionKey")
 	}
 	if sa.ActionKey.KeyType != identity.KEY_TYPE_ACTION {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionActionkeyType,
-			Message: fmt.Sprintf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType),
-			Field:   "ActionKey",
-			Got:     sa.ActionKey.KeyType,
-			Want:    identity.KEY_TYPE_ACTION,
-		}
+		return coreerr.NewWithValues(coreerr.StateactionActionkeyType, fmt.Sprintf("ActionKey: invalid key type '%s' for action", sa.ActionKey.KeyType), "ActionKey", sa.ActionKey.KeyType, identity.KEY_TYPE_ACTION)
 	}
 
 	// Validate When field.
 	if sa.When == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionWhenRequired,
-			Message: "When is required",
-			Field:   "When",
-		}
+		return coreerr.New(coreerr.StateactionWhenRequired, "When is required", "When")
 	}
 	if sa.When != _WHEN_ENTRY && sa.When != _WHEN_EXIT && sa.When != _WHEN_DO {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionWhenInvalid,
-			Message: fmt.Sprintf("When '%s' is not valid", sa.When),
-			Field:   "When",
-			Got:     sa.When,
-			Want:    "one of: entry, exit, do",
-		}
+		return coreerr.NewWithValues(coreerr.StateactionWhenInvalid, fmt.Sprintf("When '%s' is not valid", sa.When), "When", sa.When, "one of: entry, exit, do")
 	}
 
 	return nil
@@ -117,12 +87,7 @@ func (sa *StateAction) ValidateWithParent(parent *identity.Key) error {
 // ValidateReferences validates that the state action's ActionKey references a real action in the class.
 func (sa *StateAction) ValidateReferences(actions map[identity.Key]bool) error {
 	if !actions[sa.ActionKey] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.StateactionActionNotfound,
-			Message: fmt.Sprintf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String()),
-			Field:   "ActionKey",
-			Got:     sa.ActionKey.String(),
-		}
+		return coreerr.NewWithValues(coreerr.StateactionActionNotfound, fmt.Sprintf("state action '%s' references non-existent action '%s'", sa.Key.String(), sa.ActionKey.String()), "ActionKey", sa.ActionKey.String(), "")
 	}
 	return nil
 }

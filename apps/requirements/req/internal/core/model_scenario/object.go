@@ -47,74 +47,35 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 func (o *Object) Validate() error {
 	// Validate the key.
 	if err := o.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.SobjectKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if o.Key.KeyType != identity.KEY_TYPE_SCENARIO_OBJECT {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectKeyTypeInvalid,
-			Message: fmt.Sprintf("key: invalid key type '%s' for scenario object", o.Key.KeyType),
-			Field:   "Key",
-			Got:     o.Key.KeyType,
-			Want:    identity.KEY_TYPE_SCENARIO_OBJECT,
-		}
+		return coreerr.NewWithValues(coreerr.SobjectKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for scenario object", o.Key.KeyType), "Key", o.Key.KeyType, identity.KEY_TYPE_SCENARIO_OBJECT)
 	}
 	// Validate NameStyle required.
 	if o.NameStyle == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectNamestyleRequired,
-			Message: "NameStyle is required",
-			Field:   "NameStyle",
-		}
+		return coreerr.New(coreerr.SobjectNamestyleRequired, "NameStyle is required", "NameStyle")
 	}
 	// Validate NameStyle is one of the valid values.
 	if o.NameStyle != _NAME_STYLE_NAME && o.NameStyle != _NAME_STYLE_ID && o.NameStyle != _NAME_STYLE_UNNAMED {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectNamestyleInvalid,
-			Message: "NameStyle must be one of: name, id, unnamed",
-			Field:   "NameStyle",
-			Got:     o.NameStyle,
-			Want:    "one of: name, id, unnamed",
-		}
+		return coreerr.NewWithValues(coreerr.SobjectNamestyleInvalid, "NameStyle must be one of: name, id, unnamed", "NameStyle", o.NameStyle, "one of: name, id, unnamed")
 	}
 	// Validate Name conditionally based on NameStyle.
 	if o.NameStyle == _NAME_STYLE_UNNAMED {
 		if o.Name != "" {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SobjectNameMustBeBlank,
-				Message: "Name: Name must be blank for unnamed style",
-				Field:   "Name",
-				Got:     o.Name,
-			}
+			return coreerr.NewWithValues(coreerr.SobjectNameMustBeBlank, "Name: Name must be blank for unnamed style", "Name", o.Name, "")
 		}
 	} else {
 		if o.Name == "" {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SobjectNameRequired,
-				Message: "Name: Name cannot be blank",
-				Field:   "Name",
-			}
+			return coreerr.New(coreerr.SobjectNameRequired, "Name: Name cannot be blank", "Name")
 		}
 	}
 	// Validate ClassKey.
 	if err := o.ClassKey.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectClasskeyInvalid,
-			Message: fmt.Sprintf("ClassKey: %s", err.Error()),
-			Field:   "ClassKey",
-		}
+		return coreerr.New(coreerr.SobjectClasskeyInvalid, fmt.Sprintf("ClassKey: %s", err.Error()), "ClassKey")
 	}
 	if o.ClassKey.KeyType != identity.KEY_TYPE_CLASS {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectClasskeyTypeInvalid,
-			Message: fmt.Sprintf("classKey: invalid key type '%s' for class", o.ClassKey.KeyType),
-			Field:   "ClassKey",
-			Got:     o.ClassKey.KeyType,
-			Want:    identity.KEY_TYPE_CLASS,
-		}
+		return coreerr.NewWithValues(coreerr.SobjectClasskeyTypeInvalid, fmt.Sprintf("classKey: invalid key type '%s' for class", o.ClassKey.KeyType), "ClassKey", o.ClassKey.KeyType, identity.KEY_TYPE_CLASS)
 	}
 	return nil
 }
@@ -138,12 +99,7 @@ func (o *Object) ValidateWithParent(parent *identity.Key) error {
 // The class must exist in the classes map (classes from the same subdomain as the use case).
 func (o *Object) ValidateReferences(classes map[identity.Key]bool) error {
 	if !classes[o.ClassKey] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SobjectClassNotfound,
-			Message: fmt.Sprintf("scenario object '%s' references non-existent class '%s'", o.Key.String(), o.ClassKey.String()),
-			Field:   "ClassKey",
-			Got:     o.ClassKey.String(),
-		}
+		return coreerr.NewWithValues(coreerr.SobjectClassNotfound, fmt.Sprintf("scenario object '%s' references non-existent class '%s'", o.Key.String(), o.ClassKey.String()), "ClassKey", o.ClassKey.String(), "")
 	}
 	return nil
 }

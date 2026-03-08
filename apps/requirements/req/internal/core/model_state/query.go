@@ -43,28 +43,14 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []mod
 func (q *Query) Validate() error {
 	// Validate the key.
 	if err := q.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.QueryKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.QueryKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if q.Key.KeyType != identity.KEY_TYPE_QUERY {
-		return &coreerr.ValidationError{
-			Code:    coreerr.QueryKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for query", q.Key.KeyType),
-			Field:   "Key",
-			Got:     q.Key.KeyType,
-			Want:    identity.KEY_TYPE_QUERY,
-		}
+		return coreerr.NewWithValues(coreerr.QueryKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for query", q.Key.KeyType), "Key", q.Key.KeyType, identity.KEY_TYPE_QUERY)
 	}
 
 	if q.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.QueryNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.QueryNameRequired, "Name is required", "Name")
 	}
 
 	reqLetTargets := make(map[string]bool)
@@ -73,22 +59,11 @@ func (q *Query) Validate() error {
 			return errors.Wrapf(err, "requires %d", i)
 		}
 		if req.Type != model_logic.LogicTypeAssessment && req.Type != model_logic.LogicTypeLet {
-			return &coreerr.ValidationError{
-				Code:    coreerr.QueryRequiresTypeInvalid,
-				Message: fmt.Sprintf("requires %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, req.Type),
-				Field:   "Requires",
-				Got:     req.Type,
-				Want:    fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet),
-			}
+			return coreerr.NewWithValues(coreerr.QueryRequiresTypeInvalid, fmt.Sprintf("requires %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, req.Type), "Requires", req.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
 		}
 		if req.Type == model_logic.LogicTypeLet {
 			if reqLetTargets[req.Target] {
-				return &coreerr.ValidationError{
-					Code:    coreerr.QueryRequiresDuplicateLet,
-					Message: fmt.Sprintf("requires %d: duplicate let target %q", i, req.Target),
-					Field:   "Requires",
-					Got:     req.Target,
-				}
+				return coreerr.NewWithValues(coreerr.QueryRequiresDuplicateLet, fmt.Sprintf("requires %d: duplicate let target %q", i, req.Target), "Requires", req.Target, "")
 			}
 			reqLetTargets[req.Target] = true
 		}
@@ -99,30 +74,14 @@ func (q *Query) Validate() error {
 			return errors.Wrapf(err, "guarantee %d", i)
 		}
 		if guar.Type != model_logic.LogicTypeQuery && guar.Type != model_logic.LogicTypeLet {
-			return &coreerr.ValidationError{
-				Code:    coreerr.QueryGuaranteeTypeInvalid,
-				Message: fmt.Sprintf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeQuery, model_logic.LogicTypeLet, guar.Type),
-				Field:   "Guarantees",
-				Got:     guar.Type,
-				Want:    fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeQuery, model_logic.LogicTypeLet),
-			}
+			return coreerr.NewWithValues(coreerr.QueryGuaranteeTypeInvalid, fmt.Sprintf("guarantee %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeQuery, model_logic.LogicTypeLet, guar.Type), "Guarantees", guar.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeQuery, model_logic.LogicTypeLet))
 		}
 		// Each guarantee and let must set a unique target.
 		if guarTargets[guar.Target] {
 			if guar.Type == model_logic.LogicTypeLet {
-				return &coreerr.ValidationError{
-					Code:    coreerr.QueryGuaranteeDuplicateLet,
-					Message: fmt.Sprintf("guarantee %d: duplicate let target %q", i, guar.Target),
-					Field:   "Guarantees",
-					Got:     guar.Target,
-				}
+				return coreerr.NewWithValues(coreerr.QueryGuaranteeDuplicateLet, fmt.Sprintf("guarantee %d: duplicate let target %q", i, guar.Target), "Guarantees", guar.Target, "")
 			}
-			return &coreerr.ValidationError{
-				Code:    coreerr.QueryGuaranteeDuplicateTarget,
-				Message: fmt.Sprintf("guarantee %d: duplicate target %q — each output identifier can only appear once per query", i, guar.Target),
-				Field:   "Guarantees",
-				Got:     guar.Target,
-			}
+			return coreerr.NewWithValues(coreerr.QueryGuaranteeDuplicateTarget, fmt.Sprintf("guarantee %d: duplicate target %q — each output identifier can only appear once per query", i, guar.Target), "Guarantees", guar.Target, "")
 		}
 		guarTargets[guar.Target] = true
 	}

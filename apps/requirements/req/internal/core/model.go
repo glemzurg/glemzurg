@@ -55,14 +55,10 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 // This is the entry point for validating the entire model tree.
 func (m *Model) Validate() error {
 	if m.Key == "" {
-		return &coreerr.ValidationError{
-			Code: coreerr.ModelKeyRequired, Message: "Key is required", Field: "Key", Want: "non-empty string",
-		}
+		return coreerr.NewWithValues(coreerr.ModelKeyRequired, "Key is required", "Key", "", "non-empty string")
 	}
 	if m.Name == "" {
-		return &coreerr.ValidationError{
-			Code: coreerr.ModelNameRequired, Message: "Name is required", Field: "Name", Want: "non-empty string",
-		}
+		return coreerr.NewWithValues(coreerr.ModelNameRequired, "Name is required", "Name", "", "non-empty string")
 	}
 	if err := m.validateInvariants(); err != nil {
 		return err
@@ -95,19 +91,15 @@ func (m *Model) validateInvariants() error {
 			return errors.Wrapf(err, "invariant %d", i)
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return &coreerr.ValidationError{
-				Code: coreerr.ModelInvariantTypeInvalid, Field: "Invariants",
-				Message: fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
-				Got:     inv.Type, Want: fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet),
-			}
+			return coreerr.NewWithValues(coreerr.ModelInvariantTypeInvalid,
+				fmt.Sprintf("invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
+				"Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if letTargets[inv.Target] {
-				return &coreerr.ValidationError{
-					Code: coreerr.ModelInvariantDuplicateLet, Field: "Invariants",
-					Message: fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target),
-					Got:     inv.Target,
-				}
+				return coreerr.NewWithValues(coreerr.ModelInvariantDuplicateLet,
+					fmt.Sprintf("invariant %d: duplicate let target %q", i, inv.Target),
+					"Invariants", inv.Target, "")
 			}
 			letTargets[inv.Target] = true
 		}
@@ -121,11 +113,9 @@ func (m *Model) validateGlobalFunctions() error {
 			return errors.Wrapf(err, "global function '%s'", gfKey.String())
 		}
 		if gfKey != gf.Key {
-			return &coreerr.ValidationError{
-				Code: coreerr.ModelGfuncKeyMismatch, Field: "GlobalFunctions",
-				Message: fmt.Sprintf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String()),
-				Got:     gfKey.String(), Want: gf.Key.String(),
-			}
+			return coreerr.NewWithValues(coreerr.ModelGfuncKeyMismatch,
+				fmt.Sprintf("global function map key '%s' does not match function key '%s'", gfKey.String(), gf.Key.String()),
+				"GlobalFunctions", gfKey.String(), gf.Key.String())
 		}
 	}
 	return nil
@@ -137,11 +127,9 @@ func (m *Model) validateNamedSets() error {
 			return errors.Wrapf(err, "named set '%s'", nsKey.String())
 		}
 		if nsKey != ns.Key {
-			return &coreerr.ValidationError{
-				Code: coreerr.ModelNsetKeyMismatch, Field: "NamedSets",
-				Message: fmt.Sprintf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String()),
-				Got:     nsKey.String(), Want: ns.Key.String(),
-			}
+			return coreerr.NewWithValues(coreerr.ModelNsetKeyMismatch,
+				fmt.Sprintf("named set map key '%s' does not match named set key '%s'", nsKey.String(), ns.Key.String()),
+				"NamedSets", nsKey.String(), ns.Key.String())
 		}
 	}
 	return nil
@@ -185,18 +173,14 @@ func (m *Model) validateGeneralizationUsage(ag model_actor.Generalization) error
 		}
 	}
 	if superCount != 1 {
-		return &coreerr.ValidationError{
-			Code: coreerr.ModelAgenSuperclassCount, Field: "ActorGeneralizations",
-			Message: fmt.Sprintf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount),
-			Got:     fmt.Sprintf("%d", superCount), Want: "1",
-		}
+		return coreerr.NewWithValues(coreerr.ModelAgenSuperclassCount,
+			fmt.Sprintf("actor generalization '%s' must have exactly one superclass, found %d", ag.Key.String(), superCount),
+			"ActorGeneralizations", fmt.Sprintf("%d", superCount), "1")
 	}
 	if subCount < 1 {
-		return &coreerr.ValidationError{
-			Code: coreerr.ModelAgenSubclassCount, Field: "ActorGeneralizations",
-			Message: fmt.Sprintf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount),
-			Got:     fmt.Sprintf("%d", subCount), Want: "at least 1",
-		}
+		return coreerr.NewWithValues(coreerr.ModelAgenSubclassCount,
+			fmt.Sprintf("actor generalization '%s' must have at least one subclass, found %d", ag.Key.String(), subCount),
+			"ActorGeneralizations", fmt.Sprintf("%d", subCount), "at least 1")
 	}
 	return nil
 }

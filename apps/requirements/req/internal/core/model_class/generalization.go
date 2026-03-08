@@ -38,29 +38,15 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 func (g *Generalization) Validate() error {
 	// Validate the key.
 	if err := g.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.CgenKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.CgenKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if g.Key.KeyType != identity.KEY_TYPE_CLASS_GENERALIZATION {
-		return &coreerr.ValidationError{
-			Code:    coreerr.CgenKeyTypeInvalid,
-			Message: fmt.Sprintf("key: invalid key type '%s' for generalization", g.Key.KeyType),
-			Field:   "Key",
-			Got:     g.Key.KeyType,
-			Want:    identity.KEY_TYPE_CLASS_GENERALIZATION,
-		}
+		return coreerr.NewWithValues(coreerr.CgenKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for generalization", g.Key.KeyType), "Key", g.Key.KeyType, identity.KEY_TYPE_CLASS_GENERALIZATION)
 	}
 
 	// Name is required.
 	if g.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.CgenNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.CgenNameRequired, "Name is required", "Name")
 	}
 
 	return nil

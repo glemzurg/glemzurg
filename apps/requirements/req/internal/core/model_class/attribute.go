@@ -71,29 +71,15 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 func (a *Attribute) Validate() error {
 	// Validate the key.
 	if err := a.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.AttrKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.AttrKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if a.Key.KeyType != identity.KEY_TYPE_ATTRIBUTE {
-		return &coreerr.ValidationError{
-			Code:    coreerr.AttrKeyTypeInvalid,
-			Message: fmt.Sprintf("key: invalid key type '%s' for attribute", a.Key.KeyType),
-			Field:   "Key",
-			Got:     a.Key.KeyType,
-			Want:    identity.KEY_TYPE_ATTRIBUTE,
-		}
+		return coreerr.NewWithValues(coreerr.AttrKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for attribute", a.Key.KeyType), "Key", a.Key.KeyType, identity.KEY_TYPE_ATTRIBUTE)
 	}
 
 	// Name is required.
 	if a.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.AttrNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.AttrNameRequired, "Name is required", "Name")
 	}
 
 	// Validate the derivation policy logic if present.
@@ -102,13 +88,7 @@ func (a *Attribute) Validate() error {
 			return errors.Wrapf(err, "attribute %s: DerivationPolicy", a.Name)
 		}
 		if a.DerivationPolicy.Type != model_logic.LogicTypeValue {
-			return &coreerr.ValidationError{
-				Code:    coreerr.AttrDerivationTypeInvalid,
-				Message: fmt.Sprintf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type),
-				Field:   "DerivationPolicy",
-				Got:     a.DerivationPolicy.Type,
-				Want:    string(model_logic.LogicTypeValue),
-			}
+			return coreerr.NewWithValues(coreerr.AttrDerivationTypeInvalid, fmt.Sprintf("attribute %s: DerivationPolicy logic kind must be '%s', got '%s'", a.Name, model_logic.LogicTypeValue, a.DerivationPolicy.Type), "DerivationPolicy", a.DerivationPolicy.Type, string(model_logic.LogicTypeValue))
 		}
 	}
 
@@ -119,22 +99,11 @@ func (a *Attribute) Validate() error {
 			return errors.Wrapf(err, "attribute invariant %d", i)
 		}
 		if inv.Type != model_logic.LogicTypeAssessment && inv.Type != model_logic.LogicTypeLet {
-			return &coreerr.ValidationError{
-				Code:    coreerr.AttrInvariantTypeInvalid,
-				Message: fmt.Sprintf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type),
-				Field:   "Invariants",
-				Got:     inv.Type,
-				Want:    fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet),
-			}
+			return coreerr.NewWithValues(coreerr.AttrInvariantTypeInvalid, fmt.Sprintf("attribute invariant %d: logic kind must be '%s' or '%s', got '%s'", i, model_logic.LogicTypeAssessment, model_logic.LogicTypeLet, inv.Type), "Invariants", inv.Type, fmt.Sprintf("one of: %s, %s", model_logic.LogicTypeAssessment, model_logic.LogicTypeLet))
 		}
 		if inv.Type == model_logic.LogicTypeLet {
 			if attrInvLetTargets[inv.Target] {
-				return &coreerr.ValidationError{
-					Code:    coreerr.AttrInvariantDuplicateLet,
-					Message: fmt.Sprintf("attribute invariant %d: duplicate let target %q", i, inv.Target),
-					Field:   "Invariants",
-					Got:     inv.Target,
-				}
+				return coreerr.NewWithValues(coreerr.AttrInvariantDuplicateLet, fmt.Sprintf("attribute invariant %d: duplicate let target %q", i, inv.Target), "Invariants", inv.Target, "")
 			}
 			attrInvLetTargets[inv.Target] = true
 		}

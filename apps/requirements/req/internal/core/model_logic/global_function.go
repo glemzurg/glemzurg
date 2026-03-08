@@ -50,13 +50,7 @@ func (gf *GlobalFunction) Validate() error {
 		return err
 	}
 	if gf.Key.KeyType != identity.KEY_TYPE_GLOBAL_FUNCTION {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GfuncKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for global function", gf.Key.KeyType),
-			Field:   "Key.KeyType",
-			Got:     gf.Key.KeyType,
-			Want:    identity.KEY_TYPE_GLOBAL_FUNCTION,
-		}
+		return coreerr.NewWithValues(coreerr.GfuncKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for global function", gf.Key.KeyType), "Key.KeyType", gf.Key.KeyType, identity.KEY_TYPE_GLOBAL_FUNCTION)
 	}
 
 	// Validate the specification logic.
@@ -66,44 +60,22 @@ func (gf *GlobalFunction) Validate() error {
 
 	// Logic must use the global function's exact key.
 	if gf.Logic.Key != gf.Key {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GfuncLogicKeyMismatch,
-			Message: fmt.Sprintf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String()),
-			Field:   "Logic.Key",
-			Got:     gf.Logic.Key.String(),
-			Want:    gf.Key.String(),
-		}
+		return coreerr.NewWithValues(coreerr.GfuncLogicKeyMismatch, fmt.Sprintf("logic key '%s' does not match global function key '%s'", gf.Logic.Key.String(), gf.Key.String()), "Logic.Key", gf.Logic.Key.String(), gf.Key.String())
 	}
 
 	// Global function logic must be of kind "value".
 	if gf.Logic.Type != LogicTypeValue {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GfuncLogicTypeInvalid,
-			Message: fmt.Sprintf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type),
-			Field:   "Logic.Type",
-			Got:     gf.Logic.Type,
-			Want:    LogicTypeValue,
-		}
+		return coreerr.NewWithValues(coreerr.GfuncLogicTypeInvalid, fmt.Sprintf("global function logic kind must be '%s', got '%s'", LogicTypeValue, gf.Logic.Type), "Logic.Type", gf.Logic.Type, LogicTypeValue)
 	}
 
 	// Name is required.
 	if gf.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GfuncNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.GfuncNameRequired, "Name is required", "Name")
 	}
 
 	// Name must start with underscore.
 	if !strings.HasPrefix(gf.Name, "_") {
-		return &coreerr.ValidationError{
-			Code:    coreerr.GfuncNameNoUnderscore,
-			Message: fmt.Sprintf("global function name '%s' must start with underscore", gf.Name),
-			Field:   "Name",
-			Got:     gf.Name,
-			Want:    "name starting with '_'",
-		}
+		return coreerr.NewWithValues(coreerr.GfuncNameNoUnderscore, fmt.Sprintf("global function name '%s' must start with underscore", gf.Name), "Name", gf.Name, "name starting with '_'")
 	}
 
 	return nil

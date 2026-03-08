@@ -56,29 +56,14 @@ func (s *TypeSpec) ParseOk() bool {
 // Validate validates the TypeSpec.
 func (s *TypeSpec) Validate() error {
 	if s.Notation == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.TypespecNotationRequired,
-			Message: "Notation is required",
-			Field:   "Notation",
-			Want:    "one of: tla_plus",
-		}
+		return coreerr.NewWithValues(coreerr.TypespecNotationRequired, "Notation is required", "Notation", "", "one of: tla_plus")
 	}
 	if s.Notation != "tla_plus" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.TypespecNotationInvalid,
-			Message: fmt.Sprintf("Notation '%s' is not valid", s.Notation),
-			Field:   "Notation",
-			Got:     s.Notation,
-			Want:    "one of: tla_plus",
-		}
+		return coreerr.NewWithValues(coreerr.TypespecNotationInvalid, fmt.Sprintf("Notation '%s' is not valid", s.Notation), "Notation", s.Notation, "one of: tla_plus")
 	}
 	if s.ExpressionType != nil {
 		if err := s.ExpressionType.Validate(); err != nil {
-			return &coreerr.ValidationError{
-				Code:    coreerr.TypespecExprtypeInvalid,
-				Message: fmt.Sprintf("TypeSpec.ExpressionType: %s", err.Error()),
-				Field:   "ExpressionType",
-			}
+			return coreerr.New(coreerr.TypespecExprtypeInvalid, fmt.Sprintf("TypeSpec.ExpressionType: %s", err.Error()), "ExpressionType")
 		}
 	}
 	return nil

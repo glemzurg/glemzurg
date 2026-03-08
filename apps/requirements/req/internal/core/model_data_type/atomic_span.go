@@ -63,58 +63,28 @@ func precisionValidator(v float64) error {
 func (a *AtomicSpan) Validate() error {
 	// LowerType: required and must be one of closed, open, unconstrained.
 	if a.LowerType == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeSpanLowertypeRequired,
-			Message: "LowerType is required",
-			Field:   "LowerType",
-			Want:    "one of: closed, open, unconstrained",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeSpanLowertypeRequired, "LowerType is required", "LowerType", "", "one of: closed, open, unconstrained")
 	}
 	if !_validBoundTypes[a.LowerType] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeSpanLowertypeInvalid,
-			Message: "LowerType is not a valid value",
-			Field:   "LowerType",
-			Got:     a.LowerType,
-			Want:    "one of: closed, open, unconstrained",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeSpanLowertypeInvalid, "LowerType is not a valid value", "LowerType", a.LowerType, "one of: closed, open, unconstrained")
 	}
 
 	// HigherType: required and must be one of closed, open, unconstrained.
 	if a.HigherType == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeSpanHighertypeRequired,
-			Message: "HigherType is required",
-			Field:   "HigherType",
-			Want:    "one of: closed, open, unconstrained",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeSpanHighertypeRequired, "HigherType is required", "HigherType", "", "one of: closed, open, unconstrained")
 	}
 	if !_validBoundTypes[a.HigherType] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeSpanHighertypeInvalid,
-			Message: "HigherType is not a valid value",
-			Field:   "HigherType",
-			Got:     a.HigherType,
-			Want:    "one of: closed, open, unconstrained",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeSpanHighertypeInvalid, "HigherType is not a valid value", "HigherType", a.HigherType, "one of: closed, open, unconstrained")
 	}
 
 	// Units: required.
 	if a.Units == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeSpanUnitsRequired,
-			Message: "Units is required",
-			Field:   "Units",
-		}
+		return coreerr.New(coreerr.DtypeSpanUnitsRequired, "Units is required", "Units")
 	}
 
 	// Precision: required (non-zero).
 	if a.Precision == 0 {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeSpanPrecisionRequired,
-			Message: "Precision is required",
-			Field:   "Precision",
-		}
+		return coreerr.New(coreerr.DtypeSpanPrecisionRequired, "Precision is required", "Precision")
 	}
 
 	// LowerValue: required when LowerType != unconstrained.

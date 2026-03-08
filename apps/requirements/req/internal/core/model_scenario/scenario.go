@@ -35,28 +35,14 @@ func NewScenario(key identity.Key, name, details string) (scenario Scenario, err
 func (s *Scenario) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.ScenarioKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.ScenarioKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SCENARIO {
-		return &coreerr.ValidationError{
-			Code:    coreerr.ScenarioKeyTypeInvalid,
-			Message: fmt.Sprintf("key: invalid key type '%s' for scenario", s.Key.KeyType),
-			Field:   "Key",
-			Got:     s.Key.KeyType,
-			Want:    identity.KEY_TYPE_SCENARIO,
-		}
+		return coreerr.NewWithValues(coreerr.ScenarioKeyTypeInvalid, fmt.Sprintf("key: invalid key type '%s' for scenario", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_SCENARIO)
 	}
 	// Validate Name required.
 	if s.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.ScenarioNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.ScenarioNameRequired, "Name is required", "Name")
 	}
 	return nil
 }

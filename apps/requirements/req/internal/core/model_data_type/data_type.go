@@ -98,29 +98,14 @@ func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, e
 func (d DataType) Validate() error {
 	// Key: required.
 	if d.Key == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeKeyRequired,
-			Message: "Key is required",
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.DtypeKeyRequired, "Key is required", "Key")
 	}
 	// CollectionType: required and must be valid.
 	if d.CollectionType == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeCollectiontypeRequired,
-			Message: "CollectionType is required",
-			Field:   "CollectionType",
-			Want:    "one of: atomic, ordered, queue, record, stack, unordered",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeCollectiontypeRequired, "CollectionType is required", "CollectionType", "", "one of: atomic, ordered, queue, record, stack, unordered")
 	}
 	if !_validCollectionTypes[d.CollectionType] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeCollectiontypeInvalid,
-			Message: "CollectionType is not a valid value",
-			Field:   "CollectionType",
-			Got:     d.CollectionType,
-			Want:    "one of: atomic, ordered, queue, record, stack, unordered",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeCollectiontypeInvalid, "CollectionType is not a valid value", "CollectionType", d.CollectionType, "one of: atomic, ordered, queue, record, stack, unordered")
 	}
 	if err := d.validateAtomic(); err != nil {
 		return err

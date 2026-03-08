@@ -20,18 +20,10 @@ type Field struct {
 // Validate validates the Field struct.
 func (f Field) Validate() error {
 	if f.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeFieldNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.DtypeFieldNameRequired, "Name is required", "Name")
 	}
 	if f.FieldDataType == nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeFieldDatatypeRequired,
-			Message: "FieldDataType is required",
-			Field:   "FieldDataType",
-		}
+		return coreerr.New(coreerr.DtypeFieldDatatypeRequired, "FieldDataType is required", "FieldDataType")
 	}
 	if !_fieldNameRegexp.MatchString(f.Name) {
 		return fmt.Errorf("name: '%s' must be a lowercase identifier matching [a-z_][a-z0-9_]*", f.Name)

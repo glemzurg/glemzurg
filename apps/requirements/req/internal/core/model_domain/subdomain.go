@@ -46,28 +46,14 @@ func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain
 func (s *Subdomain) Validate() error {
 	// Validate the key.
 	if err := s.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SubdomainKeyInvalid,
-			Message: fmt.Sprintf("Key: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.SubdomainKeyInvalid, fmt.Sprintf("Key: %s", err.Error()), "Key")
 	}
 	if s.Key.KeyType != identity.KEY_TYPE_SUBDOMAIN {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SubdomainKeyTypeInvalid,
-			Message: fmt.Sprintf("Key: invalid key type '%s' for subdomain", s.Key.KeyType),
-			Field:   "Key",
-			Got:     s.Key.KeyType,
-			Want:    identity.KEY_TYPE_SUBDOMAIN,
-		}
+		return coreerr.NewWithValues(coreerr.SubdomainKeyTypeInvalid, fmt.Sprintf("Key: invalid key type '%s' for subdomain", s.Key.KeyType), "Key", s.Key.KeyType, identity.KEY_TYPE_SUBDOMAIN)
 	}
 	// Validate Name required.
 	if s.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.SubdomainNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.SubdomainNameRequired, "Name is required", "Name")
 	}
 	return nil
 }
@@ -163,22 +149,10 @@ func (s *Subdomain) validateClassGeneralizationUsage() error {
 			}
 		}
 		if superCount != 1 {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SubdomainCgenSuperclassCount,
-				Message: fmt.Sprintf("class generalization '%s' must have exactly one superclass, found %d", gen.Key.String(), superCount),
-				Field:   "Generalizations",
-				Got:     fmt.Sprintf("%d", superCount),
-				Want:    "1",
-			}
+			return coreerr.NewWithValues(coreerr.SubdomainCgenSuperclassCount, fmt.Sprintf("class generalization '%s' must have exactly one superclass, found %d", gen.Key.String(), superCount), "Generalizations", fmt.Sprintf("%d", superCount), "1")
 		}
 		if subCount < 1 {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SubdomainCgenSubclassCount,
-				Message: fmt.Sprintf("class generalization '%s' must have at least one subclass, found %d", gen.Key.String(), subCount),
-				Field:   "Generalizations",
-				Got:     fmt.Sprintf("%d", subCount),
-				Want:    ">=1",
-			}
+			return coreerr.NewWithValues(coreerr.SubdomainCgenSubclassCount, fmt.Sprintf("class generalization '%s' must have at least one subclass, found %d", gen.Key.String(), subCount), "Generalizations", fmt.Sprintf("%d", subCount), ">=1")
 		}
 	}
 	return nil
@@ -221,22 +195,10 @@ func (s *Subdomain) validateUseCaseGeneralizationUsage() error {
 			}
 		}
 		if superCount != 1 {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SubdomainUcgenSuperclassCount,
-				Message: fmt.Sprintf("use case generalization '%s' must have exactly one superclass, found %d", ucGen.Key.String(), superCount),
-				Field:   "UseCaseGeneralizations",
-				Got:     fmt.Sprintf("%d", superCount),
-				Want:    "1",
-			}
+			return coreerr.NewWithValues(coreerr.SubdomainUcgenSuperclassCount, fmt.Sprintf("use case generalization '%s' must have exactly one superclass, found %d", ucGen.Key.String(), superCount), "UseCaseGeneralizations", fmt.Sprintf("%d", superCount), "1")
 		}
 		if subCount < 1 {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SubdomainUcgenSubclassCount,
-				Message: fmt.Sprintf("use case generalization '%s' must have at least one subclass, found %d", ucGen.Key.String(), subCount),
-				Field:   "UseCaseGeneralizations",
-				Got:     fmt.Sprintf("%d", subCount),
-				Want:    ">=1",
-			}
+			return coreerr.NewWithValues(coreerr.SubdomainUcgenSubclassCount, fmt.Sprintf("use case generalization '%s' must have at least one subclass, found %d", ucGen.Key.String(), subCount), "UseCaseGeneralizations", fmt.Sprintf("%d", subCount), ">=1")
 		}
 	}
 	return nil
@@ -257,21 +219,11 @@ func (s *Subdomain) validateSubdomainAssociations(classes map[identity.Key]bool)
 func (s *Subdomain) validateUseCaseShares() error {
 	for seaLevelKey, mudLevelShares := range s.UseCaseShares {
 		if _, exists := s.UseCases[seaLevelKey]; !exists {
-			return &coreerr.ValidationError{
-				Code:    coreerr.SubdomainUshareSealevelNotfound,
-				Message: fmt.Sprintf("UseCaseShares sea-level key '%s' is not a use case in this subdomain", seaLevelKey.String()),
-				Field:   "UseCaseShares",
-				Got:     seaLevelKey.String(),
-			}
+			return coreerr.NewWithValues(coreerr.SubdomainUshareSealevelNotfound, fmt.Sprintf("UseCaseShares sea-level key '%s' is not a use case in this subdomain", seaLevelKey.String()), "UseCaseShares", seaLevelKey.String(), "")
 		}
 		for mudLevelKey, shared := range mudLevelShares {
 			if _, exists := s.UseCases[mudLevelKey]; !exists {
-				return &coreerr.ValidationError{
-					Code:    coreerr.SubdomainUshareMudlevelNotfound,
-					Message: fmt.Sprintf("UseCaseShares mud-level key '%s' is not a use case in this subdomain", mudLevelKey.String()),
-					Field:   "UseCaseShares",
-					Got:     mudLevelKey.String(),
-				}
+				return coreerr.NewWithValues(coreerr.SubdomainUshareMudlevelNotfound, fmt.Sprintf("UseCaseShares mud-level key '%s' is not a use case in this subdomain", mudLevelKey.String()), "UseCaseShares", mudLevelKey.String(), "")
 			}
 			if err := shared.ValidateWithParent(); err != nil {
 				return err

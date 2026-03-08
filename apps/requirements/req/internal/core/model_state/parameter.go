@@ -50,18 +50,10 @@ func isCannotParseError(err error, target **model_data_type.CannotParseError) bo
 // Validate validates the Parameter struct.
 func (p *Parameter) Validate() error {
 	if p.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.ParamNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.ParamNameRequired, "Name is required", "Name")
 	}
 	if p.DataTypeRules == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.ParamDatatypesRequired,
-			Message: "DataTypeRules is required",
-			Field:   "DataTypeRules",
-		}
+		return coreerr.New(coreerr.ParamDatatypesRequired, "DataTypeRules is required", "DataTypeRules")
 	}
 	return nil
 }

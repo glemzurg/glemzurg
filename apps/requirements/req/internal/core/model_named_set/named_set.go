@@ -42,48 +42,26 @@ func NewNamedSet(key identity.Key, name, description string, spec model_spec.Exp
 func (ns *NamedSet) Validate() error {
 	// Validate the key.
 	if err := ns.Key.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.NsetKeyInvalid,
-			Message: fmt.Sprintf("NamedSet key failed validation: %s", err.Error()),
-			Field:   "Key",
-		}
+		return coreerr.New(coreerr.NsetKeyInvalid, fmt.Sprintf("NamedSet key failed validation: %s", err.Error()), "Key")
 	}
 	if ns.Key.KeyType != identity.KEY_TYPE_NAMED_SET {
-		return &coreerr.ValidationError{
-			Code:    coreerr.NsetKeyTypeInvalid,
-			Message: fmt.Sprintf("invalid key type '%s' for named set", ns.Key.KeyType),
-			Field:   "Key",
-			Got:     ns.Key.KeyType,
-			Want:    identity.KEY_TYPE_NAMED_SET,
-		}
+		return coreerr.NewWithValues(coreerr.NsetKeyTypeInvalid, fmt.Sprintf("invalid key type '%s' for named set", ns.Key.KeyType), "Key", ns.Key.KeyType, identity.KEY_TYPE_NAMED_SET)
 	}
 
 	// Validate Name is not empty.
 	if ns.Name == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.NsetNameRequired,
-			Message: "Name is required",
-			Field:   "Name",
-		}
+		return coreerr.New(coreerr.NsetNameRequired, "Name is required", "Name")
 	}
 
 	// Validate the ExpressionSpec.
 	if err := ns.Spec.Validate(); err != nil {
-		return &coreerr.ValidationError{
-			Code:    coreerr.NsetSpecInvalid,
-			Message: fmt.Sprintf("named set '%s' Spec failed validation: %s", ns.Key.String(), err.Error()),
-			Field:   "Spec",
-		}
+		return coreerr.New(coreerr.NsetSpecInvalid, fmt.Sprintf("named set '%s' Spec failed validation: %s", ns.Key.String(), err.Error()), "Spec")
 	}
 
 	// Validate TypeSpec if present.
 	if ns.TypeSpec != nil {
 		if err := ns.TypeSpec.Validate(); err != nil {
-			return &coreerr.ValidationError{
-				Code:    coreerr.NsetTypespecInvalid,
-				Message: fmt.Sprintf("named set '%s' TypeSpec failed validation: %s", ns.Key.String(), err.Error()),
-				Field:   "TypeSpec",
-			}
+			return coreerr.New(coreerr.NsetTypespecInvalid, fmt.Sprintf("named set '%s' TypeSpec failed validation: %s", ns.Key.String(), err.Error()), "TypeSpec")
 		}
 	}
 

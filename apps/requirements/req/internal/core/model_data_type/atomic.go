@@ -38,21 +38,10 @@ type Atomic struct {
 func (a Atomic) Validate() error {
 	// ConstraintType: required and must be a valid value.
 	if a.ConstraintType == "" {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeAtomicConstrainttypeRequired,
-			Message: "ConstraintType is required",
-			Field:   "ConstraintType",
-			Want:    "one of: unconstrained, span, enumeration, reference, object",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeAtomicConstrainttypeRequired, "ConstraintType is required", "ConstraintType", "", "one of: unconstrained, span, enumeration, reference, object")
 	}
 	if !_validConstraintTypes[a.ConstraintType] {
-		return &coreerr.ValidationError{
-			Code:    coreerr.DtypeAtomicConstrainttypeInvalid,
-			Message: "ConstraintType is not a valid value",
-			Field:   "ConstraintType",
-			Got:     a.ConstraintType,
-			Want:    "one of: unconstrained, span, enumeration, reference, object",
-		}
+		return coreerr.NewWithValues(coreerr.DtypeAtomicConstrainttypeInvalid, "ConstraintType is not a valid value", "ConstraintType", a.ConstraintType, "one of: unconstrained, span, enumeration, reference, object")
 	}
 
 	if err := a.validateReference(); err != nil {
