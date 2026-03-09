@@ -55,12 +55,12 @@ func NewExpressionParseFuncStrict(ctx *LowerContext) StrictExpressionParseFunc {
 		// Parse TLA+ text to AST.
 		astExpr, err := parser.ParseExpression(specification)
 		if err != nil {
-			return nil, "", fmt.Errorf("TLA+ parse error: %w", err)
+			return nil, "", fmt.Errorf("TLA+ parse error in %q: %w", specification, err)
 		}
 		// Lower AST to model expression.
 		expr, err := Lower(astExpr, ctx)
 		if err != nil {
-			return nil, "", fmt.Errorf("TLA+ lowering error: %w", err)
+			return nil, "", fmt.Errorf("TLA+ lowering error in %q: %w", specification, err)
 		}
 		// Round-trip: raise back to TLA+ for normalized form.
 		raisedAST, err := Raise(expr, raiseContextFromLower(ctx))

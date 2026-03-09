@@ -105,7 +105,7 @@ func parseStateMachine(content []byte, filename string) (*inputStateMachine, err
 			ErrStateMachineSchemaViolation,
 			"state machine JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(stateMachineSchemaContent).WithHint("allowed: states, events, guards, transitions")
+		).WithSchema(stateMachineSchemaContent).WithHint("check schema. allowed: states, events, guards, transitions")
 	}
 
 	// Validate required fields and business rules

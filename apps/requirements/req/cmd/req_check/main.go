@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -208,6 +209,11 @@ func outputText(errs []error) {
 
 // outputJSON writes errors to stdout as a JSON array.
 func outputJSON(errs []error) {
+	outputJSONTo(os.Stdout, errs)
+}
+
+// outputJSONTo writes errors as a JSON array to the given writer.
+func outputJSONTo(w io.Writer, errs []error) {
 	type jsonError struct {
 		Type    string `json:"type"`
 		Code    string `json:"code"`
@@ -252,7 +258,7 @@ func outputJSON(errs []error) {
 		}
 	}
 
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(items)
 }
@@ -272,21 +278,28 @@ func formatError(err error) string {
 
 // runExplain shows full remediation for an error code.
 func runExplain(arg string) {
+	if err := runExplainTo(os.Stdout, arg); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(2)
+	}
+}
+
+// runExplainTo writes the error documentation to the given writer.
+func runExplainTo(w io.Writer, arg string) error {
 	// Strip leading 'E' if present.
 	codeStr := strings.TrimPrefix(arg, "E")
 	code, err := strconv.Atoi(codeStr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "invalid error code: %q (expected E1234 or 1234)\n", arg)
-		os.Exit(2)
+		return fmt.Errorf("invalid error code: %q (expected E1234 or 1234)", arg)
 	}
 
 	content, _, loadErr := parserErrors.LoadErrorDoc(code)
 	if loadErr != nil {
-		fmt.Fprintf(os.Stderr, "no documentation found for error code E%d\n", code)
-		os.Exit(2)
+		return fmt.Errorf("no documentation found for error code E%d", code)
 	}
 
-	fmt.Fprint(os.Stdout, content)
+	fmt.Fprint(w, content)
+	return nil
 }
 
 // runFormatDocs shows the JSON model format documentation.
@@ -301,6 +314,14 @@ func runFormatDocs() {
 
 // runSchema shows the JSON schema for a given entity type.
 func runSchema(entity string) {
+	if err := runSchemaTo(os.Stdout, entity); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(2)
+	}
+}
+
+// runSchemaTo writes the JSON schema for a given entity type to the given writer.
+func runSchemaTo(w io.Writer, entity string) error {
 	name := strings.ToLower(entity)
 	filename := name + ".schema.json"
 
@@ -315,8 +336,8 @@ func runSchema(entity string) {
 				available = append(available, after)
 			}
 		}
-		fmt.Fprintf(os.Stderr, "unknown schema: %q\navailable: %s\n", entity, strings.Join(available, ", "))
-		os.Exit(2)
+		return fmt.Errorf("unknown schema: %q\navailable: %s", entity, strings.Join(available, ", "))
 	}
-	fmt.Fprint(os.Stdout, string(data))
+	fmt.Fprint(w, string(data))
+	return nil
 }
