@@ -74,8 +74,8 @@ func (suite *GeneralizationSuite) TestNew() {
 	key := helper.Must(identity.NewActorGeneralizationKey("gen1"))
 
 	// Test parameters are mapped correctly.
-	gen, err := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
-	suite.Require().NoError(err)
+
+	gen := NewGeneralization(key, "Name", "Details", true, false, "UmlComment")
 	suite.Equal(Generalization{
 		Key:        key,
 		Name:       "Name",
@@ -84,10 +84,6 @@ func (suite *GeneralizationSuite) TestNew() {
 		IsStatic:   false,
 		UmlComment: "UmlComment",
 	}, gen)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewGeneralization(key, "", "Details", true, false, "UmlComment")
-	suite.Require().ErrorContains(err, "Name is required")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

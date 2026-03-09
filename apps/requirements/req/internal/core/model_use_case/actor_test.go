@@ -70,14 +70,9 @@ func (suite *ActorSuite) TestNew() {
 	}
 	for i, test := range tests {
 		testName := fmt.Sprintf("Case %d: %+v", i, test)
-		obj, err := NewActor(test.umlComment)
-		if test.errstr == "" {
-			suite.Require().NoError(err, testName)
-			suite.Equal(test.obj, obj, testName)
-		} else {
-			suite.Require().ErrorContains(err, test.errstr, testName)
-			suite.Empty(obj, testName)
-		}
+
+		obj := NewActor(test.umlComment)
+		suite.Equal(test.obj, obj, testName)
 	}
 }
 

@@ -80,17 +80,13 @@ func (suite *ScenarioSuite) TestNew() {
 	key := helper.Must(identity.NewScenarioKey(useCaseKey, "scenario1"))
 
 	// Test parameters are mapped correctly.
-	scenario, err := NewScenario(key, "Name", "Details")
-	suite.Require().NoError(err)
+
+	scenario := NewScenario(key, "Name", "Details")
 	suite.Equal(Scenario{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
 	}, scenario)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewScenario(key, "", "Details")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

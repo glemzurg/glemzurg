@@ -17,22 +17,22 @@ import (
 func indexTestModel(attrs map[identity.Key]model_class.Attribute) (*core.Model, identity.Key) {
 	classKey := mustKey("domain/d/subdomain/s/class/plane")
 
-	class := helper.Must(model_class.NewClass(classKey, "Plane", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Plane", "", nil, nil, nil, "")
 	class.SetAttributes(attrs)
 
 	subdomainKey := mustKey("domain/d/subdomain/s")
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: class,
 	}
 
 	domainKey := mustKey("domain/d")
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
+	model := core.NewModel("test", "Test", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

@@ -131,17 +131,12 @@ func (suite *StateActionSuite) TestNew() {
 	key := helper.Must(identity.NewStateActionKey(stateKey, "entry", "stateaction1"))
 
 	// Test parameters are mapped correctly.
-	stateAction, err := NewStateAction(key, actionKey, "entry")
-	suite.Require().NoError(err)
+	stateAction := NewStateAction(key, actionKey, "entry")
 	suite.Equal(StateAction{
 		Key:       key,
 		ActionKey: actionKey,
 		When:      "entry",
 	}, stateAction)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewStateAction(key, actionKey, "")
-	suite.Require().ErrorContains(err, "When")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

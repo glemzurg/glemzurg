@@ -180,8 +180,7 @@ func (suite *TransitionSuite) TestNew() {
 	key := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "guard1", "action1", "state2"))
 
 	// Test parameters are mapped correctly.
-	transition, err := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
-	suite.Require().NoError(err)
+	transition := NewTransition(key, &fromStateKey, eventKey, &guardKey, &actionKey, &toStateKey, "UmlComment")
 	suite.Equal(Transition{
 		Key:          key,
 		FromStateKey: &fromStateKey,
@@ -191,10 +190,6 @@ func (suite *TransitionSuite) TestNew() {
 		ToStateKey:   &toStateKey,
 		UmlComment:   "UmlComment",
 	}, transition)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewTransition(key, nil, eventKey, nil, nil, nil, "UmlComment")
-	suite.Require().ErrorContains(err, "FromStateKey, ToStateKey: cannot both be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

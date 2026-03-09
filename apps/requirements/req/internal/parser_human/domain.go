@@ -39,10 +39,7 @@ func parseDomain(domainSubKey, filename, contents string) (domain model_domain.D
 		return model_domain.Domain{}, nil, errors.WithStack(err)
 	}
 
-	domain, err = model_domain.NewDomain(domainKey, parsedFile.Title, stripMarkdownTitle(markdown), realized, parsedFile.UmlComment)
-	if err != nil {
-		return model_domain.Domain{}, nil, err
-	}
+	domain = model_domain.NewDomain(domainKey, parsedFile.Title, stripMarkdownTitle(markdown), realized, parsedFile.UmlComment)
 
 	// Add any associations we found (returned separately, stored at model level).
 	var associationsData []any
@@ -94,14 +91,11 @@ func domainAssociationFromYamlData(problemDomainKey identity.Key, index int, ass
 			return model_domain.Association{}, errors.WithStack(err)
 		}
 
-		association, err = model_domain.NewAssociation(
+		association = model_domain.NewAssociation(
 			assocKey,
 			problemDomainKey,
 			solutionDomainKey,
 			umlComment)
-		if err != nil {
-			return model_domain.Association{}, err
-		}
 	}
 
 	return association, nil

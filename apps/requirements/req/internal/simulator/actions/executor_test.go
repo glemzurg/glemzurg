@@ -121,22 +121,22 @@ func testOrderClass() (model_class.Class, identity.Key) {
 	actionCloseKey := mustKey("domain/d/subdomain/s/class/order/action/do_close")
 	transKey := mustKey("domain/d/subdomain/s/class/order/transition/close")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionCloseKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpec("self.amount + 10"),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
-	event := helper.Must(model_state.NewEvent(eventCloseKey, "close", "", nil))
+	action := model_state.NewAction(actionCloseKey, "DoClose", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
+	event := model_state.NewEvent(eventCloseKey, "close", "", nil)
 
-	transition := helper.Must(model_state.NewTransition(transKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, ""))
+	transition := model_state.NewTransition(transKey, &stateOpenKey, eventCloseKey, nil, &actionCloseKey, &stateClosedKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey:   helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
-		stateClosedKey: helper.Must(model_state.NewState(stateClosedKey, "Closed", "", "")),
+		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
+		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCloseKey: event,
@@ -223,13 +223,13 @@ func (s *ActionsSuite) TestExecuteActionWithPrimedAssignment() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	actionKey := mustKey("domain/d/subdomain/s/class/order/action/increment")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "increment", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	action := model_state.NewAction(actionKey, "increment", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -253,18 +253,18 @@ func (s *ActionsSuite) TestExecuteActionPreconditionPasses() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	actionKey := mustKey("domain/d/subdomain/s/class/order/action/close")
 
-	requireLogic := helper.Must(model_logic.NewLogic(
+	requireLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
 		model_logic.LogicTypeAssessment, "Precondition.", "", orderSpec("self.status = \"open\""),
 		nil,
-	))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	)
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"closed\""),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "close", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	action := model_state.NewAction(actionKey, "close", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -286,18 +286,18 @@ func (s *ActionsSuite) TestExecuteActionPreconditionFails() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	actionKey := mustKey("domain/d/subdomain/s/class/order/action/close")
 
-	requireLogic := helper.Must(model_logic.NewLogic(
+	requireLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
 		model_logic.LogicTypeAssessment, "Precondition.", "", orderSpec("self.status = \"open\""),
 		nil,
-	))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	)
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "status", parsedSpec("\"closed\""),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "close", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	action := model_state.NewAction(actionKey, "close", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -316,14 +316,14 @@ func (s *ActionsSuite) TestExecuteActionWithParameters() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	actionKey := mustKey("domain/d/subdomain/s/class/order/action/set_amount")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "amount", orderSpecWithParams("amount", []string{"amount"}),
 		nil,
-	))
+	)
 
 	actionParams := []model_state.Parameter{helper.Must(model_state.NewParameter("amount", "[0,1000]"))}
-	action := helper.Must(model_state.NewAction(actionKey, "set_amount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams))
+	action := model_state.NewAction(actionKey, "set_amount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, actionParams)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -353,13 +353,13 @@ func (s *ActionsSuite) TestExecuteQueryReturnsOutput() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	queryKey := mustKey("domain/d/subdomain/s/class/order/query/get_total")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
 		model_logic.LogicTypeQuery, "Postcondition.", "result", orderSpec("self.amount * 2"),
 		nil,
-	))
+	)
 
-	query := helper.Must(model_state.NewQuery(queryKey, "get_total", "", nil, []model_logic.Logic{guaranteeLogic}, nil))
+	query := model_state.NewQuery(queryKey, "get_total", "", nil, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
 	simState := state.NewSimulationState()
@@ -380,13 +380,13 @@ func (s *ActionsSuite) TestExecuteQueryDoesNotModifyState() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	queryKey := mustKey("domain/d/subdomain/s/class/order/query/get_total")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
 		model_logic.LogicTypeQuery, "Postcondition.", "result", orderSpec("self.amount"),
 		nil,
-	))
+	)
 
-	query := helper.Must(model_state.NewQuery(queryKey, "get_total", "", nil, []model_logic.Logic{guaranteeLogic}, nil))
+	query := model_state.NewQuery(queryKey, "get_total", "", nil, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
 	simState := state.NewSimulationState()
@@ -408,18 +408,18 @@ func (s *ActionsSuite) TestExecuteQueryPreconditionFails() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	queryKey := mustKey("domain/d/subdomain/s/class/order/query/get_total")
 
-	requireLogic := helper.Must(model_logic.NewLogic(
+	requireLogic := model_logic.NewLogic(
 		helper.Must(identity.NewQueryRequireKey(queryKey, "0")),
 		model_logic.LogicTypeAssessment, "Precondition.", "", orderSpec("self.amount > 100"),
 		nil,
-	))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	)
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
 		model_logic.LogicTypeQuery, "Postcondition.", "result", orderSpec("self.amount"),
 		nil,
-	))
+	)
 
-	query := helper.Must(model_state.NewQuery(queryKey, "get_total", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil))
+	query := model_state.NewQuery(queryKey, "get_total", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
 	simState := state.NewSimulationState()
@@ -442,13 +442,13 @@ func (s *ActionsSuite) TestGuardEvaluatorAllTrue() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	guardKey := mustKey("domain/d/subdomain/s/class/order/guard/is_open")
 
-	guardLogic := helper.Must(model_logic.NewLogic(
+	guardLogic := model_logic.NewLogic(
 		guardKey,
 		model_logic.LogicTypeAssessment, "Guard for open status and positive amount.", "", orderSpec("self.status = \"open\" /\\ self.amount > 0"),
 		nil,
-	))
+	)
 
-	guard := helper.Must(model_state.NewGuard(guardKey, "is_open", guardLogic))
+	guard := model_state.NewGuard(guardKey, "is_open", guardLogic)
 	guard = lowerGuard(guard, classKey)
 
 	simState := state.NewSimulationState()
@@ -469,13 +469,13 @@ func (s *ActionsSuite) TestGuardEvaluatorOneFalse() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	guardKey := mustKey("domain/d/subdomain/s/class/order/guard/is_open")
 
-	guardLogic := helper.Must(model_logic.NewLogic(
+	guardLogic := model_logic.NewLogic(
 		guardKey,
 		model_logic.LogicTypeAssessment, "Guard for open status and positive amount.", "", orderSpec("self.status = \"open\" /\\ self.amount > 0"),
 		nil,
-	))
+	)
 
-	guard := helper.Must(model_state.NewGuard(guardKey, "is_open", guardLogic))
+	guard := model_state.NewGuard(guardKey, "is_open", guardLogic)
 	guard = lowerGuard(guard, classKey)
 
 	simState := state.NewSimulationState()
@@ -540,14 +540,14 @@ func (s *ActionsSuite) TestExecuteTransitionCreation() {
 	eventCreateKey := mustKey("domain/d/subdomain/s/class/order/event/create")
 	transKey := mustKey("domain/d/subdomain/s/class/order/transition/create")
 
-	event := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	event := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
-	transition := helper.Must(model_state.NewTransition(transKey, nil, eventCreateKey, nil, nil, &stateOpenKey, ""))
+	transition := model_state.NewTransition(transKey, nil, eventCreateKey, nil, nil, &stateOpenKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
 		eventCreateKey: event,
@@ -582,14 +582,14 @@ func (s *ActionsSuite) TestExecuteTransitionDeletion() {
 	eventDeleteKey := mustKey("domain/d/subdomain/s/class/order/event/delete")
 	transKey := mustKey("domain/d/subdomain/s/class/order/transition/delete")
 
-	event := helper.Must(model_state.NewEvent(eventDeleteKey, "delete", "", nil))
+	event := model_state.NewEvent(eventDeleteKey, "delete", "", nil)
 
-	transition := helper.Must(model_state.NewTransition(transKey, &stateOpenKey, eventDeleteKey, nil, nil, nil, ""))
+	transition := model_state.NewTransition(transKey, &stateOpenKey, eventDeleteKey, nil, nil, nil, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
+		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
 		eventDeleteKey: event,
@@ -656,30 +656,30 @@ func (s *ActionsSuite) TestTransitionGuardDeterminism() {
 	transApproveKey := mustKey("domain/d/subdomain/s/class/order/transition/approve")
 	transRejectKey := mustKey("domain/d/subdomain/s/class/order/transition/reject")
 
-	guardHighLogic := helper.Must(model_logic.NewLogic(
+	guardHighLogic := model_logic.NewLogic(
 		guardHighKey,
 		model_logic.LogicTypeAssessment, "High value guard.", "", orderSpec("self.amount >= 100"),
 		nil,
-	))
-	guardLowLogic := helper.Must(model_logic.NewLogic(
+	)
+	guardLowLogic := model_logic.NewLogic(
 		guardLowKey,
 		model_logic.LogicTypeAssessment, "Low value guard.", "", orderSpec("self.amount < 100"),
 		nil,
-	))
+	)
 
-	guardHigh := helper.Must(model_state.NewGuard(guardHighKey, "high_value", guardHighLogic))
-	guardLow := helper.Must(model_state.NewGuard(guardLowKey, "low_value", guardLowLogic))
-	eventReview := helper.Must(model_state.NewEvent(eventReviewKey, "review", "", nil))
+	guardHigh := model_state.NewGuard(guardHighKey, "high_value", guardHighLogic)
+	guardLow := model_state.NewGuard(guardLowKey, "low_value", guardLowLogic)
+	eventReview := model_state.NewEvent(eventReviewKey, "review", "", nil)
 
-	transApprove := helper.Must(model_state.NewTransition(transApproveKey, &stateOpenKey, eventReviewKey, &guardHighKey, nil, &stateApprovedKey, ""))
-	transReject := helper.Must(model_state.NewTransition(transRejectKey, &stateOpenKey, eventReviewKey, &guardLowKey, nil, &stateRejectedKey, ""))
+	transApprove := model_state.NewTransition(transApproveKey, &stateOpenKey, eventReviewKey, &guardHighKey, nil, &stateApprovedKey, "")
+	transReject := model_state.NewTransition(transRejectKey, &stateOpenKey, eventReviewKey, &guardLowKey, nil, &stateRejectedKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey:     helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
-		stateApprovedKey: helper.Must(model_state.NewState(stateApprovedKey, "Approved", "", "")),
-		stateRejectedKey: helper.Must(model_state.NewState(stateRejectedKey, "Rejected", "", "")),
+		stateOpenKey:     model_state.NewState(stateOpenKey, "Open", "", ""),
+		stateApprovedKey: model_state.NewState(stateApprovedKey, "Approved", "", ""),
+		stateRejectedKey: model_state.NewState(stateRejectedKey, "Rejected", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
 		eventReviewKey: eventReview,
@@ -735,22 +735,22 @@ func (s *ActionsSuite) TestTransitionMultipleGuardsTrue() {
 	trans1Key := mustKey("domain/d/subdomain/s/class/order/transition/t1")
 	trans2Key := mustKey("domain/d/subdomain/s/class/order/transition/t2")
 
-	guardAlways1Logic := helper.Must(model_logic.NewLogic(guardAlwaysKey1, model_logic.LogicTypeAssessment, "Always true guard.", "", parsedSpec("TRUE"), nil))
-	guardAlways2Logic := helper.Must(model_logic.NewLogic(guardAlwaysKey2, model_logic.LogicTypeAssessment, "Always true guard.", "", parsedSpec("TRUE"), nil))
+	guardAlways1Logic := model_logic.NewLogic(guardAlwaysKey1, model_logic.LogicTypeAssessment, "Always true guard.", "", parsedSpec("TRUE"), nil)
+	guardAlways2Logic := model_logic.NewLogic(guardAlwaysKey2, model_logic.LogicTypeAssessment, "Always true guard.", "", parsedSpec("TRUE"), nil)
 
-	guardAlways1 := helper.Must(model_state.NewGuard(guardAlwaysKey1, "always1", guardAlways1Logic))
-	guardAlways2 := helper.Must(model_state.NewGuard(guardAlwaysKey2, "always2", guardAlways2Logic))
-	eventGo := helper.Must(model_state.NewEvent(eventKey, "go", "", nil))
+	guardAlways1 := model_state.NewGuard(guardAlwaysKey1, "always1", guardAlways1Logic)
+	guardAlways2 := model_state.NewGuard(guardAlwaysKey2, "always2", guardAlways2Logic)
+	eventGo := model_state.NewEvent(eventKey, "go", "", nil)
 
-	trans1 := helper.Must(model_state.NewTransition(trans1Key, &stateOpenKey, eventKey, &guardAlwaysKey1, nil, &stateAKey, ""))
-	trans2 := helper.Must(model_state.NewTransition(trans2Key, &stateOpenKey, eventKey, &guardAlwaysKey2, nil, &stateBKey, ""))
+	trans1 := model_state.NewTransition(trans1Key, &stateOpenKey, eventKey, &guardAlwaysKey1, nil, &stateAKey, "")
+	trans2 := model_state.NewTransition(trans2Key, &stateOpenKey, eventKey, &guardAlwaysKey2, nil, &stateBKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
-		stateAKey:    helper.Must(model_state.NewState(stateAKey, "A", "", "")),
-		stateBKey:    helper.Must(model_state.NewState(stateBKey, "B", "", "")),
+		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
+		stateAKey:    model_state.NewState(stateAKey, "A", "", ""),
+		stateBKey:    model_state.NewState(stateBKey, "B", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
 		eventKey: eventGo,
@@ -789,17 +789,17 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 	guardNeverKey := mustKey("domain/d/subdomain/s/class/order/guard/never")
 	transKey := mustKey("domain/d/subdomain/s/class/order/transition/t1")
 
-	guardNeverLogic := helper.Must(model_logic.NewLogic(guardNeverKey, model_logic.LogicTypeAssessment, "Never true guard.", "", parsedSpec("FALSE"), nil))
-	guardNever := helper.Must(model_state.NewGuard(guardNeverKey, "never", guardNeverLogic))
-	eventGo := helper.Must(model_state.NewEvent(eventKey, "go", "", nil))
+	guardNeverLogic := model_logic.NewLogic(guardNeverKey, model_logic.LogicTypeAssessment, "Never true guard.", "", parsedSpec("FALSE"), nil)
+	guardNever := model_state.NewGuard(guardNeverKey, "never", guardNeverLogic)
+	eventGo := model_state.NewEvent(eventKey, "go", "", nil)
 
-	trans := helper.Must(model_state.NewTransition(transKey, &stateOpenKey, eventKey, &guardNeverKey, nil, &stateAKey, ""))
+	trans := model_state.NewTransition(transKey, &stateOpenKey, eventKey, &guardNeverKey, nil, &stateAKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey: helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
-		stateAKey:    helper.Must(model_state.NewState(stateAKey, "A", "", "")),
+		stateOpenKey: model_state.NewState(stateOpenKey, "Open", "", ""),
+		stateAKey:    model_state.NewState(stateAKey, "A", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
 		eventKey: eventGo,
@@ -833,7 +833,7 @@ func (s *ActionsSuite) TestTransitionNoGuardsTrue() {
 // ========================================================================
 
 func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
-	class := helper.Must(model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), "Empty", "", nil, nil, nil, ""))
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/empty"), "Empty", "", nil, nil, nil, "")
 	class.SetStates(map[identity.Key]model_state.State{})
 
 	err := ValidateClassForSimulation(class)
@@ -844,9 +844,9 @@ func (s *ActionsSuite) TestValidateClassForSimulationNoStates() {
 func (s *ActionsSuite) TestValidateClassForSimulationWithStates() {
 	stateKey := mustKey("domain/d/subdomain/s/class/c/state/s1")
 
-	class := helper.Must(model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, ""))
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, "")
 	class.SetStates(map[identity.Key]model_state.State{
-		stateKey: helper.Must(model_state.NewState(stateKey, "S1", "", "")),
+		stateKey: model_state.NewState(stateKey, "S1", "", ""),
 	})
 
 	err := ValidateClassForSimulation(class)
@@ -861,10 +861,10 @@ func (s *ActionsSuite) TestGetStateEnumValues() {
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/c/state/open")
 	stateClosedKey := mustKey("domain/d/subdomain/s/class/c/state/closed")
 
-	class := helper.Must(model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, ""))
+	class := model_class.NewClass(mustKey("domain/d/subdomain/s/class/c"), "C", "", nil, nil, nil, "")
 	class.SetStates(map[identity.Key]model_state.State{
-		stateOpenKey:   helper.Must(model_state.NewState(stateOpenKey, "Open", "", "")),
-		stateClosedKey: helper.Must(model_state.NewState(stateClosedKey, "Closed", "", "")),
+		stateOpenKey:   model_state.NewState(stateOpenKey, "Open", "", ""),
+		stateClosedKey: model_state.NewState(stateClosedKey, "Closed", "", ""),
 	})
 
 	values := GetStateEnumValues(class)
@@ -1015,13 +1015,13 @@ func (s *ActionsSuite) TestActionRejectsRequiresWithPrime() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
-	requireLogic := helper.Must(model_logic.NewLogic(
+	requireLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionRequireKey(actionKey, "0")),
 		model_logic.LogicTypeAssessment, "Precondition.", "", counterSpec("self.count' > 0"),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "BadRequires", "", []model_logic.Logic{requireLogic}, nil, nil, nil))
+	action := model_state.NewAction(actionKey, "BadRequires", "", []model_logic.Logic{requireLogic}, nil, nil, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1040,13 +1040,13 @@ func (s *ActionsSuite) TestActionSafetyRulesMustHavePrime() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
-	safetyLogic := helper.Must(model_logic.NewLogic(
+	safetyLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionSafetyKey(actionKey, "0")),
 		model_logic.LogicTypeSafetyRule, "Safety rule.", "", counterSpec("self.count > 0"),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "BadSafety", "", nil, nil, []model_logic.Logic{safetyLogic}, nil))
+	action := model_state.NewAction(actionKey, "BadSafety", "", nil, nil, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1069,18 +1069,18 @@ func (s *ActionsSuite) TestActionSafetyRulesPass() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"),
 		nil,
-	))
-	safetyLogic := helper.Must(model_logic.NewLogic(
+	)
+	safetyLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionSafetyKey(actionKey, "0")),
 		model_logic.LogicTypeSafetyRule, "Safety rule.", "", counterSpec("self.count' >= 1"),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "GoodAction", "", nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil))
+	action := model_state.NewAction(actionKey, "GoodAction", "", nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1100,18 +1100,18 @@ func (s *ActionsSuite) TestActionSafetyRuleViolation() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	actionKey := mustKey("domain/d/subdomain/s/class/c/action/a")
 
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionGuaranteeKey(actionKey, "0")),
 		model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec("self.count + 1"),
 		nil,
-	))
-	safetyLogic := helper.Must(model_logic.NewLogic(
+	)
+	safetyLogic := model_logic.NewLogic(
 		helper.Must(identity.NewActionSafetyKey(actionKey, "0")),
 		model_logic.LogicTypeSafetyRule, "Safety rule.", "", counterSpec("self.count' < 0"),
 		nil,
-	))
+	)
 
-	action := helper.Must(model_state.NewAction(actionKey, "ViolatingAction", "", nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil))
+	action := model_state.NewAction(actionKey, "ViolatingAction", "", nil, []model_logic.Logic{guaranteeLogic}, []model_logic.Logic{safetyLogic}, nil)
 	action = lowerAction(action, classKey)
 
 	simState := state.NewSimulationState()
@@ -1136,13 +1136,13 @@ func (s *ActionsSuite) TestGuardRejectsPrimedVariables() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	guardKey := mustKey("domain/d/subdomain/s/class/c/guard/g")
 
-	guardLogic := helper.Must(model_logic.NewLogic(
+	guardLogic := model_logic.NewLogic(
 		guardKey,
 		model_logic.LogicTypeAssessment, "Guard with primed variable.", "", counterSpec("self.count' > 0"),
 		nil,
-	))
+	)
 
-	guard := helper.Must(model_state.NewGuard(guardKey, "BadGuard", guardLogic))
+	guard := model_state.NewGuard(guardKey, "BadGuard", guardLogic)
 	guard = lowerGuard(guard, classKey)
 
 	simState := state.NewSimulationState()
@@ -1166,18 +1166,18 @@ func (s *ActionsSuite) TestQueryRejectsRequiresWithPrime() {
 	classKey := mustKey("domain/d/subdomain/s/class/c")
 	queryKey := mustKey("domain/d/subdomain/s/class/c/query/q")
 
-	requireLogic := helper.Must(model_logic.NewLogic(
+	requireLogic := model_logic.NewLogic(
 		helper.Must(identity.NewQueryRequireKey(queryKey, "0")),
 		model_logic.LogicTypeAssessment, "Precondition.", "", counterSpec("self.count' > 0"),
 		nil,
-	))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(
+	)
+	guaranteeLogic := model_logic.NewLogic(
 		helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0")),
 		model_logic.LogicTypeQuery, "Postcondition.", "result", counterSpec("self.count"),
 		nil,
-	))
+	)
 
-	query := helper.Must(model_state.NewQuery(queryKey, "BadQuery", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil))
+	query := model_state.NewQuery(queryKey, "BadQuery", "", []model_logic.Logic{requireLogic}, []model_logic.Logic{guaranteeLogic}, nil)
 	query = lowerQuery(query, classKey)
 
 	simState := state.NewSimulationState()

@@ -88,9 +88,8 @@ func (suite *EventSuite) TestNew() {
 	key := helper.Must(identity.NewEventKey(classKey, "event1"))
 
 	// Test parameters are mapped correctly.
-	event, err := NewEvent(key, "Name", "Details",
+	event := NewEvent(key, "Name", "Details",
 		[]Parameter{helper.Must(NewParameter("ParamA", "Nat")), helper.Must(NewParameter("ParamB", "Int"))})
-	suite.Require().NoError(err)
 	suite.Equal(Event{
 		Key:     key,
 		Name:    "Name",
@@ -102,17 +101,12 @@ func (suite *EventSuite) TestNew() {
 	}, event)
 
 	// Test with nil optional Parameters.
-	event, err = NewEvent(key, "Name", "Details", nil)
-	suite.Require().NoError(err)
+	event = NewEvent(key, "Name", "Details", nil)
 	suite.Equal(Event{
 		Key:     key,
 		Name:    "Name",
 		Details: "Details",
 	}, event)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewEvent(key, "", "Details", nil)
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

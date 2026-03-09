@@ -121,18 +121,14 @@ func (suite *AssociationSuite) TestNew() {
 	key := helper.Must(identity.NewDomainAssociationKey(suite.problemDomainKey, suite.solutionDomainKey))
 
 	// Test parameters are mapped correctly.
-	assoc, err := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.Require().NoError(err)
+
+	assoc := NewAssociation(key, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
 	suite.Equal(Association{
 		Key:               key,
 		ProblemDomainKey:  suite.problemDomainKey,
 		SolutionDomainKey: suite.solutionDomainKey,
 		UmlComment:        "UmlComment",
 	}, assoc)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewAssociation(identity.Key{}, suite.problemDomainKey, suite.solutionDomainKey, "UmlComment")
-	suite.Require().ErrorContains(err, "key type is required")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

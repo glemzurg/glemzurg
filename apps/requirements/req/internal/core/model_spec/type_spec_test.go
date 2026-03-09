@@ -115,11 +115,6 @@ func (s *TypeSpecTestSuite) TestNew() {
 	s.False(spec.ParseOk())
 	s.Equal("Nat", spec.Specification) // Unchanged.
 
-	// Invalid notation.
-	_, err = NewTypeSpec("", "Nat", nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Notation")
-
 	// Empty specification skips parseFunc.
 	called := false
 	trackFunc := func(spec string) (model_expression_type.ExpressionType, string) {

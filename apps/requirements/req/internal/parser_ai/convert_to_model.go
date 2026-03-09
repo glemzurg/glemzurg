@@ -196,10 +196,7 @@ func convertGlobalFunctionToModel(keyStr string, gf *inputGlobalFunction) (model
 		return model_logic.GlobalFunction{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert global function logic: %s", err.Error()), gfFile)
 	}
 
-	result, err := model_logic.NewGlobalFunction(key, gf.Name, gf.Parameters, logic)
-	if err != nil {
-		return model_logic.GlobalFunction{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create global function: %s", err.Error()), gfFile)
-	}
+	result := model_logic.NewGlobalFunction(key, gf.Name, gf.Parameters, logic)
 	return result, nil
 }
 
@@ -230,10 +227,7 @@ func convertNamedSetToModel(keyStr string, ns *inputNamedSet) (model_named_set.N
 		typeSpec = &ts
 	}
 
-	result, err := model_named_set.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
-	if err != nil {
-		return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set: %s", err.Error()), nsFile)
-	}
+	result := model_named_set.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
 	return result, nil
 }
 
@@ -1136,10 +1130,7 @@ func convertSMGuardsToModel(sm *inputStateMachine, class *model_class.Class, cla
 			return convErr(ErrConvModelValidation, fmt.Sprintf("failed to convert guard '%s' logic: %s", guardKeyStr, err.Error()), smFile)
 		}
 
-		converted, err := model_state.NewGuard(guardKey, guard.Name, guardLogic)
-		if err != nil {
-			return convErr(ErrConvModelValidation, fmt.Sprintf("failed to create guard '%s': %s", guardKeyStr, err.Error()), smFile)
-		}
+		converted := model_state.NewGuard(guardKey, guard.Name, guardLogic)
 
 		class.Guards[converted.Key] = converted
 	}
@@ -1345,10 +1336,7 @@ func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.
 		targetTypeSpec = &ts
 	}
 
-	logic, err := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
-	if err != nil {
-		return model_logic.Logic{}, err
-	}
+	logic := model_logic.NewLogic(logicKey, logicType, input.Description, input.Target, spec, targetTypeSpec)
 	return logic, nil
 }
 

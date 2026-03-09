@@ -321,8 +321,7 @@ func (s *LogicTestSuite) TestNew() {
 
 	// Test all parameters are mapped correctly (assessment — no target).
 	spec := validSpecWithBody("\\A p \\in Products : p.stock >= 0")
-	logic, err := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", spec, nil)
-	s.Require().NoError(err)
+	logic := NewLogic(validKey, LogicTypeAssessment, "Stock is never negative.", "", spec, nil)
 	s.Equal(Logic{
 		Key:         validKey,
 		Type:        LogicTypeAssessment,
@@ -331,8 +330,7 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test with empty specification (optional).
-	logic, err = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", validSpec(), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey2, LogicTypeAssessment, "Placeholder.", "", validSpec(), nil)
 	s.Equal(Logic{
 		Key:         validKey2,
 		Type:        LogicTypeAssessment,
@@ -341,35 +339,17 @@ func (s *LogicTestSuite) TestNew() {
 	}, logic)
 
 	// Test state_change with target.
-	logic, err = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", validSpecWithBody("address"), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey, LogicTypeStateChange, "Set shipping.", "shipping", validSpecWithBody("address"), nil)
 	s.Equal("shipping", logic.Target)
 
 	// Test query with target.
-	logic, err = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey, LogicTypeQuery, "Return result.", "result", validSpecWithBody("expr"), nil)
 	s.Equal("result", logic.Target)
 
 	// Test let with target.
-	logic, err = NewLogic(validKey, LogicTypeLet, "Local variable.", "myVar", validSpecWithBody("1 + 2"), nil)
-	s.Require().NoError(err)
+	logic = NewLogic(validKey, LogicTypeLet, "Local variable.", "myVar", validSpecWithBody("1 + 2"), nil)
 	s.Equal("myVar", logic.Target)
 	s.Equal(LogicTypeLet, logic.Type)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewLogic(identity.Key{}, LogicTypeAssessment, "Some description.", "", validSpec(), nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "KeyType")
-
-	// Test that invalid notation fails.
-	_, err = NewLogic(validKey, LogicTypeAssessment, "Some description.", "", model_spec.ExpressionSpec{Notation: "Z"}, nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Notation")
-
-	// Test that invalid kind fails.
-	_, err = NewLogic(validKey, "bogus", "Some description.", "", validSpec(), nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Type")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

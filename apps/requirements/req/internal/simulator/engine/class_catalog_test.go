@@ -56,7 +56,7 @@ func (s *ClassCatalogSuite) TestCatalogWithMultipleClasses() {
 func (s *ClassCatalogSuite) TestClassWithNoStatesExcluded() {
 	classKey := mustKey("domain/d/subdomain/s/class/simple")
 
-	simpleClass := helper.Must(model_class.NewClass(classKey, "Simple", "", nil, nil, nil, ""))
+	simpleClass := model_class.NewClass(classKey, "Simple", "", nil, nil, nil, "")
 	simpleClass.SetAttributes(map[identity.Key]model_class.Attribute{})
 	simpleClass.SetStates(map[identity.Key]model_state.State{})
 	simpleClass.SetEvents(map[identity.Key]model_state.Event{})
@@ -98,7 +98,7 @@ func (s *ClassCatalogSuite) TestMandatoryAssociationsDetected() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
+	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -122,20 +122,20 @@ func (s *ClassCatalogSuite) TestDoActionsRecorded() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
-	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
+	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
+	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -182,7 +182,7 @@ func (s *ClassCatalogSuite) TestExternalCreationEventsWithMandatoryAssociation()
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
+	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{
@@ -273,20 +273,20 @@ func (s *ClassCatalogSuite) TestExternalDoActions_NoCalledBy() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
-	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
+	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
+	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -316,22 +316,22 @@ func (s *ClassCatalogSuite) TestExternalDoActions_CalledByInScope() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/counter/state/active/saction/do/do_count")
 	transCreateKey := mustKey("domain/d/subdomain/s/class/counter/transition/create")
 
-	eventCreate := helper.Must(model_state.NewEvent(eventCreateKey, "create", "", nil))
+	eventCreate := model_state.NewEvent(eventCreateKey, "create", "", nil)
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionDoKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil))
-	actionDo := helper.Must(model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "count", counterSpec(), nil)
+	actionDo := model_state.NewAction(actionDoKey, "DoCount", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateActionDo := helper.Must(model_state.NewStateAction(stateActionKey, actionDoKey, "do"))
+	stateActionDo := model_state.NewStateAction(stateActionKey, actionDoKey, "do")
 
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
 	stateActive.SetActions([]model_state.StateAction{stateActionDo})
 
-	transCreate := helper.Must(model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, ""))
+	transCreate := model_state.NewTransition(transCreateKey, nil, eventCreateKey, nil, nil, &stateActiveKey, "")
 
 	orderClass, orderKey := testOrderClass()
 
-	class := helper.Must(model_class.NewClass(classKey, "Counter", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Counter", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,

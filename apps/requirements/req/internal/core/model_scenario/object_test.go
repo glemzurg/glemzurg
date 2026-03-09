@@ -151,8 +151,8 @@ func (suite *ObjectSuite) TestNew() {
 	key := helper.Must(identity.NewScenarioObjectKey(scenarioKey, "obj1"))
 
 	// Test parameters are mapped correctly.
-	obj, err := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	suite.Require().NoError(err)
+
+	obj := NewObject(key, 1, "Name", _NAME_STYLE_NAME, classKey, true, "UmlComment")
 	suite.Equal(Object{
 		Key:          key,
 		ObjectNumber: 1,
@@ -162,10 +162,6 @@ func (suite *ObjectSuite) TestNew() {
 		Multi:        true,
 		UmlComment:   "UmlComment",
 	}, obj)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewObject(key, 1, "", _NAME_STYLE_NAME, classKey, true, "UmlComment")
-	suite.Require().ErrorContains(err, "Name: Name cannot be blank")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

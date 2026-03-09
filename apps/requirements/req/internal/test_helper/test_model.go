@@ -194,10 +194,7 @@ func GetStrictTestModel() core.Model {
 			if err != nil {
 				panic(fmt.Sprintf("failed to create default subdomain key: %v", err))
 			}
-			defaultSubdomain, err := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "")
-			if err != nil {
-				panic(fmt.Sprintf("failed to create default subdomain: %v", err))
-			}
+			defaultSubdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "Default subdomain to satisfy strict requirements.", "")
 			domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 				defaultSubdomainKey: defaultSubdomain,
 			}
@@ -215,10 +212,7 @@ func GetStrictTestModel() core.Model {
 					if err != nil {
 						panic(fmt.Sprintf("failed to create dummy class key: %v", err))
 					}
-					dummyClass, err := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", nil, nil, nil, "")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy class: %v", err))
-					}
+					dummyClass := model_class.NewClass(dummyClassKey, fmt.Sprintf("Dummy Class %d", i), "Dummy class to satisfy strict requirements.", nil, nil, nil, "")
 					subdomain.Classes[dummyClassKey] = dummyClass
 				}
 			}
@@ -266,18 +260,9 @@ func GetStrictTestModel() core.Model {
 					}
 
 					// Create objects.
-					state, err := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy state: %v", err))
-					}
-					event, err := model_state.NewEvent(eventKey, "Create", "Creates the entity.", nil)
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy event: %v", err))
-					}
-					transition, err := model_state.NewTransition(transitionKey, nil, eventKey, nil, nil, &stateKey, "")
-					if err != nil {
-						panic(fmt.Sprintf("failed to create dummy transition: %v", err))
-					}
+					state := model_state.NewState(stateKey, "Existing", "The entity exists in the system.", "")
+					event := model_state.NewEvent(eventKey, "Create", "Creates the entity.", nil)
+					transition := model_state.NewTransition(transitionKey, nil, eventKey, nil, nil, &stateKey, "")
 
 					// Set on class.
 					class.SetStates(map[identity.Key]model_state.State{stateKey: state})
@@ -314,7 +299,7 @@ func GetStrictTestModel() core.Model {
 					panic(fmt.Sprintf("failed to create multiplicity: %v", err))
 				}
 
-				dummyAssoc, err := model_class.NewAssociation(
+				dummyAssoc := model_class.NewAssociation(
 					dummyAssocKey,
 					"Dummy Association",
 					"Dummy association to satisfy strict requirements.",
@@ -323,10 +308,6 @@ func GetStrictTestModel() core.Model {
 					nil,
 					"",
 				)
-				if err != nil {
-					panic(fmt.Sprintf("failed to create dummy association: %v", err))
-				}
-
 				subdomain.ClassAssociations = map[identity.Key]model_class.Association{
 					dummyAssocKey: dummyAssoc,
 				}
@@ -353,10 +334,7 @@ func buildTestModel() (core.Model, error) {
 		return core.Model{}, err
 	}
 
-	globalFuncs, err := buildGlobalFunctions(k, logic)
-	if err != nil {
-		return core.Model{}, err
-	}
+	globalFuncs := buildGlobalFunctions(k, logic)
 
 	namedSets, err := buildNamedSets(k)
 	if err != nil {
@@ -368,63 +346,36 @@ func buildTestModel() (core.Model, error) {
 		return core.Model{}, err
 	}
 
-	sm, err := buildStateMachine(k, logic, params)
-	if err != nil {
-		return core.Model{}, err
-	}
+	sm := buildStateMachine(k, logic, params)
 
 	attrs, err := buildAttributes(k, logic)
 	if err != nil {
 		return core.Model{}, err
 	}
 
-	classes, err := buildClasses(k, attrs, sm, logic)
-	if err != nil {
-		return core.Model{}, err
-	}
+	classes := buildClasses(k, attrs, sm, logic)
 
-	gens, err := buildClassGeneralizations(k)
-	if err != nil {
-		return core.Model{}, err
-	}
+	gens := buildClassGeneralizations(k)
 
 	assocs, err := buildAssociations(k)
 	if err != nil {
 		return core.Model{}, err
 	}
 
-	scenarios, err := buildScenarios(k)
-	if err != nil {
-		return core.Model{}, err
-	}
+	scenarios := buildScenarios(k)
 
-	useCases, err := buildUseCases(k, scenarios)
-	if err != nil {
-		return core.Model{}, err
-	}
+	useCases := buildUseCases(k, scenarios)
 
-	actors, actorGens, err := buildActors(k)
-	if err != nil {
-		return core.Model{}, err
-	}
+	actors, actorGens := buildActors(k)
 
-	domainAssocs, err := buildDomainAssociations(k)
-	if err != nil {
-		return core.Model{}, err
-	}
+	domainAssocs := buildDomainAssociations(k)
 
-	subdomains, err := buildSubdomains(k, classes, gens, useCases, assocs)
-	if err != nil {
-		return core.Model{}, err
-	}
+	subdomains := buildSubdomains(k, classes, gens, useCases, assocs)
 
-	domains, err := buildDomains(k, subdomains)
-	if err != nil {
-		return core.Model{}, err
-	}
+	domains := buildDomains(k, subdomains)
 
 	// Assemble the model.
-	model, err := core.NewModel(
+	model := core.NewModel(
 		"test_model",
 		"Test Model",
 		"A comprehensive test model with every type represented.",
@@ -432,9 +383,6 @@ func buildTestModel() (core.Model, error) {
 		globalFuncs,
 		namedSets,
 	)
-	if err != nil {
-		return core.Model{}, err
-	}
 
 	model.Actors = actors
 	model.ActorGeneralizations = actorGens
@@ -1762,22 +1710,13 @@ type testScenarios struct {
 	viewOrderScenarios  map[identity.Key]model_scenario.Scenario
 }
 
-func buildScenarios(k testKeys) (testScenarios, error) {
+func buildScenarios(k testKeys) testScenarios {
 	var s testScenarios
 
 	// Scenario objects (3).
-	objCustomer, err := model_scenario.NewObject(k.objCustomer, 1, "Alice", "name", k.classCustomer, false, "the customer")
-	if err != nil {
-		return s, err
-	}
-	objOrder, err := model_scenario.NewObject(k.objOrder, 2, "42", "id", k.classOrder, false, "")
-	if err != nil {
-		return s, err
-	}
-	objProduct, err := model_scenario.NewObject(k.objProduct, 3, "", "unnamed", k.classProduct, true, "")
-	if err != nil {
-		return s, err
-	}
+	objCustomer := model_scenario.NewObject(k.objCustomer, 1, "Alice", "name", k.classCustomer, false, "the customer")
+	objOrder := model_scenario.NewObject(k.objOrder, 2, "42", "id", k.classOrder, false, "")
+	objProduct := model_scenario.NewObject(k.objProduct, 3, "", "unnamed", k.classProduct, true, "")
 
 	// Step tree.
 	leafEvent := "event"
@@ -1865,10 +1804,7 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 	}
 
 	// scenarioHappy: rich (3 objects, steps).
-	scenarioHappy, err := model_scenario.NewScenario(k.scenarioHappy, "Happy Path", "The order is placed successfully.")
-	if err != nil {
-		return s, err
-	}
+	scenarioHappy := model_scenario.NewScenario(k.scenarioHappy, "Happy Path", "The order is placed successfully.")
 	scenarioHappy.SetObjects(map[identity.Key]model_scenario.Object{
 		k.objCustomer: objCustomer,
 		k.objOrder:    objOrder,
@@ -1877,16 +1813,10 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 	scenarioHappy.Steps = &steps
 
 	// scenarioError: empty parent (0 objects, nil steps).
-	scenarioError, err := model_scenario.NewScenario(k.scenarioError, "Error Path", "The order fails validation.")
-	if err != nil {
-		return s, err
-	}
+	scenarioError := model_scenario.NewScenario(k.scenarioError, "Error Path", "The order fails validation.")
 
 	// scenarioAlt: third scenario in place_order.
-	scenarioAlt, err := model_scenario.NewScenario(k.scenarioAlt, "Alt Path", "Alternative order flow.")
-	if err != nil {
-		return s, err
-	}
+	scenarioAlt := model_scenario.NewScenario(k.scenarioAlt, "Alt Path", "Alternative order flow.")
 
 	s.placeOrderScenarios = map[identity.Key]model_scenario.Scenario{
 		k.scenarioHappy: scenarioHappy,
@@ -1895,15 +1825,12 @@ func buildScenarios(k testKeys) (testScenarios, error) {
 	}
 
 	// Scenario in view_order (cross-use-case scenario reference target).
-	scenarioView, err := model_scenario.NewScenario(k.scenarioView, "View Details", "View the order details.")
-	if err != nil {
-		return s, err
-	}
+	scenarioView := model_scenario.NewScenario(k.scenarioView, "View Details", "View the order details.")
 	s.viewOrderScenarios = map[identity.Key]model_scenario.Scenario{
 		k.scenarioView: scenarioView,
 	}
 
-	return s, nil
+	return s
 }
 
 // =========================================================================
@@ -1916,31 +1843,19 @@ type testUseCases struct {
 	useCaseShares map[identity.Key]map[identity.Key]model_use_case.UseCaseShared
 }
 
-func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
+func buildUseCases(k testKeys, sc testScenarios) testUseCases {
 	var u testUseCases
 
 	// Use case actors.
-	ucActor1, err := model_use_case.NewActor("customer interaction")
-	if err != nil {
-		return u, err
-	}
-	ucActor2, err := model_use_case.NewActor("payment processing")
-	if err != nil {
-		return u, err
-	}
-	ucActor3, err := model_use_case.NewActor("vip handling")
-	if err != nil {
-		return u, err
-	}
+	ucActor1 := model_use_case.NewActor("customer interaction")
+	ucActor2 := model_use_case.NewActor("payment processing")
+	ucActor3 := model_use_case.NewActor("vip handling")
 
 	// Place Order: sea level, subclass, rich (3 actors, 3 scenarios).
-	ucPlaceOrder, err := model_use_case.NewUseCase(
+	ucPlaceOrder := model_use_case.NewUseCase(
 		k.ucPlaceOrder, "Place Order", "Customer places an order.",
 		"sea", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen1}, "place order",
 	)
-	if err != nil {
-		return u, err
-	}
 	ucPlaceOrder.SetActors(map[identity.Key]model_use_case.Actor{
 		k.classCustomer: ucActor1,
 		k.classProduct:  ucActor2,
@@ -1949,50 +1864,35 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	ucPlaceOrder.SetScenarios(sc.placeOrderScenarios)
 
 	// View Order: mud level, read-only, has 1 scenario.
-	ucViewOrder, err := model_use_case.NewUseCase(
+	ucViewOrder := model_use_case.NewUseCase(
 		k.ucViewOrder, "View Order", "View order details.",
 		"mud", true, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen2}, "",
 	)
-	if err != nil {
-		return u, err
-	}
 	ucViewOrder.SetScenarios(sc.viewOrderScenarios)
 
 	// Manage Order: sky level, superclass.
-	ucManageOrder, err := model_use_case.NewUseCase(
+	ucManageOrder := model_use_case.NewUseCase(
 		k.ucManageOrder, "Manage Order", "Manage orders.",
 		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen1}, "",
 	)
-	if err != nil {
-		return u, err
-	}
 
 	// Cancel Order: empty parent (0 actors, 0 scenarios).
-	ucCancelOrder, err := model_use_case.NewUseCase(
+	ucCancelOrder := model_use_case.NewUseCase(
 		k.ucCancelOrder, "Cancel Order", "Customer cancels an order.",
 		"mud", false, model_use_case.GeneralizationRefs{SubclassOfKey: &k.ucGen3}, "",
 	)
-	if err != nil {
-		return u, err
-	}
 
 	// View Orders: sky level, superclass for ucGen2.
-	uc5, err := model_use_case.NewUseCase(
+	uc5 := model_use_case.NewUseCase(
 		k.uc5, "View Orders", "View multiple orders.",
 		"sky", true, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen2}, "",
 	)
-	if err != nil {
-		return u, err
-	}
 
 	// Cancel Orders: sky level, superclass for ucGen3.
-	uc6, err := model_use_case.NewUseCase(
+	uc6 := model_use_case.NewUseCase(
 		k.uc6, "Cancel Orders", "Cancel multiple orders.",
 		"sky", false, model_use_case.GeneralizationRefs{SuperclassOfKey: &k.ucGen3}, "",
 	)
-	if err != nil {
-		return u, err
-	}
 
 	u.useCases = map[identity.Key]model_use_case.UseCase{
 		k.ucPlaceOrder:  ucPlaceOrder,
@@ -2004,18 +1904,9 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	}
 
 	// Use case generalizations (3).
-	ucGen1, err := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", false, true, "")
-	if err != nil {
-		return u, err
-	}
-	ucGen2, err := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", true, false, "")
-	if err != nil {
-		return u, err
-	}
-	ucGen3, err := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", true, true, "")
-	if err != nil {
-		return u, err
-	}
+	ucGen1 := model_use_case.NewGeneralization(k.ucGen1, "Order Management Types", "Types of order management.", false, true, "")
+	ucGen2 := model_use_case.NewGeneralization(k.ucGen2, "Order View Types", "Types of order viewing.", true, false, "")
+	ucGen3 := model_use_case.NewGeneralization(k.ucGen3, "Order Cancel Types", "Types of order cancellation.", true, true, "")
 	u.useCaseGens = map[identity.Key]model_use_case.Generalization{
 		k.ucGen1: ucGen1,
 		k.ucGen2: ucGen2,
@@ -2023,18 +1914,9 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 	}
 
 	// Use case shares (3 entries in outer map).
-	ucShareInclude, err := model_use_case.NewUseCaseShared("include", "includes viewing")
-	if err != nil {
-		return u, err
-	}
-	ucShareExtend, err := model_use_case.NewUseCaseShared("extend", "optional cancellation")
-	if err != nil {
-		return u, err
-	}
-	ucShareInclude2, err := model_use_case.NewUseCaseShared("include", "includes cancel check")
-	if err != nil {
-		return u, err
-	}
+	ucShareInclude := model_use_case.NewUseCaseShared("include", "includes viewing")
+	ucShareExtend := model_use_case.NewUseCaseShared("extend", "optional cancellation")
+	ucShareInclude2 := model_use_case.NewUseCaseShared("include", "includes cancel check")
 
 	u.useCaseShares = map[identity.Key]map[identity.Key]model_use_case.UseCaseShared{
 		k.ucPlaceOrder: {
@@ -2046,36 +1928,21 @@ func buildUseCases(k testKeys, sc testScenarios) (testUseCases, error) {
 		},
 	}
 
-	return u, nil
+	return u
 }
 
 // =========================================================================
 // Actors
 // =========================================================================
 
-func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization, error) {
+func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.Key]model_actor.Generalization) {
 	// Actors (4).
-	actorPerson, err := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen3, nil, "main actor")
-	if err != nil {
-		return nil, nil, err
-	}
+	actorPerson := model_actor.NewActor(k.actorPerson, "Customer", "A person who buys things.", "person", &k.actorGen3, nil, "main actor")
 	// actorSystem: has BOTH SuperclassOfKey AND SubclassOfKey (different generalizations).
-	actorSystem, err := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", &k.actorGen2, &k.actorGen3, "")
-	if err != nil {
-		return nil, nil, err
-	}
-	actorVip, err := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen2, "")
-	if err != nil {
-		return nil, nil, err
-	}
-	actor4, err := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "person", &k.actorGen1, nil, "")
-	if err != nil {
-		return nil, nil, err
-	}
-	actor5, err := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "person", nil, &k.actorGen1, "")
-	if err != nil {
-		return nil, nil, err
-	}
+	actorSystem := model_actor.NewActor(k.actorSystem, "Payment Gateway", "External payment system.", "system", &k.actorGen2, &k.actorGen3, "")
+	actorVip := model_actor.NewActor(k.actorVip, "VIP Customer", "A premium customer.", "person", nil, &k.actorGen2, "")
+	actor4 := model_actor.NewActor(k.actor4, "Regular Customer", "A regular customer.", "person", &k.actorGen1, nil, "")
+	actor5 := model_actor.NewActor(k.actor5, "Another Customer", "Another customer.", "person", nil, &k.actorGen1, "")
 
 	actors := map[identity.Key]model_actor.Actor{
 		k.actorPerson: actorPerson,
@@ -2086,18 +1953,9 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 	}
 
 	// Actor generalizations (3). Pairwise: (T,T), (F,F), (T,F).
-	actorGen1, err := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", true, true, "customer hierarchy")
-	if err != nil {
-		return nil, nil, err
-	}
-	actorGen2, err := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", false, false, "")
-	if err != nil {
-		return nil, nil, err
-	}
-	actorGen3, err := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", true, false, "")
-	if err != nil {
-		return nil, nil, err
-	}
+	actorGen1 := model_actor.NewGeneralization(k.actorGen1, "Customer Types", "Types of customers.", true, true, "customer hierarchy")
+	actorGen2 := model_actor.NewGeneralization(k.actorGen2, "User Types", "Types of users.", false, false, "")
+	actorGen3 := model_actor.NewGeneralization(k.actorGen3, "System Types", "Types of systems.", true, false, "")
 
 	actorGens := map[identity.Key]model_actor.Generalization{
 		k.actorGen1: actorGen1,
@@ -2105,32 +1963,23 @@ func buildActors(k testKeys) (map[identity.Key]model_actor.Actor, map[identity.K
 		k.actorGen3: actorGen3,
 	}
 
-	return actors, actorGens, nil
+	return actors, actorGens
 }
 
 // =========================================================================
 // Domain associations
 // =========================================================================
 
-func buildDomainAssociations(k testKeys) (map[identity.Key]model_domain.Association, error) {
-	da1, err := model_domain.NewAssociation(k.domainAssoc1, k.domainA, k.domainB, "domain link")
-	if err != nil {
-		return nil, err
-	}
-	da2, err := model_domain.NewAssociation(k.domainAssoc2, k.domainA, k.domainC, "commerce to external")
-	if err != nil {
-		return nil, err
-	}
-	da3, err := model_domain.NewAssociation(k.domainAssoc3, k.domainB, k.domainC, "logistics to external")
-	if err != nil {
-		return nil, err
-	}
+func buildDomainAssociations(k testKeys) map[identity.Key]model_domain.Association {
+	da1 := model_domain.NewAssociation(k.domainAssoc1, k.domainA, k.domainB, "domain link")
+	da2 := model_domain.NewAssociation(k.domainAssoc2, k.domainA, k.domainC, "commerce to external")
+	da3 := model_domain.NewAssociation(k.domainAssoc3, k.domainB, k.domainC, "logistics to external")
 
 	return map[identity.Key]model_domain.Association{
 		k.domainAssoc1: da1,
 		k.domainAssoc2: da2,
 		k.domainAssoc3: da3,
-	}, nil
+	}
 }
 
 // =========================================================================
@@ -2143,12 +1992,9 @@ func buildSubdomains(
 	gens testGeneralizations,
 	uc testUseCases,
 	assocs testAssociations,
-) (map[identity.Key]model_domain.Subdomain, error) {
+) map[identity.Key]model_domain.Subdomain {
 	// Subdomain A: rich (3+ classes, 3 generalizations, 4 use cases, 3 uc gens, 3 class assocs, 3 shares).
-	subdomainA, err := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "order subdomain")
-	if err != nil {
-		return nil, err
-	}
+	subdomainA := model_domain.NewSubdomain(k.subdomainA, "Order Management", "Handles orders.", "order subdomain")
 	subdomainA.Classes = map[identity.Key]model_class.Class{
 		k.classOrder:    classes.all[k.classOrder],
 		k.classProduct:  classes.all[k.classProduct],
@@ -2164,10 +2010,7 @@ func buildSubdomains(
 	subdomainA.UseCaseShares = uc.useCaseShares
 
 	// Subdomain B: has 3 classes (for domain-level associations).
-	subdomainB, err := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "")
-	if err != nil {
-		return nil, err
-	}
+	subdomainB := model_domain.NewSubdomain(k.subdomainB, "Warehousing", "Warehouse management.", "")
 	subdomainB.Classes = map[identity.Key]model_class.Class{
 		k.classWarehouse: classes.all[k.classWarehouse],
 		k.classShelf:     classes.all[k.classShelf],
@@ -2175,10 +2018,7 @@ func buildSubdomains(
 	}
 
 	// Subdomain C (domain B): has 3 classes (for model-level associations).
-	subdomainC, err := model_domain.NewSubdomain(k.subdomainC, "Default", "", "")
-	if err != nil {
-		return nil, err
-	}
+	subdomainC := model_domain.NewSubdomain(k.subdomainC, "Default", "", "")
 	subdomainC.Classes = map[identity.Key]model_class.Class{
 		k.classSupplier: classes.all[k.classSupplier],
 		k.classShipment: classes.all[k.classShipment],
@@ -2186,29 +2026,23 @@ func buildSubdomains(
 	}
 
 	// Subdomain D: empty parent (0 classes, 0 everything).
-	subdomainD, err := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "")
-	if err != nil {
-		return nil, err
-	}
+	subdomainD := model_domain.NewSubdomain(k.subdomainD, "Analytics", "Analytics subdomain.", "")
 
 	return map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomainA,
 		k.subdomainB: subdomainB,
 		k.subdomainC: subdomainC,
 		k.subdomainD: subdomainD,
-	}, nil
+	}
 }
 
 // =========================================================================
 // Domains
 // =========================================================================
 
-func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain) (map[identity.Key]model_domain.Domain, error) {
+func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain) map[identity.Key]model_domain.Domain {
 	// Domain A: rich (3 subdomains: A, B, D).
-	domainA, err := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", false, "main domain")
-	if err != nil {
-		return nil, err
-	}
+	domainA := model_domain.NewDomain(k.domainA, "Commerce", "Core commerce domain.", false, "main domain")
 	domainA.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainA: subdomains[k.subdomainA],
 		k.subdomainB: subdomains[k.subdomainB],
@@ -2216,23 +2050,17 @@ func buildDomains(k testKeys, subdomains map[identity.Key]model_domain.Subdomain
 	}
 
 	// Domain B: single subdomain (special case).
-	domainB, err := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", true, "")
-	if err != nil {
-		return nil, err
-	}
+	domainB := model_domain.NewDomain(k.domainB, "Logistics", "Logistics domain.", true, "")
 	domainB.Subdomains = map[identity.Key]model_domain.Subdomain{
 		k.subdomainC: subdomains[k.subdomainC],
 	}
 
 	// Domain C: empty parent (0 subdomains).
-	domainC, err := model_domain.NewDomain(k.domainC, "External", "External integrations.", false, "")
-	if err != nil {
-		return nil, err
-	}
+	domainC := model_domain.NewDomain(k.domainC, "External", "External integrations.", false, "")
 
 	return map[identity.Key]model_domain.Domain{
 		k.domainA: domainA,
 		k.domainB: domainB,
 		k.domainC: domainC,
-	}, nil
+	}
 }

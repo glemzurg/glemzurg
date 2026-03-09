@@ -138,7 +138,7 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil)),
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
 					{Key: invKey2, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}},
 				},
 			},
@@ -149,8 +149,8 @@ func (suite *ModelSuite) TestValidate() {
 				Key:  "model1",
 				Name: "Name",
 				Invariants: []model_logic.Logic{
-					helper.Must(model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil)),
-					helper.Must(model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil)),
+					model_logic.NewLogic(invKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+					model_logic.NewLogic(invKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 				},
 			},
 			errstr: "duplicate let target \"a\"",
@@ -230,9 +230,9 @@ func (suite *ModelSuite) TestNew() {
 	invariants := []model_logic.Logic{
 		{Key: invKey1, Type: model_logic.LogicTypeAssessment, Description: "First invariant.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "inv1"}},
 	}
-	model, err := NewModel("  MODEL1  ", "Name", "Details",
+
+	model := NewModel("  MODEL1  ", "Name", "Details",
 		invariants, globalFuncs, nil)
-	suite.Require().NoError(err)
 	suite.Equal(Model{
 		Key:             "model1",
 		Name:            "Name",
@@ -242,17 +242,13 @@ func (suite *ModelSuite) TestNew() {
 	}, model)
 
 	// Test with nil optional fields (Invariants and GlobalFunctions are optional).
-	model, err = NewModel("  MODEL1  ", "Name", "Details", nil, nil, nil)
-	suite.Require().NoError(err)
+
+	model = NewModel("  MODEL1  ", "Name", "Details", nil, nil, nil)
 	suite.Equal(Model{
 		Key:     "model1",
 		Name:    "Name",
 		Details: "Details",
 	}, model)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewModel("model1", "", "Details", nil, nil, nil)
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateTree tests that Validate validates the entire model tree.

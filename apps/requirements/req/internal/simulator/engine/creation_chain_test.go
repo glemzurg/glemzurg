@@ -63,7 +63,7 @@ func buildOrderItemModel(mandatory bool) *testChainModel {
 	}
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity(toMultStr))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
+	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
 
 	m := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	m.ClassAssociations = map[identity.Key]model_class.Association{
@@ -153,11 +153,11 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	eventUpdateKey := mustKey("domain/d/subdomain/s/class/item/event/update")
 	transUpdateKey := mustKey("domain/d/subdomain/s/class/item/transition/update")
 
-	eventUpdate := helper.Must(model_state.NewEvent(eventUpdateKey, "update", "", nil))
-	stateActive := helper.Must(model_state.NewState(stateActiveKey, "Active", "", ""))
-	transUpdate := helper.Must(model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, ""))
+	eventUpdate := model_state.NewEvent(eventUpdateKey, "update", "", nil)
+	stateActive := model_state.NewState(stateActiveKey, "Active", "", "")
+	transUpdate := model_state.NewTransition(transUpdateKey, &stateActiveKey, eventUpdateKey, nil, nil, &stateActiveKey, "")
 
-	itemClass := helper.Must(model_class.NewClass(itemKey, "Item", "", nil, nil, nil, ""))
+	itemClass := model_class.NewClass(itemKey, "Item", "", nil, nil, nil, "")
 	itemClass.SetAttributes(map[identity.Key]model_class.Attribute{})
 	itemClass.SetStates(map[identity.Key]model_state.State{
 		stateActiveKey: stateActive,
@@ -175,7 +175,7 @@ func (s *CreationChainSuite) TestMissingCreationTransitionReturnsError() {
 	assocKey := testAssocKey(orderKey, itemKey, "OrderItem")
 	fromMult := helper.Must(model_class.NewMultiplicity("1"))
 	toMult := helper.Must(model_class.NewMultiplicity("1..many"))
-	assoc := helper.Must(model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, ""))
+	assoc := model_class.NewAssociation(assocKey, "OrderItem", "", model_class.AssociationEnd{ClassKey: orderKey, Multiplicity: fromMult}, model_class.AssociationEnd{ClassKey: itemKey, Multiplicity: toMult}, nil, "")
 
 	model := testModel(classEntry(orderClass, orderKey), classEntry(itemClass, itemKey))
 	model.ClassAssociations = map[identity.Key]model_class.Association{

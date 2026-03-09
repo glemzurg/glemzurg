@@ -169,11 +169,11 @@ func (suite *AssociationSuite) TestNew() {
 	suite.Require().NoError(err)
 
 	// Test parameters are mapped correctly.
-	assoc, err := NewAssociation(key, "Name", "Details",
+
+	assoc := NewAssociation(key, "Name", "Details",
 		AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity},
 		AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity},
 		&assocClassKey, "UmlComment")
-	suite.Require().NoError(err)
 	suite.Equal(Association{
 		Key:                 key,
 		Name:                "Name",
@@ -185,13 +185,6 @@ func (suite *AssociationSuite) TestNew() {
 		AssociationClassKey: &assocClassKey,
 		UmlComment:          "UmlComment",
 	}, assoc)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewAssociation(key, "", "Details",
-		AssociationEnd{ClassKey: fromClassKey, Multiplicity: multiplicity},
-		AssociationEnd{ClassKey: toClassKey, Multiplicity: multiplicity},
-		&assocClassKey, "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

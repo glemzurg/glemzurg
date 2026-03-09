@@ -303,10 +303,7 @@ func parseDomainFile(model *core.Model, ctx *parseContext, toParseFile fileToPar
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	subdomain, err := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "", "")
-	if err != nil {
-		return err
-	}
+	subdomain := model_domain.NewSubdomain(defaultSubdomainKey, "Default", "", "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		defaultSubdomainKey: subdomain,
 	}

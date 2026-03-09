@@ -80,18 +80,13 @@ func (suite *StateSuite) TestNew() {
 	key := helper.Must(identity.NewStateKey(classKey, "state1"))
 
 	// Test parameters are mapped correctly.
-	state, err := NewState(key, "Name", "Details", "UmlComment")
-	suite.Require().NoError(err)
+	state := NewState(key, "Name", "Details", "UmlComment")
 	suite.Equal(State{
 		Key:        key,
 		Name:       "Name",
 		Details:    "Details",
 		UmlComment: "UmlComment",
 	}, state)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewState(key, "", "Details", "UmlComment")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

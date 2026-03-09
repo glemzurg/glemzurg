@@ -81,60 +81,60 @@ func testAssocKey(fromKey, toKey identity.Key, name string) identity.Key {
 
 // makeOrderClass builds a simple Order class with states and creation transition.
 func makeOrderClass() model_class.Class {
-	class := helper.Must(model_class.NewClass(orderClassKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(orderClassKey, "Order", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
-		orderStateOpenKey:   helper.Must(model_state.NewState(orderStateOpenKey, "Open", "", "")),
-		orderStateClosedKey: helper.Must(model_state.NewState(orderStateClosedKey, "Closed", "", "")),
+		orderStateOpenKey:   model_state.NewState(orderStateOpenKey, "Open", "", ""),
+		orderStateClosedKey: model_state.NewState(orderStateClosedKey, "Closed", "", ""),
 	}
 	class.Events = map[identity.Key]model_state.Event{
-		orderEventCreateKey: helper.Must(model_state.NewEvent(orderEventCreateKey, "create", "", nil)),
-		orderEventCloseKey:  helper.Must(model_state.NewEvent(orderEventCloseKey, "close", "", nil)),
+		orderEventCreateKey: model_state.NewEvent(orderEventCreateKey, "create", "", nil),
+		orderEventCloseKey:  model_state.NewEvent(orderEventCloseKey, "close", "", nil),
 	}
 	class.Guards = map[identity.Key]model_state.Guard{}
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		orderTransCreateKey: helper.Must(model_state.NewTransition(orderTransCreateKey, nil, orderEventCreateKey, nil, nil, &orderStateOpenKey, "")),
-		orderTransCloseKey:  helper.Must(model_state.NewTransition(orderTransCloseKey, &orderStateOpenKey, orderEventCloseKey, nil, nil, &orderStateClosedKey, "")),
+		orderTransCreateKey: model_state.NewTransition(orderTransCreateKey, nil, orderEventCreateKey, nil, nil, &orderStateOpenKey, ""),
+		orderTransCloseKey:  model_state.NewTransition(orderTransCloseKey, &orderStateOpenKey, orderEventCloseKey, nil, nil, &orderStateClosedKey, ""),
 	}
 	return class
 }
 
 // makeItemClass builds a simple Item class with one state and creation.
 func makeItemClass() model_class.Class {
-	class := helper.Must(model_class.NewClass(itemClassKey, "Item", "", nil, nil, nil, ""))
+	class := model_class.NewClass(itemClassKey, "Item", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
-		itemStateActiveKey: helper.Must(model_state.NewState(itemStateActiveKey, "Active", "", "")),
+		itemStateActiveKey: model_state.NewState(itemStateActiveKey, "Active", "", ""),
 	}
 	class.Events = map[identity.Key]model_state.Event{
-		itemEventCreateKey: helper.Must(model_state.NewEvent(itemEventCreateKey, "create_item", "", nil)),
+		itemEventCreateKey: model_state.NewEvent(itemEventCreateKey, "create_item", "", nil),
 	}
 	class.Guards = map[identity.Key]model_state.Guard{}
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		itemTransCreateKey: helper.Must(model_state.NewTransition(itemTransCreateKey, nil, itemEventCreateKey, nil, nil, &itemStateActiveKey, "")),
+		itemTransCreateKey: model_state.NewTransition(itemTransCreateKey, nil, itemEventCreateKey, nil, nil, &itemStateActiveKey, ""),
 	}
 	return class
 }
 
 // makePaymentClass builds a simple Payment class in domain2.
 func makePaymentClass() model_class.Class {
-	class := helper.Must(model_class.NewClass(paymentClassKey, "Payment", "", nil, nil, nil, ""))
+	class := model_class.NewClass(paymentClassKey, "Payment", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{
-		paymentStatePendingKey: helper.Must(model_state.NewState(paymentStatePendingKey, "Pending", "", "")),
+		paymentStatePendingKey: model_state.NewState(paymentStatePendingKey, "Pending", "", ""),
 	}
 	class.Events = map[identity.Key]model_state.Event{
-		paymentEventCreateKey: helper.Must(model_state.NewEvent(paymentEventCreateKey, "create_payment", "", nil)),
+		paymentEventCreateKey: model_state.NewEvent(paymentEventCreateKey, "create_payment", "", nil),
 	}
 	class.Guards = map[identity.Key]model_state.Guard{}
 	class.Actions = map[identity.Key]model_state.Action{}
 	class.Queries = map[identity.Key]model_state.Query{}
 	class.Transitions = map[identity.Key]model_state.Transition{
-		paymentTransCreateKey: helper.Must(model_state.NewTransition(paymentTransCreateKey, nil, paymentEventCreateKey, nil, nil, &paymentStatePendingKey, "")),
+		paymentTransCreateKey: model_state.NewTransition(paymentTransCreateKey, nil, paymentEventCreateKey, nil, nil, &paymentStatePendingKey, ""),
 	}
 	return class
 }
@@ -142,7 +142,7 @@ func makePaymentClass() model_class.Class {
 // makeStatelessClass builds a class with no states (not simulatable).
 func makeStatelessClass() model_class.Class {
 	cKey := mustKey("domain/d/subdomain/s/class/stateless")
-	class := helper.Must(model_class.NewClass(cKey, "Stateless", "", nil, nil, nil, ""))
+	class := model_class.NewClass(cKey, "Stateless", "", nil, nil, nil, "")
 	class.Attributes = map[identity.Key]model_class.Attribute{}
 	class.States = map[identity.Key]model_state.State{}
 	class.Events = map[identity.Key]model_state.Event{}
@@ -157,31 +157,31 @@ func makeStatelessClass() model_class.Class {
 func buildTwoDomainModel() *core.Model {
 	assocKey := testAssocKey(orderClassKey, itemClassKey, "order_items")
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		itemClassKey:  makeItemClass(),
 	}
 	subdomain.ClassAssociations = map[identity.Key]model_class.Association{
-		assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, "")),
+		assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("1..many"))}, nil, ""),
 	}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	subdomain2 := helper.Must(model_domain.NewSubdomain(subdomain2Key, "S2", "", ""))
+	subdomain2 := model_domain.NewSubdomain(subdomain2Key, "S2", "", "")
 	subdomain2.Classes = map[identity.Key]model_class.Class{
 		paymentClassKey: makePaymentClass(),
 	}
 
-	domain2 := helper.Must(model_domain.NewDomain(domain2Key, "D2", "", false, ""))
+	domain2 := model_domain.NewDomain(domain2Key, "D2", "", false, "")
 	domain2.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomain2Key: subdomain2,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
+	model := core.NewModel("test", "Test", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey:  domain,
 		domain2Key: domain2,
@@ -191,18 +191,18 @@ func buildTwoDomainModel() *core.Model {
 
 // buildSingleDomainModel creates a model with just Order and Item.
 func buildSingleDomainModel() *core.Model {
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		itemClassKey:  makeItemClass(),
 	}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
+	model := core.NewModel("test", "Test", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -390,18 +390,18 @@ func (s *ResolverSuite) TestResolve_ExcludeClass() {
 func (s *ResolverSuite) TestResolve_FiltersStatelessClasses() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		orderClassKey: makeOrderClass(),
 		statelessKey:  makeStatelessClass(),
 	}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
+	model := core.NewModel("test", "Test", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -478,17 +478,17 @@ func (s *ResolverSuite) TestResolve_RealizedDomainExcluded() {
 func (s *ResolverSuite) TestResolve_NoSimulatableClasses_Error() {
 	statelessKey := mustKey("domain/d/subdomain/s/class/stateless")
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		statelessKey: makeStatelessClass(),
 	}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test", "", nil, nil, nil))
+	model := core.NewModel("test", "Test", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}
@@ -512,8 +512,8 @@ func (s *ResolverSuite) TestResolve_InvariantsScoped() {
 	// Build a model with two domains so Payment is a known class.
 	model2 := buildTwoDomainModel()
 	model2.Invariants = []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", parsedSpec("Order.count > 0", "Order"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", parsedSpec("Payment.count > 0", "Payment"), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "Order count positive.", "", parsedSpec("Order.count > 0", "Order"), nil),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "Payment count positive.", "", parsedSpec("Payment.count > 0", "Payment"), nil),
 	}
 	spec2 := &SurfaceSpecification{
 		IncludeDomains: []identity.Key{domainKey},
@@ -552,8 +552,8 @@ type InvariantScopingSuite struct {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0", "Item"), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Item.count >= 0", "Item"), nil),
 	}
 	inScope := map[string]bool{"Order": true, "Item": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -563,8 +563,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_AllInScope() {
 
 func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil),
 	}
 	inScope := map[string]bool{"Order": true}
 	included, excluded := ScopeInvariants(invariants, inScope)
@@ -577,8 +577,8 @@ func (s *InvariantScopingSuite) TestScopeInvariants_SomeOutOfScope() {
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfScope() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)),
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("1")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Payment.count >= 0", "Payment"), nil),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -591,7 +591,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_FiltersOutOfSc
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_KeepsNonClassIdentifiers() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("x + y > 0", "x", "y"), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("x + y > 0", "x", "y"), nil),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
@@ -609,7 +609,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_EmptyInvariant
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_NilExpressionInvariant() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", emptySpec(), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", emptySpec(), nil),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true}
@@ -621,7 +621,7 @@ func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_NilExpressionI
 
 func (s *InvariantScopingSuite) TestScopeInvariantsWithAllClasses_MultipleClassReferences() {
 	invariants := []model_logic.Logic{
-		helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0 /\\ Payment.count > 0", "Order", "Payment"), nil)),
+		model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0 /\\ Payment.count > 0", "Order", "Payment"), nil),
 	}
 	inScope := map[string]bool{"Order": true}
 	allClasses := map[string]bool{"Order": true, "Payment": true}
@@ -651,7 +651,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_KeepsIncludedClasses() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations:    map[identity.Key]model_class.Association{},
-		ModelInvariants: []model_logic.Logic{helper.Must(model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil))},
+		ModelInvariants: []model_logic.Logic{model_logic.NewLogic(helper.Must(identity.NewInvariantKey("0")), model_logic.LogicTypeAssessment, "test", "", parsedSpec("Order.count > 0", "Order"), nil)},
 	}
 
 	filtered, err := BuildFilteredModel(model, resolved)
@@ -705,7 +705,7 @@ func (s *FilteredModelSuite) TestBuildFilteredModel_FilteredAssociations() {
 			itemClassKey:  makeItemClass(),
 		},
 		Associations: map[identity.Key]model_class.Association{
-			assocKey: helper.Must(model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, "")),
+			assocKey: model_class.NewAssociation(assocKey, "order_items", "", model_class.AssociationEnd{ClassKey: orderClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, model_class.AssociationEnd{ClassKey: itemClassKey, Multiplicity: helper.Must(model_class.NewMultiplicity("any"))}, nil, ""),
 		},
 		ModelInvariants: []model_logic.Logic{},
 	}

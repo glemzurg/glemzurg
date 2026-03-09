@@ -57,18 +57,13 @@ func (suite *ParameterSuite) TestValidate() {
 	}
 }
 
-// TestNew tests that NewParameter maps parameters correctly and calls Validate.
+// TestNew tests that NewParameter maps parameters correctly.
 func (suite *ParameterSuite) TestNew() {
 	// Test parameters are mapped correctly.
 	param, err := NewParameter("amount", "Nat")
 	suite.Require().NoError(err)
 	suite.Equal("amount", param.Name)
 	suite.Equal("Nat", param.DataTypeRules)
-	// DataType may or may not be set depending on whether the parser is available
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewParameter("", "Nat")
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.

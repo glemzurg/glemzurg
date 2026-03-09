@@ -55,16 +55,16 @@ func (s *StateActionExecutorSuite) TestExitActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/exit/on_exit")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionExitKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", stateActionOrderSpec("self.exit_count + 1"), nil))
-	actionExit := helper.Must(model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "exit_count", stateActionOrderSpec("self.exit_count + 1"), nil)
+	actionExit := model_state.NewAction(actionExitKey, "OnExit", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateActionExit := helper.Must(model_state.NewStateAction(stateActionKey, actionExitKey, "exit"))
+	stateActionExit := model_state.NewStateAction(stateActionKey, actionExitKey, "exit")
 
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	stateOpen.SetActions([]model_state.StateAction{stateActionExit})
-	stateClosed := helper.Must(model_state.NewState(stateClosedKey, "Closed", "", ""))
+	stateClosed := model_state.NewState(stateClosedKey, "Closed", "", "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey:   stateOpen,
@@ -104,15 +104,15 @@ func (s *StateActionExecutorSuite) TestEntryActionsFireOnTransition() {
 	stateActionKey := mustKey("domain/d/subdomain/s/class/order/state/open/saction/entry/on_entry")
 
 	guaranteeKey := helper.Must(identity.NewActionGuaranteeKey(actionEntryKey, "0"))
-	guaranteeLogic := helper.Must(model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", stateActionOrderSpec("self.entry_count + 1"), nil))
-	actionEntry := helper.Must(model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil))
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "entry_count", stateActionOrderSpec("self.entry_count + 1"), nil)
+	actionEntry := model_state.NewAction(actionEntryKey, "OnEntry", "", nil, []model_logic.Logic{guaranteeLogic}, nil, nil)
 
-	stateActionEntry := helper.Must(model_state.NewStateAction(stateActionKey, actionEntryKey, "entry"))
+	stateActionEntry := model_state.NewStateAction(stateActionKey, actionEntryKey, "entry")
 
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 	stateOpen.SetActions([]model_state.StateAction{stateActionEntry})
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
@@ -147,9 +147,9 @@ func (s *StateActionExecutorSuite) TestNoStateActionsReturnsEmpty() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	stateOpenKey := mustKey("domain/d/subdomain/s/class/order/state/open")
 
-	stateOpen := helper.Must(model_state.NewState(stateOpenKey, "Open", "", ""))
+	stateOpen := model_state.NewState(stateOpenKey, "Open", "", "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
 		stateOpenKey: stateOpen,
@@ -177,7 +177,7 @@ func (s *StateActionExecutorSuite) TestStateNotFoundReturnsError() {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	bogusStateKey := mustKey("domain/d/subdomain/s/class/order/state/bogus")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{})
 	class.SetEvents(map[identity.Key]model_state.Event{})

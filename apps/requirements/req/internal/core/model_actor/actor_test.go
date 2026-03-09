@@ -155,8 +155,8 @@ func (suite *ActorSuite) TestNew() {
 	genKeyB := helper.Must(identity.NewActorGeneralizationKey("gen_b"))
 
 	// Test parameters are mapped correctly.
-	actor, err := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, &genKeyA, &genKeyB, "UmlComment")
-	suite.Require().NoError(err)
+
+	actor := NewActor(key, "Name", "Details", _USER_TYPE_PERSON, &genKeyA, &genKeyB, "UmlComment")
 	suite.Equal(Actor{
 		Key:             key,
 		Name:            "Name",
@@ -168,8 +168,8 @@ func (suite *ActorSuite) TestNew() {
 	}, actor)
 
 	// Test with nil superclass/subclass.
-	actor, err = NewActor(key, "Name", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
-	suite.Require().NoError(err)
+
+	actor = NewActor(key, "Name", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
 	suite.Equal(Actor{
 		Key:        key,
 		Name:       "Name",
@@ -177,10 +177,6 @@ func (suite *ActorSuite) TestNew() {
 		Type:       _USER_TYPE_PERSON,
 		UmlComment: "UmlComment",
 	}, actor)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewActor(key, "", "Details", _USER_TYPE_PERSON, nil, nil, "UmlComment")
-	suite.Require().ErrorContains(err, "Name is required")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.

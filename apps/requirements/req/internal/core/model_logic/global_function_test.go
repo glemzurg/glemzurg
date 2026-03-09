@@ -23,7 +23,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 	gfKey2 := helper.Must(identity.NewGlobalFunctionKey("_valid_statuses"))
 	gfKey3 := helper.Must(identity.NewGlobalFunctionKey("_constant"))
 
-	validLogic := helper.Must(NewLogic(gfKey1, LogicTypeValue, "Max of two values.", "", validSpec(), nil))
+	validLogic := NewLogic(gfKey1, LogicTypeValue, "Max of two values.", "", validSpec(), nil)
 
 	tests := []struct {
 		testName string
@@ -53,8 +53,8 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 			gf: GlobalFunction{
 				Key:  gfKey2,
 				Name: "_ValidStatuses",
-				Logic: helper.Must(NewLogic(gfKey2, LogicTypeValue, "Set of valid statuses.", "",
-					validSpecWithBody(`{"pending", "active", "complete"}`), nil)),
+				Logic: NewLogic(gfKey2, LogicTypeValue, "Set of valid statuses.", "",
+					validSpecWithBody(`{"pending", "active", "complete"}`), nil),
 			},
 		},
 		{
@@ -63,8 +63,8 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Key:        gfKey3,
 				Name:       "_Constant",
 				Parameters: nil,
-				Logic: helper.Must(NewLogic(gfKey3, LogicTypeValue, "A constant value.", "",
-					validSpecWithBody("42"), nil)),
+				Logic: NewLogic(gfKey3, LogicTypeValue, "A constant value.", "",
+					validSpecWithBody("42"), nil),
 			},
 		},
 		{
@@ -128,8 +128,8 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Key:        gfKey1,
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
-				Logic: helper.Must(NewLogic(gfKey2, LogicTypeValue, "Some desc.", "",
-					validSpec(), nil)), // Different key than gfKey1
+				Logic: NewLogic(gfKey2, LogicTypeValue, "Some desc.", "",
+					validSpec(), nil), // Different key than gfKey1
 			},
 			errstr: "does not match global function key",
 		},
@@ -184,8 +184,8 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 				Key:        gfKey1,
 				Name:       "_Max",
 				Parameters: []string{"x", "y"},
-				Logic: helper.Must(NewLogic(gfKey1, LogicTypeAssessment, "Some desc.", "",
-					validSpec(), nil)), // Wrong kind for global function
+				Logic: NewLogic(gfKey1, LogicTypeAssessment, "Some desc.", "",
+					validSpec(), nil), // Wrong kind for global function
 			},
 			errstr: "logic kind must be 'value'",
 		},
@@ -208,12 +208,12 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	gfKey1 := helper.Must(identity.NewGlobalFunctionKey("_max"))
 	gfKey2 := helper.Must(identity.NewGlobalFunctionKey("_constant"))
 
-	spec := helper.Must(NewLogic(gfKey1, LogicTypeValue, "Returns the maximum of two values.", "",
-		validSpecWithBody("IF x > y THEN x ELSE y"), nil))
+	spec := NewLogic(gfKey1, LogicTypeValue, "Returns the maximum of two values.", "",
+		validSpecWithBody("IF x > y THEN x ELSE y"), nil)
 
 	// Test all parameters are mapped correctly.
-	gf, err := NewGlobalFunction(gfKey1, "_Max", []string{"x", "y"}, spec)
-	s.Require().NoError(err)
+
+	gf := NewGlobalFunction(gfKey1, "_Max", []string{"x", "y"}, spec)
 	s.Equal(GlobalFunction{
 		Key:        gfKey1,
 		Name:       "_Max",
@@ -222,34 +222,19 @@ func (s *GlobalFunctionTestSuite) TestNew() {
 	}, gf)
 
 	// Test with nil optional fields (Comment and Parameters are optional).
-	gf, err = NewGlobalFunction(gfKey2, "_Constant", nil,
-		helper.Must(NewLogic(gfKey2, LogicTypeValue, "A constant.", "",
-			validSpecWithBody("42"), nil)))
-	s.Require().NoError(err)
+
+	gf = NewGlobalFunction(gfKey2, "_Constant", nil,
+		NewLogic(gfKey2, LogicTypeValue, "A constant.", "",
+			validSpecWithBody("42"), nil))
 	s.Equal("_Constant", gf.Name)
 	s.Nil(gf.Parameters)
-
-	// Test that Validate is called (invalid name should fail).
-	_, err = NewGlobalFunction(gfKey1, "Max", []string{"x"}, spec)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "must start with underscore")
-
-	// Test that invalid specification fails.
-	_, err = NewGlobalFunction(gfKey1, "_Max", []string{"x"}, Logic{
-		Key:         identity.Key{},
-		Type:        LogicTypeValue,
-		Description: "Some desc.",
-		Spec:        validSpec(),
-	})
-	s.Require().Error(err)
-	s.Contains(err.Error(), "KeyType")
 }
 
 // TestValidateWithParent tests that ValidateWithParent validates the key's parent relationship.
 func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 	gfKey := helper.Must(identity.NewGlobalFunctionKey("_max"))
 
-	validLogic := helper.Must(NewLogic(gfKey, LogicTypeValue, "Max of two values.", "", validSpec(), nil))
+	validLogic := NewLogic(gfKey, LogicTypeValue, "Max of two values.", "", validSpec(), nil)
 
 	// Test valid case - gfunc key is root-level (nil parent).
 	gf := GlobalFunction{

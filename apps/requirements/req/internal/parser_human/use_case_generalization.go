@@ -40,10 +40,7 @@ func parseUseCaseGeneralization(subdomainKey identity.Key, generalizationSubKey,
 		return model_use_case.Generalization{}, errors.WithStack(err)
 	}
 
-	generalization, err = model_use_case.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
-	if err != nil {
-		return model_use_case.Generalization{}, err
-	}
+	generalization = model_use_case.NewGeneralization(generalizationKey, parsedFile.Title, stripMarkdownTitle(parsedFile.Markdown), isComplete, isStatic, parsedFile.UmlComment)
 	return generalization, nil
 }
 

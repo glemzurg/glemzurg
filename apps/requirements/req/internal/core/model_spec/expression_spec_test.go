@@ -95,11 +95,6 @@ func (s *ExpressionSpecTestSuite) TestNew() {
 	s.Nil(spec.Expression)
 	s.False(spec.ParseOk())
 
-	// Invalid notation.
-	_, err = NewExpressionSpec("", "x > 0", nil)
-	s.Require().Error(err)
-	s.Contains(err.Error(), "Notation")
-
 	// Valid construction with parseFunc that succeeds.
 	parseFunc := func(spec string) (model_expression.Expression, string) {
 		return &model_expression.BoolLiteral{Value: true}, "TRUE"

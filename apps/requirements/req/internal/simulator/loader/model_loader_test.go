@@ -9,7 +9,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
 )
@@ -151,15 +150,15 @@ func buildTestModel(
 ) *core.Model {
 	toStateKey := stateKey
 
-	transition := helper.Must(model_state.NewTransition(transKey, nil, eventKey, nil, nil, &toStateKey, ""))
+	transition := model_state.NewTransition(transKey, nil, eventKey, nil, nil, &toStateKey, "")
 
-	class := helper.Must(model_class.NewClass(classKey, "Order", "", nil, nil, nil, ""))
+	class := model_class.NewClass(classKey, "Order", "", nil, nil, nil, "")
 	class.SetAttributes(map[identity.Key]model_class.Attribute{})
 	class.SetStates(map[identity.Key]model_state.State{
-		stateKey: helper.Must(model_state.NewState(stateKey, "Open", "", "")),
+		stateKey: model_state.NewState(stateKey, "Open", "", ""),
 	})
 	class.SetEvents(map[identity.Key]model_state.Event{
-		eventKey: helper.Must(model_state.NewEvent(eventKey, "create", "", nil)),
+		eventKey: model_state.NewEvent(eventKey, "create", "", nil),
 	})
 	class.SetGuards(map[identity.Key]model_state.Guard{})
 	class.SetActions(map[identity.Key]model_state.Action{})
@@ -168,17 +167,17 @@ func buildTestModel(
 		transKey: transition,
 	})
 
-	subdomain := helper.Must(model_domain.NewSubdomain(subdomainKey, "S", "", ""))
+	subdomain := model_domain.NewSubdomain(subdomainKey, "S", "", "")
 	subdomain.Classes = map[identity.Key]model_class.Class{
 		classKey: class,
 	}
 
-	domain := helper.Must(model_domain.NewDomain(domainKey, "D", "", false, ""))
+	domain := model_domain.NewDomain(domainKey, "D", "", false, "")
 	domain.Subdomains = map[identity.Key]model_domain.Subdomain{
 		subdomainKey: subdomain,
 	}
 
-	model := helper.Must(core.NewModel("test", "Test Model", "", nil, nil, nil))
+	model := core.NewModel("test", "Test Model", "", nil, nil, nil)
 	model.Domains = map[identity.Key]model_domain.Domain{
 		domainKey: domain,
 	}

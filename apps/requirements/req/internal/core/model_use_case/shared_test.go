@@ -67,16 +67,12 @@ func (suite *UseCaseSharedSuite) TestValidate() {
 // TestNew tests that NewUseCaseShared maps parameters correctly and calls Validate.
 func (suite *UseCaseSharedSuite) TestNew() {
 	// Test parameters are mapped correctly.
-	obj, err := NewUseCaseShared("include", "UmlComment")
-	suite.Require().NoError(err)
+
+	obj := NewUseCaseShared("include", "UmlComment")
 	suite.Equal(UseCaseShared{
 		ShareType:  "include",
 		UmlComment: "UmlComment",
 	}, obj)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewUseCaseShared("", "UmlComment")
-	suite.Require().ErrorContains(err, "ShareType")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate.

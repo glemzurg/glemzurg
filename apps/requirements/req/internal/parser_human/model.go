@@ -32,7 +32,7 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		markdown += "\n\n" + parsedFile.UmlComment
 	}
 
-	model, err = core.NewModel(
+	model = core.NewModel(
 		strings.TrimSpace(strings.ToLower(key)),
 		parsedFile.Title,
 		markdown,
@@ -40,9 +40,6 @@ func parseModel(key, filename, contents string) (model core.Model, err error) {
 		globalFunctions,
 		namedSets,
 	)
-	if err != nil {
-		return core.Model{}, errors.Wrap(err, "failed to create model")
-	}
 
 	return model, nil
 }
@@ -142,15 +139,9 @@ func parseOneGlobalFunction(gfMap map[string]any) (model_logic.GlobalFunction, e
 		return model_logic.GlobalFunction{}, errors.Wrapf(err, "global function %q expression spec", name)
 	}
 
-	logic, err := model_logic.NewLogic(gfKey, model_logic.LogicTypeValue, description, "", spec, nil)
-	if err != nil {
-		return model_logic.GlobalFunction{}, errors.Wrapf(err, "global function %q logic", name)
-	}
+	logic := model_logic.NewLogic(gfKey, model_logic.LogicTypeValue, description, "", spec, nil)
 
-	gf, err := model_logic.NewGlobalFunction(gfKey, name, parameters, logic)
-	if err != nil {
-		return model_logic.GlobalFunction{}, errors.Wrapf(err, "global function %q", name)
-	}
+	gf := model_logic.NewGlobalFunction(gfKey, name, parameters, logic)
 	return gf, nil
 }
 
@@ -215,10 +206,7 @@ func parseOneNamedSet(nsMap map[string]any) (model_named_set.NamedSet, error) {
 		typeSpec = &ts
 	}
 
-	ns, err := model_named_set.NewNamedSet(nsKey, name, description, spec, typeSpec)
-	if err != nil {
-		return model_named_set.NamedSet{}, errors.Wrapf(err, "named set %q", name)
-	}
+	ns := model_named_set.NewNamedSet(nsKey, name, description, spec, typeSpec)
 	return ns, nil
 }
 

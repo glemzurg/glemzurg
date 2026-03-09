@@ -35,7 +35,7 @@ func (suite *GuardSuite) TestValidate() {
 			guard: Guard{
 				Key:   validKey,
 				Name:  "Name",
-				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 			},
 		},
 		{
@@ -43,7 +43,7 @@ func (suite *GuardSuite) TestValidate() {
 			guard: Guard{
 				Key:   validKey,
 				Name:  "Name",
-				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Balance must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0"}, nil)),
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Balance must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.balance > 0"}, nil),
 			},
 		},
 		{
@@ -51,7 +51,7 @@ func (suite *GuardSuite) TestValidate() {
 			guard: Guard{
 				Key:   identity.Key{},
 				Name:  "Name",
-				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 			},
 			errstr: "key type is required",
 		},
@@ -60,7 +60,7 @@ func (suite *GuardSuite) TestValidate() {
 			guard: Guard{
 				Key:   domainKey,
 				Name:  "Name",
-				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 			},
 			errstr: "Key: invalid key type 'domain' for guard",
 		},
@@ -69,7 +69,7 @@ func (suite *GuardSuite) TestValidate() {
 			guard: Guard{
 				Key:   validKey,
 				Name:  "",
-				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 			},
 			errstr: "Name",
 		},
@@ -100,7 +100,7 @@ func (suite *GuardSuite) TestValidate() {
 			guard: Guard{
 				Key:   validKey,
 				Name:  "Name",
-				Logic: helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeStateChange, "Guard condition.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+				Logic: model_logic.NewLogic(validKey, model_logic.LogicTypeStateChange, "Guard condition.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 			},
 			errstr: "logic kind must be 'assessment'",
 		},
@@ -124,20 +124,15 @@ func (suite *GuardSuite) TestNew() {
 	classKey := helper.Must(identity.NewClassKey(subdomainKey, "class1"))
 	key := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 
-	logic := helper.Must(model_logic.NewLogic(key, model_logic.LogicTypeAssessment, "Balance check.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0"}, nil))
+	logic := model_logic.NewLogic(key, model_logic.LogicTypeAssessment, "Balance check.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.x > 0"}, nil)
 
 	// Test all parameters are mapped correctly.
-	guard, err := NewGuard(key, "Name", logic)
-	suite.Require().NoError(err)
+	guard := NewGuard(key, "Name", logic)
 	suite.Equal(Guard{
 		Key:   key,
 		Name:  "Name",
 		Logic: logic,
 	}, guard)
-
-	// Test that Validate is called (invalid data should fail).
-	_, err = NewGuard(key, "", logic)
-	suite.Require().ErrorContains(err, "Name")
 }
 
 // TestValidateWithParent tests that ValidateWithParent calls Validate and ValidateParent.
@@ -148,7 +143,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	validKey := helper.Must(identity.NewGuardKey(classKey, "guard1"))
 	otherClassKey := helper.Must(identity.NewClassKey(subdomainKey, "other_class"))
 
-	validLogic := helper.Must(model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil))
+	validLogic := model_logic.NewLogic(validKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 
 	// Test that Validate is called.
 	guard := Guard{
@@ -177,7 +172,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	guard = Guard{
 		Key:   validKey,
 		Name:  "Name",
-		Logic: helper.Must(model_logic.NewLogic(differentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+		Logic: model_logic.NewLogic(differentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 	}
 	err = guard.ValidateWithParent(&classKey)
 	suite.Require().ErrorContains(err, "does not match guard key", "ValidateWithParent should enforce logic key == guard key")
@@ -188,7 +183,7 @@ func (suite *GuardSuite) TestValidateWithParent() {
 	guard = Guard{
 		Key:   wrongParentGuardKey,
 		Name:  "Name",
-		Logic: helper.Must(model_logic.NewLogic(wrongParentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)),
+		Logic: model_logic.NewLogic(wrongParentGuardKey, model_logic.LogicTypeAssessment, "Guard condition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 	}
 	// The guard key has otherClassKey2 as parent, but we pass otherClassKey as the parent.
 	err = guard.ValidateWithParent(&otherClassKey)
