@@ -50,23 +50,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the model schema and returns detailed errors if validation fails.
 func parseModel(content []byte, filename string) (*inputModel, error) {
-	var model inputModel
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &model); err != nil {
-		return nil, NewParseError(
-			ErrModelInvalidJSON,
-			"failed to parse model JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrModelInvalidJSON,
-			"failed to parse model JSON for schema validation: "+err.Error(),
+			"failed to parse model JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -76,6 +65,16 @@ func parseModel(content []byte, filename string) (*inputModel, error) {
 			"model JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema model")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var model inputModel
+	if err := json.Unmarshal(content, &model); err != nil {
+		return nil, NewParseError(
+			ErrModelInvalidJSON,
+			"failed to parse model JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields

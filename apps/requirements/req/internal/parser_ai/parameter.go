@@ -40,23 +40,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the parameter schema and returns detailed errors if validation fails.
 func parseParameter(content []byte, filename string) (*inputParameter, error) {
-	var param inputParameter
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &param); err != nil {
-		return nil, NewParseError(
-			ErrParamInvalidJSON,
-			"failed to parse parameter JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrParamInvalidJSON,
-			"failed to parse parameter JSON for schema validation: "+err.Error(),
+			"failed to parse parameter JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -66,6 +55,16 @@ func parseParameter(content []byte, filename string) (*inputParameter, error) {
 			"parameter JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema parameter")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var param inputParameter
+	if err := json.Unmarshal(content, &param); err != nil {
+		return nil, NewParseError(
+			ErrParamInvalidJSON,
+			"failed to parse parameter JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

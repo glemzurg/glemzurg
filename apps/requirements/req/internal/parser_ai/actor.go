@@ -42,23 +42,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the actor schema and returns detailed errors if validation fails.
 func parseActor(content []byte, filename string) (*inputActor, error) {
-	var actor inputActor
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &actor); err != nil {
-		return nil, NewParseError(
-			ErrActorInvalidJSON,
-			"failed to parse actor JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActorInvalidJSON,
-			"failed to parse actor JSON for schema validation: "+err.Error(),
+			"failed to parse actor JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -68,6 +57,16 @@ func parseActor(content []byte, filename string) (*inputActor, error) {
 			"actor JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema actor")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var actor inputActor
+	if err := json.Unmarshal(content, &actor); err != nil {
+		return nil, NewParseError(
+			ErrActorInvalidJSON,
+			"failed to parse actor JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields

@@ -41,21 +41,12 @@ func init() {
 
 // parseNamedSet parses a named set JSON file content into an inputNamedSet struct.
 func parseNamedSet(content []byte, filename string) (*inputNamedSet, error) {
-	var ns inputNamedSet
-
-	if err := json.Unmarshal(content, &ns); err != nil {
-		return nil, NewParseError(
-			ErrNamedSetInvalidJSON,
-			"failed to parse named set JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrNamedSetInvalidJSON,
-			"failed to parse named set JSON for schema validation: "+err.Error(),
+			"failed to parse named set JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -65,6 +56,16 @@ func parseNamedSet(content []byte, filename string) (*inputNamedSet, error) {
 			"named set JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema named_set")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var ns inputNamedSet
+	if err := json.Unmarshal(content, &ns); err != nil {
+		return nil, NewParseError(
+			ErrNamedSetInvalidJSON,
+			"failed to parse named set JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	if err := validateNamedSet(&ns, filename); err != nil {

@@ -46,23 +46,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the domain schema and returns detailed errors if validation fails.
 func parseDomain(content []byte, filename string) (*inputDomain, error) {
-	var domain inputDomain
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &domain); err != nil {
-		return nil, NewParseError(
-			ErrDomainInvalidJSON,
-			"failed to parse domain JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrDomainInvalidJSON,
-			"failed to parse domain JSON for schema validation: "+err.Error(),
+			"failed to parse domain JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -72,6 +61,16 @@ func parseDomain(content []byte, filename string) (*inputDomain, error) {
 			"domain JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema domain")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var domain inputDomain
+	if err := json.Unmarshal(content, &domain); err != nil {
+		return nil, NewParseError(
+			ErrDomainInvalidJSON,
+			"failed to parse domain JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields

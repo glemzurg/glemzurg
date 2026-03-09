@@ -41,18 +41,19 @@ func init() {
 
 // parseAssociation parses and validates an association JSON file.
 func parseAssociation(content []byte, filename string) (*inputClassAssociation, error) {
+	// Validate JSON syntax and schema first (using untyped parse).
+	var jsonData any
+	if err := json.Unmarshal(content, &jsonData); err != nil {
+		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := classAssociationSchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema class_association")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
 	var assoc inputClassAssociation
 	if err := json.Unmarshal(content, &assoc); err != nil {
 		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	var jsonData any
-	if err := json.Unmarshal(content, &jsonData); err != nil {
-		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON for schema validation: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	if err := classAssociationSchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema class_association")
 	}
 
 	if err := validateAssociation(&assoc, filename); err != nil {

@@ -44,23 +44,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the action schema and returns detailed errors if validation fails.
 func parseAction(content []byte, filename string) (*inputAction, error) {
-	var action inputAction
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &action); err != nil {
-		return nil, NewParseError(
-			ErrActionInvalidJSON,
-			"failed to parse action JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActionInvalidJSON,
-			"failed to parse action JSON for schema validation: "+err.Error(),
+			"failed to parse action JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -70,6 +59,16 @@ func parseAction(content []byte, filename string) (*inputAction, error) {
 			"action JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema action")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var action inputAction
+	if err := json.Unmarshal(content, &action); err != nil {
+		return nil, NewParseError(
+			ErrActionInvalidJSON,
+			"failed to parse action JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

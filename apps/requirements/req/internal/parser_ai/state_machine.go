@@ -80,23 +80,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the state machine schema and returns detailed errors if validation fails.
 func parseStateMachine(content []byte, filename string) (*inputStateMachine, error) {
-	var sm inputStateMachine
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &sm); err != nil {
-		return nil, NewParseError(
-			ErrStateMachineInvalidJSON,
-			"failed to parse state machine JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrStateMachineInvalidJSON,
-			"failed to parse state machine JSON for schema validation: "+err.Error(),
+			"failed to parse state machine JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -106,6 +95,16 @@ func parseStateMachine(content []byte, filename string) (*inputStateMachine, err
 			"state machine JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema state_machine")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var sm inputStateMachine
+	if err := json.Unmarshal(content, &sm); err != nil {
+		return nil, NewParseError(
+			ErrStateMachineInvalidJSON,
+			"failed to parse state machine JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

@@ -44,23 +44,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the global function schema and returns detailed errors if validation fails.
 func parseGlobalFunction(content []byte, filename string) (*inputGlobalFunction, error) {
-	var gf inputGlobalFunction
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &gf); err != nil {
-		return nil, NewParseError(
-			ErrGlobalFuncInvalidJSON,
-			"failed to parse global function JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrGlobalFuncInvalidJSON,
-			"failed to parse global function JSON for schema validation: "+err.Error(),
+			"failed to parse global function JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -70,6 +59,16 @@ func parseGlobalFunction(content []byte, filename string) (*inputGlobalFunction,
 			"global function JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema global_function")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var gf inputGlobalFunction
+	if err := json.Unmarshal(content, &gf); err != nil {
+		return nil, NewParseError(
+			ErrGlobalFuncInvalidJSON,
+			"failed to parse global function JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

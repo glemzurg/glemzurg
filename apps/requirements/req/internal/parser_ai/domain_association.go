@@ -43,23 +43,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the domain association schema and returns detailed errors if validation fails.
 func parseDomainAssociation(content []byte, filename string) (*inputDomainAssociation, error) {
-	var assoc inputDomainAssociation
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &assoc); err != nil {
-		return nil, NewParseError(
-			ErrDomainAssocInvalidJSON,
-			"failed to parse domain association JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrDomainAssocInvalidJSON,
-			"failed to parse domain association JSON for schema validation: "+err.Error(),
+			"failed to parse domain association JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -69,6 +58,16 @@ func parseDomainAssociation(content []byte, filename string) (*inputDomainAssoci
 			"domain association JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema domain_association")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var assoc inputDomainAssociation
+	if err := json.Unmarshal(content, &assoc); err != nil {
+		return nil, NewParseError(
+			ErrDomainAssocInvalidJSON,
+			"failed to parse domain association JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

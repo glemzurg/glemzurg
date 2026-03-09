@@ -47,23 +47,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the use case generalization schema and returns detailed errors if validation fails.
 func parseUseCaseGeneralization(content []byte, filename string) (*inputUseCaseGeneralization, error) {
-	var gen inputUseCaseGeneralization
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &gen); err != nil {
-		return nil, NewParseError(
-			ErrUseCaseGenInvalidJSON,
-			"failed to parse use case generalization JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseGenInvalidJSON,
-			"failed to parse use case generalization JSON for schema validation: "+err.Error(),
+			"failed to parse use case generalization JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -73,6 +62,16 @@ func parseUseCaseGeneralization(content []byte, filename string) (*inputUseCaseG
 			"use case generalization JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema use_case_generalization")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var gen inputUseCaseGeneralization
+	if err := json.Unmarshal(content, &gen); err != nil {
+		return nil, NewParseError(
+			ErrUseCaseGenInvalidJSON,
+			"failed to parse use case generalization JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

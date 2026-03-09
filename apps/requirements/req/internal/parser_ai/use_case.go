@@ -54,23 +54,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the use case schema and returns detailed errors if validation fails.
 func parseUseCase(content []byte, filename string) (*inputUseCase, error) {
-	var uc inputUseCase
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &uc); err != nil {
-		return nil, NewParseError(
-			ErrUseCaseInvalidJSON,
-			"failed to parse use case JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseInvalidJSON,
-			"failed to parse use case JSON for schema validation: "+err.Error(),
+			"failed to parse use case JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -80,6 +69,16 @@ func parseUseCase(content []byte, filename string) (*inputUseCase, error) {
 			"use case JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema use_case")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var uc inputUseCase
+	if err := json.Unmarshal(content, &uc); err != nil {
+		return nil, NewParseError(
+			ErrUseCaseInvalidJSON,
+			"failed to parse use case JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

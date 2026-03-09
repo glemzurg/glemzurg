@@ -144,7 +144,7 @@
           },
           "specification": {
             "type": "string",
-            "description": "Optional formal specification in the given notation. Safety rule specifications MAY contain primed values (e.g., 'inventory' >= 0') to express constraints over both prior and new state."
+            "description": "Optional formal specification in the given notation. Safety rule specifications MUST contain primed values (e.g., 'inventory' >= 0') to express constraints over both prior and new state."
           }
         },
         "required": ["description", "notation"],

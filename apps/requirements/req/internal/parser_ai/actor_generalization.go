@@ -47,23 +47,12 @@ func init() {
 // The filename parameter is the path to the JSON file being parsed.
 // It validates the input against the actor generalization schema and returns detailed errors if validation fails.
 func parseActorGeneralization(content []byte, filename string) (*inputActorGeneralization, error) {
-	var gen inputActorGeneralization
-
-	// Parse JSON
-	if err := json.Unmarshal(content, &gen); err != nil {
-		return nil, NewParseError(
-			ErrActorGenInvalidJSON,
-			"failed to parse actor generalization JSON: "+err.Error(),
-			filename,
-		).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	// Validate against JSON schema
+	// Validate JSON syntax and schema first (using untyped parse).
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActorGenInvalidJSON,
-			"failed to parse actor generalization JSON for schema validation: "+err.Error(),
+			"failed to parse actor generalization JSON: "+err.Error(),
 			filename,
 		).WithHint("ensure file contains valid JSON syntax")
 	}
@@ -73,6 +62,16 @@ func parseActorGeneralization(content []byte, filename string) (*inputActorGener
 			"actor generalization JSON does not match schema: "+err.Error(),
 			filename,
 		).WithHint("run: req_check --schema actor_generalization")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
+	var gen inputActorGeneralization
+	if err := json.Unmarshal(content, &gen); err != nil {
+		return nil, NewParseError(
+			ErrActorGenInvalidJSON,
+			"failed to parse actor generalization JSON: "+err.Error(),
+			filename,
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate required fields and business rules

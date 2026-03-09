@@ -38,18 +38,19 @@ func init() {
 
 // parseQuery parses and validates a query JSON file.
 func parseQuery(content []byte, filename string) (*inputQuery, error) {
+	// Validate JSON syntax and schema first (using untyped parse).
+	var jsonData any
+	if err := json.Unmarshal(content, &jsonData); err != nil {
+		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
+	}
+	if err := querySchema.Validate(jsonData); err != nil {
+		return nil, NewParseError(ErrQuerySchemaViolation, "query JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema query")
+	}
+
+	// Unmarshal into typed struct (schema already validated structure).
 	var query inputQuery
 	if err := json.Unmarshal(content, &query); err != nil {
 		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	var jsonData any
-	if err := json.Unmarshal(content, &jsonData); err != nil {
-		return nil, NewParseError(ErrQueryInvalidJSON, "failed to parse query JSON for schema validation: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
-	}
-
-	if err := querySchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrQuerySchemaViolation, "query JSON does not match schema: "+err.Error(), filename).WithHint("run: req_check --schema query")
 	}
 
 	if err := validateQuery(&query, filename); err != nil {
