@@ -52,7 +52,7 @@ func parseAction(content []byte, filename string) (*inputAction, error) {
 			ErrActionInvalidJSON,
 			"failed to parse action JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -62,14 +62,14 @@ func parseAction(content []byte, filename string) (*inputAction, error) {
 			ErrActionInvalidJSON,
 			"failed to parse action JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := actionSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActionSchemaViolation,
 			"action JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actionSchemaContent)
+		).WithSchema(actionSchemaContent).WithHint("required: \"name\". allowed: name, details, parameters, requires, guarantees, safety_rules")
 	}
 
 	// Validate required fields and business rules
@@ -89,7 +89,7 @@ func validateAction(action *inputAction, filename string) error {
 			ErrActionNameRequired,
 			"action name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -98,7 +98,7 @@ func validateAction(action *inputAction, filename string) error {
 			ErrActionNameEmpty,
 			"action name cannot be empty or whitespace only, got '"+action.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	return nil

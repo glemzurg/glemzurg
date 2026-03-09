@@ -70,7 +70,7 @@ func (suite *TreeValidateSuite) TestClassIndexDuplicateAttr() {
 	model := t_buildMinimalModelTree()
 	// Add attribute and index with duplicate
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Attributes = map[string]*inputAttribute{
-		"id": {Name: "ID", DataTypeRules: "int"},
+		"id": {Name: "ID", DataTypeRules: "unconstrained"},
 	}
 	model.Domains["domain1"].Subdomains["subdomain1"].Classes["class1"].Indexes = [][]string{{"id", "id"}}
 
@@ -1407,8 +1407,8 @@ func t_buildValidModelTree() *inputModel {
 								Name:     "Order",
 								ActorKey: "customer",
 								Attributes: map[string]*inputAttribute{
-									"id":     {Name: "ID", DataTypeRules: "int"},
-									"status": {Name: "Status", DataTypeRules: "string"},
+									"id":     {Name: "ID", DataTypeRules: "unconstrained"},
+									"status": {Name: "Status", DataTypeRules: "enum of active, pending, completed"},
 								},
 								Indexes: [][]string{{"id"}, {"status"}},
 								StateMachine: &inputStateMachine{
@@ -1518,7 +1518,7 @@ func t_buildCompleteClass() *inputClass {
 	return &inputClass{
 		Name: "Complete Class",
 		Attributes: map[string]*inputAttribute{
-			"id": {Name: "ID", DataTypeRules: "int"},
+			"id": {Name: "ID", DataTypeRules: "unconstrained"},
 		},
 		StateMachine: &inputStateMachine{
 			States: map[string]*inputState{

@@ -58,7 +58,7 @@ func parseModel(content []byte, filename string) (*inputModel, error) {
 			ErrModelInvalidJSON,
 			"failed to parse model JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -68,14 +68,14 @@ func parseModel(content []byte, filename string) (*inputModel, error) {
 			ErrModelInvalidJSON,
 			"failed to parse model JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := modelSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrModelSchemaViolation,
 			"model JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(modelSchemaContent)
+		).WithSchema(modelSchemaContent).WithHint("required: \"name\" (non-empty string). allowed: name, details")
 	}
 
 	// Validate required fields
@@ -95,7 +95,7 @@ func validateModel(model *inputModel, filename string) error {
 			ErrModelNameRequired,
 			"model name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to model.json")
 	}
 
 	// Name cannot be only whitespace
@@ -104,7 +104,7 @@ func validateModel(model *inputModel, filename string) error {
 			ErrModelNameEmpty,
 			"model name cannot be empty or whitespace only, got '"+model.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("\"name\" must contain non-whitespace characters")
 	}
 
 	return nil

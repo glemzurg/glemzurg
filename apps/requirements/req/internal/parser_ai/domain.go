@@ -54,7 +54,7 @@ func parseDomain(content []byte, filename string) (*inputDomain, error) {
 			ErrDomainInvalidJSON,
 			"failed to parse domain JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -64,14 +64,14 @@ func parseDomain(content []byte, filename string) (*inputDomain, error) {
 			ErrDomainInvalidJSON,
 			"failed to parse domain JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := domainSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrDomainSchemaViolation,
 			"domain JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(domainSchemaContent)
+		).WithSchema(domainSchemaContent).WithHint("required: \"name\". allowed: name, details, realized, uml_comment")
 	}
 
 	// Validate required fields
@@ -91,7 +91,7 @@ func validateDomain(domain *inputDomain, filename string) error {
 			ErrDomainNameRequired,
 			"domain name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to domain.json")
 	}
 
 	// Name cannot be only whitespace
@@ -100,7 +100,7 @@ func validateDomain(domain *inputDomain, filename string) error {
 			ErrDomainNameEmpty,
 			"domain name cannot be empty or whitespace only, got '"+domain.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to domain.json")
 	}
 
 	return nil

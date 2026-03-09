@@ -72,7 +72,7 @@ func parseClass(content []byte, filename string) (*inputClass, error) {
 			ErrClassInvalidJSON,
 			"failed to parse class JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -82,14 +82,14 @@ func parseClass(content []byte, filename string) (*inputClass, error) {
 			ErrClassInvalidJSON,
 			"failed to parse class JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := classSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrClassSchemaViolation,
 			"class JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(classSchemaContent)
+		).WithSchema(classSchemaContent).WithHint("required: \"name\". allowed: name, details, actor_key, attributes, indexes, uml_comment")
 	}
 
 	// Validate required fields and business rules
@@ -109,7 +109,7 @@ func validateClass(class *inputClass, filename string) error {
 			ErrClassNameRequired,
 			"class name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to class.json")
 	}
 
 	// Name cannot be only whitespace
@@ -118,7 +118,7 @@ func validateClass(class *inputClass, filename string) error {
 			ErrClassNameEmpty,
 			"class name cannot be empty or whitespace only, got '"+class.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to class.json")
 	}
 
 	// Validate attributes if present
@@ -129,7 +129,7 @@ func validateClass(class *inputClass, filename string) error {
 				ErrClassAttributeNameEmpty,
 				fmt.Sprintf("attribute '%s' name is required, got ''", attrKey),
 				filename,
-			).WithField("attributes." + attrKey + ".name")
+			).WithField("attributes." + attrKey + ".name").WithHint("each attribute must have a non-empty \"name\" field")
 		}
 
 		// Attribute name cannot be only whitespace
@@ -138,7 +138,7 @@ func validateClass(class *inputClass, filename string) error {
 				ErrClassAttributeNameEmpty,
 				fmt.Sprintf("attribute '%s' name cannot be empty or whitespace only, got '%s'", attrKey, attr.Name),
 				filename,
-			).WithField("attributes." + attrKey + ".name")
+			).WithField("attributes." + attrKey + ".name").WithHint("each attribute must have a non-empty \"name\" field")
 		}
 	}
 
@@ -150,7 +150,7 @@ func validateClass(class *inputClass, filename string) error {
 				ErrClassIndexInvalid,
 				fmt.Sprintf("index[%d] must have at least one attribute key", i),
 				filename,
-			).WithField(fmt.Sprintf("indexes[%d]", i))
+			).WithField(fmt.Sprintf("indexes[%d]", i)).WithHint("each index must be an array of one or more non-empty attribute keys")
 		}
 
 		// Each attribute key in the index must be non-empty
@@ -160,14 +160,14 @@ func validateClass(class *inputClass, filename string) error {
 					ErrClassIndexInvalid,
 					fmt.Sprintf("index[%d][%d] attribute key cannot be empty", i, j),
 					filename,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j))
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint("each index must be an array of one or more non-empty attribute keys")
 			}
 			if strings.TrimSpace(attrKey) == "" {
 				return NewParseError(
 					ErrClassIndexInvalid,
 					fmt.Sprintf("index[%d][%d] attribute key cannot be whitespace only, got '%s'", i, j, attrKey),
 					filename,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j))
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint("each index must be an array of one or more non-empty attribute keys")
 			}
 		}
 	}

@@ -312,6 +312,31 @@ func GetStrictTestModel() core.Model {
 				}
 			}
 
+			// Ensure all event parameter DataTypeRules are parseable.
+			// The AI parser validates data_type_rules; the base model may
+			// contain intentionally unparseable values that are valid for the
+			// human parser but not the AI path.
+			for classKey, class := range subdomain.Classes {
+				changed := false
+				for eventKey, event := range class.Events {
+					for i := range event.Parameters {
+						if event.Parameters[i].DataTypeRules != "" && event.Parameters[i].DataType == nil {
+							// Unparseable — replace with unconstrained.
+							p, err := model_state.NewParameter(event.Parameters[i].Name, "unconstrained")
+							if err != nil {
+								panic(fmt.Sprintf("failed to create replacement parameter: %v", err))
+							}
+							event.Parameters[i] = p
+							changed = true
+						}
+					}
+					class.Events[eventKey] = event
+				}
+				if changed {
+					subdomain.Classes[classKey] = class
+				}
+			}
+
 			// Update subdomain in domain.
 			domain.Subdomains[subdomainKey] = subdomain
 		}

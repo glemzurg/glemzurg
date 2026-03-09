@@ -48,7 +48,7 @@ func parseNamedSet(content []byte, filename string) (*inputNamedSet, error) {
 			ErrNamedSetInvalidJSON,
 			"failed to parse named set JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	var jsonData any
@@ -57,14 +57,14 @@ func parseNamedSet(content []byte, filename string) (*inputNamedSet, error) {
 			ErrNamedSetInvalidJSON,
 			"failed to parse named set JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := namedSetSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrNamedSetSchemaViolation,
 			"named set JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(namedSetSchemaContent)
+		).WithSchema(namedSetSchemaContent).WithHint("required: \"name\". allowed: name, description, notation, specification, type_spec")
 	}
 
 	if err := validateNamedSet(&ns, filename); err != nil {
@@ -81,7 +81,7 @@ func validateNamedSet(ns *inputNamedSet, filename string) error {
 			ErrNamedSetNameRequired,
 			"named set name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field starting with underscore")
 	}
 
 	if strings.TrimSpace(ns.Name) == "" {
@@ -89,7 +89,7 @@ func validateNamedSet(ns *inputNamedSet, filename string) error {
 			ErrNamedSetNameEmpty,
 			"named set name cannot be empty or whitespace only, got '"+ns.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field starting with underscore")
 	}
 
 	if !strings.HasPrefix(ns.Name, "_") {
@@ -97,7 +97,7 @@ func validateNamedSet(ns *inputNamedSet, filename string) error {
 			ErrNamedSetNameNoUnderscore,
 			"named set name must start with underscore, got '"+ns.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("named set names must start with underscore, e.g. \"_OrderStatuses\"")
 	}
 
 	return nil

@@ -33,3 +33,73 @@ func TestNewParseErrorPanicsForMissingErrorDoc(t *testing.T) {
 	// Should not reach here
 	t.Fatal("NewParseError should have panicked")
 }
+
+func TestParseErrorConciseOutput(t *testing.T) {
+	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json")
+	output := err.Error()
+
+	assert.Contains(t, output, "E1001:")
+	assert.Contains(t, output, "model name is required")
+	assert.Contains(t, output, "file: model.json")
+	// Should NOT contain verbose markdown
+	assert.NotContains(t, output, "--- Error Detail ---")
+	assert.NotContains(t, output, "--- Schema ---")
+}
+
+func TestParseErrorWithField(t *testing.T) {
+	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json").
+		WithField("name")
+	output := err.Error()
+
+	assert.Contains(t, output, "field: name")
+}
+
+func TestParseErrorWithHint(t *testing.T) {
+	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json").
+		WithHint(`required: "name" (non-empty string)`)
+	output := err.Error()
+
+	assert.Contains(t, output, "hint: required: \"name\" (non-empty string)")
+}
+
+func TestParseErrorWithSchema(t *testing.T) {
+	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json").
+		WithSchema(`{"type": "object"}`)
+
+	// Schema should NOT appear in concise output
+	output := err.Error()
+	assert.NotContains(t, output, "Schema")
+
+	// Schema SHOULD appear in verbose output
+	verbose := err.VerboseError()
+	assert.Contains(t, verbose, "--- Schema ---")
+	assert.Contains(t, verbose, `{"type": "object"}`)
+}
+
+func TestParseErrorVerboseOutput(t *testing.T) {
+	err := NewParseError(ErrModelNameRequired, "model name is required", "model.json").
+		WithHint("add a name field").
+		WithSchema(`{"type": "object"}`)
+
+	verbose := err.VerboseError()
+	assert.Contains(t, verbose, "E1001:")
+	assert.Contains(t, verbose, "--- Error Detail ---")
+	assert.Contains(t, verbose, "--- Schema ---")
+}
+
+func TestParseErrorBuildersPreserveFields(t *testing.T) {
+	base := NewParseError(ErrModelNameRequired, "msg", "file.json")
+
+	withHint := base.WithHint("hint text")
+	assert.Equal(t, "hint text", withHint.Hint)
+	assert.Equal(t, base.Code, withHint.Code)
+
+	withField := withHint.WithField("name")
+	assert.Equal(t, "name", withField.Field)
+	assert.Equal(t, "hint text", withField.Hint)
+
+	withSchema := withField.WithSchema("schema content")
+	assert.Equal(t, "schema content", withSchema.Schema)
+	assert.Equal(t, "name", withSchema.Field)
+	assert.Equal(t, "hint text", withSchema.Hint)
+}

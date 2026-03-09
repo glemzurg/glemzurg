@@ -94,7 +94,6 @@ func (suite *ActorSuite) TestParseActorErrors() {
 			}
 
 			// Docs are always attached to all errors
-			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
 
 			// File is always set to the input filename
 			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")

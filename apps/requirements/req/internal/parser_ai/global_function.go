@@ -52,7 +52,7 @@ func parseGlobalFunction(content []byte, filename string) (*inputGlobalFunction,
 			ErrGlobalFuncInvalidJSON,
 			"failed to parse global function JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -62,14 +62,14 @@ func parseGlobalFunction(content []byte, filename string) (*inputGlobalFunction,
 			ErrGlobalFuncInvalidJSON,
 			"failed to parse global function JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := globalFunctionSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrGlobalFuncSchemaViolation,
 			"global function JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(globalFunctionSchemaContent)
+		).WithSchema(globalFunctionSchemaContent).WithHint("required: \"name\", \"logic\". allowed: name, parameters, logic")
 	}
 
 	// Validate required fields and business rules
@@ -89,7 +89,7 @@ func validateGlobalFunction(gf *inputGlobalFunction, filename string) error {
 			ErrGlobalFuncNameRequired,
 			"global function name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field starting with underscore")
 	}
 
 	// Name cannot be only whitespace
@@ -98,7 +98,7 @@ func validateGlobalFunction(gf *inputGlobalFunction, filename string) error {
 			ErrGlobalFuncNameEmpty,
 			"global function name cannot be empty or whitespace only, got '"+gf.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field starting with underscore")
 	}
 
 	// Name must start with underscore
@@ -107,7 +107,7 @@ func validateGlobalFunction(gf *inputGlobalFunction, filename string) error {
 			ErrGlobalFuncNameNoUnderscore,
 			"global function name must start with underscore, got '"+gf.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("global function names must start with underscore, e.g. \"_Max\", \"_SetOfValues\"")
 	}
 
 	// Each parameter must be non-empty and non-whitespace
@@ -117,14 +117,14 @@ func validateGlobalFunction(gf *inputGlobalFunction, filename string) error {
 				ErrGlobalFuncParamEmpty,
 				fmt.Sprintf("global function parameters[%d] cannot be empty", i),
 				filename,
-			).WithField(fmt.Sprintf("parameters[%d]", i))
+			).WithField(fmt.Sprintf("parameters[%d]", i)).WithHint("each parameter must be a non-empty string")
 		}
 		if strings.TrimSpace(param) == "" {
 			return NewParseError(
 				ErrGlobalFuncParamEmpty,
 				fmt.Sprintf("global function parameters[%d] cannot be whitespace only, got '%s'", i, param),
 				filename,
-			).WithField(fmt.Sprintf("parameters[%d]", i))
+			).WithField(fmt.Sprintf("parameters[%d]", i)).WithHint("each parameter must be a non-empty string")
 		}
 	}
 
@@ -134,7 +134,7 @@ func validateGlobalFunction(gf *inputGlobalFunction, filename string) error {
 			ErrGlobalFuncLogicRequired,
 			"global function logic description is required, got ''",
 			filename,
-		).WithField("logic.description")
+		).WithField("logic.description").WithHint("add a \"logic\" object with a non-empty \"description\" field")
 	}
 
 	// Logic description cannot be only whitespace
@@ -143,7 +143,7 @@ func validateGlobalFunction(gf *inputGlobalFunction, filename string) error {
 			ErrGlobalFuncLogicRequired,
 			"global function logic description cannot be empty or whitespace only, got '"+gf.Logic.Description+"'",
 			filename,
-		).WithField("logic.description")
+		).WithField("logic.description").WithHint("add a \"logic\" object with a non-empty \"description\" field")
 	}
 
 	return nil

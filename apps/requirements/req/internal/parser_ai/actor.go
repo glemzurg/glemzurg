@@ -50,7 +50,7 @@ func parseActor(content []byte, filename string) (*inputActor, error) {
 			ErrActorInvalidJSON,
 			"failed to parse actor JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -60,14 +60,14 @@ func parseActor(content []byte, filename string) (*inputActor, error) {
 			ErrActorInvalidJSON,
 			"failed to parse actor JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := actorSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActorSchemaViolation,
 			"actor JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actorSchemaContent)
+		).WithSchema(actorSchemaContent).WithHint("required: \"name\", \"type\". allowed: name, type, details, uml_comment")
 	}
 
 	// Validate required fields
@@ -87,7 +87,7 @@ func validateActor(actor *inputActor, filename string) error {
 			ErrActorNameRequired,
 			"actor name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -96,7 +96,7 @@ func validateActor(actor *inputActor, filename string) error {
 			ErrActorNameEmpty,
 			"actor name cannot be empty or whitespace only, got '"+actor.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Type is required (schema enforces this, but we provide a clearer error)
@@ -105,7 +105,7 @@ func validateActor(actor *inputActor, filename string) error {
 			ErrActorTypeRequired,
 			"actor type is required, got ''",
 			filename,
-		).WithField("type")
+		).WithField("type").WithHint("add \"type\": one of \"person\", \"external_system\", \"time\"")
 	}
 
 	// Type cannot be only whitespace
@@ -114,7 +114,7 @@ func validateActor(actor *inputActor, filename string) error {
 			ErrActorTypeInvalid,
 			"actor type cannot be empty or whitespace only, got '"+actor.Type+"'",
 			filename,
-		).WithField("type")
+		).WithField("type").WithHint("\"type\" must be one of: person, external_system, time")
 	}
 
 	return nil

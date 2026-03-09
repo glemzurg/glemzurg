@@ -36,16 +36,17 @@ const (
 	ErrSubdomainDirInvalid      = 4006
 
 	// Class errors (5xxx).
-	ErrClassNameRequired       = 5001
-	ErrClassNameEmpty          = 5002
-	ErrClassInvalidJSON        = 5003
-	ErrClassSchemaViolation    = 5004
-	ErrClassDuplicateKey       = 5005
-	ErrClassDirInvalid         = 5006
-	ErrClassActorNotFound      = 5007
-	ErrClassAttributeNameEmpty = 5008
-	ErrClassIndexInvalid       = 5009
-	ErrClassIndexAttrNotFound  = 5010
+	ErrClassNameRequired        = 5001
+	ErrClassNameEmpty           = 5002
+	ErrClassInvalidJSON         = 5003
+	ErrClassSchemaViolation     = 5004
+	ErrClassDuplicateKey        = 5005
+	ErrClassDirInvalid          = 5006
+	ErrClassActorNotFound       = 5007
+	ErrClassAttributeNameEmpty  = 5008
+	ErrClassIndexInvalid        = 5009
+	ErrClassIndexAttrNotFound   = 5010
+	ErrClassDataTypeUnparseable = 5011 // Attribute data_type_rules could not be parsed
 
 	// Association errors (6xxx).
 	ErrAssocNameRequired        = 6001
@@ -64,31 +65,32 @@ const (
 	ErrAssocDuplicateKey        = 6014
 
 	// State machine errors (7xxx).
-	ErrStateMachineInvalidJSON     = 7001
-	ErrStateMachineSchemaViolation = 7002
-	ErrStateNameRequired           = 7003
-	ErrStateNameEmpty              = 7004
-	ErrStateDuplicateKey           = 7005
-	ErrStateActionKeyRequired      = 7006
-	ErrStateActionWhenRequired     = 7007
-	ErrStateActionWhenInvalid      = 7008
-	ErrEventNameRequired           = 7009
-	ErrEventNameEmpty              = 7010
-	ErrEventDuplicateKey           = 7011
-	ErrEventParamNameRequired      = 7012
-	ErrEventParamSourceRequired    = 7013
-	ErrGuardNameRequired           = 7014
-	ErrGuardNameEmpty              = 7015
-	ErrGuardDetailsRequired        = 7016
-	ErrGuardDuplicateKey           = 7017
-	ErrTransitionEventRequired     = 7018
-	ErrTransitionNoStates          = 7019
-	ErrTransitionFromStateNotFound = 7020
-	ErrTransitionToStateNotFound   = 7021
-	ErrTransitionEventNotFound     = 7022
-	ErrTransitionGuardNotFound     = 7023
-	ErrTransitionActionNotFound    = 7024
-	ErrTransitionInitialToFinal    = 7025
+	ErrStateMachineInvalidJSON       = 7001
+	ErrStateMachineSchemaViolation   = 7002
+	ErrStateNameRequired             = 7003
+	ErrStateNameEmpty                = 7004
+	ErrStateDuplicateKey             = 7005
+	ErrStateActionKeyRequired        = 7006
+	ErrStateActionWhenRequired       = 7007
+	ErrStateActionWhenInvalid        = 7008
+	ErrEventNameRequired             = 7009
+	ErrEventNameEmpty                = 7010
+	ErrEventDuplicateKey             = 7011
+	ErrEventParamNameRequired        = 7012
+	ErrEventParamSourceRequired      = 7013
+	ErrGuardNameRequired             = 7014
+	ErrGuardNameEmpty                = 7015
+	ErrGuardDetailsRequired          = 7016
+	ErrGuardDuplicateKey             = 7017
+	ErrTransitionEventRequired       = 7018
+	ErrTransitionNoStates            = 7019
+	ErrTransitionFromStateNotFound   = 7020
+	ErrTransitionToStateNotFound     = 7021
+	ErrTransitionEventNotFound       = 7022
+	ErrTransitionGuardNotFound       = 7023
+	ErrTransitionActionNotFound      = 7024
+	ErrTransitionInitialToFinal      = 7025
+	ErrEventParamDataTypeUnparseable = 7026 // Event parameter data_type_rules could not be parsed
 
 	// Action errors (8xxx).
 	ErrActionNameRequired    = 8001
@@ -149,10 +151,11 @@ const (
 	ErrLogicTargetNoLeadUnderscore = 14007
 
 	// Parameter errors (15xxx).
-	ErrParamNameRequired    = 15001
-	ErrParamNameEmpty       = 15002
-	ErrParamInvalidJSON     = 15003
-	ErrParamSchemaViolation = 15004
+	ErrParamNameRequired        = 15001
+	ErrParamNameEmpty           = 15002
+	ErrParamInvalidJSON         = 15003
+	ErrParamSchemaViolation     = 15004
+	ErrParamDataTypeUnparseable = 15005 // Parameter data_type_rules could not be parsed
 
 	// Global function errors (16xxx).
 	ErrGlobalFuncNameRequired     = 16001

@@ -1,12 +1,18 @@
 package convert
 
 import (
+	"fmt"
+
 	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
+
+// StrictExpressionParseFunc parses a specification and returns an error on failure
+// instead of silently returning nil.
+type StrictExpressionParseFunc func(specification string) (me.Expression, string, error)
 
 // NewExpressionParseFunc creates an ExpressionParseFunc that uses the TLA+ parser
 // and lowering pipeline with the given context. If ctx is nil, an empty context
@@ -35,6 +41,35 @@ func NewExpressionParseFunc(ctx *LowerContext) logic_spec.ExpressionParseFunc {
 			return expr, ""
 		}
 		return expr, ast.Print(raisedAST)
+	}
+}
+
+// NewExpressionParseFuncStrict creates a strict parse function that returns errors
+// instead of silently swallowing them. Used by the AI parser path where parse
+// failures should be reported to the calling AI.
+func NewExpressionParseFuncStrict(ctx *LowerContext) StrictExpressionParseFunc {
+	if ctx == nil {
+		ctx = &LowerContext{}
+	}
+	return func(specification string) (me.Expression, string, error) {
+		// Parse TLA+ text to AST.
+		astExpr, err := parser.ParseExpression(specification)
+		if err != nil {
+			return nil, "", fmt.Errorf("TLA+ parse error: %w", err)
+		}
+		// Lower AST to model expression.
+		expr, err := Lower(astExpr, ctx)
+		if err != nil {
+			return nil, "", fmt.Errorf("TLA+ lowering error: %w", err)
+		}
+		// Round-trip: raise back to TLA+ for normalized form.
+		raisedAST, err := Raise(expr, raiseContextFromLower(ctx))
+		if err != nil {
+			// Lowering succeeded but raising failed — keep the expression
+			// with the original specification text.
+			return expr, "", nil
+		}
+		return expr, ast.Print(raisedAST), nil
 	}
 }
 

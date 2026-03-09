@@ -85,7 +85,6 @@ func (suite *GlobalFunctionSuite) TestParseGlobalFunctionErrors() {
 				suite.Empty(parseErr.Schema, testName+" should not have schema content")
 			}
 
-			suite.NotEmpty(parseErr.Docs, testName+" should have docs content")
 			suite.Equal(testData.Filename, parseErr.File, testName+" error file path")
 
 			if expected.Field != "" {

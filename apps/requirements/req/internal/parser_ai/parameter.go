@@ -48,7 +48,7 @@ func parseParameter(content []byte, filename string) (*inputParameter, error) {
 			ErrParamInvalidJSON,
 			"failed to parse parameter JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -58,14 +58,14 @@ func parseParameter(content []byte, filename string) (*inputParameter, error) {
 			ErrParamInvalidJSON,
 			"failed to parse parameter JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := parameterSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrParamSchemaViolation,
 			"parameter JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(parameterSchemaContent)
+		).WithSchema(parameterSchemaContent).WithHint("required: \"name\". allowed: name, data_type_rules")
 	}
 
 	// Validate required fields and business rules
@@ -85,7 +85,7 @@ func validateParameter(param *inputParameter, filename string) error {
 			ErrParamNameRequired,
 			"parameter name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -94,7 +94,7 @@ func validateParameter(param *inputParameter, filename string) error {
 			ErrParamNameEmpty,
 			"parameter name cannot be empty or whitespace only, got '"+param.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	return nil

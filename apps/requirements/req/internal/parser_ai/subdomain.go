@@ -57,7 +57,7 @@ func parseSubdomain(content []byte, filename string) (*inputSubdomain, error) {
 			ErrSubdomainInvalidJSON,
 			"failed to parse subdomain JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -67,14 +67,14 @@ func parseSubdomain(content []byte, filename string) (*inputSubdomain, error) {
 			ErrSubdomainInvalidJSON,
 			"failed to parse subdomain JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := subdomainSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrSubdomainSchemaViolation,
 			"subdomain JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(subdomainSchemaContent)
+		).WithSchema(subdomainSchemaContent).WithHint("required: \"name\". allowed: name, details, uml_comment")
 	}
 
 	// Validate required fields
@@ -94,7 +94,7 @@ func validateSubdomain(subdomain *inputSubdomain, filename string) error {
 			ErrSubdomainNameRequired,
 			"subdomain name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to subdomain.json")
 	}
 
 	// Name cannot be only whitespace
@@ -103,7 +103,7 @@ func validateSubdomain(subdomain *inputSubdomain, filename string) error {
 			ErrSubdomainNameEmpty,
 			"subdomain name cannot be empty or whitespace only, got '"+subdomain.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field to subdomain.json")
 	}
 
 	return nil

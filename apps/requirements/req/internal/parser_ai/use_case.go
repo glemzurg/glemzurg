@@ -62,7 +62,7 @@ func parseUseCase(content []byte, filename string) (*inputUseCase, error) {
 			ErrUseCaseInvalidJSON,
 			"failed to parse use case JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -72,14 +72,14 @@ func parseUseCase(content []byte, filename string) (*inputUseCase, error) {
 			ErrUseCaseInvalidJSON,
 			"failed to parse use case JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := useCaseSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrUseCaseSchemaViolation,
 			"use case JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(useCaseSchemaContent)
+		).WithSchema(useCaseSchemaContent).WithHint("required: \"name\", \"level\". allowed: name, details, level, read_only, uml_comment, actors")
 	}
 
 	// Validate required fields and business rules
@@ -99,7 +99,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseNameRequired,
 			"use case name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -108,7 +108,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseNameEmpty,
 			"use case name cannot be empty or whitespace only, got '"+uc.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Level is required
@@ -117,7 +117,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseLevelRequired,
 			"use case level is required, got ''",
 			filename,
-		).WithField("level")
+		).WithField("level").WithHint("add \"level\": one of \"sky\", \"sea\", \"mud\"")
 	}
 
 	// Level must be one of the valid values
@@ -129,7 +129,7 @@ func validateUseCase(uc *inputUseCase, filename string) error {
 			ErrUseCaseLevelInvalid,
 			"use case level must be 'sky', 'sea', or 'mud', got '"+uc.Level+"'",
 			filename,
-		).WithField("level")
+		).WithField("level").WithHint("\"level\" must be one of: sky, sea, mud")
 	}
 
 	return nil

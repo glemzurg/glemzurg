@@ -3,8 +3,47 @@ package parser_ai
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 )
+
+// sortedKeys returns sorted keys from a map.
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// domainScopedClassKeys returns sorted "subdomain/class" keys across all subdomains in a domain.
+func domainScopedClassKeys(domain *inputDomain) []string {
+	var keys []string
+	for sdKey, sd := range domain.Subdomains {
+		for cKey := range sd.Classes {
+			keys = append(keys, sdKey+"/"+cKey)
+		}
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// modelScopedClassKeys returns sorted "domain/subdomain/class" keys across the entire model.
+func modelScopedClassKeys(model *inputModel) []string {
+	var keys []string
+	for dKey, d := range model.Domains {
+		for sdKey, sd := range d.Subdomains {
+			for cKey := range sd.Classes {
+				keys = append(keys, dKey+"/"+sdKey+"/"+cKey)
+			}
+		}
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 // validateModelTree validates a complete model tree for cross-reference integrity.
 // This is called automatically after the tree has been successfully loaded from the filesystem.
@@ -51,7 +90,7 @@ func validateModelCompleteness(model *inputModel) error {
 			ErrTreeModelNoActors,
 			"model must have at least one actor defined - actors represent the users, systems, or external entities that interact with your system; define actors in the 'actors/' directory with files like 'actors/user.actor.json'",
 			"model.json",
-		).WithField("actors")
+		).WithField("actors").WithHint("create actors/{key}.actor.json with {\"name\": ..., \"type\": \"person|external_system|time\"}")
 	}
 
 	// Check model has at least one domain
@@ -60,7 +99,7 @@ func validateModelCompleteness(model *inputModel) error {
 			ErrTreeModelNoDomains,
 			"model must have at least one domain defined - domains are high-level subject areas that group related functionality; create a domain directory under 'domains/' with a 'domain.json' file",
 			"model.json",
-		).WithField("domains")
+		).WithField("domains").WithHint("create domains/{key}/domain.json with {\"name\": ...}")
 	}
 
 	// Validate each domain's completeness
@@ -84,7 +123,7 @@ func validateDomainCompleteness(domainKey string, domain *inputDomain) error {
 			fmt.Sprintf("domain '%s' must have at least one subdomain defined - subdomains organize classes within a domain; create a subdomain directory under 'domains/%s/' with a 'subdomain.json' file",
 				domainKey, domainKey),
 			domainPath,
-		).WithField("subdomains")
+		).WithField("subdomains").WithHint(fmt.Sprintf("create domains/%s/subdomains/default/subdomain.json", domainKey))
 	}
 
 	// Validate subdomain naming rules
@@ -128,7 +167,7 @@ func validateSubdomainNaming(domainKey string, domain *inputDomain) error {
 					"rename 'domains/%s/subdomains/%s/' to 'domains/%s/subdomains/default/'",
 					domainKey, actualName, domainKey, actualName, domainKey),
 				subdomainPath,
-			).WithField("subdomain_key")
+			).WithField("subdomain_key").WithHint("rename subdomain directory to 'default'")
 		}
 	} else if subdomainCount > 1 {
 		// Multiple subdomains cannot include one named "default"
@@ -141,7 +180,7 @@ func validateSubdomainNaming(domainKey string, domain *inputDomain) error {
 					"rename 'domains/%s/subdomains/default/' to a more descriptive name that reflects its purpose",
 					domainKey, domainKey),
 				subdomainPath,
-			).WithField("subdomain_key")
+			).WithField("subdomain_key").WithHint("rename 'default' subdomain to a descriptive name")
 		}
 	}
 
@@ -159,7 +198,7 @@ func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *in
 			fmt.Sprintf("subdomain '%s' must have at least 2 classes defined (has %d) - a subdomain needs multiple classes to represent meaningful relationships; create class directories under 'domains/%s/subdomains/%s/classes/' with 'class.json' files",
 				subdomainKey, len(subdomain.Classes), domainKey, subdomainKey),
 			subdomainPath,
-		).WithField("classes")
+		).WithField("classes").WithHint("create class directories under classes/ with class.json files")
 	}
 
 	// Check subdomain has at least one association
@@ -169,7 +208,7 @@ func validateSubdomainCompleteness(domainKey, subdomainKey string, subdomain *in
 			fmt.Sprintf("subdomain '%s' must have at least one association defined - associations describe how classes relate to each other; create association files under 'domains/%s/subdomains/%s/associations/' with '.assoc.json' extension",
 				subdomainKey, domainKey, subdomainKey),
 			subdomainPath,
-		).WithField("associations")
+		).WithField("associations").WithHint("create {from}--{to}--{name}.assoc.json in associations/")
 	}
 
 	// Validate each class's completeness
@@ -193,7 +232,7 @@ func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *
 			fmt.Sprintf("class '%s' must have at least one attribute defined - attributes describe the data properties of a class; add attributes to the 'attributes' map in the class.json file with name, data type rules, and details",
 				classKey),
 			classPath,
-		).WithField("attributes")
+		).WithField("attributes").WithHint("add attributes map to class.json: {\"attributes\": {\"attr_key\": {\"name\": ...}}}")
 	}
 
 	// Check class has a state machine
@@ -203,7 +242,7 @@ func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *
 			fmt.Sprintf("class '%s' must have a state machine defined - state machines describe the lifecycle and behavior of a class; create a 'state_machine.json' file in the class directory with states, events, and transitions",
 				classKey),
 			classPath,
-		).WithField("state_machine")
+		).WithField("state_machine").WithHint("create state_machine.json with states, events, and transitions")
 	}
 
 	// Check state machine has at least one transition
@@ -214,7 +253,7 @@ func validateClassCompleteness(domainKey, subdomainKey, classKey string, class *
 			fmt.Sprintf("state machine for class '%s' must have at least one transition defined - transitions describe how the class moves between states in response to events; add transitions to the 'transitions' array with event_key and state references",
 				classKey),
 			smPath,
-		).WithField("transitions")
+		).WithField("transitions").WithHint("add transitions: [{\"event_key\": ..., \"from_state_key\": ..., \"to_state_key\": ...}]")
 	}
 
 	return nil
@@ -290,7 +329,7 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 				ErrTreeClassActorNotFound,
 				fmt.Sprintf("class '%s' references actor '%s' which does not exist", classKey, class.ActorKey),
 				classPath,
-			).WithField("actor_key")
+			).WithField("actor_key").WithHint(fmt.Sprintf("available actors: %s", strings.Join(sortedKeys(model.Actors), ", ")))
 		}
 	}
 
@@ -304,7 +343,7 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 					ErrTreeClassIndexAttrNotFound,
 					fmt.Sprintf("class '%s' index[%d] contains duplicate attribute key '%s'", classKey, i, attrKey),
 					classPath,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j))
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(sortedKeys(class.Attributes), ", ")))
 			}
 			seen[attrKey] = true
 
@@ -314,9 +353,14 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 					ErrTreeClassIndexAttrNotFound,
 					fmt.Sprintf("class '%s' index[%d] references attribute '%s' which does not exist", classKey, i, attrKey),
 					classPath,
-				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j))
+				).WithField(fmt.Sprintf("indexes[%d][%d]", i, j)).WithHint(fmt.Sprintf("available attributes: %s", strings.Join(sortedKeys(class.Attributes), ", ")))
 			}
 		}
+	}
+
+	// Validate attribute data_type_rules are parseable
+	if err := validateClassDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
 	}
 
 	// Validate state machine if present
@@ -326,6 +370,112 @@ func validateClassTree(model *inputModel, domainKey, subdomainKey, classKey stri
 		}
 	}
 
+	return nil
+}
+
+// dataTypeHint is the concise hint shown for data type parse errors.
+const dataTypeHint = "valid types: unconstrained, enum of v1, v2, v3, [1..100] at 1 unit, ordered/unordered/stack/queue of <type>, { field: <type> }"
+
+// validateClassDataTypes validates that all attribute data_type_rules in a class are parseable.
+func validateClassDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	classPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/class.json", domainKey, subdomainKey, classKey)
+
+	// Validate attribute data_type_rules
+	for attrKey, attr := range class.Attributes {
+		if attr.DataTypeRules == "" {
+			continue
+		}
+		_, err := model_data_type.New(attrKey, attr.DataTypeRules, nil)
+		if err != nil {
+			return NewParseError(
+				ErrClassDataTypeUnparseable,
+				fmt.Sprintf("class '%s' attribute '%s' data_type_rules could not be parsed: %s", classKey, attrKey, err.Error()),
+				classPath,
+			).WithField(fmt.Sprintf("attributes.%s.data_type_rules", attrKey)).WithHint(dataTypeHint)
+		}
+	}
+
+	// Validate action parameter data_type_rules
+	if err := validateActionParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
+	// Validate query parameter data_type_rules
+	if err := validateQueryParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
+	// Validate event parameter data_type_rules
+	if err := validateEventParamDataTypes(class, domainKey, subdomainKey, classKey); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateActionParamDataTypes validates data_type_rules on action parameters.
+func validateActionParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	for actionKey, action := range class.Actions {
+		for i, param := range action.Parameters {
+			if param.DataTypeRules == "" {
+				continue
+			}
+			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
+			if err != nil {
+				actionPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/actions/%s.json", domainKey, subdomainKey, classKey, actionKey)
+				return NewParseError(
+					ErrParamDataTypeUnparseable,
+					fmt.Sprintf("action '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", actionKey, i, param.Name, err.Error()),
+					actionPath,
+				).WithField(fmt.Sprintf("parameters[%d].data_type_rules", i)).WithHint(dataTypeHint)
+			}
+		}
+	}
+	return nil
+}
+
+// validateQueryParamDataTypes validates data_type_rules on query parameters.
+func validateQueryParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	for queryKey, query := range class.Queries {
+		for i, param := range query.Parameters {
+			if param.DataTypeRules == "" {
+				continue
+			}
+			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
+			if err != nil {
+				queryPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/queries/%s.json", domainKey, subdomainKey, classKey, queryKey)
+				return NewParseError(
+					ErrParamDataTypeUnparseable,
+					fmt.Sprintf("query '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", queryKey, i, param.Name, err.Error()),
+					queryPath,
+				).WithField(fmt.Sprintf("parameters[%d].data_type_rules", i)).WithHint(dataTypeHint)
+			}
+		}
+	}
+	return nil
+}
+
+// validateEventParamDataTypes validates data_type_rules on event parameters.
+func validateEventParamDataTypes(class *inputClass, domainKey, subdomainKey, classKey string) error {
+	if class.StateMachine == nil {
+		return nil
+	}
+	for eventKey, event := range class.StateMachine.Events {
+		for i, param := range event.Parameters {
+			if param.DataTypeRules == "" {
+				continue
+			}
+			_, err := model_data_type.New(param.Name, param.DataTypeRules, nil)
+			if err != nil {
+				smPath := fmt.Sprintf("domains/%s/subdomains/%s/classes/%s/state_machine.json", domainKey, subdomainKey, classKey)
+				return NewParseError(
+					ErrEventParamDataTypeUnparseable,
+					fmt.Sprintf("event '%s' parameter[%d] '%s' data_type_rules could not be parsed: %s", eventKey, i, param.Name, err.Error()),
+					smPath,
+				).WithField(fmt.Sprintf("events.%s.parameters[%d].data_type_rules", eventKey, i)).WithHint(dataTypeHint)
+			}
+		}
+	}
 	return nil
 }
 
@@ -343,7 +493,7 @@ func validateStateMachineTree(class *inputClass, domainKey, subdomainKey, classK
 					fmt.Sprintf("state '%s' action[%d] references action '%s' which does not exist in class '%s'",
 						stateKey, i, stateAction.ActionKey, classKey),
 					smPath,
-				).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i))
+				).WithField(fmt.Sprintf("states.%s.actions[%d].action_key", stateKey, i)).WithHint(fmt.Sprintf("available actions: %s", strings.Join(sortedKeys(class.Actions), ", ")))
 			}
 		}
 	}
@@ -370,7 +520,7 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 			ErrTreeTransitionNoStates,
 			fmt.Sprintf("transition[%d] must have at least one of from_state_key or to_state_key", i),
 			smPath,
-		).WithField(fmt.Sprintf("transitions[%d]", i))
+		).WithField(fmt.Sprintf("transitions[%d]", i)).WithHint("add from_state_key, to_state_key, or both")
 	}
 
 	if transition.FromStateKey != nil {
@@ -379,7 +529,7 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 				ErrTreeStateMachineStateNotFound,
 				fmt.Sprintf("transition[%d] from_state_key '%s' does not exist", i, *transition.FromStateKey),
 				smPath,
-			).WithField(fmt.Sprintf("transitions[%d].from_state_key", i))
+			).WithField(fmt.Sprintf("transitions[%d].from_state_key", i)).WithHint(fmt.Sprintf("available states: %s", strings.Join(sortedKeys(sm.States), ", ")))
 		}
 	}
 
@@ -389,7 +539,7 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 				ErrTreeStateMachineStateNotFound,
 				fmt.Sprintf("transition[%d] to_state_key '%s' does not exist", i, *transition.ToStateKey),
 				smPath,
-			).WithField(fmt.Sprintf("transitions[%d].to_state_key", i))
+			).WithField(fmt.Sprintf("transitions[%d].to_state_key", i)).WithHint(fmt.Sprintf("available states: %s", strings.Join(sortedKeys(sm.States), ", ")))
 		}
 	}
 
@@ -398,7 +548,7 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 			ErrTreeStateMachineEventNotFound,
 			fmt.Sprintf("transition[%d] event_key '%s' does not exist", i, transition.EventKey),
 			smPath,
-		).WithField(fmt.Sprintf("transitions[%d].event_key", i))
+		).WithField(fmt.Sprintf("transitions[%d].event_key", i)).WithHint(fmt.Sprintf("available events: %s", strings.Join(sortedKeys(sm.Events), ", ")))
 	}
 
 	if transition.GuardKey != nil {
@@ -407,7 +557,7 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 				ErrTreeStateMachineGuardNotFound,
 				fmt.Sprintf("transition[%d] guard_key '%s' does not exist", i, *transition.GuardKey),
 				smPath,
-			).WithField(fmt.Sprintf("transitions[%d].guard_key", i))
+			).WithField(fmt.Sprintf("transitions[%d].guard_key", i)).WithHint(fmt.Sprintf("available guards: %s", strings.Join(sortedKeys(sm.Guards), ", ")))
 		}
 	}
 
@@ -417,7 +567,7 @@ func validateSingleTransitionTree(class *inputClass, sm *inputStateMachine, i in
 				ErrTreeStateMachineActionNotFound,
 				fmt.Sprintf("transition[%d] action_key '%s' does not exist in class '%s'", i, *transition.ActionKey, classKey),
 				smPath,
-			).WithField(fmt.Sprintf("transitions[%d].action_key", i))
+			).WithField(fmt.Sprintf("transitions[%d].action_key", i)).WithHint(fmt.Sprintf("available actions: %s", strings.Join(sortedKeys(class.Actions), ", ")))
 		}
 	}
 
@@ -463,7 +613,7 @@ func validateActionsReferenced(class *inputClass, domainKey, subdomainKey, class
 					"every action must be used in the state machine either as a state entry/exit/do action or as a transition action",
 					actionKey, classKey),
 				actionPath,
-			).WithField("action_key")
+			).WithField("action_key").WithHint("reference this action in a state entry/exit/do or transition action_key")
 		}
 	}
 
@@ -481,7 +631,7 @@ func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdo
 			fmt.Sprintf("class generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
 				genKey, gen.SuperclassKey, subdomainKey),
 			genPath,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate subclass_keys exist and are unique
@@ -493,7 +643,7 @@ func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdo
 				ErrTreeClassGenSubclassDuplicate,
 				fmt.Sprintf("class generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("remove duplicate entries from subclass_keys")
 		}
 		seen[subclassKey] = true
 
@@ -504,7 +654,7 @@ func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdo
 				fmt.Sprintf("class generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
 					genKey, subclassKey, subdomainKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 		}
 
 		// Check that superclass is not also a subclass
@@ -514,7 +664,7 @@ func validateClassGeneralizationTree(subdomain *inputSubdomain, domainKey, subdo
 				fmt.Sprintf("class generalization '%s' superclass '%s' cannot also be a subclass",
 					genKey, gen.SuperclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("superclass cannot also appear in subclass_keys")
 		}
 	}
 
@@ -531,7 +681,7 @@ func validateModelDomainAssociation(model *inputModel, key string, da *inputDoma
 			fmt.Sprintf("domain association '%s' problem_domain_key '%s' references domain which does not exist",
 				key, da.ProblemDomainKey),
 			assocPath,
-		).WithField("problem_domain_key")
+		).WithField("problem_domain_key").WithHint(fmt.Sprintf("available domains: %s", strings.Join(sortedKeys(model.Domains), ", ")))
 	}
 	if _, ok := model.Domains[da.SolutionDomainKey]; !ok {
 		return NewParseError(
@@ -539,7 +689,7 @@ func validateModelDomainAssociation(model *inputModel, key string, da *inputDoma
 			fmt.Sprintf("domain association '%s' solution_domain_key '%s' references domain which does not exist",
 				key, da.SolutionDomainKey),
 			assocPath,
-		).WithField("solution_domain_key")
+		).WithField("solution_domain_key").WithHint(fmt.Sprintf("available domains: %s", strings.Join(sortedKeys(model.Domains), ", ")))
 	}
 	return nil
 }
@@ -554,7 +704,7 @@ func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inpu
 			fmt.Sprintf("actor generalization '%s' superclass_key '%s' does not exist",
 				genKey, gen.SuperclassKey),
 			genPath,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint(fmt.Sprintf("available actors: %s", strings.Join(sortedKeys(model.Actors), ", ")))
 	}
 
 	seen := make(map[string]bool)
@@ -565,7 +715,7 @@ func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inpu
 				ErrActorGenSubclassesEmpty,
 				fmt.Sprintf("actor generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("remove duplicate entries from subclass_keys")
 		}
 		seen[subclassKey] = true
 
@@ -575,7 +725,7 @@ func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inpu
 				fmt.Sprintf("actor generalization '%s' subclass_key '%s' does not exist",
 					genKey, subclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint(fmt.Sprintf("available actors: %s", strings.Join(sortedKeys(model.Actors), ", ")))
 		}
 
 		if subclassKey == gen.SuperclassKey {
@@ -584,7 +734,7 @@ func validateActorGeneralizationTree(model *inputModel, genKey string, gen *inpu
 				fmt.Sprintf("actor generalization '%s' superclass '%s' cannot also be a subclass",
 					genKey, gen.SuperclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("superclass cannot also appear in subclass_keys")
 		}
 	}
 	return nil
@@ -602,7 +752,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 			fmt.Sprintf("association '%s' from_class_key '%s' does not exist in subdomain '%s'",
 				assocKey, assoc.FromClassKey, subdomainKey),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate to_class_key
@@ -612,7 +762,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 			fmt.Sprintf("association '%s' to_class_key '%s' does not exist in subdomain '%s'",
 				assocKey, assoc.ToClassKey, subdomainKey),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate association_class_key if present
@@ -623,7 +773,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 				fmt.Sprintf("association '%s' association_class_key '%s' does not exist in subdomain '%s'",
 					assocKey, *assoc.AssociationClassKey, subdomainKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 		}
 		// Association class cannot be the same as from or to class
 		if *assoc.AssociationClassKey == assoc.FromClassKey {
@@ -632,7 +782,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as from_class_key",
 					assocKey, *assoc.AssociationClassKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint("association_class_key must be a different class than from_class_key and to_class_key")
 		}
 		if *assoc.AssociationClassKey == assoc.ToClassKey {
 			return NewParseError(
@@ -640,7 +790,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as to_class_key",
 					assocKey, *assoc.AssociationClassKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint("association_class_key must be a different class than from_class_key and to_class_key")
 		}
 	}
 
@@ -651,7 +801,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 			fmt.Sprintf("association '%s' from_multiplicity '%s' is invalid: %s",
 				assocKey, assoc.FromMultiplicity, err.Error()),
 			assocPath,
-		).WithField("from_multiplicity")
+		).WithField("from_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
 	if err := validateMultiplicity(assoc.ToMultiplicity); err != nil {
@@ -660,7 +810,7 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 			fmt.Sprintf("association '%s' to_multiplicity '%s' is invalid: %s",
 				assocKey, assoc.ToMultiplicity, err.Error()),
 			assocPath,
-		).WithField("to_multiplicity")
+		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
 	return nil
@@ -671,6 +821,8 @@ func validateSubdomainAssociation(subdomain *inputSubdomain, domainKey, subdomai
 func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("domains/%s/associations/%s.assoc.json", domainKey, assocKey)
 
+	domainClassKeys := domainScopedClassKeys(domain)
+
 	// Parse from_class_key (subdomain/class format)
 	fromSubdomain, fromClass, err := parseDomainScopedKey(assoc.FromClassKey)
 	if err != nil {
@@ -679,7 +831,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' from_class_key '%s' is invalid: %s",
 				assocKey, assoc.FromClassKey, err.Error()),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
 	}
 
 	// Check from subdomain exists
@@ -690,7 +842,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' from_class_key '%s' references subdomain '%s' which does not exist",
 				assocKey, assoc.FromClassKey, fromSubdomain),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
 	}
 
 	// Check from class exists
@@ -700,7 +852,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' from_class_key '%s' references class '%s' which does not exist in subdomain '%s'",
 				assocKey, assoc.FromClassKey, fromClass, fromSubdomain),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s': %s", fromSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Parse to_class_key (subdomain/class format)
@@ -711,7 +863,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_class_key '%s' is invalid: %s",
 				assocKey, assoc.ToClassKey, err.Error()),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
 	}
 
 	// Check to subdomain exists
@@ -722,7 +874,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_class_key '%s' references subdomain '%s' which does not exist",
 				assocKey, assoc.ToClassKey, toSubdomain),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
 	}
 
 	// Check to class exists
@@ -732,7 +884,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_class_key '%s' references class '%s' which does not exist in subdomain '%s'",
 				assocKey, assoc.ToClassKey, toClass, toSubdomain),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s': %s", toSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate association_class_key if present
@@ -744,7 +896,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				fmt.Sprintf("association '%s' association_class_key '%s' is invalid: %s",
 					assocKey, *assoc.AssociationClassKey, err.Error()),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
 		}
 
 		subdomain, ok := domain.Subdomains[assocSubdomain]
@@ -754,7 +906,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				fmt.Sprintf("association '%s' association_class_key '%s' references subdomain '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocSubdomain),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(domainClassKeys, ", ")))
 		}
 
 		if _, ok := subdomain.Classes[assocClass]; !ok {
@@ -763,7 +915,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				fmt.Sprintf("association '%s' association_class_key '%s' references class '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocClass),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s': %s", assocSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 		}
 		// Association class cannot be the same as from or to class
 		if *assoc.AssociationClassKey == assoc.FromClassKey {
@@ -772,7 +924,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as from_class_key",
 					assocKey, *assoc.AssociationClassKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint("association_class_key must be a different class than from_class_key and to_class_key")
 		}
 		if *assoc.AssociationClassKey == assoc.ToClassKey {
 			return NewParseError(
@@ -780,7 +932,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as to_class_key",
 					assocKey, *assoc.AssociationClassKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint("association_class_key must be a different class than from_class_key and to_class_key")
 		}
 	}
 
@@ -791,7 +943,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' from_multiplicity '%s' is invalid: %s",
 				assocKey, assoc.FromMultiplicity, err.Error()),
 			assocPath,
-		).WithField("from_multiplicity")
+		).WithField("from_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
 	if err := validateMultiplicity(assoc.ToMultiplicity); err != nil {
@@ -800,7 +952,7 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 			fmt.Sprintf("association '%s' to_multiplicity '%s' is invalid: %s",
 				assocKey, assoc.ToMultiplicity, err.Error()),
 			assocPath,
-		).WithField("to_multiplicity")
+		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
 	return nil
@@ -811,6 +963,8 @@ func validateDomainAssociation(domainKey string, domain *inputDomain, assocKey s
 func validateModelAssociation(model *inputModel, assocKey string, assoc *inputClassAssociation) error {
 	assocPath := fmt.Sprintf("associations/%s.assoc.json", assocKey)
 
+	allClassKeys := modelScopedClassKeys(model)
+
 	// Parse from_class_key (domain/subdomain/class format)
 	fromDomain, fromSubdomain, fromClass, err := parseModelScopedKey(assoc.FromClassKey)
 	if err != nil {
@@ -819,7 +973,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' from_class_key '%s' is invalid: %s",
 				assocKey, assoc.FromClassKey, err.Error()),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check from domain exists
@@ -830,7 +984,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' from_class_key '%s' references domain '%s' which does not exist",
 				assocKey, assoc.FromClassKey, fromDomain),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check from subdomain exists
@@ -841,7 +995,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' from_class_key '%s' references subdomain '%s' which does not exist in domain '%s'",
 				assocKey, assoc.FromClassKey, fromSubdomain, fromDomain),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check from class exists
@@ -851,7 +1005,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' from_class_key '%s' references class '%s' which does not exist",
 				assocKey, assoc.FromClassKey, fromClass),
 			assocPath,
-		).WithField("from_class_key")
+		).WithField("from_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s/%s': %s", fromDomain, fromSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Parse to_class_key (domain/subdomain/class format)
@@ -862,7 +1016,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' is invalid: %s",
 				assocKey, assoc.ToClassKey, err.Error()),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check to domain exists
@@ -873,7 +1027,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' references domain '%s' which does not exist",
 				assocKey, assoc.ToClassKey, toDomain),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check to subdomain exists
@@ -884,7 +1038,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' references subdomain '%s' which does not exist in domain '%s'",
 				assocKey, assoc.ToClassKey, toSubdomain, toDomain),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 	}
 
 	// Check to class exists
@@ -894,7 +1048,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_class_key '%s' references class '%s' which does not exist",
 				assocKey, assoc.ToClassKey, toClass),
 			assocPath,
-		).WithField("to_class_key")
+		).WithField("to_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s/%s': %s", toDomain, toSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 	}
 
 	// Validate association_class_key if present
@@ -906,7 +1060,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 				fmt.Sprintf("association '%s' association_class_key '%s' is invalid: %s",
 					assocKey, *assoc.AssociationClassKey, err.Error()),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 		}
 
 		domain, ok := model.Domains[assocDomain]
@@ -916,7 +1070,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 				fmt.Sprintf("association '%s' association_class_key '%s' references domain '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocDomain),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 		}
 
 		subdomain, ok := domain.Subdomains[assocSubdomain]
@@ -926,7 +1080,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 				fmt.Sprintf("association '%s' association_class_key '%s' references subdomain '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocSubdomain),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes: %s", strings.Join(allClassKeys, ", ")))
 		}
 
 		if _, ok := subdomain.Classes[assocClass]; !ok {
@@ -935,7 +1089,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 				fmt.Sprintf("association '%s' association_class_key '%s' references class '%s' which does not exist",
 					assocKey, *assoc.AssociationClassKey, assocClass),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint(fmt.Sprintf("available classes in subdomain '%s/%s': %s", assocDomain, assocSubdomain, strings.Join(sortedKeys(subdomain.Classes), ", ")))
 		}
 		// Association class cannot be the same as from or to class
 		if *assoc.AssociationClassKey == assoc.FromClassKey {
@@ -944,7 +1098,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as from_class_key",
 					assocKey, *assoc.AssociationClassKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint("association_class_key must be a different class than from_class_key and to_class_key")
 		}
 		if *assoc.AssociationClassKey == assoc.ToClassKey {
 			return NewParseError(
@@ -952,7 +1106,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 				fmt.Sprintf("association '%s' association_class_key '%s' cannot be the same as to_class_key",
 					assocKey, *assoc.AssociationClassKey),
 				assocPath,
-			).WithField("association_class_key")
+			).WithField("association_class_key").WithHint("association_class_key must be a different class than from_class_key and to_class_key")
 		}
 	}
 
@@ -963,7 +1117,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' from_multiplicity '%s' is invalid: %s",
 				assocKey, assoc.FromMultiplicity, err.Error()),
 			assocPath,
-		).WithField("from_multiplicity")
+		).WithField("from_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
 	if err := validateMultiplicity(assoc.ToMultiplicity); err != nil {
@@ -972,7 +1126,7 @@ func validateModelAssociation(model *inputModel, assocKey string, assoc *inputCl
 			fmt.Sprintf("association '%s' to_multiplicity '%s' is invalid: %s",
 				assocKey, assoc.ToMultiplicity, err.Error()),
 			assocPath,
-		).WithField("to_multiplicity")
+		).WithField("to_multiplicity").WithHint("valid multiplicities: 1, 0..1, *, 0..*, 1..*")
 	}
 
 	return nil
@@ -1041,7 +1195,7 @@ func validateUseCaseTree(model *inputModel, domainKey, subdomainKey, useCaseKey 
 				ErrTreeClassActorNotFound,
 				fmt.Sprintf("use case '%s' references actor class '%s' which does not exist in subdomain '%s/%s'", useCaseKey, actorKey, domainKey, subdomainKey),
 				useCasePath,
-			).WithField("actors")
+			).WithField("actors").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(subdomain.Classes), ", ")))
 		}
 	}
 
@@ -1076,7 +1230,7 @@ func validateScenarioTree(model *inputModel, domainKey, subdomainKey, useCaseKey
 				ErrTreeAssocClassNotFound,
 				fmt.Sprintf("scenario '%s' object '%s' references class '%s' which does not exist", scenarioKey, objectKey, object.ClassKey),
 				scenarioPath,
-			).WithField("objects")
+			).WithField("objects").WithHint(fmt.Sprintf("available classes: %s", strings.Join(sortedKeys(model.Domains[domainKey].Subdomains[subdomainKey].Classes), ", ")))
 		}
 	}
 
@@ -1126,7 +1280,7 @@ func validateStepObjectRefs(step inputStep, path string, ctx scenarioValidationC
 				fmt.Sprintf("scenario '%s' step at '%s' references from_object_key '%s' which does not exist",
 					ctx.scenarioKey, path, *step.FromObjectKey),
 				ctx.scenarioPath,
-			).WithField(path + ".from_object_key")
+			).WithField(path + ".from_object_key").WithHint(fmt.Sprintf("available objects: %s", strings.Join(sortedKeys(ctx.scenario.Objects), ", ")))
 		}
 	}
 	if step.ToObjectKey != nil {
@@ -1136,7 +1290,7 @@ func validateStepObjectRefs(step inputStep, path string, ctx scenarioValidationC
 				fmt.Sprintf("scenario '%s' step at '%s' references to_object_key '%s' which does not exist",
 					ctx.scenarioKey, path, *step.ToObjectKey),
 				ctx.scenarioPath,
-			).WithField(path + ".to_object_key")
+			).WithField(path + ".to_object_key").WithHint(fmt.Sprintf("available objects: %s", strings.Join(sortedKeys(ctx.scenario.Objects), ", ")))
 		}
 	}
 	return nil
@@ -1153,9 +1307,10 @@ func validateStepEventRef(step inputStep, path string, ctx scenarioValidationCon
 			fmt.Sprintf("scenario '%s' step at '%s' references event '%s' but no object is specified to resolve the class",
 				ctx.scenarioKey, path, *step.EventKey),
 			ctx.scenarioPath,
-		).WithField(path + ".event_key")
+		).WithField(path + ".event_key").WithHint(fmt.Sprintf("available objects: %s", strings.Join(sortedKeys(ctx.scenario.Objects), ", ")))
 	}
 	found := false
+	var availableEvents []string
 	for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
 		if objKey == nil {
 			continue
@@ -1167,16 +1322,18 @@ func validateStepEventRef(step inputStep, path string, ctx scenarioValidationCon
 				found = true
 				break
 			}
+			availableEvents = append(availableEvents, sortedKeys(class.StateMachine.Events)...)
 		}
 	}
 	if !found {
 		classNames := collectStepClassNames(step, ctx.scenario)
+		sort.Strings(availableEvents)
 		return NewParseError(
 			ErrTreeScenarioStepEventNotFound,
 			fmt.Sprintf("scenario '%s' step at '%s' references event '%s' which does not exist on classes %v",
 				ctx.scenarioKey, path, *step.EventKey, classNames),
 			ctx.scenarioPath,
-		).WithField(path + ".event_key")
+		).WithField(path + ".event_key").WithHint(fmt.Sprintf("available events: %s", strings.Join(availableEvents, ", ")))
 	}
 	return nil
 }
@@ -1192,9 +1349,10 @@ func validateStepQueryRef(step inputStep, path string, ctx scenarioValidationCon
 			fmt.Sprintf("scenario '%s' step at '%s' references query '%s' but no object is specified to resolve the class",
 				ctx.scenarioKey, path, *step.QueryKey),
 			ctx.scenarioPath,
-		).WithField(path + ".query_key")
+		).WithField(path + ".query_key").WithHint(fmt.Sprintf("available objects: %s", strings.Join(sortedKeys(ctx.scenario.Objects), ", ")))
 	}
 	found := false
+	var availableQueries []string
 	for _, objKey := range []*string{step.ToObjectKey, step.FromObjectKey} {
 		if objKey == nil {
 			continue
@@ -1206,16 +1364,18 @@ func validateStepQueryRef(step inputStep, path string, ctx scenarioValidationCon
 				found = true
 				break
 			}
+			availableQueries = append(availableQueries, sortedKeys(class.Queries)...)
 		}
 	}
 	if !found {
 		classNames := collectStepClassNames(step, ctx.scenario)
+		sort.Strings(availableQueries)
 		return NewParseError(
 			ErrTreeScenarioStepQueryNotFound,
 			fmt.Sprintf("scenario '%s' step at '%s' references query '%s' which does not exist on classes %v",
 				ctx.scenarioKey, path, *step.QueryKey, classNames),
 			ctx.scenarioPath,
-		).WithField(path + ".query_key")
+		).WithField(path + ".query_key").WithHint(fmt.Sprintf("available queries: %s", strings.Join(availableQueries, ", ")))
 	}
 	return nil
 }
@@ -1242,7 +1402,7 @@ func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, sub
 			fmt.Sprintf("use case generalization '%s' superclass_key '%s' does not exist in subdomain '%s'",
 				genKey, gen.SuperclassKey, subdomainKey),
 			genPath,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint(fmt.Sprintf("available use cases: %s", strings.Join(sortedKeys(subdomain.UseCases), ", ")))
 	}
 
 	// Validate subclass_keys exist and are unique
@@ -1254,7 +1414,7 @@ func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, sub
 				ErrTreeClassGenSubclassDuplicate, // reusing error code
 				fmt.Sprintf("use case generalization '%s' has duplicate subclass_key '%s'", genKey, subclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("remove duplicate entries from subclass_keys")
 		}
 		seen[subclassKey] = true
 
@@ -1265,7 +1425,7 @@ func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, sub
 				fmt.Sprintf("use case generalization '%s' subclass_key '%s' does not exist in subdomain '%s'",
 					genKey, subclassKey, subdomainKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint(fmt.Sprintf("available use cases: %s", strings.Join(sortedKeys(subdomain.UseCases), ", ")))
 		}
 
 		// Check that superclass is not also a subclass
@@ -1275,7 +1435,7 @@ func validateUseCaseGeneralizationTree(subdomain *inputSubdomain, domainKey, sub
 				fmt.Sprintf("use case generalization '%s' superclass '%s' cannot also be a subclass",
 					genKey, gen.SuperclassKey),
 				genPath,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("superclass cannot also appear in subclass_keys")
 		}
 	}
 

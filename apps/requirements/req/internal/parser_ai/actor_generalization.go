@@ -55,7 +55,7 @@ func parseActorGeneralization(content []byte, filename string) (*inputActorGener
 			ErrActorGenInvalidJSON,
 			"failed to parse actor generalization JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -65,14 +65,14 @@ func parseActorGeneralization(content []byte, filename string) (*inputActorGener
 			ErrActorGenInvalidJSON,
 			"failed to parse actor generalization JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := actorGeneralizationSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrActorGenSchemaViolation,
 			"actor generalization JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(actorGeneralizationSchemaContent)
+		).WithSchema(actorGeneralizationSchemaContent).WithHint("required: name, superclass_key, subclass_keys. allowed: +details, is_complete, is_static, uml_comment")
 	}
 
 	// Validate required fields and business rules
@@ -92,7 +92,7 @@ func validateActorGeneralization(gen *inputActorGeneralization, filename string)
 			ErrActorGenNameRequired,
 			"actor generalization name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -101,7 +101,7 @@ func validateActorGeneralization(gen *inputActorGeneralization, filename string)
 			ErrActorGenNameEmpty,
 			"actor generalization name cannot be empty or whitespace only, got '"+gen.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Superclass key is required (schema enforces this, but we provide a clearer error)
@@ -110,7 +110,7 @@ func validateActorGeneralization(gen *inputActorGeneralization, filename string)
 			ErrActorGenSuperclassRequired,
 			"actor generalization superclass_key is required, got ''",
 			filename,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined actor")
 	}
 
 	// Superclass key cannot be only whitespace
@@ -119,7 +119,7 @@ func validateActorGeneralization(gen *inputActorGeneralization, filename string)
 			ErrActorGenSuperclassRequired,
 			"actor generalization superclass_key cannot be empty or whitespace only, got '"+gen.SuperclassKey+"'",
 			filename,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined actor")
 	}
 
 	// Subclass keys is required and must have at least one entry (schema enforces this)
@@ -128,7 +128,7 @@ func validateActorGeneralization(gen *inputActorGeneralization, filename string)
 			ErrActorGenSubclassesRequired,
 			"actor generalization subclass_keys is required and must have at least one entry",
 			filename,
-		).WithField("subclass_keys")
+		).WithField("subclass_keys").WithHint("add \"subclass_keys\" array with at least one actor key")
 	}
 
 	// Each subclass key must be non-empty and non-whitespace
@@ -138,14 +138,14 @@ func validateActorGeneralization(gen *inputActorGeneralization, filename string)
 				ErrActorGenSubclassesEmpty,
 				fmt.Sprintf("actor generalization subclass_keys[%d] cannot be empty", i),
 				filename,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty actor key")
 		}
 		if strings.TrimSpace(key) == "" {
 			return NewParseError(
 				ErrActorGenSubclassesEmpty,
 				fmt.Sprintf("actor generalization subclass_keys[%d] cannot be whitespace only, got '%s'", i, key),
 				filename,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty actor key")
 		}
 	}
 

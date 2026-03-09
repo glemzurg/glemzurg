@@ -76,7 +76,7 @@ func parseScenario(content []byte, filename string) (*inputScenario, error) {
 			ErrScenarioInvalidJSON,
 			"failed to parse scenario JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -86,14 +86,14 @@ func parseScenario(content []byte, filename string) (*inputScenario, error) {
 			ErrScenarioInvalidJSON,
 			"failed to parse scenario JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := scenarioSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrScenarioSchemaViolation,
 			"scenario JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(scenarioSchemaContent)
+		).WithSchema(scenarioSchemaContent).WithHint("required: \"name\". allowed: name, details, objects, steps")
 	}
 
 	// Validate required fields
@@ -113,7 +113,7 @@ func validateScenario(scenario *inputScenario, filename string) error {
 			ErrScenarioNameRequired,
 			"scenario name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -122,7 +122,7 @@ func validateScenario(scenario *inputScenario, filename string) error {
 			ErrScenarioNameEmpty,
 			"scenario name cannot be empty or whitespace only, got '"+scenario.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	return nil

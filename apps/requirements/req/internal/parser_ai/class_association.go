@@ -43,16 +43,16 @@ func init() {
 func parseAssociation(content []byte, filename string) (*inputClassAssociation, error) {
 	var assoc inputClassAssociation
 	if err := json.Unmarshal(content, &assoc); err != nil {
-		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON: "+err.Error(), filename)
+		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	var jsonData any
 	if err := json.Unmarshal(content, &jsonData); err != nil {
-		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON for schema validation: "+err.Error(), filename)
+		return nil, NewParseError(ErrAssocInvalidJSON, "failed to parse association JSON for schema validation: "+err.Error(), filename).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	if err := classAssociationSchema.Validate(jsonData); err != nil {
-		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithSchema(classAssociationSchemaContent)
+		return nil, NewParseError(ErrAssocSchemaViolation, "association JSON does not match schema: "+err.Error(), filename).WithSchema(classAssociationSchemaContent).WithHint("required: name, from_class_key, from_multiplicity, to_class_key, to_multiplicity. allowed: +details, association_class_key, uml_comment")
 	}
 
 	if err := validateAssociation(&assoc, filename); err != nil {
@@ -66,42 +66,42 @@ func parseAssociation(content []byte, filename string) (*inputClassAssociation, 
 func validateAssociation(assoc *inputClassAssociation, filename string) error {
 	// Validate name
 	if assoc.Name == "" {
-		return NewParseError(ErrAssocNameRequired, "association name is required, got ''", filename).WithField("name")
+		return NewParseError(ErrAssocNameRequired, "association name is required, got ''", filename).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 	if strings.TrimSpace(assoc.Name) == "" {
-		return NewParseError(ErrAssocNameEmpty, "association name cannot be empty or whitespace only, got '"+assoc.Name+"'", filename).WithField("name")
+		return NewParseError(ErrAssocNameEmpty, "association name cannot be empty or whitespace only, got '"+assoc.Name+"'", filename).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Validate from_class_key
 	if assoc.FromClassKey == "" {
-		return NewParseError(ErrAssocFromClassRequired, "association from_class_key is required, got ''", filename).WithField("from_class_key")
+		return NewParseError(ErrAssocFromClassRequired, "association from_class_key is required, got ''", filename).WithField("from_class_key").WithHint("add a non-empty \"from_class_key\" referencing a defined class")
 	}
 	if strings.TrimSpace(assoc.FromClassKey) == "" {
-		return NewParseError(ErrAssocFromClassRequired, "association from_class_key cannot be empty or whitespace only, got '"+assoc.FromClassKey+"'", filename).WithField("from_class_key")
+		return NewParseError(ErrAssocFromClassRequired, "association from_class_key cannot be empty or whitespace only, got '"+assoc.FromClassKey+"'", filename).WithField("from_class_key").WithHint("add a non-empty \"from_class_key\" referencing a defined class")
 	}
 
 	// Validate from_multiplicity
 	if assoc.FromMultiplicity == "" {
-		return NewParseError(ErrAssocFromMultRequired, "association from_multiplicity is required, got ''", filename).WithField("from_multiplicity")
+		return NewParseError(ErrAssocFromMultRequired, "association from_multiplicity is required, got ''", filename).WithField("from_multiplicity").WithHint("add \"from_multiplicity\": one of \"1\", \"0..1\", \"*\", \"0..*\", \"1..*\"")
 	}
 	if strings.TrimSpace(assoc.FromMultiplicity) == "" {
-		return NewParseError(ErrAssocFromMultRequired, "association from_multiplicity cannot be empty or whitespace only, got '"+assoc.FromMultiplicity+"'", filename).WithField("from_multiplicity")
+		return NewParseError(ErrAssocFromMultRequired, "association from_multiplicity cannot be empty or whitespace only, got '"+assoc.FromMultiplicity+"'", filename).WithField("from_multiplicity").WithHint("add \"from_multiplicity\": one of \"1\", \"0..1\", \"*\", \"0..*\", \"1..*\"")
 	}
 
 	// Validate to_class_key
 	if assoc.ToClassKey == "" {
-		return NewParseError(ErrAssocToClassRequired, "association to_class_key is required, got ''", filename).WithField("to_class_key")
+		return NewParseError(ErrAssocToClassRequired, "association to_class_key is required, got ''", filename).WithField("to_class_key").WithHint("add a non-empty \"to_class_key\" referencing a defined class")
 	}
 	if strings.TrimSpace(assoc.ToClassKey) == "" {
-		return NewParseError(ErrAssocToClassRequired, "association to_class_key cannot be empty or whitespace only, got '"+assoc.ToClassKey+"'", filename).WithField("to_class_key")
+		return NewParseError(ErrAssocToClassRequired, "association to_class_key cannot be empty or whitespace only, got '"+assoc.ToClassKey+"'", filename).WithField("to_class_key").WithHint("add a non-empty \"to_class_key\" referencing a defined class")
 	}
 
 	// Validate to_multiplicity
 	if assoc.ToMultiplicity == "" {
-		return NewParseError(ErrAssocToMultRequired, "association to_multiplicity is required, got ''", filename).WithField("to_multiplicity")
+		return NewParseError(ErrAssocToMultRequired, "association to_multiplicity is required, got ''", filename).WithField("to_multiplicity").WithHint("add \"to_multiplicity\": one of \"1\", \"0..1\", \"*\", \"0..*\", \"1..*\"")
 	}
 	if strings.TrimSpace(assoc.ToMultiplicity) == "" {
-		return NewParseError(ErrAssocToMultRequired, "association to_multiplicity cannot be empty or whitespace only, got '"+assoc.ToMultiplicity+"'", filename).WithField("to_multiplicity")
+		return NewParseError(ErrAssocToMultRequired, "association to_multiplicity cannot be empty or whitespace only, got '"+assoc.ToMultiplicity+"'", filename).WithField("to_multiplicity").WithHint("add \"to_multiplicity\": one of \"1\", \"0..1\", \"*\", \"0..*\", \"1..*\"")
 	}
 
 	return nil

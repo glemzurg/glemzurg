@@ -54,7 +54,7 @@ func parseClassGeneralization(content []byte, filename string) (*inputClassGener
 			ErrClassGenInvalidJSON,
 			"failed to parse class generalization JSON: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 
 	// Validate against JSON schema
@@ -64,14 +64,14 @@ func parseClassGeneralization(content []byte, filename string) (*inputClassGener
 			ErrClassGenInvalidJSON,
 			"failed to parse class generalization JSON for schema validation: "+err.Error(),
 			filename,
-		)
+		).WithHint("ensure file contains valid JSON syntax")
 	}
 	if err := classGeneralizationSchema.Validate(jsonData); err != nil {
 		return nil, NewParseError(
 			ErrClassGenSchemaViolation,
 			"class generalization JSON does not match schema: "+err.Error(),
 			filename,
-		).WithSchema(classGeneralizationSchemaContent)
+		).WithSchema(classGeneralizationSchemaContent).WithHint("required: name, superclass_key, subclass_keys. allowed: +details, is_complete, is_static, uml_comment")
 	}
 
 	// Validate required fields and business rules
@@ -91,7 +91,7 @@ func validateClassGeneralization(gen *inputClassGeneralization, filename string)
 			ErrClassGenNameRequired,
 			"class generalization name is required, got ''",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Name cannot be only whitespace
@@ -100,7 +100,7 @@ func validateClassGeneralization(gen *inputClassGeneralization, filename string)
 			ErrClassGenNameEmpty,
 			"class generalization name cannot be empty or whitespace only, got '"+gen.Name+"'",
 			filename,
-		).WithField("name")
+		).WithField("name").WithHint("add a non-empty \"name\" field")
 	}
 
 	// Superclass key is required (schema enforces this, but we provide a clearer error)
@@ -109,7 +109,7 @@ func validateClassGeneralization(gen *inputClassGeneralization, filename string)
 			ErrClassGenSuperclassRequired,
 			"class generalization superclass_key is required, got ''",
 			filename,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined class")
 	}
 
 	// Superclass key cannot be only whitespace
@@ -118,7 +118,7 @@ func validateClassGeneralization(gen *inputClassGeneralization, filename string)
 			ErrClassGenSuperclassRequired,
 			"class generalization superclass_key cannot be empty or whitespace only, got '"+gen.SuperclassKey+"'",
 			filename,
-		).WithField("superclass_key")
+		).WithField("superclass_key").WithHint("add a non-empty \"superclass_key\" referencing a defined class")
 	}
 
 	// Subclass keys is required and must have at least one entry (schema enforces this)
@@ -127,7 +127,7 @@ func validateClassGeneralization(gen *inputClassGeneralization, filename string)
 			ErrClassGenSubclassesRequired,
 			"class generalization subclass_keys is required and must have at least one entry",
 			filename,
-		).WithField("subclass_keys")
+		).WithField("subclass_keys").WithHint("add \"subclass_keys\" array with at least one class key")
 	}
 
 	// Each subclass key must be non-empty and non-whitespace
@@ -137,14 +137,14 @@ func validateClassGeneralization(gen *inputClassGeneralization, filename string)
 				ErrClassGenSubclassesEmpty,
 				fmt.Sprintf("class generalization subclass_keys[%d] cannot be empty", i),
 				filename,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty class key")
 		}
 		if strings.TrimSpace(key) == "" {
 			return NewParseError(
 				ErrClassGenSubclassesEmpty,
 				fmt.Sprintf("class generalization subclass_keys[%d] cannot be whitespace only, got '%s'", i, key),
 				filename,
-			).WithField(fmt.Sprintf("subclass_keys[%d]", i))
+			).WithField(fmt.Sprintf("subclass_keys[%d]", i)).WithHint("each entry in \"subclass_keys\" must be a non-empty class key")
 		}
 	}
 
