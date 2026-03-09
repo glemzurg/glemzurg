@@ -255,6 +255,36 @@ Guards are conditions that must be true for a transition to occur:
 }
 ```
 
+## Stateless Classes
+
+If a class has no obvious lifecycle (no `status`, `state`, or lifecycle column), create a minimal state machine with a single `existing` state:
+
+```json
+{
+    "states": {
+        "existing": {
+            "name": "Existing",
+            "details": "The entity exists in the system"
+        }
+    },
+    "events": {
+        "existing": {
+            "name": "existing",
+            "details": "Initial event that creates the entity"
+        }
+    },
+    "transitions": [
+        {
+            "from_state_key": null,
+            "to_state_key": "existing",
+            "event_key": "existing"
+        }
+    ]
+}
+```
+
+State-changing API calls become events with transitions from `existing` to `existing`, each with an associated action file.
+
 ## Related Errors
 
 - **E7001**: State machine JSON is invalid

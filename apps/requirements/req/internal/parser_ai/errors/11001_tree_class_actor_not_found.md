@@ -91,6 +91,14 @@ If no actor is appropriate, remove the `actor_key` field entirely:
 }
 ```
 
+## Key Scoping Rules
+
+Cross-references use minimal scoped keys:
+- **Within a subdomain**: just the entity name (e.g., `book_order`)
+- **Within a domain (cross-subdomain)**: `subdomain/entity` (e.g., `orders/book_order`)
+- **Within a model (cross-domain)**: `domain/subdomain/entity` (e.g., `order_fulfillment/default/book_order`)
+- **Actors**: always model-scoped, just the actor name (e.g., `customer`)
+
 ## Related Errors
 
 - **E2001**: Actor name is required

@@ -7,8 +7,29 @@ update ai parser to be an ai desitned cli:
     - that is the input structure for ai interface
 
 
+[
+  {
+    "type": "parse",
+    "code": "E11001",
+    "message": "class 'order' references actor 'nonexistent_actor' which does not exist",
+    "file": "domains/sales/subdomains/default/classes/order/class.json",
+    "field": "actor_key",
+    "hint": "available actors: customer | run: req_check --explain E11001"
+  }
+]
+
+actor names?
 
 
+[
+  {
+    "type": "parse",
+    "code": "E21002",
+    "message": "resulting model validation failed: requires 0: [LOGIC_SPEC_INVALID] logic \"domain/sales/subdomain/default/class/item/action/update_item/arequire/0\" spec: [EXPRSPEC_NOTATION_REQUIRED] Notation is required (field: Notation, want: one of: tla_plus) (field: Spec)",
+    "file": "model.json",
+    "hint": "run: req_check --explain E21002"
+  }
+]
 
 ----------------------------
 

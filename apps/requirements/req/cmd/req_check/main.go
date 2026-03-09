@@ -14,7 +14,6 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai"
-	parserDocs "github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/docs"
 	parserErrors "github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/errors"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/parser_ai/json_schemas"
 )
@@ -24,7 +23,6 @@ const helpText = `req_check - validate an AI-generated requirements model
 Usage:
   req_check <model_path>              validate model (JSON output)
   req_check --explain <error_code>    show full remediation for an error (e.g. E5003)
-  req_check --format-docs             show the JSON model format documentation
   req_check --schema <entity>         show JSON schema (model, class, action, ...)
   req_check --tree                    show expected directory tree structure
   req_check --help                    show this help
@@ -86,7 +84,6 @@ Keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$
 func main() {
 	var (
 		explainArg string
-		formatDocs bool
 		schemaArg  string
 		showTree   bool
 		showHelp   bool
@@ -94,7 +91,6 @@ func main() {
 	)
 
 	flag.StringVar(&explainArg, "explain", "", "show full remediation for error code (e.g. E5003 or 5003)")
-	flag.BoolVar(&formatDocs, "format-docs", false, "show the JSON model format documentation")
 	flag.StringVar(&schemaArg, "schema", "", "show JSON schema for entity (model, class, action, ...)")
 	flag.BoolVar(&showTree, "tree", false, "show expected directory tree structure")
 	flag.BoolVar(&showHelp, "help", false, "show help")
@@ -112,10 +108,6 @@ func main() {
 	if showTree {
 		fmt.Fprint(os.Stdout, treeText)
 		os.Exit(0)
-	}
-	if formatDocs {
-		runFormatDocs()
-		return
 	}
 	if schemaArg != "" {
 		runSchema(schemaArg)
@@ -249,20 +241,42 @@ func outputJSONTo(w io.Writer, errs []error) {
 
 // buildParseErrorHint constructs the hint string for a parse error in JSON output.
 // It combines the error's own hint with category-specific follow-up commands:
-//   - Tree errors (11xxx): adds --tree and --format-docs
+//   - File/directory structure errors: adds --tree
 //   - All parse errors: adds --explain E{code}
 func buildParseErrorHint(pe *parser_ai.ParseError, code string) string {
 	parts := []string{}
 	if pe.Hint != "" {
 		parts = append(parts, pe.Hint)
 	}
-	// Tree structure errors get --tree and --format-docs guidance.
-	if pe.Code >= 11000 && pe.Code < 12000 {
-		parts = append(parts, "run: req_check --tree", "run: req_check --format-docs")
+	// File/directory structure errors get --tree guidance.
+	if isFileStructureError(pe.Code) {
+		parts = append(parts, "run: req_check --tree")
 	}
 	// All parse errors get --explain with the specific code.
 	parts = append(parts, "run: req_check --explain "+code)
 	return strings.Join(parts, " | ")
+}
+
+// isFileStructureError returns true for errors about missing files/directories
+// or malformed filenames — cases where --tree helps the AI understand the
+// expected directory layout.
+func isFileStructureError(code int) bool {
+	switch code {
+	case
+		parser_ai.ErrTreeModelNoActors,                // need to create actor files
+		parser_ai.ErrTreeModelNoDomains,               // need to create domain dirs
+		parser_ai.ErrTreeDomainNoSubdomains,           // need to create subdomain dirs
+		parser_ai.ErrTreeSubdomainTooFewClasses,       // need to create class dirs
+		parser_ai.ErrTreeSubdomainNoAssociations,      // need to create assoc files
+		parser_ai.ErrTreeClassNoStateMachine,          // need to create state_machine.json
+		parser_ai.ErrKeyInvalidFormat,                 // filename/dir naming
+		parser_ai.ErrAssocFilenameInvalidFormat,       // assoc filename format
+		parser_ai.ErrAssocFilenameInvalidComponent,    // assoc filename component
+		parser_ai.ErrTreeSingleSubdomainNotDefault,    // dir naming
+		parser_ai.ErrTreeMultipleSubdomainsHasDefault: // dir naming
+		return true
+	}
+	return false
 }
 
 // runExplain shows full remediation for an error code.
@@ -289,16 +303,6 @@ func runExplainTo(w io.Writer, arg string) error {
 
 	fmt.Fprint(w, content)
 	return nil
-}
-
-// runFormatDocs shows the JSON model format documentation.
-func runFormatDocs() {
-	data, err := fs.ReadFile(parserDocs.Docs, "JSON_AI_MODEL_FORMAT.md")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load format documentation: %v\n", err)
-		os.Exit(2)
-	}
-	fmt.Fprint(os.Stdout, string(data))
 }
 
 // runSchema shows the JSON schema for a given entity type.

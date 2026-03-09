@@ -24,7 +24,7 @@ intentionally broken model fixtures.
 Every parse error's `hint` field contains pipe-delimited guidance:
 - **Actionable fix** — what to change (e.g., `available actors: customer`)
 - **Schema errors** — `run: req_check --schema <entity>` (specific entity)
-- **Tree errors (11xxx)** — `run: req_check --tree` and `run: req_check --format-docs`
+- **File structure errors** — `run: req_check --tree` (missing files, bad filenames)
 - **All errors** — `run: req_check --explain E{code}` (specific code)
 
 ---
@@ -121,7 +121,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "actor_key key 'BadKey' has invalid format - keys must be lowercase snake_case (e.g., 'order_line'); convert to lowercase",
     "file": "actors/BadKey.actor.json",
     "field": "actor_key",
-    "hint": "keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$ | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11026"
+    "hint": "keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$ | run: req_check --tree | run: req_check --explain E11026"
   }
 ]
 ```
@@ -138,7 +138,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "association filename 'badname' must have exactly 3 parts separated by '--' (from--to--name), found 1 parts",
     "file": "domains/sales/subdomains/default/class_associations/badname.assoc.json",
     "field": "filename",
-    "hint": "association filenames must follow the pattern: from--to--name.assoc.json | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11027"
+    "hint": "association filenames must follow the pattern: from--to--name.assoc.json | run: req_check --tree | run: req_check --explain E11027"
   }
 ]
 ```
@@ -155,7 +155,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "class 'order' references actor 'nonexistent_actor' which does not exist",
     "file": "domains/sales/subdomains/default/classes/order/class.json",
     "field": "actor_key",
-    "hint": "available actors: customer | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11001"
+    "hint": "available actors: customer | run: req_check --explain E11001"
   }
 ]
 ```
@@ -172,7 +172,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "transition[0] from_state_key 'nonexistent' does not exist",
     "file": "domains/sales/subdomains/default/classes/order/state_machine.json",
     "field": "transitions[0].from_state_key",
-    "hint": "available states: pending | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11008"
+    "hint": "available states: pending | run: req_check --explain E11008"
   }
 ]
 ```
@@ -189,7 +189,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "model must have at least one actor defined - actors represent the users, systems, or external entities that interact with your system; define actors in the 'actors/' directory with files like 'actors/user.actor.json'",
     "file": "model.json",
     "field": "actors",
-    "hint": "create actors/{key}.actor.json with {\"name\": ..., \"type\": \"person|external_system|time\"} | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11017"
+    "hint": "create actors/{key}.actor.json with {\"name\": ..., \"type\": \"person|external_system|time\"} | run: req_check --tree | run: req_check --explain E11017"
   }
 ]
 ```
@@ -206,7 +206,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "class 'item' must have a state machine defined - state machines describe the lifecycle and behavior of a class; create a 'state_machine.json' file in the class directory with states, events, and transitions",
     "file": "domains/sales/subdomains/default/classes/item/class.json",
     "field": "state_machine",
-    "hint": "create state_machine.json with states, events, and transitions | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11023"
+    "hint": "create state_machine.json with states, events, and transitions | run: req_check --tree | run: req_check --explain E11023"
   }
 ]
 ```
@@ -223,7 +223,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "association 'order--item--contains' from_multiplicity 'abc' is invalid: invalid format",
     "file": "domains/sales/subdomains/default/associations/order--item--contains.assoc.json",
     "field": "from_multiplicity",
-    "hint": "valid multiplicities: 1, 0..1, *, 0..*, 1..* | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11016"
+    "hint": "valid multiplicities: 1, 0..1, *, 0..*, 1..* | run: req_check --explain E11016"
   }
 ]
 ```
@@ -240,7 +240,7 @@ Every parse error's `hint` field contains pipe-delimited guidance:
     "message": "action 'create_order' in class 'order' is defined but not referenced by any state action or transition - every action must be used in the state machine either as a state entry/exit/do action or as a transition action",
     "file": "domains/sales/subdomains/default/classes/order/actions/create_order.json",
     "field": "action_key",
-    "hint": "reference this action in a state entry/exit/do or transition action_key | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11029"
+    "hint": "reference this action in a state entry/exit/do or transition action_key | run: req_check --explain E11029"
   }
 ]
 ```
@@ -290,7 +290,7 @@ Error accumulation reports all errors in a single run:
     "message": "subdomain 'default' must have at least 2 classes defined (has 1)...",
     "file": "domains/sales/subdomains/default/subdomain.json",
     "field": "classes",
-    "hint": "create class directories under classes/ with class.json files | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11020"
+    "hint": "create class directories under classes/ with class.json files | run: req_check --tree | run: req_check --explain E11020"
   },
   {
     "type": "parse",
@@ -298,7 +298,7 @@ Error accumulation reports all errors in a single run:
     "message": "class 'order' references actor 'nonexistent_actor' which does not exist",
     "file": "domains/sales/subdomains/default/classes/order/class.json",
     "field": "actor_key",
-    "hint": "available actors: customer | run: req_check --tree | run: req_check --format-docs | run: req_check --explain E11001"
+    "hint": "available actors: customer | run: req_check --explain E11001"
   }
 ]
 ```
@@ -342,7 +342,6 @@ Error accumulation reports all errors in a single run:
 | `req_check --explain E{code}` | Full remediation docs for a specific error |
 | `req_check --schema <entity>` | JSON schema for an entity type |
 | `req_check --tree` | Expected directory tree structure |
-| `req_check --format-docs` | JSON model format documentation |
 
 ---
 
@@ -368,5 +367,6 @@ Error accumulation reports all errors in a single run:
 6. **Schema errors point to `--schema`.** Schema violation hints direct the AI to
    `req_check --schema <entity>` for the full JSON schema.
 
-7. **Tree errors include `--tree` and `--format-docs`.** Structural errors (11xxx)
-   tell the AI about the available reference commands.
+7. **File structure errors include `--tree`.** Errors about misnamed files or unexpected
+   file locations (e.g., bad key format, bad association filename) include `--tree` in
+   the hint so the AI can see the expected directory layout.

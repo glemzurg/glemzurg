@@ -37,6 +37,17 @@ The model enforces these rules after conversion:
 | Transition | Must have at least one of from_state_key or to_state_key |
 | Multiplicity | Upper bound must be >= lower bound |
 
+## The "details" Field
+
+The `details` field on entities is for **human-readable summaries only**, not logic. Do not put preconditions, postconditions, formulas, or conditional behavior in `details`. Instead use the structured logic fields:
+
+| Entity | Logic Fields |
+|--------|-------------|
+| Action | `requires`, `guarantees`, `safety_rules` (arrays of Logic objects) |
+| Query | `requires`, `guarantees` (arrays of Logic objects) |
+| Guard | `logic` (single Logic object) |
+| Attribute | `derivation_policy` (single Logic object) |
+
 ## Related Errors
 
 - **E2004**: Actor type invalid
