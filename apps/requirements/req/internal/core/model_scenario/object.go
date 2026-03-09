@@ -25,8 +25,8 @@ type Object struct {
 	UmlComment   string
 }
 
-func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) (object Object, err error) {
-	object = Object{
+func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, classKey identity.Key, multi bool, umlComment string) Object {
+	return Object{
 		Key:          key,
 		ObjectNumber: objectNumber,
 		Name:         name,
@@ -35,12 +35,6 @@ func NewObject(key identity.Key, objectNumber uint, name, nameStyle string, clas
 		Multi:        multi,
 		UmlComment:   umlComment,
 	}
-
-	if err = object.Validate(); err != nil {
-		return Object{}, err
-	}
-
-	return object, nil
 }
 
 // Validate validates the Object struct.

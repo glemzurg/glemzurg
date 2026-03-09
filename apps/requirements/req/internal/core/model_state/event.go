@@ -16,19 +16,13 @@ type Event struct {
 	Parameters []Parameter
 }
 
-func NewEvent(key identity.Key, name, details string, parameters []Parameter) (event Event, err error) {
-	event = Event{
+func NewEvent(key identity.Key, name, details string, parameters []Parameter) Event {
+	return Event{
 		Key:        key,
 		Name:       name,
 		Details:    details,
 		Parameters: parameters,
 	}
-
-	if err = event.Validate(); err != nil {
-		return Event{}, err
-	}
-
-	return event, nil
 }
 
 // Validate validates the Event struct.

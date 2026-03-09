@@ -17,18 +17,12 @@ type Scenario struct {
 	Objects map[identity.Key]Object
 }
 
-func NewScenario(key identity.Key, name, details string) (scenario Scenario, err error) {
-	scenario = Scenario{
+func NewScenario(key identity.Key, name, details string) Scenario {
+	return Scenario{
 		Key:     key,
 		Name:    name,
 		Details: details,
 	}
-
-	if err = scenario.Validate(); err != nil {
-		return Scenario{}, err
-	}
-
-	return scenario, nil
 }
 
 // Validate validates the Scenario struct.

@@ -22,8 +22,8 @@ type Query struct {
 	Guarantees []model_logic.Logic // Filtering criteria for returned data (NOT state changes).
 }
 
-func NewQuery(key identity.Key, name, details string, requires, guarantees []model_logic.Logic, parameters []Parameter) (query Query, err error) {
-	query = Query{
+func NewQuery(key identity.Key, name, details string, requires, guarantees []model_logic.Logic, parameters []Parameter) Query {
+	return Query{
 		Key:        key,
 		Name:       name,
 		Details:    details,
@@ -31,12 +31,6 @@ func NewQuery(key identity.Key, name, details string, requires, guarantees []mod
 		Guarantees: guarantees,
 		Parameters: parameters,
 	}
-
-	if err = query.Validate(); err != nil {
-		return Query{}, err
-	}
-
-	return query, nil
 }
 
 // Validate validates the Query struct.

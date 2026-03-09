@@ -118,7 +118,7 @@ func (d DataType) Validate() error {
 	}
 	if d.TypeSpec != nil {
 		if err := d.TypeSpec.Validate(); err != nil {
-			return fmt.Errorf("typeSpec: %w", err)
+			return err
 		}
 	}
 	return nil
@@ -126,11 +126,11 @@ func (d DataType) Validate() error {
 
 func (d DataType) validateAtomic() error {
 	if d.CollectionType == COLLECTION_TYPE_ATOMIC && d.Atomic == nil {
-		return fmt.Errorf("atomic: cannot be blank")
+		return coreerr.New(coreerr.DtypeAtomicRequired, "atomic is required for atomic collection type", "Atomic")
 	}
 	if d.Atomic != nil {
 		if err := d.Atomic.Validate(); err != nil {
-			return fmt.Errorf("atomic: (%s)", err.Error())
+			return err
 		}
 	}
 	return nil
@@ -138,11 +138,11 @@ func (d DataType) validateAtomic() error {
 
 func (d DataType) validateRecordFields() error {
 	if d.CollectionType == COLLECTION_TYPE_RECORD && len(d.RecordFields) == 0 {
-		return fmt.Errorf("recordFields: cannot be blank")
+		return coreerr.New(coreerr.DtypeRecordfieldsRequired, "record fields are required for record collection type", "RecordFields")
 	}
 	for _, f := range d.RecordFields {
 		if err := f.Validate(); err != nil {
-			return fmt.Errorf("recordFields: (%s)", err.Error())
+			return err
 		}
 	}
 	return nil
@@ -156,27 +156,27 @@ func (d DataType) validateCollectionFields() error {
 
 	if isCollection {
 		if d.CollectionUnique == nil {
-			return fmt.Errorf("collectionUnique: cannot be blank")
+			return coreerr.New(coreerr.DtypeColluniqRequired, "collection unique is required for collection types", "CollectionUnique")
 		}
 		if d.CollectionMin != nil && *d.CollectionMin < 1 {
-			return fmt.Errorf("collectionMin: must be no less than 1")
+			return coreerr.NewWithValues(coreerr.DtypeCollminTooSmall, "collection min must be at least 1", "CollectionMin", fmt.Sprintf("%d", *d.CollectionMin), "at least 1")
 		}
 		if d.CollectionMax != nil && *d.CollectionMax < 1 {
-			return fmt.Errorf("collectionMax: must be no less than 1")
+			return coreerr.NewWithValues(coreerr.DtypeCollmaxTooSmall, "collection max must be at least 1", "CollectionMax", fmt.Sprintf("%d", *d.CollectionMax), "at least 1")
 		}
 		if d.CollectionMin != nil && d.CollectionMax != nil && *d.CollectionMax < *d.CollectionMin {
-			return fmt.Errorf("collectionMax: must be no less than collectionMin")
+			return coreerr.NewWithValues(coreerr.DtypeCollmaxLessThanMin, "collection max must be at least collection min", "CollectionMax", fmt.Sprintf("%d", *d.CollectionMax), fmt.Sprintf("at least %d", *d.CollectionMin))
 		}
 		return nil
 	}
 	if d.CollectionUnique != nil {
-		return fmt.Errorf("collectionUnique: must be blank")
+		return coreerr.New(coreerr.DtypeColluniqMustBeBlank, "collection unique must be nil for non-collection types", "CollectionUnique")
 	}
 	if d.CollectionMin != nil {
-		return fmt.Errorf("collectionMin: must be blank")
+		return coreerr.New(coreerr.DtypeCollminMustBeBlank, "collection min must be nil for non-collection types", "CollectionMin")
 	}
 	if d.CollectionMax != nil {
-		return fmt.Errorf("collectionMax: must be blank")
+		return coreerr.New(coreerr.DtypeCollmaxMustBeBlank, "collection max must be nil for non-collection types", "CollectionMax")
 	}
 	return nil
 }

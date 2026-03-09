@@ -23,20 +23,14 @@ type Domain struct {
 	ClassAssociations map[identity.Key]model_class.Association // Associations between classes that bridge subdomains in this domain.
 }
 
-func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) (domain Domain, err error) {
-	domain = Domain{
+func NewDomain(key identity.Key, name, details string, realized bool, umlComment string) Domain {
+	return Domain{
 		Key:        key,
 		Name:       name,
 		Details:    details,
 		Realized:   realized,
 		UmlComment: umlComment,
 	}
-
-	if err = domain.Validate(); err != nil {
-		return Domain{}, err
-	}
-
-	return domain, nil
 }
 
 // Validate validates the Domain struct.

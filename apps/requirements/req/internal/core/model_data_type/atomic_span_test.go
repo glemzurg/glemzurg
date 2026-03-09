@@ -115,7 +115,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerValue: cannot be blank",
+			errorMessage: "DTYPE_SPAN_LOWERVAL_REQUIRED",
 		},
 		{
 			name: "LowerType closed but LowerDenominator nil",
@@ -126,7 +126,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  1.0,
 			},
-			errorMessage: "LowerDenominator: cannot be blank",
+			errorMessage: "DTYPE_SPAN_LOWERDENOM_REQUIRED",
 		},
 		{
 			name: "LowerDenominator < 1",
@@ -139,7 +139,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerDenominator: must be no less than 1",
+			errorMessage: "DTYPE_SPAN_LOWERDENOM_INVALID",
 		},
 		{
 			name: "HigherType open but HigherValue nil",
@@ -150,7 +150,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:             "m",
 				Precision:         1.0,
 			},
-			errorMessage: "HigherValue: cannot be blank",
+			errorMessage: "DTYPE_SPAN_HIGHERVAL_REQUIRED",
 		},
 		{
 			name: "HigherType open but HigherDenominator nil",
@@ -161,7 +161,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:       "m",
 				Precision:   1.0,
 			},
-			errorMessage: "HigherDenominator: cannot be blank",
+			errorMessage: "DTYPE_SPAN_HIGHERDENOM_REQUIRED",
 		},
 		{
 			name: "HigherDenominator < 1",
@@ -173,7 +173,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:             "m",
 				Precision:         1.0,
 			},
-			errorMessage: "HigherDenominator: must be no less than 1",
+			errorMessage: "DTYPE_SPAN_HIGHERDENOM_INVALID",
 		},
 		{
 			name: "LowerDenominator < 1",
@@ -185,7 +185,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:            "m",
 				Precision:        1.0,
 			},
-			errorMessage: "LowerDenominator: must be no less than 1",
+			errorMessage: "DTYPE_SPAN_LOWERDENOM_INVALID",
 		},
 		{
 			name: "LowerDenominator nil when unconstrained",
@@ -224,7 +224,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  -1.0,
 			},
-			errorMessage: "precision: must be greater than 0 and less than or equal to 1",
+			errorMessage: "DTYPE_SPAN_PRECISION_INVALID",
 		},
 		{
 			name: "Precision > 1",
@@ -234,7 +234,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  2.0,
 			},
-			errorMessage: "precision: must be greater than 0 and less than or equal to 1",
+			errorMessage: "DTYPE_SPAN_PRECISION_INVALID",
 		},
 		{
 			name: "Precision not power of 10",
@@ -244,7 +244,7 @@ func TestAtomicSpanValidate(t *testing.T) {
 				Units:      "m",
 				Precision:  0.5,
 			},
-			errorMessage: "precision: must be exactly 1.0, 0.1, 0.01, etc",
+			errorMessage: "DTYPE_SPAN_PRECISION_NOT_POW10",
 		},
 		{
 			name: "valid Precision 0.1",

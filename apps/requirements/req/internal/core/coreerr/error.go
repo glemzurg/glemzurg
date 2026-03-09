@@ -26,7 +26,9 @@ type ValidationError struct {
 }
 
 // New creates a ValidationError with code, message, and field.
+// Panics if code or message is empty — these are programming errors.
 func New(code Code, message, field string) *ValidationError {
+	requireCodeAndMessage(code, message)
 	return &ValidationError{
 		code:    code,
 		message: message,
@@ -35,7 +37,9 @@ func New(code Code, message, field string) *ValidationError {
 }
 
 // NewWithValues creates a ValidationError with code, message, field, got, and want.
+// Panics if code or message is empty — these are programming errors.
 func NewWithValues(code Code, message, field, got, want string) *ValidationError {
+	requireCodeAndMessage(code, message)
 	return &ValidationError{
 		code:    code,
 		message: message,
@@ -46,12 +50,25 @@ func NewWithValues(code Code, message, field, got, want string) *ValidationError
 }
 
 // NewWithPath creates a ValidationError with code, message, path, and field.
+// Panics if code or message is empty — these are programming errors.
 func NewWithPath(code Code, message string, path []PathSegment, field string) *ValidationError {
+	requireCodeAndMessage(code, message)
 	return &ValidationError{
 		code:    code,
 		message: message,
 		path:    path,
 		field:   field,
+	}
+}
+
+// requireCodeAndMessage panics if code or message is empty.
+// An error without a code or message is always a programming bug.
+func requireCodeAndMessage(code Code, message string) {
+	if code == "" {
+		panic("coreerr: code must not be empty")
+	}
+	if message == "" {
+		panic("coreerr: message must not be empty")
 	}
 }
 
@@ -138,7 +155,9 @@ func (vc *ValidationContext) Child(entity, key string) *ValidationContext {
 }
 
 // Err creates a new ValidationError at the current context path.
+// Panics if code or message is empty — these are programming errors.
 func (vc *ValidationContext) Err(code Code, field, got, want, message string) *ValidationError {
+	requireCodeAndMessage(code, message)
 	return &ValidationError{
 		code:    code,
 		message: message,

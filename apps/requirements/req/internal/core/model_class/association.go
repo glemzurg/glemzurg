@@ -28,8 +28,8 @@ type AssociationEnd struct {
 	Multiplicity Multiplicity
 }
 
-func NewAssociation(key identity.Key, name, details string, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) (association Association, err error) {
-	association = Association{
+func NewAssociation(key identity.Key, name, details string, from, to AssociationEnd, associationClassKey *identity.Key, umlComment string) Association {
+	return Association{
 		Key:                 key,
 		Name:                name,
 		Details:             details,
@@ -40,12 +40,6 @@ func NewAssociation(key identity.Key, name, details string, from, to Association
 		AssociationClassKey: associationClassKey,
 		UmlComment:          umlComment,
 	}
-
-	if err = association.Validate(); err != nil {
-		return Association{}, err
-	}
-
-	return association, nil
 }
 
 // Validate validates the Association struct.

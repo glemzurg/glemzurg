@@ -42,9 +42,6 @@ func NewExpressionSpec(notation, specification string, parseFunc ExpressionParse
 			}
 		}
 	}
-	if err = spec.Validate(); err != nil {
-		return ExpressionSpec{}, err
-	}
 	return spec, nil
 }
 

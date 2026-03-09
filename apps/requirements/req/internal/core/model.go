@@ -34,8 +34,8 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_named_set.NamedSet) (model Model, err error) {
-	model = Model{
+func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_named_set.NamedSet) Model {
+	return Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
 		Name:            name,
 		Details:         details,
@@ -43,12 +43,6 @@ func NewModel(key, name, details string, invariants []model_logic.Logic, globalF
 		GlobalFunctions: globalFunctions,
 		NamedSets:       namedSets,
 	}
-
-	if err = model.Validate(); err != nil {
-		return Model{}, err
-	}
-
-	return model, nil
 }
 
 // Validate validates the Model struct and all its children.

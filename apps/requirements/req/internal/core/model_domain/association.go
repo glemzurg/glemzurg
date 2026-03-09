@@ -15,19 +15,13 @@ type Association struct {
 	UmlComment        string
 }
 
-func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlComment string) (association Association, err error) {
-	association = Association{
+func NewAssociation(key, problemDomainKey, solutionDomainKey identity.Key, umlComment string) Association {
+	return Association{
 		Key:               key,
 		ProblemDomainKey:  problemDomainKey,
 		SolutionDomainKey: solutionDomainKey,
 		UmlComment:        umlComment,
 	}
-
-	if err = association.Validate(); err != nil {
-		return Association{}, err
-	}
-
-	return association, nil
 }
 
 // Validate validates the domain Association struct.

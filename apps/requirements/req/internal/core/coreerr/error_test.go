@@ -168,3 +168,37 @@ func (suite *ErrorSuite) TestEnsureContext() {
 	suite.Equal("action", result.ContextPath()[0].Entity)
 	suite.Equal("place_order", result.ContextPath()[0].Key)
 }
+
+func (suite *ErrorSuite) TestNewPanicsOnEmptyCode() {
+	suite.Panics(func() { _ = New("", "msg", "Field") })
+}
+
+func (suite *ErrorSuite) TestNewPanicsOnEmptyMessage() {
+	suite.Panics(func() { _ = New("CODE", "", "Field") })
+}
+
+func (suite *ErrorSuite) TestNewWithValuesPanicsOnEmptyCode() {
+	suite.Panics(func() { _ = NewWithValues("", "msg", "Field", "got", "want") })
+}
+
+func (suite *ErrorSuite) TestNewWithValuesPanicsOnEmptyMessage() {
+	suite.Panics(func() { _ = NewWithValues("CODE", "", "Field", "got", "want") })
+}
+
+func (suite *ErrorSuite) TestNewWithPathPanicsOnEmptyCode() {
+	suite.Panics(func() { _ = NewWithPath("", "msg", nil, "Field") })
+}
+
+func (suite *ErrorSuite) TestNewWithPathPanicsOnEmptyMessage() {
+	suite.Panics(func() { _ = NewWithPath("CODE", "", nil, "Field") })
+}
+
+func (suite *ErrorSuite) TestContextErrPanicsOnEmptyCode() {
+	ctx := NewContext("model", "")
+	suite.Panics(func() { _ = ctx.Err("", "Field", "", "", "msg") })
+}
+
+func (suite *ErrorSuite) TestContextErrPanicsOnEmptyMessage() {
+	ctx := NewContext("model", "")
+	suite.Panics(func() { _ = ctx.Err("CODE", "Field", "", "", "") })
+}

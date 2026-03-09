@@ -27,19 +27,13 @@ type Subdomain struct {
 	UseCaseShares          map[identity.Key]map[identity.Key]model_use_case.UseCaseShared // Outer key is sea-level use case, inner key is mud-level use case.
 }
 
-func NewSubdomain(key identity.Key, name, details, umlComment string) (subdomain Subdomain, err error) {
-	subdomain = Subdomain{
+func NewSubdomain(key identity.Key, name, details, umlComment string) Subdomain {
+	return Subdomain{
 		Key:        key,
 		Name:       name,
 		Details:    details,
 		UmlComment: umlComment,
 	}
-
-	if err = subdomain.Validate(); err != nil {
-		return Subdomain{}, err
-	}
-
-	return subdomain, nil
 }
 
 // Validate validates the Subdomain struct.

@@ -42,9 +42,9 @@ type Logic struct {
 	TargetTypeSpec *model_spec.TypeSpec      // Optional: declared result type of the logic's target.
 }
 
-// NewLogic creates a new Logic and validates it.
-func NewLogic(key identity.Key, logicType, description, target string, spec model_spec.ExpressionSpec, targetTypeSpec *model_spec.TypeSpec) (logic Logic, err error) {
-	logic = Logic{
+// NewLogic creates a new Logic.
+func NewLogic(key identity.Key, logicType, description, target string, spec model_spec.ExpressionSpec, targetTypeSpec *model_spec.TypeSpec) Logic {
+	return Logic{
 		Key:            key,
 		Type:           logicType,
 		Description:    description,
@@ -52,12 +52,6 @@ func NewLogic(key identity.Key, logicType, description, target string, spec mode
 		Spec:           spec,
 		TargetTypeSpec: targetTypeSpec,
 	}
-
-	if err = logic.Validate(); err != nil {
-		return Logic{}, err
-	}
-
-	return logic, nil
 }
 
 // Validate validates the Logic struct.

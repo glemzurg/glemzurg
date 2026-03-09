@@ -42,9 +42,6 @@ func NewTypeSpec(notation, specification string, parseFunc TypeParseFunc) (spec 
 			}
 		}
 	}
-	if err = spec.Validate(); err != nil {
-		return TypeSpec{}, err
-	}
 	return spec, nil
 }
 

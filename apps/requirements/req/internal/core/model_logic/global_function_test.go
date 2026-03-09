@@ -286,6 +286,5 @@ func (s *GlobalFunctionTestSuite) TestValidateWithParent() {
 	}
 	err = gf.ValidateWithParent()
 	s.Require().Error(err)
-	s.Contains(err.Error(), "specification")
 	s.Contains(err.Error(), "Description")
 }

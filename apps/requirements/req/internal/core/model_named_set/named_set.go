@@ -21,21 +21,15 @@ type NamedSet struct {
 	TypeSpec    *model_spec.TypeSpec      // Optional precise type specification.
 }
 
-// NewNamedSet creates a new NamedSet and validates it.
-func NewNamedSet(key identity.Key, name, description string, spec model_spec.ExpressionSpec, typeSpec *model_spec.TypeSpec) (ns NamedSet, err error) {
-	ns = NamedSet{
+// NewNamedSet creates a new NamedSet.
+func NewNamedSet(key identity.Key, name, description string, spec model_spec.ExpressionSpec, typeSpec *model_spec.TypeSpec) NamedSet {
+	return NamedSet{
 		Key:         key,
 		Name:        name,
 		Description: description,
 		Spec:        spec,
 		TypeSpec:    typeSpec,
 	}
-
-	if err = ns.Validate(); err != nil {
-		return NamedSet{}, err
-	}
-
-	return ns, nil
 }
 
 // Validate validates the NamedSet struct.

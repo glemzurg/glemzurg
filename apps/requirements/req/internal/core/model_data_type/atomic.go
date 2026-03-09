@@ -1,7 +1,6 @@
 package model_data_type
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -62,10 +61,10 @@ func (a Atomic) Validate() error {
 func (a Atomic) validateReference() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_REFERENCE {
 		if a.Reference == nil || *a.Reference == "" {
-			return fmt.Errorf("reference: reference must not be nil or empty for reference types")
+			return coreerr.New(coreerr.DtypeAtomicRefRequired, "reference must not be nil or empty for reference types", "Reference")
 		}
 	} else if a.Reference != nil {
-		return fmt.Errorf("reference: reference must be nil for non-reference types")
+		return coreerr.New(coreerr.DtypeAtomicRefMustBeBlank, "reference must be nil for non-reference types", "Reference")
 	}
 	return nil
 }
@@ -73,10 +72,10 @@ func (a Atomic) validateReference() error {
 func (a Atomic) validateObjectClassKey() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_OBJECT {
 		if a.ObjectClassKey == nil || *a.ObjectClassKey == "" {
-			return fmt.Errorf("objectClassKey: objectClassKey must not be nil or empty for object types")
+			return coreerr.New(coreerr.DtypeAtomicObjkeyRequired, "objectClassKey must not be nil or empty for object types", "ObjectClassKey")
 		}
 	} else if a.ObjectClassKey != nil {
-		return fmt.Errorf("objectClassKey: objectClassKey must be nil for non-object types")
+		return coreerr.New(coreerr.DtypeAtomicObjkeyMustBeBlank, "objectClassKey must be nil for non-object types", "ObjectClassKey")
 	}
 	return nil
 }
@@ -84,22 +83,22 @@ func (a Atomic) validateObjectClassKey() error {
 func (a Atomic) validateEnums() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_ENUMERATION {
 		if len(a.Enums) == 0 {
-			return fmt.Errorf("enums: cannot be blank")
+			return coreerr.New(coreerr.DtypeAtomicEnumsRequired, "enums cannot be blank for enumeration types", "Enums")
 		}
 		for _, enum := range a.Enums {
 			if err := enum.Validate(); err != nil {
-				return fmt.Errorf("enums: (%s)", err.Error())
+				return err
 			}
 		}
 		if a.EnumOrdered == nil {
-			return fmt.Errorf("enumOrdered: enumOrdered must not be nil for enumeration types")
+			return coreerr.New(coreerr.DtypeAtomicEnumordRequired, "enumOrdered must not be nil for enumeration types", "EnumOrdered")
 		}
 	} else {
 		if len(a.Enums) > 0 {
-			return fmt.Errorf("enums: must be blank")
+			return coreerr.New(coreerr.DtypeAtomicEnumsMustBeBlank, "enums must be blank for non-enumeration types", "Enums")
 		}
 		if a.EnumOrdered != nil {
-			return fmt.Errorf("enumOrdered: enumOrdered must be nil for non-enumeration types")
+			return coreerr.New(coreerr.DtypeAtomicEnumordMustBeBlank, "enumOrdered must be nil for non-enumeration types", "EnumOrdered")
 		}
 	}
 	return nil
@@ -108,13 +107,13 @@ func (a Atomic) validateEnums() error {
 func (a Atomic) validateSpan() error {
 	if a.ConstraintType == CONSTRAINT_TYPE_SPAN {
 		if a.Span == nil {
-			return fmt.Errorf("span: span must not be nil for span types")
+			return coreerr.New(coreerr.DtypeAtomicSpanRequired, "span must not be nil for span types", "Span")
 		}
 		if err := a.Span.Validate(); err != nil {
-			return fmt.Errorf("span: (%s)", err.Error())
+			return err
 		}
 	} else if a.Span != nil {
-		return fmt.Errorf("span: span must be nil for non-span types")
+		return coreerr.New(coreerr.DtypeAtomicSpanMustBeBlank, "span must be nil for non-span types", "Span")
 	}
 	return nil
 }

@@ -60,10 +60,6 @@ func NewAttribute(key identity.Key, name, details, dataTypeRules string, derivat
 		attribute.DataType = parsedDataType
 	}
 
-	if err = attribute.Validate(); err != nil {
-		return Attribute{}, err
-	}
-
 	return attribute, nil
 }
 

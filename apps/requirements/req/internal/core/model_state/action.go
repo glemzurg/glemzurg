@@ -22,8 +22,8 @@ type Action struct {
 	SafetyRules []model_logic.Logic // Boolean assertions that must reference primed variables.
 }
 
-func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) (action Action, err error) {
-	action = Action{
+func NewAction(key identity.Key, name, details string, requires, guarantees, safetyRules []model_logic.Logic, parameters []Parameter) Action {
+	return Action{
 		Key:         key,
 		Name:        name,
 		Details:     details,
@@ -32,12 +32,6 @@ func NewAction(key identity.Key, name, details string, requires, guarantees, saf
 		SafetyRules: safetyRules,
 		Parameters:  parameters,
 	}
-
-	if err = action.Validate(); err != nil {
-		return Action{}, err
-	}
-
-	return action, nil
 }
 
 // Validate validates the Action struct.

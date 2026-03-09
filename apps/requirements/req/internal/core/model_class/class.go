@@ -31,8 +31,8 @@ type Class struct {
 	Transitions map[identity.Key]model_state.Transition
 }
 
-func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (class Class, err error) {
-	class = Class{
+func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Class {
+	return Class{
 		Key:             key,
 		Name:            name,
 		Details:         details,
@@ -41,12 +41,6 @@ func NewClass(key identity.Key, name, details string, actorKey, superclassOfKey,
 		SubclassOfKey:   subclassOfKey,
 		UmlComment:      umlComment,
 	}
-
-	if err = class.Validate(); err != nil {
-		return Class{}, err
-	}
-
-	return class, nil
 }
 
 // Validate validates the Class struct.

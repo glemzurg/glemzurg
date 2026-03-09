@@ -23,8 +23,8 @@ type Actor struct {
 	UmlComment      string
 }
 
-func NewActor(key identity.Key, name, details, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) (actor Actor, err error) {
-	actor = Actor{
+func NewActor(key identity.Key, name, details, userType string, superclassOfKey, subclassOfKey *identity.Key, umlComment string) Actor {
+	return Actor{
 		Key:             key,
 		Name:            name,
 		Details:         details,
@@ -33,12 +33,6 @@ func NewActor(key identity.Key, name, details, userType string, superclassOfKey,
 		SubclassOfKey:   subclassOfKey,
 		UmlComment:      umlComment,
 	}
-
-	if err = actor.Validate(); err != nil {
-		return Actor{}, err
-	}
-
-	return actor, nil
 }
 
 // Validate validates the Actor struct.

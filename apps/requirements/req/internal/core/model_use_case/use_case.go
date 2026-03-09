@@ -35,8 +35,8 @@ type GeneralizationRefs struct {
 	SubclassOfKey   *identity.Key
 }
 
-func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) (useCase UseCase, err error) {
-	useCase = UseCase{
+func NewUseCase(key identity.Key, name, details, level string, readOnly bool, genRefs GeneralizationRefs, umlComment string) UseCase {
+	return UseCase{
 		Key:             key,
 		Name:            name,
 		Details:         details,
@@ -46,12 +46,6 @@ func NewUseCase(key identity.Key, name, details, level string, readOnly bool, ge
 		SubclassOfKey:   genRefs.SubclassOfKey,
 		UmlComment:      umlComment,
 	}
-
-	if err = useCase.Validate(); err != nil {
-		return UseCase{}, err
-	}
-
-	return useCase, nil
 }
 
 // Validate validates the UseCase struct.

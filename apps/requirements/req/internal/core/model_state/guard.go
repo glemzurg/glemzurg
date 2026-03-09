@@ -17,18 +17,12 @@ type Guard struct {
 	Logic model_logic.Logic // The formal logic specification for this guard condition.
 }
 
-func NewGuard(key identity.Key, name string, logic model_logic.Logic) (guard Guard, err error) {
-	guard = Guard{
+func NewGuard(key identity.Key, name string, logic model_logic.Logic) Guard {
+	return Guard{
 		Key:   key,
 		Name:  name,
 		Logic: logic,
 	}
-
-	if err = guard.Validate(); err != nil {
-		return Guard{}, err
-	}
-
-	return guard, nil
 }
 
 // Validate validates the Guard struct.

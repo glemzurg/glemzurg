@@ -34,32 +34,6 @@ type AtomicSpan struct {
 	Precision float64
 }
 
-func validateDenominator(ptr *int, required bool) error {
-	if ptr == nil {
-		if required {
-			return fmt.Errorf("cannot be blank")
-		}
-		return nil
-	}
-	if *ptr < 1 {
-		return fmt.Errorf("must be no less than 1")
-	}
-	return nil
-}
-
-func precisionValidator(v float64) error {
-	if v <= 0 || v > 1 {
-		return fmt.Errorf("must be greater than 0 and less than or equal to 1")
-	}
-
-	log := math.Log10(v)
-	if math.Floor(log) != log {
-		return fmt.Errorf("must be exactly 1.0, 0.1, 0.01, etc")
-	}
-
-	return nil
-}
-
 func (a *AtomicSpan) Validate() error {
 	// LowerType: required and must be one of closed, open, unconstrained.
 	if a.LowerType == "" {
@@ -87,34 +61,74 @@ func (a *AtomicSpan) Validate() error {
 		return coreerr.New(coreerr.DtypeSpanPrecisionRequired, "Precision is required", "Precision")
 	}
 
+	// Validate lower bound fields.
+	if err := a.validateLowerBound(); err != nil {
+		return err
+	}
+
+	// Validate higher bound fields.
+	if err := a.validateHigherBound(); err != nil {
+		return err
+	}
+
+	// Precision: must be valid value.
+	if err := a.validatePrecision(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateLowerBound validates LowerValue and LowerDenominator based on LowerType.
+func (a *AtomicSpan) validateLowerBound() error {
 	// LowerValue: required when LowerType != unconstrained.
 	if a.LowerType != _BOUND_TYPE_LIMIT_UNCONSTRAINED {
 		if a.LowerValue == nil {
-			return fmt.Errorf("LowerValue: cannot be blank")
+			return coreerr.New(coreerr.DtypeSpanLowervalRequired, "lower value is required for constrained lower bound", "LowerValue")
 		}
 	}
 
 	// LowerDenominator: conditional validation.
-	if err := validateDenominator(a.LowerDenominator, a.LowerType != _BOUND_TYPE_LIMIT_UNCONSTRAINED); err != nil {
-		return fmt.Errorf("LowerDenominator: %s", err.Error())
+	if a.LowerDenominator == nil {
+		if a.LowerType != _BOUND_TYPE_LIMIT_UNCONSTRAINED {
+			return coreerr.New(coreerr.DtypeSpanLowerdenomRequired, "lower denominator is required for constrained lower bound", "LowerDenominator")
+		}
+	} else if *a.LowerDenominator < 1 {
+		return coreerr.NewWithValues(coreerr.DtypeSpanLowerdenomInvalid, "lower denominator must be at least 1", "LowerDenominator", fmt.Sprintf("%d", *a.LowerDenominator), "at least 1")
 	}
 
+	return nil
+}
+
+// validateHigherBound validates HigherValue and HigherDenominator based on HigherType.
+func (a *AtomicSpan) validateHigherBound() error {
 	// HigherValue: required when HigherType != unconstrained.
 	if a.HigherType != _BOUND_TYPE_LIMIT_UNCONSTRAINED {
 		if a.HigherValue == nil {
-			return fmt.Errorf("HigherValue: cannot be blank")
+			return coreerr.New(coreerr.DtypeSpanHighervalRequired, "higher value is required for constrained higher bound", "HigherValue")
 		}
 	}
 
 	// HigherDenominator: conditional validation.
-	if err := validateDenominator(a.HigherDenominator, a.HigherType != _BOUND_TYPE_LIMIT_UNCONSTRAINED); err != nil {
-		return fmt.Errorf("HigherDenominator: %s", err.Error())
+	if a.HigherDenominator == nil {
+		if a.HigherType != _BOUND_TYPE_LIMIT_UNCONSTRAINED {
+			return coreerr.New(coreerr.DtypeSpanHigherdenomRequired, "higher denominator is required for constrained higher bound", "HigherDenominator")
+		}
+	} else if *a.HigherDenominator < 1 {
+		return coreerr.NewWithValues(coreerr.DtypeSpanHigherdenomInvalid, "higher denominator must be at least 1", "HigherDenominator", fmt.Sprintf("%d", *a.HigherDenominator), "at least 1")
 	}
 
-	// Precision: must be valid value.
-	if err := precisionValidator(a.Precision); err != nil {
-		return fmt.Errorf("precision: %s", err.Error())
-	}
+	return nil
+}
 
+// validatePrecision validates precision is a valid power of 10 between 0 and 1.
+func (a *AtomicSpan) validatePrecision() error {
+	if a.Precision <= 0 || a.Precision > 1 {
+		return coreerr.NewWithValues(coreerr.DtypeSpanPrecisionInvalid, "precision must be greater than 0 and at most 1", "Precision", fmt.Sprintf("%g", a.Precision), "0 < precision <= 1")
+	}
+	log := math.Log10(a.Precision)
+	if math.Floor(log) != log {
+		return coreerr.NewWithValues(coreerr.DtypeSpanPrecisionNotPow10, "precision must be a power of 10 (1, 0.1, 0.01, etc.)", "Precision", fmt.Sprintf("%g", a.Precision), "power of 10")
+	}
 	return nil
 }

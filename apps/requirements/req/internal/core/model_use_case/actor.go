@@ -5,16 +5,10 @@ type Actor struct {
 	UmlComment string
 }
 
-func NewActor(umlComment string) (actor Actor, err error) {
-	actor = Actor{
+func NewActor(umlComment string) Actor {
+	return Actor{
 		UmlComment: umlComment,
 	}
-
-	if err = actor.Validate(); err != nil {
-		return Actor{}, err
-	}
-
-	return actor, nil
 }
 
 // Validate validates the Actor struct.

@@ -26,18 +26,12 @@ type StateAction struct {
 	When      string
 }
 
-func NewStateAction(key, actionKey identity.Key, when string) (stateAction StateAction, err error) {
-	stateAction = StateAction{
+func NewStateAction(key, actionKey identity.Key, when string) StateAction {
+	return StateAction{
 		Key:       key,
 		ActionKey: actionKey,
 		When:      when,
 	}
-
-	if err = stateAction.Validate(); err != nil {
-		return StateAction{}, err
-	}
-
-	return stateAction, nil
 }
 
 // Validate validates the StateAction struct.

@@ -26,7 +26,7 @@ func (f Field) Validate() error {
 		return coreerr.New(coreerr.DtypeFieldDatatypeRequired, "FieldDataType is required", "FieldDataType")
 	}
 	if !_fieldNameRegexp.MatchString(f.Name) {
-		return fmt.Errorf("name: '%s' must be a lowercase identifier matching [a-z_][a-z0-9_]*", f.Name)
+		return coreerr.NewWithValues(coreerr.DtypeFieldNameInvalid, fmt.Sprintf("name '%s' must be a lowercase identifier", f.Name), "Name", f.Name, "matching [a-z_][a-z0-9_]*")
 	}
 	return nil
 }

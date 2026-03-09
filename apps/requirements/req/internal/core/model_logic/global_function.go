@@ -27,20 +27,14 @@ type GlobalFunction struct {
 	Logic      Logic    // The logic specification for this global function.
 }
 
-// NewGlobalFunction creates a new GlobalFunction and validates it.
-func NewGlobalFunction(key identity.Key, name string, parameters []string, logic Logic) (gf GlobalFunction, err error) {
-	gf = GlobalFunction{
+// NewGlobalFunction creates a new GlobalFunction.
+func NewGlobalFunction(key identity.Key, name string, parameters []string, logic Logic) GlobalFunction {
+	return GlobalFunction{
 		Key:        key,
 		Name:       name,
 		Parameters: parameters,
 		Logic:      logic,
 	}
-
-	if err = gf.Validate(); err != nil {
-		return GlobalFunction{}, err
-	}
-
-	return gf, nil
 }
 
 // Validate validates the GlobalFunction struct.
@@ -55,7 +49,7 @@ func (gf *GlobalFunction) Validate() error {
 
 	// Validate the specification logic.
 	if err := gf.Logic.Validate(); err != nil {
-		return fmt.Errorf("specification: %w", err)
+		return err
 	}
 
 	// Logic must use the global function's exact key.

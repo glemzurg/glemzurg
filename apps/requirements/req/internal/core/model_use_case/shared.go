@@ -10,17 +10,11 @@ type UseCaseShared struct {
 	UmlComment string
 }
 
-func NewUseCaseShared(shareType, umlComment string) (useCaseShared UseCaseShared, err error) {
-	useCaseShared = UseCaseShared{
+func NewUseCaseShared(shareType, umlComment string) UseCaseShared {
+	return UseCaseShared{
 		ShareType:  shareType,
 		UmlComment: umlComment,
 	}
-
-	if err = useCaseShared.Validate(); err != nil {
-		return UseCaseShared{}, err
-	}
-
-	return useCaseShared, nil
 }
 
 // Validate validates the UseCaseShared struct.

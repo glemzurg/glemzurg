@@ -17,8 +17,8 @@ type Generalization struct {
 	UmlComment string
 }
 
-func NewGeneralization(key identity.Key, name, details string, isComplete, isStatic bool, umlComment string) (generalization Generalization, err error) {
-	generalization = Generalization{
+func NewGeneralization(key identity.Key, name, details string, isComplete, isStatic bool, umlComment string) Generalization {
+	return Generalization{
 		Key:        key,
 		Name:       name,
 		Details:    details,
@@ -26,12 +26,6 @@ func NewGeneralization(key identity.Key, name, details string, isComplete, isSta
 		IsStatic:   isStatic,
 		UmlComment: umlComment,
 	}
-
-	if err = generalization.Validate(); err != nil {
-		return Generalization{}, err
-	}
-
-	return generalization, nil
 }
 
 // Validate validates the Generalization struct.

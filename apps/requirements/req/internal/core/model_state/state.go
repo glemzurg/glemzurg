@@ -18,19 +18,13 @@ type State struct {
 	Actions []StateAction
 }
 
-func NewState(key identity.Key, name, details, umlComment string) (state State, err error) {
-	state = State{
+func NewState(key identity.Key, name, details, umlComment string) State {
+	return State{
 		Key:        key,
 		Name:       name,
 		Details:    details,
 		UmlComment: umlComment,
 	}
-
-	if err = state.Validate(); err != nil {
-		return State{}, err
-	}
-
-	return state, nil
 }
 
 // Validate validates the State struct.

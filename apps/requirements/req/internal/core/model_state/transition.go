@@ -18,8 +18,8 @@ type Transition struct {
 	UmlComment   string
 }
 
-func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identity.Key, guardKey, actionKey, toStateKey *identity.Key, umlComment string) (transition Transition, err error) {
-	transition = Transition{
+func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identity.Key, guardKey, actionKey, toStateKey *identity.Key, umlComment string) Transition {
+	return Transition{
 		Key:          key,
 		FromStateKey: fromStateKey,
 		EventKey:     eventKey,
@@ -28,12 +28,6 @@ func NewTransition(key identity.Key, fromStateKey *identity.Key, eventKey identi
 		ToStateKey:   toStateKey,
 		UmlComment:   umlComment,
 	}
-
-	if err = transition.Validate(); err != nil {
-		return Transition{}, err
-	}
-
-	return transition, nil
 }
 
 // Validate validates the Transition struct.

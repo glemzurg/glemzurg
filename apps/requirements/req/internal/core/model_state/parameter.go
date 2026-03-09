@@ -35,10 +35,6 @@ func NewParameter(name, dataTypeRules string) (param Parameter, err error) {
 		param.DataType = parsedDataType
 	}
 
-	if err = param.Validate(); err != nil {
-		return Parameter{}, err
-	}
-
 	return param, nil
 }
 

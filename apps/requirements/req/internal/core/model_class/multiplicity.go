@@ -31,10 +31,6 @@ func NewMultiplicity(value string) (multiplicity Multiplicity, err error) {
 		HigherBound: higherBound,
 	}
 
-	if err = multiplicity.Validate(); err != nil {
-		return Multiplicity{}, err
-	}
-
 	return multiplicity, nil
 }
 
