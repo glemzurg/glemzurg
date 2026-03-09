@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -46,10 +46,10 @@ func (suite *QuerySuite) TestValidate() {
 				Name:    "Name",
 				Details: "Details",
 				Requires: []model_logic.Logic{
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "req1"}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition 1.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "req1"}, nil),
 				},
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee 1.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "guar1"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee 1.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "guar1"}, nil),
 				},
 			},
 		},
@@ -59,7 +59,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil),
 				},
 			},
 		},
@@ -69,7 +69,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"}, nil),
 				},
 			},
 		},
@@ -103,10 +103,10 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "",
 				Requires: []model_logic.Logic{
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "x must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "x > 0"}, nil),
 				},
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result in S.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result \\in S"}, nil),
 				},
 			},
 			errstr: "Name",
@@ -117,7 +117,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "x must be positive.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "requires 0",
@@ -128,7 +128,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					{Key: identity.Key{}, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
+					{Key: identity.Key{}, Type: model_logic.LogicTypeQuery, Description: "Result in S.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}},
 				},
 			},
 			errstr: "guarantee 0",
@@ -139,7 +139,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeStateChange, "x must be positive.", "x", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 				},
 			},
 			errstr: "requires 0: logic kind must be 'assessment' or 'let'",
@@ -150,7 +150,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Result in S.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeAssessment, "Result in S.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 				},
 			},
 			errstr: "guarantee 0: logic kind must be 'query' or 'let'",
@@ -161,8 +161,8 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 1.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr1"}, nil),
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 2.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr2"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 1.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr1"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result 2.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr2"}, nil),
 				},
 			},
 			errstr: "duplicate target",
@@ -174,7 +174,7 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local total.", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
 				},
 			},
 		},
@@ -184,8 +184,8 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local value.", "localVar", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local value.", "localVar", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr"}, nil),
 				},
 			},
 		},
@@ -195,8 +195,8 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Requires: []model_logic.Logic{
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
-					model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+					model_logic.NewLogic(reqKey, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 				},
 			},
 			errstr: "duplicate let target \"a\"",
@@ -207,8 +207,8 @@ func (suite *QuerySuite) TestValidate() {
 				Key:  validKey,
 				Name: "Name",
 				Guarantees: []model_logic.Logic{
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr"}, nil),
-					model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Result.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "expr"}, nil),
+					model_logic.NewLogic(guarKey, model_logic.LogicTypeLet, "Local result.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 				},
 			},
 			errstr: "duplicate let target \"result\"",
@@ -236,10 +236,10 @@ func (suite *QuerySuite) TestNew() {
 	guarKey := helper.Must(identity.NewQueryGuaranteeKey(key, "guar_1"))
 
 	requires := []model_logic.Logic{
-		model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_req"}, nil),
+		model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_req"}, nil),
 	}
 	guarantees := []model_logic.Logic{
-		model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"}, nil),
+		model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "tla_guar"}, nil),
 	}
 
 	// Test all parameters are mapped correctly.
@@ -306,10 +306,10 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+			model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Precondition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 		Guarantees: []model_logic.Logic{
-			model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+			model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
 	err = query.ValidateWithParent(&classKey)
@@ -322,7 +322,7 @@ func (suite *QuerySuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Requires: []model_logic.Logic{
-			model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+			model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
 	err = query.ValidateWithParent(&classKey)

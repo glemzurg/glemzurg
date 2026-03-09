@@ -7,7 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -274,11 +274,11 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	guarKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "guar_1"))
 
 	// Test valid full tree.
-	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	guard := model_state.NewGuard(guardKey, "Guard", guardLogic)
-	reqLogic := model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	reqLogic := model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	action := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil)
-	guarLogic := model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guarLogic := model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	query := model_state.NewQuery(queryKey, "Query", "", nil, []model_logic.Logic{guarLogic}, nil)
 	class := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
 	class.SetGuards(map[identity.Key]model_state.Guard{guardKey: guard})
@@ -302,7 +302,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 
 	// Test that a guard logic key mismatch deep in the tree is caught.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
-	mismatchedGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	mismatchedGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	mismatchedGuard := model_state.NewGuard(guardKey, "Guard", mismatchedGuardLogic)
 	mismatchedGuardClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
 	mismatchedGuardClass.SetGuards(map[identity.Key]model_state.Guard{guardKey: mismatchedGuard})
@@ -325,7 +325,7 @@ func (suite *DomainSuite) TestValidateWithParentDeepTree() {
 	// Test that an action require key with wrong parent deep in the tree is caught.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
-	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	wrongReqAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
 	wrongReqClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
 	wrongReqClass.SetActions(map[identity.Key]model_state.Action{actionKey: wrongReqAction})

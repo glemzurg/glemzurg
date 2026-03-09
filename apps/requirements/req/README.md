@@ -3,16 +3,14 @@ update ai parser to be an ai desitned cli:
   - move error codes to req_model
   - small outputs with ways to get schemas to people
     - https://grok.com/share/c2hhcmQtMw_d87e1d40-d147-49e4-a204-39e0de4afe15
-  - parser errors displayed in markdown
   - rename to logic/ir
     - that is the input structure for ai interface
-  - add stacks to the core errors
-    - replace all fmt.Errorf() with errors.Errorf()
 
 ----------------------------
 
 march (art workshops)
   - enter the evenplay model
+    - parser errors displayed in markdown
   - steven tockey model review
 
 april (in parallel)
@@ -30,6 +28,9 @@ cleanup:
   - remove the json markup in req_model tree, and any json handling code
     - move to the parser_ai package
   - change constants styles
+  - replace all fmt.Errorf() with errors.Errorf()
+  - rename as intermediate representation?
+
 
 - use case shared display in graphviz and capturing the meaning
 

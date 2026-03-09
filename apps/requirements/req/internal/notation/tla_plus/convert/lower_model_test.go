@@ -8,10 +8,9 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
@@ -33,8 +32,8 @@ func mustKey(key identity.Key, err error) identity.Key {
 }
 
 // mustSpec creates a TLA+ expression spec for testing.
-func mustSpec(spec string) model_spec.ExpressionSpec {
-	s, err := model_spec.NewExpressionSpec("tla_plus", spec, nil)
+func mustSpec(spec string) logic_spec.ExpressionSpec {
+	s, err := logic_spec.NewExpressionSpec("tla_plus", spec, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -158,7 +157,7 @@ func buildTestModel() *core.Model {
 				Logic:      globalFuncLogic,
 			},
 		},
-		NamedSets: map[identity.Key]model_named_set.NamedSet{
+		NamedSets: map[identity.Key]model_logic.NamedSet{
 			namedSetKey: {
 				Key:  namedSetKey,
 				Name: "valid_statuses",
@@ -232,20 +231,20 @@ func (s *LowerModelTestSuite) TestLowerModelSuccess() {
 
 	// Verify model invariant was lowered.
 	s.NotNil(model.Invariants[0].Spec.Expression)
-	_, isBool := model.Invariants[0].Spec.Expression.(*model_expression.BoolLiteral)
+	_, isBool := model.Invariants[0].Spec.Expression.(*logic_expression.BoolLiteral)
 	s.True(isBool, "model invariant should be BoolLiteral")
 
 	// Verify global function was lowered.
 	for _, gf := range model.GlobalFunctions {
 		s.NotNil(gf.Logic.Spec.Expression, "global function should be lowered")
-		_, isITE := gf.Logic.Spec.Expression.(*model_expression.IfThenElse)
+		_, isITE := gf.Logic.Spec.Expression.(*logic_expression.IfThenElse)
 		s.True(isITE, "global function should be IfThenElse")
 	}
 
 	// Verify named set was lowered.
 	for _, ns := range model.NamedSets {
 		s.NotNil(ns.Spec.Expression, "named set should be lowered")
-		_, isSet := ns.Spec.Expression.(*model_expression.SetLiteral)
+		_, isSet := ns.Spec.Expression.(*logic_expression.SetLiteral)
 		s.True(isSet, "named set should be SetLiteral")
 	}
 
@@ -327,9 +326,9 @@ func (s *LowerModelTestSuite) TestLowerModelActionParameterScope() {
 	// The action require "amount > 0" should resolve 'amount' as a LocalVar.
 	for _, action := range getClassFromModel(model).Actions {
 		require := action.Requires[0].Spec.Expression
-		cmp, ok := require.(*model_expression.Compare)
+		cmp, ok := require.(*logic_expression.Compare)
 		s.True(ok)
-		lv, ok := cmp.Left.(*model_expression.LocalVar)
+		lv, ok := cmp.Left.(*logic_expression.LocalVar)
 		s.True(ok)
 		s.Equal("amount", lv.Name)
 	}
@@ -344,9 +343,9 @@ func (s *LowerModelTestSuite) TestLowerModelAttributeResolves() {
 	// The class invariant "balance ≥ 0" should resolve 'balance' as an AttributeRef.
 	class := getClassFromModel(model)
 	inv := class.Invariants[0].Spec.Expression
-	cmp, ok := inv.(*model_expression.Compare)
+	cmp, ok := inv.(*logic_expression.Compare)
 	s.True(ok)
-	_, isAttr := cmp.Left.(*model_expression.AttributeRef)
+	_, isAttr := cmp.Left.(*logic_expression.AttributeRef)
 	s.True(isAttr, "balance should resolve to AttributeRef")
 }
 

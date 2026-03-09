@@ -5,7 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -342,10 +342,10 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 
 	// Test valid full tree.
 	// Build inside-out: Logic → Guard/Action/Query/Attribute → Class → Subdomain.
-	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	reqLogic := model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	guarLogic := model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	derivLogic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	reqLogic := model_logic.NewLogic(reqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guarLogic := model_logic.NewLogic(guarKey, model_logic.LogicTypeQuery, "Guar.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	derivLogic := model_logic.NewLogic(derivKey, model_logic.LogicTypeValue, "Computed.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 
 	validGuard := model_state.NewGuard(guardKey, "Guard", guardLogic)
 	validAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{reqLogic}, nil, nil, nil)
@@ -371,7 +371,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 
 	// Test guard logic key mismatch is caught deep in the tree.
 	otherGuardKey := helper.Must(identity.NewGuardKey(classKey, "other_guard"))
-	mismatchGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	mismatchGuardLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Guard.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	mismatchGuard := model_state.NewGuard(guardKey, "Guard", mismatchGuardLogic)
 
 	mismatchGuardClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
@@ -390,7 +390,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	// Test action require key with wrong parent is caught deep in the tree.
 	otherActionKey := helper.Must(identity.NewActionKey(classKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
-	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Req.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	wrongReqAction := model_state.NewAction(actionKey, "Action", "", []model_logic.Logic{wrongReqLogic}, nil, nil, nil)
 
 	wrongReqClass := model_class.NewClass(classKey, "Class", "", nil, nil, nil, "")
@@ -409,7 +409,7 @@ func (suite *SubdomainSuite) TestValidateWithParentDeepTree() {
 	// Test attribute derivation key with wrong parent is caught deep in the tree.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(classKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
-	wrongDerivLogic := model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongDerivLogic := model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeValue, "Computed.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	wrongDerivAttr := helper.Must(model_class.NewAttribute(attrKey, "Attr", "", "", &wrongDerivLogic, false,
 		model_class.AttributeAnnotations{}))
 

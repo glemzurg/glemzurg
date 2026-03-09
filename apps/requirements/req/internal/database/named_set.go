@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
 	"github.com/pkg/errors"
 )
 
 // Populate a golang struct from a database row.
-func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
+func scanNamedSet(scanner Scanner, ns *model_logic.NamedSet) (err error) {
 	var keyStr string
 	var notation string
 	var specification string
@@ -41,7 +41,7 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 	}
 
 	// Construct ExpressionSpec via constructor (nil parseFunc — parsing happens at higher layers).
-	ns.Spec, err = model_spec.NewExpressionSpec(notation, specification, nil)
+	ns.Spec, err = logic_spec.NewExpressionSpec(notation, specification, nil)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 		if typeSpecSpecification != nil {
 			spec = *typeSpecSpecification
 		}
-		ts, err := model_spec.NewTypeSpec(*typeSpecNotation, spec, nil)
+		ts, err := logic_spec.NewTypeSpec(*typeSpecNotation, spec, nil)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func scanNamedSet(scanner Scanner, ns *model_named_set.NamedSet) (err error) {
 }
 
 // LoadNamedSet loads a named set from the database.
-func LoadNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (ns model_named_set.NamedSet, err error) {
+func LoadNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (ns model_logic.NamedSet, err error) {
 	err = dbQueryRow(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
@@ -89,15 +89,15 @@ func LoadNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (ns model
 		modelKey,
 		setKey.String())
 	if err != nil {
-		return model_named_set.NamedSet{}, errors.WithStack(err)
+		return model_logic.NamedSet{}, errors.WithStack(err)
 	}
 
 	return ns, nil
 }
 
 // AddNamedSet adds a named set row to the database.
-func AddNamedSet(dbOrTx DbOrTx, modelKey string, ns model_named_set.NamedSet) (err error) {
-	return AddNamedSets(dbOrTx, modelKey, []model_named_set.NamedSet{ns})
+func AddNamedSet(dbOrTx DbOrTx, modelKey string, ns model_logic.NamedSet) (err error) {
+	return AddNamedSets(dbOrTx, modelKey, []model_logic.NamedSet{ns})
 }
 
 // RemoveNamedSet deletes a named set row from the database.
@@ -119,11 +119,11 @@ func RemoveNamedSet(dbOrTx DbOrTx, modelKey string, setKey identity.Key) (err er
 }
 
 // QueryNamedSets loads all named sets from the database for a given model.
-func QueryNamedSets(dbOrTx DbOrTx, modelKey string) (nss []model_named_set.NamedSet, err error) {
+func QueryNamedSets(dbOrTx DbOrTx, modelKey string) (nss []model_logic.NamedSet, err error) {
 	err = dbQuery(
 		dbOrTx,
 		func(scanner Scanner) (err error) {
-			var ns model_named_set.NamedSet
+			var ns model_logic.NamedSet
 			if err = scanNamedSet(scanner, &ns); err != nil {
 				return errors.WithStack(err)
 			}
@@ -152,7 +152,7 @@ func QueryNamedSets(dbOrTx DbOrTx, modelKey string) (nss []model_named_set.Named
 }
 
 // AddNamedSets adds multiple named set rows to the database in a single insert.
-func AddNamedSets(dbOrTx DbOrTx, modelKey string, nss []model_named_set.NamedSet) (err error) {
+func AddNamedSets(dbOrTx DbOrTx, modelKey string, nss []model_logic.NamedSet) (err error) {
 	if len(nss) == 0 {
 		return nil
 	}

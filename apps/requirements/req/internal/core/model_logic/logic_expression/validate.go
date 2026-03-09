@@ -1,4 +1,4 @@
-package model_expression
+package logic_expression
 
 import (
 	"fmt"

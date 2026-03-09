@@ -1,16 +1,16 @@
-package model_spec
+package logic_spec
 
 import (
 	"fmt"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 )
 
 // TypeParseFunc parses a type specification string and returns the parsed expression type
 // and a normalized specification string. Returns (nil, "") if parsing fails — this is
 // NOT an error condition, it simply means the specification could not be parsed.
-type TypeParseFunc func(specification string) (model_expression_type.ExpressionType, string)
+type TypeParseFunc func(specification string) (logic_expression_type.ExpressionType, string)
 
 // TypeSpec groups a type declaration's notation, text, and parsed type tree.
 // A TypeSpec can be in one of three states:
@@ -20,7 +20,7 @@ type TypeParseFunc func(specification string) (model_expression_type.ExpressionT
 type TypeSpec struct {
 	Notation       string                               // Notation system (currently only TLA+).
 	Specification  string                               // Optional specification body text.
-	ExpressionType model_expression_type.ExpressionType // Optional parsed expression type tree (nil = not yet parsed).
+	ExpressionType logic_expression_type.ExpressionType // Optional parsed expression type tree (nil = not yet parsed).
 }
 
 // NewTypeSpec creates a new TypeSpec and validates it.

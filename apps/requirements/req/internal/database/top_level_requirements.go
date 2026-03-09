@@ -10,7 +10,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
@@ -223,7 +222,7 @@ func writeNamedSets(tx *sql.Tx, modelKey string, model core.Model) error {
 	if len(model.NamedSets) == 0 {
 		return nil
 	}
-	nsSlice := make([]model_named_set.NamedSet, 0, len(model.NamedSets))
+	nsSlice := make([]model_logic.NamedSet, 0, len(model.NamedSets))
 	for _, ns := range model.NamedSets {
 		nsSlice = append(nsSlice, ns)
 	}
@@ -816,7 +815,7 @@ func readModelLevelData(tx *sql.Tx, modelKey string, model *core.Model, logicsBy
 		return err
 	}
 	if len(namedSetSlice) > 0 {
-		model.NamedSets = make(map[identity.Key]model_named_set.NamedSet, len(namedSetSlice))
+		model.NamedSets = make(map[identity.Key]model_logic.NamedSet, len(namedSetSlice))
 		for _, ns := range namedSetSlice {
 			model.NamedSets[ns.Key] = ns
 		}

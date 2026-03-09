@@ -3,7 +3,7 @@ package evaluator
 import (
 	"fmt"
 
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/object"
 )
 
@@ -73,7 +73,7 @@ func (r *EvalResult) HasPrimedBindings() bool {
 
 // Eval evaluates a model expression and returns the result.
 // This is the primary evaluator entry point. It dispatches on the concrete
-// model_expression.Expression type to the appropriate handler.
+// logic_expression.Expression type to the appropriate handler.
 //
 //complexity:cyclo:warn=50,fail=50 A simple routing switch.
 //complexity:fanout:warn=50,fail=50 A simple routing switch.

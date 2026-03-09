@@ -10,9 +10,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -98,11 +97,11 @@ func convertGlobalFunctionsMap(input map[string]*inputGlobalFunction) (map[ident
 }
 
 // convertNamedSetsMap converts the named sets map.
-func convertNamedSetsMap(input map[string]*inputNamedSet) (map[identity.Key]model_named_set.NamedSet, error) {
+func convertNamedSetsMap(input map[string]*inputNamedSet) (map[identity.Key]model_logic.NamedSet, error) {
 	if len(input) == 0 {
 		return nil, nil //nolint:nilnil // empty input is valid, not an error
 	}
-	namedSets := make(map[identity.Key]model_named_set.NamedSet)
+	namedSets := make(map[identity.Key]model_logic.NamedSet)
 	for key, ns := range input {
 		converted, err := convertNamedSetToModel(key, ns)
 		if err != nil {
@@ -200,34 +199,34 @@ func convertGlobalFunctionToModel(keyStr string, gf *inputGlobalFunction) (model
 	return result, nil
 }
 
-// convertNamedSetToModel converts an inputNamedSet to a model_named_set.NamedSet.
-func convertNamedSetToModel(keyStr string, ns *inputNamedSet) (model_named_set.NamedSet, error) {
+// convertNamedSetToModel converts an inputNamedSet to a model_logic.NamedSet.
+func convertNamedSetToModel(keyStr string, ns *inputNamedSet) (model_logic.NamedSet, error) {
 	nsFile := fmt.Sprintf("named_sets/%s.nset.json", keyStr)
 
 	key, err := identity.NewNamedSetKey(keyStr)
 	if err != nil {
-		return model_named_set.NamedSet{}, convErr(
+		return model_logic.NamedSet{}, convErr(
 			ErrConvKeyConstruction,
 			fmt.Sprintf("failed to create named set key '%s': %s", keyStr, err.Error()),
 			nsFile,
 		).WithField("key")
 	}
 
-	spec, err := model_spec.NewExpressionSpec(ns.Notation, ns.Specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(ns.Notation, ns.Specification, nil)
 	if err != nil {
-		return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set spec: %s", err.Error()), nsFile)
+		return model_logic.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set spec: %s", err.Error()), nsFile)
 	}
 
-	var typeSpec *model_spec.TypeSpec
+	var typeSpec *logic_spec.TypeSpec
 	if ns.TypeSpec != "" {
-		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, ns.TypeSpec, nil)
+		ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, ns.TypeSpec, nil)
 		if err != nil {
-			return model_named_set.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set type spec: %s", err.Error()), nsFile)
+			return model_logic.NamedSet{}, convErr(ErrConvModelValidation, fmt.Sprintf("failed to create named set type spec: %s", err.Error()), nsFile)
 		}
 		typeSpec = &ts
 	}
 
-	result := model_named_set.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
+	result := model_logic.NewNamedSet(key, ns.Name, ns.Description, spec, typeSpec)
 	return result, nil
 }
 
@@ -1322,14 +1321,14 @@ func resolveLogicType(input *inputLogic, defaultType string) string {
 
 // convertLogicToModel converts an inputLogic to a model_logic.Logic with the given key.
 func convertLogicToModel(input *inputLogic, logicType string, logicKey identity.Key) (model_logic.Logic, error) {
-	spec, err := model_spec.NewExpressionSpec(input.Notation, input.Specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(input.Notation, input.Specification, nil)
 	if err != nil {
 		return model_logic.Logic{}, fmt.Errorf("failed to create expression spec: %w", err)
 	}
 
-	var targetTypeSpec *model_spec.TypeSpec
+	var targetTypeSpec *logic_spec.TypeSpec
 	if input.TargetTypeSpec != "" {
-		ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, input.TargetTypeSpec, nil)
+		ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, input.TargetTypeSpec, nil)
 		if err != nil {
 			return model_logic.Logic{}, fmt.Errorf("failed to create target type spec: %w", err)
 		}

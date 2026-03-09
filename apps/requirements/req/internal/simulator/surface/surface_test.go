@@ -7,7 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -28,14 +28,14 @@ func mustKey(s string) identity.Key {
 }
 
 // emptySpec creates a TLA+ ExpressionSpec with no specification body (nil Expression).
-func emptySpec() model_spec.ExpressionSpec {
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", "", nil))
+func emptySpec() logic_spec.ExpressionSpec {
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", "", nil))
 	return spec
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
 // Any unresolved identifiers in the expression should be passed as extra parameters.
-func parsedSpec(tla string, params ...string) model_spec.ExpressionSpec {
+func parsedSpec(tla string, params ...string) logic_spec.ExpressionSpec {
 	ctx := &convert.LowerContext{}
 	if len(params) > 0 {
 		ctx.Parameters = make(map[string]bool, len(params))
@@ -44,7 +44,7 @@ func parsedSpec(tla string, params ...string) model_spec.ExpressionSpec {
 		}
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 

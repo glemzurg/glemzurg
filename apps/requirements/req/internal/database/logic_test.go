@@ -6,7 +6,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 
@@ -80,7 +80,7 @@ func (suite *LogicSuite) TestLoad() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "Target",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	}, logic)
 }
 
@@ -90,7 +90,7 @@ func (suite *LogicSuite) TestAdd() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "Target",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	suite.Require().NoError(err)
 
@@ -101,7 +101,7 @@ func (suite *LogicSuite) TestAdd() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "Target",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	}, logic)
 }
 
@@ -111,7 +111,7 @@ func (suite *LogicSuite) TestAddNulls() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	})
 	suite.Require().NoError(err)
 
@@ -122,7 +122,7 @@ func (suite *LogicSuite) TestAddNulls() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	}, logic)
 }
 
@@ -132,7 +132,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "Target",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	suite.Require().NoError(err)
 
@@ -141,7 +141,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "DescriptionX",
 		Target:      "TargetX",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 	}, 0)
 	suite.Require().NoError(err)
 
@@ -152,7 +152,7 @@ func (suite *LogicSuite) TestUpdate() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "DescriptionX",
 		Target:      "TargetX",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 	}, logic)
 }
 
@@ -162,7 +162,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "Target",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	suite.Require().NoError(err)
 
@@ -171,7 +171,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "DescriptionX",
 		Target:      "",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	}, 0)
 	suite.Require().NoError(err)
 
@@ -182,7 +182,7 @@ func (suite *LogicSuite) TestUpdateNulls() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "DescriptionX",
 		Target:      "",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: ""},
 	}, logic)
 }
 
@@ -192,7 +192,7 @@ func (suite *LogicSuite) TestRemove() {
 		Type:        model_logic.LogicTypeAssessment,
 		Description: "Description",
 		Target:      "Target",
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	suite.Require().NoError(err)
 
@@ -211,14 +211,14 @@ func (suite *LogicSuite) TestQuery() {
 			Type:        model_logic.LogicTypeAssessment,
 			Description: "DescriptionX",
 			Target:      "TargetX",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 		},
 		{
 			Key:         suite.logicKey,
 			Type:        model_logic.LogicTypeAssessment,
 			Description: "Description",
 			Target:      "Target",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 		},
 	}, map[string]int{
 		suite.logicKeyB.String(): 0,
@@ -234,26 +234,26 @@ func (suite *LogicSuite) TestQuery() {
 			Type:        model_logic.LogicTypeAssessment,
 			Description: "Description",
 			Target:      "Target",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 		},
 		{
 			Key:         suite.logicKeyB,
 			Type:        model_logic.LogicTypeAssessment,
 			Description: "DescriptionX",
 			Target:      "TargetX",
-			Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
+			Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "SpecificationX"},
 		},
 	}, logics)
 }
 
 func (suite *LogicSuite) TestAddLetType() {
-	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "Int"}
+	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "Int"}
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:            suite.logicKey,
 		Type:           model_logic.LogicTypeLet,
 		Description:    "Compute threshold",
 		Target:         "threshold",
-		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"},
+		Spec:           logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"},
 		TargetTypeSpec: &ts,
 	})
 	suite.Require().NoError(err)
@@ -265,19 +265,19 @@ func (suite *LogicSuite) TestAddLetType() {
 		Type:           model_logic.LogicTypeLet,
 		Description:    "Compute threshold",
 		Target:         "threshold",
-		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"},
-		TargetTypeSpec: &model_spec.TypeSpec{Notation: "tla_plus", Specification: "Int"},
+		Spec:           logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "10"},
+		TargetTypeSpec: &logic_spec.TypeSpec{Notation: "tla_plus", Specification: "Int"},
 	}, logic)
 }
 
 func (suite *LogicSuite) TestAddWithTargetTypeSpec() {
-	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"}
+	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"}
 	err := AddLogic(suite.db, suite.model.Key, model_logic.Logic{
 		Key:            suite.logicKey,
 		Type:           model_logic.LogicTypeAssessment,
 		Description:    "Description",
 		Target:         "",
-		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:           logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 		TargetTypeSpec: &ts,
 	})
 	suite.Require().NoError(err)
@@ -289,8 +289,8 @@ func (suite *LogicSuite) TestAddWithTargetTypeSpec() {
 		Type:           model_logic.LogicTypeAssessment,
 		Description:    "Description",
 		Target:         "",
-		Spec:           model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
-		TargetTypeSpec: &model_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"},
+		Spec:           logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		TargetTypeSpec: &logic_spec.TypeSpec{Notation: "tla_plus", Specification: "STRING"},
 	}, logic)
 }
 
@@ -303,7 +303,7 @@ func t_AddLogic(t *testing.T, dbOrTx DbOrTx, modelKey string, logicKey identity.
 		Key:         logicKey,
 		Type:        model_logic.LogicTypeAssessment,
 		Description: logicKey.String(),
-		Spec:        model_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
+		Spec:        logic_spec.ExpressionSpec{Notation: "tla_plus", Specification: "Specification"},
 	})
 	require.NoError(t, err)
 

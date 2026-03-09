@@ -8,7 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -265,7 +265,7 @@ func (suite *ConvertSuite) TestConvertFromModelWithStateMachine() {
 	event := model_state.NewEvent(eventKey, "confirm", "", nil)
 
 	// Build guard with logic
-	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Check if order has items", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guardLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Check if order has items", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	guard := model_state.NewGuard(guardKey, "has_items", guardLogic)
 
 	// Build transition
@@ -422,8 +422,8 @@ func (suite *ConvertSuite) TestConvertFromModelWithQueries() {
 	// Build query logic
 	requireKey := helper.Must(identity.NewQueryRequireKey(queryKey, "0"))
 	guaranteeKey := helper.Must(identity.NewQueryGuaranteeKey(queryKey, "0"))
-	requireLogic := model_logic.NewLogic(requireKey, model_logic.LogicTypeAssessment, "order must exist", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeQuery, "returns total amount", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	requireLogic := model_logic.NewLogic(requireKey, model_logic.LogicTypeAssessment, "order must exist", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	guaranteeLogic := model_logic.NewLogic(guaranteeKey, model_logic.LogicTypeQuery, "returns total amount", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 
 	// Build query
 	query := model_state.NewQuery(queryKey, "Get Total", "Get order total",

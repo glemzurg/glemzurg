@@ -3,7 +3,7 @@ package convert
 import (
 	"fmt"
 
-	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	met "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 )
 

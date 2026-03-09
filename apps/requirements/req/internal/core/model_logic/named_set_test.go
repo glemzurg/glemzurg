@@ -1,10 +1,9 @@
-package model_named_set
+package model_logic
 
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -16,16 +15,6 @@ type NamedSetTestSuite struct {
 
 func TestNamedSetSuite(t *testing.T) {
 	suite.Run(t, new(NamedSetTestSuite))
-}
-
-// validSpec returns a valid ExpressionSpec for testing.
-func validSpec() model_spec.ExpressionSpec {
-	return model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}
-}
-
-// validSpecWithBody returns a valid ExpressionSpec with a specification body.
-func validSpecWithBody(body string) model_spec.ExpressionSpec {
-	return model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: body}
 }
 
 // TestValidate tests all validation rules for NamedSet.
@@ -53,8 +42,8 @@ func (s *NamedSetTestSuite) TestValidate() {
 				Name:        "Valid Statuses",
 				Description: "The set of all valid order statuses.",
 				Spec:        validSpecWithBody(`{"pending", "active", "complete"}`),
-				TypeSpec: &model_spec.TypeSpec{
-					Notation:      model_logic.NotationTLAPlus,
+				TypeSpec: &logic_spec.TypeSpec{
+					Notation:      NotationTLAPlus,
 					Specification: "SUBSET STRING",
 				},
 			},
@@ -100,7 +89,7 @@ func (s *NamedSetTestSuite) TestValidate() {
 			ns: NamedSet{
 				Key:  validKey,
 				Name: "Valid Statuses",
-				Spec: model_spec.ExpressionSpec{},
+				Spec: logic_spec.ExpressionSpec{},
 			},
 			errstr: "Notation",
 		},
@@ -109,7 +98,7 @@ func (s *NamedSetTestSuite) TestValidate() {
 			ns: NamedSet{
 				Key:  validKey,
 				Name: "Valid Statuses",
-				Spec: model_spec.ExpressionSpec{Notation: "Z"},
+				Spec: logic_spec.ExpressionSpec{Notation: "Z"},
 			},
 			errstr: "Notation",
 		},
@@ -119,7 +108,7 @@ func (s *NamedSetTestSuite) TestValidate() {
 				Key:  validKey,
 				Name: "Valid Statuses",
 				Spec: validSpec(),
-				TypeSpec: &model_spec.TypeSpec{
+				TypeSpec: &logic_spec.TypeSpec{
 					Notation: "invalid",
 				},
 			},
@@ -144,8 +133,8 @@ func (s *NamedSetTestSuite) TestNew() {
 	validKey := helper.Must(identity.NewNamedSetKey("valid_statuses"))
 
 	spec := validSpecWithBody(`{"pending", "active", "complete"}`)
-	typeSpec := &model_spec.TypeSpec{
-		Notation:      model_logic.NotationTLAPlus,
+	typeSpec := &logic_spec.TypeSpec{
+		Notation:      NotationTLAPlus,
 		Specification: "SUBSET STRING",
 	}
 

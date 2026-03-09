@@ -10,7 +10,7 @@ import (
 	pkgerrors "github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 )
 
 const (
@@ -40,11 +40,11 @@ type DataType struct {
 	CollectionMax    *int
 	Atomic           *Atomic
 	RecordFields     []Field
-	TypeSpec         *model_spec.TypeSpec // Optional precise type specification.
+	TypeSpec         *logic_spec.TypeSpec // Optional precise type specification.
 }
 
 // New creates a new DataType by parsing the input text.
-func New(key, text string, typeSpec *model_spec.TypeSpec) (dataType *DataType, err error) {
+func New(key, text string, typeSpec *logic_spec.TypeSpec) (dataType *DataType, err error) {
 	// If this is blank then it is an unconstrained data type.
 	if strings.TrimSpace(text) == "" {
 		dataType = &DataType{

@@ -5,7 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -18,7 +18,7 @@ import (
 
 // stateActionOrderSpec parses a TLA+ expression in the context of the Order class
 // used by state action tests, with attributes: exit_count, entry_count.
-func stateActionOrderSpec(tla string) model_spec.ExpressionSpec {
+func stateActionOrderSpec(tla string) logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
@@ -28,7 +28,7 @@ func stateActionOrderSpec(tla string) model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 

@@ -8,9 +8,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -20,8 +19,8 @@ import (
 // newSpec creates a TLA+ ExpressionSpec via the constructor. The parse function is nil,
 // so expressions remain unparsed (ParseOk=false). This is appropriate for the test model
 // which contains domain-specific expressions that require class context to parse.
-func newSpec(specification string) model_spec.ExpressionSpec {
-	spec, err := model_spec.NewExpressionSpec("tla_plus", specification, nil)
+func newSpec(specification string) logic_spec.ExpressionSpec {
+	spec, err := logic_spec.NewExpressionSpec("tla_plus", specification, nil)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create ExpressionSpec: %v", err))
 	}
@@ -31,9 +30,9 @@ func newSpec(specification string) model_spec.ExpressionSpec {
 // parsedSpec creates a TLA+ ExpressionSpec via the constructor with a parse function
 // that uses an empty LowerContext. This is suitable for expressions that can parse
 // without class context (literals, arithmetic, comparisons, conditionals).
-func parsedSpec(specification string) model_spec.ExpressionSpec {
+func parsedSpec(specification string) logic_spec.ExpressionSpec {
 	pf := convert.NewExpressionParseFunc(nil)
-	spec, err := model_spec.NewExpressionSpec("tla_plus", specification, pf)
+	spec, err := logic_spec.NewExpressionSpec("tla_plus", specification, pf)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create ExpressionSpec: %v", err))
 	}
@@ -1077,7 +1076,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	l.actionRequire3 = model_logic.NewLogic(k.actionRequire3, model_logic.LogicTypeAssessment, "Customer must be active", "", parsedSpec("customer.active = TRUE"), nil)
 
 	// Action guarantees (3).
-	actionGuarantee1TypeSpec, err := model_spec.NewTypeSpec("tla_plus", "STRING", nil)
+	actionGuarantee1TypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "STRING", nil)
 	if err != nil {
 		return l, err
 	}
@@ -1091,7 +1090,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	l.actionSafety3 = model_logic.NewLogic(k.actionSafety3, model_logic.LogicTypeSafetyRule, "Closed orders cannot change", "", parsedSpec("order.state /= \"closed\""), nil)
 
 	// Action let logic.
-	actionRequireLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	actionRequireLetTypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "Int", nil)
 	if err != nil {
 		return l, err
 	}
@@ -1105,7 +1104,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	l.queryRequire3 = model_logic.NewLogic(k.queryRequire3, model_logic.LogicTypeAssessment, "Order must not be deleted", "", parsedSpec("order.deleted = FALSE"), nil)
 
 	// Query guarantees (3).
-	queryGuarantee1TypeSpec, err := model_spec.NewTypeSpec("tla_plus", "STRING", nil)
+	queryGuarantee1TypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "STRING", nil)
 	if err != nil {
 		return l, err
 	}
@@ -1121,7 +1120,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	inv1 := model_logic.NewLogic(k.invariant1, model_logic.LogicTypeAssessment, "Order total must be non-negative", "", parsedSpec("\\A o \\in Orders : o.total >= 0"), nil)
 	inv2 := model_logic.NewLogic(k.invariant2, model_logic.LogicTypeAssessment, "Every order has a customer", "", parsedSpec("\\A o \\in Orders : o.customer /= NULL"), nil)
 	inv3 := model_logic.NewLogic(k.invariant3, model_logic.LogicTypeAssessment, "Order IDs are unique", "", parsedSpec("\\A o1, o2 \\in Orders : o1 /= o2 => o1.id /= o2.id"), nil)
-	invLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	invLetTypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "Int", nil)
 	if err != nil {
 		return l, err
 	}
@@ -1132,7 +1131,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	cInv1 := model_logic.NewLogic(k.classInv1, model_logic.LogicTypeAssessment, "Order total matches line item sum", "", newSpec("self.total = Sum({li.price : li \\in self.lineItems})"), nil)
 	cInv2 := model_logic.NewLogic(k.classInv2, model_logic.LogicTypeAssessment, "Order must have at least one line item", "", newSpec("Len(self.lineItems) > 0"), nil)
 	cInv3 := model_logic.NewLogic(k.classInv3, model_logic.LogicTypeAssessment, "Order status is valid", "", newSpec("self.status \\in {\"new\", \"processing\", \"complete\"}"), nil)
-	classInvLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	classInvLetTypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "Int", nil)
 	if err != nil {
 		return l, err
 	}
@@ -1152,7 +1151,7 @@ func buildLogic(k testKeys) (testLogic, error) {
 	aInv1 := model_logic.NewLogic(k.attrInv1, model_logic.LogicTypeAssessment, "Total must be non-negative", "", newSpec("self.total >= 0"), nil)
 	aInv2 := model_logic.NewLogic(k.attrInv2, model_logic.LogicTypeAssessment, "Total must not exceed one million", "", newSpec("self.total <= 1000000"), nil)
 	aInv3 := model_logic.NewLogic(k.attrInv3, model_logic.LogicTypeAssessment, "Total must be a multiple of the cent", "", newSpec("self.total * 100 \\in Int"), nil)
-	attrInvLetTypeSpec, err := model_spec.NewTypeSpec("tla_plus", "Int", nil)
+	attrInvLetTypeSpec, err := logic_spec.NewTypeSpec("tla_plus", "Int", nil)
 	if err != nil {
 		return l, err
 	}
@@ -1202,18 +1201,18 @@ func buildGlobalFunctions(k testKeys, l testLogic) map[identity.Key]model_logic.
 // Named sets
 // =========================================================================
 
-func buildNamedSets(k testKeys) (map[identity.Key]model_named_set.NamedSet, error) {
+func buildNamedSets(k testKeys) (map[identity.Key]model_logic.NamedSet, error) {
 	// Named set with a spec and type spec.
-	typeSpec1, err := model_spec.NewTypeSpec("tla_plus", "SUBSET STRING", nil)
+	typeSpec1, err := logic_spec.NewTypeSpec("tla_plus", "SUBSET STRING", nil)
 	if err != nil {
 		return nil, err
 	}
-	ns1 := model_named_set.NewNamedSet(k.namedSet1, "_Valid_Statuses", "The set of valid order statuses.", parsedSpec("{\"pending\", \"active\", \"closed\"}"), &typeSpec1)
+	ns1 := model_logic.NewNamedSet(k.namedSet1, "_Valid_Statuses", "The set of valid order statuses.", parsedSpec("{\"pending\", \"active\", \"closed\"}"), &typeSpec1)
 
 	// Named set without a type spec.
-	ns2 := model_named_set.NewNamedSet(k.namedSet2, "_Order_Types", "The set of order types.", parsedSpec("{\"standard\", \"express\"}"), nil)
+	ns2 := model_logic.NewNamedSet(k.namedSet2, "_Order_Types", "The set of order types.", parsedSpec("{\"standard\", \"express\"}"), nil)
 
-	return map[identity.Key]model_named_set.NamedSet{
+	return map[identity.Key]model_logic.NamedSet{
 		k.namedSet1: ns1,
 		k.namedSet2: ns2,
 	}, nil

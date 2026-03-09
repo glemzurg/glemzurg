@@ -8,8 +8,8 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
@@ -73,11 +73,11 @@ var (
 // buildTestModel builds a comprehensive model with all entity types populated.
 func buildTestModel() core.Model {
 	// Logics.
-	guardLogic := model_logic.NewLogic(tGuardKey, model_logic.LogicTypeAssessment, "Guard logic.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount > 0"}, nil)
-	actionGuarantee := model_logic.NewLogic(tActionGuaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount' = 0"}, nil)
-	queryGuarantee := model_logic.NewLogic(tQueryGuaranteeKey, model_logic.LogicTypeQuery, "Query result.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result = self.amount"}, nil)
-	invariant := model_logic.NewLogic(tInvariantKey, model_logic.LogicTypeAssessment, "Always true.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil)
-	gfLogic := model_logic.NewLogic(tGlobalFuncKey, model_logic.LogicTypeValue, "Max function.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF a > b THEN a ELSE b"}, nil)
+	guardLogic := model_logic.NewLogic(tGuardKey, model_logic.LogicTypeAssessment, "Guard logic.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount > 0"}, nil)
+	actionGuarantee := model_logic.NewLogic(tActionGuaranteeKey, model_logic.LogicTypeStateChange, "Postcondition.", "amount", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.amount' = 0"}, nil)
+	queryGuarantee := model_logic.NewLogic(tQueryGuaranteeKey, model_logic.LogicTypeQuery, "Query result.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "result = self.amount"}, nil)
+	invariant := model_logic.NewLogic(tInvariantKey, model_logic.LogicTypeAssessment, "Always true.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "TRUE"}, nil)
+	gfLogic := model_logic.NewLogic(tGlobalFuncKey, model_logic.LogicTypeValue, "Max function.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "IF a > b THEN a ELSE b"}, nil)
 
 	// Global function.
 	globalFunc := model_logic.NewGlobalFunction(tGlobalFuncKey, "_Max", []string{"a", "b"}, gfLogic)
@@ -121,8 +121,8 @@ func buildTestModel() core.Model {
 		tTransCreateKey: model_state.NewTransition(tTransCreateKey, nil, tEventCreateKey, nil, nil, &tStateOpenKey, ""),
 		tTransCloseKey:  model_state.NewTransition(tTransCloseKey, &tStateOpenKey, tEventCloseKey, &tGuardKey, &tActionKey, &tStateClosedKey, ""),
 	}
-	classInv1 := model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.total > 0"}, nil)
-	classInv2 := model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Len(self.items) > 0"}, nil)
+	classInv1 := model_logic.NewLogic(tClassInvariantKey, model_logic.LogicTypeAssessment, "Order total matches.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "self.total > 0"}, nil)
+	classInv2 := model_logic.NewLogic(tClassInvariant2Key, model_logic.LogicTypeAssessment, "Order has items.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "Len(self.items) > 0"}, nil)
 	class.SetInvariants([]model_logic.Logic{classInv1, classInv2})
 
 	// Second class (minimal).

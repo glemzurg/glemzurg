@@ -5,7 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -52,13 +52,13 @@ func (suite *SortSuite) TestSortAttributes() {
 	attrDerived := model_class.Attribute{
 		Key:              helper.Must(identity.NewAttributeKey(classKey, "derived")),
 		Name:             "Derived",
-		DerivationPolicy: &model_logic.Logic{Type: model_logic.LogicTypeValue, Description: "some derivation", Spec: model_spec.ExpressionSpec{Notation: "tla_plus"}},
+		DerivationPolicy: &model_logic.Logic{Type: model_logic.LogicTypeValue, Description: "some derivation", Spec: logic_spec.ExpressionSpec{Notation: "tla_plus"}},
 	}
 	attrDerivedWithIndex := model_class.Attribute{
 		Key:              helper.Must(identity.NewAttributeKey(classKey, "derived_indexed")),
 		Name:             "DerivedIndexed",
 		IndexNums:        []uint{3},
-		DerivationPolicy: &model_logic.Logic{Type: model_logic.LogicTypeValue, Description: "some derivation", Spec: model_spec.ExpressionSpec{Notation: "tla_plus"}},
+		DerivationPolicy: &model_logic.Logic{Type: model_logic.LogicTypeValue, Description: "some derivation", Spec: logic_spec.ExpressionSpec{Notation: "tla_plus"}},
 	}
 
 	tests := []struct {

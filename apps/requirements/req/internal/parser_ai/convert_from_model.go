@@ -8,7 +8,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_scenario"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_use_case"
@@ -590,8 +589,8 @@ func convertLogicFromModel(logic *model_logic.Logic) inputLogic {
 	return result
 }
 
-// convertNamedSetFromModel converts a model_named_set.NamedSet to an inputNamedSet.
-func convertNamedSetFromModel(ns *model_named_set.NamedSet) *inputNamedSet {
+// convertNamedSetFromModel converts a model_logic.NamedSet to an inputNamedSet.
+func convertNamedSetFromModel(ns *model_logic.NamedSet) *inputNamedSet {
 	result := &inputNamedSet{
 		Name:          ns.Name,
 		Description:   ns.Description,

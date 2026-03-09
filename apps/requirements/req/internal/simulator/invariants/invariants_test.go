@@ -8,7 +8,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -36,15 +36,15 @@ func mustKey(s string) identity.Key {
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
-func parsedSpec(tla string) model_spec.ExpressionSpec {
+func parsedSpec(tla string) logic_spec.ExpressionSpec {
 	pf := convert.NewExpressionParseFunc(nil)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // orderSpec parses a TLA+ expression in the context of the Order class
 // used by createTestModel, with attributes: status, amount, name.
-func orderSpec(tla string) model_spec.ExpressionSpec {
+func orderSpec(tla string) logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/test_domain/subdomain/test_subdomain/class/order")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
@@ -55,7 +55,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 

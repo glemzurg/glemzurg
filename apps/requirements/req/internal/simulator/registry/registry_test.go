@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"testing"
 
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/types"
 	"github.com/stretchr/testify/suite"
 )

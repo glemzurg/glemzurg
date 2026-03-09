@@ -3,7 +3,7 @@ package ast
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -19,34 +19,34 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 	tests := []struct {
 		testName string
 		expr     Expression
-		expected model_expression_type.ExpressionType
+		expected logic_expression_type.ExpressionType
 		errstr   string
 	}{
 		// --- Scalar types via Identifier ---
 		{
 			testName: "BOOLEAN identifier",
 			expr:     &Identifier{Value: "BOOLEAN"},
-			expected: &model_expression_type.BooleanType{},
+			expected: &logic_expression_type.BooleanType{},
 		},
 		{
 			testName: "Nat identifier",
 			expr:     &Identifier{Value: "Nat"},
-			expected: &model_expression_type.IntegerType{},
+			expected: &logic_expression_type.IntegerType{},
 		},
 		{
 			testName: "Int identifier",
 			expr:     &Identifier{Value: "Int"},
-			expected: &model_expression_type.IntegerType{},
+			expected: &logic_expression_type.IntegerType{},
 		},
 		{
 			testName: "Real identifier",
 			expr:     &Identifier{Value: "Real"},
-			expected: &model_expression_type.RationalType{},
+			expected: &logic_expression_type.RationalType{},
 		},
 		{
 			testName: "STRING identifier",
 			expr:     &Identifier{Value: "STRING"},
-			expected: &model_expression_type.StringType{},
+			expected: &logic_expression_type.StringType{},
 		},
 		{
 			testName: "error unknown identifier",
@@ -58,22 +58,22 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 		{
 			testName: "BOOLEAN set constant",
 			expr:     &SetConstant{Value: SetConstantBoolean},
-			expected: &model_expression_type.BooleanType{},
+			expected: &logic_expression_type.BooleanType{},
 		},
 		{
 			testName: "Nat set constant",
 			expr:     &SetConstant{Value: SetConstantNat},
-			expected: &model_expression_type.IntegerType{},
+			expected: &logic_expression_type.IntegerType{},
 		},
 		{
 			testName: "Int set constant",
 			expr:     &SetConstant{Value: SetConstantInt},
-			expected: &model_expression_type.IntegerType{},
+			expected: &logic_expression_type.IntegerType{},
 		},
 		{
 			testName: "Real set constant",
 			expr:     &SetConstant{Value: SetConstantReal},
-			expected: &model_expression_type.RationalType{},
+			expected: &logic_expression_type.RationalType{},
 		},
 		{
 			testName: "error unknown set constant",
@@ -85,7 +85,7 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 		{
 			testName: "enum via SetLiteralEnum",
 			expr:     &SetLiteralEnum{Values: []string{"active", "inactive", "pending"}},
-			expected: &model_expression_type.EnumType{Values: []string{"active", "inactive", "pending"}},
+			expected: &logic_expression_type.EnumType{Values: []string{"active", "inactive", "pending"}},
 		},
 		{
 			testName: "enum via SetLiteral with string literals",
@@ -94,7 +94,7 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				&StringLiteral{Value: "green"},
 				&StringLiteral{Value: "blue"},
 			}},
-			expected: &model_expression_type.EnumType{Values: []string{"red", "green", "blue"}},
+			expected: &logic_expression_type.EnumType{Values: []string{"red", "green", "blue"}},
 		},
 		{
 			testName: "error empty SetLiteralEnum",
@@ -122,8 +122,8 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				Name:      &Identifier{Value: "Seq"},
 				Args:      []Expression{&Identifier{Value: "Int"}},
 			},
-			expected: &model_expression_type.SequenceType{
-				ElementType: &model_expression_type.IntegerType{},
+			expected: &logic_expression_type.SequenceType{
+				ElementType: &logic_expression_type.IntegerType{},
 				Unique:      false,
 			},
 		},
@@ -134,8 +134,8 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				Name:      &Identifier{Value: "SeqUnique"},
 				Args:      []Expression{&Identifier{Value: "STRING"}},
 			},
-			expected: &model_expression_type.SequenceType{
-				ElementType: &model_expression_type.StringType{},
+			expected: &logic_expression_type.SequenceType{
+				ElementType: &logic_expression_type.StringType{},
 				Unique:      true,
 			},
 		},
@@ -157,8 +157,8 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				Name:      &Identifier{Value: "_Set"},
 				Args:      []Expression{&Identifier{Value: "Int"}},
 			},
-			expected: &model_expression_type.SetType{
-				ElementType: &model_expression_type.IntegerType{},
+			expected: &logic_expression_type.SetType{
+				ElementType: &logic_expression_type.IntegerType{},
 			},
 		},
 		{
@@ -179,8 +179,8 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 				Name:      &Identifier{Value: "_Bag"},
 				Args:      []Expression{&Identifier{Value: "STRING"}},
 			},
-			expected: &model_expression_type.BagType{
-				ElementType: &model_expression_type.StringType{},
+			expected: &logic_expression_type.BagType{
+				ElementType: &logic_expression_type.StringType{},
 			},
 		},
 		{
@@ -240,10 +240,10 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 					{Name: &Identifier{Value: "age"}, Type: &Identifier{Value: "Int"}},
 				},
 			},
-			expected: &model_expression_type.RecordType{
-				Fields: []model_expression_type.RecordFieldType{
-					{Name: "name", Type: &model_expression_type.StringType{}},
-					{Name: "age", Type: &model_expression_type.IntegerType{}},
+			expected: &logic_expression_type.RecordType{
+				Fields: []logic_expression_type.RecordFieldType{
+					{Name: "name", Type: &logic_expression_type.StringType{}},
+					{Name: "age", Type: &logic_expression_type.IntegerType{}},
 				},
 			},
 		},
@@ -266,10 +266,10 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 					&Identifier{Value: "STRING"},
 				},
 			},
-			expected: &model_expression_type.TupleType{
-				ElementTypes: []model_expression_type.ExpressionType{
-					&model_expression_type.IntegerType{},
-					&model_expression_type.StringType{},
+			expected: &logic_expression_type.TupleType{
+				ElementTypes: []logic_expression_type.ExpressionType{
+					&logic_expression_type.IntegerType{},
+					&logic_expression_type.StringType{},
 				},
 			},
 		},
@@ -282,11 +282,11 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 					&Identifier{Value: "BOOLEAN"},
 				},
 			},
-			expected: &model_expression_type.TupleType{
-				ElementTypes: []model_expression_type.ExpressionType{
-					&model_expression_type.IntegerType{},
-					&model_expression_type.StringType{},
-					&model_expression_type.BooleanType{},
+			expected: &logic_expression_type.TupleType{
+				ElementTypes: []logic_expression_type.ExpressionType{
+					&logic_expression_type.IntegerType{},
+					&logic_expression_type.StringType{},
+					&logic_expression_type.BooleanType{},
 				},
 			},
 		},
@@ -316,11 +316,11 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 					},
 				},
 			},
-			expected: &model_expression_type.SequenceType{
-				ElementType: &model_expression_type.RecordType{
-					Fields: []model_expression_type.RecordFieldType{
-						{Name: "id", Type: &model_expression_type.IntegerType{}},
-						{Name: "label", Type: &model_expression_type.StringType{}},
+			expected: &logic_expression_type.SequenceType{
+				ElementType: &logic_expression_type.RecordType{
+					Fields: []logic_expression_type.RecordFieldType{
+						{Name: "id", Type: &logic_expression_type.IntegerType{}},
+						{Name: "label", Type: &logic_expression_type.StringType{}},
 					},
 				},
 				Unique: false,
@@ -340,11 +340,11 @@ func (suite *TypeConvertSuite) TestConvertToExpressionType() {
 					},
 				},
 			},
-			expected: &model_expression_type.SetType{
-				ElementType: &model_expression_type.TupleType{
-					ElementTypes: []model_expression_type.ExpressionType{
-						&model_expression_type.IntegerType{},
-						&model_expression_type.StringType{},
+			expected: &logic_expression_type.SetType{
+				ElementType: &logic_expression_type.TupleType{
+					ElementTypes: []logic_expression_type.ExpressionType{
+						&logic_expression_type.IntegerType{},
+						&logic_expression_type.StringType{},
 					},
 				},
 			},

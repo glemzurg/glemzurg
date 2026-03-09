@@ -1,4 +1,4 @@
-package model_named_set
+package model_logic
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -17,12 +17,12 @@ type NamedSet struct {
 	Key         identity.Key              // Unique key of type "nset".
 	Name        string                    // Required: display name.
 	Description string                    // Optional description.
-	Spec        model_spec.ExpressionSpec // Notation + Specification + Expression for the set definition.
-	TypeSpec    *model_spec.TypeSpec      // Optional precise type specification.
+	Spec        logic_spec.ExpressionSpec // Notation + Specification + Expression for the set definition.
+	TypeSpec    *logic_spec.TypeSpec      // Optional precise type specification.
 }
 
 // NewNamedSet creates a new NamedSet.
-func NewNamedSet(key identity.Key, name, description string, spec model_spec.ExpressionSpec, typeSpec *model_spec.TypeSpec) NamedSet {
+func NewNamedSet(key identity.Key, name, description string, spec logic_spec.ExpressionSpec, typeSpec *logic_spec.TypeSpec) NamedSet {
 	return NamedSet{
 		Key:         key,
 		Name:        name,

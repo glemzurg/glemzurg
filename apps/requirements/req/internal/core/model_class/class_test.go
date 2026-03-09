@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -186,7 +186,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Spec: model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}}, // Invalid: empty key
+			{Key: identity.Key{}, Type: model_logic.LogicTypeAssessment, Description: "Desc.", Spec: logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}}, // Invalid: empty key
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -199,7 +199,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+			model_logic.NewLogic(wrongInvKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -212,8 +212,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local total.", "total", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
-			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
+			model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local total.", "total", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1 + 2"}, nil),
+			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeAssessment, "Must be positive.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -224,8 +224,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 		Key:  validKey,
 		Name: "Name",
 		Invariants: []model_logic.Logic{
-			model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local a.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
-			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
+			model_logic.NewLogic(letInvKey1, model_logic.LogicTypeLet, "Local a.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "1"}, nil),
+			model_logic.NewLogic(letInvKey2, model_logic.LogicTypeLet, "Local a again.", "a", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus, Specification: "2"}, nil),
 		},
 	}
 	err = class.ValidateWithParent(&subdomainKey)
@@ -317,8 +317,8 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test valid class with all child types.
 	invKey := helper.Must(identity.NewClassInvariantKey(validKey, "0"))
-	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
-	validLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	validInvariant := model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	validLogic := model_logic.NewLogic(guardKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	validAction := model_state.NewAction(actionKey, "Action", "", nil, nil, nil, nil)
 	validEvent := model_state.NewEvent(eventKey, "Event", "", nil)
 	validState := model_state.NewState(stateKey, "State", "", "")
@@ -343,7 +343,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 
 	// Test guard logic key mismatch is caught through class validation.
 	otherGuardKey := helper.Must(identity.NewGuardKey(validKey, "other_guard"))
-	mismatchedLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	mismatchedLogic := model_logic.NewLogic(otherGuardKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
@@ -357,7 +357,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test action require key with wrong parent is caught.
 	otherActionKey := helper.Must(identity.NewActionKey(validKey, "other_action"))
 	wrongReqKey := helper.Must(identity.NewActionRequireKey(otherActionKey, "req_1"))
-	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongReqLogic := model_logic.NewLogic(wrongReqKey, model_logic.LogicTypeAssessment, "Precondition.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
@@ -371,7 +371,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test query guarantee key with wrong parent is caught.
 	otherQueryKey := helper.Must(identity.NewQueryKey(validKey, "other_query"))
 	wrongGuarKey := helper.Must(identity.NewQueryGuaranteeKey(otherQueryKey, "guar_1"))
-	wrongGuarLogic := model_logic.NewLogic(wrongGuarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongGuarLogic := model_logic.NewLogic(wrongGuarKey, model_logic.LogicTypeQuery, "Guarantee.", "result", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
@@ -385,7 +385,7 @@ func (suite *ClassSuite) TestValidateWithParent() {
 	// Test attribute derivation policy key with wrong parent is caught.
 	otherAttrKey := helper.Must(identity.NewAttributeKey(validKey, "other_attr"))
 	wrongDerivKey := helper.Must(identity.NewAttributeDerivationKey(otherAttrKey, "deriv1"))
-	wrongDerivLogic := model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeStateChange, "Computed.", "field", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
+	wrongDerivLogic := model_logic.NewLogic(wrongDerivKey, model_logic.LogicTypeStateChange, "Computed.", "field", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)
 	class = Class{
 		Key:  validKey,
 		Name: "Name",
@@ -413,7 +413,7 @@ func (suite *ClassSuite) TestSetters() {
 	transitionKey := helper.Must(identity.NewTransitionKey(classKey, "state1", "event1", "", "", "state1"))
 
 	invKey := helper.Must(identity.NewClassInvariantKey(classKey, "0"))
-	invariants := []model_logic.Logic{model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", model_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)}
+	invariants := []model_logic.Logic{model_logic.NewLogic(invKey, model_logic.LogicTypeAssessment, "Desc.", "", logic_spec.ExpressionSpec{Notation: model_logic.NotationTLAPlus}, nil)}
 	class.SetInvariants(invariants)
 	suite.Equal(invariants, class.Invariants)
 

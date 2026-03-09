@@ -3,7 +3,7 @@ package model_logic
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -158,7 +158,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 					Key:         gfKey1,
 					Type:        LogicTypeValue,
 					Description: "Some desc.",
-					Spec:        model_spec.ExpressionSpec{},
+					Spec:        logic_spec.ExpressionSpec{},
 				},
 			},
 			errstr: "Notation",
@@ -173,7 +173,7 @@ func (s *GlobalFunctionTestSuite) TestValidate() {
 					Key:         gfKey1,
 					Type:        LogicTypeValue,
 					Description: "Some desc.",
-					Spec:        model_spec.ExpressionSpec{Notation: "Z"},
+					Spec:        logic_spec.ExpressionSpec{Notation: "Z"},
 				},
 			},
 			errstr: "Notation",

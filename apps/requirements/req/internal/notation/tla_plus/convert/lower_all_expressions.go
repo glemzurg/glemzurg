@@ -5,7 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -169,11 +169,11 @@ func lowerAllClassExpressions(class *model_class.Class, globalFunctions, namedSe
 
 // relowerSpec re-creates an ExpressionSpec using the given parse function.
 // If the spec has no specification text, it's a no-op.
-func relowerSpec(spec *model_spec.ExpressionSpec, pf model_spec.ExpressionParseFunc) error {
+func relowerSpec(spec *logic_spec.ExpressionSpec, pf logic_spec.ExpressionParseFunc) error {
 	if spec.Specification == "" {
 		return nil
 	}
-	newSpec, err := model_spec.NewExpressionSpec(spec.Notation, spec.Specification, pf)
+	newSpec, err := logic_spec.NewExpressionSpec(spec.Notation, spec.Specification, pf)
 	if err != nil {
 		return err
 	}

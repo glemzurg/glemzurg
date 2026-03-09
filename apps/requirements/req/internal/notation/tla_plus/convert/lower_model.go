@@ -6,14 +6,14 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
 )
 
 // LowerModel walks the entire model tree, parsing and lowering every ExpressionSpec
-// that has a TLA+ specification string into a model_expression.Expression.
+// that has a TLA+ specification string into a logic_expression.Expression.
 // It returns the first error encountered, leaving the model partially populated.
 func LowerModel(model *core.Model) error {
 	// Build model-level lookup maps for global functions and named sets.
@@ -212,7 +212,7 @@ func ContextWithParameters(base *LowerContext, params []model_state.Parameter) *
 
 // lowerLogicSpec parses and lowers a single ExpressionSpec if it has a TLA+ specification
 // and hasn't been lowered yet.
-func lowerLogicSpec(spec *model_spec.ExpressionSpec, ctx *LowerContext) error {
+func lowerLogicSpec(spec *logic_spec.ExpressionSpec, ctx *LowerContext) error {
 	// Skip if not TLA+, no specification text, or already lowered.
 	if spec.Notation != "tla_plus" || spec.Specification == "" || spec.Expression != nil {
 		return nil
@@ -224,7 +224,7 @@ func lowerLogicSpec(spec *model_spec.ExpressionSpec, ctx *LowerContext) error {
 		return fmt.Errorf("parse %q: %w", spec.Specification, err)
 	}
 
-	// Lower AST to model_expression.
+	// Lower AST to logic_expression.
 	meExpr, err := Lower(astExpr, ctx)
 	if err != nil {
 		return fmt.Errorf("lower %q: %w", spec.Specification, err)

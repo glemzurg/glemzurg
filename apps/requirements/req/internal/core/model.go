@@ -12,7 +12,6 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_named_set"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -25,7 +24,7 @@ type Model struct {
 	// Global functions that can be referenced from other expressions.
 	GlobalFunctions map[identity.Key]model_logic.GlobalFunction
 	// Named sets that can be referenced from behavioral logic.
-	NamedSets map[identity.Key]model_named_set.NamedSet
+	NamedSets map[identity.Key]model_logic.NamedSet
 	// Children
 	Actors               map[identity.Key]model_actor.Actor
 	ActorGeneralizations map[identity.Key]model_actor.Generalization
@@ -34,7 +33,7 @@ type Model struct {
 	ClassAssociations    map[identity.Key]model_class.Association // Associations between classes that span domains.
 }
 
-func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_named_set.NamedSet) Model {
+func NewModel(key, name, details string, invariants []model_logic.Logic, globalFunctions map[identity.Key]model_logic.GlobalFunction, namedSets map[identity.Key]model_logic.NamedSet) Model {
 	return Model{
 		Key:             strings.TrimSpace(strings.ToLower(key)),
 		Name:            name,

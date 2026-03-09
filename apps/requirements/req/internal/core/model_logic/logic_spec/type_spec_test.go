@@ -1,11 +1,11 @@
-package model_spec
+package logic_spec
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression_type"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression_type"
 )
 
 type TypeSpecTestSuite struct {
@@ -39,7 +39,7 @@ func (s *TypeSpecTestSuite) TestValidate() {
 			testName: "valid with expression type",
 			spec: TypeSpec{
 				Notation:       "tla_plus",
-				ExpressionType: &model_expression_type.IntegerType{},
+				ExpressionType: &logic_expression_type.IntegerType{},
 			},
 		},
 		{
@@ -47,7 +47,7 @@ func (s *TypeSpecTestSuite) TestValidate() {
 			spec: TypeSpec{
 				Notation:       "tla_plus",
 				Specification:  "Nat",
-				ExpressionType: &model_expression_type.IntegerType{},
+				ExpressionType: &logic_expression_type.IntegerType{},
 			},
 		},
 		{
@@ -68,7 +68,7 @@ func (s *TypeSpecTestSuite) TestValidate() {
 			testName: "error invalid expression type",
 			spec: TypeSpec{
 				Notation:       "tla_plus",
-				ExpressionType: &model_expression_type.SetType{}, // Missing ElementType.
+				ExpressionType: &logic_expression_type.SetType{}, // Missing ElementType.
 			},
 			errstr: "TypeSpec.ExpressionType",
 		},
@@ -96,8 +96,8 @@ func (s *TypeSpecTestSuite) TestNew() {
 	s.False(spec.ParseOk())
 
 	// With parseFunc that succeeds.
-	parseFunc := func(spec string) (model_expression_type.ExpressionType, string) {
-		return &model_expression_type.IntegerType{}, "Int"
+	parseFunc := func(spec string) (logic_expression_type.ExpressionType, string) {
+		return &logic_expression_type.IntegerType{}, "Int"
 	}
 	spec, err = NewTypeSpec("tla_plus", "Nat", parseFunc)
 	s.Require().NoError(err)
@@ -106,7 +106,7 @@ func (s *TypeSpecTestSuite) TestNew() {
 	s.Equal("Int", spec.Specification) // Normalized.
 
 	// With parseFunc that fails (returns nil).
-	failFunc := func(spec string) (model_expression_type.ExpressionType, string) {
+	failFunc := func(spec string) (logic_expression_type.ExpressionType, string) {
 		return nil, ""
 	}
 	spec, err = NewTypeSpec("tla_plus", "Nat", failFunc)
@@ -117,7 +117,7 @@ func (s *TypeSpecTestSuite) TestNew() {
 
 	// Empty specification skips parseFunc.
 	called := false
-	trackFunc := func(spec string) (model_expression_type.ExpressionType, string) {
+	trackFunc := func(spec string) (logic_expression_type.ExpressionType, string) {
 		called = true
 		return nil, ""
 	}

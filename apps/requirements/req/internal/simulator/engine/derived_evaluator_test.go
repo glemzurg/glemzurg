@@ -5,7 +5,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -18,7 +18,7 @@ import (
 
 // productSpec parses a TLA+ expression in the context of a Product class
 // with attributes: price, double_price, derived_field.
-func productSpec(tla string) model_spec.ExpressionSpec {
+func productSpec(tla string) logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
@@ -29,7 +29,7 @@ func productSpec(tla string) model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
@@ -101,7 +101,7 @@ func (s *DerivedEvaluatorSuite) TestDerivedAttributeEmptySpecification() {
 	classKey := mustKey("domain/d/subdomain/s/class/product")
 	attrKey := mustKey("domain/d/subdomain/s/class/product/attribute/derived_field")
 
-	derivationLogic := model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeValue, "A derived field.", "", helper.Must(model_spec.NewExpressionSpec("tla_plus", "", nil)), nil)
+	derivationLogic := model_logic.NewLogic(mustKey("invariant/11"), model_logic.LogicTypeValue, "A derived field.", "", helper.Must(logic_spec.NewExpressionSpec("tla_plus", "", nil)), nil)
 
 	attrDerived := helper.Must(model_class.NewAttribute(attrKey, "derivedField", "", "", &derivationLogic, false,
 		model_class.AttributeAnnotations{}))

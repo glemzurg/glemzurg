@@ -7,7 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -273,7 +273,7 @@ func (suite *DataTypeSuite) TestBulkInsertDataTypes() {
 }
 
 func (suite *DataTypeSuite) TestAddWithTypeSpec() {
-	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
+	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:            "key",
 		CollectionType: "atomic",
@@ -286,12 +286,12 @@ func (suite *DataTypeSuite) TestAddWithTypeSpec() {
 	suite.Equal(model_data_type.DataType{
 		Key:            "key",
 		CollectionType: "atomic",
-		TypeSpec:       &model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"},
+		TypeSpec:       &logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"},
 	}, dataType)
 }
 
 func (suite *DataTypeSuite) TestUpdateTypeSpec() {
-	ts := model_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
+	ts := logic_spec.TypeSpec{Notation: "tla_plus", Specification: "SUBSET STRING"}
 	err := AddDataType(suite.db, suite.model.Key, model_data_type.DataType{
 		Key:            "key",
 		CollectionType: "atomic",

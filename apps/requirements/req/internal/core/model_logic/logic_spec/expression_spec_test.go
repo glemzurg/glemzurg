@@ -1,11 +1,11 @@
-package model_spec
+package logic_spec
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 )
 
 type ExpressionSpecTestSuite struct {
@@ -39,7 +39,7 @@ func (s *ExpressionSpecTestSuite) TestValidate() {
 			testName: "valid with expression",
 			spec: ExpressionSpec{
 				Notation:   "tla_plus",
-				Expression: &model_expression.BoolLiteral{Value: true},
+				Expression: &logic_expression.BoolLiteral{Value: true},
 			},
 		},
 		{
@@ -47,7 +47,7 @@ func (s *ExpressionSpecTestSuite) TestValidate() {
 			spec: ExpressionSpec{
 				Notation:      "tla_plus",
 				Specification: "TRUE",
-				Expression:    &model_expression.BoolLiteral{Value: true},
+				Expression:    &logic_expression.BoolLiteral{Value: true},
 			},
 		},
 		{
@@ -68,7 +68,7 @@ func (s *ExpressionSpecTestSuite) TestValidate() {
 			testName: "error invalid expression",
 			spec: ExpressionSpec{
 				Notation:   "tla_plus",
-				Expression: &model_expression.RationalLiteral{}, // nil Value
+				Expression: &logic_expression.RationalLiteral{}, // nil Value
 			},
 			errstr: "ExpressionSpec.Expression",
 		},
@@ -96,8 +96,8 @@ func (s *ExpressionSpecTestSuite) TestNew() {
 	s.False(spec.ParseOk())
 
 	// Valid construction with parseFunc that succeeds.
-	parseFunc := func(spec string) (model_expression.Expression, string) {
-		return &model_expression.BoolLiteral{Value: true}, "TRUE"
+	parseFunc := func(spec string) (logic_expression.Expression, string) {
+		return &logic_expression.BoolLiteral{Value: true}, "TRUE"
 	}
 	spec, err = NewExpressionSpec("tla_plus", "true", parseFunc)
 	s.Require().NoError(err)
@@ -106,7 +106,7 @@ func (s *ExpressionSpecTestSuite) TestNew() {
 	s.True(spec.ParseOk())
 
 	// Valid construction with parseFunc that fails (returns nil).
-	failFunc := func(spec string) (model_expression.Expression, string) {
+	failFunc := func(spec string) (logic_expression.Expression, string) {
 		return nil, ""
 	}
 	spec, err = NewExpressionSpec("tla_plus", "invalid", failFunc)
@@ -117,7 +117,7 @@ func (s *ExpressionSpecTestSuite) TestNew() {
 
 	// Empty specification skips parseFunc.
 	called := false
-	trackFunc := func(spec string) (model_expression.Expression, string) {
+	trackFunc := func(spec string) (logic_expression.Expression, string) {
 		called = true
 		return nil, ""
 	}

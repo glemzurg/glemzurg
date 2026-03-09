@@ -1,8 +1,8 @@
 package convert
 
 import (
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/ast"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/notation/tla_plus/parser"
@@ -12,7 +12,7 @@ import (
 // and lowering pipeline with the given context. If ctx is nil, an empty context
 // is used (suitable for context-free expressions like literals and arithmetic).
 // Returns (expression, normalizedTLA) on success, (nil, "") on any failure.
-func NewExpressionParseFunc(ctx *LowerContext) model_spec.ExpressionParseFunc {
+func NewExpressionParseFunc(ctx *LowerContext) logic_spec.ExpressionParseFunc {
 	if ctx == nil {
 		ctx = &LowerContext{}
 	}

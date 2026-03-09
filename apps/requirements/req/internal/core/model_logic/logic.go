@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/coreerr"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 )
 
@@ -38,12 +38,12 @@ type Logic struct {
 	Type           string                    // One of: assessment, state_change, query, safety_rule, value, let.
 	Description    string                    // Required human-readable description.
 	Target         string                    // Identifier or attribute to set. Required for state_change and query types.
-	Spec           model_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
-	TargetTypeSpec *model_spec.TypeSpec      // Optional: declared result type of the logic's target.
+	Spec           logic_spec.ExpressionSpec // Notation + Specification + Expression (the reusable trio).
+	TargetTypeSpec *logic_spec.TypeSpec      // Optional: declared result type of the logic's target.
 }
 
 // NewLogic creates a new Logic.
-func NewLogic(key identity.Key, logicType, description, target string, spec model_spec.ExpressionSpec, targetTypeSpec *model_spec.TypeSpec) Logic {
+func NewLogic(key identity.Key, logicType, description, target string, spec logic_spec.ExpressionSpec, targetTypeSpec *logic_spec.TypeSpec) Logic {
 	return Logic{
 		Key:            key,
 		Type:           logicType,

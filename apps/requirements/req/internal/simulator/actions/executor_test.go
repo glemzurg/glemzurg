@@ -7,7 +7,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -46,15 +46,15 @@ func buildTestExecutor(simState *state.SimulationState) *ActionExecutor {
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
 // Uses nil LowerContext — suitable for context-free expressions (literals, arithmetic on params).
-func parsedSpec(tla string) model_spec.ExpressionSpec {
+func parsedSpec(tla string) logic_spec.ExpressionSpec {
 	pf := convert.NewExpressionParseFunc(nil)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // parsedSpecCtx creates a TLA+ ExpressionSpec parsed with a LowerContext built from the given
 // class key, attribute names, and optional parameter names.
-func parsedSpecCtx(tla string, classKey identity.Key, attrNames []string, paramNames []string) model_spec.ExpressionSpec {
+func parsedSpecCtx(tla string, classKey identity.Key, attrNames []string, paramNames []string) logic_spec.ExpressionSpec {
 	ctx := &convert.LowerContext{
 		ClassKey:       classKey,
 		AttributeNames: make(map[string]identity.Key),
@@ -69,23 +69,23 @@ func parsedSpecCtx(tla string, classKey identity.Key, attrNames []string, paramN
 		}
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // orderSpec parses a TLA+ expression in the context of the standard Order class
 // with attributes: amount, status.
-func orderSpec(tla string) model_spec.ExpressionSpec {
+func orderSpec(tla string) logic_spec.ExpressionSpec {
 	return parsedSpecCtx(tla, mustKey("domain/d/subdomain/s/class/order"), []string{"amount", "status"}, nil)
 }
 
 // orderSpecWithParams parses a TLA+ expression in the Order class context with parameters.
-func orderSpecWithParams(tla string, params []string) model_spec.ExpressionSpec {
+func orderSpecWithParams(tla string, params []string) logic_spec.ExpressionSpec {
 	return parsedSpecCtx(tla, mustKey("domain/d/subdomain/s/class/order"), []string{"amount", "status"}, params)
 }
 
 // counterSpec parses a TLA+ expression in the context of a class with attribute: count.
-func counterSpec(tla string) model_spec.ExpressionSpec {
+func counterSpec(tla string) logic_spec.ExpressionSpec {
 	return parsedSpecCtx(tla, mustKey("domain/d/subdomain/s/class/c"), []string{"count"}, nil)
 }
 

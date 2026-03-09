@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_data_type"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 
 	"github.com/pkg/errors"
 )
@@ -45,7 +45,7 @@ func scanDataType(scanner Scanner, dataType *model_data_type.DataType) (err erro
 		if tsSpecification != nil {
 			spec = *tsSpecification
 		}
-		ts, err := model_spec.NewTypeSpec(*tsNotation, spec, nil)
+		ts, err := logic_spec.NewTypeSpec(*tsNotation, spec, nil)
 		if err != nil {
 			return err
 		}

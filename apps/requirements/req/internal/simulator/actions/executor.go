@@ -6,8 +6,8 @@ import (
 	"math/rand"
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
-	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
+	me "github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_expression"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/simulator/evaluator"

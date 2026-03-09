@@ -3,7 +3,7 @@ package model_logic
 import (
 	"testing"
 
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/stretchr/testify/suite"
@@ -18,13 +18,13 @@ func TestLogicSuite(t *testing.T) {
 }
 
 // validSpec returns a valid ExpressionSpec for testing.
-func validSpec() model_spec.ExpressionSpec {
-	return model_spec.ExpressionSpec{Notation: NotationTLAPlus}
+func validSpec() logic_spec.ExpressionSpec {
+	return logic_spec.ExpressionSpec{Notation: NotationTLAPlus}
 }
 
 // validSpecWithBody returns a valid ExpressionSpec with a specification body.
-func validSpecWithBody(body string) model_spec.ExpressionSpec {
-	return model_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: body}
+func validSpecWithBody(body string) logic_spec.ExpressionSpec {
+	return logic_spec.ExpressionSpec{Notation: NotationTLAPlus, Specification: body}
 }
 
 // TestValidate tests all validation rules for Logic.
@@ -159,7 +159,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Spec:        model_spec.ExpressionSpec{},
+				Spec:        logic_spec.ExpressionSpec{},
 			},
 			errstr: "Notation",
 		},
@@ -169,7 +169,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Spec:        model_spec.ExpressionSpec{Notation: "Z"},
+				Spec:        logic_spec.ExpressionSpec{Notation: "Z"},
 			},
 			errstr: "Notation",
 		},
@@ -199,7 +199,7 @@ func (s *LogicTestSuite) TestValidate() {
 				Key:         validKey,
 				Type:        LogicTypeAssessment,
 				Description: "Some description.",
-				Spec:        model_spec.ExpressionSpec{Notation: "Alloy", Specification: "some spec"},
+				Spec:        logic_spec.ExpressionSpec{Notation: "Alloy", Specification: "some spec"},
 			},
 			errstr: "Notation",
 		},

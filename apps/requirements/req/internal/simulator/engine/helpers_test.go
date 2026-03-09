@@ -5,7 +5,7 @@ import (
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_domain"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/helper"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
@@ -101,15 +101,15 @@ func testItemClass() (model_class.Class, identity.Key) {
 }
 
 // parsedSpec creates a TLA+ ExpressionSpec with the expression parsed via the convert pipeline.
-func parsedSpec(tla string) model_spec.ExpressionSpec {
+func parsedSpec(tla string) logic_spec.ExpressionSpec {
 	pf := convert.NewExpressionParseFunc(nil)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // counterSpec parses a TLA+ expression in the context of the standard Counter class
 // with attribute: count.
-func counterSpec() model_spec.ExpressionSpec {
+func counterSpec() logic_spec.ExpressionSpec {
 	tla := "self.count + 1"
 	classKey := mustKey("domain/d/subdomain/s/class/counter")
 	ctx := &convert.LowerContext{
@@ -119,13 +119,13 @@ func counterSpec() model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 
 // orderSpec parses a TLA+ expression in the context of the standard Order class
 // with attributes: amount, status.
-func orderSpec(tla string) model_spec.ExpressionSpec {
+func orderSpec(tla string) logic_spec.ExpressionSpec {
 	classKey := mustKey("domain/d/subdomain/s/class/order")
 	ctx := &convert.LowerContext{
 		ClassKey: classKey,
@@ -135,7 +135,7 @@ func orderSpec(tla string) model_spec.ExpressionSpec {
 		},
 	}
 	pf := convert.NewExpressionParseFunc(ctx)
-	spec := helper.Must(model_spec.NewExpressionSpec("tla_plus", tla, pf))
+	spec := helper.Must(logic_spec.NewExpressionSpec("tla_plus", tla, pf))
 	return spec
 }
 

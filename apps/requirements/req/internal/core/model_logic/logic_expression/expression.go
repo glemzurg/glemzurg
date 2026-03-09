@@ -1,4 +1,4 @@
-package model_expression
+package logic_expression
 
 // Expression is the interface implemented by all model expression nodes.
 // Model expressions are notation-independent representations of formal logic.

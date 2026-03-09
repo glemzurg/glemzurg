@@ -7,7 +7,7 @@ import (
 
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_class"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic"
-	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_spec"
+	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_logic/logic_spec"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/core/model_state"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/identity"
 	"github.com/glemzurg/glemzurg/apps/requirements/req/internal/view_helper"
@@ -399,7 +399,7 @@ func attributeFromYamlData(classKey identity.Key, attrSubKey string, attributeAn
 				if err != nil {
 					return model_class.Attribute{}, errors.WithStack(err)
 				}
-				spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+				spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 				if err != nil {
 					return model_class.Attribute{}, errors.Wrap(err, "derivation expression spec")
 				}
@@ -755,7 +755,7 @@ func guardFromYamlData(classKey identity.Key, name string, guardAny any) (guard 
 		}
 	}
 
-	spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+	spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 	if err != nil {
 		return model_state.Guard{}, errors.Wrap(err, "guard expression spec")
 	}
@@ -941,15 +941,15 @@ func logicListFromYamlData(data map[string]any, field string, logicType string, 
 		}
 
 		// Use constructors — Phase 1 uses nil parseFunc; Phase 2 re-lowers with full context.
-		spec, err := model_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
+		spec, err := logic_spec.NewExpressionSpec(model_logic.NotationTLAPlus, specification, nil)
 		if err != nil {
 			return nil, errors.Wrapf(err, "%s[%d] expression spec", field, i)
 		}
 
 		// Parse optional target_type_spec.
-		var targetTypeSpec *model_spec.TypeSpec
+		var targetTypeSpec *logic_spec.TypeSpec
 		if tsStr, ok := itemMap["target_type_spec"].(string); ok && tsStr != "" {
-			ts, err := model_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
+			ts, err := logic_spec.NewTypeSpec(model_logic.NotationTLAPlus, tsStr, nil)
 			if err != nil {
 				return nil, errors.Wrapf(err, "%s[%d] target type spec", field, i)
 			}

@@ -1,4 +1,4 @@
-package model_expression_type
+package logic_expression_type
 
 // ExpressionType is the interface implemented by all precise structural types.
 // ExpressionTypes describe the shape and kind of values an expression can produce.
