@@ -6,26 +6,7 @@ update ai parser to be an ai desitned cli:
   - rename to logic/ir
     - that is the input structure for ai interface
 
-<from>__<to>__<name>.assoc.json subdomain-level association
-json output onlyUsage:
-  req_check <model_path>              validate model, minimal error output
-  req_check --json <model_path>       validate model, JSON error output
-  req_check --explain <error_code>    show full remediation for an error (e.g. E5003)
-  req_check --format-docs             show the JSON model format documentation
-  req_check --schema <entity>         show JSON schema (model, class, action, ...)
-  req_check --tree                    show expected directory tree structure
-  req_check --help                    show this help
 
-
-
-So we want to streamline the error messages and simplify the req_check for an AI tool.
-
-- Remove the --json parametr and always return json.
-- Update the main.go hint to use the proper "--" sequences in filenames.
-- For each error instead of recommending "--explain E{code}" add that for each message and give the specific like "--explain E1104".
-- If it is a shema error, do nothing but offer the "--schema <entity>" but explicitly include which schema it is like "--schema class"
-- If the error is related to the file tree just give both the "--tree" and "--format-docs" recommendations.
-- Tighten up all the error messages from calling a distinct flag. Our goal is to give the AI tool the most information in the least amount of characters. We are trying to guide it quickly to the correct next step without filling up the context.
 
 
 

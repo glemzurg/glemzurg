@@ -22,8 +22,7 @@ import (
 const helpText = `req_check - validate an AI-generated requirements model
 
 Usage:
-  req_check <model_path>              validate model, minimal error output
-  req_check --json <model_path>       validate model, JSON error output
+  req_check <model_path>              validate model (JSON output)
   req_check --explain <error_code>    show full remediation for an error (e.g. E5003)
   req_check --format-docs             show the JSON model format documentation
   req_check --schema <entity>         show JSON schema (model, class, action, ...)
@@ -45,12 +44,12 @@ const treeText = `Expected directory structure for a requirements model:
 │   └── <domain_key>/
 │       ├── domain.json                                 domain definition
 │       ├── associations/
-│       │   └── <from>__<to>__<name>.assoc.json         domain-level association
+│       │   └── <from>--<to>--<name>.assoc.json         domain-level association
 │       └── subdomains/
 │           └── <subdomain_key>/
 │               ├── subdomain.json                      subdomain definition
 │               ├── associations/
-│               │   └── <from>__<to>__<name>.assoc.json subdomain-level association
+│               │   └── <from>--<to>--<name>.assoc.json subdomain-level association
 │               ├── generalizations/
 │               │   └── <key>.gen.json                  class generalization
 │               └── classes/
@@ -73,7 +72,7 @@ const treeText = `Expected directory structure for a requirements model:
 │                               └── invariants/
 │                                   └── <N>.json        attribute invariant logic
 ├── associations/
-│   └── <from>__<to>__<name>.assoc.json                 model-level association
+│   └── <from>--<to>--<name>.assoc.json                 model-level association
 ├── domain_associations/
 │   └── <key>.domain_assoc.json                         domain association
 ├── global_functions/
@@ -86,7 +85,6 @@ Keys must be lowercase snake_case: ^[a-z][a-z0-9]*(_[a-z0-9]+)*$
 
 func main() {
 	var (
-		jsonOutput bool
 		explainArg string
 		formatDocs bool
 		schemaArg  string
@@ -95,7 +93,6 @@ func main() {
 		modelPath  string
 	)
 
-	flag.BoolVar(&jsonOutput, "json", false, "output errors as JSON array")
 	flag.StringVar(&explainArg, "explain", "", "show full remediation for error code (e.g. E5003 or 5003)")
 	flag.BoolVar(&formatDocs, "format-docs", false, "show the JSON model format documentation")
 	flag.StringVar(&schemaArg, "schema", "", "show JSON schema for entity (model, class, action, ...)")
@@ -149,12 +146,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Output errors.
-	if jsonOutput {
-		outputJSON(errs)
-	} else {
-		outputText(errs)
-	}
+	// Output errors as JSON.
+	outputJSON(errs)
 	os.Exit(1)
 }
 
@@ -196,17 +189,6 @@ func flattenErrors(err error) []error {
 	return []error{err}
 }
 
-// outputText writes errors to stdout in concise text format.
-func outputText(errs []error) {
-	for i, err := range errs {
-		if i > 0 {
-			fmt.Fprintln(os.Stdout)
-		}
-		fmt.Fprintln(os.Stdout, formatError(err))
-	}
-	fmt.Fprintf(os.Stdout, "\n%d error(s) found. Use --explain E{code} for detailed remediation.\n", len(errs))
-}
-
 // outputJSON writes errors to stdout as a JSON array.
 func outputJSON(errs []error) {
 	outputJSONTo(os.Stdout, errs)
@@ -232,13 +214,15 @@ func outputJSONTo(w io.Writer, errs []error) {
 		var ve *coreerr.ValidationError
 		switch {
 		case errors.As(err, &pe):
+			code := fmt.Sprintf("E%d", pe.Code)
+			hint := buildParseErrorHint(pe, code)
 			items = append(items, jsonError{
 				Type:    "parse",
-				Code:    fmt.Sprintf("E%d", pe.Code),
+				Code:    code,
 				Message: pe.Message,
 				File:    pe.File,
 				Field:   pe.Field,
-				Hint:    pe.Hint,
+				Hint:    hint,
 			})
 		case errors.As(err, &ve):
 			items = append(items, jsonError{
@@ -263,17 +247,22 @@ func outputJSONTo(w io.Writer, errs []error) {
 	_ = enc.Encode(items)
 }
 
-// formatError formats an error for text output.
-func formatError(err error) string {
-	var pe *parser_ai.ParseError
-	if errors.As(err, &pe) {
-		return pe.Error()
+// buildParseErrorHint constructs the hint string for a parse error in JSON output.
+// It combines the error's own hint with category-specific follow-up commands:
+//   - Tree errors (11xxx): adds --tree and --format-docs
+//   - All parse errors: adds --explain E{code}
+func buildParseErrorHint(pe *parser_ai.ParseError, code string) string {
+	parts := []string{}
+	if pe.Hint != "" {
+		parts = append(parts, pe.Hint)
 	}
-	var ve *coreerr.ValidationError
-	if errors.As(err, &ve) {
-		return ve.Error()
+	// Tree structure errors get --tree and --format-docs guidance.
+	if pe.Code >= 11000 && pe.Code < 12000 {
+		parts = append(parts, "run: req_check --tree", "run: req_check --format-docs")
 	}
-	return err.Error()
+	// All parse errors get --explain with the specific code.
+	parts = append(parts, "run: req_check --explain "+code)
+	return strings.Join(parts, " | ")
 }
 
 // runExplain shows full remediation for an error code.

@@ -63,28 +63,6 @@ func (s *CLISuite) TestFlattenErrors_NestedJoinedErrors() {
 	s.Equal("inner 2", result[2].Error())
 }
 
-// --- formatError tests ---
-
-func (s *CLISuite) TestFormatError_ParseError() {
-	pe := parser_ai.NewParseError(parser_ai.ErrModelNameRequired, "model name is required", "model.json")
-	output := formatError(pe)
-	s.Contains(output, "E1001")
-	s.Contains(output, "model name is required")
-}
-
-func (s *CLISuite) TestFormatError_ValidationError() {
-	ve := coreerr.New("TEST_CODE", "test validation message", "test_field")
-	output := formatError(ve)
-	s.Contains(output, "TEST_CODE")
-	s.Contains(output, "test validation message")
-}
-
-func (s *CLISuite) TestFormatError_GenericError() {
-	err := fmt.Errorf("generic error message")
-	output := formatError(err)
-	s.Equal("generic error message", output)
-}
-
 // --- outputJSON tests ---
 
 func (s *CLISuite) TestOutputJSON_ParseError() {
@@ -108,7 +86,7 @@ func (s *CLISuite) TestOutputJSON_ParseError() {
 	s.Equal("model name is required", item["message"])
 	s.Equal("model.json", item["file"])
 	s.Equal("name", item["field"])
-	s.Equal("add a name field", item["hint"])
+	s.Equal("add a name field | run: req_check --explain E1001", item["hint"])
 }
 
 func (s *CLISuite) TestOutputJSON_ValidationError() {
