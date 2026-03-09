@@ -1,3 +1,4 @@
 {
-    "description": "Order total must be positive"
+    "description": "Order total must be positive",
+    "notation": "tla_plus"
 }

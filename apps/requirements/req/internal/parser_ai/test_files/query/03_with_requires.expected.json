@@ -1,7 +1,7 @@
 {
     "name": "Find Pending Orders",
     "requires": [
-        {"description": "User must be authenticated"},
-        {"description": "User must have read access to orders"}
+        {"description": "User must be authenticated", "notation": "tla_plus"},
+        {"description": "User must have read access to orders", "notation": "tla_plus"}
     ]
 }

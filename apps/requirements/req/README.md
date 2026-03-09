@@ -7,18 +7,7 @@ update ai parser to be an ai desitned cli:
     - that is the input structure for ai interface
 
 
-[
-  {
-    "type": "parse",
-    "code": "E11001",
-    "message": "class 'order' references actor 'nonexistent_actor' which does not exist",
-    "file": "domains/sales/subdomains/default/classes/order/class.json",
-    "field": "actor_key",
-    "hint": "available actors: customer | run: req_check --explain E11001"
-  }
-]
 
-actor names?
 
 
 [

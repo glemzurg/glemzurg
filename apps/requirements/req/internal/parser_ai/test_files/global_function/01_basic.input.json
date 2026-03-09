@@ -2,6 +2,6 @@
     "name": "_Max",
     "parameters": ["x", "y"],
     "logic": {
-        "description": "Returns the maximum of two values"
+        "description": "Returns the maximum of two values", "notation": "tla_plus"
     }
 }
