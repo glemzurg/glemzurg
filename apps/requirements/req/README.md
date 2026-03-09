@@ -2,13 +2,12 @@
 update ai parser to be an ai desitned cli:
   - move error codes to req_model
   - small outputs with ways to get schemas to people
-
-
-https://grok.com/share/c2hhcmQtMw_d87e1d40-d147-49e4-a204-39e0de4afe15
-
-change constants styles
-
-private data members
+    - https://grok.com/share/c2hhcmQtMw_d87e1d40-d147-49e4-a204-39e0de4afe15
+  - parser errors displayed in markdown
+  - rename to logic/ir
+    - that is the input structure for ai interface
+  - add stacks to the core errors
+    - replace all fmt.Errorf() with errors.Errorf()
 
 ----------------------------
 
@@ -30,15 +29,13 @@ april (in parallel)
 cleanup:
   - remove the json markup in req_model tree, and any json handling code
     - move to the parser_ai package
-  - replace all fmt.Errorf() with errors.Errorf()
+  - change constants styles
 
 - use case shared display in graphviz and capturing the meaning
 
   - make generalizations have subdomain parents: apps/requirements/req/internal/database/generalization.go
 
 - restrict names so that tla+ do not have conflics (like _Stack:Pop, no state attribute)
-
-  - make object members private
 - cleanup regex must compile code
 - import examples models from steve's examples
 - fix the nested sequence diagram display issue (move to d2)
@@ -77,6 +74,10 @@ update to https://github.com/go-playground/validator
 - make state class members innate and not specified
 
 - use godoc to review exported methods
+
+- private data members
+  - would need to solve the testify object comparision
+
 
 - revisit irrationals and how they are handled in a model:
   - https://grok.com/share/c2hhcmQtMw_524fb597-1e4a-4906-b1ce-37de14fe80af
